@@ -53,7 +53,7 @@ and an instance of `_PyUOpExecutor_Type` is created to contain it.
 ## The JIT interpreter
 
 After a `JUMP_BACKWARD` instruction invokes the uop optimizer to create a uop
-executor, it transfers control to this executor via the `GOTO_TIER_TWO` macro.
+executor, it transfers control to this executor via the `TIER1_TO_TIER2` macro.
 
 CPython implements two executors. Here we describe the JIT interpreter,
 which is the simpler of them and is therefore useful for debugging and analyzing
@@ -89,7 +89,7 @@ When the full jit is enabled (python was configured with
 [`--enable-experimental-jit`](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit),
 the uop executor's `jit_code` field is populated with a pointer to a compiled
 C function that implements the executor logic. This function's signature is
-defined by `jit_func` in [`pycore_jit.h`](Include/internal/pycore_jit.h).
+defined by `jit_func` in [`pycore_jit.h`](../Include/internal/pycore_jit.h).
 When the executor is invoked by `ENTER_EXECUTOR`, instead of jumping to
 the uop interpreter at `tier2_dispatch`, the executor runs the function
 that `jit_code` points to. This function returns the instruction pointer

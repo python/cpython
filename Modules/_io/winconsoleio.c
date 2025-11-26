@@ -1253,7 +1253,7 @@ static PyType_Slot winconsoleio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec winconsoleio_spec = {
+PyType_Spec _Py_winconsoleio_spec = {
     .name = "_io._WindowsConsoleIO",
     .basicsize = sizeof(winconsoleio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

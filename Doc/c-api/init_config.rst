@@ -102,7 +102,7 @@ Error Handling
    * Set *\*err_msg* and return ``1`` if an error is set.
    * Set *\*err_msg* to ``NULL`` and return ``0`` otherwise.
 
-   An error message is an UTF-8 encoded string.
+   An error message is a UTF-8 encoded string.
 
    If *config* has an exit code, format the exit code as an error
    message.
@@ -1277,6 +1277,11 @@ PyConfig
       Incremented by the :option:`-b` command line option.
 
       Default: ``0``.
+
+      .. deprecated-removed:: 3.15 3.17
+
+         The :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
 
    .. c:member:: int warn_default_encoding
 

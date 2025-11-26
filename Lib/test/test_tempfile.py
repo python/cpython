@@ -1386,7 +1386,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
 
         f.write(b'x')
         self.assertTrue(f._rolled)
-        self.assertEqual(f.mode, 'rb+')
+        self.assertEqual(f.mode, 'wb+')
         self.assertIsNotNone(f.name)
         with self.assertRaises(AttributeError):
             f.newlines
