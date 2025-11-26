@@ -1113,7 +1113,8 @@ BaseExceptionGroup_repr(PyObject *op)
         if (!exceptions_str) {
             return NULL;
         }
-    } else {
+    }
+    else {
         exceptions_str = Py_NewRef(self->excs_str);
     }
 
