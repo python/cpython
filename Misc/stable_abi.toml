@@ -2533,7 +2533,7 @@
 [function.PyEval_GetFrameLocals]
     added = '3.13'
 [const.Py_mod_gil]
-    added = '3.12'
+    added = '3.13'
 
 [function.Py_TYPE]
     # Before 3.14, this was a macro that accessed the PyObject member
