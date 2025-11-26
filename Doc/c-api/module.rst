@@ -330,6 +330,8 @@ Creation and initialization slots
    - :ref:`module state slots <ext-module-state-slots>` (``Py_mod_state_*``),
    - :c:macro:`Py_mod_token`.
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: next
 
       The *slots* argument may be a ``ModuleSpec``-like object, rather than
@@ -360,6 +362,8 @@ Creation and initialization slots
    Elsewhere (that is, in arguments to :c:func:`PyModule_FromSlotsAndSpec`
    and in return values of :samp:`PyModExport_{<name>}`), repeating the slot
    is not allowed.
+
+   .. versionadded:: 3.5
 
    .. versionchanged:: next
 

@@ -1902,6 +1902,13 @@
     added = '3.5'
 [data.PyModuleDef_Type]
     added = '3.5'
+[const.Py_mod_create]
+    added = '3.5'
+[const.Py_mod_exec]
+    added = '3.5'
+[struct.PyModuleDef_Slot]
+    added = '3.5'
+    struct_abi_kind = 'full-abi'
 
 # New slots in 3.5:
 # d51374ed78a3e3145911a16cdf3b9b84b3ba7d15 - Matrix multiplication (PEP 465)
@@ -2444,6 +2451,9 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
+[const.Py_mod_multiple_interpreters]
+    added = '3.12'
+
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
@@ -2522,10 +2532,14 @@
     added = '3.13'
 [function.PyEval_GetFrameLocals]
     added = '3.13'
+[const.Py_mod_gil]
+    added = '3.12'
 
 [function.Py_TYPE]
+    # Before 3.14, this was a macro that accessed the PyObject member
     added = '3.14'
 [function.Py_REFCNT]
+    # Before 3.14, this was a macro that accessed the PyObject member
     added = '3.14'
 [function.PyIter_NextItem]
     added = '3.14'
@@ -2640,4 +2654,13 @@
 [const.Py_mod_token]
     added = '3.15'
 [function.PyDict_SetDefaultRef]
+    added = '3.15'
+[function.Py_SIZE]
+    # Before 3.15, this was a macro that accessed the PyObject member
+    added = '3.15'
+[function.Py_IS_TYPE]
+    # Before 3.15, this was a macro that accessed the PyObject member
+    added = '3.15'
+[function.Py_SET_SIZE]
+    # Before 3.15, this was a macro that accessed the PyObject member
     added = '3.15'
