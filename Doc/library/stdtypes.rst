@@ -4649,7 +4649,7 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=sys.maxsize, /)
+   .. method:: index(value, start=0, stop=sys.maxsize, /)
 
       Return the index of the first occurrence of *value* (at or after
       index *start* and before index *stop*).
