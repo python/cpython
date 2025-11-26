@@ -254,7 +254,7 @@ Asynchronous generators best practices
 ======================================
 
 By :term:`asynchronous generator` in this section we will mean
-an :term:`asynchronous generator iterator` that returned by
+an :term:`asynchronous generator iterator` that is returned by an
 :term:`asynchronous generator` function.
 
 Manually close the generator
@@ -262,13 +262,12 @@ Manually close the generator
 
 If an asynchronous generator happens to exit early by :keyword:`break`, the caller
 task being cancelled, or other exceptions, the generator's async cleanup code
-will run and possibly raise exceptions or access context variables in an
-unexpected context--perhaps after the lifetime of tasks it depends, or
+will run in an unexpected context -- perhaps after the lifetime of tasks it depends on, or
 during the event loop shutdown when the async-generator garbage collection hook
 is called.
 
 To prevent this, it is recommended to explicitly close the async generator by
-calling :meth:`~agen.aclose` method, or using :func:`contextlib.aclosing` context
+calling the :meth:`~agen.aclose` method, or using a :func:`contextlib.aclosing` context
 manager::
 
   import asyncio
@@ -281,7 +280,7 @@ manager::
   async def func():
     async with contextlib.aclosing(gen()) as g:
       async for x in g:
-        break
+        break  # Don't iterate until the end
 
   asyncio.run(func())
 
@@ -290,9 +289,9 @@ Only create a generator when a loop is already running
 
 As said above, if an asynchronous generator is not resumed before it is
 finalized, then any finalization procedures will be delayed. The event loop
-handles this situation and doing it best to call async generator-iterator's
-:meth:`~agen.aclose` at the proper moment, thus allowing any pending
-:keyword:`!finally` clauses to execute.
+handles this situation and doing its best to call the async generator-iterator's
+:meth:`~agen.aclose` method at the proper moment, thus allowing any pending
+:keyword:`!finally` clauses to run.
 
 Then it is recomended to create async generators only after the event loop
 has already been created.
@@ -300,10 +299,10 @@ has already been created.
 Avoid iterating and closing the same generator concurrently
 -----------------------------------------------------------
 
-The async generators allow to be reentered while another
+Async generators may to be reentered while another
 :meth:`~agen.aclose`/:meth:`~agen.aclose`/:meth:`~agen.aclose` call is in
 progress. This may lead to an inconsistent state of the async generator
-and cause errors.
+and can cause errors.
 
 Let's consider following example::
 
@@ -347,5 +346,5 @@ Output::
   RuntimeError: anext(): asynchronous generator is already running
 
 
-Therefore, it is recommended to avoid using the async generators in parallel
-tasks or in the multiple event loops.
+Therefore, it is recommended to avoid using async generators in parallel
+tasks or from multiple event loops.
