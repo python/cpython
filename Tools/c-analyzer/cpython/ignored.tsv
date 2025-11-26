@@ -167,6 +167,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 
 # thread-safety
 # XXX need race protection?
+Modules/cmathmodule.c	-	special_values_init_once	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Modules/grpmodule.c	-	group_db_mutex	-

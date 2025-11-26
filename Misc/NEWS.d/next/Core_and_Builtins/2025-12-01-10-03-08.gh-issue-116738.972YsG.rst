@@ -1,0 +1,2 @@
+Make the :mod:`cmath` module thread-safe during import in free-threading and
+subinterpreter use cases.

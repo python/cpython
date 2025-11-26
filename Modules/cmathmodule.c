@@ -9,6 +9,7 @@
 #include "Python.h"
 #include "pycore_complexobject.h" // _Py_c_neg()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
@@ -1173,6 +1174,9 @@ static PyMethodDef cmath_methods[] = {
     {NULL, NULL}  /* sentinel */
 };
 
+static int init_special_value_tables(void *Py_UNUSED(arg));
+static _PyOnceFlag special_values_init_once = {0};
+
 static int
 cmath_exec(PyObject *mod)
 {
@@ -1203,6 +1207,15 @@ cmath_exec(PyObject *mod)
     }
 
     /* initialize special value tables */
+    if (_PyOnceFlag_CallOnce(&special_values_init_once, init_special_value_tables, NULL) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+init_special_value_tables(void *Py_UNUSED(arg)) {
 
 #define INIT_SPECIAL_VALUES(NAME, BODY) { Py_complex* p = (Py_complex*)NAME; BODY }
 #define C(REAL, IMAG) p->real = REAL; p->imag = IMAG; ++p;
