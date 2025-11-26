@@ -690,9 +690,6 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
      * vlen and wlen across the comparison calls.
      */
     for (i = 0; i < vlen && i < wlen; i++) {
-        if (vt->ob_item[i] == wt->ob_item[i]) {
-            continue;
-        }
         int k = PyObject_RichCompareBool(vt->ob_item[i],
                                          wt->ob_item[i], Py_EQ);
         if (k < 0)
