@@ -906,7 +906,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    /* Save initial exceptions sequence as a string incase sequence is mutated */
+    /* Save initial exceptions sequence as a string in case sequence is mutated */
     if (!PyList_Check(exceptions) && !PyTuple_Check(exceptions)) {
         exceptions_str = PyObject_Repr(exceptions);
         if (exceptions_str == NULL) {
