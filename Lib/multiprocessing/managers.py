@@ -193,7 +193,7 @@ class Server(object):
         handler_threads = []
         while True and not self.stop_event.is_set():
             try:
-                self.listener.settimeout(3)
+                self.listener.settimeout(0.5)
                 c = self.listener.accept()
             except OSError:
                 continue
