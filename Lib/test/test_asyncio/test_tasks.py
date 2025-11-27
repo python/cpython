@@ -3682,14 +3682,14 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
 
     def test_run_coroutine_threadsafe_and_cancel(self):
         async def target():
-            # self.loop.run_in_executor(None, _in_another_thread)
             thread_future = asyncio.run_coroutine_threadsafe(self.add(1, 2), self.loop)
             await asyncio.sleep(0)
 
             thread_future.cancel()
             await asyncio.sleep(0)
 
-        self.loop.run_until_complete(target())
+        future = self.loop.run_in_executor(None, target)
+        self.loop.run_until_complete(future)
         self.assertEqual(0, len(self.loop._ready))
 
 
