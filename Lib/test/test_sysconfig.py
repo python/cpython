@@ -20,7 +20,7 @@ from test.support import (
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
-                                    change_cwd)
+                                    change_cwd, EnvironmentVarGuard)
 from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
@@ -807,7 +807,9 @@ class MakefileTests(unittest.TestCase):
             print("PY_LDFLAGS=-lm", file=makefile)
             print("var2=$(LDFLAGS)", file=makefile)
             print("var3=$(CPPFLAGS)", file=makefile)
-        vars = _parse_makefile(TESTFN)
+        with EnvironmentVarGuard() as env:
+            env.clear()
+            vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': '-Wall',
             'CFLAGS': '-Wall',
