@@ -7263,6 +7263,13 @@ class TestColorized(TestCase):
             choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
             help="pick one",
         )
+        parser.add_argument(
+            "--optional8",
+            default="A",
+            metavar="X",
+            choices=("A", "B", "C"),
+            help="among %(choices)s, default is %(default)s",
+        )
 
         parser.add_argument("+f")
         parser.add_argument("++bar")
@@ -7302,8 +7309,8 @@ class TestColorized(TestCase):
                 f"""\
                 {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
                             [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
-                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
-                            [{short}-c {label}COUNT{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{long}--optional8 {label}X{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}]
+                            [{long}-+baz {label}BAZ{reset}] [{short}-c {label}COUNT{reset}]
                             {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
 
                 Colorful help
@@ -7327,6 +7334,7 @@ class TestColorized(TestCase):
                   {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
                                         pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional8{reset} {label_b}X{reset}         among {interp}A, B, C{reset}, default is {interp}A{reset}
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
