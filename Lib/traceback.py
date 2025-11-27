@@ -15,7 +15,7 @@ import _colorize
 from contextlib import suppress
 
 try:
-    from _stdlib_modules_info import MISSING_STDLIB_MODULE_MESSAGES
+    from _missing_stdlib_info import MISSING_STDLIB_MODULE_MESSAGES
 except ImportError:
     MISSING_STDLIB_MODULE_MESSAGES = {}
 
