@@ -256,6 +256,23 @@ class SharedObjectProxyTests(TestBase):
             interp.exec("assert proxy() == 42")
             self.assertEqual(thread_local.value, 24)
 
+    def test_destruct_object_in_subinterp(self):
+        called = False
+
+        class Test:
+            def __del__(self):
+                nonlocal called
+                called = True
+
+        foo = Test()
+        proxy = share(foo)
+        with self.create_interp(proxy=proxy):
+            self.assertFalse(called)
+            del foo, proxy
+            self.assertFalse(called)
+
+        self.assertTrue(called)
+
 
 if __name__ == "__main__":
     unittest.main()
