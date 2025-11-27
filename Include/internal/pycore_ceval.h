@@ -263,6 +263,10 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
 #endif
 }
 
+extern int _Py_ReachedRecursionLimitWithMargin(
+    PyThreadState *tstate,
+    int margin_count);
+
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
