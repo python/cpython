@@ -6,6 +6,15 @@ from .commands import Command, MotionCommand, KillCommand, delete
 from . import input as _input
 from .types import ViFindDirection
 from .trace import trace
+from .vi_motions import (
+    vi_eow,
+    vi_forward_word as _vi_forward_word,
+    vi_forward_word_ws as _vi_forward_word_ws,
+    vi_bow,
+    vi_bow_ws,
+    find_char_forward,
+    find_char_backward,
+)
 
 
 class ViKillCommand(KillCommand):
@@ -26,33 +35,33 @@ class end_of_word(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            r.pos = r.vi_eow()
+            r.pos = vi_eow(r.buffer, r.pos)
 
 
 class vi_forward_word(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            r.pos = r.vi_forward_word()
+            r.pos = _vi_forward_word(r.buffer, r.pos)
 
 class vi_forward_word_ws(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            r.pos = r.vi_forward_word_ws()
+            r.pos = _vi_forward_word_ws(r.buffer, r.pos)
 
 class vi_backward_word(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            r.pos = r.vi_bow()
+            r.pos = vi_bow(r.buffer, r.pos)
 
 
 class vi_backward_word_ws(MotionCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            r.pos = r.vi_bow_ws()
+            r.pos = vi_bow_ws(r.buffer, r.pos)
 
 
 
@@ -127,7 +136,7 @@ class vi_delete_word(ViKillCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            end = r.vi_forward_word()
+            end = _vi_forward_word(r.buffer, r.pos)
             if end > r.pos:
                 self.kill_range(r.pos, end)
 
@@ -264,14 +273,14 @@ class vi_find_execute(MotionCommand):
         r = self.reader
         for _ in range(r.get_arg()):
             if direction == ViFindDirection.FORWARD:
-                new_pos = r.find_char_forward(char)
+                new_pos = find_char_forward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos -= 1
                     if new_pos > r.pos:
                         r.pos = new_pos
             else:
-                new_pos = r.find_char_backward(char)
+                new_pos = find_char_backward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos += 1
@@ -304,14 +313,14 @@ class vi_repeat_find(MotionCommand):
 
         for _ in range(r.get_arg()):
             if direction == ViFindDirection.FORWARD:
-                new_pos = r.find_char_forward(char)
+                new_pos = find_char_forward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos -= 1
                     if new_pos > r.pos:
                         r.pos = new_pos
             else:
-                new_pos = r.find_char_backward(char)
+                new_pos = find_char_backward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos += 1
@@ -334,14 +343,14 @@ class vi_repeat_find_opposite(MotionCommand):
 
         for _ in range(r.get_arg()):
             if direction == ViFindDirection.FORWARD:
-                new_pos = r.find_char_forward(char)
+                new_pos = find_char_forward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos -= 1
                     if new_pos > r.pos:
                         r.pos = new_pos
             else:
-                new_pos = r.find_char_backward(char)
+                new_pos = find_char_backward(r.buffer, r.pos, char)
                 if new_pos is not None:
                     if not inclusive:
                         new_pos += 1
@@ -358,7 +367,7 @@ class vi_change_word(ViKillCommand):
     def do(self) -> None:
         r = self.reader
         for _ in range(r.get_arg()):
-            end = r.vi_eow() + 1  # +1 to include last char
+            end = vi_eow(r.buffer, r.pos) + 1  # +1 to include last char
             if end > r.pos:
                 self.kill_range(r.pos, end)
         r.enter_insert_mode()
