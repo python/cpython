@@ -227,6 +227,10 @@ Unless using :pep:`523`, you will not need this.
 
    The interpreter's internal frame representation.
 
+   The structure is intentionally opaque and there are currently no plans to
+   stabilize it. Debuggers and profilers can use the internal C API to access
+   the structure members.
+
    .. versionadded:: 3.11
    .. versionchanged:: next
       Renamed to ``PyUnstable_InterpreterFrame``.
