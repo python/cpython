@@ -799,6 +799,10 @@ Glossary
          And also please note that the free-threading CPython does not guarantee
          the thread-safety of iterator operations.
 
+   key
+
+      A value that "names" an entry in a :term:`mapping`,
+      See also :term:`subscript`.
 
    key function
       A key function or collation function is a callable that returns a value
@@ -1339,6 +1343,13 @@ Glossary
       avoid leaking one reference.
 
       See also :term:`borrowed reference`.
+
+   subscript
+
+      The expression in square brackets of a :ref:`subscription <subscriptions>`
+      expression, usually used to select an element of a container.
+      Also called a :term:`key` (when subscipting a :term:`mapping`) or
+      an :term:`index` (when subscipting a :term:`sequence`).
 
    t-string
    t-strings
