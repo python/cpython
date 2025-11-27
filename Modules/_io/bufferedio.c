@@ -1849,6 +1849,7 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t size)
                 PyBytesWriter_Discard(writer);
                 goto error;
             }
+            out = PyBytesWriter_GetData(writer);
         }
         Py_ssize_t r = MINUS_LAST_BLOCK(self, allocated - written);
         if (r == 0) {
@@ -1877,6 +1878,7 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t size)
             PyBytesWriter_Discard(writer);
             goto error;
         }
+        out = PyBytesWriter_GetData(writer);
     }
     /* NOTE: when the read is satisfied, we avoid issuing any additional
        reads, which could block indefinitely (e.g. on a socket).
