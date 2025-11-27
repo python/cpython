@@ -273,6 +273,20 @@ class SharedObjectProxyTests(TestBase):
 
         self.assertTrue(called)
 
+    def test_called_in_correct_interpreter(self):
+        called = False
+
+        def foo():
+            nonlocal called
+            self.assertEqual(interpreters.get_current(), interpreters.get_main())
+            called = True
+
+        proxy = share(foo)
+        with self.create_interp(proxy=proxy) as interp:
+            interp.exec("proxy()")
+
+        self.assertTrue(called)
+
 
 if __name__ == "__main__":
     unittest.main()
