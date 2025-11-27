@@ -261,8 +261,8 @@ General Options
    containing custom error messages for missing :term:`standard library` modules.
 
    This option is intended for Python distributors who wish to provide
-   distribution-specific guidance when users encounter missing standard library
-   modules that are packaged separately.
+   distribution-specific guidance when users encounter standard library
+   modules that are missing or packaged separately.
 
    The JSON file should map missing module names to custom error message strings.
    For example, if your distribution packages :mod:`tkinter` and
