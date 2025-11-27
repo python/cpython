@@ -45,7 +45,7 @@ GENERIC_PERMISSION_ERROR = """
 system restrictions or missing privileges.
 """
 
-from .sample import main
+from .cli import main
 
 def handle_permission_error():
     """Handle PermissionError by displaying appropriate error message."""
