@@ -20,6 +20,7 @@ def _dump_footer(
     yield "    size_t code_size;"
     yield "    size_t data_size;"
     yield "    symbol_mask trampoline_mask;"
+    yield "    symbol_mask got_mask;"
     yield "} StencilGroup;"
     yield ""
     yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
