@@ -46,7 +46,7 @@ typedef struct tracemalloc_frame frame_t;
 typedef struct tracemalloc_traceback traceback_t;
 
 #define TRACEBACK_SIZE(NFRAME) \
-        (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
+        (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME))
 
 static const int MAX_NFRAME = UINT16_MAX;
 
@@ -329,8 +329,9 @@ traceback_new(void)
     traceback->nframe = 0;
     traceback->total_nframe = 0;
     traceback_get_frames(traceback);
-    if (traceback->nframe == 0)
-        return &tracemalloc_empty_traceback;
+    if (traceback->nframe == 0) {
+        return tracemalloc_empty_traceback;
+    }
     traceback->hash = traceback_hash(traceback);
 
     /* intern the traceback */
@@ -754,12 +755,18 @@ _PyTraceMalloc_Init(void)
         return _PyStatus_NO_MEMORY();
     }
 
-    tracemalloc_empty_traceback.nframe = 1;
-    tracemalloc_empty_traceback.total_nframe = 1;
+    assert(tracemalloc_empty_traceback == NULL);
+    tracemalloc_empty_traceback = raw_malloc(TRACEBACK_SIZE(1));
+    if (tracemalloc_empty_traceback  == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    tracemalloc_empty_traceback->nframe = 1;
+    tracemalloc_empty_traceback->total_nframe = 1;
     /* borrowed reference */
-    tracemalloc_empty_traceback.frames[0].filename = &_Py_STR(anon_unknown);
-    tracemalloc_empty_traceback.frames[0].lineno = 0;
-    tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
+    tracemalloc_empty_traceback->frames[0].filename = &_Py_STR(anon_unknown);
+    tracemalloc_empty_traceback->frames[0].lineno = 0;
+    tracemalloc_empty_traceback->hash = traceback_hash(tracemalloc_empty_traceback);
 
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
     return _PyStatus_OK();
@@ -782,6 +789,9 @@ tracemalloc_deinit(void)
     _Py_hashtable_destroy(tracemalloc_filenames);
 
     PyThread_tss_delete(&tracemalloc_reentrant_key);
+
+    raw_free(tracemalloc_empty_traceback);
+    tracemalloc_empty_traceback = NULL;
 }
 
 
