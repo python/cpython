@@ -885,7 +885,7 @@ static PyType_Slot iobase_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec iobase_spec = {
+PyType_Spec _Py_iobase_spec = {
     .name = "_io._IOBase",
     .basicsize = sizeof(iobase),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -927,26 +927,33 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
-    /* TODO: allocate a bytes object directly instead and manually construct
-       a writable memoryview pointing to it. */
     b = PyByteArray_FromStringAndSize(NULL, n);
-    if (b == NULL)
+    if (b == NULL) {
         return NULL;
+    }
 
     res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), b, NULL);
     if (res == NULL || res == Py_None) {
-        Py_DECREF(b);
-        return res;
+        goto cleanup;
     }
 
-    n = PyNumber_AsSsize_t(res, PyExc_ValueError);
-    Py_DECREF(res);
-    if (n == -1 && PyErr_Occurred()) {
-        Py_DECREF(b);
-        return NULL;
+    Py_ssize_t bytes_filled = PyNumber_AsSsize_t(res, PyExc_ValueError);
+    Py_CLEAR(res);
+    if (bytes_filled == -1 && PyErr_Occurred()) {
+        goto cleanup;
     }
+    if (bytes_filled < 0 || bytes_filled > n) {
+        PyErr_Format(PyExc_ValueError,
+                     "readinto returned %zd outside buffer size %zd",
+                     bytes_filled, n);
+        goto cleanup;
+    }
+    if (PyByteArray_Resize(b, bytes_filled) < 0) {
+        goto cleanup;
+    }
+    res = PyObject_CallMethodNoArgs(b, &_Py_ID(take_bytes));
 
-    res = PyBytes_FromStringAndSize(PyByteArray_AsString(b), n);
+cleanup:
     Py_DECREF(b);
     return res;
 }
@@ -962,12 +969,10 @@ static PyObject *
 _io__RawIOBase_readall_impl(PyObject *self)
 /*[clinic end generated code: output=1987b9ce929425a0 input=688874141213622a]*/
 {
-    int r;
-    PyObject *chunks = PyList_New(0);
-    PyObject *result;
-
-    if (chunks == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
         return NULL;
+    }
 
     while (1) {
         PyObject *data = _PyObject_CallMethod(self, &_Py_ID(read),
@@ -978,21 +983,21 @@ _io__RawIOBase_readall_impl(PyObject *self)
             if (_PyIO_trap_eintr()) {
                 continue;
             }
-            Py_DECREF(chunks);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
         if (data == Py_None) {
-            if (PyList_GET_SIZE(chunks) == 0) {
-                Py_DECREF(chunks);
+            if (PyBytesWriter_GetSize(writer) == 0) {
+                PyBytesWriter_Discard(writer);
                 return data;
             }
             Py_DECREF(data);
             break;
         }
         if (!PyBytes_Check(data)) {
-            Py_DECREF(chunks);
             Py_DECREF(data);
             PyErr_SetString(PyExc_TypeError, "read() should return bytes");
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
         if (PyBytes_GET_SIZE(data) == 0) {
@@ -1000,16 +1005,16 @@ _io__RawIOBase_readall_impl(PyObject *self)
             Py_DECREF(data);
             break;
         }
-        r = PyList_Append(chunks, data);
-        Py_DECREF(data);
-        if (r < 0) {
-            Py_DECREF(chunks);
+        if (PyBytesWriter_WriteBytes(writer,
+                                     PyBytes_AS_STRING(data),
+                                     PyBytes_GET_SIZE(data)) < 0) {
+            Py_DECREF(data);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
+        Py_DECREF(data);
     }
-    result = PyBytes_Join((PyObject *)&_Py_SINGLETON(bytes_empty), chunks);
-    Py_DECREF(chunks);
-    return result;
+    return PyBytesWriter_Finish(writer);
 }
 
 static PyObject *
@@ -1041,7 +1046,7 @@ static PyType_Slot rawiobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec rawiobase_spec = {
+PyType_Spec _Py_rawiobase_spec = {
     .name = "_io._RawIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),

@@ -12,10 +12,10 @@ import types
 import unittest
 
 import test.support
-from test.support import requires_specialization_ft, script_helper
+from test.support import import_helper, requires_specialization_ft, script_helper
 
-_testcapi = test.support.import_helper.import_module("_testcapi")
-_testinternalcapi = test.support.import_helper.import_module("_testinternalcapi")
+_testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
@@ -1077,6 +1077,25 @@ class ExceptionMonitoringTest(CheckEvents):
             ('return', 'f', None),
         ]
 
+        self.assertEqual(events, expected)
+
+    # gh-140373
+    def test_gen_unwind(self):
+        def gen():
+            yield 1
+
+        def f():
+            g = gen()
+            next(g)
+            g.close()
+
+        recorders = (
+            UnwindRecorder,
+        )
+        events = self.get_events(f, TEST_TOOL, recorders)
+        expected = [
+            ("unwind", GeneratorExit, "gen"),
+        ]
         self.assertEqual(events, expected)
 
 class LineRecorder:
