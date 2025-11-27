@@ -158,7 +158,7 @@ static mach_port_t pid_to_task(pid_t pid);
 #endif
 
 // Initialize the process handle
-static int
+UNUSED static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -188,7 +188,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
 }
 
 // Clean up the process handle
-static void
+UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 #ifdef MS_WINDOWS
     if (handle->hProcess != NULL) {
@@ -875,7 +875,7 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
 #endif // MS_WINDOWS
 
 // Get the PyRuntime section address for any platform
-static uintptr_t
+UNUSED static uintptr_t
 _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
 {
     uintptr_t address;
@@ -1158,7 +1158,7 @@ fallback:
     return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
 }
 
-static int
+UNUSED static int
 _Py_RemoteDebug_ReadDebugOffsets(
     proc_handle_t *handle,
     uintptr_t *runtime_start_address,
