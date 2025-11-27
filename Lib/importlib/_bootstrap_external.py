@@ -208,12 +208,8 @@ def _write_atomic(path, data, mode=0o666):
     try:
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
-        with _io.FileIO(fd, 'wb') as file:
-            bytes_written = file.write(data)
-        if bytes_written != len(data):
-            # Raise an OSError so the 'except' below cleans up the partially
-            # written file.
-            raise OSError("os.write() didn't write the full pyc file")
+        with _io.open(fd, 'wb') as file:
+            file.write(data)
         _os.replace(path_tmp, path)
     except OSError:
         try:
