@@ -51,6 +51,8 @@ if __spec__ is not None:
     print('__main__ was located through the import system')
     assertIdentical(__spec__.loader, __loader__)
     expected_spec_name = os.path.splitext(os.path.basename(__file__))[0]
+    if __spec__.parent and __spec__.parent != __spec__.name:
+        expected_spec_name = __spec__.parent + '.' + expected_spec_name
     assertEqual(__spec__.name, expected_spec_name)
     assertIdentical(__spec__.submodule_search_locations, None)
     assertEqual(__spec__.origin, __file__)
