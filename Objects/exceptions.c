@@ -2912,8 +2912,7 @@ SyntaxError_str(PyObject *op)
         filename = my_basename(self->filename);
         if (filename == NULL)
             return NULL;
-    }
-    else {
+    } else {
         filename = NULL;
     }
     have_lineno = (self->lineno != NULL) && PyLong_CheckExact(self->lineno);
