@@ -7144,3 +7144,47 @@ class SemLockTests(unittest.TestCase):
         name = f'test_semlock_subclass-{os.getpid()}'
         s = SemLock(1, 0, 10, name, False)
         _multiprocessing.sem_unlink(name)
+
+
+@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
+class TestSharedMemoryNames(unittest.TestCase):
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(self):
+        # Test script that creates and cleans up shared memory with colon in name
+        test_script = textwrap.dedent("""
+            import sys
+            from multiprocessing import shared_memory
+            import time
+
+            # Test various patterns of colons in names
+            test_names = [
+                "a:b",
+                "a:b:c",
+                "test:name:with:many:colons",
+                ":starts:with:colon",
+                "ends:with:colon:",
+                "::double::colons::",
+                "name\\nwithnewline",
+                "name-with-trailing-newline\\n",
+                "\\nname-starts-with-newline",
+                "colons:and\\nnewlines:mix",
+                "multi\\nline\\nname",
+            ]
+
+            for name in test_names:
+                try:
+                    shm = shared_memory.SharedMemory(create=True, size=100, name=name)
+                    shm.buf[:5] = b'hello'  # Write something to the shared memory
+                    shm.close()
+                    shm.unlink()
+
+                except Exception as e:
+                    print(f"Error with name '{name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            print("SUCCESS")
+        """)
+
+        rc, out, err = script_helper.assert_python_ok("-c", test_script)
+        self.assertIn(b"SUCCESS", out)
+        self.assertNotIn(b"traceback", err.lower(), err)
+        self.assertNotIn(b"resource_tracker.py", err, err)
