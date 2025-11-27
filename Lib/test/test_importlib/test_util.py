@@ -788,7 +788,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             self.run_with_own_gil(script)
 
 
-class PatchAtomicWrites():
+class PatchAtomicWrites:
     def __init__(self, truncate_at_length, never_complete=False):
         self.truncate_at_length = truncate_at_length
         self.never_complete = never_complete
