@@ -1,1 +1,2 @@
-Use Python's regular file object to ensure that writes to ``.pyc`` files are retried, or an appropriate error is raised.
+When importing a module, use Python's regular file object to ensure that
+writes to ``.pyc`` files are retried, or an appropriate error is raised.
