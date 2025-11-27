@@ -325,3 +325,10 @@ Importing Modules
    If Python is initialized multiple times, :c:func:`PyImport_AppendInittab` or
    :c:func:`PyImport_ExtendInittab` must be called before each Python
    initialization.
+
+
+.. c:var:: struct _inittab *PyImport_Inittab
+
+   The table of built-in modules used by Python initialization. Do not use this directly;
+   use :c:func:`PyImport_AppendInittab` and :c:func:`PyImport_ExtendInittab`
+   instead.
