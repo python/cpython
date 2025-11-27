@@ -837,7 +837,7 @@ check-app-store-compliance:
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
-	$(MAKE) clean
+	$(MAKE) clean-profile
 	touch $@
 
 # Compile with profile generation enabled.
@@ -3257,12 +3257,20 @@ profile-removal:
 	rm -f profile-run-stamp
 	rm -f profile-bolt-stamp
 
-.PHONY: clean
-clean: clean-retain-profile clean-bolt
+.PHONY: clean-profile
+clean-profile: clean-retain-profile clean-bolt
 	@if test @DEF_MAKE_ALL_RULE@ = profile-opt -o @DEF_MAKE_ALL_RULE@ = bolt-opt; then \
 		rm -f profile-gen-stamp profile-clean-stamp; \
 		$(MAKE) profile-removal; \
 	fi
+
+# gh-141808: The JIT stencils are deliberately kept in clean-profile
+.PHONY: clean-jit-stencils
+clean-jit-stencils:
+	-rm -f jit_stencils*.h
+
+.PHONY: clean
+clean: clean-profile clean-jit-stencils
 
 .PHONY: clobber
 clobber: clean
@@ -3275,11 +3283,6 @@ clobber: clean
 	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
-
-# gh-141808: The JIT stencils are deliberately kept in make clean(-retain-profile)
-.PHONY: clean-jit-stencils
-clean-jit-stencils:
-	-rm -f jit_stencils*.h
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
