@@ -1658,7 +1658,7 @@ print()
                 text=True,
         ) as proc:
             try:
-                data = f"spam{'#'*subprocess._PIPE_BUF}beans"
+                data = f"spam{'#'*4096}beans"
                 proc.communicate(
                     input=data,
                     timeout=0,
