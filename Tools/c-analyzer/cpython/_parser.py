@@ -126,6 +126,7 @@ INCL_DIRS = format_tsv_lines([
     ('Modules/blake2module.c', 'Modules/_hacl/include'),
     ('Modules/hmacmodule.c', 'Modules/_hacl/include'),
     ('Objects/stringlib/*.h', 'Objects'),
+    ('Modules/pyexpat.c', './Modules/expat'),
 
     # possible system-installed headers, just in case
     ('Modules/_tkinter.c', '/usr/include/tcl8.6'),
