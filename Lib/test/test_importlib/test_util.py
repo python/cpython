@@ -789,7 +789,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
 
 class PatchAtomicWrites():
-    def __init__(self, truncate_at_length=100, never_complete=False):
+    def __init__(self, truncate_at_length, never_complete=False):
         self.truncate_at_length = truncate_at_length
         self.never_complete = never_complete
         self.seen_write = False
@@ -833,9 +833,9 @@ class MiscTests(unittest.TestCase):
             # truncate.
             content = b'x' * length
             _bootstrap_external._write_atomic(os_helper.TESTFN, content)
-        assert cm.seen_write
+        self.assertTrue(cm.seen_write)
 
-        assert os.stat(support.os_helper.TESTFN).st_size == length
+        self.assertEqual(os.stat(support.os_helper.TESTFN).st_size, length)
         os.unlink(support.os_helper.TESTFN)
 
     def test_atomic_write_errors_if_unable_to_complete(self):
@@ -851,7 +851,7 @@ class MiscTests(unittest.TestCase):
             # truncate.
             content = b'x' * (truncate_at_length * 2)
             _bootstrap_external._write_atomic(os_helper.TESTFN, content)
-        assert cm.seen_write
+        self.assertTrue(cm.seen_write)
 
         with self.assertRaises(OSError):
             os.stat(support.os_helper.TESTFN) # Check that the file did not get written.
