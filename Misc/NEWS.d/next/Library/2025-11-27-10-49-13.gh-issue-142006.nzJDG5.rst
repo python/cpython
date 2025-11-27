@@ -1,0 +1,1 @@
+Fix :exc:`email.errors.HeaderWriteError` in :mod:`email.policy.default` which created double newlines when folding long headers with list separators.
