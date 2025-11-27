@@ -62,7 +62,8 @@ except ImportError:
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
+           "SubprocessError", "TimeoutExpired", "CompletedProcess",
+           "run_pipeline", "PipelineResult", "PipelineError"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -192,6 +193,36 @@ class TimeoutExpired(SubprocessError):
         # There's no obvious reason to set this, but allow it anyway so
         # .stdout is a transparent alias for .output
         self.output = value
+
+
+class PipelineError(SubprocessError):
+    """Raised when run_pipeline() is called with check=True and one or more
+    commands in the pipeline return a non-zero exit status.
+
+    Attributes:
+        commands: List of commands in the pipeline (each a list of strings).
+        returncodes: List of return codes corresponding to each command.
+        stdout: Standard output from the final command (if captured).
+        stderr: Standard error output (if captured).
+        failed: List of (index, command, returncode) tuples for failed commands.
+    """
+    def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        self.commands = commands
+        self.returncodes = returncodes
+        self.stdout = stdout
+        self.stderr = stderr
+        self.failed = [
+            (i, cmd, rc)
+            for i, (cmd, rc) in enumerate(zip(commands, returncodes))
+            if rc != 0
+        ]
+
+    def __str__(self):
+        failed_info = ", ".join(
+            f"command {i} {cmd!r} returned {rc}"
+            for i, cmd, rc in self.failed
+        )
+        return f"Pipeline failed: {failed_info}"
 
 
 if _mswindows:
@@ -508,6 +539,47 @@ class CompletedProcess(object):
                                      self.stderr)
 
 
+class PipelineResult:
+    """A pipeline of processes that have finished running.
+
+    This is returned by run_pipeline().
+
+    Attributes:
+        commands: List of commands in the pipeline (each command is a list).
+        returncodes: List of return codes for each command in the pipeline.
+        returncode: The return code of the final command (for convenience).
+        stdout: The standard output of the final command (None if not captured).
+        stderr: The standard error output (None if not captured).
+    """
+    def __init__(self, commands, returncodes, stdout=None, stderr=None):
+        self.commands = list(commands)
+        self.returncodes = list(returncodes)
+        self.stdout = stdout
+        self.stderr = stderr
+
+    @property
+    def returncode(self):
+        """Return the exit code of the final command in the pipeline."""
+        return self.returncodes[-1] if self.returncodes else None
+
+    def __repr__(self):
+        args = [f'commands={self.commands!r}',
+                f'returncodes={self.returncodes!r}']
+        if self.stdout is not None:
+            args.append(f'stdout={self.stdout!r}')
+        if self.stderr is not None:
+            args.append(f'stderr={self.stderr!r}')
+        return f"{type(self).__name__}({', '.join(args)})"
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+    def check_returncodes(self):
+        """Raise PipelineError if any command's exit code is non-zero."""
+        if any(rc != 0 for rc in self.returncodes):
+            raise PipelineError(self.commands, self.returncodes,
+                                self.stdout, self.stderr)
+
+
 def run(*popenargs,
         input=None, capture_output=False, timeout=None, check=False, **kwargs):
     """Run command with arguments and return a CompletedProcess instance.
@@ -576,6 +648,236 @@ def run(*popenargs,
             raise CalledProcessError(retcode, process.args,
                                      output=stdout, stderr=stderr)
     return CompletedProcess(process.args, retcode, stdout, stderr)
+
+
+def run_pipeline(*commands, input=None, capture_output=False, timeout=None,
+                 check=False, **kwargs):
+    """Run a pipeline of commands connected via pipes.
+
+    Each positional argument should be a command (list of strings or a string
+    if shell=True) to execute. The stdout of each command is connected to the
+    stdin of the next command in the pipeline, similar to shell pipelines.
+
+    Returns a PipelineResult instance with attributes commands, returncodes,
+    stdout, and stderr. By default, stdout and stderr are not captured, and
+    those attributes will be None. Pass capture_output=True to capture both
+    the final command's stdout and stderr from all commands.
+
+    If check is True and any command's exit code is non-zero, it raises a
+    PipelineError. This is similar to shell "pipefail" behavior.
+
+    If timeout (seconds) is given and the pipeline takes too long, a
+    TimeoutExpired exception will be raised and all processes will be killed.
+
+    The optional "input" argument allows passing bytes or a string to the
+    first command's stdin. If you use this argument, you may not also specify
+    stdin in kwargs.
+
+    By default, all communication is in bytes. Use text=True, encoding, or
+    errors to enable text mode, which affects the input argument and stdout/
+    stderr outputs.
+
+    .. note::
+       When using text=True with capture_output=True or stderr=PIPE, be aware
+       that stderr output from multiple processes may be interleaved in ways
+       that produce invalid character sequences when decoded. For reliable
+       text decoding, avoid text=True when capturing stderr from pipelines,
+       or handle decoding errors appropriately.
+
+    Other keyword arguments are passed to each Popen call, except for stdin,
+    stdout which are managed by the pipeline.
+
+    Example:
+        # Equivalent to: cat file.txt | grep pattern | wc -l
+        result = run_pipeline(
+            ['cat', 'file.txt'],
+            ['grep', 'pattern'],
+            ['wc', '-l'],
+            capture_output=True, text=True
+        )
+        print(result.stdout)  # "42\\n"
+        print(result.returncodes)  # [0, 0, 0]
+    """
+    if len(commands) < 2:
+        raise ValueError('run_pipeline requires at least 2 commands')
+
+    # Reject universal_newlines - use text= instead
+    if kwargs.get('universal_newlines') is not None:
+        raise TypeError(
+            "run_pipeline() does not support 'universal_newlines'. "
+            "Use 'text=True' instead."
+        )
+
+    # Validate no conflicting arguments
+    if input is not None:
+        if kwargs.get('stdin') is not None:
+            raise ValueError('stdin and input arguments may not both be used.')
+
+    if capture_output:
+        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+            raise ValueError('stdout and stderr arguments may not be used '
+                             'with capture_output.')
+
+    # Determine stderr handling - all processes share the same stderr pipe
+    # When capturing, we create one pipe and all processes write to it
+    stderr_arg = kwargs.pop('stderr', None)
+    capture_stderr = capture_output or stderr_arg == PIPE
+
+    # stdin is for the first process, stdout is for the last process
+    stdin_arg = kwargs.pop('stdin', None)
+    stdout_arg = kwargs.pop('stdout', None)
+
+    processes = []
+    stderr_read_fd = None   # Read end of shared stderr pipe (for parent)
+    stderr_write_fd = None  # Write end of shared stderr pipe (for children)
+
+    try:
+        # Create a single stderr pipe that all processes will share
+        if capture_stderr:
+            stderr_read_fd, stderr_write_fd = os.pipe()
+
+        for i, cmd in enumerate(commands):
+            is_first = (i == 0)
+            is_last = (i == len(commands) - 1)
+
+            # Determine stdin for this process
+            if is_first:
+                if input is not None:
+                    proc_stdin = PIPE
+                else:
+                    proc_stdin = stdin_arg  # Could be None, PIPE, fd, or file
+            else:
+                proc_stdin = processes[-1].stdout
+
+            # Determine stdout for this process
+            if is_last:
+                if capture_output:
+                    proc_stdout = PIPE
+                else:
+                    proc_stdout = stdout_arg  # Could be None, PIPE, fd, or file
+            else:
+                proc_stdout = PIPE
+
+            # All processes share the same stderr pipe (write end)
+            if capture_stderr:
+                proc_stderr = stderr_write_fd
+            else:
+                proc_stderr = stderr_arg
+
+            proc = Popen(cmd, stdin=proc_stdin, stdout=proc_stdout,
+                         stderr=proc_stderr, **kwargs)
+            processes.append(proc)
+
+            # Close the parent's copy of the previous process's stdout
+            # to allow the pipe to signal EOF when the previous process exits
+            if not is_first and processes[-2].stdout is not None:
+                processes[-2].stdout.close()
+
+        # Close the write end of stderr pipe in parent - children have it
+        if stderr_write_fd is not None:
+            os.close(stderr_write_fd)
+            stderr_write_fd = None
+
+        first_proc = processes[0]
+        last_proc = processes[-1]
+
+        # Handle communication with timeout
+        start_time = _time() if timeout is not None else None
+
+        # Write input to first process if provided
+        if input is not None and first_proc.stdin is not None:
+            try:
+                first_proc.stdin.write(input)
+            except BrokenPipeError:
+                pass  # First process may have exited early
+            finally:
+                first_proc.stdin.close()
+
+        # Determine if we're in text mode
+        text_mode = kwargs.get('text') or kwargs.get('encoding') or kwargs.get('errors')
+
+        # Read output from the last process
+        stdout = None
+        stderr = None
+
+        # Read stdout if we created a pipe for it (capture_output or stdout=PIPE)
+        if last_proc.stdout is not None:
+            stdout = last_proc.stdout.read()
+
+        # Read stderr from the shared pipe
+        if stderr_read_fd is not None:
+            stderr = os.read(stderr_read_fd, 1024 * 1024 * 10)  # Up to 10MB
+            # Keep reading until EOF
+            while True:
+                chunk = os.read(stderr_read_fd, 65536)
+                if not chunk:
+                    break
+                stderr += chunk
+
+        # Calculate remaining timeout
+        def remaining_timeout():
+            if timeout is None:
+                return None
+            elapsed = _time() - start_time
+            remaining = timeout - elapsed
+            if remaining <= 0:
+                raise TimeoutExpired(commands, timeout, stdout, stderr)
+            return remaining
+
+        # Wait for all processes to complete
+        returncodes = []
+        for proc in processes:
+            try:
+                proc.wait(timeout=remaining_timeout())
+            except TimeoutExpired:
+                # Kill all processes on timeout
+                for p in processes:
+                    if p.poll() is None:
+                        p.kill()
+                for p in processes:
+                    p.wait()
+                raise TimeoutExpired(commands, timeout, stdout, stderr)
+            returncodes.append(proc.returncode)
+
+        # Handle text mode conversion for stderr (stdout is already handled
+        # by Popen when text=True). stderr is always read as bytes since
+        # we use os.pipe() directly.
+        if text_mode and stderr is not None:
+            encoding = kwargs.get('encoding')
+            errors = kwargs.get('errors', 'strict')
+            if encoding is None:
+                encoding = locale.getencoding()
+            stderr = stderr.decode(encoding, errors)
+
+        result = PipelineResult(commands, returncodes, stdout, stderr)
+
+        if check and any(rc != 0 for rc in returncodes):
+            raise PipelineError(commands, returncodes, stdout, stderr)
+
+        return result
+
+    finally:
+        # Ensure all processes are cleaned up
+        for proc in processes:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+            # Close any open file handles
+            if proc.stdin and not proc.stdin.closed:
+                proc.stdin.close()
+            if proc.stdout and not proc.stdout.closed:
+                proc.stdout.close()
+        # Close stderr pipe file descriptors
+        if stderr_read_fd is not None:
+            try:
+                os.close(stderr_read_fd)
+            except OSError:
+                pass
+        if stderr_write_fd is not None:
+            try:
+                os.close(stderr_write_fd)
+            except OSError:
+                pass
 
 
 def list2cmdline(seq):

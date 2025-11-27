@@ -1984,6 +1984,217 @@ class RunFuncTestCase(BaseTestCase):
         self.assertStartsWith(lines[1], b"<string>:3: EncodingWarning: ")
 
 
+class PipelineTestCase(BaseTestCase):
+    """Tests for subprocess.run_pipeline()"""
+
+    def test_pipeline_basic(self):
+        """Test basic two-command pipeline"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello world")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncode, 0)
+
+    def test_pipeline_three_commands(self):
+        """Test pipeline with three commands"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("one\\ntwo\\nthree")'],
+            [sys.executable, '-c', 'import sys; print("".join(sorted(sys.stdin.readlines())))'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().strip().upper())'],
+            capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), 'ONE\nTHREE\nTWO')
+        self.assertEqual(result.returncodes, [0, 0, 0])
+
+    def test_pipeline_with_input(self):
+        """Test pipeline with input data"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            [sys.executable, '-c', 'import sys; print(len(sys.stdin.read().strip()))'],
+            input='hello', capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), '5')
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_bytes_mode(self):
+        """Test pipeline in binary mode"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; sys.stdout.buffer.write(b"hello")'],
+            [sys.executable, '-c', 'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read().upper())'],
+            capture_output=True
+        )
+        self.assertEqual(result.stdout, b'HELLO')
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_error_check(self):
+        """Test that check=True raises PipelineError on failure"""
+        with self.assertRaises(subprocess.PipelineError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'print("hello")'],
+                [sys.executable, '-c', 'import sys; sys.exit(1)'],
+                capture_output=True, check=True
+            )
+        exc = cm.exception
+        self.assertEqual(len(exc.failed), 1)
+        self.assertEqual(exc.failed[0][0], 1)  # Second command failed
+        self.assertEqual(exc.returncodes, [0, 1])
+
+    def test_pipeline_first_command_fails(self):
+        """Test pipeline where first command fails"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; sys.exit(42)'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            capture_output=True
+        )
+        self.assertEqual(result.returncodes[0], 42)
+
+    def test_pipeline_requires_two_commands(self):
+        """Test that pipeline requires at least 2 commands"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'print("hello")'],
+                capture_output=True
+            )
+        self.assertIn('at least 2 commands', str(cm.exception))
+
+    def test_pipeline_stdin_and_input_conflict(self):
+        """Test that stdin and input cannot both be specified"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                input='data', stdin=subprocess.PIPE
+            )
+        self.assertIn('stdin', str(cm.exception))
+        self.assertIn('input', str(cm.exception))
+
+    def test_pipeline_capture_output_conflict(self):
+        """Test that capture_output conflicts with stdout/stderr"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                capture_output=True, stdout=subprocess.PIPE
+            )
+        self.assertIn('capture_output', str(cm.exception))
+
+    def test_pipeline_rejects_universal_newlines(self):
+        """Test that universal_newlines is not supported"""
+        with self.assertRaises(TypeError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                universal_newlines=True
+            )
+        self.assertIn('universal_newlines', str(cm.exception))
+        self.assertIn('text=True', str(cm.exception))
+
+    def test_pipeline_result_repr(self):
+        """Test PipelineResult string representation"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("test")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            capture_output=True, text=True
+        )
+        repr_str = repr(result)
+        self.assertIn('PipelineResult', repr_str)
+        self.assertIn('commands=', repr_str)
+        self.assertIn('returncodes=', repr_str)
+
+    def test_pipeline_check_returncodes_method(self):
+        """Test PipelineResult.check_returncodes() method"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; sys.exit(5)'],
+            capture_output=True
+        )
+        with self.assertRaises(subprocess.PipelineError) as cm:
+            result.check_returncodes()
+        self.assertEqual(cm.exception.returncodes[1], 5)
+
+    def test_pipeline_no_capture(self):
+        """Test pipeline without capturing output"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'pass'],
+            [sys.executable, '-c', 'pass'],
+        )
+        self.assertEqual(result.stdout, None)
+        self.assertEqual(result.stderr, None)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_stderr_capture(self):
+        """Test that stderr is captured from all processes"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; print("err1", file=sys.stderr); print("out1")'],
+            [sys.executable, '-c', 'import sys; print("err2", file=sys.stderr); print(sys.stdin.read())'],
+            capture_output=True, text=True
+        )
+        self.assertIn('err1', result.stderr)
+        self.assertIn('err2', result.stderr)
+
+    @unittest.skipIf(mswindows, "POSIX specific test")
+    def test_pipeline_timeout(self):
+        """Test pipeline with timeout"""
+        with self.assertRaises(subprocess.TimeoutExpired):
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import time; time.sleep(10); print("done")'],
+                [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+                capture_output=True, timeout=0.1
+            )
+
+    def test_pipeline_error_str(self):
+        """Test PipelineError string representation"""
+        try:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import sys; sys.exit(1)'],
+                [sys.executable, '-c', 'import sys; sys.exit(2)'],
+                capture_output=True, check=True
+            )
+        except subprocess.PipelineError as e:
+            error_str = str(e)
+            self.assertIn('Pipeline failed', error_str)
+
+    def test_pipeline_explicit_stdout_pipe(self):
+        """Test pipeline with explicit stdout=PIPE"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            stdout=subprocess.PIPE
+        )
+        self.assertEqual(result.stdout.strip(), b'HELLO')
+        self.assertIsNone(result.stderr)
+
+    def test_pipeline_stdin_from_file(self):
+        """Test pipeline with stdin from file"""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write('file content\n')
+            f.flush()
+            fname = f.name
+        try:
+            with open(fname, 'r') as f:
+                result = subprocess.run_pipeline(
+                    [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+                    [sys.executable, '-c', 'import sys; print(len(sys.stdin.read().strip()))'],
+                    stdin=f, capture_output=True, text=True
+                )
+            self.assertEqual(result.stdout.strip(), '12')  # "FILE CONTENT"
+        finally:
+            os.unlink(fname)
+
+    def test_pipeline_stdout_to_devnull(self):
+        """Test pipeline with stdout to DEVNULL"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            stdout=subprocess.DEVNULL
+        )
+        self.assertIsNone(result.stdout)
+        self.assertEqual(result.returncodes, [0, 0])
+
+
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
         if grp:
