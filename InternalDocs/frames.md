@@ -116,7 +116,7 @@ instruction which cleans up the shim frame and returns.
 Each thread state contains an embedded `_PyInterpreterFrame` called the "base frame"
 that serves as a sentinel at the bottom of the frame stack. This frame is allocated
 in `_PyThreadStateImpl` (the internal extension of `PyThreadState`) and initialized
-when the thread state is created. The `owner` field is set to `FRAME_OWNED_BY_THREAD_STATE`.
+when the thread state is created. The `owner` field is set to `FRAME_OWNED_BY_INTERPRETER`.
 
 External profilers and sampling tools can validate that they have successfully unwound
 the complete call stack by checking that the frame chain terminates at the base frame.
@@ -135,7 +135,7 @@ See the initialization in `new_threadstate()` in [Python/pystate.c](../Python/py
 
 External profilers should read `tstate->base_frame` before walking the stack, then
 walk from `tstate->current_frame` following `frame->previous` pointers until reaching
-a frame with `owner == FRAME_OWNED_BY_THREAD_STATE`. After the walk, verify that the
+a frame with `owner == FRAME_OWNED_BY_INTERPRETER`. After the walk, verify that the
 last frame address matches `base_frame`. If not, discard the sample as incomplete
 since the frame chain may have been in an inconsistent state due to concurrent updates.
 

@@ -1035,8 +1035,7 @@ _Py_DumpWideString(int fd, wchar_t *str)
 static int
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    if (frame->owner == FRAME_OWNED_BY_INTERPRETER ||
-        frame->owner == FRAME_OWNED_BY_THREAD_STATE) {
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
         /* Ignore trampoline frames and base frame sentinel */
         return 0;
     }

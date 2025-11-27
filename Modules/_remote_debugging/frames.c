@@ -156,11 +156,7 @@ is_frame_valid(
 
     char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
     if (owner == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame
-    }
-
-    if (owner == FRAME_OWNED_BY_THREAD_STATE) {
-        return 0;  // Sentinel base frame - end of stack
+        return 0;  // C frame or sentinel base frame
     }
 
     if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
