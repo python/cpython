@@ -164,6 +164,7 @@ class Server(object):
         self.id_to_refcount = {}
         self.id_to_local_proxy_obj = {}
         self.mutex = threading.Lock()
+        self._handler_threads = []
 
     def serve_forever(self):
         '''
@@ -186,11 +187,12 @@ class Server(object):
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
                 sys.stderr = sys.__stderr__
+            for t in self._handler_threads:
+                t.join()
             accepter.join()
             sys.exit(0)
 
     def accepter(self):
-        handler_threads = []
         while True and not self.stop_event.is_set():
             try:
                 self.listener.settimeout(0.5)
@@ -198,11 +200,9 @@ class Server(object):
             except OSError:
                 continue
             t = threading.Thread(target=self.handle_request, args=(c,))
-            handler_threads.append(t)
+            self._handler_threads.append(t)
             t.daemon = True
             t.start()
-        for t in handler_threads:
-            t.join()
 
     def _handle_request(self, c):
         request = None
