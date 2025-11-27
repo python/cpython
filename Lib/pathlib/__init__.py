@@ -1222,7 +1222,8 @@ class Path(PurePath):
         """
         Change the permissions of the path, like os.chmod().
         """
-        os.chmod(self, mode, follow_symlinks=follow_symlinks)
+        # GH-127380: Force string path to ensure Windows archive bit handling works
+        os.chmod(str(self), mode, follow_symlinks=follow_symlinks)
 
     def lchmod(self, mode):
         """
