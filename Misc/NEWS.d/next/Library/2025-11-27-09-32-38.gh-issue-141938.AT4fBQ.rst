@@ -1,0 +1,5 @@
+Fix :mod:`http.client` to properly reset the connection state when an
+:exc:`OSError` (such as a :exc:`TimeoutError`) occurs during request sending.
+Previously, the state remained inconsistent, causing subsequent
+:meth:`~http.client.HTTPConnection.request` calls to raise
+:exc:`~http.client.CannotSendRequest`. Patch by pareshjoshij.
