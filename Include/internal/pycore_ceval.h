@@ -263,7 +263,8 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
 #endif
 }
 
-extern int _Py_ReachedRecursionLimitWithMargin(
+// Export for test_peg_generator
+PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
     PyThreadState *tstate,
     int margin_count);
 
