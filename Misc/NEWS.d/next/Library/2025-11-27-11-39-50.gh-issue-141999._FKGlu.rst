@@ -1,0 +1,1 @@
+Fix: handle KeyboardInterrupt when sampling and print the result.
