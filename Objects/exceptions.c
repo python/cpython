@@ -1088,8 +1088,11 @@ BaseExceptionGroup_repr(PyObject *op)
 
     PyObject *exceptions_str = NULL;
 
-    /* If the initial exceptions string was not saved in the constructor. */
-    if (!self->excs_str) {
+    /* Use the saved exceptions string for custom sequences. */
+    if (self->excs_str) {
+        exceptions_str = Py_NewRef(self->excs_str);
+    }
+    else {
         assert(self->excs);
 
         /* Older versions delegated to BaseException, inserting the current
@@ -1112,9 +1115,6 @@ BaseExceptionGroup_repr(PyObject *op)
         if (!exceptions_str) {
             return NULL;
         }
-    }
-    else {
-        exceptions_str = Py_NewRef(self->excs_str);
     }
 
     assert(exceptions_str != NULL);
