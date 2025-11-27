@@ -666,6 +666,10 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
     if (!PyTuple_Check(v) || !PyTuple_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
+    if (v == w) {
+        Py_RETURN_RICHCOMPARE(0, 0, op);
+    }
+
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
 
