@@ -17,7 +17,9 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_unicodectype.h"  // _PyUnicode_IsXidStart()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -1525,6 +1527,58 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 }
 
 /*[clinic input]
+unicodedata.UCD.isxidstart
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Return True if the character has the XID_Start property, else False.
+
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_isxidstart_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=944005823c72c3ef input=9353f88d709c21fb]*/
+{
+    if (UCD_Check(self)) {
+        const change_record *old = get_old_record(self, chr);
+        if (old->category_changed == 0) {
+            /* unassigned */
+            Py_RETURN_FALSE;
+        }
+    }
+
+    return PyBool_FromLong(_PyUnicode_IsXidStart(chr));
+}
+
+/*[clinic input]
+unicodedata.UCD.isxidcontinue
+
+    self: self
+    chr: int(accept={str})
+    /
+
+Return True if the character has the XID_Continue property, else False.
+
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_isxidcontinue_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=9438dcbff5ca3e41 input=bbb8dd3ac0d2d709]*/
+{
+    if (UCD_Check(self)) {
+        const change_record *old = get_old_record(self, chr);
+        if (old->category_changed == 0) {
+            /* unassigned */
+            Py_RETURN_FALSE;
+        }
+    }
+
+    return PyBool_FromLong(_PyUnicode_IsXidContinue(chr));
+}
+
+/*[clinic input]
 unicodedata.UCD.lookup
 
     self: self
@@ -1589,6 +1643,8 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
+    UNICODEDATA_UCD_ISXIDSTART_METHODDEF
+    UNICODEDATA_UCD_ISXIDCONTINUE_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
     UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
