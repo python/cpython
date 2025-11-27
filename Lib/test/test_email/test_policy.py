@@ -165,6 +165,20 @@ class PolicyAPITests(unittest.TestCase):
         self.assertEqual(p1.fold('Subject', msg['Subject']), expected)
         self.assertEqual(p2.fold('Subject', msg['Subject']), expected)
 
+    def test_fold_address_list_with_stolen_whitespace(self):
+        long_address = (
+            "loooooooooooooooooooooooooooooooooooong@dooooooooooooomainname.example.com, "
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.example.com"
+        )
+        msg = email.message_from_string(f"To: {long_address}\n\n", policy=email.policy.default)
+
+        # This should not raise HeaderWriteError
+        output = msg.as_string()
+        # Verify the output format is correct and clean
+        self.assertIn(long_address.split(',')[0], output)
+        # Ensure header section doesn't have double newlines
+        self.assertNotIn('\n\n', output.split('\n\n')[0])
+
     def test_register_defect(self):
         class Dummy:
             def __init__(self):
