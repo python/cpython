@@ -324,7 +324,7 @@ class ModuleChecker:
 MISSING_STDLIB_MODULE_MESSAGES = {pprint.pformat(messages)}
 '''
 
-        output_path = self.builddir / "_missing_stdlib_module_info.py"
+        output_path = self.builddir / "_missing_stdlib_info.py"
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
 
