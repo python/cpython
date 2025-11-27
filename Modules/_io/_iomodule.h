@@ -80,6 +80,10 @@ extern int _PyIO_trap_eintr(void);
 
 #define DEFAULT_BUFFER_SIZE (128 * 1024)  /* bytes */
 
+// Data larger than this will be read in chunks, to prevent extreme
+// overallocation.
+#define MIN_READ_BUF_SIZE (1 << 20)
+
 /*
  * Offset type for positioning.
  */

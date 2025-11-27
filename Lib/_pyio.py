@@ -27,6 +27,10 @@ if hasattr(os, 'SEEK_HOLE') :
 # when the device block size is available.
 DEFAULT_BUFFER_SIZE = 128 * 1024  # bytes
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
+
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't want
 # to inherit the C implementations.
@@ -611,15 +615,29 @@ class RawIOBase(IOBase):
         """
         if size is None:
             size = -1
+        size = size.__index__()
         if size < 0:
             return self.readall()
-        b = bytearray(size.__index__())
+        b = bytearray(min(size, _MIN_READ_BUF_SIZE))
         n = self.readinto(b)
         if n is None:
             return None
-        if n < 0 or n > len(b):
-            raise ValueError(f"readinto returned {n} outside buffer size {len(b)}")
-        del b[n:]
+        written = 0
+        while True:
+            if n != len(b) - written:
+                if n < 0 or n > len(b) - written:
+                    raise ValueError(f"readinto returned {n} outside buffer size {len(b) - written}")
+                written += n
+                break
+            written += n
+            if written >= size:
+                break
+            b.resize(min(2*len(b), size))
+            with memoryview(b) as m:
+                n = self.readinto(m[written:])
+            if n is None:
+                break
+        del b[written:]
         return b.take_bytes()
 
     def readall(self):

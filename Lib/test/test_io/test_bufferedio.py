@@ -433,6 +433,18 @@ class BufferedReaderTest(CommonBufferedTests):
 
         self.assertEqual(b"abcdefg", bufio.read())
 
+    def test_large_read_from_small_file(self):
+        for size in support.itersize(1 << 20, sys.maxsize):
+            rawio = self.MockRawIO((b'abc',))
+            bufio = self.tp(rawio)
+            self.assertEqual(bufio.read(size), b'abc')
+
+    def test_large_read1_from_small_file(self):
+        for size in support.itersize(1 << 20, sys.maxsize):
+            rawio = self.MockRawIO((b'abc',))
+            bufio = self.tp(rawio)
+            self.assertEqual(bufio.read1(size), b'abc')
+
     @threading_helper.requires_working_threading()
     @support.requires_resource('cpu')
     def test_threads(self):

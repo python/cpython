@@ -1,0 +1,8 @@
+Fix a potential memory denial of service when reading from a file,
+a file descriptor or a buffered stream the large specific number of bytes.
+This affects the :func:`os.read` and :func:`os.pread` functions and
+the :meth:`!read` and :meth:`!read1` methods of various :mod:`io` classes.
+When the number of bytes to read is received from untrusted source, it could
+cause an arbitrary amount of memory to be allocated.
+This could have led to symptoms including a :exc:`MemoryError`, swapping,
+out of memory (OOM) killed processes or containers, or even system crashes.
