@@ -676,11 +676,11 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
-    if (vlen != wlen && (op == Py_EQ || op == Py_NE)) {
-        if (op == Py_EQ) {
+    if (vlen != wlen) {
+        switch (op) {
+        case Py_EQ:
             Py_RETURN_FALSE;
-        }
-        else {
+        case Py_NE:
             Py_RETURN_TRUE;
         }
     }
