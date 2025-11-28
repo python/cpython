@@ -3255,5 +3255,18 @@ class TestFolding(TestEmailBase):
             " filename*1*=_TEST_TES.txt\n",
             )
 
+    def test_fold_unfoldable_element_stealing_whitespace(self):
+        # gh-142006: When an element is too long to fit on the current line
+        # the previous line's trailing whitespace
+        policy = self.policy.clone(max_line_length=10)
+
+        # "a," fits. The space after it should wrap to the next line.
+        # The "long" part (20 chars) forces the wrap because 20 > 10.
+        text = "a, " + ("b" * 20)
+        expected = "a,\n " + ("b" * 20) + "\n"
+
+        token = parser.get_address_list(text)[0]
+        self._test(token, expected, policy=policy)
+
 if __name__ == '__main__':
     unittest.main()
