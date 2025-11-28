@@ -1,0 +1,1 @@
+Fix :exc:`email.errors.HeaderWriteError` in :mod:`email.policy.default` which incorrectly added double newlines when folding lines containing unfoldable syntactic elements wider than max_line_len.
