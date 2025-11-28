@@ -394,6 +394,10 @@ Other language changes
   syntax warnings by module name.
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
 
+* Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
+  for any class.
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
 
 New modules
 ===========
@@ -411,6 +415,10 @@ Improved modules
 
 argparse
 --------
+
+* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+  long options and alternate prefix characters.
+  (Contributed by Serhiy Storchaka in :gh:`138525`.)
 
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
@@ -1271,3 +1279,10 @@ that may require changes to your code.
   Use its :meth:`!close` method or the :func:`contextlib.closing` context
   manager to close it.
   (Contributed by Osama Abdelkader and Serhiy Storchaka in :gh:`140601`.)
+
+* If a short option and a single-dash long option are passed to
+  :meth:`argparse.ArgumentParser.add_argument`, *dest* is now inferred from
+  the single-dash long option. For example, in ``add_argument('-f', '-foo')``,
+  *dest* is now ``'foo'`` instead of ``'f'``.
+  Pass an explicit *dest* argument to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`138697`.)

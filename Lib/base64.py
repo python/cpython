@@ -193,7 +193,7 @@ def _b32encode(alphabet, s):
         encoded[-3:] = b'==='
     elif leftover == 4:
         encoded[-1:] = b'='
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
     # Delay the initialization of the table to not waste memory
@@ -238,7 +238,7 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
         last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
-    return bytes(decoded)
+    return decoded.take_bytes()
 
 
 def b32encode(s):
