@@ -1,0 +1,4 @@
+Fix `http.client.HTTPConnection` to properly reset its internal state when
+reading the response raises an exception such as `TimeoutError`, ensuring
+the connection can be reused or raises appropriate errors on subsequent
+requests.

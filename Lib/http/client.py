@@ -1449,7 +1449,7 @@ class HTTPConnection:
 
             return response
         except:
-            response.close()
+            self.close()
             raise
 
 try:
