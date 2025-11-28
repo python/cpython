@@ -3628,7 +3628,6 @@ class WindowsPathTest(PathTest, PureWindowsPathTest):
     cls = pathlib.WindowsPath
 
     def test_chmod_archive_bit_behavior(self):
-        import subprocess
 
         # gh-140774: Fix chmod failing to clear Read-Only if Archive bit is cleared.
         base = self.cls(self.base)
