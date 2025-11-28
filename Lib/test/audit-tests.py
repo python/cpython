@@ -6,7 +6,6 @@ module with arguments identifying each test.
 """
 
 import contextlib
-import importlib.machinery
 import os
 import sys
 import unittest.mock
@@ -701,7 +700,7 @@ def test_import_module():
     )
 
 def test_builtin__import__():
-    import importlib # noqa: F401
+    import importlib.machinery # noqa: F401
 
     with TestHook() as hook:
         __import__("importlib")
@@ -727,7 +726,7 @@ def test_builtin__import__():
     )
 
 def test_import_statement():
-    import importlib # noqa: F401
+    import importlib.machinery # noqa: F401
     # Set __spec__.parent so relative imports work
     spec = importlib.machinery.ModuleSpec("test", None, is_package=True)
     with swap_item(globals(), "__spec__", spec):
