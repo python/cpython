@@ -8,12 +8,6 @@ import os
 
 from .collector import Collector
 from .string_table import StringTable
-from .constants import (
-    THREAD_STATUS_HAS_GIL,
-    THREAD_STATUS_ON_CPU,
-    THREAD_STATUS_GIL_REQUESTED,
-    THREAD_STATUS_UNKNOWN,
-)
 
 
 class StackTraceCollector(Collector):
@@ -28,13 +22,6 @@ class StackTraceCollector(Collector):
             self.process_frames(frames, thread_id)
 
     def process_frames(self, frames, thread_id):
-        pass
-
-    def collect_stats_sample(self, stack_frames):
-        """
-        Collect thread status statistics from a sample.
-        Subclasses can override to track GIL/CPU/GC stats.
-        """
         pass
 
 
@@ -98,65 +85,30 @@ class FlamegraphCollector(StackTraceCollector):
         # Increment sample count once per sample
         self._sample_count += 1
 
-        # Collect both aggregate and per-thread statistics in a single pass
-        has_gc_frame_in_sample = False
+        # Collect both aggregate and per-thread statistics using base method
+        status_counts, has_gc_frame, per_thread_stats = self._collect_thread_status_stats(stack_frames)
 
-        for interpreter_info in stack_frames:
-            threads = getattr(interpreter_info, "threads", [])
-            for thread_info in threads:
-                # Update aggregate counts
-                self.thread_status_counts["total"] += 1
-
-                # Track thread status using bit flags
-                status_flags = getattr(thread_info, "status", 0)
-
-                if status_flags & THREAD_STATUS_HAS_GIL:
-                    self.thread_status_counts["has_gil"] += 1
-                if status_flags & THREAD_STATUS_ON_CPU:
-                    self.thread_status_counts["on_cpu"] += 1
-                if status_flags & THREAD_STATUS_GIL_REQUESTED:
-                    self.thread_status_counts["gil_requested"] += 1
-                if status_flags & THREAD_STATUS_UNKNOWN:
-                    self.thread_status_counts["unknown"] += 1
-
-                # Track per-thread statistics
-                thread_id = getattr(thread_info, "thread_id", None)
-                if thread_id is not None:
-                    # Initialize per-thread stats if needed
-                    if thread_id not in self.per_thread_stats:
-                        self.per_thread_stats[thread_id] = {
-                            "has_gil": 0,
-                            "on_cpu": 0,
-                            "gil_requested": 0,
-                            "unknown": 0,
-                            "total": 0,
-                            "gc_samples": 0,
-                        }
-
-                    thread_stats = self.per_thread_stats[thread_id]
-                    thread_stats["total"] += 1
-
-                    if status_flags & THREAD_STATUS_HAS_GIL:
-                        thread_stats["has_gil"] += 1
-                    if status_flags & THREAD_STATUS_ON_CPU:
-                        thread_stats["on_cpu"] += 1
-                    if status_flags & THREAD_STATUS_GIL_REQUESTED:
-                        thread_stats["gil_requested"] += 1
-                    if status_flags & THREAD_STATUS_UNKNOWN:
-                        thread_stats["unknown"] += 1
-
-                    # Check for GC frames in this thread
-                    frames = getattr(thread_info, "frame_info", None)
-                    if frames:
-                        for frame in frames:
-                            if self._is_gc_frame(frame):
-                                thread_stats["gc_samples"] += 1
-                                has_gc_frame_in_sample = True
-                                break
+        # Merge aggregate status counts
+        for key in status_counts:
+            self.thread_status_counts[key] += status_counts[key]
 
         # Update aggregate GC frame count
-        if has_gc_frame_in_sample:
+        if has_gc_frame:
             self.samples_with_gc_frames += 1
+
+        # Merge per-thread statistics
+        for thread_id, stats in per_thread_stats.items():
+            if thread_id not in self.per_thread_stats:
+                self.per_thread_stats[thread_id] = {
+                    "has_gil": 0,
+                    "on_cpu": 0,
+                    "gil_requested": 0,
+                    "unknown": 0,
+                    "total": 0,
+                    "gc_samples": 0,
+                }
+            for key, value in stats.items():
+                self.per_thread_stats[thread_id][key] += value
 
         # Call parent collect to process frames
         super().collect(stack_frames, skip_idle=skip_idle)

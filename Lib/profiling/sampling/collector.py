@@ -42,6 +42,14 @@ class Collector(ABC):
         return "<GC>" in funcname or "gc_collect" in funcname
 
     def _collect_thread_status_stats(self, stack_frames):
+        """Collect aggregate and per-thread status statistics from a sample.
+
+        Returns:
+            tuple: (aggregate_status_counts, has_gc_frame, per_thread_stats)
+                - aggregate_status_counts: dict with has_gil, on_cpu, etc.
+                - has_gc_frame: bool indicating if any thread has GC frames
+                - per_thread_stats: dict mapping thread_id to per-thread counts
+        """
         status_counts = {
             "has_gil": 0,
             "on_cpu": 0,
@@ -50,6 +58,7 @@ class Collector(ABC):
             "total": 0,
         }
         has_gc_frame = False
+        per_thread_stats = {}
 
         for interpreter_info in stack_frames:
             threads = getattr(interpreter_info, "threads", [])
@@ -68,12 +77,38 @@ class Collector(ABC):
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     status_counts["unknown"] += 1
 
-                # Check for GC frames
-                frames = getattr(thread_info, "frame_info", None)
-                if frames and not has_gc_frame:
-                    for frame in frames:
-                        if self._is_gc_frame(frame):
-                            has_gc_frame = True
-                            break
+                # Track per-thread statistics
+                thread_id = getattr(thread_info, "thread_id", None)
+                if thread_id is not None:
+                    if thread_id not in per_thread_stats:
+                        per_thread_stats[thread_id] = {
+                            "has_gil": 0,
+                            "on_cpu": 0,
+                            "gil_requested": 0,
+                            "unknown": 0,
+                            "total": 0,
+                            "gc_samples": 0,
+                        }
 
-        return status_counts, has_gc_frame
+                    thread_stats = per_thread_stats[thread_id]
+                    thread_stats["total"] += 1
+
+                    if status_flags & THREAD_STATUS_HAS_GIL:
+                        thread_stats["has_gil"] += 1
+                    if status_flags & THREAD_STATUS_ON_CPU:
+                        thread_stats["on_cpu"] += 1
+                    if status_flags & THREAD_STATUS_GIL_REQUESTED:
+                        thread_stats["gil_requested"] += 1
+                    if status_flags & THREAD_STATUS_UNKNOWN:
+                        thread_stats["unknown"] += 1
+
+                    # Check for GC frames in this thread
+                    frames = getattr(thread_info, "frame_info", None)
+                    if frames:
+                        for frame in frames:
+                            if self._is_gc_frame(frame):
+                                thread_stats["gc_samples"] += 1
+                                has_gc_frame = True
+                                break
+
+        return status_counts, has_gc_frame, per_thread_stats
