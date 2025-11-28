@@ -265,6 +265,12 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGXCPU
+
+   CPU time limit exceeded.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
