@@ -4420,6 +4420,13 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    if (PyUnicode_GetLength(name) == 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "name must not be empty");
+        Py_DECREF(name);
+        return NULL;
+    }
+
     PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
