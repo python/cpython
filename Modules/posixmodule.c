@@ -3986,7 +3986,7 @@ win32_lchmod(LPCWSTR path, int mode)
     }
     if (mode & _S_IWRITE) {
         attr &= ~FILE_ATTRIBUTE_READONLY;
-    }
+        
     if (attr == 0) {
         /* gh-140774: If all attributes are cleared, set to NORMAL
            to avoid failing to clear the Read-Only bit. */
