@@ -1,2 +1,2 @@
-Avoid increase the PySetOjbect->used twice when adding one element triggers
-__eq__ that cause another set.add
+Fix set length corruption when set additions occur within
+element comparison (:meth:`object.__eq__`) methods.
