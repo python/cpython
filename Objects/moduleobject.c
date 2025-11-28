@@ -154,8 +154,6 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
         return -1;
     if (PyDict_SetItem(md_dict, &_Py_ID(__doc__), doc) != 0)
         return -1;
-    if (PyDict_SetItem(md_dict, &_Py_ID(__package__), Py_None) != 0)
-        return -1;
     if (PyDict_SetItem(md_dict, &_Py_ID(__loader__), Py_None) != 0)
         return -1;
     if (PyDict_SetItem(md_dict, &_Py_ID(__spec__), Py_None) != 0)

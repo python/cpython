@@ -1432,7 +1432,7 @@ class TestMain(ReplTestCase):
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
         pre = "['__builtins__'"
-        post = "'__loader__', '__name__', '__package__', '__spec__']"
+        post = "'__loader__', '__name__', '__spec__']"
         output, exit_code = self.run_repl(["sorted(dir())", "exit()"], skip=True)
         self.assertEqual(exit_code, 0)
 
@@ -1522,7 +1522,6 @@ class TestMain(ReplTestCase):
     def test_globals_initialized_as_default(self):
         expectations = {
             "__name__": "'__main__'",
-            "__package__": "None",
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations)
@@ -1531,7 +1530,6 @@ class TestMain(ReplTestCase):
         expectations = {
             "BAR": "64",
             "__name__": "'__main__'",
-            "__package__": "None",
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, pythonstartup=True)
@@ -1540,7 +1538,6 @@ class TestMain(ReplTestCase):
         expectations = {
             "FOO": "42",
             "__name__": "'__main__'",
-            "__package__": "None",
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, as_file=True)
@@ -1550,7 +1547,6 @@ class TestMain(ReplTestCase):
             "FOO": "42",
             "BAR": "64",
             "__name__": "'__main__'",
-            "__package__": "None",
             # "__file__" is missing in -i, like in the basic REPL
         }
         self._run_repl_globals_test(expectations, as_file=True, pythonstartup=True)
@@ -1559,7 +1555,6 @@ class TestMain(ReplTestCase):
         expectations = {
             "FOO": "42",
             "__name__": "'__main__'",
-            "__package__": "'blue'",
             "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True)
@@ -1569,7 +1564,6 @@ class TestMain(ReplTestCase):
             "FOO": "42",
             "BAR": "64",
             "__name__": "'__main__'",
-            "__package__": "'blue'",
             "__file__": re.compile(r"^'.*calx.py'$"),
         }
         self._run_repl_globals_test(expectations, as_module=True, pythonstartup=True)

@@ -190,11 +190,6 @@ class ImportTests(unittest.TestCase):
         self.assertRaises(ModuleNotFoundError, importmodulelevel, 'nonexistent', NULL, NULL, NULL, 0)
         self.assertRaises(ValueError, importmodulelevel, '', NULL, NULL, NULL, 0)
 
-        if __package__:
-            self.assertIs(importmodulelevel('test_import', globals(), NULL, NULL, 1),
-                          sys.modules['test.test_capi.test_import'])
-            self.assertIs(importmodulelevel('test_capi', globals(), NULL, NULL, 2),
-                          sys.modules['test.test_capi'])
         self.assertRaises(ValueError, importmodulelevel, 'os', NULL, NULL, NULL, -1)
         with self.assertWarns(ImportWarning):
             self.assertRaises(KeyError, importmodulelevel, 'test_import', {}, NULL, NULL, 1)

@@ -61,8 +61,7 @@ class LoaderTests:
         with util.uncache(util.EXTENSIONS.name):
             module = self.load_module(util.EXTENSIONS.name)
             for attr, value in [('__name__', util.EXTENSIONS.name),
-                                ('__file__', util.EXTENSIONS.file_path),
-                                ('__package__', '')]:
+                                ('__file__', util.EXTENSIONS.file_path)]:
                 self.assertEqual(getattr(module, attr), value)
             self.assertIn(util.EXTENSIONS.name, sys.modules)
             self.assertIsInstance(module.__loader__, self.LoaderClass)
@@ -145,8 +144,7 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
         with util.uncache(self.name):
             module = self.load_module()
             for attr, value in [('__name__', self.name),
-                                ('__file__', self.spec.origin),
-                                ('__package__', '')]:
+                                ('__file__', self.spec.origin)]:
                 self.assertEqual(getattr(module, attr), value)
             with self.assertRaises(AttributeError):
                 module.__path__
@@ -242,8 +240,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         with util.uncache(self.name):
             module = self.load_module()
             for attr, value in [('__name__', self.name),
-                                ('__file__', self.spec.origin),
-                                ('__package__', '')]:
+                                ('__file__', self.spec.origin)]:
                 self.assertEqual(getattr(module, attr), value)
             with self.assertRaises(AttributeError):
                 module.__path__

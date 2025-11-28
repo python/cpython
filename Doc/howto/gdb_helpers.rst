@@ -136,7 +136,7 @@ enabled::
        at Objects/unicodeobject.c:551
    #7  0x0000000000440d94 in PyUnicodeUCS2_FromString (u=0x5c2b8d "__lltrace__") at Objects/unicodeobject.c:569
    #8  0x0000000000584abd in PyDict_GetItemString (v=
-       {'Yuck': <type at remote 0xad4730>, '__builtins__': <module at remote 0x7ffff7fd5ee8>, '__file__': 'Lib/test/crashers/nasty_eq_vs_dict.py', '__package__': None, 'y': <Yuck(i=0) at remote 0xaacd80>, 'dict': {0: 0, 1: 1, 2: 2, 3: 3}, '__cached__': None, '__name__': '__main__', 'z': <Yuck(i=0) at remote 0xaace60>, '__doc__': None}, key=
+       {'Yuck': <type at remote 0xad4730>, '__builtins__': <module at remote 0x7ffff7fd5ee8>, '__file__': 'Lib/test/crashers/nasty_eq_vs_dict.py', 'y': <Yuck(i=0) at remote 0xaacd80>, 'dict': {0: 0, 1: 1, 2: 2, 3: 3}, '__cached__': None, '__name__': '__main__', 'z': <Yuck(i=0) at remote 0xaace60>, '__doc__': None}, key=
        0x5c2b8d "__lltrace__") at Objects/dictobject.c:2171
 
 Notice how the dictionary argument to ``PyDict_GetItemString`` is displayed
@@ -148,8 +148,7 @@ cast the value to a pointer of the appropriate type.  For example::
 
     (gdb) p globals
     $1 = {'__builtins__': <module at remote 0x7ffff7fb1868>, '__name__':
-    '__main__', 'ctypes': <module at remote 0x7ffff7f14360>, '__doc__': None,
-    '__package__': None}
+    '__main__', 'ctypes': <module at remote 0x7ffff7f14360>, '__doc__': None}
 
     (gdb) p *(PyDictObject*)globals
     $2 = {ob_refcnt = 3, ob_type = 0x3dbdf85820, ma_fill = 5, ma_used = 5,
@@ -162,8 +161,7 @@ cast the value to a pointer of the appropriate type.  For example::
     {me_hash = -9177857982131165996, me_key = 'ctypes',
     me_value = <module at remote 0x7ffff7f14360>},
     {me_hash = -8518757509529533123, me_key = '__doc__', me_value = None},
-    {me_hash = 0, me_key = 0x0, me_value = 0x0}, {
-      me_hash = 6614918939584953775, me_key = '__package__', me_value = None}}}
+    {me_hash = 0, me_key = 0x0, me_value = 0x0}}}
 
 Note that the pretty-printers do not actually call ``repr()``.
 For basic types, they try to match its result closely.

@@ -599,7 +599,7 @@ class ExecutionLoaderGetCodeTests:
 class SourceOnlyLoader:
 
     # Globals that should be defined for all modules.
-    source = (b"_ = '::'.join([__name__, __file__, __cached__, __package__, "
+    source = (b"_ = '::'.join([__name__, __file__, __cached__, "
               b"repr(__loader__)])")
 
     def __init__(self, path):
@@ -676,20 +676,17 @@ class SourceLoaderTestHarness:
         self.assertEqual(module.__name__, self.name)
         self.assertEqual(module.__file__, self.path)
         self.assertEqual(module.__cached__, self.cached)
-        self.assertEqual(module.__package__, self.package)
         self.assertEqual(module.__loader__, self.loader)
         values = module._.split('::')
         self.assertEqual(values[0], self.name)
         self.assertEqual(values[1], self.path)
         self.assertEqual(values[2], self.cached)
-        self.assertEqual(values[3], self.package)
-        self.assertEqual(values[4], repr(self.loader))
+        self.assertEqual(values[3], repr(self.loader))
 
     def verify_code(self, code_object):
         module = types.ModuleType(self.name)
         module.__file__ = self.path
         module.__cached__ = self.cached
-        module.__package__ = self.package
         module.__loader__ = self.loader
         module.__path__ = []
         exec(code_object, module.__dict__)
@@ -730,7 +727,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         self.verify_code(code)
 
     def test_load_module(self):
-        # Loading a module should set __name__, __loader__, __package__,
+        # Loading a module should set __name__, __loader__,
         # __path__ (for packages), __file__, and __cached__.
         # The module should also be put into sys.modules.
         with warnings.catch_warnings():
@@ -742,20 +739,6 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                 self.verify_module(module)
                 self.assertEqual(module.__path__, [os.path.dirname(self.path)])
                 self.assertIn(self.name, sys.modules)
-
-    def test_package_settings(self):
-        # __package__ needs to be set, while __path__ is set on if the module
-        # is a package.
-        # Testing the values for a package are covered by test_load_module.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.setUp(is_package=False)
-            with test_util.uncache(self.name):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    module = self.loader.load_module(self.name)
-                self.verify_module(module)
-                self.assertNotHasAttr(module, '__path__')
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise

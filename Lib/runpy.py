@@ -83,7 +83,6 @@ def _run_code(code, run_globals, init_globals=None,
                        __cached__ = cached,
                        __doc__ = None,
                        __loader__ = loader,
-                       __package__ = pkg_name,
                        __spec__ = mod_spec)
     exec(code, run_globals)
     return run_globals
@@ -182,7 +181,6 @@ def _run_module_as_main(mod_name, alter_argv=True):
            __file__
            __cached__
            __loader__
-           __package__
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch

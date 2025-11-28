@@ -73,12 +73,6 @@ class Using__package__:
         module = self.import_module({'__spec__': FakeSpec('pkg.fake')})
         self.assertEqual(module.__name__, 'pkg')
 
-    def test_warn_when_package_and_spec_disagree(self):
-        # Raise a DeprecationWarning if __package__ != __spec__.parent.
-        with self.assertWarns(DeprecationWarning):
-            self.import_module({'__package__': 'pkg.fake',
-                                '__spec__': FakeSpec('pkg.fakefake')})
-
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
         with self.assertRaises(ModuleNotFoundError):
@@ -102,50 +96,6 @@ class Using__package__PEP451(Using__package__):
 (Frozen_UsingPackagePEP451,
  Source_UsingPackagePEP451
  ) = util.test_both(Using__package__PEP451, __import__=util.__import__)
-
-
-class Setting__package__:
-
-    """Because __package__ is a new feature, it is not always set by a loader.
-    Import will set it as needed to help with the transition to relying on
-    __package__.
-
-    For a top-level module, __package__ is set to None [top-level]. For a
-    package __name__ is used for __package__ [package]. For submodules the
-    value is __name__.rsplit('.', 1)[0] [submodule].
-
-    """
-
-    __import__ = util.__import__['Source']
-
-    # [top-level]
-    def test_top_level(self):
-        with self.mock_modules('top_level') as mock:
-            with util.import_state(meta_path=[mock]):
-                del mock['top_level'].__package__
-                module = self.__import__('top_level')
-                self.assertEqual(module.__package__, '')
-
-    # [package]
-    def test_package(self):
-        with self.mock_modules('pkg.__init__') as mock:
-            with util.import_state(meta_path=[mock]):
-                del mock['pkg'].__package__
-                module = self.__import__('pkg')
-                self.assertEqual(module.__package__, 'pkg')
-
-    # [submodule]
-    def test_submodule(self):
-        with self.mock_modules('pkg.__init__', 'pkg.mod') as mock:
-            with util.import_state(meta_path=[mock]):
-                del mock['pkg.mod'].__package__
-                pkg = self.__import__('pkg.mod')
-                module = getattr(pkg, 'mod')
-                self.assertEqual(module.__package__, 'pkg')
-
-
-class Setting__package__PEP451(Setting__package__, unittest.TestCase):
-    mock_modules = util.mock_spec
 
 
 if __name__ == '__main__':

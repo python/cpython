@@ -66,7 +66,6 @@ class LoaderTests(metaclass=abc.ABCMeta):
 
             * __name__
             * __file__
-            * __package__
             * __path__
             * __loader__
 

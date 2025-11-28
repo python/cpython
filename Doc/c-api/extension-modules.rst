@@ -134,9 +134,8 @@ The process of creating an extension module follows several phases:
 - By default, Python itself then creates the module object -- that is, it does
   the equivalent of calling :py:meth:`~object.__new__` when creating an object.
   This step can be overridden using the :c:data:`Py_mod_create` slot.
-- Python sets initial module attributes like :attr:`~module.__package__` and
-  :attr:`~module.__loader__`, and inserts the module object into
-  :py:attr:`sys.modules`.
+- Python sets initial module attributes like :attr:`~module.__spec__`, and
+  inserts the module object into :py:attr:`sys.modules`.
 - Afterwards, the module object is initialized in an extension-specific way
   -- the equivalent of :py:meth:`~object.__init__` when creating an object,
   or of executing top-level code in a Python-language module.

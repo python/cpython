@@ -1841,7 +1841,6 @@ class ImportlibBootstrapTests(unittest.TestCase):
         mod = sys.modules['_frozen_importlib']
         self.assertIs(mod, _bootstrap)
         self.assertEqual(mod.__name__, 'importlib._bootstrap')
-        self.assertEqual(mod.__package__, 'importlib')
         self.assertEndsWith(mod.__file__, '_bootstrap.py')
 
     def test_frozen_importlib_external_is_bootstrap_external(self):
@@ -1849,7 +1848,6 @@ class ImportlibBootstrapTests(unittest.TestCase):
         mod = sys.modules['_frozen_importlib_external']
         self.assertIs(mod, _bootstrap_external)
         self.assertEqual(mod.__name__, 'importlib._bootstrap_external')
-        self.assertEqual(mod.__package__, 'importlib')
         self.assertEndsWith(mod.__file__, '_bootstrap_external.py')
 
     def test_there_can_be_only_one(self):

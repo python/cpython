@@ -316,7 +316,7 @@ defines.  It returns a sorted list of strings::
    ['__name__', 'fib', 'fib2']
    >>> dir(sys)  # doctest: +NORMALIZE_WHITESPACE
    ['__breakpointhook__', '__displayhook__', '__doc__', '__excepthook__',
-    '__interactivehook__', '__loader__', '__name__', '__package__', '__spec__',
+    '__interactivehook__', '__loader__', '__name__', '__spec__',
     '__stderr__', '__stdin__', '__stdout__', '__unraisablehook__',
     '_clear_type_cache', '_current_frames', '_debugmallocstats', '_framework',
     '_getframe', '_git', '_home', '_xoptions', 'abiflags', 'addaudithook',
@@ -373,7 +373,7 @@ want a list of those, they are defined in the standard module
     'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError',
     'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning',
     'ValueError', 'Warning', 'ZeroDivisionError', '_', '__build_class__',
-    '__debug__', '__doc__', '__import__', '__name__', '__package__', 'abs',
+    '__debug__', '__doc__', '__import__', '__name__', 'abs',
     'all', 'any', 'ascii', 'bin', 'bool', 'bytearray', 'bytes', 'callable',
     'chr', 'classmethod', 'compile', 'complex', 'copyright', 'credits',
     'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval', 'exec', 'exit',

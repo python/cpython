@@ -960,7 +960,7 @@ this approach.
 
 .. attribute:: module.__package__
 
-   The :term:`package` a module belongs to.
+   An optional attribute that states what :term:`package` a module belongs to.
 
    If the module is top-level (that is, not a part of any specific package)
    then the attribute should be set to ``''`` (the empty string). Otherwise,
@@ -968,17 +968,13 @@ this approach.
    :attr:`module.__name__` if the module itself is a package). See :pep:`366`
    for further details.
 
-   This attribute is used instead of :attr:`~module.__name__` to calculate
-   explicit relative imports for main modules. It defaults to ``None`` for
-   modules created dynamically using the :class:`types.ModuleType` constructor;
-   use :func:`importlib.util.module_from_spec` instead to ensure the attribute
-   is set to a :class:`str`.
+   When set, this attribute is used instead of :attr:`~module.__spec__` or
+   :attr:`~module.__name__` to calculate explicit relative imports for main
+   modules.
 
    It is **strongly** recommended that you use
    :attr:`module.__spec__.parent <importlib.machinery.ModuleSpec.parent>`
-   instead of :attr:`!module.__package__`. :attr:`__package__` is now only used
-   as a fallback if :attr:`!__spec__.parent` is not set, and this fallback
-   path is deprecated.
+   instead of :attr:`!module.__package__`.
 
    .. versionchanged:: 3.4
       This attribute now defaults to ``None`` for modules created dynamically
@@ -1001,8 +997,7 @@ this approach.
       falling back to :attr:`!__package__` during import resolution.
 
    .. deprecated-removed:: 3.13 3.15
-      :attr:`!__package__` will cease to be set or taken into consideration
-      by the import system or standard library.
+      :attr:`!__package__` is no longer set.
 
 .. attribute:: module.__loader__
 

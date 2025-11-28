@@ -1776,7 +1776,6 @@ class TestInterpreterCall(TestBase):
             '__doc__',
             '__loader__',
             '__name__',
-            '__package__',
             '__spec__',
         ])
 
@@ -1786,7 +1785,6 @@ class TestInterpreterCall(TestBase):
             '__name__': '__main__',
             '__doc__': None,
             '__spec__': None,  # It wasn't imported, so no module spec?
-            '__package__': None,
             '__loader__': BuiltinImporter,
         })
         with self.assertRaises(ExecutionFailed):

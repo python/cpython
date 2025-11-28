@@ -243,8 +243,8 @@ def visiblename(name, all=None, obj=None):
     # XXX Remove __initializing__?
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
-                '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__',
+                '__loader__', '__module__', '__name__', '__path__',
+                '__qualname__', '__slots__', '__version__',
                 '__static_attributes__', '__firstlineno__',
                 '__annotate_func__', '__annotations_cache__'}:
         return 0

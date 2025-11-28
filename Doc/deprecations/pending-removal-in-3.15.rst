@@ -10,8 +10,8 @@ Pending removal in Python 3.15
 
   * Setting :attr:`~module.__package__` on a module while
     failing to set :attr:`__spec__.parent <importlib.machinery.ModuleSpec.parent>`
-    is deprecated. In Python 3.15, :attr:`!__package__` will cease to be set or
-    take into consideration by the import system or standard library. (:gh:`97879`)
+    is deprecated. In Python 3.15, :attr:`!__package__` will cease to be set by
+    the import system or standard library. (:gh:`97879`)
 
 * :mod:`ctypes`:
 

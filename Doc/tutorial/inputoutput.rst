@@ -217,7 +217,7 @@ This is particularly useful in combination with the built-in function
    >>> table = {k: str(v) for k, v in vars().items()}
    >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
    >>> print(message.format(**table))
-   __name__: __main__; __doc__: None; __package__: None; __loader__: ...
+   __name__: __main__; __doc__: None; __loader__: ...
 
 As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::

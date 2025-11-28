@@ -3648,25 +3648,6 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
                              "package must be a string");
             goto error;
         }
-        else if (spec != NULL && spec != Py_None) {
-            int equal;
-            PyObject *parent = PyObject_GetAttr(spec, &_Py_ID(parent));
-            if (parent == NULL) {
-                goto error;
-            }
-
-            equal = PyObject_RichCompareBool(package, parent, Py_EQ);
-            Py_DECREF(parent);
-            if (equal < 0) {
-                goto error;
-            }
-            else if (equal == 0) {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                        "__package__ != __spec__.parent", 1) < 0) {
-                    goto error;
-                }
-            }
-        }
     }
     else if (spec != NULL && spec != Py_None) {
         package = PyObject_GetAttr(spec, &_Py_ID(parent));

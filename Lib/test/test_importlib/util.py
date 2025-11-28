@@ -241,7 +241,6 @@ class _ImporterMock:
             module = types.ModuleType(import_name)
             module.__loader__ = self
             module.__file__ = '<mock __file__>'
-            module.__package__ = package
             module.attr = name
             if import_name != name:
                 module.__path__ = ['<mock __path__>']

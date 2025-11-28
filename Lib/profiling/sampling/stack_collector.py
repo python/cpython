@@ -241,7 +241,7 @@ class FlamegraphCollector(StackTraceCollector):
     def _create_flamegraph_html(self, data):
         data_json = json.dumps(data)
 
-        template_dir = importlib.resources.files(__package__)
+        template_dir = importlib.resources.files(__spec__.parent)
         vendor_dir = template_dir / "_vendor"
         assets_dir = template_dir / "_assets"
 
