@@ -997,7 +997,7 @@ this approach.
       falling back to :attr:`!__package__` during import resolution.
 
    .. deprecated-removed:: 3.13 3.15
-      :attr:`!__package__` is no longer set.
+      :attr:`!__package__` is no longer set implicitly.
 
 .. attribute:: module.__loader__
 
