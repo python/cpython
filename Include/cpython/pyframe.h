@@ -40,6 +40,7 @@ PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLasti(
 PyAPI_FUNC(int) PyUnstable_InterpreterFrame_GetLine(
     PyUnstable_InterpreterFrame *frame);
 
+/* Get a frame object from an interpreter frame. */
 PyAPI_FUNC(PyFrameObject*) PyUnstable_InterpreterFrame_GetFrameObject(
     PyUnstable_InterpreterFrame *frame);
 
