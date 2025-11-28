@@ -1,0 +1,2 @@
+Jit stencils should not contain debug data. Only Windows was affected. Fixed
+by Chris Eibl.
