@@ -2435,9 +2435,14 @@ create_builtin(
         p0 = lookup_inittab_initfunc(&info);
         if (p0 == NULL) {
             /* Cannot re-init internal module ("sys" or "builtins") */
-            assert(is_core_module(tstate->interp, info.name, info.path));
-            mod = import_add_module(tstate, info.name);
-            goto finally;
+            if (is_core_module(tstate->interp, info.name, info.path)) {
+                mod = import_add_module(tstate, info.name);
+                goto finally;
+            }
+            else {
+                mod = Py_NewRef(Py_None);
+                goto finally;
+            }
         }
     }
 
