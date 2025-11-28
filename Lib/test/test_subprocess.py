@@ -2194,6 +2194,100 @@ class PipelineTestCase(BaseTestCase):
         self.assertIsNone(result.stdout)
         self.assertEqual(result.returncodes, [0, 0])
 
+    def test_pipeline_large_data_no_deadlock(self):
+        """Test that large data doesn't cause pipe buffer deadlock.
+
+        This test verifies that the multiplexed I/O implementation properly
+        handles cases where pipe buffers would fill up. Without proper
+        multiplexing, this would deadlock because:
+        1. First process outputs large data filling stdout pipe buffer
+        2. Middle process reads some, processes, writes to its stdout
+        3. If stdout pipe buffer fills, middle process blocks on write
+        4. But first process is blocked waiting for middle to read more
+        5. Classic deadlock
+
+        The test uses data larger than typical pipe buffer size (64KB on Linux)
+        to ensure the multiplexed I/O is working correctly.
+        """
+        # Generate data larger than typical pipe buffer (64KB)
+        # Use 256KB to ensure we exceed buffer on most systems
+        large_data = 'x' * (256 * 1024)
+
+        # Pipeline: input -> double the data -> count chars
+        # The middle process outputs twice as much, increasing buffer pressure
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; data = sys.stdin.read(); print(data + data)'],
+            [sys.executable, '-c',
+             'import sys; print(len(sys.stdin.read().strip()))'],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        # Original data doubled = 512KB = 524288 chars
+        # Second process strips whitespace (removes trailing newline) then counts
+        expected_len = 256 * 1024 * 2  # doubled data, newline stripped
+        self.assertEqual(result.stdout.strip(), str(expected_len))
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_large_data_three_stages(self):
+        """Test large data through a three-stage pipeline.
+
+        This is a more complex deadlock scenario with three processes,
+        where buffer pressure can occur at multiple points.
+        """
+        # Use 128KB of data
+        large_data = 'y' * (128 * 1024)
+
+        # Pipeline: input -> uppercase -> add prefix to each line -> count
+        # We use line-based processing to create more buffer churn
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; print(sys.stdin.read().upper())'],
+            [sys.executable, '-c',
+             'import sys; print("".join("PREFIX:" + line for line in sys.stdin))'],
+            [sys.executable, '-c',
+             'import sys; print(len(sys.stdin.read()))'],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        self.assertEqual(result.returncodes, [0, 0, 0])
+        # Just verify we got a reasonable numeric output without deadlock
+        output_len = int(result.stdout.strip())
+        self.assertGreater(output_len, len(large_data))
+
+    def test_pipeline_large_data_with_stderr(self):
+        """Test large data with stderr output from multiple processes.
+
+        Ensures stderr collection doesn't interfere with the main data flow
+        and doesn't cause deadlocks when multiple processes write stderr.
+        """
+        # 64KB of data
+        data_size = 64 * 1024
+        large_data = 'z' * data_size
+
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', '''
+import sys
+sys.stderr.write("stage1 processing\\n")
+data = sys.stdin.read()
+sys.stderr.write(f"stage1 read {len(data)} bytes\\n")
+print(data)
+'''],
+            [sys.executable, '-c', '''
+import sys
+sys.stderr.write("stage2 processing\\n")
+data = sys.stdin.read()
+sys.stderr.write(f"stage2 read {len(data)} bytes\\n")
+print(len(data.strip()))
+'''],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        self.assertEqual(result.stdout.strip(), str(data_size))
+        self.assertIn('stage1 processing', result.stderr)
+        self.assertIn('stage2 processing', result.stderr)
+        self.assertEqual(result.returncodes, [0, 0])
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
