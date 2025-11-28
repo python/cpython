@@ -1,2 +1,2 @@
 Raise :exc:`TypeError` instead of crashing when empty string is used as a
-name in ``importlib._imp.create_builtin``.
+name in ``_imp.create_builtin()``.
