@@ -250,6 +250,43 @@ class CommonTest(unittest.TestCase):
         checklast = self.type2test([StopCompares(), 1])
         self.assertRaises(DoNotTestEq, checklast.__contains__, 1)
 
+    def test_compare_nan(self):
+        nan = float('nan')
+        a = self.type2test([nan])
+        b = self.type2test([nan])
+        self.assertTrue(a == a)
+        self.assertFalse(a != a)
+        self.assertTrue(a == b)
+        self.assertFalse(a != b)
+        self.assertFalse(a < a)
+        self.assertFalse(a < b)
+        self.assertFalse(a > b)
+
+    def test_compare_decimal_nan(self):
+        import decimal
+        nan = decimal.Decimal("NaN")
+        a = self.type2test([nan])
+        b = self.type2test([nan])
+        self.assertTrue(a == a)
+        self.assertFalse(a != a)
+        self.assertTrue(a == b)
+        self.assertFalse(a != b)
+        self.assertFalse(a < a)
+        self.assertFalse(a < b)
+        self.assertFalse(a > b)
+
+    def test_compare_signed_zero(self):
+        a = self.type2test([0.0])
+        b = self.type2test([-0.0])
+        self.assertTrue(a == a)
+        self.assertFalse(a != a)
+        self.assertTrue(b == b)
+        self.assertFalse(b != b)
+        self.assertTrue(a == b)
+        self.assertFalse(a != b)
+        self.assertFalse(a > b)
+        self.assertFalse(a < b)
+
     def test_len(self):
         self.assertEqual(len(self.type2test()), 0)
         self.assertEqual(len(self.type2test([])), 0)
