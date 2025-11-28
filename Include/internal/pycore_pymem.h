@@ -11,6 +11,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME)
+#include <sys/prctl.h>
+#endif
+
 // Try to get the allocators name set by _PyMem_SetupAllocators().
 // Return NULL if unknown.
 // Export for '_testinternalcapi' shared extension.
@@ -88,6 +92,16 @@ static inline int _PyMem_IsULongFreed(unsigned long value)
             || value == (unsigned long)0xFFFFFFFF);
 #else
 #  error "unknown long size"
+#endif
+}
+
+static inline int _PyMem_Annotate_Mmap(void *addr, size_t size, const char *name)
+{
+#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME)
+   prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
+   return 0;
+#else
+   return 0;
 #endif
 }
 
