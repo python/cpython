@@ -190,6 +190,7 @@ class Server(object):
             for t in self._handler_threads:
                 t.join()
             accepter.join()
+            self.listener.close()
             sys.exit(0)
 
     def accepter(self):
