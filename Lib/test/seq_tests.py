@@ -251,7 +251,7 @@ class CommonTest(unittest.TestCase):
         self.assertRaises(DoNotTestEq, checklast.__contains__, 1)
 
     def test_compare_nan(self):
-        nan = float('nan')
+        nan = float("nan")
         a = self.type2test([nan])
         b = self.type2test([nan])
         self.assertTrue(a == a)
