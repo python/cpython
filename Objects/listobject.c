@@ -2927,6 +2927,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
 
+    PyObject **keylist;
     if (keyfunc == NULL) {
         keys = NULL;
         lo.keys = saved_ob_item;
@@ -2943,18 +2944,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 goto keyfunc_fail;
             }
         }
-
-        for (i = 0; i < saved_ob_size ; i++) {
-            keys[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
-            if (keys[i] == NULL) {
-                for (i=i-1 ; i>=0 ; i--)
-                    Py_DECREF(keys[i]);
-                if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
-                    PyMem_Free(keys);
-                goto keyfunc_fail;
+        if (PyList_CheckExact(keyfunc)) {
+            keylist = ((PyListObject *) keyfunc)->ob_item;
+            for (i = 0; i < saved_ob_size ; i++) {
+                keys[i] = keylist[i];
             }
         }
-
+        else {
+            for (i = 0; i < saved_ob_size ; i++) {
+                keys[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
+                if (keys[i] == NULL) {
+                    for (i=i-1 ; i>=0 ; i--)
+                        Py_DECREF(keys[i]);
+                    if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
+                        PyMem_Free(keys);
+                    goto keyfunc_fail;
+                }
+            }
+        }
         lo.keys = keys;
         lo.values = saved_ob_item;
     }
@@ -3118,8 +3125,15 @@ succeed:
     result = Py_None;
 fail:
     if (keys != NULL) {
-        for (i = 0; i < saved_ob_size; i++)
-            Py_DECREF(keys[i]);
+        if (PyList_CheckExact(keyfunc)) {
+            for (i = 0; i < saved_ob_size ; i++) {
+                keylist[i] = keys[i];
+            }
+        }
+        else {
+            for (i = 0; i < saved_ob_size; i++)
+                Py_DECREF(keys[i]);
+        }
         if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
             PyMem_Free(keys);
     }
