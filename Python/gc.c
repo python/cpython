@@ -1708,7 +1708,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 
     if (gc_list_is_empty(not_visited)) {
         completed_scavenge(gcstate);
-        assert(gc_list_is_empty(&gcstate->old[visited].head));
+        assert(gc_list_is_empty(&gcstate->old[gcstate->visited_space].head));
     }
     validate_spaces(gcstate);
 }
