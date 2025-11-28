@@ -2906,7 +2906,7 @@ PyUnstable_InterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 }
 
 
-void
+int
 PyUnstable_InterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
                                              PyUnstable_FrameEvalFunction eval_frame)
 {
@@ -2914,7 +2914,7 @@ PyUnstable_InterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
         eval_frame = NULL;
     }
     if (eval_frame == interp->eval_frame) {
-        return;
+        return 0;
     }
 #ifdef _Py_TIER2
     if (eval_frame != NULL) {
@@ -2925,6 +2925,7 @@ PyUnstable_InterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
     _PyEval_StartTheWorld(interp);
+    return 0;
 }
 
 

@@ -306,7 +306,7 @@ typedef PyObject* (*PyUnstable_FrameEvalFunction)(PyThreadState *tstate, struct 
 
 PyAPI_FUNC(PyUnstable_FrameEvalFunction) PyUnstable_InterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
-PyAPI_FUNC(void) PyUnstable_InterpreterState_SetEvalFrameFunc(
+PyAPI_FUNC(int) PyUnstable_InterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     PyUnstable_FrameEvalFunction eval_frame);
 

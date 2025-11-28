@@ -2606,13 +2606,16 @@ test_interpreter_setevalframefunc(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyUnstable_FrameEvalFunction eval_func;
+    int res;
 
     eval_func = PyUnstable_InterpreterState_GetEvalFrameFunc(interp);
 
-    PyUnstable_InterpreterState_SetEvalFrameFunc(interp, noop_eval);
+    res = PyUnstable_InterpreterState_SetEvalFrameFunc(interp, noop_eval);
+    assert(res == 0);
     assert(PyUnstable_InterpreterState_GetEvalFrameFunc(interp) == noop_eval);
 
-    PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_func);
+    res = PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_func);
+    assert(res == 0);
 
     Py_RETURN_NONE;
 }

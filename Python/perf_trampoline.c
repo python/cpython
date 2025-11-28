@@ -470,7 +470,9 @@ _PyPerfTrampoline_SetCallbacks(_PyPerf_Callbacks *callbacks)
     }
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     if (trampoline_api.state) {
-        _PyPerfTrampoline_Fini();
+        if (_PyPerfTrampoline_Fini() < 0) {
+            return -1;
+        }
     }
     trampoline_api.init_state = callbacks->init_state;
     trampoline_api.write_state = callbacks->write_state;
@@ -486,12 +488,18 @@ _PyPerfTrampoline_Init(int activate)
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
     if (!activate) {
-        PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
+        if (PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp,
+                                                         prev_eval_frame) < 0) {
+            return -1;
+        }
         perf_status = PERF_STATUS_NO_INIT;
     }
     else if (tstate->interp->eval_frame != py_trampoline_evaluator) {
         prev_eval_frame = PyUnstable_InterpreterState_GetEvalFrameFunc(tstate->interp);
-        PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
+        if (PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp,
+                                                         py_trampoline_evaluator) < 0) {
+            return -1;
+        }
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
@@ -517,7 +525,9 @@ _PyPerfTrampoline_Fini(void)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
-        PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
+        if (PyUnstable_InterpreterState_SetEvalFrameFunc(tstate->interp, NULL) < 0) {
+            return -1;
+        }
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);
@@ -553,7 +563,9 @@ _PyPerfTrampoline_AfterFork_Child(void)
         if (perf_trampoline_type != PERF_TRAMPOLINE_TYPE_MAP) {
             return PyStatus_Error("Failed to copy perf map file as perf trampoline type is not type map.");
         }
-        _PyPerfTrampoline_Fini();
+        if (_PyPerfTrampoline_Fini() < 0) {
+            return PyStatus_Error("_PyPerfTrampoline_Fini() failed");
+        }
         char filename[256];
         pid_t parent_pid = getppid();
         snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", parent_pid);
@@ -563,7 +575,9 @@ _PyPerfTrampoline_AfterFork_Child(void)
     } else {
         // Restart trampoline in file in child.
         int was_active = _PyIsPerfTrampolineActive();
-        _PyPerfTrampoline_Fini();
+        if (_PyPerfTrampoline_Fini() < 0) {
+            return PyStatus_Error("_PyPerfTrampoline_Fini() failed");
+        }
         if (was_active) {
             _PyPerfTrampoline_Init(1);
         }

@@ -1470,6 +1470,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    Set the frame evaluation function.
 
+   Return ``0`` on success, or set an exception and return ``-1`` on error.
+
    See the :pep:`523` "Adding a frame evaluation API to CPython".
 
    .. versionadded:: next
