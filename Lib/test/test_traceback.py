@@ -5064,7 +5064,7 @@ class MiscTest(unittest.TestCase):
         code = """
             import sys
             import traceback
-            traceback.MISSING_STDLIB_MODULE_MESSAGES = {'spam': "Install 'spam4life' for 'spam'"}
+            traceback._MISSING_STDLIB_MODULE_MESSAGES = {'spam': "Install 'spam4life' for 'spam'"}
             sys.stdlib_module_names |= {'spam'}
             import spam
         """

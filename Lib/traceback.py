@@ -15,9 +15,9 @@ import _colorize
 from contextlib import suppress
 
 try:
-    from _missing_stdlib_info import MISSING_STDLIB_MODULE_MESSAGES
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
 except ImportError:
-    MISSING_STDLIB_MODULE_MESSAGES = {}
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -1115,7 +1115,7 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
-                message = MISSING_STDLIB_MODULE_MESSAGES.get(
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
                     module_name,
                     f"Standard library module {module_name!r} was not found"
                 )
