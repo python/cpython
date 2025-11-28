@@ -1,2 +1,2 @@
 Remove data copy from :mod:`codecs` ``punycode`` encoding by using
-:func:`bytearray.take_bytes`.
+:meth:`bytearray.take_bytes`.
