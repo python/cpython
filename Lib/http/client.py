@@ -887,12 +887,7 @@ class HTTPConnection:
 
         self._validate_host(self.host)
 
-        # Callable used to open sockets. Kept on the instance so tests
-        # can replace it; use a thin wrapper so the real
-        # `socket.create_connection` is invoked at `connect()` time.
-        # This avoids permanently capturing a patched factory at
-        # construction time.
-        self._create_connection = (lambda *a, **kw: socket.create_connection(*a, **kw))
+        self._create_connection = socket.create_connection
 
     def set_tunnel(self, host, port=None, headers=None):
         """Set up host and port for HTTP CONNECT tunnelling.
