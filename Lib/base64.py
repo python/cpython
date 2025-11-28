@@ -193,7 +193,7 @@ def _b32encode(alphabet, s):
         encoded[-3:] = b'==='
     elif leftover == 4:
         encoded[-1:] = b'='
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
     # Delay the initialization of the table to not waste memory
@@ -238,7 +238,7 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
         last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
-    return bytes(decoded)
+    return decoded.take_bytes()
 
 
 def b32encode(s):
@@ -604,7 +604,14 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        func(sys.stdin.buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-138775: read terminal input data all at once to detect EOF
+            import io
+            data = sys.stdin.buffer.read()
+            buffer = io.BytesIO(data)
+        else:
+            buffer = sys.stdin.buffer
+        func(buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':

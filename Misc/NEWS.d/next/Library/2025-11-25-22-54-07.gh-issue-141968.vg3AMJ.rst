@@ -1,0 +1,2 @@
+Remove a data copy from :func:`base64.b32decode` and
+:func:`base64.b32encode` by using :func:`bytearray.take_bytes`.

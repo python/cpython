@@ -1,1 +1,0 @@
-Publicly expose and document :class:`importlib.machinery.NamespacePath`.

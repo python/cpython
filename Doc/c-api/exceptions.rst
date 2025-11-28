@@ -309,6 +309,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.4
 
 
+.. c:function:: void PyErr_RangedSyntaxLocationObject(PyObject *filename, int lineno, int col_offset, int end_lineno, int end_col_offset)
+
+   Similar to :c:func:`PyErr_SyntaxLocationObject`, but also sets the
+   *end_lineno* and *end_col_offset* information for the current exception.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
@@ -975,6 +983,9 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
+
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStackProtection` function.
 
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.
