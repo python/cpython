@@ -12,6 +12,7 @@ import socket
 import stat
 import tempfile
 import unittest
+import subprocess
 from unittest import mock
 from urllib.request import pathname2url
 
@@ -3622,33 +3623,52 @@ class PathWalkTest(unittest.TestCase):
 class PosixPathTest(PathTest, PurePosixPathTest):
     cls = pathlib.PosixPath
 
-    def test_chmod_archive_bit_behavior(self):
-        base = self.cls(self.base)
-        filename = base / 'test_chmod_archive.txt'
-        filename.touch()
-        self.addCleanup(filename.unlink, missing_ok=True)
-
-        # Helper to check read-only status
-        def is_read_only(p):
-            return (p.stat().st_file_attributes & stat.FILE_ATTRIBUTE_READONLY) > 0
-        try:
-            # Case 1: Archive bit CLEARED, Read-Only SET
-            # We use attrib command to manipulate the Archive bit directly
-            subprocess.run(['attrib', '-a', '+r', str(filename)], check=True, shell=True)
-
-            # This line used to fail silently (bug #140774)
-            filename.chmod(stat.S_IWRITE | stat.S_IREAD)
-
-            self.assertFalse(is_read_only(filename),
-                "chmod failed to clear Read-Only when Archive bit was cleared")
-
-        except subprocess.CalledProcessError:
-            self.skipTest("attrib command failed or not available")
-
 @unittest.skipIf(os.name != 'nt', 'test requires a Windows-compatible system')
 class WindowsPathTest(PathTest, PureWindowsPathTest):
     cls = pathlib.WindowsPath
 
+    def test_chmod_archive_bit_behavior(self):
+        import subprocess
+
+        # gh-140774: Fix chmod failing to clear Read-Only if Archive bit is cleared.
+        base = self.cls(self.base)
+        filename = base / 'test_chmod_archive.txt'
+        filename.touch()
+
+        # Robust cleanup: Force write permission before deleting
+        def force_remove():
+            try:
+                os.chmod(filename, stat.S_IWRITE)
+            except OSError:
+                pass
+            try:
+                filename.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+        self.addCleanup(force_remove)
+
+        def is_read_only(p):
+            try:
+                return (p.stat().st_file_attributes & stat.FILE_ATTRIBUTE_READONLY) > 0
+            except AttributeError:
+                return False
+
+        try:
+            # Case 1: Archive bit CLEARED, Read-Only SET
+            # We use the Windows 'attrib' command to manipulate the Archive bit directly
+            subprocess.run(['attrib', '-a', '+r', str(filename)], check=True, shell=True)
+
+            # Try to make it Writable (clearing the Read-Only flag)
+            filename.chmod(stat.S_IWRITE | stat.S_IREAD)
+
+            self.assertFalse(is_read_only(filename),
+                             "chmod failed to clear Read-Only when Archive bit was cleared")
+
+        except subprocess.CalledProcessError:
+            self.skipTest("attrib command failed")
+        except FileNotFoundError:
+            self.skipTest("attrib command not found")
 
 class PathSubclassTest(PathTest):
     class cls(pathlib.Path):
