@@ -30,6 +30,8 @@ from typing import (
     Protocol,
 )
 
+from . import events
+
 
 class _HasFileno(Protocol):
     def fileno(self) -> int:
@@ -259,10 +261,11 @@ class SelectorThread:
         so exception handler wrappers, etc. are applied.
         """
         try:
-            fileobj, callback = cb_map[fd]
+            fileobj, handle = cb_map[fd]
         except KeyError:
             return
-        callback()
+        if not handle.cancelled():
+            handle._run()
 
     def _split_fd(self, fd: _FileDescriptorLike) -> tuple[int, _FileDescriptorLike]:
         """Return fd, file object
@@ -283,30 +286,38 @@ class SelectorThread:
         self, fd: _FileDescriptorLike, callback: Callable[..., None], *args: Any
     ) -> None:
         fd, fileobj = self._split_fd(fd)
-        self._readers[fd] = (fileobj, functools.partial(callback, *args))
+        if fd in self._readers:
+            _, handle = self._readers[fd]
+            handle.cancel()
+        self._readers[fd] = (fileobj, events.Handle(callback, args, self._real_loop))
         self._wake_selector()
 
     def add_writer(
         self, fd: _FileDescriptorLike, callback: Callable[..., None], *args: Any
     ) -> None:
         fd, fileobj = self._split_fd(fd)
-        self._writers[fd] = (fileobj, functools.partial(callback, *args))
+        if fd in self._writers:
+            _, handle = self._writers[fd]
+            handle.cancel()
+        self._writers[fd] = (fileobj, events.Handle(callback, args, self._real_loop))
         self._wake_selector()
 
     def remove_reader(self, fd: _FileDescriptorLike) -> bool:
         fd, _ = self._split_fd(fd)
         try:
-            del self._readers[fd]
+            _, handle = self._readers.pop(fd)
         except KeyError:
             return False
+        handle.cancel()
         self._wake_selector()
         return True
 
     def remove_writer(self, fd: _FileDescriptorLike) -> bool:
         fd, _ = self._split_fd(fd)
         try:
-            del self._writers[fd]
+            _, handle = self._writers.pop(fd)
         except KeyError:
             return False
+        handle.cancel()
         self._wake_selector()
         return True
