@@ -981,8 +981,8 @@ class ProcessTestCase(BaseTestCase):
         pipe_buf = getattr(select, 'PIPE_BUF', 512)
         # Each 'i' element is 4 bytes, so we need more than pipe_buf/4 elements
         # Add some extra to ensure we exceed the buffer size
-        num_elements = (pipe_buf // 4) + 100
-        test_array = array.array('i', range(num_elements))  # 'i' = signed int (4 bytes each)
+        num_elements = pipe_buf + 1
+        test_array = array.array('i', [0x64306f66 for _ in range(num_elements)])
         expected_bytes = test_array.tobytes()
         mv = memoryview(test_array)
 
@@ -995,7 +995,8 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stdin.close)
         (stdout, stderr) = p.communicate(mv)
-        self.assertEqual(stdout, expected_bytes)
+        self.assertEqual(stdout, expected_bytes,
+                         msg=f"{len(stdout)=} =? {len(expected_bytes)=}")
         self.assertIsNone(stderr)
 
     def test_communicate_timeout(self):
