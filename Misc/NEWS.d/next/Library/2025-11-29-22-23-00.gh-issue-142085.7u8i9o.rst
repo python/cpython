@@ -1,2 +1,2 @@
 Fix :class:`ChainMap.__ior__ <collections.ChainMap>` to return :data:`NotImplemented`
-instead of raising :exc:`TypeError`` for unsupported types.
+instead of raising :exc:`TypeError` for unsupported types.
