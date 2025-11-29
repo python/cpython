@@ -1,0 +1,11 @@
+{#
+This file is only used in indexsidebar.html, where it is included in the docs
+by version list. For non-end-of-life branches, build_docs.py overwrites this
+list with the full list of versions.
+
+Keep the following two files synchronised:
+* cpython/Doc/tools/templates/_docs_by_version.html
+* docsbuild-scripts/templates/_docs_by_version.html
+#}
+<li><a href="https://docs.python.org/3/">{% trans %}Stable{% endtrans %}</a></li>
+<li><a href="https://docs.python.org/dev/">{% trans %}In development{% endtrans %}</a></li>

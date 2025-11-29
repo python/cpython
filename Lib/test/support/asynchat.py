@@ -1,5 +1,5 @@
 # TODO: This module was deprecated and removed from CPython 3.12
-# Now it is a test-only helper. Any attempts to rewrite exising tests that
+# Now it is a test-only helper. Any attempts to rewrite existing tests that
 # are using this module and remove it completely are appreciated!
 # See: https://github.com/python/cpython/issues/72719
 

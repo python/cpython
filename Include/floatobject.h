@@ -2,7 +2,7 @@
 /* Float object interface */
 
 /*
-PyFloatObject represents a (double precision) floating point number.
+PyFloatObject represents a (double precision) floating-point number.
 */
 
 #ifndef Py_FLOATOBJECT_H
@@ -18,14 +18,14 @@ PyAPI_DATA(PyTypeObject) PyFloat_Type;
 
 #define Py_RETURN_NAN return PyFloat_FromDouble(Py_NAN)
 
-#define Py_RETURN_INF(sign)                          \
-    do {                                             \
-        if (copysign(1., sign) == 1.) {              \
-            return PyFloat_FromDouble(Py_HUGE_VAL);  \
-        }                                            \
-        else {                                       \
-            return PyFloat_FromDouble(-Py_HUGE_VAL); \
-        }                                            \
+#define Py_RETURN_INF(sign)                       \
+    do {                                          \
+        if (copysign(1., sign) == 1.) {           \
+            return PyFloat_FromDouble(INFINITY);  \
+        }                                         \
+        else {                                    \
+            return PyFloat_FromDouble(-INFINITY); \
+        }                                         \
     } while(0)
 
 PyAPI_FUNC(double) PyFloat_GetMax(void);

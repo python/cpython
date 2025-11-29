@@ -279,14 +279,13 @@ class CoverageResults:
             n_hits, n_lines = self.write_results_file(coverpath, source,
                                                       lnotab, count, encoding)
             if summary and n_lines:
-                percent = int(100 * n_hits / n_lines)
-                sums[modulename] = n_lines, percent, modulename, filename
+                sums[modulename] = n_lines, n_hits, modulename, filename
 
         if summary and sums:
             print("lines   cov%   module   (path)")
             for m in sorted(sums):
-                n_lines, percent, modulename, filename = sums[m]
-                print("%5d   %3d%%   %s   (%s)" % sums[m])
+                n_lines, n_hits, modulename, filename = sums[m]
+                print(f"{n_lines:5d}   {n_hits/n_lines:.1%}   {modulename}   ({filename})")
 
         if self.outfile:
             # try and store counts and module info into self.outfile
@@ -605,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',

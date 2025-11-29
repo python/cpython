@@ -18,7 +18,7 @@ try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
     from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
-    from concurrent.futures import ProcessPoolExecutor
+    from concurrent.futures import ProcessPoolExecutor  # noqa: F401
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
     _have_multiprocessing = True
@@ -316,7 +316,7 @@ class CompileallTestsBase:
 
         self.assertTrue(mods)
         for mod in mods:
-            self.assertTrue(mod.startswith(self.directory), mod)
+            self.assertStartsWith(mod, self.directory)
             modcode = importlib.util.cache_from_source(mod)
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
@@ -766,6 +766,7 @@ class CommandLineTestsBase:
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
         self.assertRegex(out, b'File "dinsdale')
 
+    @support.force_not_colorized
     def test_d_runtime_error(self):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)

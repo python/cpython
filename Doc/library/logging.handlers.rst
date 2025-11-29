@@ -352,6 +352,10 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+   .. method:: shouldRollover(record)
+
+      See if the supplied record would cause the file to exceed the configured size limit.
+
 .. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
@@ -460,6 +464,11 @@ timed intervals.
 
       Returns a list of filenames which should be deleted as part of rollover. These
       are the absolute paths of the oldest backup log files written by the handler.
+
+   .. method:: shouldRollover(record)
+
+      See if enough time has passed for a rollover to occur and if it has, compute
+      the next rollover time.
 
 .. _socket-handler:
 
@@ -613,7 +622,7 @@ The :class:`SysLogHandler` class, located in the :mod:`logging.handlers` module,
 supports sending logging messages to a remote or local Unix syslog.
 
 
-.. class:: SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER, socktype=socket.SOCK_DGRAM)
+.. class:: SysLogHandler(address=('localhost', SYSLOG_UDP_PORT), facility=LOG_USER, socktype=socket.SOCK_DGRAM, timeout=None)
 
    Returns a new instance of the :class:`SysLogHandler` class intended to
    communicate with a remote Unix machine whose address is given by *address* in
@@ -626,6 +635,11 @@ supports sending logging messages to a remote or local Unix syslog.
    *socktype* argument, which defaults to :const:`socket.SOCK_DGRAM` and thus
    opens a UDP socket. To open a TCP socket (for use with the newer syslog
    daemons such as rsyslog), specify a value of :const:`socket.SOCK_STREAM`.
+   If *timeout* is specified, it sets a timeout (in seconds) for the socket operations.
+   This can help prevent the program from hanging indefinitely if the syslog server is
+   unreachable. By default, *timeout* is ``None``, meaning no timeout is applied.
+
+
 
    Note that if your server is not listening on UDP port 514,
    :class:`SysLogHandler` may appear not to work. In that case, check what
@@ -645,6 +659,8 @@ supports sending logging messages to a remote or local Unix syslog.
    .. versionchanged:: 3.2
       *socktype* was added.
 
+   .. versionchanged:: 3.14
+      *timeout* was added.
 
    .. method:: close()
 
@@ -1044,6 +1060,15 @@ possible, while any potentially slow operations (such as sending an email via
    .. note:: If you are using :mod:`multiprocessing`, you should avoid using
       :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
+   .. warning::
+
+      The :mod:`multiprocessing` module uses an internal logger created and
+      accessed via :meth:`~multiprocessing.get_logger`.
+      :class:`multiprocessing.Queue` will log ``DEBUG`` level messages upon
+      items being queued. If those log messages are processed by a
+      :class:`QueueHandler` using the same :class:`multiprocessing.Queue` instance,
+      it will cause a deadlock or infinite recursion.
+
    .. method:: emit(record)
 
       Enqueues the result of preparing the LogRecord. Should an exception
@@ -1141,6 +1166,13 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
+   .. versionchanged:: 3.14
+      :class:`QueueListener` can now be used as a context manager via
+      :keyword:`with`. When entering the context, the listener is started. When
+      exiting the context, the listener is stopped.
+      :meth:`~contextmanager.__enter__` returns the
+      :class:`QueueListener` object.
+
    .. method:: dequeue(block)
 
       Dequeues a record and return it, optionally blocking.
@@ -1171,6 +1203,10 @@ possible, while any potentially slow operations (such as sending an email via
 
       This starts up a background thread to monitor the queue for
       LogRecords to process.
+
+      .. versionchanged:: 3.14
+         Raises :exc:`RuntimeError` if called and the listener is already
+         running.
 
    .. method:: stop()
 

@@ -1,14 +1,17 @@
+import io
 import platform
 import queue
 import re
 import subprocess
 import sys
 import unittest
+from _android_support import TextLogStream
 from array import array
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from threading import Thread
 from test.support import LOOPBACK_TIMEOUT
 from time import time
+from unittest.mock import patch
 
 
 if sys.platform != "android":
@@ -16,12 +19,11 @@ if sys.platform != "android":
 
 api_level = platform.android_ver().api_level
 
+# (name, level, fileno)
+STREAM_INFO = [("stdout", "I", 1), ("stderr", "W", 2)]
+
 
 # Test redirection of stdout and stderr to the Android log.
-@unittest.skipIf(
-    api_level < 23 and platform.machine() == "aarch64",
-    "SELinux blocks reading logs on older ARM64 emulators"
-)
 class TestAndroidOutput(unittest.TestCase):
     maxDiff = None
 
@@ -36,30 +38,41 @@ class TestAndroidOutput(unittest.TestCase):
             for line in self.logcat_process.stdout:
                 self.logcat_queue.put(line.rstrip("\n"))
             self.logcat_process.stdout.close()
-        Thread(target=logcat_thread).start()
 
-        from ctypes import CDLL, c_char_p, c_int
-        android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
-        android_log_write.argtypes = (c_int, c_char_p, c_char_p)
-        ANDROID_LOG_INFO = 4
+        self.logcat_thread = Thread(target=logcat_thread)
+        self.logcat_thread.start()
 
-        # Separate tests using a marker line with a different tag.
-        tag, message = "python.test", f"{self.id()} {time()}"
-        android_log_write(
-            ANDROID_LOG_INFO, tag.encode("UTF-8"), message.encode("UTF-8"))
-        self.assert_log("I", tag, message, skip=True, timeout=5)
+        try:
+            from ctypes import CDLL, c_char_p, c_int
+            android_log_write = getattr(CDLL("liblog.so"), "__android_log_write")
+            android_log_write.argtypes = (c_int, c_char_p, c_char_p)
+            ANDROID_LOG_INFO = 4
+
+            # Separate tests using a marker line with a different tag.
+            tag, message = "python.test", f"{self.id()} {time()}"
+            android_log_write(
+                ANDROID_LOG_INFO, tag.encode("UTF-8"), message.encode("UTF-8"))
+            self.assert_log("I", tag, message, skip=True)
+        except:
+            # If setUp throws an exception, tearDown is not automatically
+            # called. Avoid leaving a dangling thread which would keep the
+            # Python process alive indefinitely.
+            self.tearDown()
+            raise
 
     def assert_logs(self, level, tag, expected, **kwargs):
         for line in expected:
             self.assert_log(level, tag, line, **kwargs)
 
-    def assert_log(self, level, tag, expected, *, skip=False, timeout=0.5):
-        deadline = time() + timeout
+    def assert_log(self, level, tag, expected, *, skip=False):
+        deadline = time() + LOOPBACK_TIMEOUT
         while True:
             try:
                 line = self.logcat_queue.get(timeout=(deadline - time()))
             except queue.Empty:
-                self.fail(f"line not found: {expected!r}")
+                raise self.failureException(
+                    f"line not found: {expected!r}"
+                ) from None
             if match := re.fullmatch(fr"(.)/{tag}: (.*)", line):
                 try:
                     self.assertEqual(level, match[1])
@@ -72,31 +85,60 @@ class TestAndroidOutput(unittest.TestCase):
     def tearDown(self):
         self.logcat_process.terminate()
         self.logcat_process.wait(LOOPBACK_TIMEOUT)
+        self.logcat_thread.join(LOOPBACK_TIMEOUT)
+
+        # Avoid an irrelevant warning about threading._dangling.
+        self.logcat_thread = None
 
     @contextmanager
-    def unbuffered(self, stream):
-        stream.reconfigure(write_through=True)
+    def reconfigure(self, stream, **settings):
+        original_settings = {key: getattr(stream, key, None) for key in settings.keys()}
+        stream.reconfigure(**settings)
         try:
             yield
         finally:
-            stream.reconfigure(write_through=False)
+            stream.reconfigure(**original_settings)
+
+    def stream_context(self, stream_name, level):
+        stack = ExitStack()
+        stack.enter_context(self.subTest(stream_name))
+
+        # In --verbose3 mode, sys.stdout and sys.stderr are captured, so we can't
+        # test them directly. Detect this mode and use some temporary streams with
+        # the same properties.
+        stream = getattr(sys, stream_name)
+        native_stream = getattr(sys, f"__{stream_name}__")
+        if isinstance(stream, io.StringIO):
+            # https://developer.android.com/ndk/reference/group/logging
+            prio = {"I": 4, "W": 5}[level]
+            stack.enter_context(
+                patch(
+                    f"sys.{stream_name}",
+                    stream := TextLogStream(
+                        prio, f"python.{stream_name}", native_stream,
+                    ),
+                )
+            )
+
+        # The tests assume the stream is initially buffered.
+        stack.enter_context(self.reconfigure(stream, write_through=False))
+
+        return stack
 
     def test_str(self):
-        for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
-            with self.subTest(stream=stream_name):
+        for stream_name, level, fileno in STREAM_INFO:
+            with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name)
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<TextLogStream '{tag}'>", repr(stream))
 
-                self.assertTrue(stream.writable())
-                self.assertFalse(stream.readable())
+                self.assertIs(stream.writable(), True)
+                self.assertIs(stream.readable(), False)
+                self.assertEqual(stream.fileno(), fileno)
                 self.assertEqual("UTF-8", stream.encoding)
-                self.assertTrue(stream.line_buffering)
-                self.assertFalse(stream.write_through)
-
-                # stderr is backslashreplace by default; stdout is configured
-                # that way by libregrtest.main.
                 self.assertEqual("backslashreplace", stream.errors)
+                self.assertIs(stream.line_buffering, True)
+                self.assertIs(stream.write_through, False)
 
                 def write(s, lines=None, *, write_len=None):
                     if write_len is None:
@@ -107,7 +149,7 @@ class TestAndroidOutput(unittest.TestCase):
                     self.assert_logs(level, tag, lines)
 
                 # Single-line messages,
-                with self.unbuffered(stream):
+                with self.reconfigure(stream, write_through=True):
                     write("", [])
 
                     write("a")
@@ -147,7 +189,14 @@ class TestAndroidOutput(unittest.TestCase):
                 write("f\n\ng", ["exxf", ""])
                 write("\n", ["g"])
 
-                with self.unbuffered(stream):
+                # Since this is a line-based logging system, line buffering
+                # cannot be turned off, i.e. a newline always causes a flush.
+                stream.reconfigure(line_buffering=False)
+                self.assertIs(stream.line_buffering, True)
+
+                # However, buffering can be turned off completely if you want a
+                # flush after every write.
+                with self.reconfigure(stream, write_through=True):
                     write("\nx", ["", "x"])
                     write("\na\n", ["", "a"])
                     write("\n", [""])
@@ -209,30 +258,31 @@ class TestAndroidOutput(unittest.TestCase):
                 # (MAX_BYTES_PER_WRITE).
                 #
                 # ASCII (1 byte per character)
-                write(("foobar" * 700) + "\n",
-                      [("foobar" * 666) + "foob",  # 4000 bytes
-                       "ar" + ("foobar" * 33)])  # 200 bytes
+                write(("foobar" * 700) + "\n",  # 4200 bytes in
+                      [("foobar" * 666) + "foob",  # 4000 bytes out
+                       "ar" + ("foobar" * 33)])  # 200 bytes out
 
                 # "Full-width" digits 0-9 (3 bytes per character)
                 s = "\uff10\uff11\uff12\uff13\uff14\uff15\uff16\uff17\uff18\uff19"
-                write((s * 150) + "\n",
-                      [s * 100,  # 3000 bytes
-                       s * 50])  # 1500 bytes
+                write((s * 150) + "\n",  # 4500 bytes in
+                      [s * 100,  # 3000 bytes out
+                       s * 50])  # 1500 bytes out
 
                 s = "0123456789"
-                write(s * 200, [])
-                write(s * 150, [])
-                write(s * 51, [s * 350])  # 3500 bytes
-                write("\n", [s * 51])  # 510 bytes
+                write(s * 200, [])  # 2000 bytes in
+                write(s * 150, [])  # 1500 bytes in
+                write(s * 51, [s * 350])  # 510 bytes in, 3500 bytes out
+                write("\n", [s * 51])  # 0 bytes in, 510 bytes out
 
     def test_bytes(self):
-        for stream_name, level in [("stdout", "I"), ("stderr", "W")]:
-            with self.subTest(stream=stream_name):
+        for stream_name, level, fileno in STREAM_INFO:
+            with self.stream_context(stream_name, level):
                 stream = getattr(sys, stream_name).buffer
                 tag = f"python.{stream_name}"
                 self.assertEqual(f"<BinaryLogStream '{tag}'>", repr(stream))
-                self.assertTrue(stream.writable())
-                self.assertFalse(stream.readable())
+                self.assertIs(stream.writable(), True)
+                self.assertIs(stream.readable(), False)
+                self.assertEqual(stream.fileno(), fileno)
 
                 def write(b, lines=None, *, write_len=None):
                     if write_len is None:
@@ -330,3 +380,82 @@ class TestAndroidOutput(unittest.TestCase):
                             fr"{type(obj).__name__}"
                         ):
                             stream.write(obj)
+
+
+class TestAndroidRateLimit(unittest.TestCase):
+    def test_rate_limit(self):
+        # https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log_read.h;l=39
+        PER_MESSAGE_OVERHEAD = 28
+
+        # https://developer.android.com/ndk/reference/group/logging
+        ANDROID_LOG_DEBUG = 3
+
+        # To avoid flooding the test script output, use a different tag rather
+        # than stdout or stderr.
+        tag = "python.rate_limit"
+        stream = TextLogStream(ANDROID_LOG_DEBUG, tag)
+
+        # Make a test message which consumes 1 KB of the logcat buffer.
+        message = "Line {:03d} "
+        message += "." * (
+            1024 - PER_MESSAGE_OVERHEAD - len(tag) - len(message.format(0))
+        ) + "\n"
+
+        # To avoid depending on the performance of the test device, we mock the
+        # passage of time.
+        mock_now = time()
+
+        def mock_time():
+            # Avoid division by zero by simulating a small delay.
+            mock_sleep(0.0001)
+            return mock_now
+
+        def mock_sleep(duration):
+            nonlocal mock_now
+            mock_now += duration
+
+        # See _android_support.py. The default values of these parameters work
+        # well across a wide range of devices, but we'll use smaller values to
+        # ensure a quick and reliable test that doesn't flood the log too much.
+        MAX_KB_PER_SECOND = 100
+        BUCKET_KB = 10
+        with (
+            patch("_android_support.MAX_BYTES_PER_SECOND", MAX_KB_PER_SECOND * 1024),
+            patch("_android_support.BUCKET_SIZE", BUCKET_KB * 1024),
+            patch("_android_support.sleep", mock_sleep),
+            patch("_android_support.time", mock_time),
+        ):
+            # Make sure the token bucket is full.
+            stream.write("Initial message to reset _prev_write_time")
+            mock_sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+            line_num = 0
+
+            # Write BUCKET_KB messages, and return the rate at which they were
+            # accepted in KB per second.
+            def write_bucketful():
+                nonlocal line_num
+                start = mock_time()
+                max_line_num = line_num + BUCKET_KB
+                while line_num < max_line_num:
+                    stream.write(message.format(line_num))
+                    line_num += 1
+                return BUCKET_KB / (mock_time() - start)
+
+            # The first bucketful should be written with minimal delay. The
+            # factor of 2 here is not arbitrary: it verifies that the system can
+            # write fast enough to empty the bucket within two bucketfuls, which
+            # the next part of the test depends on.
+            self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
+
+            # Write another bucketful to empty the token bucket completely.
+            write_bucketful()
+
+            # The next bucketful should be written at the rate limit.
+            self.assertAlmostEqual(
+                write_bucketful(), MAX_KB_PER_SECOND,
+                delta=MAX_KB_PER_SECOND * 0.1
+            )
+
+            # Once the token bucket refills, we should go back to full speed.
+            mock_sleep(BUCKET_KB / MAX_KB_PER_SECOND)
+            self.assertGreater(write_bucketful(), MAX_KB_PER_SECOND * 2)
