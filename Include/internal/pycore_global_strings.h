@@ -561,6 +561,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(keepends)
         STRUCT_FOR_ID(key)
         STRUCT_FOR_ID(keyfile)
+        STRUCT_FOR_ID(keylist)
         STRUCT_FOR_ID(keys)
         STRUCT_FOR_ID(kind)
         STRUCT_FOR_ID(kw)

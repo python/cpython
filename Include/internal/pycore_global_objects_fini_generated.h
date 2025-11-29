@@ -1838,6 +1838,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(keepends));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(key));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(keyfile));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(keylist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(keys));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kind));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(kw));

@@ -2882,6 +2882,7 @@ list.sort
 
     *
     key as keyfunc: object = None
+    keylist: object = None
     reverse: bool = False
 
 Sort the list in ascending order and return None.
@@ -2896,8 +2897,9 @@ The reverse flag can be set to sort in descending order.
 [clinic start generated code]*/
 
 static PyObject *
-list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=e4f6b6069181ad7d]*/
+list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
+               int reverse)
+/*[clinic end generated code: output=ebb99a3e19f35128 input=466d6923f1e8913d]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -2915,6 +2917,23 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     if (keyfunc == Py_None)
         keyfunc = NULL;
 
+    if (keylist == Py_None) {
+        keylist = NULL;
+    }
+    else if (keylist != NULL) {
+        if (keyfunc != NULL) {
+            PyErr_SetString(PyExc_ValueError,
+                "Only one of key and keylist can be provided.");
+            return result;
+        }
+        if (!PyList_Check(keylist)) {
+            PyErr_Format(PyExc_TypeError,
+                "'%.200s' object is not list",
+                Py_TYPE(keylist)->tp_name);
+            return result;
+        }
+    }
+
     /* The list is temporarily made empty, so that mutations performed
      * by comparison functions can't affect the slice of memory we're
      * sorting (allowing mutations during sorting is a core-dump
@@ -2926,9 +2945,8 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     Py_SET_SIZE(self, 0);
     FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
-
-    PyObject **keylist;
-    if (keyfunc == NULL) {
+    PyObject **keylist_ob_item;
+    if (keyfunc == NULL && keylist == NULL) {
         keys = NULL;
         lo.keys = saved_ob_item;
         lo.values = NULL;
@@ -2944,10 +2962,16 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                 goto keyfunc_fail;
             }
         }
-        if (PyList_CheckExact(keyfunc)) {
-            keylist = ((PyListObject *) keyfunc)->ob_item;
-            for (i = 0; i < saved_ob_size ; i++) {
-                keys[i] = keylist[i];
+
+        if (keylist != NULL) {
+            if (saved_ob_size != Py_SIZE(keylist)) {
+                PyErr_SetString(PyExc_ValueError,
+                    "Lengths of input list and keylist differ.");
+                goto keyfunc_fail;
+            }
+            keylist_ob_item = ((PyListObject *) keylist)->ob_item;
+            for (i = 0; i < saved_ob_size; i++) {
+                keys[i] = keylist_ob_item[i];
             }
         }
         else {
@@ -3125,9 +3149,9 @@ succeed:
     result = Py_None;
 fail:
     if (keys != NULL) {
-        if (PyList_CheckExact(keyfunc)) {
+        if (keylist != NULL) {
             for (i = 0; i < saved_ob_size ; i++) {
-                keylist[i] = keys[i];
+                keylist_ob_item[i] = keys[i];
             }
         }
         else {
@@ -3184,7 +3208,7 @@ PyList_Sort(PyObject *v)
         return -1;
     }
     Py_BEGIN_CRITICAL_SECTION(v);
-    v = list_sort_impl((PyListObject *)v, NULL, 0);
+    v = list_sort_impl((PyListObject *)v, NULL, NULL, 0);
     Py_END_CRITICAL_SECTION();
     if (v == NULL)
         return -1;

@@ -1836,6 +1836,7 @@ extern "C" {
     INIT_ID(keepends), \
     INIT_ID(key), \
     INIT_ID(keyfile), \
+    INIT_ID(keylist), \
     INIT_ID(keys), \
     INIT_ID(kind), \
     INIT_ID(kw), \

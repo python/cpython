@@ -2638,6 +2638,7 @@ sorted as builtin_sorted
 
     iterable as seq: object
     key as keyfunc: object = None
+    keylist: object = None
     reverse: object = False
 
 Return a new list containing all items from the iterable in ascending order.
@@ -2647,7 +2648,7 @@ reverse flag can be set to request the result in descending order.
 [end disabled clinic input]*/
 
 PyDoc_STRVAR(builtin_sorted__doc__,
-"sorted($module, iterable, /, *, key=None, reverse=False)\n"
+"sorted($module, iterable, /, *, key=None, keylist=None, reverse=False)\n"
 "--\n"
 "\n"
 "Return a new list containing all items from the iterable in ascending order.\n"
