@@ -1553,7 +1553,6 @@ are always available.  They are listed here in alphabetical order.
    length 1, return its single byte value.
    For example, ``ord(b'a')`` returns the integer ``97``.
 
-
 .. function:: pow(base, exp, mod=None)
 
    Return *base* to the power *exp*; if *mod* is present, return *base* to the
@@ -1594,7 +1593,6 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.8
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
-
 
 .. function:: print(*objects, sep=' ', end='\n', file=None, flush=False)
 
@@ -1640,8 +1638,8 @@ are always available.  They are listed here in alphabetical order.
          sleep(3)
          print("Hi there!")
 
-.. versionchanged:: 3.3
-   Added the *flush* keyword argument.
+   .. versionchanged:: 3.3
+      Added the *flush* keyword argument.
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
