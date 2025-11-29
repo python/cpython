@@ -103,10 +103,8 @@ _PyMem_Annotate_Mmap(void *addr, size_t size, const char *name)
    // Ignore errno from prctl
    // See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
    errno = 0;
-   return 0;
-#else
-   return 0;
 #endif
+   return 0;
 }
 
 extern int _PyMem_GetAllocatorName(
