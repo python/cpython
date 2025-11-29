@@ -2019,6 +2019,48 @@ class PipelineTestCase(BaseTestCase):
         self.assertEqual(result.stdout.strip(), '5')
         self.assertEqual(result.returncodes, [0, 0])
 
+    def test_pipeline_memoryview_input(self):
+        """Test pipeline with memoryview input (byte elements)"""
+        test_data = b"Hello, memoryview pipeline!"
+        mv = memoryview(test_data)
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())'],
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read().upper())'],
+            input=mv, capture_output=True
+        )
+        self.assertEqual(result.stdout, test_data.upper())
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_memoryview_input_nonbyte(self):
+        """Test pipeline with non-byte memoryview input (e.g., int32).
+
+        This tests the fix for gh-134453 where non-byte memoryviews
+        had incorrect length tracking on POSIX, causing data truncation.
+        """
+        import array
+        # Create an array of 32-bit integers large enough to trigger
+        # chunked writing behavior (> PIPE_BUF)
+        pipe_buf = getattr(select, 'PIPE_BUF', 512)
+        # Each 'i' element is 4 bytes, need more than pipe_buf bytes total
+        num_elements = (pipe_buf // 4) + 100
+        test_array = array.array('i', [0x41424344 for _ in range(num_elements)])
+        expected_bytes = test_array.tobytes()
+        mv = memoryview(test_array)
+
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())'],
+            [sys.executable, '-c',
+             'import sys; data = sys.stdin.buffer.read(); '
+             'sys.stdout.buffer.write(data)'],
+            input=mv, capture_output=True
+        )
+        self.assertEqual(result.stdout, expected_bytes,
+                         msg=f"{len(result.stdout)=} != {len(expected_bytes)=}")
+        self.assertEqual(result.returncodes, [0, 0])
+
     def test_pipeline_bytes_mode(self):
         """Test pipeline in binary mode"""
         result = subprocess.run_pipeline(

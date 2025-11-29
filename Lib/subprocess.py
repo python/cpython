@@ -540,6 +540,10 @@ else:
                 stdin.flush()
             except BrokenPipeError:
                 pass
+            except ValueError:
+                # ignore ValueError: I/O operation on closed file.
+                if not stdin.closed:
+                    raise
             if not input_data:
                 try:
                     stdin.close()
@@ -547,8 +551,14 @@ else:
                     pass
                 stdin = None  # Don't register with selector
 
-        # Prepare input data
-        input_view = memoryview(input_data) if input_data else None
+        # Prepare input data - cast to bytes view for correct length tracking
+        if input_data:
+            if not isinstance(input_data, memoryview):
+                input_view = memoryview(input_data)
+            else:
+                input_view = input_data.cast("b")  # byte view required
+        else:
+            input_view = None
 
         with _PopenSelector() as selector:
             if stdin and input_data:
