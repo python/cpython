@@ -2078,6 +2078,10 @@ class Popen:
                     self.stdin.flush()
                 except BrokenPipeError:
                     pass  # communicate() must ignore BrokenPipeError.
+                except ValueError:
+                    # ignore ValueError: I/O operation on closed file.
+                    if not self.stdin.closed:
+                        raise
                 if not input:
                     try:
                         self.stdin.close()
