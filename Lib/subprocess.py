@@ -328,6 +328,32 @@ def _remaining_time_helper(endtime):
     return endtime - _time()
 
 
+def _flush_stdin(stdin):
+    """Flush stdin, ignoring BrokenPipeError and closed file ValueError."""
+    try:
+        stdin.flush()
+    except BrokenPipeError:
+        pass
+    except ValueError:
+        # Ignore ValueError: I/O operation on closed file.
+        if not stdin.closed:
+            raise
+
+
+def _make_input_view(input_data):
+    """Convert input data to a byte memoryview for writing.
+
+    Handles the case where input_data is already a memoryview with
+    non-byte elements (e.g., int32 array) by casting to a byte view.
+    This ensures len(view) returns the byte count, not element count.
+    """
+    if not input_data:
+        return None
+    if isinstance(input_data, memoryview):
+        return input_data.cast("b")  # ensure byte view for correct len()
+    return memoryview(input_data)
+
+
 def _communicate_io_posix(selector, stdin, input_view, input_offset,
                           output_buffers, endtime):
     """
@@ -536,14 +562,7 @@ else:
 
         # Prepare stdin
         if stdin:
-            try:
-                stdin.flush()
-            except BrokenPipeError:
-                pass
-            except ValueError:
-                # ignore ValueError: I/O operation on closed file.
-                if not stdin.closed:
-                    raise
+            _flush_stdin(stdin)
             if not input_data:
                 try:
                     stdin.close()
@@ -551,14 +570,8 @@ else:
                     pass
                 stdin = None  # Don't register with selector
 
-        # Prepare input data - cast to bytes view for correct length tracking
-        if input_data:
-            if not isinstance(input_data, memoryview):
-                input_view = memoryview(input_data)
-            else:
-                input_view = input_data.cast("b")  # byte view required
-        else:
-            input_view = None
+        # Prepare input data
+        input_view = _make_input_view(input_data)
 
         with _PopenSelector() as selector:
             if stdin and input_data:
@@ -2671,14 +2684,7 @@ class Popen:
             if self.stdin and not self._communication_started:
                 # Flush stdio buffer.  This might block, if the user has
                 # been writing to .stdin in an uncontrolled fashion.
-                try:
-                    self.stdin.flush()
-                except BrokenPipeError:
-                    pass  # communicate() must ignore BrokenPipeError.
-                except ValueError:
-                    # ignore ValueError: I/O operation on closed file.
-                    if not self.stdin.closed:
-                        raise
+                _flush_stdin(self.stdin)
                 if not input:
                     try:
                         self.stdin.close()
@@ -2703,15 +2709,8 @@ class Popen:
 
             self._save_input(input)
 
-            if self._input:
-                if not isinstance(self._input, memoryview):
-                    input_view = memoryview(self._input)
-                else:
-                    input_view = self._input.cast("b")  # byte input required
-                input_offset = self._input_offset
-            else:
-                input_view = None
-                input_offset = 0
+            input_view = _make_input_view(self._input)
+            input_offset = self._input_offset if self._input else 0
 
             with _PopenSelector() as selector:
                 if self.stdin and not self.stdin.closed and self._input:
