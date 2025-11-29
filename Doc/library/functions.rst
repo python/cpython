@@ -1636,16 +1636,12 @@ are always available.  They are listed here in alphabetical order.
 
    .. code-block:: python
       from time import sleep
-      # Whether the default end is a newline ('\\n') or any other character,
-      # Python performs a single write operation for the entire string.
-      # Therefore, newlines inside the string do not cause mid-string flushing.
       print("Hello\nWorld")
       sleep(3)
       print("Hi there!")
 
 .. versionchanged:: 3.3
    Added the *flush* keyword argument.
-
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
