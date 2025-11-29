@@ -18,9 +18,12 @@ class Popen(object):
         util._flush_std_streams()
         self.returncode = None
         self.finalizer = None
+        self._init_locking()
+        self._launch(process_obj)
+
+    def _init_locking(self):
         self._exit_condition = threading.Condition()
         self._exit_blockers = 0
-        self._launch(process_obj)
 
     def duplicate_for_child(self, fd):
         return fd

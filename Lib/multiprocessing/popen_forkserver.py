@@ -33,8 +33,10 @@ class Popen(popen_fork.Popen):
 
     def __init__(self, process_obj):
         self._fds = []
-        self._lock = threading.Lock()
         super().__init__(process_obj)
+
+    def _init_locking(self):
+        self._lock = threading.Lock()
 
     def duplicate_for_child(self, fd):
         self._fds.append(fd)
