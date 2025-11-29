@@ -1,2 +1,0 @@
-Minor refactoring of :mod:`multiprocessing.synchronize` and :mod:`multiprocessing.queues` to use
-the public :meth:`~multiprocessing.Semaphore.get_value` method instead of private attribute access.
