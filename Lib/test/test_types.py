@@ -2,7 +2,7 @@
 
 from test.support import (
     run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS, EqualToForwardRef,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef, check_disallow_instantiation,
 )
 from test.support.script_helper import assert_python_ok
 from test.support.import_helper import import_fresh_module
@@ -21,6 +21,7 @@ import types
 import unittest.mock
 import weakref
 import typing
+import re
 
 c_types = import_fresh_module('types', fresh=['_types'])
 py_types = import_fresh_module('types', blocked=['_types'])
@@ -52,6 +53,7 @@ class TypesTests(unittest.TestCase):
             'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
             'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
+            'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
             'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
             'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
@@ -517,8 +519,8 @@ class TypesTests(unittest.TestCase):
         # and a number after the decimal.  This is tricky, because
         # a totally empty format specifier means something else.
         # So, just use a sign flag
-        test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1e+200')
+        test(1.25e200, '+g', '+1.25e+200')
+        test(1.25e200, '+', '+1.25e+200')
 
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
@@ -709,6 +711,19 @@ class TypesTests(unittest.TestCase):
             pass
         """
         assert_python_ok("-c", code)
+
+    def test_frame_locals_proxy_type(self):
+        self.assertIsInstance(types.FrameLocalsProxyType, type)
+        if MISSING_C_DOCSTRINGS:
+            self.assertIsNone(types.FrameLocalsProxyType.__doc__)
+        else:
+            self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
+        self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
+        self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
+
+        frame = inspect.currentframe()
+        self.assertIsNotNone(frame)
+        self.assertIsInstance(frame.f_locals, types.FrameLocalsProxyType)
 
 
 class UnionTests(unittest.TestCase):
@@ -1148,8 +1163,7 @@ class UnionTests(unittest.TestCase):
                              msg='Check for union reference leak.')
 
     def test_instantiation(self):
-        with self.assertRaises(TypeError):
-            types.UnionType()
+        check_disallow_instantiation(self, types.UnionType)
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
@@ -1375,6 +1389,27 @@ class MappingProxyTests(unittest.TestCase):
         mapping = HashableDict({'a': 1, 'b': 2})
         view = self.mappingproxy(mapping)
         self.assertEqual(hash(view), hash(mapping))
+
+    def test_richcompare(self):
+        mp1 = self.mappingproxy({'a': 1})
+        mp1_2 = self.mappingproxy({'a': 1})
+        mp2 = self.mappingproxy({'a': 2})
+
+        self.assertTrue(mp1 == mp1_2)
+        self.assertFalse(mp1 != mp1_2)
+        self.assertFalse(mp1 == mp2)
+        self.assertTrue(mp1 != mp2)
+
+        msg = "not supported between instances of 'mappingproxy' and 'mappingproxy'"
+
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 > mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1 < mp1_2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp2 >= mp2
+        with self.assertRaisesRegex(TypeError, msg):
+            mp1_2 <= mp1
 
 
 class ClassCreationTests(unittest.TestCase):
@@ -2010,6 +2045,24 @@ class SimpleNamespaceTests(unittest.TestCase):
         self.assertEqual(ns1, ns2)
         self.assertNotEqual(ns2, types.SimpleNamespace())
 
+    def test_richcompare_unsupported(self):
+        ns1 = types.SimpleNamespace(x=1)
+        ns2 = types.SimpleNamespace(y=2)
+
+        msg = re.escape(
+            "not supported between instances of "
+            "'types.SimpleNamespace' and 'types.SimpleNamespace'"
+        )
+
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 > ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 >= ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 < ns2
+        with self.assertRaisesRegex(TypeError, msg):
+            ns1 <= ns2
+
     def test_nested(self):
         ns1 = types.SimpleNamespace(a=1, b=2)
         ns2 = types.SimpleNamespace()
@@ -2513,15 +2566,16 @@ class SubinterpreterTests(unittest.TestCase):
     def setUpClass(cls):
         global interpreters
         try:
-            from test.support import interpreters
+            from concurrent import interpreters
         except ModuleNotFoundError:
             raise unittest.SkipTest('subinterpreters required')
-        import test.support.interpreters.channels  # noqa: F401
+        from test.support import channels  # noqa: F401
+        cls.create_channel = staticmethod(channels.create)
 
     @cpython_only
     @no_rerun('channels (and queues) might have a refleak; see gh-122199')
     def test_static_types_inherited_slots(self):
-        rch, sch = interpreters.channels.create()
+        rch, sch = self.create_channel()
 
         script = textwrap.dedent("""
             import test.support
@@ -2547,7 +2601,7 @@ class SubinterpreterTests(unittest.TestCase):
         main_results = collate_results(raw)
 
         interp = interpreters.create()
-        interp.exec('from test.support import interpreters')
+        interp.exec('from concurrent import interpreters')
         interp.prepare_main(sch=sch)
         interp.exec(script)
         raw = rch.recv_nowait()

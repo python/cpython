@@ -380,8 +380,7 @@ def _text_encoding():
 
     if sys.flags.utf8_mode:
         return "utf-8"
-    else:
-        return locale.getencoding()
+    return locale.getencoding()
 
 
 def call(*popenargs, timeout=None, **kwargs):
@@ -2109,7 +2108,7 @@ class Popen:
                     input_view = self._input.cast("b")  # byte input required
 
             with _PopenSelector() as selector:
-                if self.stdin and input:
+                if self.stdin and not self.stdin.closed and self._input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
                 if self.stdout and not self.stdout.closed:
                     selector.register(self.stdout, selectors.EVENT_READ)

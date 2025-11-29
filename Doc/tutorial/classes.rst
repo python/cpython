@@ -359,7 +359,7 @@ Usually, a method is called right after it is bound::
 
    x.f()
 
-In the :class:`!MyClass` example, this will return the string ``'hello world'``.
+If ``x = MyClass()``, as above, this will return the string ``'hello world'``.
 However, it is not necessary to call a method right away: ``x.f`` is a method
 object, and can be stored away and called at a later time.  For example::
 
@@ -662,6 +662,9 @@ class can be subclassed without affecting the precedence order of its parents).
 Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
 :ref:`python_2.3_mro`.
+
+In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
+for details.
 
 
 .. _tut-private:

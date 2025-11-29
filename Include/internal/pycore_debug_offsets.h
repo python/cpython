@@ -106,6 +106,8 @@ typedef struct _Py_DebugOffsets {
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
         uint64_t status;
+        uint64_t holds_gil;
+        uint64_t gil_requested;
     } thread_state;
 
     // InterpreterFrame offset;
@@ -210,6 +212,7 @@ typedef struct _Py_DebugOffsets {
     struct _gc {
         uint64_t size;
         uint64_t collecting;
+        uint64_t frame;
     } gc;
 
     // Generator object offset;
@@ -273,6 +276,8 @@ typedef struct _Py_DebugOffsets {
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
         .datastack_chunk = offsetof(PyThreadState, datastack_chunk), \
         .status = offsetof(PyThreadState, _status), \
+        .holds_gil = offsetof(PyThreadState, holds_gil), \
+        .gil_requested = offsetof(PyThreadState, gil_requested), \
     }, \
     .interpreter_frame = { \
         .size = sizeof(_PyInterpreterFrame), \
@@ -351,6 +356,7 @@ typedef struct _Py_DebugOffsets {
     .gc = { \
         .size = sizeof(struct _gc_runtime_state), \
         .collecting = offsetof(struct _gc_runtime_state, collecting), \
+        .frame = offsetof(struct _gc_runtime_state, frame), \
     }, \
     .gen_object = { \
         .size = sizeof(PyGenObject), \
@@ -368,7 +374,7 @@ typedef struct _Py_DebugOffsets {
         .remote_debugging_enabled = offsetof(PyInterpreterState, config.remote_debug),  \
         .debugger_pending_call = offsetof(_PyRemoteDebuggerSupport, debugger_pending_call),  \
         .debugger_script_path = offsetof(_PyRemoteDebuggerSupport, debugger_script_path),  \
-        .debugger_script_path_size = MAX_SCRIPT_PATH_SIZE, \
+        .debugger_script_path_size = _Py_MAX_SCRIPT_PATH_SIZE, \
     }, \
 }
 

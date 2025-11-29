@@ -1,0 +1,1 @@
+Fix musl version detection on Void Linux.

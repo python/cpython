@@ -21,7 +21,7 @@ try:
     import _interpreters
 except ImportError as exc:
     raise unittest.SkipTest(str(exc))
-from test.support import interpreters
+from concurrent import interpreters
 
 
 try:
