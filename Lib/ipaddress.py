@@ -1017,20 +1017,21 @@ class _BaseNetwork(_IPAddressBase):
 
     @staticmethod
     def _is_subnet_of(a, b):
-        if not isinstance(a, _BaseNetwork):
-            raise TypeError(f"{a} is not a network object")
-        if not isinstance(b, _BaseNetwork):
-            raise TypeError(f"{b} is not a network object")
+        # The caller must ensure that 'a' and 'b' are both networks.
         _check_ip_version(a, b)
         return (b.network_address <= a.network_address and
                 b.broadcast_address >= a.broadcast_address)
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"{other} is not a network object")
         return self._is_subnet_of(self, other)
 
     def supernet_of(self, other):
         """Return True if this network is a supernet of other."""
+        if not isinstance(other, _BaseNetwork):
+            raise TypeError(f"{other} is not a network object")
         return self._is_subnet_of(other, self)
 
     @property
