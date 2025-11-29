@@ -715,9 +715,9 @@ class _BaseNetwork(_IPAddressBase):
     def __eq__(self, other):
         if not isinstance(other, _BaseNetwork):
             return NotImplemented
-        return (self.version == other.version
-                and self.network_address == other.network_address
-                and int(self.netmask._ip) == int(other.netmask))
+        return (self.version == other.version and
+                self.network_address == other.network_address and
+                int(self.netmask._ip) == int(other.netmask))
 
     def __hash__(self):
         return hash((int(self.network_address), int(self.netmask)))
