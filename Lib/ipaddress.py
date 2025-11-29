@@ -737,7 +737,7 @@ class _BaseNetwork(_IPAddressBase):
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
         if not isinstance(other, _BaseNetwork):
-            raise TypeError("%s is not a network object" % other)
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self.network_address in other or (
             self.broadcast_address in other or (
                 other.network_address in self or (
@@ -818,7 +818,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         if not isinstance(other, _BaseNetwork):
-            raise TypeError("%s is not a network object" % other)
+            raise TypeError(f"expecting a network object, not {type(other)}")
         _check_ip_version(self, other)
         if not other.subnet_of(self):
             raise ValueError('%s not contained in %s' % (other, self))
@@ -885,7 +885,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         if not isinstance(other, _BaseNetwork):
-            raise TypeError("%s is not a network object" % other)
+            raise TypeError(f"expecting a network object, not {type(other)}")
         _check_ip_version(self, other)
         # self.version == other.version below here:
         if self.network_address < other.network_address:
@@ -1025,13 +1025,13 @@ class _BaseNetwork(_IPAddressBase):
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
         if not isinstance(other, _BaseNetwork):
-            raise TypeError(f"{other} is not a network object")
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self._is_subnet_of(self, other)
 
     def supernet_of(self, other):
         """Return True if this network is a supernet of other."""
         if not isinstance(other, _BaseNetwork):
-            raise TypeError(f"{other} is not a network object")
+            raise TypeError(f"expecting a network object, not {type(other)}")
         return self._is_subnet_of(other, self)
 
     @property
