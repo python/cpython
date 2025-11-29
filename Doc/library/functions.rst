@@ -1,6 +1,15 @@
 .. XXX document all delegations to __special__ methods
 .. _built-in-funcs:
 
+Notation
+--------
+
+In the function signatures that follow you may see some special markers:
+
+- ``/`` (a single forward slash) — indicates that the parameters before it are *positional-only*. Parameters to the left of ``/`` must be supplied positionally and cannot be passed as keyword arguments. For example, ``repr(object, /)`` means ``object`` is positional-only.
+
+- ``*`` (a single asterisk) — indicates that the parameters following it are *keyword-only* and must be supplied using their parameter names.
+
 Built-in Functions
 ==================
 
