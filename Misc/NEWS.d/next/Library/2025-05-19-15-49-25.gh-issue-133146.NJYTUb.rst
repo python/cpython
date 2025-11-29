@@ -1,1 +1,2 @@
-Document the old public :meth:`get_value<multiprocessing.synchronized.Semaphore>`. Replace code using private attributes with this public method in ``multiprocessing.synchronized.py`` and ``multiprocessing.queues.py`` files
+Minor refactoring of :mod:`multiprocessing.synchronize` and :mod:`multiprocessing.queues` to use
+the public :meth:`~multiprocessing.Semaphore.get_value` method instead of private attribute access.
