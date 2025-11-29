@@ -1,15 +1,15 @@
 .. XXX document all delegations to __special__ methods
 .. _built-in-funcs:
 
-Built-in Functions
+.. Built-in Functions
 ==================
 
-The Python interpreter has a number of functions and types built into it that
+.. _The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-+---------------------------------------------------------------------------------------------------+
+.. _+---------------------------------------------------------------------------------------------------+
 |                                        Built-in Functions                                         |
-+=========================+=======================+=======================+=========================+
+.. _+=========================+=======================+=======================+=========================+
 | |  **A**                | |  **E**              | |  **L**              | |  **R**                |
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
@@ -40,10 +40,10 @@ are always available.  They are listed here in alphabetical order.
 | |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
-.. using :func:`dict` would create a link to another page, so local targets are
+.. _using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
 
-.. |func-dict| replace:: ``dict()``
+.. _|func-dict| replace:: ``dict()``
 .. |func-frozenset| replace:: ``frozenset()``
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-set| replace:: ``set()``
@@ -54,7 +54,7 @@ are always available.  They are listed here in alphabetical order.
 .. |func-bytearray| replace:: ``bytearray()``
 .. |func-bytes| replace:: ``bytes()``
 
-.. function:: abs(number, /)
+.. _function:: abs(number, /)
 
    Return the absolute value of a number.  The argument may be an
    integer, a floating-point number, or an object implementing
@@ -62,7 +62,7 @@ are always available.  They are listed here in alphabetical order.
    If the argument is a complex number, its magnitude is returned.
 
 
-.. function:: aiter(async_iterable, /)
+.. _function:: aiter(async_iterable, /)
 
    Return an :term:`asynchronous iterator` for an :term:`asynchronous iterable`.
    Equivalent to calling ``x.__aiter__()``.
