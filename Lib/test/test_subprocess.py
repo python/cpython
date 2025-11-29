@@ -956,6 +956,48 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"banana")
         self.assertEqual(stderr, b"pineapple")
 
+    def test_communicate_memoryview_input(self):
+        # Test memoryview input with byte elements
+        test_data = b"Hello, memoryview!"
+        mv = memoryview(test_data)
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; sys.stdout.write(sys.stdin.read())'],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stdin.close)
+        (stdout, stderr) = p.communicate(mv)
+        self.assertEqual(stdout, test_data)
+        self.assertIsNone(stderr)
+
+    def test_communicate_memoryview_input_nonbyte(self):
+        # Test memoryview input with non-byte elements (e.g., int32)
+        # This tests the fix for gh-134453 where non-byte memoryviews
+        # had incorrect length tracking on POSIX
+        import array
+        # Create an array of 32-bit integers that's large enough to trigger
+        # the chunked writing behavior (> PIPE_BUF)
+        pipe_buf = getattr(select, 'PIPE_BUF', 512)
+        # Each 'i' element is 4 bytes, so we need more than pipe_buf/4 elements
+        # Add some extra to ensure we exceed the buffer size
+        num_elements = pipe_buf + 1
+        test_array = array.array('i', [0x64306f66 for _ in range(num_elements)])
+        expected_bytes = test_array.tobytes()
+        mv = memoryview(test_array)
+
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys; '
+                              'data = sys.stdin.buffer.read(); '
+                              'sys.stdout.buffer.write(data)'],
+                             stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stdin.close)
+        (stdout, stderr) = p.communicate(mv)
+        self.assertEqual(stdout, expected_bytes,
+                         msg=f"{len(stdout)=} =? {len(expected_bytes)=}")
+        self.assertIsNone(stderr)
+
     def test_communicate_timeout(self):
         p = subprocess.Popen([sys.executable, "-c",
                               'import sys,os,time;'
@@ -1697,6 +1739,40 @@ class ProcessTestCase(BaseTestCase):
                 proc.returncode = None
 
             self.assertEqual(proc.wait(), 0)
+
+    def test_post_timeout_communicate_sends_input(self):
+        """GH-141473 regression test; the stdin pipe must close"""
+        with subprocess.Popen(
+                [sys.executable, "-uc", """\
+import sys
+while c := sys.stdin.read(512):
+    sys.stdout.write(c)
+print()
+"""],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+        ) as proc:
+            try:
+                data = f"spam{'#'*4096}beans"
+                proc.communicate(
+                    input=data,
+                    timeout=0,
+                )
+            except subprocess.TimeoutExpired as exc:
+                pass
+            # Prior to the bugfix, this would hang as the stdin
+            # pipe to the child had not been closed.
+            try:
+                stdout, stderr = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired as exc:
+                self.fail("communicate() hung waiting on child process that should have seen its stdin pipe close and exit")
+            self.assertEqual(
+                    proc.returncode, 0,
+                    msg=f"STDERR:\n{stderr}\nSTDOUT:\n{stdout}")
+            self.assertTrue(stdout.startswith("spam"), msg=stdout)
+            self.assertIn("beans", stdout)
 
 
 class RunFuncTestCase(BaseTestCase):
