@@ -26,6 +26,7 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_obmalloc.h"      // _PyMem_Annotate_Mmap()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -1951,6 +1952,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+    _PyMem_Annotate_Mmap(m_obj->data, map_size, "Python:new_mmap_object");
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }

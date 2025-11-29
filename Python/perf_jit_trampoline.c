@@ -61,6 +61,7 @@
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_obmalloc.h"      // _PyMem_Annotate_Mmap()
 #include "pycore_runtime.h"       // _PyRuntime
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -1085,6 +1086,7 @@ static void* perf_map_jit_init(void) {
         close(fd);
         return NULL;  // Memory mapping failed
     }
+    _PyMem_Annotate_Mmap(perf_jit_map_state.mapped_buffer, page_size, "Python:perf_map_jit_init");
 #endif
 
     perf_jit_map_state.mapped_size = page_size;

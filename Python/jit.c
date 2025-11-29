@@ -71,6 +71,9 @@ jit_alloc(size_t size)
     int prot = PROT_READ | PROT_WRITE;
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
+    if (!failed) {
+        _PyMem_Annotate_Mmap(memory, size, "Python:jit_alloc");
+    }
 #endif
     if (failed) {
         jit_error("unable to allocate memory");

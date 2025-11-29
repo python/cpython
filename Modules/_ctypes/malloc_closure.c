@@ -14,6 +14,7 @@
 #  endif
 #endif
 #include "ctypes.h"
+#include "pycore_obmalloc.h"      // _PyMem_Annotate_Mmap()
 
 /* BLOCKSIZE can be adjusted.  Larger blocksize will take a larger memory
    overhead, but allocate less blocks from the system.  It may be that some
@@ -82,6 +83,7 @@ static void more_core(void)
                         0);
     if (item == (void *)MAP_FAILED)
         return;
+    _PyMem_Annotate_Mmap(item, count * sizeof(ITEM), "Python:more_core");
 #endif
 
 #ifdef MALLOC_CLOSURE_DEBUG
