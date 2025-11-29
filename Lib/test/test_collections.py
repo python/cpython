@@ -308,7 +308,20 @@ class TestChainMap(unittest.TestCase):
         tmp = ChainMap() | SubclassRor()
         self.assertIs(type(tmp), SubclassRor)
         self.assertIs(type(tmp.maps[0]), dict)
-
+        
+    def test_ior_fallback(self):
+        # Verify that __ior__ returns NotImplemented for unrecognized types,
+        # allowing the other operand to handle the operation via __ror__.
+        class Rescuer:
+            def __ror__(self, other):
+                return "fallback"
+        
+        cm = ChainMap()
+        # This should not raise TypeError.
+        # Since ChainMap.__ior__ returns NotImplemented, Python calls Rescuer.__ror__,
+        # and the result ("fallback") is assigned back to 'cm'.
+        cm |= Rescuer()
+        self.assertEqual(cm, "fallback")
 
 ################################################################################
 ### Named Tuples

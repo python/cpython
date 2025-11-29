@@ -1151,7 +1151,10 @@ class ChainMap(_collections_abc.MutableMapping):
         self.maps[0].clear()
 
     def __ior__(self, other):
-        self.maps[0].update(other)
+        try:
+            self.maps[0].update(other)
+        except TypeError:
+            return NotImplemented
         return self
 
     def __or__(self, other):
