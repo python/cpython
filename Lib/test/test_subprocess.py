@@ -1673,7 +1673,7 @@ print()
             self.assertEqual(
                     proc.returncode, 0,
                     msg=f"STDERR:\n{stderr}\nSTDOUT:\n{stdout}")
-            self.assertStartsWith(stdout, "spam")
+            self.assertTrue(stdout.startswith("spam"), msg=stdout)
             self.assertIn("beans", stdout)
 
 
