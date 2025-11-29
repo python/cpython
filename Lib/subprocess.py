@@ -2655,9 +2655,6 @@ class Popen:
                     ready = selector.select(timeout)
                     self._check_timeout(endtime, orig_timeout, stdout, stderr)
 
-                    # XXX Rewrite these to use non-blocking I/O on the file
-                    # objects; they are no longer using C stdio!
-
                     for key, events in ready:
                         if key.fileobj is self.stdin:
                             chunk = input_view[self._input_offset :
