@@ -315,7 +315,7 @@ class TestChainMap(unittest.TestCase):
         class Rescuer:
             def __ror__(self, other):
                 return "fallback"
-        
+
         cm = ChainMap()
         # This should not raise TypeError.
         # Since ChainMap.__ior__ returns NotImplemented, Python calls Rescuer.__ror__,
