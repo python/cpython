@@ -2095,11 +2095,8 @@ to sockets.
       Accepts any real number, not only integer or float.
 
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+.. method:: socket.setsockopt(level, optname, value: int | Buffer)
+            socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: pair: module; struct
 
