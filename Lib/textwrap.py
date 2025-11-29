@@ -243,7 +243,7 @@ class TextWrapper:
 
     def _str_len_without_ansi_escape_codes(self, s):
         """Return the length of string s without ANSI escape codes."""
-        return len(self.ansi_escape_re.sub(s, ""))
+        return len(self.ansi_escape_re.sub("", s))
 
     def _wrap_chunks(self, chunks):
         """_wrap_chunks(chunks : [string]) -> [string]
