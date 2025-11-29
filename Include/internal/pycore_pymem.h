@@ -99,6 +99,9 @@ static inline int _PyMem_Annotate_Mmap(void *addr, size_t size, const char *name
 {
 #if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME)
    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
+   // Ignore errno from prctl
+   // See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
+   errno = 0;
    return 0;
 #else
    return 0;

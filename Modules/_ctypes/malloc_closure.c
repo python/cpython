@@ -75,15 +75,16 @@ static void more_core(void)
     if (item == NULL)
         return;
 #else
+    size_t mem_size = count * sizeof(ITEM);
     item = (ITEM *)mmap(NULL,
-                        count * sizeof(ITEM),
+                        mem_size,
                         PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | MAP_ANONYMOUS,
                         -1,
                         0);
     if (item == (void *)MAP_FAILED)
         return;
-    _PyMem_Annotate_Mmap(item, count * sizeof(ITEM), "Python:more_core");
+    _PyMem_Annotate_Mmap(item, mem_size, "Python:more_core");
 #endif
 
 #ifdef MALLOC_CLOSURE_DEBUG
