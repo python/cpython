@@ -317,9 +317,6 @@ underlying :class:`Popen` interface can be used directly.
    in the returned :class:`PipelineResult`'s :attr:`~PipelineResult.stdout`
    attribute. Other keyword arguments are passed to each :class:`Popen` call.
 
-   Unlike :func:`run`, this function does not accept *universal_newlines*.
-   Use ``text=True`` instead.
-
    Examples::
 
       >>> import subprocess

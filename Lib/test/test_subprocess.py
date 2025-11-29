@@ -2123,16 +2123,16 @@ class PipelineTestCase(BaseTestCase):
             )
         self.assertIn('capture_output', str(cm.exception))
 
-    def test_pipeline_rejects_universal_newlines(self):
-        """Test that universal_newlines is not supported"""
-        with self.assertRaises(TypeError) as cm:
-            subprocess.run_pipeline(
-                [sys.executable, '-c', 'pass'],
-                [sys.executable, '-c', 'pass'],
-                universal_newlines=True
-            )
-        self.assertIn('universal_newlines', str(cm.exception))
-        self.assertIn('text=True', str(cm.exception))
+    def test_pipeline_universal_newlines(self):
+        """Test that universal_newlines=True works like text=True"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            capture_output=True, universal_newlines=True
+        )
+        self.assertIsInstance(result.stdout, str)
+        self.assertIn('HELLO', result.stdout)
+        self.assertEqual(result.returncodes, [0, 0])
 
     def test_pipeline_result_repr(self):
         """Test PipelineResult string representation"""
