@@ -308,7 +308,7 @@ class TestChainMap(unittest.TestCase):
         tmp = ChainMap() | SubclassRor()
         self.assertIs(type(tmp), SubclassRor)
         self.assertIs(type(tmp.maps[0]), dict)
-        
+
     def test_ior_fallback(self):
         # Verify that __ior__ returns NotImplemented for unrecognized types,
         # allowing the other operand to handle the operation via __ror__.
