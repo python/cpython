@@ -2893,7 +2893,12 @@ order of two equal elements is maintained).
 If a key function is given, apply it once to each list item and sort them,
 ascending or descending, according to their function values.
 
+Alternative to key function is supplying list to keylist argument,
+which will determine sort order and will be modified in place.
+
 The reverse flag can be set to sort in descending order.
+
+Both key and keylist can not be used at the same time.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2911,6 +2916,11 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
     PyObject *result = NULL;            /* guilty until proved innocent */
     Py_ssize_t i;
     PyObject **keys;
+    // keylist vars
+    PyListObject *self_kl;
+    Py_ssize_t keylist_ob_size, keylist_allocated;
+    PyObject **keylist_ob_item;
+    int keylist_frozen = 0;
 
     assert(self != NULL);
     assert(PyList_Check(self));
@@ -2926,12 +2936,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
                 "Only one of key and keylist can be provided.");
             return result;
         }
-        if (!PyList_Check(keylist)) {
-            PyErr_Format(PyExc_TypeError,
-                "'%.200s' object is not list",
-                Py_TYPE(keylist)->tp_name);
-            return result;
-        }
     }
 
     /* The list is temporarily made empty, so that mutations performed
@@ -2945,36 +2949,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
     Py_SET_SIZE(self, 0);
     FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
-    PyObject **keylist_ob_item;
+
     if (keyfunc == NULL && keylist == NULL) {
         keys = NULL;
         lo.keys = saved_ob_item;
         lo.values = NULL;
     }
     else {
-        if (saved_ob_size < MERGESTATE_TEMP_SIZE/2)
-            /* Leverage stack space we allocated but won't otherwise use */
-            keys = &ms.temparray[saved_ob_size+1];
-        else {
-            keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
-            if (keys == NULL) {
-                PyErr_NoMemory();
-                goto keyfunc_fail;
+        if (keyfunc != NULL) {
+            if (saved_ob_size < MERGESTATE_TEMP_SIZE/2)
+                /* Leverage stack space we allocated but won't otherwise use */
+                keys = &ms.temparray[saved_ob_size+1];
+            else {
+                keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
+                if (keys == NULL) {
+                    PyErr_NoMemory();
+                    goto keyfunc_fail;
+                }
             }
-        }
-
-        if (keylist != NULL) {
-            if (saved_ob_size != Py_SIZE(keylist)) {
-                PyErr_SetString(PyExc_ValueError,
-                    "Lengths of input list and keylist differ.");
-                goto keyfunc_fail;
-            }
-            keylist_ob_item = ((PyListObject *) keylist)->ob_item;
-            for (i = 0; i < saved_ob_size; i++) {
-                keys[i] = keylist_ob_item[i];
-            }
-        }
-        else {
             for (i = 0; i < saved_ob_size ; i++) {
                 keys[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
                 if (keys[i] == NULL) {
@@ -2986,11 +2978,34 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
                 }
             }
         }
+        else {
+            assert(keylist != NULL);
+            if (!PyList_Check(keylist)) {
+                PyErr_Format(PyExc_TypeError,
+                    "'%.200s' object is not a list",
+                    Py_TYPE(keylist)->tp_name);
+                goto keyfunc_fail;
+            }
+            self_kl = ((PyListObject *) keylist);
+            // Disable keylist modifications via same methodology as for main list
+            keylist_ob_size = Py_SIZE(self_kl);
+            keylist_ob_item = self_kl->ob_item;
+            keylist_allocated = self_kl->allocated;
+            Py_SET_SIZE(self_kl, 0);
+            FT_ATOMIC_STORE_PTR_RELEASE(self_kl->ob_item, NULL);
+            self_kl->allocated = -1; /* any operation will reset it to >= 0 */
+
+            keylist_frozen = 1;
+            if (saved_ob_size != keylist_ob_size) {
+                PyErr_SetString(PyExc_ValueError,
+                    "Lengths of input list and keylist differ.");
+                goto keylist_fail;
+            }
+            keys = keylist_ob_item;
+        }
         lo.keys = keys;
         lo.values = saved_ob_item;
     }
-
-
     /* The pre-sort check: here's where we decide which compare function to use.
      * How much optimization is safe? We test for homogeneity with respect to
      * several properties that are expensive to check at compare-time, and
@@ -3148,16 +3163,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
 succeed:
     result = Py_None;
 fail:
-    if (keys != NULL) {
-        if (keylist != NULL) {
-            for (i = 0; i < saved_ob_size ; i++) {
-                keylist_ob_item[i] = keys[i];
-            }
-        }
-        else {
-            for (i = 0; i < saved_ob_size; i++)
-                Py_DECREF(keys[i]);
-        }
+    if (keyfunc != NULL) {
+        for (i = 0; i < saved_ob_size; i++)
+            Py_DECREF(keys[i]);
         if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
             PyMem_Free(keys);
     }
@@ -3174,6 +3182,40 @@ fail:
         reverse_slice(saved_ob_item, saved_ob_item + saved_ob_size);
 
     merge_freemem(&ms);
+
+keylist_fail:
+    if (keylist_frozen) {
+        if (self_kl->allocated != -1 && result != NULL) {
+            /* The user mucked with the keylist during the sort,
+             * and we don't already have another error to report.
+             */
+            PyErr_SetString(PyExc_ValueError, "keylist modified during sort");
+            result = NULL;
+        }
+
+        if (reverse && saved_ob_size > 1)
+            reverse_slice(keylist_ob_item, keylist_ob_item + keylist_ob_size);
+
+        final_ob_item = self_kl->ob_item;
+        i = Py_SIZE(self_kl);
+        Py_SET_SIZE(self_kl, keylist_ob_size);
+        FT_ATOMIC_STORE_PTR_RELEASE(self_kl->ob_item, keylist_ob_item);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self_kl->allocated, keylist_allocated);
+        if (final_ob_item != NULL) {
+            /* we cannot use list_clear() for this because it does not
+               guarantee that the list is really empty when it returns */
+            while (--i >= 0) {
+                Py_XDECREF(final_ob_item[i]);
+            }
+#ifdef Py_GIL_DISABLED
+            ensure_shared_on_resize(self_kl);
+            bool use_qsbr = _PyObject_GC_IS_SHARED(self_kl);
+#else
+            bool use_qsbr = false;
+#endif
+            free_list_items(final_ob_item, use_qsbr);
+        }
+    }
 
 keyfunc_fail:
     final_ob_item = self->ob_item;
