@@ -2298,6 +2298,39 @@ print(len(data.strip()))
         self.assertGreater(len(result.stderr), stderr_size)
         self.assertEqual(result.returncodes, [0, 0])
 
+    def test_pipeline_timeout_large_input(self):
+        """Test that timeout is enforced with large input to a slow pipeline.
+
+        This verifies that run_pipeline() doesn't block indefinitely when
+        writing large input to a pipeline where the first process is slow
+        to consume stdin. The timeout should be enforced promptly.
+
+        This is particularly important on Windows where stdin writing could
+        block without proper threading.
+        """
+        # Input larger than typical pipe buffer (64KB)
+        input_data = 'x' * (128 * 1024)
+
+        start = time.monotonic()
+        with self.assertRaises(subprocess.TimeoutExpired):
+            subprocess.run_pipeline(
+                # First process sleeps before reading - simulates slow consumer
+                [sys.executable, '-c',
+                 'import sys, time; time.sleep(30); print(sys.stdin.read())'],
+                [sys.executable, '-c',
+                 'import sys; print(len(sys.stdin.read()))'],
+                input=input_data, capture_output=True, text=True, timeout=0.5
+            )
+        elapsed = time.monotonic() - start
+
+        # Timeout should occur close to the specified timeout value,
+        # not after waiting for the subprocess to finish sleeping.
+        # Allow generous margin for slow CI, but must be well under
+        # the subprocess sleep time.
+        self.assertLess(elapsed, 5.0,
+            f"TimeoutExpired raised after {elapsed:.2f}s; expected ~0.5s. "
+            "Input writing may have blocked without checking timeout.")
+
 
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):

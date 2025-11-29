@@ -443,11 +443,48 @@ if _mswindows:
         except OSError:
             buffer.append(b'')
 
+    def _writer_thread_func(fh, data, result):
+        """Thread function to write data to a file handle and close it."""
+        try:
+            if data:
+                fh.write(data)
+        except BrokenPipeError:
+            pass
+        except OSError as exc:
+            if exc.errno != errno.EINVAL:
+                result.append(exc)
+        try:
+            fh.close()
+        except BrokenPipeError:
+            pass
+        except OSError as exc:
+            if exc.errno != errno.EINVAL and not result:
+                result.append(exc)
+
     def _communicate_streams_windows(stdin, input_data, read_streams,
                                      endtime, orig_timeout, cmd_for_timeout):
         """Windows implementation using threads."""
         threads = []
         buffers = {}
+        writer_thread = None
+        writer_result = []
+
+        # Start writer thread to send input to stdin
+        if stdin and input_data:
+            writer_thread = threading.Thread(
+                target=_writer_thread_func,
+                args=(stdin, input_data, writer_result))
+            writer_thread.daemon = True
+            writer_thread.start()
+        elif stdin:
+            # No input data, just close stdin
+            try:
+                stdin.close()
+            except BrokenPipeError:
+                pass
+            except OSError as exc:
+                if exc.errno != errno.EINVAL:
+                    raise
 
         # Start reader threads for each stream
         for stream in read_streams:
@@ -458,25 +495,23 @@ if _mswindows:
             t.start()
             threads.append((stream, t))
 
-        # Write stdin
-        if stdin and input_data:
-            try:
-                stdin.write(input_data)
-            except BrokenPipeError:
-                pass
-            except OSError as exc:
-                if exc.errno != errno.EINVAL:
-                    raise
-        if stdin:
-            try:
-                stdin.close()
-            except BrokenPipeError:
-                pass
-            except OSError as exc:
-                if exc.errno != errno.EINVAL:
-                    raise
+        # Join writer thread with timeout first
+        if writer_thread is not None:
+            remaining = _remaining_time_helper(endtime)
+            if remaining is not None and remaining < 0:
+                remaining = 0
+            writer_thread.join(remaining)
+            if writer_thread.is_alive():
+                # Timed out during write - collect partial results
+                results = {s: (b[0] if b else b'') for s, b in buffers.items()}
+                raise TimeoutExpired(
+                    cmd_for_timeout, orig_timeout,
+                    output=results.get(read_streams[0]) if read_streams else None)
+            # Check for write errors
+            if writer_result:
+                raise writer_result[0]
 
-        # Join threads with timeout
+        # Join reader threads with timeout
         for stream, t in threads:
             remaining = _remaining_time_helper(endtime)
             if remaining is not None and remaining < 0:
