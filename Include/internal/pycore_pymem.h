@@ -11,7 +11,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME)
+#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
+#include <linux/prctl.h>
 #include <sys/prctl.h>
 #endif
 
@@ -96,9 +97,9 @@ static inline int _PyMem_IsULongFreed(unsigned long value)
 }
 
 static inline int
-_PyMem_Annotate_Mmap(void *addr, size_t size, const char *name)
+_PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
 {
-#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME)
+#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
    // Ignore errno from prctl
    // See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
