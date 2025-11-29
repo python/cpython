@@ -2106,7 +2106,7 @@ class Popen:
                 input_view = memoryview(self._input)
 
             with _PopenSelector() as selector:
-                if self.stdin and input:
+                if self.stdin and not self.stdin.closed and self._input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
                 if self.stdout and not self.stdout.closed:
                     selector.register(self.stdout, selectors.EVENT_READ)
