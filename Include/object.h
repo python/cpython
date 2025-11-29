@@ -140,12 +140,12 @@ struct _object {
 #  endif
         };
 #else
-        Py_ssize_t ob_refcnt;
+        Py_ssize_t ob_refcnt;  // part of stable ABI; do not change
 #endif
         _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
 
-    PyTypeObject *ob_type;
+    PyTypeObject *ob_type;  // part of stable ABI; do not change
 };
 #else
 // Objects that are not owned by any thread use a thread id (tid) of zero.
@@ -173,7 +173,7 @@ struct _object {
 #ifndef _Py_OPAQUE_PYOBJECT
 struct PyVarObject {
     PyObject ob_base;
-    Py_ssize_t ob_size; /* Number of items in variable part */
+    Py_ssize_t ob_size; // Number of items in variable part. Part of stable ABI
 };
 #endif
 typedef struct PyVarObject PyVarObject;
@@ -265,56 +265,72 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
-// Py_TYPE() implementation for the stable ABI
-PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
-
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
-    // Stable ABI implements Py_TYPE() as a function call
-    // on limited C API version 3.14 and newer.
-#else
-    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
-    {
-        return ob->ob_type;
-    }
-    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
-    #else
-    #   define Py_TYPE(ob) _Py_TYPE(ob)
-    #endif
-#endif
-
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
+/* Definitions for the stable ABI */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(Py_ssize_t) Py_SIZE(PyObject *ob);
+PyAPI_FUNC(int) Py_IS_TYPE(PyObject *ob, PyTypeObject *type);
+PyAPI_FUNC(void) Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size);
+#endif
+
 #ifndef _Py_OPAQUE_PYOBJECT
+
+static inline void
+Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{
+    ob->ob_type = type;
+}
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
+// Non-limited API & limited API 3.11 & below: use static inline functions and
+// use _PyObject_CAST so that users don't need their own casts
+#  define Py_TYPE(ob) _Py_TYPE_impl(_PyObject_CAST(ob))
+#  define Py_SIZE(ob) _Py_SIZE_impl(_PyObject_CAST(ob))
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl(_PyObject_CAST(ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl(_PyVarObject_CAST(ob), (size))
+#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
+#elif Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 15)
+// Limited API 3.11-3.14: use static inline functions, without casts
+#  define Py_SIZE(ob) _Py_SIZE_impl(ob)
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl((ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl((ob), (size))
+#  if Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 14)
+//   Py_TYPE() is static inline only on Limited API 3.13 and below
+#    define Py_TYPE(ob) _Py_TYPE_impl(ob)
+#  endif
+#else
+// Limited API 3.15+: use function calls
+#endif
+
+static inline
+PyTypeObject* _Py_TYPE_impl(PyObject *ob)
+{
+    return ob->ob_type;
+}
+
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t Py_SIZE(PyObject *ob) {
+static inline Py_ssize_t
+_Py_SIZE_impl(PyObject *ob)
+{
     assert(Py_TYPE(ob) != &PyLong_Type);
     assert(Py_TYPE(ob) != &PyBool_Type);
     return  _PyVarObject_CAST(ob)->ob_size;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
-#endif
-#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
-static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+static inline int
+_Py_IS_TYPE_impl(PyObject *ob, PyTypeObject *type)
+{
     return Py_TYPE(ob) == type;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST(ob), (type))
-#endif
 
-
-#ifndef _Py_OPAQUE_PYOBJECT
-static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-    ob->ob_type = type;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
-#endif
-
-static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+static inline void
+_Py_SET_SIZE_impl(PyVarObject *ob, Py_ssize_t size)
+{
     assert(Py_TYPE(_PyObject_CAST(ob)) != &PyLong_Type);
     assert(Py_TYPE(_PyObject_CAST(ob)) != &PyBool_Type);
 #ifdef Py_GIL_DISABLED
@@ -323,9 +339,7 @@ static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
 #endif
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
-#endif
+
 #endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 
@@ -529,7 +543,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_weaklistoffset.
+ * The VM will automatically set tp_weaklistoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
@@ -837,6 +851,11 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
+                                               const void *token);
 #endif
 
 #ifdef __cplusplus

@@ -2283,6 +2283,15 @@ class UnionTests(BaseTestCase):
         self.assertEqual(Union[Literal[1], Literal[Ints.B], Literal[True]].__args__,
                          (Literal[1], Literal[Ints.B], Literal[True]))
 
+    def test_allow_non_types_in_or(self):
+        # gh-140348: Test that using | with a Union object allows things that are
+        # not allowed by is_unionable().
+        U1 = Union[int, str]
+        self.assertEqual(U1 | float, Union[int, str, float])
+        self.assertEqual(U1 | "float", Union[int, str, "float"])
+        self.assertEqual(float | U1, Union[float, int, str])
+        self.assertEqual("float" | U1, Union["float", int, str])
+
 
 class TupleTests(BaseTestCase):
 

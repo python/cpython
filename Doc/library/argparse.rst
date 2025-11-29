@@ -638,6 +638,11 @@ by setting ``color`` to ``False``::
    ...                     help='an integer for the accumulator')
    >>> parser.parse_args(['--help'])
 
+Note that when ``color=True``, colored output depends on both environment
+variables and terminal capabilities.  However, if ``color=False``, colored
+output is always disabled, even if environment variables like ``FORCE_COLOR``
+are set.
+
 .. versionadded:: 3.14
 
 
@@ -1317,8 +1322,12 @@ attribute is determined by the ``dest`` keyword argument of
 
 For optional argument actions, the value of ``dest`` is normally inferred from
 the option strings.  :class:`ArgumentParser` generates the value of ``dest`` by
-taking the first long option string and stripping away the initial ``--``
-string.  If no long option strings were supplied, ``dest`` will be derived from
+taking the first double-dash long option string and stripping away the initial
+``-`` characters.
+If no double-dash long option strings were supplied, ``dest`` will be derived
+from the first single-dash long option string by stripping the initial ``-``
+character.
+If no long option strings were supplied, ``dest`` will be derived from
 the first short option string by stripping the initial ``-`` character.  Any
 internal ``-`` characters will be converted to ``_`` characters to make sure
 the string is a valid attribute name.  The examples below illustrate this
@@ -1326,11 +1335,12 @@ behavior::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('-f', '--foo-bar', '--foo')
+   >>> parser.add_argument('-q', '-quz')
    >>> parser.add_argument('-x', '-y')
-   >>> parser.parse_args('-f 1 -x 2'.split())
-   Namespace(foo_bar='1', x='2')
-   >>> parser.parse_args('--foo 1 -y 2'.split())
-   Namespace(foo_bar='1', x='2')
+   >>> parser.parse_args('-f 1 -q 2 -x 3'.split())
+   Namespace(foo_bar='1', quz='2', x='3')
+   >>> parser.parse_args('--foo 1 -quz 2 -y 3'.split())
+   Namespace(foo_bar='1', quz='2', x='2')
 
 ``dest`` allows a custom attribute name to be provided::
 
@@ -1338,6 +1348,9 @@ behavior::
    >>> parser.add_argument('--foo', dest='bar')
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
+
+.. versionchanged:: next
+   Single-dash long option now takes precedence over short options.
 
 
 .. _deprecated:
@@ -1432,7 +1445,17 @@ this API may be passed as the ``action`` parameter to
        >>> parser.parse_args(['--no-foo'])
        Namespace(foo=False)
 
+   Single-dash long options are also supported.
+   For example, negative option ``-nofoo`` is automatically added for
+   positive option ``-foo``.
+   But no additional options are added for short options such as ``-f``.
+
    .. versionadded:: 3.9
+
+   .. versionchanged:: next
+      Added support for single-dash options.
+
+      Added support for alternate prefix_chars_.
 
 
 The parse_args() method
@@ -2065,7 +2088,9 @@ Parser defaults
      >>> parser.parse_args(['736'])
      Namespace(bar=42, baz='badger', foo=736)
 
-   Note that parser-level defaults always override argument-level defaults::
+   Note that defaults can be set at both the parser level using :meth:`set_defaults`
+   and at the argument level using :meth:`add_argument`. If both are called for the
+   same argument, the last default set for an argument is used::
 
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', default='bar')
