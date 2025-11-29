@@ -406,14 +406,15 @@ else:
     def _copyxattr(*args, **kwargs):
         pass
 
-def copystat(src, dst, *, follow_symlinks=True):
+def copystat(src, dst, *, follow_symlinks=True, preserve_timestamps=True):
     """Copy file metadata
 
-    Copy the permission bits, last access time, last modification time, and
-    flags from `src` to `dst`. On Linux, copystat() also copies the "extended
-    attributes" where possible. The file contents, owner, and group are
-    unaffected. `src` and `dst` are path-like objects or path names given as
-    strings.
+    Copy the permission bits and flags from `src` to `dst`; the last access
+    time and last modification time are also copied if `preserve_timestamps`
+    is true. On Linux, copystat() also copies the "extended attributes" where
+    possible. The file contents, owner, and group are unaffected.
+
+    `src` and `dst` are path-like objects or path names given as strings.
 
     If the optional flag `follow_symlinks` is not set, symlinks aren't
     followed if and only if both `src` and `dst` are symlinks.
@@ -443,8 +444,9 @@ def copystat(src, dst, *, follow_symlinks=True):
     else:
         st = lookup("stat")(src, follow_symlinks=follow)
     mode = stat.S_IMODE(st.st_mode)
-    lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
-        follow_symlinks=follow)
+    if preserve_timestamps:
+        lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
+            follow_symlinks=follow)
     # We must copy extended attributes before the file is (potentially)
     # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
     _copyxattr(src, dst, follow_symlinks=follow)
@@ -490,7 +492,7 @@ def copy(src, dst, *, follow_symlinks=True):
     copymode(src, dst, follow_symlinks=follow_symlinks)
     return dst
 
-def copy2(src, dst, *, follow_symlinks=True):
+def copy2(src, dst, *, follow_symlinks=True, preserve_timestamps=True):
     """Copy data and metadata. Return the file's destination.
 
     Metadata is copied with copystat(). Please see the copystat function
@@ -527,7 +529,8 @@ def copy2(src, dst, *, follow_symlinks=True):
                 raise
 
     copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copystat(src, dst, follow_symlinks=follow_symlinks)
+    copystat(src, dst, follow_symlinks=follow_symlinks,
+             preserve_timestamps=preserve_timestamps)
     return dst
 
 def ignore_patterns(*patterns):
