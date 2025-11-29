@@ -16,6 +16,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "_iomodule.h"
 
@@ -52,6 +53,7 @@ _unsupported(_PyIO_State *state, const char *message)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io._TextIOBase.detach
     cls: defining_class
     /
@@ -63,7 +65,7 @@ After the underlying buffer has been detached, the TextIO is in an unusable stat
 
 static PyObject *
 _io__TextIOBase_detach_impl(PyObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=50915f40c609eaa4 input=987ca3640d0a3776]*/
+/*[clinic end generated code: output=50915f40c609eaa4 input=8cd0652c17d7f015]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return _unsupported(state, "detach");
@@ -206,7 +208,7 @@ static PyType_Slot textiobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec textiobase_spec = {
+PyType_Spec _Py_textiobase_spec = {
     .name = "_io._TextIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -1469,8 +1471,7 @@ textiowrapper_dealloc(PyObject *op)
         return;
     self->ok = 0;
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)textiowrapper_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
@@ -2844,7 +2845,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
        current pos */
     skip_bytes = (Py_ssize_t) (self->b2cratio * chars_to_skip);
     skip_back = 1;
-    assert(skip_back <= PyBytes_GET_SIZE(next_input));
+    assert(skip_bytes <= PyBytes_GET_SIZE(next_input));
     input = PyBytes_AS_STRING(next_input);
     while (skip_bytes > 0) {
         /* Decode up to temptative start point */
@@ -3351,7 +3352,7 @@ static PyType_Slot nldecoder_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec nldecoder_spec = {
+PyType_Spec _Py_nldecoder_spec = {
     .name = "_io.IncrementalNewlineDecoder",
     .basicsize = sizeof(nldecoder_object),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -3403,7 +3404,7 @@ static PyGetSetDef textiowrapper_getset[] = {
     {NULL}
 };
 
-PyType_Slot textiowrapper_slots[] = {
+static PyType_Slot textiowrapper_slots[] = {
     {Py_tp_dealloc, textiowrapper_dealloc},
     {Py_tp_repr, textiowrapper_repr},
     {Py_tp_doc, (void *)_io_TextIOWrapper___init____doc__},
@@ -3417,7 +3418,7 @@ PyType_Slot textiowrapper_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec textiowrapper_spec = {
+PyType_Spec _Py_textiowrapper_spec = {
     .name = "_io.TextIOWrapper",
     .basicsize = sizeof(textio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

@@ -26,6 +26,16 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 digest_size = None
 
 
+def _is_shake_constructor(digest_like):
+    if isinstance(digest_like, str):
+        name = digest_like
+    else:
+        h = digest_like() if callable(digest_like) else digest_like.new()
+        if not isinstance(name := getattr(h, "name", None), str):
+            return False
+    return name.startswith(("shake", "SHAKE"))
+
+
 def _get_digest_constructor(digest_like):
     if callable(digest_like):
         return digest_like
@@ -109,6 +119,8 @@ class HMAC:
         import warnings
 
         digest_cons = _get_digest_constructor(digestmod)
+        if _is_shake_constructor(digest_cons):
+            raise ValueError(f"unsupported hash algorithm {digestmod}")
 
         self._hmac = None
         self._outer = digest_cons()
@@ -229,6 +241,14 @@ def digest(key, msg, digest):
     if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
+        except OverflowError:
+            # OpenSSL's HMAC limits the size of the key to INT_MAX.
+            # Instead of falling back to HACL* implementation which
+            # may still not be supported due to a too large key, we
+            # directly switch to the pure Python fallback instead
+            # even if we could have used streaming HMAC for small keys
+            # but large messages.
+            return _compute_digest_fallback(key, msg, digest)
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
@@ -236,6 +256,10 @@ def digest(key, msg, digest):
         try:
             return _hmac.compute_digest(key, msg, digest)
         except (OverflowError, _hmac.UnknownHashError):
+            # HACL* HMAC limits the size of the key to UINT32_MAX
+            # so we fallback to the pure Python implementation even
+            # if streaming HMAC may have been used for small keys
+            # and large messages.
             pass
 
     return _compute_digest_fallback(key, msg, digest)
@@ -243,6 +267,8 @@ def digest(key, msg, digest):
 
 def _compute_digest_fallback(key, msg, digest):
     digest_cons = _get_digest_constructor(digest)
+    if _is_shake_constructor(digest_cons):
+        raise ValueError(f"unsupported hash algorithm {digest}")
     inner = digest_cons()
     outer = digest_cons()
     blocksize = getattr(inner, 'block_size', 64)

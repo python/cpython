@@ -172,7 +172,7 @@ def download_with_retries(download_location: str,
     for attempt in range(max_retries + 1):
         try:
             resp = urllib.request.urlopen(download_location)
-        except urllib.error.URLError as ex:
+        except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
                 msg = f"Download from {download_location} failed."
                 raise OSError(msg) from ex
@@ -242,14 +242,14 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
             )
 
         # libexpat specifies its expected rev in a refresh script.
-        if package["name"] == "libexpat":
+        if package["name"] == "expat":
             libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
             libexpat_expected_version_match = re.search(
                 r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
                 libexpat_refresh_sh
             )
             libexpat_expected_sha256_match = re.search(
-                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                r"expected_libexpat_sha256=\"([a-f0-9]{64})\"",
                 libexpat_refresh_sh
             )
             libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)
