@@ -104,7 +104,7 @@ Type aliases are useful for simplifying complex type signatures. For example::
        ...
 
 The :keyword:`type` statement is new in Python 3.12. For backwards
-compatibility, type aliases can also be created through `assignment statements <https://docs.python.org/3/reference/simple_stmts.html#assignment-statements>`_:
+compatibility, type aliases can also be created through simple assignment::
 
    Vector = list[float]
 
