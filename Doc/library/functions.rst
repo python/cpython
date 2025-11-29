@@ -1611,8 +1611,8 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Output buffering is usually determined by *file*.
-   However, if *flush* is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.  However, if *flush* is
+   true, the stream is forcibly flushed.
 
    .. note::
 
@@ -1634,6 +1634,8 @@ are always available.  They are listed here in alphabetical order.
 
       .. code-block:: python
          from time import sleep
+         # This call performs one write operation, so the newline inside the string
+         # does not trigger an immediate flush by itself.
          print("Hello\nWorld")
          sleep(3)
          print("Hi there!")
