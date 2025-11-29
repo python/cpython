@@ -1618,33 +1618,34 @@ are always available.  They are listed here in alphabetical order.
 
 .. note::
 
-   In Python, printing a string containing newline characters does not automatically flush stdout. 
-   Python performs buffering at the write/operation level, so newlines inside a single write 
-   do not necessarily trigger an immediate flush. The exact timing of output may vary depending 
+   In Python, printing a string containing newline characters does not automatically flush stdout.
+   Python performs buffering at the write/operation level, so newlines inside a single write
+   do not necessarily trigger an immediate flush. The exact timing of output may vary depending
    on the environment:
 
-   - When stdout is connected to a terminal (TTY), output is line-buffered and typically flushes 
+   - When stdout is connected to a terminal (TTY), output is line-buffered and typically flushes
      after the write completes.
-   - When stdout is redirected to a file or pipe, output may be fully buffered and not flush 
+   - When stdout is redirected to a file or pipe, output may be fully buffered and not flush
      until the buffer fills or flush is requested.
 
-   For guaranteed immediate output, use ``flush=True`` or call ``sys.stdout.flush()`` explicitly. 
-   Running Python with the ``-u`` flag also forces unbuffered output, which may be useful in 
+   For guaranteed immediate output, use ``flush=True`` or call ``sys.stdout.flush()`` explicitly.
+   Running Python with the ``-u`` flag also forces unbuffered output, which may be useful in
    scripts requiring immediate writes.
 
    Example:
 
    .. code-block:: python
-
       from time import sleep
 
-      print("Hello\nWorld", end='')  # Both lines appear together on TTY
+      # Whether the default end is a newline ('\\n') or any other character,
+      # Python performs a single write operation for the entire string.
+      # Therefore, newlines inside the string do not cause mid-string flushing.
+      print("Hello\nWorld")
       sleep(3)
       print("Hi there!")
 
-   .. versionchanged:: 3.3
-      Added the *flush* keyword argument.
-
+.. versionchanged:: 3.3
+   Added the *flush* keyword argument.
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
