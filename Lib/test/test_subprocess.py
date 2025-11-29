@@ -1642,6 +1642,40 @@ class ProcessTestCase(BaseTestCase):
 
             self.assertEqual(proc.wait(), 0)
 
+    def test_post_timeout_communicate_sends_input(self):
+        """GH-141473 regression test; the stdin pipe must close"""
+        with subprocess.Popen(
+                [sys.executable, "-uc", """\
+import sys
+while c := sys.stdin.read(512):
+    sys.stdout.write(c)
+print()
+"""],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+        ) as proc:
+            try:
+                data = f"spam{'#'*4096}beans"
+                proc.communicate(
+                    input=data,
+                    timeout=0,
+                )
+            except subprocess.TimeoutExpired as exc:
+                pass
+            # Prior to the bugfix, this would hang as the stdin
+            # pipe to the child had not been closed.
+            try:
+                stdout, stderr = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired as exc:
+                self.fail("communicate() hung waiting on child process that should have seen its stdin pipe close and exit")
+            self.assertEqual(
+                    proc.returncode, 0,
+                    msg=f"STDERR:\n{stderr}\nSTDOUT:\n{stdout}")
+            self.assertStartsWith(stdout, "spam")
+            self.assertIn("beans", stdout)
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
