@@ -969,7 +969,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         (stdout, stderr) = p.communicate(mv)
         self.assertEqual(stdout, test_data)
-        self.assertEqual(stderr, None)
+        self.assertIsNone(stderr)
 
     def test_communicate_memoryview_input_nonbyte(self):
         # Test memoryview input with non-byte elements (e.g., int32)
@@ -996,7 +996,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         (stdout, stderr) = p.communicate(mv)
         self.assertEqual(stdout, expected_bytes)
-        self.assertEqual(stderr, None)
+        self.assertIsNone(stderr)
 
     def test_communicate_timeout(self):
         p = subprocess.Popen([sys.executable, "-c",
