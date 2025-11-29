@@ -1,1 +1,1 @@
-Fix :meth:`~collections.ChainMap.__ior__` to return :const:`NotImplemented` instead of raising :exc:`TypeError` for unsupported types.
+Fix ``ChainMap.__ior__`` to return ``NotImplemented`` instead of raising ``TypeError`` for unsupported types.
