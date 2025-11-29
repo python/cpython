@@ -3313,6 +3313,11 @@ check-c-globals:
 		--format summary \
 		--traceback
 
+# Check for undocumented C APIs.
+.PHONY: check-c-globals
+check-c-api-docs:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/check-c-api-docs/main.py
+
 # Find files with funny names
 .PHONY: funny
 funny:
