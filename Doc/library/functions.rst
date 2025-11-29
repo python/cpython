@@ -1616,9 +1616,6 @@ are always available.  They are listed here in alphabetical order.
    Output buffering is usually determined by *file*.
    However, if *flush* is true, the stream is forcibly flushed.
 
-Output buffering is usually determined by *file*. However, if *flush* is true,
-the stream is forcibly flushed.
-
 .. note::
 
    In Python, printing a string containing newline characters does not automatically
