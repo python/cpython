@@ -1061,6 +1061,19 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(stdout, b"bananasplit")
         self.assertEqual(stderr, b"")
 
+    def test_communicate_stdin_closed_before_call(self):
+        # gh-70560, gh-74389: stdin.close() before communicate()
+        # should not raise ValueError from stdin.flush()
+        with subprocess.Popen([sys.executable, "-c",
+                               'import sys; sys.exit(0)'],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as p:
+            p.stdin.close()  # Close stdin before communicate
+            # This should not raise ValueError
+            (stdout, stderr) = p.communicate()
+            self.assertEqual(p.returncode, 0)
+
     def test_universal_newlines_and_text(self):
         args = [
             sys.executable, "-c",
