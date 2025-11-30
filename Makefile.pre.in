@@ -3314,7 +3314,7 @@ check-c-globals:
 		--traceback
 
 # Check for undocumented C APIs.
-.PHONY: check-c-globals
+.PHONY: check-c-api-docs
 check-c-api-docs:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/check-c-api-docs/main.py
 

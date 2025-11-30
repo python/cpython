@@ -9,7 +9,7 @@ SIMPLE_INLINE_REGEX = re.compile(r"static inline .+( |\n)(\w+)")
 SIMPLE_DATA_REGEX = re.compile(r"PyAPI_DATA\(.+\) (\w+)")
 
 MISTAKE = """\
-If this is a mistake and this script should not be failing, please create an
+If this is a mistake and this script should not be failing, create an
 issue and tag Peter (@ZeroIntensity) on it.\
 """
 
@@ -17,7 +17,7 @@ FOUND_UNDOCUMENTED = f"""\
 Found some undocumented C API(s)!
 
 Python requires documentation on all public C API symbols, macros, and types.
-If these API(s) were not meant to be public, please prefix them with a
+If these API(s) were not meant to be public, prefix them with a
 leading underscore (_PySomething_API) or move them to the internal C API
 (pycore_*.h files).
 
@@ -29,8 +29,8 @@ Tools/c-api-docs-check/ignored_c_api.txt
 
 FOUND_IGNORED_DOCUMENTED = f"""\
 Some C API(s) were listed in Tools/c-api-docs-check/ignored_c_api.txt, but
-they were found in the documentation. To fix this, simply update ignored_c_api.txt
-accordingly.
+they were found in the documentation. To fix this, remove them from
+ignored_c_api.txt.
 
 {MISTAKE}\
 """
@@ -112,7 +112,7 @@ def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
 
         check_for_name(name)
 
-    # Remove duplicates and sort alphabetically to keep the output non-deterministic
+    # Remove duplicates and sort alphabetically to keep the output deterministic
     undocumented = list(set(undocumented))
     undocumented.sort()
 
