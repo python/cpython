@@ -31,6 +31,7 @@ class SampleProfiler:
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
+        self.mode = mode  # Store mode for later use
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
@@ -117,7 +118,7 @@ class SampleProfiler:
 
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
-            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate)
+            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate, mode=self.mode)
 
         expected_samples = int(duration_sec / sample_interval_sec)
         if num_samples < expected_samples and not is_live_mode:

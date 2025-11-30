@@ -1,5 +1,3 @@
-"""Stack trace collectors for Python profiling with optimized sampling analysis."""
-
 import base64
 import collections
 import functools
@@ -7,7 +5,6 @@ import importlib.resources
 import json
 import linecache
 import os
-from pathlib import Path
 
 from .collector import Collector
 from .string_table import StringTable
@@ -19,70 +16,25 @@ class StackTraceCollector(Collector):
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):
-        """Collect and process stack frames from profiling data.
-
-        Args:
-            stack_frames: Stack frame data from profiler
-            skip_idle: Override instance setting for skipping idle frames
-        """
-        effective_skip_idle = skip_idle if skip_idle is not None else self.skip_idle
-
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=effective_skip_idle):
+        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
             if not frames:
                 continue
-
-            try:
-                self.process_frames(frames, thread_id)
-            except Exception:
-                # Silently continue processing other frames if one fails
-                pass
+            self.process_frames(frames, thread_id)
 
     def process_frames(self, frames, thread_id):
-        """Process a single set of stack frames.
-
-        This method should be implemented by subclasses to perform
-        the actual analysis of the stack frames.
-
-        Args:
-            frames: List of frame tuples (filename, lineno, funcname)
-            thread_id: ID of the thread these frames came from
-        """
-        raise NotImplementedError("Subclasses must implement process_frames")
+        pass
 
 
 class CollapsedStackCollector(StackTraceCollector):
-    """Collector that generates collapsed stack traces for flame graph generation.
-
-    This collector aggregates stack traces by counting identical call stacks,
-    producing output suitable for tools like FlameGraph.
-    """
-
     def __init__(self, *args, **kwargs):
-        """Initialize with a counter for stack traces."""
         super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
     def process_frames(self, frames, thread_id):
-        """Process frames by building a collapsed stack representation.
-
-        Args:
-            frames: List of frame tuples (filename, lineno, funcname)
-            thread_id: Thread ID for this stack trace
-        """
-        # Reverse frames to get root->leaf order for collapsed stacks
         call_tree = tuple(reversed(frames))
         self.stack_counter[(call_tree, thread_id)] += 1
 
     def export(self, filename):
-        """Export collapsed stacks to a file.
-
-        Args:
-            filename: Path where to write the collapsed stack output
-        """
-        if not self.stack_counter:
-            print("Warning: No stack data to export")
-            return
-
         lines = []
         for (call_tree, thread_id), count in self.stack_counter.items():
             parts = [f"tid:{thread_id}"]
@@ -96,112 +48,105 @@ class CollapsedStackCollector(StackTraceCollector):
             stack_str = ";".join(parts)
             lines.append((stack_str, count))
 
-        # Sort by count (descending) then by stack string for deterministic output
         lines.sort(key=lambda x: (-x[1], x[0]))
 
-        try:
-            with open(filename, "w", encoding='utf-8') as f:
-                for stack, count in lines:
-                    f.write(f"{stack} {count}\n")
-            print(f"Collapsed stack output written to {filename}")
-        except OSError as e:
-            print(f"Error: Failed to write collapsed stack output: {e}")
-            raise
+        with open(filename, "w") as f:
+            for stack, count in lines:
+                f.write(f"{stack} {count}\n")
+        print(f"Collapsed stack output written to {filename}")
 
 
 class FlamegraphCollector(StackTraceCollector):
-    """Collector that generates interactive flame graph visualizations.
-
-    This collector builds a hierarchical representation of stack traces
-    and generates self-contained HTML flame graphs using D3.js.
-    """
-
     def __init__(self, *args, **kwargs):
-        """Initialize the flame graph collector."""
         super().__init__(*args, **kwargs)
         self.stats = {}
         self._root = {"samples": 0, "children": {}, "threads": set()}
         self._total_samples = 0
-        self._func_intern = {}  # Function interning for memory efficiency
+        self._sample_count = 0  # Track actual number of samples (not thread traces)
+        self._func_intern = {}
         self._string_table = StringTable()
         self._all_threads = set()
 
-    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):
-        """Set profiling statistics to include in flame graph data.
+        # Thread status statistics (similar to LiveStatsCollector)
+        self.thread_status_counts = {
+            "has_gil": 0,
+            "on_cpu": 0,
+            "gil_requested": 0,
+            "unknown": 0,
+            "total": 0,
+        }
+        self.samples_with_gc_frames = 0
 
-        Args:
-            sample_interval_usec: Sampling interval in microseconds
-            duration_sec: Total profiling duration in seconds
-            sample_rate: Effective sampling rate
-            error_rate: Optional error rate during profiling
-        """
+        # Per-thread statistics
+        self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, total, gc_samples}}
+
+    def collect(self, stack_frames, skip_idle=False):
+        """Override to track thread status statistics before processing frames."""
+        # Increment sample count once per sample
+        self._sample_count += 1
+
+        # Collect both aggregate and per-thread statistics using base method
+        status_counts, has_gc_frame, per_thread_stats = self._collect_thread_status_stats(stack_frames)
+
+        # Merge aggregate status counts
+        for key in status_counts:
+            self.thread_status_counts[key] += status_counts[key]
+
+        # Update aggregate GC frame count
+        if has_gc_frame:
+            self.samples_with_gc_frames += 1
+
+        # Merge per-thread statistics
+        for thread_id, stats in per_thread_stats.items():
+            if thread_id not in self.per_thread_stats:
+                self.per_thread_stats[thread_id] = {
+                    "has_gil": 0,
+                    "on_cpu": 0,
+                    "gil_requested": 0,
+                    "unknown": 0,
+                    "total": 0,
+                    "gc_samples": 0,
+                }
+            for key, value in stats.items():
+                self.per_thread_stats[thread_id][key] += value
+
+        # Call parent collect to process frames
+        super().collect(stack_frames, skip_idle=skip_idle)
+
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, mode=None):
+        """Set profiling statistics to include in flamegraph data."""
         self.stats = {
             "sample_interval_usec": sample_interval_usec,
             "duration_sec": duration_sec,
             "sample_rate": sample_rate,
-            "error_rate": error_rate
+            "error_rate": error_rate,
+            "mode": mode
         }
 
-    def process_frames(self, frames, thread_id):
-        """Process frames by building a hierarchical call tree.
-
-        Args:
-            frames: List of frame tuples (filename, lineno, funcname)
-            thread_id: Thread ID for this stack trace
-        """
-        # Reverse to root->leaf order for tree building
-        call_tree = reversed(frames)
-        self._root["samples"] += 1
-        self._total_samples += 1
-        self._root["threads"].add(thread_id)
-        self._all_threads.add(thread_id)
-
-        current = self._root
-        for func in call_tree:
-            # Intern function tuples to save memory
-            func = self._func_intern.setdefault(func, func)
-            children = current["children"]
-            node = children.get(func)
-            if node is None:
-                node = {"samples": 0, "children": {}, "threads": set()}
-                children[func] = node
-            node["samples"] += 1
-            node["threads"].add(thread_id)
-            current = node
-
     def export(self, filename):
-        """Export flame graph as a self-contained HTML file.
+        flamegraph_data = self._convert_to_flamegraph_format()
 
-        Args:
-            filename: Path where to write the HTML flame graph
-        """
-        try:
-            flamegraph_data = self._convert_to_flamegraph_format()
-            self._print_export_stats(flamegraph_data)
-
-            if not flamegraph_data.get("children"):
-                print("Warning: No functions found in profiling data. Check if sampling captured any data.")
-                return
-
-            html_content = self._create_flamegraph_html(flamegraph_data)
-
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(html_content)
-
-            print(f"Flamegraph saved to: {filename}")
-
-        except Exception as e:
-            print(f"Error: Failed to export flame graph: {e}")
-            raise
-
-    def _print_export_stats(self, flamegraph_data):
+        # Debug output with string table statistics
         num_functions = len(flamegraph_data.get("children", []))
         total_time = flamegraph_data.get("value", 0)
         string_count = len(self._string_table)
         print(
-            f"Flamegraph data: {num_functions} root functions, "
-            f"total samples: {total_time}, {string_count} unique strings"
+            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}, "
+            f"{string_count} unique strings"
         )
+
+        if num_functions == 0:
+            print(
+                "Warning: No functions found in profiling data. Check if sampling captured any data."
+            )
+            return
+
+        html_content = self._create_flamegraph_html(flamegraph_data)
+
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        print(f"Flamegraph saved to: {filename}")
 
     @staticmethod
     @functools.lru_cache(maxsize=None)
@@ -213,14 +158,13 @@ class FlamegraphCollector(StackTraceCollector):
             return funcname
 
         if len(filename) > 50:
-            path_parts = filename.split("/")
-            if len(path_parts) > 2:
-                filename = f".../{'/'.join(path_parts[-2:])}"
+            parts = filename.split("/")
+            if len(parts) > 2:
+                filename = f".../{'/'.join(parts[-2:])}"
 
         return f"{funcname} ({filename}:{lineno})"
 
     def _convert_to_flamegraph_format(self):
-        """Convert aggregated trie to d3-flamegraph format with string table optimization."""
         if self._total_samples == 0:
             return {
                 "name": self._string_table.intern("No Data"),
@@ -281,6 +225,29 @@ class FlamegraphCollector(StackTraceCollector):
                 "strings": self._string_table.get_strings()
             }
 
+        # Calculate thread status percentages for display
+        total_threads = max(1, self.thread_status_counts["total"])
+        thread_stats = {
+            "has_gil_pct": (self.thread_status_counts["has_gil"] / total_threads) * 100,
+            "on_cpu_pct": (self.thread_status_counts["on_cpu"] / total_threads) * 100,
+            "gil_requested_pct": (self.thread_status_counts["gil_requested"] / total_threads) * 100,
+            "gc_pct": (self.samples_with_gc_frames / max(1, self._sample_count)) * 100,
+            **self.thread_status_counts
+        }
+
+        # Calculate per-thread statistics with percentages
+        per_thread_stats_with_pct = {}
+        total_samples_denominator = max(1, self._sample_count)
+        for thread_id, stats in self.per_thread_stats.items():
+            total = max(1, stats["total"])
+            per_thread_stats_with_pct[thread_id] = {
+                "has_gil_pct": (stats["has_gil"] / total) * 100,
+                "on_cpu_pct": (stats["on_cpu"] / total) * 100,
+                "gil_requested_pct": (stats["gil_requested"] / total) * 100,
+                "gc_pct": (stats["gc_samples"] / total_samples_denominator) * 100,
+                **stats
+            }
+
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
             main_child = root_children[0]
@@ -288,7 +255,11 @@ class FlamegraphCollector(StackTraceCollector):
             old_name = self._string_table.get_string(main_child["name"])
             new_name = f"Program Root: {old_name}"
             main_child["name"] = self._string_table.intern(new_name)
-            main_child["stats"] = self.stats
+            main_child["stats"] = {
+                **self.stats,
+                "thread_stats": thread_stats,
+                "per_thread_stats": per_thread_stats_with_pct
+            }
             main_child["threads"] = sorted(list(self._all_threads))
             main_child["strings"] = self._string_table.get_strings()
             return main_child
@@ -297,10 +268,34 @@ class FlamegraphCollector(StackTraceCollector):
             "name": self._string_table.intern("Program Root"),
             "value": total_samples,
             "children": root_children,
-            "stats": self.stats,
+            "stats": {
+                **self.stats,
+                "thread_stats": thread_stats,
+                "per_thread_stats": per_thread_stats_with_pct
+            },
             "threads": sorted(list(self._all_threads)),
             "strings": self._string_table.get_strings()
         }
+
+    def process_frames(self, frames, thread_id):
+        # Reverse to root->leaf
+        call_tree = reversed(frames)
+        self._root["samples"] += 1
+        self._total_samples += 1
+        self._root["threads"].add(thread_id)
+        self._all_threads.add(thread_id)
+
+        current = self._root
+        for func in call_tree:
+            func = self._func_intern.setdefault(func, func)
+            children = current["children"]
+            node = children.get(func)
+            if node is None:
+                node = {"samples": 0, "children": {}, "threads": set()}
+                children[func] = node
+            node["samples"] += 1
+            node["threads"].add(thread_id)
+            current = node
 
     def _get_source_lines(self, func):
         filename, lineno, _ = func
@@ -322,64 +317,62 @@ class FlamegraphCollector(StackTraceCollector):
             return None
 
     def _create_flamegraph_html(self, data):
-        """Create self-contained HTML for the flame graph visualization.
-
-        Args:
-            data: Flame graph data structure
-
-        Returns:
-            str: Complete HTML content with inlined assets
-        """
         data_json = json.dumps(data)
+
         template_dir = importlib.resources.files(__package__)
-        flamegraph_assets_dir = template_dir / "_flamegraph_assets"
+        vendor_dir = template_dir / "_vendor"
+        assets_dir = template_dir / "_assets"
 
-        # Load base template and assets
-        html_template = (flamegraph_assets_dir / "flamegraph_template.html").read_text(encoding="utf-8")
-        html_template = self._inline_first_party_assets(html_template, flamegraph_assets_dir)
-        html_template = self._inline_vendor_assets(html_template, template_dir)
-        html_template = self._inline_logo(html_template, template_dir)
+        d3_path = vendor_dir / "d3" / "7.8.5" / "d3.min.js"
+        d3_flame_graph_dir = vendor_dir /  "d3-flame-graph" / "4.1.3"
+        fg_css_path = d3_flame_graph_dir / "d3-flamegraph.css"
+        fg_js_path = d3_flame_graph_dir / "d3-flamegraph.min.js"
+        fg_tooltip_js_path = d3_flame_graph_dir / "d3-flamegraph-tooltip.min.js"
 
-        # Replace data placeholder
-        return html_template.replace("{{FLAMEGRAPH_DATA}}", data_json)
+        html_template = (template_dir / "_flamegraph_assets" / "flamegraph_template.html").read_text(encoding="utf-8")
+        css_content = (template_dir / "_flamegraph_assets" / "flamegraph.css").read_text(encoding="utf-8")
+        js_content = (template_dir /  "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
 
-    def _inline_first_party_assets(self, html_template, flamegraph_assets_dir):
-        css_content = (flamegraph_assets_dir / "flamegraph.css").read_text(encoding="utf-8")
-        js_content = (flamegraph_assets_dir / "flamegraph.js").read_text(encoding="utf-8")
-
+        # Inline first-party CSS/JS
         html_template = html_template.replace(
             "<!-- INLINE_CSS -->", f"<style>\n{css_content}\n</style>"
         )
         html_template = html_template.replace(
             "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
         )
-        return html_template
 
-    def _inline_vendor_assets(self, html_template, template_dir):
-        vendor_dir = template_dir / "_vendor"
-        d3_flame_graph_dir = vendor_dir / "d3-flame-graph" / "4.1.3"
-
-        # Load vendor assets
-        d3_js = (vendor_dir / "d3" / "7.8.5" / "d3.min.js").read_text(encoding="utf-8")
-        fg_css = (d3_flame_graph_dir / "d3-flamegraph.css").read_text(encoding="utf-8")
-        fg_js = (d3_flame_graph_dir / "d3-flamegraph.min.js").read_text(encoding="utf-8")
-        fg_tooltip_js = (d3_flame_graph_dir / "d3-flamegraph-tooltip.min.js").read_text(encoding="utf-8")
-
-        # Inline vendor assets
-        replacements = [
-            ("<!-- INLINE_VENDOR_D3_JS -->", f"<script>\n{d3_js}\n</script>"),
-            ("<!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->", f"<style>\n{fg_css}\n</style>"),
-            ("<!-- INLINE_VENDOR_FLAMEGRAPH_JS -->", f"<script>\n{fg_js}\n</script>"),
-            ("<!-- INLINE_VENDOR_FLAMEGRAPH_TOOLTIP_JS -->", f"<script>\n{fg_tooltip_js}\n</script>"),
-        ]
-
-        for placeholder, replacement in replacements:
-            html_template = html_template.replace(placeholder, replacement)
-
-        return html_template
-
-    def _inline_logo(self, html_template, template_dir):
-        png_path = template_dir / "_assets" / "python-logo-only.png"
+        png_path = assets_dir / "python-logo-only.png"
         b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
+
+        # Let CSS control size; keep markup simple
         logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo"/>'
-        return html_template.replace("<!-- INLINE_LOGO -->", logo_html)
+        html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
+
+        d3_js = d3_path.read_text(encoding="utf-8")
+        fg_css = fg_css_path.read_text(encoding="utf-8")
+        fg_js = fg_js_path.read_text(encoding="utf-8")
+        fg_tooltip_js = fg_tooltip_js_path.read_text(encoding="utf-8")
+
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_D3_JS -->",
+            f"<script>\n{d3_js}\n</script>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->",
+            f"<style>\n{fg_css}\n</style>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_JS -->",
+            f"<script>\n{fg_js}\n</script>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_TOOLTIP_JS -->",
+            f"<script>\n{fg_tooltip_js}\n</script>",
+        )
+
+        # Replace the placeholder with actual data
+        html_content = html_template.replace(
+            "{{FLAMEGRAPH_DATA}}", data_json
+        )
+
+        return html_content

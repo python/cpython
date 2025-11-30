@@ -314,6 +314,13 @@ Importing Modules
    initialization.
 
 
+.. c:var:: struct _inittab *PyImport_Inittab
+
+   The table of built-in modules used by Python initialization. Do not use this directly;
+   use :c:func:`PyImport_AppendInittab` and :c:func:`PyImport_ExtendInittab`
+   instead.
+
+
 .. c:function:: PyObject* PyImport_ImportModuleAttr(PyObject *mod_name, PyObject *attr_name)
 
    Import the module *mod_name* and get its attribute *attr_name*.
@@ -346,7 +353,7 @@ Importing Modules
    the same as for :c:func:`PyImport_AppendInittab`.
 
    On success, create and return a module object.
-   This module will not be initialized; call :c:func:`!PyModule_Exec`
+   This module will not be initialized; call :c:func:`PyModule_Exec`
    to initialize it.
    (Custom importers should do this in their
    :py:meth:`~importlib.abc.Loader.exec_module` method.)
