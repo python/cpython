@@ -1419,6 +1419,12 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. note::
       On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
@@ -1578,6 +1584,13 @@ object -- see :ref:`multiprocessing-managers`.
 
       Note that this may raise :exc:`NotImplementedError` on platforms like
       macOS where ``sem_getvalue()`` is not implemented.
+
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
 
 
 .. note::
