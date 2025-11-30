@@ -22,7 +22,7 @@ for index, line in enumerate(IGNORED):
     if line.startswith("#"):
         IGNORED.pop(index)
 
-MISTAKE = """\
+MISTAKE = """
 If this is a mistake and this script should not be failing, create an
 issue and tag Peter (@ZeroIntensity) on it.\
 """
@@ -35,8 +35,9 @@ def found_undocumented(singular: bool):
     them = "it" if singular else "them"
     were = "was" if singular else "were"
 
-    return textwrap.dedent(
-        f"""\
+    return (
+        textwrap.dedent(
+            f"""
     Found {some} undocumented C API{s}!
 
     Python requires documentation on all public C API symbols, macros, and types.
@@ -46,9 +47,9 @@ def found_undocumented(singular: bool):
 
     In exceptional cases, certain APIs can be ignored by adding them to
     Tools/c-api-docs-check/ignored_c_api.txt
-
-    {MISTAKE}\
     """
+        )
+        + MISTAKE
     )
 
 
@@ -59,14 +60,15 @@ def found_ignored_documented(singular: bool) -> str:
     were = "was" if singular else "were"
     they = "it" if singular else "they"
 
-    return textwrap.dedent(
-        f"""\
+    return (
+        textwrap.dedent(
+            f"""
     Found {some} C API{s} listed in Tools/c-api-docs-check/ignored_c_api.txt, but
     {they} {were} found in the documentation. To fix this, remove {them} from
     ignored_c_api.txt.
-
-    {MISTAKE}\
     """
+        )
+        + MISTAKE
     )
 
 
@@ -181,7 +183,6 @@ def main() -> None:
         print(f"-- {len(name_list)} {what} C API{s} --")
         for name in name_list:
             print(f" - {name}")
-        print()
         print(message)
         fail = True
 
