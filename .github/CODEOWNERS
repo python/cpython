@@ -140,6 +140,9 @@ Misc/externals.spdx.json      @sethmlarson
 Misc/sbom.spdx.json           @sethmlarson
 Tools/build/generate_sbom.py  @sethmlarson
 
+# C API Documentation Checks
+Tools/check-c-api-docs/       @ZeroIntensity
+
 
 # ----------------------------------------------------------------------------
 # Platform Support
