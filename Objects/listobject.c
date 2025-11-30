@@ -2959,10 +2959,10 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
     Py_ssize_t i;
     PyObject **keys;
     // keylist vars
-    PyListObject *self_kl;
-    Py_ssize_t keylist_ob_size, keylist_allocated;
-    PyObject **keylist_ob_item;
-    int keylist_frozen = 0;
+    PyListObject *keylist_lob;
+    Py_ssize_t keylist_ob_size = -1;
+    Py_ssize_t keylist_allocated = -1;
+    PyObject **keylist_ob_item = NULL;
 
     assert(self != NULL);
     assert(PyList_Check(self));
@@ -3027,9 +3027,8 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
             goto keyfunc_fail;
         }
 
-        self_kl = ((PyListObject *) keylist);
-        DISABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
-        keylist_frozen = 1;
+        keylist_lob = ((PyListObject *) keylist);
+        DISABLE_LIST(keylist_lob, keylist_ob_size, keylist_ob_item, keylist_allocated);
         if (saved_ob_size != keylist_ob_size) {
             PyErr_SetString(PyExc_ValueError,
                 "Lengths of input list and keylist differ.");
@@ -3219,8 +3218,8 @@ fail:
     merge_freemem(&ms);
 
 keylist_fail:
-    if (keylist_frozen) {
-        if (self_kl->allocated != -1 && result != NULL) {
+    if (keylist_ob_size != -1) {
+        if (keylist_lob->allocated != -1 && result != NULL) {
             /* The user mucked with the keylist during the sort,
              * and we don't already have another error to report.
              */
@@ -3231,7 +3230,7 @@ keylist_fail:
         if (reverse && keylist_ob_size > 1)
             reverse_slice(keylist_ob_item, keylist_ob_item + keylist_ob_size);
 
-        REENABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
+        REENABLE_LIST(keylist_lob, keylist_ob_size, keylist_ob_item, keylist_allocated);
         final_ob_item = NULL;
     }
 
