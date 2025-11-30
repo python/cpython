@@ -832,8 +832,8 @@ raising an exception.
 
 One difference from other Python queue implementations, is that :mod:`multiprocessing`
 queues serializes all objects that are put into them using :mod:`pickle`.
-The object return by the get method is a re-created object that does not share memory
-with the original object.
+The object returned by the get method is a re-created object that does not share
+memory with the original object.
 
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
