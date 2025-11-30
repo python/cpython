@@ -2,44 +2,18 @@ import re
 from pathlib import Path
 import sys
 import _colorize
+import textwrap
 
 SIMPLE_FUNCTION_REGEX = re.compile(r"PyAPI_FUNC(.+) (\w+)\(")
 SIMPLE_MACRO_REGEX = re.compile(r"# *define *(\w+)(\(.+\))? ")
 SIMPLE_INLINE_REGEX = re.compile(r"static inline .+( |\n)(\w+)")
 SIMPLE_DATA_REGEX = re.compile(r"PyAPI_DATA\(.+\) (\w+)")
 
-MISTAKE = """\
-If this is a mistake and this script should not be failing, create an
-issue and tag Peter (@ZeroIntensity) on it.\
-"""
-
-FOUND_UNDOCUMENTED = f"""\
-Found some undocumented C API(s)!
-
-Python requires documentation on all public C API symbols, macros, and types.
-If these API(s) were not meant to be public, prefix them with a
-leading underscore (_PySomething_API) or move them to the internal C API
-(pycore_*.h files).
-
-In exceptional cases, certain functions can be ignored by adding them to
-Tools/c-api-docs-check/ignored_c_api.txt
-
-{MISTAKE}\
-"""
-
-FOUND_IGNORED_DOCUMENTED = f"""\
-Some C API(s) were listed in Tools/c-api-docs-check/ignored_c_api.txt, but
-they were found in the documentation. To fix this, remove them from
-ignored_c_api.txt.
-
-{MISTAKE}\
-"""
-
-_CPYTHON = Path(__file__).parent.parent.parent
-INCLUDE = _CPYTHON / "Include"
-C_API_DOCS = _CPYTHON / "Doc" / "c-api"
+CPYTHON = Path(__file__).parent.parent.parent
+INCLUDE = CPYTHON / "Include"
+C_API_DOCS = CPYTHON / "Doc" / "c-api"
 IGNORED = (
-    (_CPYTHON / "Tools" / "check-c-api-docs" / "ignored_c_api.txt")
+    (CPYTHON / "Tools" / "check-c-api-docs" / "ignored_c_api.txt")
     .read_text()
     .split("\n")
 )
@@ -47,6 +21,53 @@ IGNORED = (
 for index, line in enumerate(IGNORED):
     if line.startswith("#"):
         IGNORED.pop(index)
+
+MISTAKE = """\
+If this is a mistake and this script should not be failing, create an
+issue and tag Peter (@ZeroIntensity) on it.\
+"""
+
+
+def found_undocumented(singular: bool):
+    some = "an" if singular else "some"
+    s = "" if singular else "s"
+    these = "this" if singular else "these"
+    them = "it" if singular else "them"
+    were = "was" if singular else "were"
+
+    return textwrap.dedent(
+        f"""\
+    Found {some} undocumented C API{s}!
+
+    Python requires documentation on all public C API symbols, macros, and types.
+    If {these} API{s} {were} not meant to be public, prefix {them} with a
+    leading underscore (_PySomething_API) or move {them} to the internal C API
+    (pycore_*.h files).
+
+    In exceptional cases, certain APIs can be ignored by adding them to
+    Tools/c-api-docs-check/ignored_c_api.txt
+
+    {MISTAKE}\
+    """
+    )
+
+
+def found_ignored_documented(singular: bool) -> str:
+    some = "a" if singular else "some"
+    s = "" if singular else "s"
+    them = "it" if singular else "them"
+    were = "was" if singular else "were"
+    they = "it" if singular else "they"
+
+    return textwrap.dedent(
+        f"""\
+    Found {some} C API{s} listed in Tools/c-api-docs-check/ignored_c_api.txt, but
+    {they} {were} found in the documentation. To fix this, remove {them} from
+    ignored_c_api.txt.
+
+    {MISTAKE}\
+    """
+    )
 
 
 def is_documented(name: str) -> bool:
@@ -145,8 +166,12 @@ def main() -> None:
 
     fail = False
     to_check = [
-        (all_missing, "missing", FOUND_UNDOCUMENTED),
-        (all_found_ignored, "documented but ignored", FOUND_IGNORED_DOCUMENTED),
+        (all_missing, "missing", found_undocumented(len(all_missing) == 1)),
+        (
+            all_found_ignored,
+            "documented but ignored",
+            found_ignored_documented(len(all_found_ignored) == 1),
+        ),
     ]
     for name_list, what, message in to_check:
         if not name_list:
@@ -154,8 +179,9 @@ def main() -> None:
 
         s = "s" if len(name_list) != 1 else ""
         print(f"-- {len(name_list)} {what} C API{s} --")
-        for name in all_missing:
+        for name in name_list:
             print(f" - {name}")
+        print()
         print(message)
         fail = True
 
