@@ -4608,7 +4608,6 @@ def bœr():
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
-        print(stdout)
         self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:8")
         self.assertRegex(stdout, r"Breakpoint 2 at .*main\.py:5")
         self.assertIn("first break", stdout)
