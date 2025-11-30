@@ -462,23 +462,23 @@ function populateThreadStats(data, selectedThreadId = null) {
       // GIL Held
       const gilHeldPct = threadStats.has_gil_pct || 0;
       const gilHeldPctElem = document.getElementById('gil-held-pct');
-      if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(1)}%`;
+      if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(2)}%`;
 
       // GIL Released (threads running without GIL)
       const gilReleasedPct = threadStats.on_cpu_pct || 0;
       const gilReleasedPctElem = document.getElementById('gil-released-pct');
-      if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(1)}%`;
+      if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(2)}%`;
 
       // Waiting for GIL
       const gilWaitingPct = threadStats.gil_requested_pct || 0;
       const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
-      if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(1)}%`;
+      if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(2)}%`;
     }
 
     // Garbage Collection (always show)
     const gcPct = threadStats.gc_pct || 0;
     const gcPctElem = document.getElementById('gc-pct');
-    if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(1)}%`;
+    if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(2)}%`;
   }
 }
 
