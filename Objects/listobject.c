@@ -2992,50 +2992,55 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
         lo.keys = saved_ob_item;
         lo.values = NULL;
     }
-    else {
-        if (keyfunc != NULL) {
-            if (saved_ob_size < MERGESTATE_TEMP_SIZE/2)
-                /* Leverage stack space we allocated but won't otherwise use */
-                keys = &ms.temparray[saved_ob_size+1];
-            else {
-                keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
-                if (keys == NULL) {
-                    PyErr_NoMemory();
-                    goto keyfunc_fail;
-                }
-            }
-            for (i = 0; i < saved_ob_size ; i++) {
-                keys[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
-                if (keys[i] == NULL) {
-                    for (i=i-1 ; i>=0 ; i--)
-                        Py_DECREF(keys[i]);
-                    if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
-                        PyMem_Free(keys);
-                    goto keyfunc_fail;
-                }
-            }
-        }
+    else if (keyfunc != NULL) {
+        if (saved_ob_size < MERGESTATE_TEMP_SIZE/2)
+            /* Leverage stack space we allocated but won't otherwise use */
+            keys = &ms.temparray[saved_ob_size+1];
         else {
-            assert(keylist != NULL);
-            if (!PyList_Check(keylist)) {
-                PyErr_Format(PyExc_TypeError,
-                    "'%.200s' object is not a list",
-                    Py_TYPE(keylist)->tp_name);
+            keys = PyMem_Malloc(sizeof(PyObject *) * saved_ob_size);
+            if (keys == NULL) {
+                PyErr_NoMemory();
                 goto keyfunc_fail;
             }
-            self_kl = ((PyListObject *) keylist);
-            DISABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
-            keylist_frozen = 1;
-            if (saved_ob_size != keylist_ob_size) {
-                PyErr_SetString(PyExc_ValueError,
-                    "Lengths of input list and keylist differ.");
-                goto keylist_fail;
-            }
-            keys = keylist_ob_item;
         }
+
+        for (i = 0; i < saved_ob_size ; i++) {
+            keys[i] = PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
+            if (keys[i] == NULL) {
+                for (i=i-1 ; i>=0 ; i--)
+                    Py_DECREF(keys[i]);
+                if (saved_ob_size >= MERGESTATE_TEMP_SIZE/2)
+                    PyMem_Free(keys);
+                goto keyfunc_fail;
+            }
+        }
+
         lo.keys = keys;
         lo.values = saved_ob_item;
     }
+    else {
+        assert(keylist != NULL);
+        if (!PyList_Check(keylist)) {
+            PyErr_Format(PyExc_TypeError,
+                "'%.200s' object is not a list",
+                Py_TYPE(keylist)->tp_name);
+            goto keyfunc_fail;
+        }
+
+        self_kl = ((PyListObject *) keylist);
+        DISABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
+        keylist_frozen = 1;
+        if (saved_ob_size != keylist_ob_size) {
+            PyErr_SetString(PyExc_ValueError,
+                "Lengths of input list and keylist differ.");
+            goto keylist_fail;
+        }
+
+        keys = keylist_ob_item;
+        lo.keys = keys;
+        lo.values = saved_ob_item;
+    }
+
     /* The pre-sort check: here's where we decide which compare function to use.
      * How much optimization is safe? We test for homogeneity with respect to
      * several properties that are expensive to check at compare-time, and
