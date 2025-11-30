@@ -629,6 +629,20 @@ after the decimal point.  The rounding mode for :class:`float` matches that
 of the :func:`round` builtin.  For :class:`~decimal.Decimal`, the rounding
 mode of the current :ref:`context <decimal-context>` will be used.
 
+
+.. note::
+
+   The :class:`~decimal.Decimal` type has special formatting behavior:
+
+   * When using ``__format__`` (f-strings, ``format()``, ``str.format()``),
+    Decimal formats with maximum precision only when precision is **omitted**
+    in ``f``, ``e``, or ``g`` format types. If precision is explicitly specified,
+    it is respected.
+
+   * When using ``%`` formatting (old-style string formatting with the ``%`` operator),
+   Decimal values are first converted to :class:`float`, which may result in
+   precision loss.
+
 The available presentation types for :class:`complex` are the same as those for
 :class:`float` (``'%'`` is not allowed).  Both the real and imaginary components
 of a complex number are formatted as floating-point numbers, according to the
