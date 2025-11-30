@@ -14,9 +14,9 @@ issue and tag Peter (@ZeroIntensity) on it.\
 """
 
 FOUND_UNDOCUMENTED = f"""\
-Found some undocumented C API!
+Found some undocumented C API(s)!
 
-Python requires documentation on all public C API functions.
+Python requires documentation on all public C API symbols, macros, and types.
 If these API(s) were not meant to be public, please prefix them with a
 leading underscore (_PySomething_API) or move them to the internal C API
 (pycore_*.h files).
@@ -144,20 +144,19 @@ def main() -> None:
         all_missing += missing
 
     fail = False
-    if all_missing != []:
-        s = "s" if len(all_missing) != 1 else ""
-        print(f"-- {len(all_missing)} missing C API{s} --")
+    to_check = [
+        (all_missing, "missing", FOUND_UNDOCUMENTED),
+        (all_found_ignored, "documented but ignored", FOUND_IGNORED_DOCUMENTED),
+    ]
+    for name_list, what, message in to_check:
+        if not name_list:
+            continue
+
+        s = "s" if len(name_list) != 1 else ""
+        print(f"-- {len(name_list)} {what} C API{s} --")
         for name in all_missing:
             print(f" - {name}")
-        print(FOUND_UNDOCUMENTED)
-        fail = True
-
-    if all_found_ignored != []:
-        s = "s" if len(all_found_ignored) != 1 else ""
-        print(f"-- Found {len(all_found_ignored)} documented but ignored C API{s} --")
-        for name in all_found_ignored:
-            print(f" - {name}")
-        print(FOUND_IGNORED_DOCUMENTED)
+        print(message)
         fail = True
 
     sys.exit(1 if fail else 0)
