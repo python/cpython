@@ -8,10 +8,37 @@ SIMPLE_MACRO_REGEX = re.compile(r"# *define *(\w+)(\(.+\))? ")
 SIMPLE_INLINE_REGEX = re.compile(r"static inline .+( |\n)(\w+)")
 SIMPLE_DATA_REGEX = re.compile(r"PyAPI_DATA\(.+\) (\w+)")
 
+MISTAKE = """\
+If this is a mistake and this script should not be failing, please create an
+issue and tag Peter (@ZeroIntensity) on it.\
+"""
+
+FOUND_UNDOCUMENTED = f"""\
+Found some undocumented C API!
+
+Python requires documentation on all public C API functions.
+If these API(s) were not meant to be public, please prefix them with a
+leading underscore (_PySomething_API) or move them to the internal C API
+(pycore_*.h files).
+
+In exceptional cases, certain functions can be ignored by adding them to
+Tools/c-api-docs-check/ignored_c_api.txt
+
+{MISTAKE}\
+"""
+
+FOUND_IGNORED_DOCUMENTED = f"""\
+Some C API(s) were listed in Tools/c-api-docs-check/ignored_c_api.txt, but
+they were found in the documentation. To fix this, simply update ignored_c_api.txt
+accordingly.
+
+{MISTAKE}\
+"""
+
 _CPYTHON = Path(__file__).parent.parent.parent
 INCLUDE = _CPYTHON / "Include"
 C_API_DOCS = _CPYTHON / "Doc" / "c-api"
-IGNORED = (_CPYTHON / "Tools" / "c-api-docs-check" / "ignored_c_api.txt").read_text().split("\n")
+IGNORED = (_CPYTHON / "Tools" / "check-c-api-docs" / "ignored_c_api.txt").read_text().split("\n")
 
 for index, line in enumerate(IGNORED):
     if line.startswith("#"):
@@ -22,9 +49,6 @@ def is_documented(name: str) -> bool:
     """
     Is a name present in the C API documentation?
     """
-    if name in IGNORED:
-        return True
-
     for path in C_API_DOCS.iterdir():
         if path.is_dir():
             continue
@@ -38,20 +62,27 @@ def is_documented(name: str) -> bool:
     return False
 
 
-def scan_file_for_missing_docs(filename: str, text: str) -> list[str]:
+def scan_file_for_docs(filename: str, text: str) -> tuple[list[str], list[str]]:
     """
-    Scan a header file for undocumented C API functions.
+    Scan a header file for  C API functions.
     """
     undocumented: list[str] = []
+    documented_ignored: list[str] = []
     colors = _colorize.get_colors()
+
+    def check_for_name(name: str) -> None:
+        documented = is_documented(name)
+        if documented and (name in IGNORED):
+            documented_ignored.append(name)
+        elif not documented and (name not in IGNORED):
+            undocumented.append(name)
 
     for function in SIMPLE_FUNCTION_REGEX.finditer(text):
         name = function.group(2)
         if not name.startswith("Py"):
             continue
 
-        if not is_documented(name):
-            undocumented.append(name)
+        check_for_name(name)
 
     for macro in SIMPLE_MACRO_REGEX.finditer(text):
         name = macro.group(1)
@@ -61,76 +92,71 @@ def scan_file_for_missing_docs(filename: str, text: str) -> list[str]:
         if "(" in name:
             name = name[: name.index("(")]
 
-        if not is_documented(name):
-            undocumented.append(name)
+        check_for_name(name)
 
     for inline in SIMPLE_INLINE_REGEX.finditer(text):
         name = inline.group(2)
         if not name.startswith("Py"):
             continue
 
-        if not is_documented(name):
-            undocumented.append(name)
+        check_for_name(name)
 
     for data in SIMPLE_DATA_REGEX.finditer(text):
         name = data.group(1)
         if not name.startswith("Py"):
             continue
 
-        if not is_documented(name):
-            undocumented.append(name)
+        check_for_name(name)
 
     # Remove duplicates and sort alphabetically to keep the output non-deterministic
     undocumented = list(set(undocumented))
     undocumented.sort()
 
-    if undocumented:
+    if undocumented or documented_ignored:
         print(f"{filename} {colors.RED}BAD{colors.RESET}")
         for name in undocumented:
             print(f"{colors.BOLD_RED}UNDOCUMENTED:{colors.RESET} {name}")
-
-        return undocumented
+        for name in documented_ignored:
+            print(f"{colors.BOLD_YELLOW}DOCUMENTED BUT IGNORED:{colors.RESET} {name}")
     else:
         print(f"{filename} {colors.GREEN}OK{colors.RESET}")
 
-    return []
+    return undocumented, documented_ignored
 
 
 def main() -> None:
     print("Scanning for undocumented C API functions...")
     files = [*INCLUDE.iterdir(), *(INCLUDE / "cpython").iterdir()]
     all_missing: list[str] = []
+    all_found_ignored: list[str] = []
+
     for file in files:
         if file.is_dir():
             continue
         assert file.exists()
         text = file.read_text(encoding="utf-8")
-        missing = scan_file_for_missing_docs(str(file.relative_to(INCLUDE)), text)
+        missing, ignored = scan_file_for_docs(str(file.relative_to(INCLUDE)), text)
+        all_found_ignored += ignored
         all_missing += missing
 
+    fail = False
     if all_missing != []:
         s = "s" if len(all_missing) != 1 else ""
-        print(f"-- {len(all_missing)} missing function{s} --")
+        print(f"-- {len(all_missing)} missing C API{s} --")
         for name in all_missing:
             print(f" - {name}")
-        print()
-        print(
-            "Found some undocumented C API!",
-            "Python requires documentation on all public C API functions.",
-            "If these function(s) were not meant to be public, please prefix "
-            "them with a leading underscore (_PySomething_API) or move them to "
-            "the internal C API (pycore_*.h files).",
-            "",
-            "In exceptional cases, certain functions can be ignored by adding "
-            "them to Tools/c-api-docs-check/ignored_c_api.txt",
-            "If this is a mistake and this script should not be failing, please "
-            "create an issue and tag Peter (@ZeroIntensity) on it.",
-            sep="\n",
-        )
-        sys.exit(1)
-    else:
-        print("Nothing found :)")
-        sys.exit(0)
+        print(FOUND_UNDOCUMENTED)
+        fail = True
+
+    if all_found_ignored != []:
+        s = "s" if len(all_found_ignored) != 1 else ""
+        print(f"-- Found {len(all_found_ignored)} documented but ignored C API{s} --")
+        for name in all_found_ignored:
+            print(f" - {name}")
+        print(FOUND_IGNORED_DOCUMENTED)
+        fail = True
+
+    sys.exit(1 if fail else 0)
 
 
 if __name__ == "__main__":
