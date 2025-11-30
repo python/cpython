@@ -2935,7 +2935,7 @@ order of two equal elements is maintained).
 If a key function is given, apply it once to each list item and sort them,
 ascending or descending, according to their function values.
 
-Alternative to key function is supplying list to keylist argument,
+Alternative to key function is supplying a list to keylist argument,
 which will determine sort order and will be modified in place.
 
 The reverse flag can be set to sort in descending order.

@@ -2644,7 +2644,8 @@ sorted as builtin_sorted
 Return a new list containing all items from the iterable in ascending order.
 
 A custom key function can be supplied to customize the sort order.
-Alternatively, keylist argument accepts a list on which sort order is based.
+Alternative to key function is supplying a list to keylist argument,
+which will determine sort order and will be modified in place.
 The reverse flag can be set to request the result in descending order.
 Both key and keylist can not be used at the same time.
 [end disabled clinic input]*/
@@ -2656,7 +2657,8 @@ PyDoc_STRVAR(builtin_sorted__doc__,
 "Return a new list containing all items from the iterable in ascending order.\n"
 "\n"
 "A custom key function can be supplied to customize the sort order.\n"
-"Alternatively, keylist argument accepts a list on which sort order is based.\n"
+"Alternative to key function is supplying a list to keylist argument,\n"
+"which will determine sort order and will be modified in place.\n"
 "The reverse flag can be set to request the result in descending order.\n"
 "Both key and keylist can not be used at the same time.");
 

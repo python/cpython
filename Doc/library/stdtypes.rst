@@ -1394,7 +1394,7 @@ application).
    :ref:`mutable <typesseq-mutable>` sequence operations. Lists also provide the
    following additional method:
 
-   .. method:: list.sort(*, key=None, reverse=False)
+   .. method:: list.sort(*, key=None, keylist=None, reverse=False)
 
       This method sorts the list in place, using only ``<`` comparisons
       between items. Exceptions are not suppressed - if any comparison operations
@@ -1413,6 +1413,9 @@ application).
 
       The :func:`functools.cmp_to_key` utility is available to convert a 2.x
       style *cmp* function to a *key* function.
+
+      Alternative to key function is supplying a list to *keylist* argument,
+      which will determine sort order and will be modified in place.
 
       *reverse* is a boolean value.  If set to ``True``, then the list elements
       are sorted as if each comparison were reversed.
@@ -1436,6 +1439,11 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
+         The same applies to *keylist* argument.
+
+      .. versionchanged:: 3.15
+
+         Added *keylist* argument.
 
 .. _typesseq-tuple:
 
