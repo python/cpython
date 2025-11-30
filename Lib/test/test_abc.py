@@ -6,11 +6,12 @@
 
 """Unit tests for abc.py."""
 
-import unittest
-
 import abc
-import _py_abc
+import unittest
 from inspect import isabstract
+
+import _py_abc
+
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
@@ -488,27 +489,49 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
         def test_custom_subclasses(self):
             class A: pass
-            class B: pass
+            class B(A): pass
 
-            class Parent1(metaclass=abc_ABCMeta):
+            class C: pass
+            class D(C): pass
+
+            class Root(metaclass=abc_ABCMeta): pass
+
+            class Parent1(Root):
                 @classmethod
                 def __subclasses__(cls):
                     return [A]
 
-            class Parent2(metaclass=abc_ABCMeta):
+            class Parent2(Root):
                 __subclasses__ = lambda: [A]
 
             # trigger caching
             for _ in range(2):
                 self.check_isinstance(A(), Parent1)
+                self.check_isinstance(B(), Parent1)
                 self.check_issubclass(A, Parent1)
-                self.check_not_isinstance(B(), Parent1)
-                self.check_not_issubclass(B, Parent1)
+                self.check_issubclass(B, Parent1)
+                self.check_not_isinstance(C(), Parent1)
+                self.check_not_isinstance(D(), Parent1)
+                self.check_not_issubclass(C, Parent1)
+                self.check_not_issubclass(D, Parent1)
 
                 self.check_isinstance(A(), Parent2)
+                self.check_isinstance(B(), Parent2)
                 self.check_issubclass(A, Parent2)
-                self.check_not_isinstance(B(), Parent2)
-                self.check_not_issubclass(B, Parent2)
+                self.check_issubclass(B, Parent2)
+                self.check_not_isinstance(C(), Parent2)
+                self.check_not_isinstance(D(), Parent2)
+                self.check_not_issubclass(C, Parent2)
+                self.check_not_issubclass(D, Parent2)
+
+                self.check_isinstance(A(), Root)
+                self.check_isinstance(B(), Root)
+                self.check_issubclass(A, Root)
+                self.check_issubclass(B, Root)
+                self.check_not_isinstance(C(), Root)
+                self.check_not_isinstance(D(), Root)
+                self.check_not_issubclass(C, Root)
+                self.check_not_issubclass(D, Root)
 
         def test_issubclass_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
