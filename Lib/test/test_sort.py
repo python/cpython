@@ -407,5 +407,51 @@ class TestOptimizedCompares(unittest.TestCase):
 
 #==============================================================================
 
+class TestKeylist(unittest.TestCase):
+    def test_exclusivity_with_key(self):
+        msg = 'Only one of key and keylist can be provided.'
+        with self.assertRaisesRegex(ValueError, msg):
+            [].sort(key=1, keylist=1)
+
+    def test_argtype(self):
+        msg = 'Only one of key and keylist can be provided.'
+        for arg in [1, (), iter(())]:
+            msg = f"'{type(arg).__name__}' object is not a list"
+            with self.assertRaisesRegex(TypeError, msg):
+                [].sort(keylist=arg)
+
+    def test_unequal_sizes(self):
+        msg = 'Lengths of input list and keylist differ.'
+        for arg in [[1, 2], [1, 2, 3, 4]]:
+            with self.assertRaisesRegex(ValueError, msg):
+                [1, 2, 3].sort(keylist=arg)
+
+    def test_keylist_vs_key(self):
+        data = list(range(10))
+        # NOTE: BORLAND32
+        keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % 10
+        keylist = list(map(keyfunc, data))
+        res_keyfunc = sorted(data, key=keyfunc)
+        res_keylist = sorted(data, keylist=keylist)
+        self.assertEqual(res_keyfunc, res_keylist)
+
+    def test_mutability_plus(self):
+        for size in [10, 100, 1000]:
+            data = list(range(size))
+            # NOTE: BORLAND32
+            keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % size
+            keylist = list(map(keyfunc, data))
+            orig_keylist = list(keylist)
+
+            expected_keylist = sorted(keylist)
+            result = sorted(data, keylist=keylist)
+            self.assertEqual(keylist, expected_keylist)
+
+            # And for completeness check the result
+            idxs = sorted(range(len(keylist)), key=orig_keylist.__getitem__)
+            expected_result = [data[i] for i in idxs]
+            self.assertEqual(result, expected_result)
+
+
 if __name__ == "__main__":
     unittest.main()
