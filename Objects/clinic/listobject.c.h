@@ -206,7 +206,12 @@ PyDoc_STRVAR(list_sort__doc__,
 "If a key function is given, apply it once to each list item and sort them,\n"
 "ascending or descending, according to their function values.\n"
 "\n"
-"The reverse flag can be set to sort in descending order.");
+"Alternative to key function is supplying a list to keylist argument,\n"
+"which will determine sort order and will be modified in place.\n"
+"\n"
+"The reverse flag can be set to sort in descending order.\n"
+"\n"
+"Both key and keylist can not be used at the same time.");
 
 #define LIST_SORT_METHODDEF    \
     {"sort", _PyCFunction_CAST(list_sort), METH_FASTCALL|METH_KEYWORDS, list_sort__doc__},
@@ -476,4 +481,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=8b9d3816e643276c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=08c07d813f75a628 input=a9049054013a1b77]*/

@@ -2946,7 +2946,7 @@ Both key and keylist can not be used at the same time.
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
                int reverse)
-/*[clinic end generated code: output=ebb99a3e19f35128 input=466d6923f1e8913d]*/
+/*[clinic end generated code: output=ebb99a3e19f35128 input=5d44a191b821cc9a]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
