@@ -4609,7 +4609,6 @@ def bœr():
         """
         stdout, stderr = self.run_pdb_script(script, commands)
         res_lines = [x.strip() for x in stdout.splitlines()]
-        print(res_lines)
         # can't set breakpoint before class C is defined, and gives an error
         self.assertIn("The specified object 'C.foo' is not a function", res_lines[3])
         # can set correctly after the class C is defined
