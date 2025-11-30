@@ -149,6 +149,22 @@ body {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(55, 118, 171, 0.15); }
+  50% { box-shadow: 0 2px 16px rgba(55, 118, 171, 0.4); }
+}
+
 /* Color-coded borders and subtle glow on hover */
 #gil-held-stat {
   --stat-color: 40, 167, 69;
@@ -240,7 +256,12 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
   min-height: 120px;
+  animation: slideUp 0.4s ease-out backwards;
 }
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
 
 .stat-card:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -339,6 +360,11 @@ body {
   box-shadow: 0 4px 8px rgba(55, 118, 171, 0.3);
 }
 
+.controls button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(55, 118, 171, 0.2);
+}
+
 .controls button.secondary {
   background: #ffd43b;
   color: #2e3338;
@@ -346,6 +372,10 @@ body {
 
 .controls button.secondary:hover {
   background: #ffcd02;
+}
+
+.controls button.secondary:active {
+  background: #e6b800;
 }
 
 .thread-filter-wrapper {
@@ -489,11 +519,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
+  animation: gentlePulse 3s ease-in-out infinite;
 }
 
 #show-info-btn:hover {
   background: #2d5aa0;
+  animation: none;
+  transform: scale(1.05);
 }
 
 #close-info-btn {
@@ -606,4 +639,23 @@ body {
     max-width: calc(100vw - 20px) !important;
     font-size: 12px !important;
   }
+}
+
+/* Accessibility: visible focus states */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid #ffd43b;
+  outline-offset: 2px;
+}
+
+/* Smooth panel transitions */
+.legend-panel,
+.info-panel {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.legend-panel[style*="block"],
+.info-panel[style*="block"] {
+  animation: slideUp 0.2s ease-out;
 }
