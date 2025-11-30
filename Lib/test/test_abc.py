@@ -6,12 +6,11 @@
 
 """Unit tests for abc.py."""
 
-import abc
 import unittest
-from inspect import isabstract
 
+import abc
 import _py_abc
-
+from inspect import isabstract
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
