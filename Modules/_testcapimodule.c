@@ -3337,6 +3337,10 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return NULL;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return NULL;
     }

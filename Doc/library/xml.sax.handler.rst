@@ -96,6 +96,14 @@ for the feature and property names.
 
 .. data:: feature_external_ges
 
+   .. warning::
+
+      Enabling opens a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if the parser is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before enabling this feature.
+
    | value: ``"http://xml.org/sax/features/external-general-entities"``
    | true: Include all external general (text) entities.
    | false: Do not include external general entities.
