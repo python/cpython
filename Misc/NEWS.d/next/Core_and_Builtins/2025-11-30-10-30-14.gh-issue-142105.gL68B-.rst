@@ -1,0 +1,1 @@
+:func:`sorted` and :meth:`list.sort` now accept *keylist* argument, which takes :class:`list` object by the keys of which the sorting takes place. Provided :class:`list` object is sorted in-place (i.e. the *keylist* itself is modified).
