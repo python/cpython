@@ -4591,21 +4591,28 @@ def bœr():
         script = """
             import asyncio
 
+            async def do_something():
+                test_str = "second break"
+
             async def main():
-                print(f"Hello")
-                await asyncio.sleep(1)
-                print(f"World!")
+                test_str = "first break"
+                await do_something()
 
             asyncio.run(main())
         """
         commands = """
             break main
+            break do_something
+            continue
             continue
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
-        self.assertIn("Breakpoint 1 at", stdout)
-        self.assertIn("Hello", stdout)
+        print(stdout)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:8")
+        self.assertRegex(stdout, r"Breakpoint 2 at .*main\.py:5")
+        self.assertIn("first break", stdout)
+        self.assertIn("second break", stdout)
 
 
 class ChecklineTests(unittest.TestCase):
