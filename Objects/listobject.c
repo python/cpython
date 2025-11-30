@@ -3228,7 +3228,7 @@ keylist_fail:
             result = NULL;
         }
 
-        if (reverse && saved_ob_size > 1)
+        if (reverse && keylist_ob_size > 1)
             reverse_slice(keylist_ob_item, keylist_ob_item + keylist_ob_size);
 
         REENABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
