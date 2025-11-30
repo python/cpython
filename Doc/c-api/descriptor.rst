@@ -25,8 +25,16 @@ found in the dictionary of type objects.
 
    The type object for member descriptor objects created from
    :c:type:`PyMemberDef` structures. These descriptors expose fields of a
-   C struct as attributes on a type, and correspond to ``member_descriptor``
+   C struct as attributes on a type, and correspond to :class:`types.MemberDescriptorType`
    objects in the Python layer.
+
+
+.. c:var:: PyTypeObject PyGetSetDescr_Type
+
+   The type object for get/set descriptor objects created from
+   :c:type:`PyGetSetDef` structures. These descriptors implement attributes
+   whose value is computed by C getter and setter functions, and are used
+   for many built-in type attributes.
 
 
 .. c:function:: PyObject* PyDescr_NewMethod(PyTypeObject *type, struct PyMethodDef *meth)
@@ -36,7 +44,7 @@ found in the dictionary of type objects.
 
    The type object for method descriptor objects created from
    :c:type:`PyMethodDef` structures. These descriptors expose C functions as
-   methods on a type, and correspond to ``method_descriptor`` objects in the
+   methods on a type, and correspond to :class:`types.MemberDescriptorType` objects in the
    Python layer.
 
 
@@ -48,7 +56,7 @@ found in the dictionary of type objects.
    The type object for wrapper descriptor objects created by
    :c:func:`PyDescr_NewWrapper` and :c:func:`PyWrapper_New`. Wrapper
    descriptors are used internally to expose special methods implemented
-   via wrapper structures, and appear in Python as ``wrapper_descriptor``
+   via wrapper structures, and appear in Python as :class:`types.WrapperDescriptorType`
    objects.
 
 
@@ -86,14 +94,6 @@ Built-in descriptors
    This is the type of the descriptors created for :func:`classmethod` defined in C
    extension types, and is the same object as :class:`classmethod` in the
    Python layer.
-
-
-.. c:var:: PyTypeObject PyGetSetDescr_Type
-
-   The type object for get/set descriptor objects created from
-   :c:type:`PyGetSetDef` structures. These descriptors implement attributes
-   whose value is computed by C getter and setter functions, and are used
-   for many built-in type attributes.
 
 
 .. c:function:: PyObject *PyClassMethod_New(PyObject *callable)

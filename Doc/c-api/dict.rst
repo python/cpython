@@ -50,7 +50,8 @@ Dictionary Objects
    of many built-in types. A :c:type:`PyDictProxy_Type` instance provides a
    dynamic, read-only view of an underlying dictionary: changes to the
    underlying dictionary are reflected in the proxy, but the proxy itself
-   does not support mutation operations.
+   does not support mutation operations.These objects correspond to 
+   :class:`types.MappingProxyType` in Python.
 
 
 .. c:function:: void PyDict_Clear(PyObject *p)
