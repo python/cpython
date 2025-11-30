@@ -1840,7 +1840,7 @@ are always available.  They are listed here in alphabetical order.
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
       :attr:`~slice.stop`, and :attr:`~slice.step` are hashable).
 
-.. function:: sorted(iterable, /, *, key=None, reverse=False)
+.. function:: sorted(iterable, /, *, key=None, keylist=None, reverse=False)
 
    Return a new sorted list from the items in *iterable*.
 
@@ -1849,6 +1849,10 @@ are always available.  They are listed here in alphabetical order.
    *key* specifies a function of one argument that is used to extract a comparison
    key from each element in *iterable* (for example, ``key=str.lower``).  The
    default value is ``None`` (compare the elements directly).
+
+   Alternative to key function is supplying a :class:`list` object
+   to *keylist* argument, which will determine the sort order.
+   Provided :class:`list` object will be modified in place.
 
    *reverse* is a boolean value.  If set to ``True``, then the list elements are
    sorted as if each comparison were reversed.
@@ -1871,6 +1875,11 @@ are always available.  They are listed here in alphabetical order.
    the reflected :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
+
+   .. versionchanged:: 3.15
+
+      Added *keylist* argument.
+
 
 .. decorator:: staticmethod
 

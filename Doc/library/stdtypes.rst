@@ -1414,8 +1414,9 @@ application).
       The :func:`functools.cmp_to_key` utility is available to convert a 2.x
       style *cmp* function to a *key* function.
 
-      Alternative to key function is supplying a list to *keylist* argument,
-      which will determine sort order and will be modified in place.
+      Alternative to key function is supplying a :class:`list` object
+      to *keylist* argument, which will determine the sort order.
+      Provided :class:`list` object will be modified in place.
 
       *reverse* is a boolean value.  If set to ``True``, then the list elements
       are sorted as if each comparison were reversed.
