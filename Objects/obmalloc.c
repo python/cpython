@@ -467,7 +467,7 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
-    _PyAnnotateMemoryMap(ptr, size, "Python:PyMem_ArenaAlloc");
+    _PyAnnotateMemoryMap(ptr, size, "cpython:PyMem_ArenaAlloc");
     return ptr;
 #else
     return malloc(size);

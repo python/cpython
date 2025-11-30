@@ -84,7 +84,7 @@ static void more_core(void)
                         0);
     if (item == (void *)MAP_FAILED)
         return;
-    _PyAnnotateMemoryMap(item, mem_size, "Python:more_core");
+    _PyAnnotateMemoryMap(item, mem_size, "cpython:more_core");
 #endif
 
 #ifdef MALLOC_CLOSURE_DEBUG
