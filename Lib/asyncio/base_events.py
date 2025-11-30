@@ -1341,6 +1341,15 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_shutdown_timeout=ssl_shutdown_timeout,
             call_connection_made=False)
 
+        # gh-142352: move buffered StreamReader data to SSLProtocol
+        if server_side:
+            stream_reader = getattr(protocol, '_stream_reader', None)
+            if stream_reader is not None:
+                buffer = stream_reader._buffer
+                if buffer:
+                    ssl_protocol._incoming.write(buffer)
+                    buffer.clear()
+
         # Pause early so that "ssl_protocol.data_received()" doesn't
         # have a chance to get called before "ssl_protocol.connection_made()".
         transport.pause_reading()

@@ -1,0 +1,4 @@
+Fix :meth:`asyncio.StreamWriter.start_tls` to transfer buffered data from
+:class:`~asyncio.StreamReader` to the SSL layer, preventing data loss when
+upgrading a connection to TLS mid-stream (e.g., when implementing PROXY
+protocol support).
