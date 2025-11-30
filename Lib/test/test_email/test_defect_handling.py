@@ -15,17 +15,6 @@ class TestDefectsBase:
     def _raise_point(self, defect):
         yield
 
-    def get_defects(self, obj):
-        return obj.defects
-
-    def check_defect(self, defect, string):
-        msg = None
-        with self._raise_point(defect):
-            msg = self._str_msg(string)
-            self.assertEqual(len(self.get_defects(msg)), 1)
-            self.assertDefectsEqual(self.get_defects(msg), [defect])
-        return msg
-
     def test_same_boundary_inner_outer(self):
         source = textwrap.dedent("""\
             Subject: XX
@@ -310,37 +299,48 @@ class TestDefectsBase:
                                 [errors.CloseBoundaryNotFoundDefect])
 
     def test_line_beginning_colon(self):
-        msg = self.check_defect(errors.InvalidHeaderDefect,
-            'Subject: Dummy subject\r\n'
-            ': faulty header line\r\n'
-            '\r\n'
-            'body\r\n'
+        string = (
+            "Subject: Dummy subject\r\n: faulty header line\r\n\r\nbody\r\n"
         )
-        if msg:
-            self.assertEqual(msg.items(), [('Subject', 'Dummy subject')])
-            self.assertEqual(msg.get_payload(), 'body\r\n')
+
+        with self._raise_point(errors.InvalidHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.InvalidHeaderDefect]
+            )
+
+            if msg:
+                self.assertEqual(msg.items(), [("Subject", "Dummy subject")])
+                self.assertEqual(msg.get_payload(), "body\r\n")
 
     def test_misplaced_envelope(self):
-        msg = self.check_defect(errors.MisplacedEnvelopeHeaderDefect,
-            'Subject: Dummy subject\r\n'
-            'From wtf\r\n'
-            'To: abc\r\n'
-            '\r\n'
-            'body\r\n'
+        string = (
+            "Subject: Dummy subject\r\nFrom wtf\r\nTo: abc\r\n\r\nbody\r\n"
         )
-        if msg:
-            headers = [('Subject', 'Dummy subject'), ('To', 'abc')]
-            self.assertEqual(msg.items(), headers)
-            self.assertEqual(msg.get_payload(), 'body\r\n')
+        with self._raise_point(errors.MisplacedEnvelopeHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.MisplacedEnvelopeHeaderDefect]
+            )
+
+            if msg:
+                headers = [("Subject", "Dummy subject"), ("To", "abc")]
+                self.assertEqual(msg.items(), headers)
+                self.assertEqual(msg.get_payload(), "body\r\n")
+
 
 
 class TestCompat32(TestDefectsBase, TestEmailBase):
 
     policy = policy.compat32
 
+    def get_defects(self, obj):
+        return obj.defects
+
 
 class TestDefectDetection(TestDefectsBase, TestEmailBase):
-    pass
 
     def get_defects(self, obj):
         return obj.defects
@@ -370,6 +370,9 @@ class TestDefectRaising(TestDefectsBase, TestEmailBase):
     def _raise_point(self, defect):
         with self.assertRaises(defect):
             yield
+
+    def get_defects(self, obj):
+        return obj.defects
 
 
 if __name__ == '__main__':

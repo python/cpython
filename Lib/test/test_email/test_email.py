@@ -2241,26 +2241,6 @@ class TestNonConformant(TestEmailBase):
         eq(msg.get_content_maintype(), 'text')
         eq(msg.get_content_subtype(), 'plain')
 
-    # test_defect_handling
-    def test_same_boundary_inner_outer(self):
-        msg = self._msgobj('msg_15.txt')
-        # XXX We can probably eventually do better
-        inner = msg.get_payload(0)
-        self.assertHasAttr(inner, 'defects')
-        self.assertEqual(len(inner.defects), 1)
-        self.assertIsInstance(inner.defects[0],
-                              errors.StartBoundaryNotFoundDefect)
-
-    # test_defect_handling
-    def test_multipart_no_boundary(self):
-        msg = self._msgobj('msg_25.txt')
-        self.assertIsInstance(msg.get_payload(), str)
-        self.assertEqual(len(msg.defects), 2)
-        self.assertIsInstance(msg.defects[0],
-                              errors.NoBoundaryInMultipartDefect)
-        self.assertIsInstance(msg.defects[1],
-                              errors.MultipartInvariantViolationDefect)
-
     # test_headerregistry.TestContentTypeHeader invalid_1 and invalid_2.
     def test_invalid_content_type(self):
         eq = self.assertEqual
