@@ -424,6 +424,13 @@ argparse
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
 
+builtins
+--------
+* :func:`sorted` and :meth:`list.sort` now accept *keylist* argument,
+  which takes :class:`list` object by the keys of which the sorting takes place.
+  *keylist* argument is sorted in-place (i.e. is modified).
+  (Contributed by Dominykas Grigonis in :gh:`142105`.)
+
 calendar
 --------
 
