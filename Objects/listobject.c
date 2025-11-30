@@ -2870,6 +2870,48 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
         return PyObject_RichCompareBool(vt->ob_item[i], wt->ob_item[i], Py_LT);
 }
 
+#define DISABLE_LIST(self, saved_ob_size, saved_ob_item, saved_allocated) \
+    do {                                                                  \
+        saved_ob_size = Py_SIZE(self);                                    \
+        saved_ob_item = self->ob_item;                                    \
+        saved_allocated = self->allocated;                                \
+        Py_SET_SIZE(self, 0);                                             \
+        FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);                 \
+        self->allocated = -1; /* any operation will reset it to >= 0 */   \
+    } while (0)
+
+#ifdef Py_GIL_DISABLED
+    #define _REENABLE_LIST_GIL_PART(self, use_qsbr)     \
+        do {                                            \
+            ensure_shared_on_resize(self);              \
+            use_qsbr = _PyObject_GC_IS_SHARED(self);    \
+        } while (0)
+#else
+    #define _REENABLE_LIST_GIL_PART(self, use_qsbr)     \
+        do {                                            \
+            use_qsbr = false;                           \
+        } while (0)
+#endif
+
+#define REENABLE_LIST(self, saved_ob_size, saved_ob_item, saved_allocated)  \
+    do {                                                                    \
+        final_ob_item = self->ob_item;                                      \
+        i = Py_SIZE(self);                                                  \
+        Py_SET_SIZE(self, saved_ob_size);                                   \
+        FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, saved_ob_item);          \
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, saved_allocated);    \
+        if (final_ob_item != NULL) {                                        \
+            /* we cannot use list_clear() for this because it does not */   \
+            /* guarantee that the list is really empty when it returns */   \
+            while (--i >= 0) {                                              \
+                Py_XDECREF(final_ob_item[i]);                               \
+            }                                                               \
+            bool use_qsbr;                                                  \
+            _REENABLE_LIST_GIL_PART(self, use_qsbr);                        \
+            free_list_items(final_ob_item, use_qsbr);                       \
+        }                                                                   \
+    } while (0)
+
 /* An adaptive, stable, natural mergesort.  See listsort.txt.
  * Returns Py_None on success, NULL on error.  Even in case of error, the
  * list will be some permutation of its input state (nothing is lost or
@@ -2943,12 +2985,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
      * sorting (allowing mutations during sorting is a core-dump
      * factory, since ob_item may change).
      */
-    saved_ob_size = Py_SIZE(self);
-    saved_ob_item = self->ob_item;
-    saved_allocated = self->allocated;
-    Py_SET_SIZE(self, 0);
-    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
-    self->allocated = -1; /* any operation will reset it to >= 0 */
+    DISABLE_LIST(self, saved_ob_size, saved_ob_item, saved_allocated);
 
     if (keyfunc == NULL && keylist == NULL) {
         keys = NULL;
@@ -2987,14 +3024,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, PyObject *keylist,
                 goto keyfunc_fail;
             }
             self_kl = ((PyListObject *) keylist);
-            // Disable keylist modifications via same methodology as for main list
-            keylist_ob_size = Py_SIZE(self_kl);
-            keylist_ob_item = self_kl->ob_item;
-            keylist_allocated = self_kl->allocated;
-            Py_SET_SIZE(self_kl, 0);
-            FT_ATOMIC_STORE_PTR_RELEASE(self_kl->ob_item, NULL);
-            self_kl->allocated = -1; /* any operation will reset it to >= 0 */
-
+            DISABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
             keylist_frozen = 1;
             if (saved_ob_size != keylist_ob_size) {
                 PyErr_SetString(PyExc_ValueError,
@@ -3196,49 +3226,17 @@ keylist_fail:
         if (reverse && saved_ob_size > 1)
             reverse_slice(keylist_ob_item, keylist_ob_item + keylist_ob_size);
 
-        final_ob_item = self_kl->ob_item;
-        i = Py_SIZE(self_kl);
-        Py_SET_SIZE(self_kl, keylist_ob_size);
-        FT_ATOMIC_STORE_PTR_RELEASE(self_kl->ob_item, keylist_ob_item);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(self_kl->allocated, keylist_allocated);
-        if (final_ob_item != NULL) {
-            /* we cannot use list_clear() for this because it does not
-               guarantee that the list is really empty when it returns */
-            while (--i >= 0) {
-                Py_XDECREF(final_ob_item[i]);
-            }
-#ifdef Py_GIL_DISABLED
-            ensure_shared_on_resize(self_kl);
-            bool use_qsbr = _PyObject_GC_IS_SHARED(self_kl);
-#else
-            bool use_qsbr = false;
-#endif
-            free_list_items(final_ob_item, use_qsbr);
-        }
+        REENABLE_LIST(self_kl, keylist_ob_size, keylist_ob_item, keylist_allocated);
+        final_ob_item = NULL;
     }
 
 keyfunc_fail:
-    final_ob_item = self->ob_item;
-    i = Py_SIZE(self);
-    Py_SET_SIZE(self, saved_ob_size);
-    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, saved_ob_item);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, saved_allocated);
-    if (final_ob_item != NULL) {
-        /* we cannot use list_clear() for this because it does not
-           guarantee that the list is really empty when it returns */
-        while (--i >= 0) {
-            Py_XDECREF(final_ob_item[i]);
-        }
-#ifdef Py_GIL_DISABLED
-        ensure_shared_on_resize(self);
-        bool use_qsbr = _PyObject_GC_IS_SHARED(self);
-#else
-        bool use_qsbr = false;
-#endif
-        free_list_items(final_ob_item, use_qsbr);
-    }
+    REENABLE_LIST(self, saved_ob_size, saved_ob_item, saved_allocated);
     return Py_XNewRef(result);
 }
+#undef DISABLE_LIST
+#undef _REENABLE_LIST_GIL_PART
+#undef REENABLE_LIST
 #undef IFLT
 #undef ISLT
 
