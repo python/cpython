@@ -521,40 +521,76 @@ footer {
   align-items: center;
 }
 
-#toggle-color-mode,
-#toggle-cold {
-  padding: 8px 16px;
-  background: var(--color-primary);
-  border: 1px solid var(--color-primary-dark);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-inverse);
+/* Toggle Switch Styles */
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
-  font-size: 0.9em;
-  transition: all var(--transition-base);
-  white-space: nowrap;
-  font-weight: 500;
+  user-select: none;
+  font-family: var(--font-family-base);
 }
 
+.toggle-switch .toggle-label {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  min-width: 65px;
+  text-align: right;
+}
+
+.toggle-switch .toggle-label:last-child {
+  text-align: left;
+}
+
+.toggle-switch .toggle-label.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Push first toggle to the right */
 #toggle-color-mode {
   margin-left: auto;
 }
 
-#toggle-color-mode:hover,
-#toggle-cold:hover {
-  background: var(--color-primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.toggle-track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 12px;
+  transition: background 0.3s ease;
 }
 
-#toggle-color-mode.cumulative {
-  background: #9b59b6;  /* Purple for cumulative mode */
-  border-color: #8e44ad;
+.toggle-track.on {
+  background: var(--color-primary);
 }
 
-#toggle-cold.active {
-  background: var(--color-accent);
-  color: var(--color-text-primary);
-  border-color: var(--color-accent);
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.toggle-track.on::after {
+  transform: translateX(20px);
+}
+
+/* Color mode toggle specific */
+#toggle-color-mode .toggle-track.on {
+  background: #8e44ad;
+}
+
+/* Cold code toggle specific */
+#toggle-cold .toggle-track.on {
+  background: #e67e22;
 }
 
 .code-header h1 {

@@ -211,7 +211,7 @@ window.addEventListener('resize', buildScrollMarker);
 function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;
     const lines = document.querySelectorAll('.code-line');
-    const toggleBtn = document.getElementById('toggle-cold');
+    const toggle = document.getElementById('toggle-cold');
 
     lines.forEach(line => {
         // Check both self and cumulative samples
@@ -228,9 +228,18 @@ function toggleColdCode() {
         }
     });
 
-    if (toggleBtn) {
-        toggleBtn.textContent = coldCodeHidden ? '🔥 Show Cold' : '❄️ Hide Cold';
-        toggleBtn.classList.toggle('active', coldCodeHidden);
+    if (toggle) {
+        const track = toggle.querySelector('.toggle-track');
+        const labels = toggle.querySelectorAll('.toggle-label');
+        if (coldCodeHidden) {
+            track.classList.add('on');
+            labels[0].classList.remove('active');
+            labels[1].classList.add('active');
+        } else {
+            track.classList.remove('on');
+            labels[0].classList.add('active');
+            labels[1].classList.remove('active');
+        }
     }
 }
 
@@ -249,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function toggleColorMode() {
     colorMode = colorMode === 'self' ? 'cumulative' : 'self';
     const lines = document.querySelectorAll('.code-line');
-    const toggleBtn = document.getElementById('toggle-color-mode');
+    const toggle = document.getElementById('toggle-color-mode');
 
     lines.forEach(line => {
         let bgColor;
@@ -264,13 +273,17 @@ function toggleColorMode() {
         }
     });
 
-    if (toggleBtn) {
+    if (toggle) {
+        const track = toggle.querySelector('.toggle-track');
+        const labels = toggle.querySelectorAll('.toggle-label');
         if (colorMode === 'self') {
-            toggleBtn.textContent = '🎨 Color: Self';
-            toggleBtn.classList.remove('cumulative');
+            track.classList.remove('on');
+            labels[0].classList.add('active');
+            labels[1].classList.remove('active');
         } else {
-            toggleBtn.textContent = '📊 Color: Cumulative';
-            toggleBtn.classList.add('cumulative');
+            track.classList.add('on');
+            labels[0].classList.remove('active');
+            labels[1].classList.add('active');
         }
     }
 
