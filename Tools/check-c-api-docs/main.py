@@ -38,7 +38,11 @@ accordingly.
 _CPYTHON = Path(__file__).parent.parent.parent
 INCLUDE = _CPYTHON / "Include"
 C_API_DOCS = _CPYTHON / "Doc" / "c-api"
-IGNORED = (_CPYTHON / "Tools" / "check-c-api-docs" / "ignored_c_api.txt").read_text().split("\n")
+IGNORED = (
+    (_CPYTHON / "Tools" / "check-c-api-docs" / "ignored_c_api.txt")
+    .read_text()
+    .split("\n")
+)
 
 for index, line in enumerate(IGNORED):
     if line.startswith("#"):
