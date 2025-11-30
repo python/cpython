@@ -23933,6 +23933,7 @@ fi
 
 
 ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
 " "$ac_c_undeclared_builtin_options" "CFLAGS"
 if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
 then :
