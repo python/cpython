@@ -414,7 +414,6 @@ class TestKeylist(unittest.TestCase):
             [].sort(key=1, keylist=1)
 
     def test_argtype(self):
-        msg = 'Only one of key and keylist can be provided.'
         for arg in [1, (), iter(())]:
             msg = f"'{type(arg).__name__}' object is not a list"
             with self.assertRaisesRegex(TypeError, msg):
@@ -426,31 +425,51 @@ class TestKeylist(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, msg):
                 [1, 2, 3].sort(keylist=arg)
 
+    def test_empty(self):
+        data = []
+        keylist = []
+        data.sort(keylist=keylist)
+        self.assertEqual(data, [])
+        self.assertEqual(keylist, [])
+
     def test_keylist_vs_key(self):
-        data = list(range(10))
-        # NOTE: BORLAND32
-        keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % 10
-        keylist = list(map(keyfunc, data))
-        res_keyfunc = sorted(data, key=keyfunc)
-        res_keylist = sorted(data, keylist=keylist)
-        self.assertEqual(res_keyfunc, res_keylist)
+        for reverse in [False, True]:
+            data = list(range(10))
+            # NOTE: BORLAND32-RNG-LIKE
+            keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % 10
+            keylist = list(map(keyfunc, data))
+            res_keyfunc = sorted(data, key=keyfunc, reverse=reverse)
+            res_keylist = sorted(data, keylist=keylist, reverse=reverse)
+            self.assertEqual(res_keyfunc, res_keylist)
 
     def test_mutability_plus(self):
-        for size in [10, 100, 1000]:
-            data = list(range(size))
-            # NOTE: BORLAND32
-            keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % size
-            keylist = list(map(keyfunc, data))
-            orig_keylist = list(keylist)
+        for reverse in [False, True]:
+            for size in [10, 100, 1000]:
+                data = list(range(size))
+                # NOTE: BORLAND32-RNG-LIKE
+                keyfunc = lambda x: ((22695477 * x + 1) % 2**32) % size
+                keylist = list(map(keyfunc, data))
+                orig_keylist = list(keylist)
 
-            expected_keylist = sorted(keylist)
-            result = sorted(data, keylist=keylist)
-            self.assertEqual(keylist, expected_keylist)
+                expected_keylist = sorted(keylist, reverse=reverse)
+                result = sorted(data, keylist=keylist, reverse=reverse)
+                self.assertEqual(keylist, expected_keylist)
 
-            # And for completeness check the result
-            idxs = sorted(range(len(keylist)), key=orig_keylist.__getitem__)
-            expected_result = [data[i] for i in idxs]
-            self.assertEqual(result, expected_result)
+                # And for completeness check the result
+                rge = range(len(keylist))
+                idxs = sorted(rge, key=orig_keylist.__getitem__, reverse=reverse)
+                expected_result = [data[i] for i in idxs]
+                self.assertEqual(result, expected_result)
+
+    def test_mid_failure(self):
+        values = list(range(5))
+        keylist = [2, 1, 3, 0, None]
+        with self.assertRaises(TypeError):
+            values.sort(keylist=keylist)
+
+        expected_values = sorted(range(4), keylist=[2, 1, 3, 0])
+        self.assertEqual(values, expected_values + [4])
+        self.assertEqual(keylist, [0, 1, 2, 3, None])
 
 
 if __name__ == "__main__":
