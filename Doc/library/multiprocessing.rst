@@ -22,8 +22,7 @@ to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both POSIX and
 Windows.
 
-The :mod:`multiprocessing` module also introduces APIs which do not have
-analogs in the :mod:`threading` module.  A prime example of this is the
+The :mod:`multiprocessing` module also introduces the
 :class:`~multiprocessing.pool.Pool` object which offers a convenient means of
 parallelizing the execution of a function across multiple input values,
 distributing the input data across processes (data parallelism).  The following
@@ -44,6 +43,10 @@ will print to standard output ::
 
    [1, 4, 9]
 
+The :mod:`multiprocessing` module also introduces APIs which do not have
+analogs in the :mod:`threading` module, like the ability to :meth:`terminate
+<Process.terminate>`, :meth:`interrupt <Process.interrupt>` or :meth:`kill
+<Process.kill>` a running process.
 
 .. seealso::
 
@@ -1416,6 +1419,12 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. note::
       On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
@@ -1567,6 +1576,12 @@ object -- see :ref:`multiprocessing-managers`.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
 
 .. note::
 

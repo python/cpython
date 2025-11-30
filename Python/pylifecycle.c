@@ -503,6 +503,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     _Py_InitVersion();
+    _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2517,7 +2518,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong

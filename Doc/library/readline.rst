@@ -26,6 +26,8 @@ Readline library in general.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
   The underlying Readline library API may be implemented by

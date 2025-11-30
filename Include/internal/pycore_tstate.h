@@ -76,6 +76,10 @@ typedef struct _PyThreadStateImpl {
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
 
+    // PyUnstable_ThreadState_ResetStackProtection() values
+    uintptr_t c_stack_init_base;
+    uintptr_t c_stack_init_top;
+
 } _PyThreadStateImpl;
 
 #ifdef __cplusplus

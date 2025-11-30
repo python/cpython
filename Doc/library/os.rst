@@ -561,7 +561,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -3504,6 +3504,9 @@ features:
 .. function:: symlink(src, dst, target_is_directory=False, *, dir_fd=None)
 
    Create a symbolic link pointing to *src* named *dst*.
+
+   The *src* parameter refers to the target of the link (the file or directory being linked to),
+   and *dst* is the name of the link being created.
 
    On Windows, a symlink represents either a file or a directory, and does not
    morph to the target dynamically.  If the target is present, the type of the

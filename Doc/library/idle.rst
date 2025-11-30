@@ -37,6 +37,10 @@ IDLE has the following features:
 
 * configuration, browsers, and other dialogs
 
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+.. include:: ../includes/optional-module.rst
+
 Menus
 -----
 
@@ -657,7 +661,9 @@ looked for in the user's home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE's Python shell.
 
-Command line usage
+.. _idlelib-cli:
+
+Command-line usage
 ^^^^^^^^^^^^^^^^^^
 
 .. program:: idle

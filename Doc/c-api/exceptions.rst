@@ -309,6 +309,14 @@ For convenience, some of these functions will always return a
    .. versionadded:: 3.4
 
 
+.. c:function:: void PyErr_RangedSyntaxLocationObject(PyObject *filename, int lineno, int col_offset, int end_lineno, int end_col_offset)
+
+   Similar to :c:func:`PyErr_SyntaxLocationObject`, but also sets the
+   *end_lineno* and *end_col_offset* information for the current exception.
+
+   .. versionadded:: 3.10
+
+
 .. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
@@ -329,6 +337,23 @@ For convenience, some of these functions will always return a
    where *message* indicates that an internal operation (e.g. a Python/C API
    function) was invoked with an illegal argument.  It is mostly for internal
    use.
+
+
+.. c:function:: PyObject *PyErr_ProgramTextObject(PyObject *filename, int lineno)
+
+   Get the source line in *filename* at line *lineno*. *filename* should be a
+   Python :class:`str` object.
+
+   On success, this function returns a Python string object with the found line.
+   On failure, this function returns ``NULL`` without an exception set.
+
+
+.. c:function:: PyObject *PyErr_ProgramText(const char *filename, int lineno)
+
+   Similar to :c:func:`PyErr_ProgramTextObject`, but *filename* is a
+   :c:expr:`const char *`, which is decoded with the
+   :term:`filesystem encoding and error handler`, instead of a
+   Python object reference.
 
 
 Issuing warnings
@@ -771,6 +796,17 @@ Exception Classes
 Exception Objects
 =================
 
+.. c:function:: int PyExceptionInstance_Check(PyObject *op)
+
+   Return true if *op* is an instance of :class:`BaseException`, false
+   otherwise. This function always succeeds.
+
+
+.. c:macro:: PyExceptionInstance_Class(op)
+
+   Equivalent to :c:func:`Py_TYPE(op) <Py_TYPE>`.
+
+
 .. c:function:: PyObject* PyException_GetTraceback(PyObject *ex)
 
    Return the traceback associated with the exception as a new reference, as
@@ -947,6 +983,9 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
    *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
    be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
+
+   .. seealso::
+      The :c:func:`PyUnstable_ThreadState_SetStackProtection` function.
 
    .. versionchanged:: 3.9
       This function is now also available in the :ref:`limited API <limited-c-api>`.

@@ -2564,6 +2564,10 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
+        def resize(b, a):  # MODIFIES!
+            b.wait()
+            a.resize(10)
+
         def check(funcs, a=None, *args):
             if a is None:
                 a = bytearray(b'0' * 0x400000)
@@ -2624,6 +2628,8 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
+        check([clear] + [resize] * 10)
 
         check([clear] + [contains] * 10)
         check([clear] + [subscript] * 10)

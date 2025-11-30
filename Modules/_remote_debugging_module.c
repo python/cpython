@@ -11,14 +11,6 @@
  * HEADERS AND INCLUDES
  * ============================================================================ */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifndef Py_BUILD_CORE_BUILTIN
 #    define Py_BUILD_CORE_MODULE 1
 #endif
@@ -29,6 +21,17 @@
 #include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 #include "../Python/remote_debug.h"
+
+// gh-141784: Python.h header must be included first, before system headers.
+// Otherwise, some types such as ino_t can be defined differently, causing ABI
+// issues.
+#include <errno.h>
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
