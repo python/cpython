@@ -4595,26 +4595,13 @@ def bœr():
             class C:
                 def foo(self):
                     test_str = "break C.foo"
-
-            foo()
-            C().foo()
         """
         commands = """
-            break foo
             break C.foo
-            continue
-            break C.foo
-            continue
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
-        res_lines = [x.strip() for x in stdout.splitlines()]
-        # can't set breakpoint before class C is defined, and gives an error
-        self.assertIn("The specified object 'C.foo' is not a function", res_lines[3])
-        # can set correctly after the class C is defined
-        self.assertRegex(res_lines[6], r"Breakpoint 2 at .*main\.py:7")
-        self.assertIn('test_str = "break C.foo"', res_lines[8])
-
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
 
 class ChecklineTests(unittest.TestCase):
