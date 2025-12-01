@@ -113,7 +113,7 @@ _MAXHEADERS = 100
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
-_SAFE_BUF_SIZE = 1 << 20
+_MIN_READ_BUF_SIZE = 1 << 20
 
 
 # Header name/value ABNF (http://tools.ietf.org/html/rfc7230#section-3.2)
@@ -647,11 +647,13 @@ class HTTPResponse(io.BufferedIOBase):
         reading. If the bytes are truly not available (due to EOF), then the
         IncompleteRead exception can be used to detect the problem.
         """
-        cursize = min(amt, _SAFE_BUF_SIZE)
+        cursize = min(amt, _MIN_READ_BUF_SIZE)
         data = self.fp.read(cursize)
         while len(data) < amt:
             if len(data) < cursize:
                 raise IncompleteRead(data, amt-len(data))
+            # This is a geometric increase in read size (never more than
+            # doubling out the current length of data per loop iteration).
             delta = min(cursize, amt - cursize)
             data += self.fp.read(cursize)
             cursize += delta
