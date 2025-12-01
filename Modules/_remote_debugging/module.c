@@ -386,6 +386,12 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
+    // Clear stale last_profiled_frame values from previous profilers
+    // This prevents us from stopping frame walking early due to stale values
+    if (cache_frames) {
+        clear_last_profiled_frames(self);
+    }
+
     return 0;
 }
 

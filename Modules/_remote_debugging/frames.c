@@ -405,6 +405,63 @@ frame_cache_cleanup(RemoteUnwinderObject *unwinder)
     Py_CLEAR(unwinder->frame_cache);
 }
 
+// Clear last_profiled_frame for all threads in the target process.
+// This must be called at the start of profiling to avoid stale values
+// from previous profilers causing us to stop frame walking early.
+int
+clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
+{
+    uintptr_t current_interp = unwinder->interpreter_addr;
+    uintptr_t zero = 0;
+
+    while (current_interp != 0) {
+        // Get first thread in this interpreter
+        uintptr_t tstate_addr;
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &unwinder->handle,
+                current_interp + unwinder->debug_offsets.interpreter_state.threads_head,
+                sizeof(void*),
+                &tstate_addr) < 0) {
+            // Non-fatal: just skip clearing
+            PyErr_Clear();
+            return 0;
+        }
+
+        // Iterate all threads in this interpreter
+        while (tstate_addr != 0) {
+            // Clear last_profiled_frame
+            uintptr_t lpf_addr = tstate_addr + unwinder->debug_offsets.thread_state.last_profiled_frame;
+            if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                                  sizeof(uintptr_t), &zero) < 0) {
+                // Non-fatal: just continue
+                PyErr_Clear();
+            }
+
+            // Move to next thread
+            if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                    &unwinder->handle,
+                    tstate_addr + unwinder->debug_offsets.thread_state.next,
+                    sizeof(void*),
+                    &tstate_addr) < 0) {
+                PyErr_Clear();
+                break;
+            }
+        }
+
+        // Move to next interpreter
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &unwinder->handle,
+                current_interp + unwinder->debug_offsets.interpreter_state.next,
+                sizeof(void*),
+                &current_interp) < 0) {
+            PyErr_Clear();
+            break;
+        }
+    }
+
+    return 0;
+}
+
 // Remove cache entries for threads not seen in the result
 // result structure: list of InterpreterInfo, where InterpreterInfo[1] is threads list,
 // and ThreadInfo[0] is the thread_id

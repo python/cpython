@@ -374,6 +374,7 @@ extern int process_frame_chain(
 /* Frame cache functions */
 extern int frame_cache_init(RemoteUnwinderObject *unwinder);
 extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
+extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
     RemoteUnwinderObject *unwinder,
