@@ -2207,10 +2207,23 @@ record_deallocation(PyThreadState *tstate)
 {
     struct _gc_thread_state *gc = &((_PyThreadStateImpl *)tstate)->gc;
 
-    // Only decrement if positive, matching gc.c behavior which prevents
-    // negative counts (see PyObject_GC_Del in gc.c).
-    if (gc->alloc_count > 0) {
-        gc->alloc_count--;
+    gc->alloc_count--;
+    if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
+        GCState *gcstate = &tstate->interp->gc;
+        int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+        int new_count;
+        do {
+            if (count == 0){ 
+                break;
+            }
+            new_count = count + (int)gc->alloc_count;
+            if (new_count < 0) {
+                new_count = 0;
+            }
+        } while (!_Py_atomic_compare_exchange_int(&gcstate->young.count,
+                                                  &count,
+                                                  new_count));
+        gc->alloc_count = 0;
     }
 }
 
