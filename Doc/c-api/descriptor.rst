@@ -92,8 +92,8 @@ Built-in descriptors
 .. c:var:: PyTypeObject PyClassMethodDescr_Type
 
    The type object for C-level class method descriptor objects.
-   This is the type of the descriptors created for :func:`classmethod` defined in C
-   extension types, and is the same object as :class:`classmethod` in the
+   This is the type of the descriptors created for :func:`classmethod` defined in
+   C extension types, and is the same object as :class:`classmethod` in the
    Python layer.
 
 
