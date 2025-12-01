@@ -75,7 +75,7 @@ globals().update(PlistFormat.__members__)
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
-_SAFE_BUF_SIZE = 1 << 20
+_MIN_READ_BUF_SIZE = 1 << 20
 
 class UID:
     def __init__(self, data):
@@ -512,7 +512,7 @@ class _BinaryPlistParser:
         return tokenL
 
     def _read(self, size):
-        cursize = min(size, _SAFE_BUF_SIZE)
+        cursize = min(size, _MIN_READ_BUF_SIZE)
         data = self._fp.read(cursize)
         while True:
             if len(data) != cursize:
