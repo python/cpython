@@ -26,7 +26,7 @@ found in the dictionary of type objects.
    The type object for member descriptor objects created from
    :c:type:`PyMemberDef` structures. These descriptors expose fields of a
    C struct as attributes on a type, and correspond
-   to :class:`types.MemberDescriptorType` objects in the Python layer.
+   to :class:`types.MemberDescriptorType` objects in Python.
 
 
 
@@ -46,7 +46,7 @@ found in the dictionary of type objects.
    The type object for method descriptor objects created from
    :c:type:`PyMethodDef` structures. These descriptors expose C functions as
    methods on a type, and correspond to :class:`types.MemberDescriptorType`
-   objects in the Python layer.
+   objects in Python.
 
 
 .. c:function:: PyObject* PyDescr_NewWrapper(PyTypeObject *type, struct wrapperbase *wrapper, void *wrapped)
@@ -93,8 +93,8 @@ Built-in descriptors
 
    The type object for C-level class method descriptor objects.
    This is the type of the descriptors created for :func:`classmethod` defined in
-   C extension types, and is the same object as :class:`classmethod` in the
-   Python layer.
+   C extension types, and is the same object as :class:`classmethod`
+   in Python.
 
 
 .. c:function:: PyObject *PyClassMethod_New(PyObject *callable)
