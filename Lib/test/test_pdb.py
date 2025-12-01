@@ -4594,7 +4594,7 @@ def bœr():
 
             class C:
                 def foo(self):
-                    test_str = "break C.foo"
+                    pass
         """
         commands = """
             break C.foo
