@@ -3240,7 +3240,7 @@ objects.
 
          See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
          common code patterns which can be optimized with
-         :func:`bytearray.take_bytes`.
+         :meth:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4649,7 +4649,7 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=sys.maxsize, /)
+   .. method:: index(value, start=0, stop=sys.maxsize, /)
 
       Return the index of the first occurrence of *value* (at or after
       index *start* and before index *stop*).

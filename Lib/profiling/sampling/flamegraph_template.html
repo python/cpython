@@ -26,7 +26,31 @@
       </div>
     </div>
 
+    <!-- Compact Thread Stats Bar -->
+    <div class="thread-stats-bar" id="thread-stats-bar" style="display: none;">
+      <span class="thread-stat-item" id="gil-held-stat">
+        <span class="stat-label">🟢 GIL Held:</span>
+        <span class="stat-value" id="gil-held-pct">--</span>
+      </span>
+      <span class="thread-stat-separator">│</span>
+      <span class="thread-stat-item" id="gil-released-stat">
+        <span class="stat-label">🔴 GIL Released:</span>
+        <span class="stat-value" id="gil-released-pct">--</span>
+      </span>
+      <span class="thread-stat-separator">│</span>
+      <span class="thread-stat-item" id="gil-waiting-stat">
+        <span class="stat-label">🟡 Waiting:</span>
+        <span class="stat-value" id="gil-waiting-pct">--</span>
+      </span>
+      <span class="thread-stat-separator">│</span>
+      <span class="thread-stat-item" id="gc-stat">
+        <span class="stat-label">🗑️ GC:</span>
+        <span class="stat-value" id="gc-pct">--</span>
+      </span>
+    </div>
+
     <div class="stats-section">
+      <!-- Hot Spots -->
       <div class="stats-container">
         <div class="stat-card hotspot-card">
           <div class="stat-icon">🥇</div>

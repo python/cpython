@@ -831,7 +831,9 @@ Instances of the :class:`Popen` class have the following methods:
 
    If the process does not terminate after *timeout* seconds, a
    :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
-   retrying communication will not lose any output.
+   retrying communication will not lose any output.  Supplying *input* to a
+   subsequent post-timeout :meth:`communicate` call is in undefined behavior
+   and may become an error in the future.
 
    The child process is not killed if the timeout expires, so in order to
    cleanup properly a well-behaved application should kill the child process and
@@ -843,6 +845,11 @@ Instances of the :class:`Popen` class have the following methods:
       except TimeoutExpired:
           proc.kill()
           outs, errs = proc.communicate()
+
+   After a call to :meth:`~Popen.communicate` raises :exc:`TimeoutExpired`, do
+   not call :meth:`~Popen.wait`. Use an additional :meth:`~Popen.communicate`
+   call to finish handling pipes and populate the :attr:`~Popen.returncode`
+   attribute.
 
    .. note::
 

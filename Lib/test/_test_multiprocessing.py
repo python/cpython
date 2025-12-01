@@ -1204,7 +1204,7 @@ class _TestQueue(BaseTestCase):
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
         child_can_start.wait()
-        #queue.put(1)
+        queue.put(1)
         queue.put(2)
         queue.put(3)
         queue.put(4)
@@ -1229,15 +1229,16 @@ class _TestQueue(BaseTestCase):
         child_can_start.set()
         parent_can_continue.wait()
 
-        time.sleep(DELTA)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
         self.assertEqual(queue_empty(queue), False)
 
-        # Hangs unexpectedly, remove for now
-        #self.assertEqual(queue.get(), 1)
+        self.assertEqual(queue.get_nowait(), 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
-        self.assertEqual(queue.get_nowait(), 5)
+        self.assertEqual(queue.get(), 5)
 
         self.assertEqual(queue_empty(queue), True)
 

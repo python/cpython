@@ -5476,7 +5476,7 @@
                 JUMP_TO_LABEL(stop_tracing);
             }
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            _PyExecutorObject *executor = code->co_executors->executors[this_instr->op.arg];
+            _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
@@ -11714,7 +11714,7 @@
                 if (err < 0) {
                     JUMP_TO_LABEL(error);
                 }
-                DISPATCH_GOTO_NON_TRACING();
+                DISPATCH();
             }
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
             if ((_tstate->jit_tracer_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
