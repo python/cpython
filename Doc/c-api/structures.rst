@@ -280,6 +280,8 @@ Implementing functions and methods
 
       Name of the method.
 
+      A ``NULL`` *ml_name* marks the end of a :c:type:`!PyMethodDef` array.
+
    .. c:member:: PyCFunction ml_meth
 
       Pointer to the C implementation.
@@ -698,14 +700,12 @@ The following flags can be used with :c:member:`PyMemberDef.flags`:
    entry indicates an offset from the subclass-specific data, rather than
    from ``PyObject``.
 
-   Can only be used as part of :c:member:`Py_tp_members <PyTypeObject.tp_members>`
+   Can only be used as part of the :c:data:`Py_tp_members`
    :c:type:`slot <PyType_Slot>` when creating a class using negative
    :c:member:`~PyType_Spec.basicsize`.
    It is mandatory in that case.
-
-   This flag is only used in :c:type:`PyType_Slot`.
-   When setting :c:member:`~PyTypeObject.tp_members` during
-   class creation, Python clears it and sets
+   When setting :c:member:`~PyTypeObject.tp_members` from the slot during
+   class creation, Python clears the flag and sets
    :c:member:`PyMemberDef.offset` to the offset from the ``PyObject`` struct.
 
 .. index::

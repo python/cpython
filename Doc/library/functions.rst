@@ -377,7 +377,7 @@ are always available.  They are listed here in alphabetical order.
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
       Added the *module* parameter.
 
 

@@ -1204,7 +1204,7 @@ class _TestQueue(BaseTestCase):
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
         child_can_start.wait()
-        #queue.put(1)
+        queue.put(1)
         queue.put(2)
         queue.put(3)
         queue.put(4)
@@ -1229,15 +1229,16 @@ class _TestQueue(BaseTestCase):
         child_can_start.set()
         parent_can_continue.wait()
 
-        time.sleep(DELTA)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
         self.assertEqual(queue_empty(queue), False)
 
-        # Hangs unexpectedly, remove for now
-        #self.assertEqual(queue.get(), 1)
+        self.assertEqual(queue.get_nowait(), 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
-        self.assertEqual(queue.get_nowait(), 5)
+        self.assertEqual(queue.get(), 5)
 
         self.assertEqual(queue_empty(queue), True)
 
@@ -6956,28 +6957,13 @@ class _TestSpawnedSysPath(BaseTestCase):
         if multiprocessing.get_start_method() != "forkserver":
             self.skipTest("forkserver specific test")
 
-        # Create a test module in the temporary directory on the child's path
-        # TODO: This can all be simplified once gh-126631 is fixed and we can
-        #       use __main__ instead of a module.
-        dirname = os.path.join(self._temp_dir, 'preloaded_module')
-        init_name = os.path.join(dirname, '__init__.py')
-        os.mkdir(dirname)
-        with open(init_name, "w") as f:
-            cmd = '''if 1:
-                import sys
-                print('stderr', end='', file=sys.stderr)
-                print('stdout', end='', file=sys.stdout)
-            '''
-            f.write(cmd)
-
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
-        env = {'PYTHONPATH': self._temp_dir}
-        _, out, err = test.support.script_helper.assert_python_ok(name, **env)
+        _, out, err = test.support.script_helper.assert_python_ok(name)
 
         # Check stderr first, as it is more likely to be useful to see in the
         # event of a failure.
-        self.assertEqual(err.decode().rstrip(), 'stderr')
-        self.assertEqual(out.decode().rstrip(), 'stdout')
+        self.assertEqual(err.decode().rstrip(), '__main____mp_main__')
+        self.assertEqual(out.decode().rstrip(), '__main____mp_main__')
 
 
 class MiscTestCase(unittest.TestCase):
