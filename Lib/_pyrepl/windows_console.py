@@ -22,6 +22,7 @@ from __future__ import annotations
 import io
 import os
 import sys
+import time
 
 import ctypes
 import types
@@ -448,7 +449,6 @@ class WindowsConsole(Console):
         while self.event_queue.empty():
             # Check if we have a pending escape sequence that needs timeout handling
             if self.event_queue.has_pending_escape_sequence():
-                import time
                 current_time_ms = time.monotonic() * 1000
 
                 if self.event_queue.should_emit_standalone_escape(current_time_ms):
