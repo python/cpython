@@ -655,7 +655,7 @@ class HTTPResponse(io.BufferedIOBase):
             # This is a geometric increase in read size (never more than
             # doubling out the current length of data per loop iteration).
             delta = min(cursize, amt - cursize)
-            data += self.fp.read(cursize)
+            data += self.fp.read(delta)
             cursize += delta
         return data
 
