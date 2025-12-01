@@ -261,11 +261,13 @@ process_frame_chain(
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     int *stopped_at_cached_frame,
-    PyObject *frame_addresses)  // optional: list to receive frame addresses
+    uintptr_t *frame_addrs,      // optional: C array to receive frame addresses
+    Py_ssize_t *num_addrs,       // in/out: current count / updated count
+    Py_ssize_t max_addrs)        // max capacity of frame_addrs array
 {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
-    const size_t MAX_FRAMES = 1024;
+    const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
 
     // Initialize output flag
@@ -343,14 +345,8 @@ process_frame_chain(
                 return -1;
             }
             // Extra frames use 0 as address (they're synthetic)
-            if (frame_addresses) {
-                PyObject *addr_obj = PyLong_FromUnsignedLongLong(0);
-                if (!addr_obj || PyList_Append(frame_addresses, addr_obj) < 0) {
-                    Py_XDECREF(addr_obj);
-                    Py_DECREF(extra_frame_info);
-                    return -1;
-                }
-                Py_DECREF(addr_obj);
+            if (frame_addrs && *num_addrs < max_addrs) {
+                frame_addrs[(*num_addrs)++] = 0;
             }
             Py_DECREF(extra_frame_info);
         }
@@ -369,14 +365,8 @@ process_frame_chain(
                 return -1;
             }
             // Track the address for this frame
-            if (frame_addresses) {
-                PyObject *addr_obj = PyLong_FromUnsignedLongLong(frame_addr);
-                if (!addr_obj || PyList_Append(frame_addresses, addr_obj) < 0) {
-                    Py_XDECREF(addr_obj);
-                    Py_DECREF(frame);
-                    return -1;
-                }
-                Py_DECREF(addr_obj);
+            if (frame_addrs && *num_addrs < max_addrs) {
+                frame_addrs[(*num_addrs)++] = frame_addr;
             }
             Py_DECREF(frame);
         }
@@ -386,23 +376,6 @@ process_frame_chain(
     }
 
     return 0;
-}
-
-/* ============================================================================
- * FRAME CACHE - stores (address, frame_info) pairs per thread
- * ============================================================================ */
-
-int
-frame_cache_init(RemoteUnwinderObject *unwinder)
-{
-    unwinder->frame_cache = PyDict_New();
-    return unwinder->frame_cache ? 0 : -1;
-}
-
-void
-frame_cache_cleanup(RemoteUnwinderObject *unwinder)
-{
-    Py_CLEAR(unwinder->frame_cache);
 }
 
 // Clear last_profiled_frame for all threads in the target process.
@@ -462,219 +435,6 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
     return 0;
 }
 
-// Remove cache entries for threads not seen in the result
-// result structure: list of InterpreterInfo, where InterpreterInfo[1] is threads list,
-// and ThreadInfo[0] is the thread_id
-void
-frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result)
-{
-    if (!unwinder->frame_cache || !result || !PyList_Check(result)) {
-        return;
-    }
-
-    // Build set of seen thread IDs from result
-    PyObject *seen = PySet_New(NULL);
-    if (!seen) {
-        PyErr_Clear();
-        return;
-    }
-
-    // Iterate: result -> interpreters -> threads -> thread_id
-    Py_ssize_t num_interps = PyList_GET_SIZE(result);
-    for (Py_ssize_t i = 0; i < num_interps; i++) {
-        PyObject *interp_info = PyList_GET_ITEM(result, i);
-        // InterpreterInfo[1] is the threads list
-        PyObject *threads = PyStructSequence_GetItem(interp_info, 1);
-        if (!threads || !PyList_Check(threads)) {
-            continue;
-        }
-        Py_ssize_t num_threads = PyList_GET_SIZE(threads);
-        for (Py_ssize_t j = 0; j < num_threads; j++) {
-            PyObject *thread_info = PyList_GET_ITEM(threads, j);
-            // ThreadInfo[0] is the thread_id
-            PyObject *thread_id = PyStructSequence_GetItem(thread_info, 0);
-            if (thread_id && PySet_Add(seen, thread_id) < 0) {
-                PyErr_Clear();
-            }
-        }
-    }
-
-    // Collect keys to remove (can't modify dict while iterating)
-    PyObject *keys_to_remove = PyList_New(0);
-    if (!keys_to_remove) {
-        Py_DECREF(seen);
-        PyErr_Clear();
-        return;
-    }
-
-    PyObject *key, *value;
-    Py_ssize_t pos = 0;
-    while (PyDict_Next(unwinder->frame_cache, &pos, &key, &value)) {
-        int contains = PySet_Contains(seen, key);
-        if (contains == 0) {
-            // Thread ID not seen in current sample, mark for removal
-            if (PyList_Append(keys_to_remove, key) < 0) {
-                PyErr_Clear();
-                break;
-            }
-        } else if (contains < 0) {
-            PyErr_Clear();
-        }
-    }
-
-    // Remove stale entries
-    Py_ssize_t num_to_remove = PyList_GET_SIZE(keys_to_remove);
-    for (Py_ssize_t i = 0; i < num_to_remove; i++) {
-        PyObject *k = PyList_GET_ITEM(keys_to_remove, i);
-        if (PyDict_DelItem(unwinder->frame_cache, k) < 0) {
-            PyErr_Clear();
-        }
-    }
-
-    Py_DECREF(keys_to_remove);
-    Py_DECREF(seen);
-}
-
-// Find last_profiled_frame in cache and extend frame_info with cached continuation
-// Cache format: tuple of (bytes_of_addresses, frame_list)
-// - bytes_of_addresses: raw uintptr_t values packed as bytes
-// - frame_list: Python list of frame info tuples
-// If frame_addresses is provided (not NULL), also extends it with cached addresses
-int
-frame_cache_lookup_and_extend(
-    RemoteUnwinderObject *unwinder,
-    uint64_t thread_id,
-    uintptr_t last_profiled_frame,
-    PyObject *frame_info,
-    PyObject *frame_addresses)
-{
-    if (!unwinder->frame_cache || last_profiled_frame == 0) {
-        return 0;
-    }
-
-    PyObject *key = PyLong_FromUnsignedLongLong(thread_id);
-    if (!key) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    PyObject *cached = PyDict_GetItemWithError(unwinder->frame_cache, key);
-    Py_DECREF(key);
-    if (!cached || PyErr_Occurred()) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    // cached is tuple of (addresses_bytes, frame_list)
-    if (!PyTuple_Check(cached) || PyTuple_GET_SIZE(cached) != 2) {
-        return 0;
-    }
-
-    PyObject *addr_bytes = PyTuple_GET_ITEM(cached, 0);
-    PyObject *frame_list = PyTuple_GET_ITEM(cached, 1);
-
-    if (!PyBytes_Check(addr_bytes) || !PyList_Check(frame_list)) {
-        return 0;
-    }
-
-    const uintptr_t *addrs = (const uintptr_t *)PyBytes_AS_STRING(addr_bytes);
-    Py_ssize_t num_addrs = PyBytes_GET_SIZE(addr_bytes) / sizeof(uintptr_t);
-    Py_ssize_t num_frames = PyList_GET_SIZE(frame_list);
-
-    // Find the index where last_profiled_frame matches
-    Py_ssize_t start_idx = -1;
-    for (Py_ssize_t i = 0; i < num_addrs; i++) {
-        if (addrs[i] == last_profiled_frame) {
-            start_idx = i;
-            break;
-        }
-    }
-
-    if (start_idx < 0) {
-        return 0;  // Not found
-    }
-
-    // Extend frame_info with frames from start_idx onwards
-    // Use list slice for efficiency: frame_info.extend(frame_list[start_idx:])
-    PyObject *slice = PyList_GetSlice(frame_list, start_idx, num_frames);
-    if (!slice) {
-        return -1;
-    }
-
-    // Extend frame_info with the slice using SetSlice at the end
-    Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
-    int result = PyList_SetSlice(frame_info, cur_size, cur_size, slice);
-    Py_DECREF(slice);
-
-    if (result < 0) {
-        return -1;
-    }
-
-    // Also extend frame_addresses with cached addresses if provided
-    if (frame_addresses) {
-        for (Py_ssize_t i = start_idx; i < num_addrs; i++) {
-            PyObject *addr_obj = PyLong_FromUnsignedLongLong(addrs[i]);
-            if (!addr_obj) {
-                return -1;
-            }
-            if (PyList_Append(frame_addresses, addr_obj) < 0) {
-                Py_DECREF(addr_obj);
-                return -1;
-            }
-            Py_DECREF(addr_obj);
-        }
-    }
-
-    return 1;
-}
-
-// Store frame list with addresses in cache
-// Stores as tuple of (addresses_bytes, frame_list)
-int
-frame_cache_store(
-    RemoteUnwinderObject *unwinder,
-    uint64_t thread_id,
-    PyObject *frame_list,
-    const uintptr_t *addrs,
-    Py_ssize_t num_addrs)
-{
-    if (!unwinder->frame_cache) {
-        return 0;
-    }
-
-    PyObject *key = PyLong_FromUnsignedLongLong(thread_id);
-    if (!key) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    // Create bytes object from addresses array
-    PyObject *addr_bytes = PyBytes_FromStringAndSize(
-        (const char *)addrs, num_addrs * sizeof(uintptr_t));
-    if (!addr_bytes) {
-        Py_DECREF(key);
-        PyErr_Clear();
-        return 0;
-    }
-
-    // Create tuple (addr_bytes, frame_list)
-    PyObject *cache_entry = PyTuple_Pack(2, addr_bytes, frame_list);
-    Py_DECREF(addr_bytes);
-    if (!cache_entry) {
-        Py_DECREF(key);
-        PyErr_Clear();
-        return 0;
-    }
-
-    int result = PyDict_SetItem(unwinder->frame_cache, key, cache_entry);
-    Py_DECREF(key);
-    Py_DECREF(cache_entry);
-    if (result < 0) {
-        PyErr_Clear();
-    }
-    return 0;
-}
-
 // Fast path: check if we have a full cache hit (entire stack unchanged)
 // Returns: 1 if full hit (frame_info populated), 0 if miss, -1 on error
 static int
@@ -693,40 +453,19 @@ try_full_cache_hit(
         return 0;
     }
 
-    PyObject *key = PyLong_FromUnsignedLongLong(thread_id);
-    if (!key) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    PyObject *cached = PyDict_GetItemWithError(unwinder->frame_cache, key);
-    Py_DECREF(key);
-    if (!cached || PyErr_Occurred()) {
-        PyErr_Clear();
-        return 0;
-    }
-
-    if (!PyTuple_Check(cached) || PyTuple_GET_SIZE(cached) != 2) {
-        return 0;
-    }
-
-    PyObject *addr_bytes = PyTuple_GET_ITEM(cached, 0);
-    PyObject *frame_list = PyTuple_GET_ITEM(cached, 1);
-
-    if (!PyBytes_Check(addr_bytes) || !PyList_Check(frame_list)) {
+    FrameCacheEntry *entry = frame_cache_find(unwinder, thread_id);
+    if (!entry || !entry->frame_list) {
         return 0;
     }
 
     // Verify first address matches (sanity check)
-    const uintptr_t *addrs = (const uintptr_t *)PyBytes_AS_STRING(addr_bytes);
-    Py_ssize_t num_addrs = PyBytes_GET_SIZE(addr_bytes) / sizeof(uintptr_t);
-    if (num_addrs == 0 || addrs[0] != frame_addr) {
+    if (entry->num_addrs == 0 || entry->addrs[0] != frame_addr) {
         return 0;
     }
 
     // Full hit! Extend frame_info with entire cached list
     Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
-    int result = PyList_SetSlice(frame_info, cur_size, cur_size, frame_list);
+    int result = PyList_SetSlice(frame_info, cur_size, cur_size, entry->frame_list);
     return result < 0 ? -1 : 1;
 }
 
@@ -749,66 +488,35 @@ collect_frames_with_cache(
         return full_hit < 0 ? -1 : 0;  // Either error or success
     }
 
-    // Slow path: need to walk frames
-    PyObject *frame_addresses = PyList_New(0);
-    if (!frame_addresses) {
-        return -1;
-    }
+    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
+    Py_ssize_t num_addrs = 0;
 
     int stopped_at_cached = 0;
     if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, gc_frame,
-                            last_profiled_frame, &stopped_at_cached, frame_addresses) < 0) {
-        Py_DECREF(frame_addresses);
+                            last_profiled_frame, &stopped_at_cached,
+                            addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
         return -1;
     }
 
     // If stopped at cached frame, extend with cached continuation (both frames and addresses)
     if (stopped_at_cached) {
         int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id, last_profiled_frame,
-                                                         frame_info, frame_addresses);
+                                                         frame_info, addrs, &num_addrs,
+                                                         FRAME_CACHE_MAX_FRAMES);
         if (cache_result < 0) {
-            Py_DECREF(frame_addresses);
             return -1;
         }
         if (cache_result == 0) {
             // Cache miss - continue walking from last_profiled_frame to get the rest
             if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, gc_frame,
-                                    0, NULL, frame_addresses) < 0) {
-                Py_DECREF(frame_addresses);
+                                    0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
                 return -1;
             }
         }
     }
 
-    // Convert frame_addresses (list of PyLong) to C array for efficient cache storage
-    Py_ssize_t num_addrs = PyList_GET_SIZE(frame_addresses);
-
-    // After extending from cache, frames and addresses should be in sync
-    assert(PyList_GET_SIZE(frame_info) == num_addrs);
-
-    // Allocate C array for addresses
-    uintptr_t *addrs = (uintptr_t *)PyMem_Malloc(num_addrs * sizeof(uintptr_t));
-    if (!addrs) {
-        Py_DECREF(frame_addresses);
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    // Fill addresses from the Python list
-    for (Py_ssize_t i = 0; i < num_addrs; i++) {
-        PyObject *addr_obj = PyList_GET_ITEM(frame_addresses, i);
-        addrs[i] = PyLong_AsUnsignedLongLong(addr_obj);
-        if (PyErr_Occurred()) {
-            PyErr_Clear();
-            addrs[i] = 0;
-        }
-    }
-
-    // Store in cache
+    // Store in cache (frame_cache_store handles truncation if num_addrs > FRAME_CACHE_MAX_FRAMES)
     frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs);
-
-    PyMem_Free(addrs);
-    Py_DECREF(frame_addresses);
 
     return 0;
 }

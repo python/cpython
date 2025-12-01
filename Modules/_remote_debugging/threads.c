@@ -406,7 +406,7 @@ unwind_stack_for_thread(
     } else {
         // No caching - process entire frame chain
         if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
-                                gc_frame, 0, NULL, NULL) < 0) {
+                                gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
             goto error;
         }

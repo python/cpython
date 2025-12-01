@@ -154,6 +154,17 @@ typedef struct {
     uintptr_t addr_code_adaptive;
 } CachedCodeMetadata;
 
+/* Frame cache constants and types */
+#define FRAME_CACHE_MAX_THREADS 32
+#define FRAME_CACHE_MAX_FRAMES 1024
+
+typedef struct {
+    uint64_t thread_id;                      // 0 = empty slot
+    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
+    Py_ssize_t num_addrs;
+    PyObject *frame_list;                    // owned reference, NULL if empty
+} FrameCacheEntry;
+
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
     PyTypeObject *TaskInfo_Type;
@@ -196,8 +207,9 @@ typedef struct {
     int native;
     int gc;
     int cache_frames;
+    uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
     RemoteDebuggingState *cached_state;
-    PyObject *frame_cache;  // dict: thread_id -> list of (addr, frame_info)
+    FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
@@ -368,12 +380,15 @@ extern int process_frame_chain(
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     int *stopped_at_cached_frame,
-    PyObject *frame_addresses  // optional: list to receive frame addresses
+    uintptr_t *frame_addrs,
+    Py_ssize_t *num_addrs,
+    Py_ssize_t max_addrs
 );
 
 /* Frame cache functions */
 extern int frame_cache_init(RemoteUnwinderObject *unwinder);
 extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
+extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
 extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
 extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
 extern int frame_cache_lookup_and_extend(
@@ -381,7 +396,9 @@ extern int frame_cache_lookup_and_extend(
     uint64_t thread_id,
     uintptr_t last_profiled_frame,
     PyObject *frame_info,
-    PyObject *frame_addresses);  // optional: list to extend with cached addresses
+    uintptr_t *frame_addrs,
+    Py_ssize_t *num_addrs,
+    Py_ssize_t max_addrs);
 extern int frame_cache_store(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,

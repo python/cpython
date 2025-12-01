@@ -2616,6 +2616,61 @@ sock.connect(('localhost', {port}))
         self.assertEqual(len(frames1), len(frames2),
                          "New unwinder should return complete stack despite stale last_profiled_frame")
 
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_exhaustion(self):
+        """Test cache works when frame limit (1024) is exceeded.
+
+        FRAME_CACHE_MAX_FRAMES=1024. With 1100 recursive frames,
+        the cache can't store all of them but should still work.
+        """
+        # Use 1100 to exceed FRAME_CACHE_MAX_FRAMES=1024
+        depth = 1100
+        script_body = f"""\
+import sys
+sys.setrecursionlimit(2000)
+
+def recurse(n):
+    if n <= 0:
+        sock.sendall(b"ready")
+        sock.recv(16)  # wait for ack
+        sock.sendall(b"ready2")
+        sock.recv(16)  # wait for done
+        return
+    recurse(n - 1)
+
+recurse({depth})
+"""
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder_cache = make_unwinder(cache_frames=True)
+            unwinder_no_cache = make_unwinder(cache_frames=False)
+
+            frames_cached = self._sample_frames(
+                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}
+            )
+            # Sample again with no cache for comparison
+            frames_no_cache = self._sample_frames(
+                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}
+            )
+
+        self.assertIsNotNone(frames_cached)
+        self.assertIsNotNone(frames_no_cache)
+
+        # Both should have many recurse frames (> 1024 limit)
+        cached_count = [f.funcname for f in frames_cached].count("recurse")
+        no_cache_count = [f.funcname for f in frames_no_cache].count("recurse")
+
+        self.assertGreater(cached_count, 1000, "Should have >1000 recurse frames")
+        self.assertGreater(no_cache_count, 1000, "Should have >1000 recurse frames")
+
+        # Both modes should produce same frame count
+        self.assertEqual(len(frames_cached), len(frames_no_cache),
+                        "Cache exhaustion should not affect stack completeness")
+
 
 if __name__ == "__main__":
     unittest.main()

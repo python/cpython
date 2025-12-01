@@ -295,6 +295,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->native = native;
     self->gc = gc;
     self->cache_frames = cache_frames;
+    self->stale_invalidation_counter = 0;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -608,9 +609,13 @@ next_interpreter:
     }
 
 exit:
-    // Invalidate cache entries for threads not seen in this sample
+    // Invalidate cache entries for threads not seen in this sample.
+    // Only do this every 1024 iterations to avoid performance overhead.
     if (self->cache_frames && result) {
-        frame_cache_invalidate_stale(self, result);
+        if (++self->stale_invalidation_counter >= 1024) {
+            self->stale_invalidation_counter = 0;
+            frame_cache_invalidate_stale(self, result);
+        }
     }
     _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
