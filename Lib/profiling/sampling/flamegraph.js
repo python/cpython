@@ -633,7 +633,9 @@ function populateThreadStats(data, selectedThreadId = null) {
     if (gilHeldPctElem) gilHeldPctElem.textContent = `${(threadStats.has_gil_pct || 0).toFixed(1)}%`;
 
     const gilReleasedPctElem = document.getElementById('gil-released-pct');
-    if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${(threadStats.on_cpu_pct || 0).toFixed(1)}%`;
+    // GIL Released = not holding GIL and not waiting for it
+    const gilReleasedPct = Math.max(0, 100 - (threadStats.has_gil_pct || 0) - (threadStats.gil_requested_pct || 0));
+    if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(1)}%`;
 
     const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
     if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${(threadStats.gil_requested_pct || 0).toFixed(1)}%`;
