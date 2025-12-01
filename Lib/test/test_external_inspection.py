@@ -2047,6 +2047,7 @@ class TestFrameCaching(unittest.TestCase):
     """
 
     maxDiff = None
+    MAX_TRIES = 10
 
     @contextlib.contextmanager
     def _target_process(self, script_body):
@@ -2112,10 +2113,15 @@ sock.connect(('localhost', {port}))
                     return thread.frame_info
         return None
 
-    def _sample_frames(self, client_socket, unwinder, wait_signal, send_ack, required_funcs):
+    def _sample_frames(self, client_socket, unwinder, wait_signal, send_ack, required_funcs, expected_frames=1):
         """Wait for signal, sample frames, send ack. Returns frame_info list."""
         self._wait_for_signal(client_socket, wait_signal)
-        frames = self._get_frames(unwinder, required_funcs)
+        # Give at least MAX_TRIES tries for the process to arrive to a steady state
+        for _ in range(self.MAX_TRIES):
+            frames = self._get_frames(unwinder, required_funcs)
+            if frames and len(frames) >= expected_frames:
+                break
+            time.sleep(0.1)
         client_socket.sendall(send_ack)
         return frames
 
@@ -2358,8 +2364,7 @@ sock.connect(('localhost', {port}))
         """Test that cache_frames=True and cache_frames=False produce equivalent results."""
         script_body = """\
             def level3():
-                sock.sendall(b"ready")
-                sock.recv(16)
+                sock.sendall(b"ready"); sock.recv(16)
 
             def level2():
                 level3()
@@ -2650,11 +2655,11 @@ recurse({depth})
             unwinder_no_cache = make_unwinder(cache_frames=False)
 
             frames_cached = self._sample_frames(
-                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}
+                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}, 1024
             )
             # Sample again with no cache for comparison
             frames_no_cache = self._sample_frames(
-                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}
+                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}, 1024
             )
 
         self.assertIsNotNone(frames_cached)
