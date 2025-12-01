@@ -197,8 +197,8 @@ def _add_sampling_options(parser):
         choices=["running", "all"],
         default=None,
         metavar="MODE",
-        help="Enable async-aware profiling: 'running' (only running task) "
-        "or 'all' (all tasks including waiting)",
+        help='Enable async-aware profiling: "running" (only running task) '
+        'or "all" (all tasks including waiting)',
     )
 
 
