@@ -2469,16 +2469,20 @@ sock.connect(('localhost', {port}))
 
             def get_thread_frames(target_funcs):
                 """Get frames for thread matching target functions."""
-                for _ in range(3):
-                    try:
+                retries = 0
+                for _ in busy_retry(SHORT_TIMEOUT):
+                    if retries >= 5:
+                        break
+                    retries += 1
+                    # On Windows, ReadProcessMemory can fail with OSError
+                    # (WinError 299) when frame pointers are in flux
+                    with contextlib.suppress(RuntimeError, OSError):
                         traces = unwinder.get_stack_trace()
                         for interp in traces:
                             for thread in interp.threads:
                                 funcs = [f.funcname for f in thread.frame_info]
                                 if any(f in funcs for f in target_funcs):
                                     return funcs
-                    except RuntimeError:
-                        pass
                 return None
 
             # Track results for each sync point
