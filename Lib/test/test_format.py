@@ -278,6 +278,8 @@ class FormatTest(unittest.TestCase):
                         "unsupported format %z at position 4")
         test_exc_common("abc %Id", 1, ValueError,
                         "unsupported format %I at position 4")
+        test_exc_common("abc %'d", 1, ValueError,
+                        "stray % at position 4 or unexpected format character \"'\" at position 5")
         test_exc_common("abc %1 d", 1, ValueError,
                         "stray % at position 4 or unexpected format character ' ' at position 6")
         test_exc_common('abc % (x)r', {}, ValueError,
@@ -312,12 +314,16 @@ class FormatTest(unittest.TestCase):
                         "not enough arguments for format string (got 0)")
         test_exc_common('%(x)r', 1, TypeError,
                         "format requires a mapping, not int")
+        test_exc_common('%*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
         test_exc_common('%*r', 3.14, TypeError,
-                        "* requires int, not float")
+                        "not enough arguments for format string (got 1)")
         test_exc_common('%*r', (3.14, 1), TypeError,
                         "format argument 1: * requires int, not float")
+        test_exc_common('%.*r', 1, TypeError,
+                        "not enough arguments for format string (got 1)")
         test_exc_common('%.*r', 3.14, TypeError,
-                        "* requires int, not float")
+                        "not enough arguments for format string (got 1)")
         test_exc_common('%.*r', (3.14, 1), TypeError,
                         "format argument 1: * requires int, not float")
         test_exc_common('%*r', (2**1000, 1), OverflowError,
@@ -329,25 +335,25 @@ class FormatTest(unittest.TestCase):
         test_exc_common('%.*r', (-2**1000, 1), OverflowError,
                         "format argument 1: too big for precision")
         test_exc_common('%d', '1', TypeError,
-                        "a real number is required for format %d, not str")
+                        "%d requires a real number, not str")
         test_exc_common('%d', b'1', TypeError,
-                        "a real number is required for format %d, not bytes")
+                        "%d requires a real number, not bytes")
         test_exc_common('%d', ('1',), TypeError,
-                        "format argument 1: a real number is required for format %d, not str")
+                        "format argument 1: %d requires a real number, not str")
         test_exc_common('%x', '1', TypeError,
-                        "an integer is required for format %x, not str")
+                        "%x requires an integer, not str")
         test_exc_common('%x', 3.14, TypeError,
-                        "an integer is required for format %x, not float")
+                        "%x requires an integer, not float")
         test_exc_common('%x', ('1',), TypeError,
-                        "format argument 1: an integer is required for format %x, not str")
+                        "format argument 1: %x requires an integer, not str")
         test_exc_common('%i', '1', TypeError,
-                        "a real number is required for format %i, not str")
+                        "%i requires a real number, not str")
         test_exc_common('%i', b'1', TypeError,
-                        "a real number is required for format %i, not bytes")
+                        "%i requires a real number, not bytes")
         test_exc_common('%g', '1', TypeError,
-                        "a real number is required for format %g, not str")
+                        "%g requires a real number, not str")
         test_exc_common('%g', ('1',), TypeError,
-                        "format argument 1: a real number is required for format %g, not str")
+                        "format argument 1: %g requires a real number, not str")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
@@ -361,8 +367,6 @@ class FormatTest(unittest.TestCase):
             print('Testing exceptions')
         test_exc('abc %b', 1, ValueError,
                  "unsupported format %b at position 4")
-        test_exc("abc %'d", 1, ValueError,
-                 "stray % at position 4 or unexpected format character ''' (U+0027) at position 5")
         test_exc("abc %\nd", 1, ValueError,
                  "stray % at position 4 or unexpected format character U+000A at position 5")
         test_exc("abc %\x1fd", 1, ValueError,
@@ -386,11 +390,11 @@ class FormatTest(unittest.TestCase):
         test_exc('%(x).*r', {'x': 1}, ValueError,
                  "* cannot be used with a parenthesised mapping key at position 0")
         test_exc('%(x)d', {'x': '1'}, TypeError,
-                 "format argument 'x': a real number is required for format %d, not str")
+                 "format argument 'x': %d requires a real number, not str")
         test_exc('%(x)x', {'x': '1'}, TypeError,
-                 "format argument 'x': an integer is required for format %x, not str")
+                 "format argument 'x': %x requires an integer, not str")
         test_exc('%(x)g', {'x': '1'}, TypeError,
-                 "format argument 'x': a real number is required for format %g, not str")
+                 "format argument 'x': %g requires a real number, not str")
         test_exc('%c', -1, OverflowError, "%c argument not in range(0x110000)")
         test_exc('%c', (-1,), OverflowError,
                  "format argument 1: %c argument not in range(0x110000)")
@@ -465,8 +469,6 @@ class FormatTest(unittest.TestCase):
             print('Testing exceptions')
         test_exc(b"abc %\nd", 1, ValueError,
                  "stray % at position 4 or unexpected format character with code 0x0a at position 5")
-        test_exc(b"abc %'d", 1, ValueError,
-                 "stray % at position 4 or unexpected format character with code 0x27 at position 5")
         test_exc(b"abc %\x1fd", 1, ValueError,
                  "stray % at position 4 or unexpected format character with code 0x1f at position 5")
         test_exc(b"abc %\x7fd", 1, ValueError,
@@ -488,11 +490,11 @@ class FormatTest(unittest.TestCase):
         test_exc(b'%(x).*r', {b'x': 1}, ValueError,
                  "* cannot be used with a parenthesised mapping key at position 0")
         test_exc(b'%(x)d', {b'x': '1'}, TypeError,
-                 "format argument b'x': a real number is required for format %d, not str")
+                 "format argument b'x': %d requires a real number, not str")
         test_exc(b'%(x)x', {b'x': '1'}, TypeError,
-                 "format argument b'x': an integer is required for format %x, not str")
+                 "format argument b'x': %x requires an integer, not str")
         test_exc(b'%(x)g', {b'x': '1'}, TypeError,
-                 "format argument b'x': a real number is required for format %g, not str")
+                 "format argument b'x': %g requires a real number, not str")
         test_exc(b"%c", -1, OverflowError,
                 "%c argument not in range(256)")
         test_exc(b"%c", (-1,), OverflowError,

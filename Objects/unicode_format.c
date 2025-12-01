@@ -93,16 +93,18 @@ struct unicode_format_arg_t {
 
 
 static PyObject *
-unicode_format_getnextarg(struct unicode_formatter_t *ctx)
+unicode_format_getnextarg(struct unicode_formatter_t *ctx, int allowone)
 {
     Py_ssize_t argidx = ctx->argidx;
 
-    if (argidx < ctx->arglen) {
+    if (argidx < ctx->arglen && (allowone || ctx->arglen >= 0)) {
         ctx->argidx++;
-        if (ctx->arglen < 0)
-            return ctx->args;
-        else
+        if (ctx->arglen >= 0) {
             return PyTuple_GetItem(ctx->args, argidx);
+        }
+        else if (allowone) {
+            return ctx->args;
+        }
     }
     PyErr_Format(PyExc_TypeError,
                  "not enough arguments for format string (got %zd)",
@@ -134,7 +136,7 @@ formatfloat(PyObject *v,
     if (x == -1.0 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             FORMAT_ERROR(PyExc_TypeError,
-                         "a real number is required for format %%%c, not %T",
+                         "%%%c requires a real number, not %T",
                          arg->ch, v);
         }
         return -1;
@@ -392,12 +394,12 @@ wrongtype:
         case 'x':
         case 'X':
             FORMAT_ERROR(PyExc_TypeError,
-                         "an integer is required for format %%%c, not %T",
+                         "%%%c requires an integer, not %T",
                          arg->ch, v);
             break;
         default:
             FORMAT_ERROR(PyExc_TypeError,
-                         "a real number is required for format %%%c, not %T",
+                         "%%%c requires a real number, not %T",
                          arg->ch, v);
             break;
     }
@@ -540,7 +542,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                     arg->fmtstart);
             return -1;
         }
-        v = unicode_format_getnextarg(ctx);
+        v = unicode_format_getnextarg(ctx, 0);
         if (v == NULL)
             return -1;
         if (!PyLong_Check(v)) {
@@ -599,7 +601,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                         arg->fmtstart);
                 return -1;
             }
-            v = unicode_format_getnextarg(ctx);
+            v = unicode_format_getnextarg(ctx, 0);
             if (v == NULL)
                 return -1;
             if (!PyLong_Check(v)) {
@@ -684,7 +686,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     if (ctx->fmtcnt == 0)
         ctx->writer.overallocate = 0;
 
-    v = unicode_format_getnextarg(ctx);
+    v = unicode_format_getnextarg(ctx, 1);
     if (v == NULL)
         return -1;
 
@@ -768,7 +770,14 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
                          "unsupported format %%%c at position %zd",
                          (int)arg->ch, arg->fmtstart);
         }
-        else if (arg->ch >= 32 && arg->ch < 127 && arg->ch != '\'') {
+        else if (arg->ch == '\'') {
+            PyErr_Format(PyExc_ValueError,
+                         "stray %% at position %zd or unexpected "
+                         "format character \"'\" at position %zd",
+                         arg->fmtstart,
+                         ctx->fmtpos - 1);
+        }
+        else if (arg->ch >= 32 && arg->ch < 127) {
             PyErr_Format(PyExc_ValueError,
                          "stray %% at position %zd or unexpected "
                          "format character '%c' at position %zd",

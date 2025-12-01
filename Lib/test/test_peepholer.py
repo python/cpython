@@ -744,16 +744,16 @@ class TestTranforms(BytecodeTestCase):
                     'unsupported format %z at position 2'):
             eval("'%s%z' % (x, 5)", {'x': 1234})
         with self.assertRaisesRegex(TypeError,
-                'format argument 1: a real number is required for format %d, not str'):
+                'format argument 1: %d requires a real number, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
-                'format argument 1: an integer is required for format %x, not float'):
+                'format argument 1: %x requires an integer, not float'):
             eval("'%x' % (x,)", {'x': 1234.56})
         with self.assertRaisesRegex(TypeError,
-                'format argument 1: an integer is required for format %x, not str'):
+                'format argument 1: %x requires an integer, not str'):
             eval("'%x' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
-                'format argument 1: a real number is required for format %f, not str'):
+                'format argument 1: %f requires a real number, not str'):
             eval("'%f' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError,
                     'not enough arguments for format string'):
