@@ -75,12 +75,37 @@ the module and a copyright notice if you like).
    See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
-``PY``, except those defined in standard header files. For convenience, and
-since they are used extensively by the Python interpreter, ``"Python.h"``
-includes a few standard header files: ``<stdio.h>``, ``<string.h>``,
-``<errno.h>``, and ``<stdlib.h>``.  If the latter header file does not exist on
-your system, it declares the functions :c:func:`malloc`, :c:func:`free` and
-:c:func:`realloc` directly.
+``PY``, except those defined in standard header files.
+
+.. tip::
+
+   For backward compatibility, :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   If using the limited C API version 3.13 or newer, the implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.12 or older,
+   the headers below are also included:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.10 or older,
+   the headers below are also included:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
 
 The next thing we add to our module file is the C function that will be called
 when the Python expression ``spam.system(string)`` is evaluated (we'll see
@@ -203,31 +228,57 @@ function usually raises :c:data:`PyExc_TypeError`.  If you have an argument whos
 value must be in a particular range or must satisfy other conditions,
 :c:data:`PyExc_ValueError` is appropriate.
 
-You can also define a new exception that is unique to your module. For this, you
-usually declare a static object variable at the beginning of your file::
+You can also define a new exception that is unique to your module.
+The simplest way to do this is to declare a static global object variable at
+the beginning of the file::
 
-   static PyObject *SpamError;
+   static PyObject *SpamError = NULL;
 
-and initialize it in your module's initialization function (:c:func:`!PyInit_spam`)
-with an exception object::
+and initialize it by calling :c:func:`PyErr_NewException` in the module's
+:c:data:`Py_mod_exec` function (:c:func:`!spam_module_exec`)::
+
+   SpamError = PyErr_NewException("spam.error", NULL, NULL);
+
+Since :c:data:`!SpamError` is a global variable, it will be overwritten every time
+the module is reinitialized, when the :c:data:`Py_mod_exec` function is called.
+
+For now, let's avoid the issue: we will block repeated initialization by raising an
+:py:exc:`ImportError`::
+
+   static PyObject *SpamError = NULL;
+
+   static int
+   spam_module_exec(PyObject *m)
+   {
+       if (SpamError != NULL) {
+           PyErr_SetString(PyExc_ImportError,
+                           "cannot initialize spam module more than once");
+           return -1;
+       }
+       SpamError = PyErr_NewException("spam.error", NULL, NULL);
+       if (PyModule_AddObjectRef(m, "SpamError", SpamError) < 0) {
+           return -1;
+       }
+
+       return 0;
+   }
+
+   static PyModuleDef_Slot spam_module_slots[] = {
+       {Py_mod_exec, spam_module_exec},
+       {0, NULL}
+   };
+
+   static struct PyModuleDef spam_module = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "spam",
+       .m_size = 0,  // non-negative
+       .m_slots = spam_module_slots,
+   };
 
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       PyObject *m;
-
-       m = PyModule_Create(&spammodule);
-       if (m == NULL)
-           return NULL;
-
-       SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       if (PyModule_AddObjectRef(m, "error", SpamError) < 0) {
-           Py_CLEAR(SpamError);
-           Py_DECREF(m);
-           return NULL;
-       }
-
-       return m;
+       return PyModuleDef_Init(&spam_module);
    }
 
 Note that the Python name for the exception object is :exc:`!spam.error`.  The
@@ -241,6 +292,11 @@ removed from the module by external code, an owned reference to the class is
 needed to ensure that it will not be discarded, causing :c:data:`!SpamError` to
 become a dangling pointer. Should it become a dangling pointer, C code which
 raises the exception could cause a core dump or other unintended side effects.
+
+For now, the :c:func:`Py_DECREF` call to remove this reference is missing.
+Even when the Python interpreter shuts down, the global :c:data:`!SpamError`
+variable will not be garbage-collected. It will "leak".
+We did, however, ensure that this will happen at most once per process.
 
 We discuss the use of :c:macro:`PyMODINIT_FUNC` as a function return type later in this
 sample.
@@ -318,7 +374,7 @@ The Module's Method Table and Initialization Function
 I promised to show how :c:func:`!spam_system` is called from Python programs.
 First, we need to list its name and address in a "method table"::
 
-   static PyMethodDef SpamMethods[] = {
+   static PyMethodDef spam_methods[] = {
        ...
        {"system",  spam_system, METH_VARARGS,
         "Execute a shell command."},
@@ -343,13 +399,10 @@ function.
 
 The method table must be referenced in the module definition structure::
 
-   static struct PyModuleDef spammodule = {
-       PyModuleDef_HEAD_INIT,
-       "spam",   /* name of module */
-       spam_doc, /* module documentation, may be NULL */
-       -1,       /* size of per-interpreter state of the module,
-                    or -1 if the module keeps state in global variables. */
-       SpamMethods
+   static struct PyModuleDef spam_module = {
+       ...
+       .m_methods = spam_methods,
+       ...
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -360,23 +413,17 @@ only non-\ ``static`` item defined in the module file::
    PyMODINIT_FUNC
    PyInit_spam(void)
    {
-       return PyModule_Create(&spammodule);
+       return PyModuleDef_Init(&spam_module);
    }
 
 Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *`` return type,
 declares any special linkage declarations required by the platform, and for C++
 declares the function as ``extern "C"``.
 
-When the Python program imports module :mod:`!spam` for the first time,
-:c:func:`!PyInit_spam` is called. (See below for comments about embedding Python.)
-It calls :c:func:`PyModule_Create`, which returns a module object, and
-inserts built-in function objects into the newly created module based upon the
-table (an array of :c:type:`PyMethodDef` structures) found in the module definition.
-:c:func:`PyModule_Create` returns a pointer to the module object
-that it creates.  It may abort with a fatal error for
-certain errors, or return ``NULL`` if the module could not be initialized
-satisfactorily. The init function must return the module object to its caller,
-so that it then gets inserted into ``sys.modules``.
+:c:func:`!PyInit_spam` is called when each interpreter imports its module
+:mod:`!spam` for the first time.  (See below for comments about embedding Python.)
+A pointer to the module definition must be returned via :c:func:`PyModuleDef_Init`,
+so that the import machinery can create the module and store it in ``sys.modules``.
 
 When embedding Python, the :c:func:`!PyInit_spam` function is not called
 automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
@@ -433,22 +480,18 @@ optionally followed by an import of the module::
 
 .. note::
 
-   Removing entries from ``sys.modules`` or importing compiled modules into
-   multiple interpreters within a process (or following a :c:func:`fork` without an
-   intervening :c:func:`exec`) can create problems for some extension modules.
-   Extension module authors should exercise caution when initializing internal data
-   structures.
+   If you declare a global variable or a local static one, the module may
+   experience unintended side-effects on re-initialisation, for example when
+   removing entries from ``sys.modules`` or importing compiled modules into
+   multiple interpreters within a process
+   (or following a :c:func:`fork` without an intervening :c:func:`exec`).
+   If module state is not yet fully :ref:`isolated <isolating-extensions-howto>`,
+   authors should consider marking the module as having no support for subinterpreters
+   (via :c:macro:`Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED`).
 
 A more substantial example module is included in the Python source distribution
-as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
+as :file:`Modules/xxlimited.c`.  This file may be used as a template or simply
 read as an example.
-
-.. note::
-
-   Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
-   (new in Python 3.5), where a PyModuleDef structure is returned from
-   ``PyInit_spam``, and creation of the module is left to the import machinery.
-   For details on multi-phase initialization, see :PEP:`489`.
 
 
 .. _compilation:
@@ -790,18 +833,17 @@ Philbrick (philbrick@hks.com)::
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
 
-   static struct PyModuleDef keywdargmodule = {
-       PyModuleDef_HEAD_INIT,
-       "keywdarg",
-       NULL,
-       -1,
-       keywdarg_methods
+   static struct PyModuleDef keywdarg_module = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "keywdarg",
+       .m_size = 0,
+       .m_methods = keywdarg_methods,
    };
 
    PyMODINIT_FUNC
    PyInit_keywdarg(void)
    {
-       return PyModule_Create(&keywdargmodule);
+       return PyModuleDef_Init(&keywdarg_module);
    }
 
 
@@ -1042,7 +1084,14 @@ references to all its items, so when item 1 is replaced, it has to dispose of
 the original item 1.  Now let's suppose the original item 1 was an instance of a
 user-defined class, and let's further suppose that the class defined a
 :meth:`!__del__` method.  If this class instance has a reference count of 1,
-disposing of it will call its :meth:`!__del__` method.
+disposing of it will call its :meth:`!__del__` method. Internally,
+:c:func:`PyList_SetItem` calls :c:func:`Py_DECREF` on the replaced item,
+which invokes replaced item's corresponding
+:c:member:`~PyTypeObject.tp_dealloc` function. During
+deallocation, :c:member:`~PyTypeObject.tp_dealloc` calls
+:c:member:`~PyTypeObject.tp_finalize`, which is mapped to the
+:meth:`!__del__` method for class instances (see :pep:`442`). This entire
+sequence happens synchronously within the :c:func:`PyList_SetItem` call.
 
 Since it is written in Python, the :meth:`!__del__` method can execute arbitrary
 Python code.  Could it perhaps do something to invalidate the reference to
@@ -1072,8 +1121,9 @@ why his :meth:`!__del__` methods would fail...
 
 The second case of problems with a borrowed reference is a variant involving
 threads.  Normally, multiple threads in the Python interpreter can't get in each
-other's way, because there is a global lock protecting Python's entire object
-space.  However, it is possible to temporarily release this lock using the macro
+other's way, because there is a :term:`global lock <global interpreter lock>`
+protecting Python's entire object space.
+However, it is possible to temporarily release this lock using the macro
 :c:macro:`Py_BEGIN_ALLOW_THREADS`, and to re-acquire it using
 :c:macro:`Py_END_ALLOW_THREADS`.  This is common around blocking I/O calls, to
 let other threads use the processor while waiting for the I/O to complete.
@@ -1259,19 +1309,14 @@ two more lines must be added::
    #include "spammodule.h"
 
 The ``#define`` is used to tell the header file that it is being included in the
-exporting module, not a client module. Finally, the module's initialization
-function must take care of initializing the C API pointer array::
+exporting module, not a client module. Finally, the module's :c:data:`mod_exec
+<Py_mod_exec>` function must take care of initializing the C API pointer array::
 
-   PyMODINIT_FUNC
-   PyInit_spam(void)
+   static int
+   spam_module_exec(PyObject *m)
    {
-       PyObject *m;
        static void *PySpam_API[PySpam_API_pointers];
        PyObject *c_api_object;
-
-       m = PyModule_Create(&spammodule);
-       if (m == NULL)
-           return NULL;
 
        /* Initialize the C API pointer array */
        PySpam_API[PySpam_System_NUM] = (void *)PySpam_System;
@@ -1280,11 +1325,10 @@ function must take care of initializing the C API pointer array::
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
        if (PyModule_Add(m, "_C_API", c_api_object) < 0) {
-           Py_DECREF(m);
-           return NULL;
+           return -1;
        }
 
-       return m;
+       return 0;
    }
 
 Note that ``PySpam_API`` is declared ``static``; otherwise the pointer
@@ -1343,20 +1387,16 @@ like this::
 
 All that a client module must do in order to have access to the function
 :c:func:`!PySpam_System` is to call the function (or rather macro)
-:c:func:`!import_spam` in its initialization function::
+:c:func:`!import_spam` in its :c:data:`mod_exec <Py_mod_exec>` function::
 
-   PyMODINIT_FUNC
-   PyInit_client(void)
+   static int
+   client_module_exec(PyObject *m)
    {
-       PyObject *m;
-
-       m = PyModule_Create(&clientmodule);
-       if (m == NULL)
-           return NULL;
-       if (import_spam() < 0)
-           return NULL;
+       if (import_spam() < 0) {
+           return -1;
+       }
        /* additional initialization can happen here */
-       return m;
+       return 0;
    }
 
 The main disadvantage of this approach is that the file :file:`spammodule.h` is

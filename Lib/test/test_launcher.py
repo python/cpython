@@ -443,7 +443,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         except subprocess.CalledProcessError:
             raise unittest.SkipTest("requires at least one Python 3.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
 
     def test_search_major_3_32(self):
         try:
@@ -453,8 +453,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 raise unittest.SkipTest("requires at least one 32-bit Python 3.x install")
             raise
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
-        self.assertTrue(data["env.tag"].endswith("-32"), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
+        self.assertEndsWith(data["env.tag"], "-32")
 
     def test_search_major_2(self):
         try:
@@ -463,7 +463,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             if not is_installed("2.7"):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "2.")
 
     def test_py_default(self):
         with self.py_ini(TEST_PY_DEFAULTS):

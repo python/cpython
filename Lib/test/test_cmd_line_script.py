@@ -553,9 +553,9 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
             self.assertEqual(len(text), 5)
-            self.assertTrue(text[0].startswith('Traceback'))
-            self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[3].startswith('NameError'))
+            self.assertStartsWith(text[0], 'Traceback')
+            self.assertStartsWith(text[1], '  File ')
+            self.assertStartsWith(text[3], 'NameError')
 
     def test_non_ascii(self):
         # Apple platforms deny the creation of a file with an invalid UTF-8 name.
@@ -708,9 +708,8 @@ class CmdLineTest(unittest.TestCase):
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
             # It used to crash in https://github.com/python/cpython/issues/111132
-            self.assertTrue(text.endswith(
-                'SyntaxError: nonlocal declaration not allowed at module level\n',
-            ), text)
+            self.assertEndsWith(text,
+                'SyntaxError: nonlocal declaration not allowed at module level\n')
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
@@ -811,6 +810,30 @@ class CmdLineTest(unittest.TestCase):
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::__main__',
+            '-Werror:::test.test_import.data.syntax_warnings',
+            '-Werror:::syntax_warnings',
+            filename)
+        self.assertEqual(err.count(b': SyntaxWarning: '), 6)
+
+    def test_zipfile_run_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with os_helper.temp_dir() as script_dir:
+            zip_name, _ = make_zip_pkg(
+                script_dir, 'test_zip', 'test_pkg', '__main__', source)
+            rc, out, err = assert_python_ok(
+                '-Werror',
+                '-Walways:::__main__',
+                '-Werror:::test_pkg.__main__',
+                os.path.join(zip_name, 'test_pkg')
+            )
+            self.assertEqual(err.count(b': SyntaxWarning: '), 12)
 
 
 def tearDownModule():

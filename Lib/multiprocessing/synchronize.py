@@ -201,8 +201,6 @@ class Semaphore(_SemClass):
         _SemClass.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=ctx)
 
     def get_value(self):
-        """redefined when MacOSX.
-        """
         return self._semlock._get_value()
 
     def __repr__(self):
@@ -315,8 +313,8 @@ class Condition(object):
 
     def __repr__(self):
         try:
-            num_waiters = (self._sleeping_count._semlock._get_value() -
-                           self._woken_count._semlock._get_value())
+            num_waiters = (self._sleeping_count.get_value() -
+                           self._woken_count.get_value())
         except Exception:
             num_waiters = 'unknown'
         return '<%s(%s, %s)>' % (self.__class__.__name__, self._lock, num_waiters)

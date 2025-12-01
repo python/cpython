@@ -19,10 +19,43 @@ cleanup_proc_handle(proc_handle_t *handle) {
 }
 
 static int
-read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
+read_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
     return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
 }
+
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+static int
+write_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (char*)src + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        written = pwritev(handle->memfd, local, 1, offset);
+        if (written < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+}
+#endif // __linux__
 
 static int
 write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
@@ -39,6 +72,9 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
     } while (result < len);
     return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return write_memory_fallback(handle, remote_address, len, src);
+    }
     struct iovec local[1];
     struct iovec remote[1];
     Py_ssize_t result = 0;
@@ -52,6 +88,9 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
 
         written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
         if (written < 0) {
+            if (errno == ENOSYS) {
+                return write_memory_fallback(handle, remote_address, len, src);
+            }
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
@@ -196,7 +235,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     int is_remote_debugging_enabled = 0;
     if (0 != read_memory(
             handle,
-            interpreter_state_addr + debug_offsets.debugger_support.remote_debugging_enabled,
+            interpreter_state_addr + (uintptr_t)debug_offsets.debugger_support.remote_debugging_enabled,
             sizeof(int),
             &is_remote_debugging_enabled))
     {
@@ -216,7 +255,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     if (tid != 0) {
         if (0 != read_memory(
                 handle,
-                interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
+                interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.threads_head,
                 sizeof(void*),
                 &thread_state_addr))
         {
@@ -225,7 +264,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         while (thread_state_addr != 0) {
             if (0 != read_memory(
                     handle,
-                    thread_state_addr + debug_offsets.thread_state.native_thread_id,
+                    thread_state_addr + (uintptr_t)debug_offsets.thread_state.native_thread_id,
                     sizeof(this_tid),
                     &this_tid))
             {
@@ -238,7 +277,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
             if (0 != read_memory(
                     handle,
-                    thread_state_addr + debug_offsets.thread_state.next,
+                    thread_state_addr + (uintptr_t)debug_offsets.thread_state.next,
                     sizeof(void*),
                     &thread_state_addr))
             {
@@ -255,7 +294,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     } else {
         if (0 != read_memory(
                 handle,
-                interpreter_state_addr + debug_offsets.interpreter_state.threads_main,
+                interpreter_state_addr + (uintptr_t)debug_offsets.interpreter_state.threads_main,
                 sizeof(void*),
                 &thread_state_addr))
         {
@@ -307,7 +346,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     uintptr_t eval_breaker;
     if (0 != read_memory(
             handle,
-            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            thread_state_addr + (uintptr_t)debug_offsets.debugger_support.eval_breaker,
             sizeof(uintptr_t),
             &eval_breaker))
     {

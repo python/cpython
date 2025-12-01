@@ -313,7 +313,7 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
+    return ((type->tp_flags) & feature) != 0;
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
@@ -614,7 +614,7 @@ static inline PyObject *
 _Py_XGetRef(PyObject **ptr)
 {
     for (;;) {
-        PyObject *value = _Py_atomic_load_ptr(ptr);
+        PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
         if (value == NULL) {
             return value;
         }
@@ -629,7 +629,7 @@ _Py_XGetRef(PyObject **ptr)
 static inline PyObject *
 _Py_TryXGetRef(PyObject **ptr)
 {
-    PyObject *value = _Py_atomic_load_ptr(ptr);
+    PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
     if (value == NULL) {
         return value;
     }
@@ -767,6 +767,27 @@ _Py_TryIncref(PyObject *op)
 #endif
 }
 
+// Enqueue an object to be freed possibly after some delay
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
+#else
+static inline void _PyObject_XDecRefDelayed(PyObject *obj)
+{
+    Py_XDECREF(obj);
+}
+#endif
+
+#ifdef Py_GIL_DISABLED
+// Same as `Py_XSETREF` but in free-threading, it stores the object atomically
+// and queues the old object to be decrefed at a safe point using QSBR.
+PyAPI_FUNC(void) _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj);
+#else
+static inline void _PyObject_XSetRefDelayed(PyObject **p_obj, PyObject *obj)
+{
+    Py_XSETREF(*p_obj, obj);
+}
+#endif
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);
@@ -842,8 +863,7 @@ static inline Py_hash_t
 _PyObject_HashFast(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
-        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
-                             _PyASCIIObject_CAST(op)->hash);
+        Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);
         if (hash != -1) {
             return hash;
         }
@@ -896,6 +916,9 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 // type->tp_version or zero if name is missing. It doesn't set an exception!
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
+
+PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+                                       PyObject *name, _PyStackRef *method);
 
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
@@ -1006,6 +1029,27 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_FORWARDREF = 3,
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
+
+extern int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
+
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    op->ob_refcnt++;
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
+#endif
+}
+#endif
+
+/* Utility for the tp_traverse slot of mutable heap types that have no other
+ * references. */
+PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);
 
 #ifdef __cplusplus
 }

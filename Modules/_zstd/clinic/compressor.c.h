@@ -252,4 +252,43 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ee2d1dc298de790c input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_zstd_ZstdCompressor_set_pledged_input_size__doc__,
+"set_pledged_input_size($self, size, /)\n"
+"--\n"
+"\n"
+"Set the uncompressed content size to be written into the frame header.\n"
+"\n"
+"  size\n"
+"    The size of the uncompressed data to be provided to the compressor.\n"
+"\n"
+"This method can be used to ensure the header of the frame about to be written\n"
+"includes the size of the data, unless the CompressionParameter.content_size_flag\n"
+"is set to False. If last_mode != FLUSH_FRAME, then a RuntimeError is raised.\n"
+"\n"
+"It is important to ensure that the pledged data size matches the actual data\n"
+"size. If they do not match the compressed output data may be corrupted and the\n"
+"final chunk written may be lost.");
+
+#define _ZSTD_ZSTDCOMPRESSOR_SET_PLEDGED_INPUT_SIZE_METHODDEF    \
+    {"set_pledged_input_size", (PyCFunction)_zstd_ZstdCompressor_set_pledged_input_size, METH_O, _zstd_ZstdCompressor_set_pledged_input_size__doc__},
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
+                                                 unsigned long long size);
+
+static PyObject *
+_zstd_ZstdCompressor_set_pledged_input_size(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    unsigned long long size;
+
+    if (!zstd_contentsize_converter(arg, &size)) {
+        goto exit;
+    }
+    return_value = _zstd_ZstdCompressor_set_pledged_input_size_impl((ZstdCompressor *)self, size);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=c1d5c2cf06a8becd input=a9049054013a1b77]*/

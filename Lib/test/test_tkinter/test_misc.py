@@ -1,3 +1,4 @@
+import collections.abc
 import functools
 import unittest
 import tkinter
@@ -497,7 +498,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(vi.serial, 0)
         else:
             self.assertEqual(vi.micro, 0)
-        self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
+        self.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
 
     def test_embedded_null(self):
         widget = tkinter.Entry(self.root)
@@ -507,6 +508,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         widget.insert(0, '\u20ac\0')  # non-ASCII
         widget.selection_range(0, 'end')
         self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
+
+    def test_iterable_protocol(self):
+        widget = tkinter.Entry(self.root)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Iterable)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Container)
+        self.assertNotIsInstance(widget, collections.abc.Iterable)
+        self.assertNotIsInstance(widget, collections.abc.Container)
+        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+            iter(widget)
+        with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
+            widget in widget
 
 
 class WmTest(AbstractTkTest, unittest.TestCase):
@@ -609,7 +621,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, '??')
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, '??')
         self.assertEqual(e.char, '??')
@@ -642,7 +654,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, '??')
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, '??')
         self.assertEqual(e.char, '??')
@@ -676,7 +688,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertIsInstance(e.state, int)
         self.assertNotEqual(e.state, 0)
@@ -747,7 +759,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, 1)
         self.assertEqual(e.state, 0)
         self.assertEqual(e.char, '??')
@@ -781,7 +793,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0x100)
         self.assertEqual(e.char, '??')
@@ -814,7 +826,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(e.widget, f)
         self.assertIsInstance(e.serial, int)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.time, 0)
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0)
@@ -849,7 +861,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0)
         self.assertEqual(e.char, '??')
@@ -1308,17 +1320,17 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self.assertIs(tkinter._default_root, root)
         tkinter.NoDefaultRoot()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         # repeated call is no-op
         tkinter.NoDefaultRoot()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root.destroy()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root = tkinter.Tk()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root.destroy()
 
     def test_getboolean(self):

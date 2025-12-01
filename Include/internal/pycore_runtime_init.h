@@ -61,9 +61,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
             }, \
         }, \
-        /* A TSS key must be initialized with Py_tss_NEEDS_INIT \
-           in accordance with the specification. */ \
-        .autoTSSkey = Py_tss_NEEDS_INIT, \
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
             .pending_mainthread = { \

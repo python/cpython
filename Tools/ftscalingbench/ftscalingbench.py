@@ -27,6 +27,8 @@ import queue
 import sys
 import threading
 import time
+from dataclasses import dataclass
+from operator import methodcaller
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
@@ -188,6 +190,29 @@ def thread_local_read():
         _ = tmp.x
         _ = tmp.x
 
+class MyClass:
+    __slots__ = ()
+
+    def func(self):
+        pass
+
+@register_benchmark
+def method_caller():
+    mc = methodcaller("func")
+    obj = MyClass()
+    for i in range(1000 * WORK_SCALE):
+        mc(obj)
+
+@dataclass
+class MyDataClass:
+    x: int
+    y: int
+    z: int
+
+@register_benchmark
+def instantiate_dataclass():
+    for _ in range(1000 * WORK_SCALE):
+        obj = MyDataClass(x=1, y=2, z=3)
 
 def bench_one_thread(func):
     t0 = time.perf_counter_ns()
