@@ -64,6 +64,9 @@ import struct
 from warnings import warn
 from xml.parsers.expat import ParserCreate
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
 
 PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
@@ -646,12 +649,24 @@ class _BinaryPlistParser:
 
         return tokenL
 
+    def _read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        data = self._fp.read(cursize)
+        while True:
+            if len(data) != cursize:
+                raise InvalidFileException
+            if cursize == size:
+                return data
+            delta = min(cursize, size - cursize)
+            data += self._fp.read(delta)
+            cursize += delta
+
     def _read_ints(self, n, size):
-        data = self._fp.read(size * n)
+        data = self._read(size * n)
         if size in _BINARY_FORMAT:
             return struct.unpack(f'>{n}{_BINARY_FORMAT[size]}', data)
         else:
-            if not size or len(data) != size * n:
+            if not size:
                 raise InvalidFileException()
             return tuple(int.from_bytes(data[i: i + size], 'big')
                          for i in range(0, size * n, size))
@@ -708,24 +723,18 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
-            result = self._fp.read(s)
-            if len(result) != s:
-                raise InvalidFileException()
+            result = self._read(s)
             if not self._use_builtin_types:
                 result = Data(result)
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('ascii')
 
         elif tokenH == 0x60:  # unicode string
             s = self._get_size(tokenL) * 2
-            data = self._fp.read(s)
-            if len(data) != s:
-                raise InvalidFileException()
+            data = self._read(s)
             result = data.decode('utf-16be')
 
         # tokenH == 0x80 is documented as 'UID' and appears to be used for
