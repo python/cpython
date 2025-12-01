@@ -768,7 +768,7 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
                          "unsupported format %%%c at position %zd",
                          (int)arg->ch, arg->fmtstart);
         }
-        else if (arg->ch >= 32 && arg->ch < 127) {
+        else if (arg->ch >= 32 && arg->ch < 127 && arg->ch != '\'') {
             PyErr_Format(PyExc_ValueError,
                          "stray %% at position %zd or unexpected "
                          "format character '%c' at position %zd",

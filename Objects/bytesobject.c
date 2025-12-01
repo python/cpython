@@ -1012,7 +1012,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                  "unsupported format %%%c at position %zd",
                                  c, (Py_ssize_t)(fmtstart - format - 1));
                 }
-                else if (c >= 32 && c < 127) {
+                else if (c >= 32 && c < 127 && c != '\'') {
                     PyErr_Format(PyExc_ValueError,
                                  "stray %% at position %zd or unexpected "
                                  "format character '%c' "
