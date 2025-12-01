@@ -174,6 +174,9 @@ The module defines the following user-callable items:
       :class:`io.TextIOBase` abstract base classes (depending on whether binary
       or text *mode* was specified).
 
+   .. versionchanged:: 3.13
+      The truncate method returns new file size.
+
 
 .. class:: TemporaryDirectory(suffix=None, prefix=None, dir=None, ignore_cleanup_errors=False, *, delete=True)
 
@@ -394,6 +397,7 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     >>> fp.write(b'Hello world!')
     # read data from file
     >>> fp.seek(0)
+    0
     >>> fp.read()
     b'Hello world!'
     # close the file, it will be removed
