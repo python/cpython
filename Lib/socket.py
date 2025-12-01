@@ -26,6 +26,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -748,3 +749,64 @@ def getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
                          _intenum_converter(socktype, SocketKind),
                          proto, canonname, sa))
     return addrlist
+
+
+def create_server(address, family=None, backlog=None, reuse_port=False):
+    """Convenience function which creates a SOCK_STREAM type socket
+    bound to *address* (a 2-tuple (host, port)) and return the socket
+    object.
+
+    *family* should be either AF_INET or AF_INET6.
+    *backlog* is the queue size passed to socket.listen().
+    *reuse_port* dictates whether to use the SO_REUSEPORT socket option.
+    *dualstack_ipv6*: if true and the platform supports it, it will
+    create an AF_INET6 socket able to accept both IPv4 or IPv6
+    connections. When false it will explicitly disable this option on
+    platforms that enable it by default (e.g. Linux).
+
+    >>> with create_server(('', 8000)) as server:
+    ...     while True:
+    ...         conn, addr = server.accept()
+    ...         # handle new connection
+    """
+    if family is None:
+        family = getattr(socket, "AF_UNSPEC", 0)
+
+    host, port = address
+    err = None
+
+    # AI_PASSIVE tells getaddrinfo we intend to bind() to this address
+    try:
+        addr_infos = getaddrinfo(
+            host, port, family, SOCK_STREAM, 0, AI_PASSIVE
+        )
+    except gaierror as e:
+        raise OSError(f"getaddrinfo failed for {address}: {e}")
+
+    for res in addr_infos:
+        af, socktype, proto, canonname, sa = res
+        sock = None
+        try:
+            sock = socket(af, socktype, proto)
+
+            # Standard server socket option
+            sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+
+            if reuse_port:
+                if hasattr(socket, "SO_REUSEPORT"):
+                    sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+
+            sock.bind(sa)
+            sock.listen(backlog if backlog is not None else SOMAXCONN)
+
+            return sock  # Success!
+
+        except OSError as e:
+            err = e
+            if sock is not None:
+                sock.close()
+
+    # If we get here, no address worked
+    if err is not None:
+        raise err
+    raise OSError(f"Could not create server on {address}")
