@@ -73,6 +73,12 @@
   --code-text: #2e3338;
   --code-text-muted: #8b949e;
   --code-accent: #3776ab;
+
+  /* Navigation colors */
+  --nav-caller: #2563eb;
+  --nav-caller-hover: #1d4ed8;
+  --nav-callee: #dc2626;
+  --nav-callee-hover: #b91c1c;
 }
 
 /* Dark theme */
@@ -114,6 +120,12 @@
   --code-text: #e6edf3;
   --code-text-muted: #6e7681;
   --code-accent: #58a6ff;
+
+  /* Navigation colors - dark theme friendly */
+  --nav-caller: #58a6ff;
+  --nav-caller-hover: #4184e4;
+  --nav-callee: #f87171;
+  --nav-callee-hover: #e53e3e;
 }
 
 /* --------------------------------------------------------------------------
