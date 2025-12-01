@@ -166,7 +166,7 @@ Importing Modules
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.12
-      Setting :attr:``__cached__`` is deprecated. See
+      Setting ``__cached__`` is deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
    .. versionchanged:: 3.15
