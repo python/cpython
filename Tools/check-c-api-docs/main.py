@@ -28,7 +28,7 @@ issue and tag Peter (@ZeroIntensity) on it.\
 """
 
 
-def found_undocumented(singular: bool):
+def found_undocumented(singular: bool) -> str:
     some = "an" if singular else "some"
     s = "" if singular else "s"
     these = "this" if singular else "these"
