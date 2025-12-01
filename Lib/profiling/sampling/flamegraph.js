@@ -76,7 +76,7 @@ function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   if (sidebar) {
     const isCollapsing = !sidebar.classList.contains('collapsed');
-    
+
     if (isCollapsing) {
       // Save current width before collapsing
       const currentWidth = sidebar.offsetWidth;
@@ -89,7 +89,7 @@ function toggleSidebar() {
         sidebar.style.width = savedWidth + 'px';
       }
     }
-    
+
     sidebar.classList.toggle('collapsed');
     localStorage.setItem('flamegraph-sidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
 
@@ -558,11 +558,11 @@ function initSidebarResize() {
       isResizing = false;
       resizeHandle.classList.remove('resizing');
       document.body.classList.remove('resizing-sidebar');
-      
+
       // Save the new width
       const width = sidebar.offsetWidth;
       localStorage.setItem('flamegraph-sidebar-width', width);
-      
+
       // Resize chart after sidebar resize
       setTimeout(() => {
         resizeChart();
@@ -666,6 +666,7 @@ function populateProfileSummary(data) {
   const duration = stats.duration_sec || 0;
   const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
   const errorRate = stats.error_rate || 0;
+  const missedSamples= stats.missed_samples || 0;
 
   const samplesEl = document.getElementById('stat-total-samples');
   if (samplesEl) samplesEl.textContent = formatNumber(totalSamples);
@@ -700,6 +701,19 @@ function populateProfileSummary(data) {
 
     const efficiencyFill = document.getElementById('efficiency-fill');
     if (efficiencyFill) efficiencyFill.style.width = efficiency + '%';
+  }
+  // MissedSamples bar
+  if (missedSamples !== undefined && missedSamples !== null) {
+    const sampleEfficiency = Math.max(0, missedSamples);
+
+    const efficiencySection = document.getElementById('efficiency-section');
+    if (efficiencySection) efficiencySection.style.display = 'block';
+
+    const sampleEfficiencyValue = document.getElementById('stat-missed-samples');
+    if (sampleEfficiencyValue) sampleEfficiencyValue.textContent = sampleEfficiency.toFixed(1) + '%';
+
+    const sampleEfficiencyFill = document.getElementById('missed-samples-fill');
+    if (sampleEfficiencyFill) sampleEfficiencyFill.style.width = sampleEfficiency + '%';
   }
 }
 

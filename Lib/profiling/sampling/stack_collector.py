@@ -113,13 +113,15 @@ class FlamegraphCollector(StackTraceCollector):
         # Call parent collect to process frames
         super().collect(stack_frames, skip_idle=skip_idle)
 
-    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, mode=None):
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
+                  error_rate=None, missed_samples=None, mode=None):
         """Set profiling statistics to include in flamegraph data."""
         self.stats = {
             "sample_interval_usec": sample_interval_usec,
             "duration_sec": duration_sec,
             "sample_rate": sample_rate,
             "error_rate": error_rate,
+            "missed_samples": missed_samples,
             "mode": mode
         }
 
