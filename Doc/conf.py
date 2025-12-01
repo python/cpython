@@ -213,13 +213,6 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
-    # Deprecated function that was never documented:
-    ('py:func', 'getargspec'),
-    ('py:func', 'inspect.getargspec'),
-    # Undocumented modules that users shouldn't have to worry about
-    # (implementation details of `os.path`):
-    ('py:mod', 'ntpath'),
-    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
@@ -232,7 +225,6 @@ nitpick_ignore += [
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__annotations__'),
-    ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
 ]
 
@@ -362,7 +354,7 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Guido van Rossum and the Python development team'
+_stdauthor = 'The Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
     (

@@ -175,7 +175,6 @@ _Py_ext_module_loader_info_init_for_builtin(
                             PyObject *name)
 {
     assert(PyUnicode_Check(name));
-    assert(PyUnicode_FindChar(name, '.', 0, PyUnicode_GetLength(name), -1) == -1);
     assert(PyUnicode_GetLength(name) > 0);
 
     PyObject *name_encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
