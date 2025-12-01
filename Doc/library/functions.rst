@@ -1633,12 +1633,13 @@ are always available.  They are listed here in alphabetical order.
       Example:
 
       .. code-block:: python
-            from time import sleep
-            # This call performs one write operation, so the newline inside the string
-            # does not trigger an immediate flush by itself.
-            print("Hello\nWorld")
-            sleep(3)
-            print("Hi there!")
+
+         from time import sleep
+         # This call performs one write operation, so the newline inside the string
+         # does not trigger an immediate flush by itself.
+         print("Hello\nWorld")
+         sleep(3)
+         print("Hi there!")
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
