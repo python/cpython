@@ -846,6 +846,11 @@ Instances of the :class:`Popen` class have the following methods:
           proc.kill()
           outs, errs = proc.communicate()
 
+   After a call to :meth:`~Popen.communicate` raises :exc:`TimeoutExpired`, do
+   not call :meth:`~Popen.wait`. Use an additional :meth:`~Popen.communicate`
+   call to finish handling pipes and populate the :attr:`~Popen.returncode`
+   attribute.
+
    .. note::
 
       The data read is buffered in memory, so do not use this method if the data
