@@ -1952,7 +1952,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:new_mmap_object");
+    _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap:new_mmap_object");
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }
