@@ -388,9 +388,28 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info, gc_frame) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
-        goto error;
+    if (unwinder->cache_frames) {
+        // Use cache to avoid re-reading unchanged parent frames
+        uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.last_profiled_frame);
+        if (collect_frames_with_cache(unwinder, frame_addr, &chunks, frame_info,
+                                      gc_frame, last_profiled_frame, tid) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
+            goto error;
+        }
+        // Update last_profiled_frame for next sample
+        uintptr_t lpf_addr = *current_tstate + unwinder->debug_offsets.thread_state.last_profiled_frame;
+        if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                              sizeof(uintptr_t), &frame_addr) < 0) {
+            PyErr_Clear();  // Non-fatal
+        }
+    } else {
+        // No caching - process entire frame chain
+        if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
+                                gc_frame, 0, NULL, NULL) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
+            goto error;
+        }
     }
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);

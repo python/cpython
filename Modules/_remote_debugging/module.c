@@ -235,6 +235,7 @@ _remote_debugging.RemoteUnwinder.__init__
     skip_non_matching_threads: bool = True
     native: bool = False
     gc: bool = False
+    cache_frames: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
 
@@ -253,6 +254,8 @@ Args:
             non-Python code.
     gc: If True, include artificial "<GC>" frames to denote active garbage
         collection.
+    cache_frames: If True, enable frame caching optimization to avoid re-reading
+                 unchanged parent frames between samples.
 
 The RemoteUnwinder provides functionality to inspect and debug a running Python
 process, including examining thread states, stack frames and other runtime data.
@@ -270,8 +273,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
-                                               int native, int gc)
-/*[clinic end generated code: output=e9eb6b4df119f6e0 input=606d099059207df2]*/
+                                               int native, int gc,
+                                               int cache_frames)
+/*[clinic end generated code: output=aa577d807fedcead input=0f0ec2666a4ca65b]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -290,11 +294,13 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     self->native = native;
     self->gc = gc;
+    self->cache_frames = cache_frames;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
     self->skip_non_matching_threads = skip_non_matching_threads;
     self->cached_state = NULL;
+    self->frame_cache = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
         return -1;
@@ -374,6 +380,11 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->win_process_buffer = NULL;
     self->win_process_buffer_size = 0;
 #endif
+
+    if (cache_frames && frame_cache_init(self) < 0) {
+        PyErr_NoMemory();
+        return -1;
+    }
 
     return 0;
 }
@@ -591,7 +602,11 @@ next_interpreter:
     }
 
 exit:
-   _Py_RemoteDebug_ClearCache(&self->handle);
+    // Invalidate cache entries for threads not seen in this sample
+    if (self->cache_frames && result) {
+        frame_cache_invalidate_stale(self, result);
+    }
+    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 }
 
@@ -791,6 +806,7 @@ RemoteUnwinder_dealloc(PyObject *op)
         _Py_RemoteDebug_ClearCache(&self->handle);
         _Py_RemoteDebug_CleanupProcHandle(&self->handle);
     }
+    frame_cache_cleanup(self);
     PyObject_Del(self);
     Py_DECREF(tp);
 }

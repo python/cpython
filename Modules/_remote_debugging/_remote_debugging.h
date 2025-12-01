@@ -195,7 +195,9 @@ typedef struct {
     int skip_non_matching_threads;
     int native;
     int gc;
+    int cache_frames;
     RemoteDebuggingState *cached_state;
+    PyObject *frame_cache;  // dict: thread_id -> list of (addr, frame_info)
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
@@ -363,8 +365,37 @@ extern int process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
-    uintptr_t gc_frame
+    uintptr_t gc_frame,
+    uintptr_t last_profiled_frame,
+    int *stopped_at_cached_frame,
+    PyObject *frame_addresses  // optional: list to receive frame addresses
 );
+
+/* Frame cache functions */
+extern int frame_cache_init(RemoteUnwinderObject *unwinder);
+extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
+extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
+extern int frame_cache_lookup_and_extend(
+    RemoteUnwinderObject *unwinder,
+    uint64_t thread_id,
+    uintptr_t last_profiled_frame,
+    PyObject *frame_info,
+    PyObject *frame_addresses);  // optional: list to extend with cached addresses
+extern int frame_cache_store(
+    RemoteUnwinderObject *unwinder,
+    uint64_t thread_id,
+    PyObject *frame_list,
+    const uintptr_t *addrs,
+    Py_ssize_t num_addrs);
+
+extern int collect_frames_with_cache(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    StackChunkList *chunks,
+    PyObject *frame_info,
+    uintptr_t gc_frame,
+    uintptr_t last_profiled_frame,
+    uint64_t thread_id);
 
 /* ============================================================================
  * THREAD FUNCTION DECLARATIONS
