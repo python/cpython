@@ -4590,7 +4590,7 @@ def bœr():
     def test_issue_59000(self):
         script = """
             def foo():
-                test_str = "break foo"
+                pass
 
             class C:
                 def foo(self):
