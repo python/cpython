@@ -469,16 +469,16 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         Tests that when multiple leaves have multiple parents, each leaf picks the same
         parent (sorted, first one) and all leaves are annotated with parent count.
 
-        Task graph structure (both leaves awaited by both A and B):
+        Task graph structure (both leaves awaited by both A and B)::
 
                     Root (id=1)
-                    /        \
+                    /        \\
                A (id=2)    B (id=3)
-                  |  \    /  |
-                  |   \  /   |
-                  |    \/    |
-                  |    /\    |
-                  |   /  \   |
+                  |  \\    /  |
+                  |   \\  /   |
+                  |    \\/    |
+                  |    /\\    |
+                  |   /  \\   |
             LeafX (id=4)  LeafY (id=5)
 
         Expected behavior: Both leaves pick parent A (lowest id=2) for their stack path.
