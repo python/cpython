@@ -4592,7 +4592,7 @@ def bœr():
             import asyncio
 
             async def main():
-                test_str = "test break"
+                pass
 
             asyncio.run(main())
         """
@@ -4603,7 +4603,7 @@ def bœr():
         """
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
-        self.assertIn("test break", stdout)
+        self.assertIn("pass", stdout)
 
 
 class ChecklineTests(unittest.TestCase):
