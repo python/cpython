@@ -210,28 +210,44 @@ window.addEventListener('resize', buildScrollMarker);
 
 function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;
+    applyHotFilter();
+    updateToggleUI('toggle-cold', coldCodeHidden);
+}
+
+// Apply hot filter based on current coldCodeHidden and colorMode state
+function applyHotFilter() {
     const lines = document.querySelectorAll('.code-line');
-    const toggle = document.getElementById('toggle-cold');
 
     lines.forEach(line => {
-        // Check both self and cumulative samples
         const selfSamples = line.querySelector('.line-samples-self')?.textContent.trim();
         const cumulativeSamples = line.querySelector('.line-samples-cumulative')?.textContent.trim();
 
-        // Line is cold if both are empty
-        if ((!selfSamples || selfSamples === '') && (!cumulativeSamples || cumulativeSamples === '')) {
-            if (coldCodeHidden) {
-                line.style.display = 'none';
-            } else {
-                line.style.display = 'flex';
-            }
+        // Determine if line should be hidden based on color mode
+        let isCold;
+        if (colorMode === 'self') {
+            // In self mode, hide lines with no self samples
+            isCold = !selfSamples || selfSamples === '';
+        } else {
+            // In cumulative mode, hide lines with no cumulative samples
+            isCold = !cumulativeSamples || cumulativeSamples === '';
+        }
+
+        if (isCold) {
+            line.style.display = coldCodeHidden ? 'none' : 'flex';
+        } else {
+            // Line has samples, always show it
+            line.style.display = 'flex';
         }
     });
+}
 
+// Update toggle UI state
+function updateToggleUI(toggleId, isOn) {
+    const toggle = document.getElementById(toggleId);
     if (toggle) {
         const track = toggle.querySelector('.toggle-track');
         const labels = toggle.querySelectorAll('.toggle-label');
-        if (coldCodeHidden) {
+        if (isOn) {
             track.classList.add('on');
             labels[0].classList.remove('active');
             labels[1].classList.add('active');
@@ -258,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function toggleColorMode() {
     colorMode = colorMode === 'self' ? 'cumulative' : 'self';
     const lines = document.querySelectorAll('.code-line');
-    const toggle = document.getElementById('toggle-color-mode');
 
     lines.forEach(line => {
         let bgColor;
@@ -273,18 +288,11 @@ function toggleColorMode() {
         }
     });
 
-    if (toggle) {
-        const track = toggle.querySelector('.toggle-track');
-        const labels = toggle.querySelectorAll('.toggle-label');
-        if (colorMode === 'self') {
-            track.classList.remove('on');
-            labels[0].classList.add('active');
-            labels[1].classList.remove('active');
-        } else {
-            track.classList.add('on');
-            labels[0].classList.remove('active');
-            labels[1].classList.add('active');
-        }
+    updateToggleUI('toggle-color-mode', colorMode === 'cumulative');
+
+    // Reapply hot filter if enabled (filtering criteria depends on color mode)
+    if (coldCodeHidden) {
+        applyHotFilter();
     }
 
     // Rebuild scroll marker with new color mode
