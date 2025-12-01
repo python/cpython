@@ -780,9 +780,10 @@ class Reader:
             return  # nothing to do
 
         command = command_type(self, *cmd)  # type: ignore[arg-type]
-
         # Save undo state in vi mode if the command modifies the buffer
         if self.use_vi_mode and getattr(command_type, 'modifies_buffer', False):
+            if len(self.undo_stack) > MAX_VI_UNDO_STACK_SIZE:
+                self.undo_stack.pop(0)
             self.undo_stack.append(ViUndoState(
                 buffer_snapshot=self.buffer.copy(),
                 pos_snapshot=self.pos,
