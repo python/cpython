@@ -1814,8 +1814,8 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     // Flush the thread's local GC allocation count to the global count
     // before the thread state is deleted, otherwise the count is lost.
     _Py_atomic_add_int(&tstate->interp->gc.young.count,
-                       (int)((_PyThreadStateImpl *)tstate)->gc.alloc_count);
-    ((_PyThreadStateImpl *)tstate)->gc.alloc_count = 0;
+                       (int)tstate_impl->gc.alloc_count);
+    tstate_impl->gc.alloc_count = 0;
 #endif
 
 #if _Py_TIER2
