@@ -2135,6 +2135,8 @@ Utility functions
 
    The exact functionality is system dependent.
 
+   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
+
 
 .. function:: find_msvcrt()
    :module: ctypes.util
