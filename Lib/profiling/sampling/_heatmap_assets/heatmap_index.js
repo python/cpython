@@ -1,4 +1,40 @@
-// Toggle type section (stdlib, project, etc)
+// Tachyon Profiler - Heatmap Index JavaScript
+// Index page specific functionality
+
+// ============================================================================
+// Theme Support
+// ============================================================================
+
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('heatmap-theme', next);
+
+    // Update theme button icon
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+        btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+    }
+}
+
+function restoreUIState() {
+    // Restore theme
+    const savedTheme = localStorage.getItem('heatmap-theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const btn = document.getElementById('theme-btn');
+        if (btn) {
+            btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+        }
+    }
+}
+
+// ============================================================================
+// Type Section Toggle (stdlib, project, etc)
+// ============================================================================
+
 function toggleTypeSection(header) {
     const section = header.parentElement;
     const content = section.querySelector('.type-content');
@@ -6,14 +42,17 @@ function toggleTypeSection(header) {
 
     if (content.style.display === 'none') {
         content.style.display = 'block';
-        icon.textContent = '▼';
+        icon.textContent = '\u25BC';
     } else {
         content.style.display = 'none';
-        icon.textContent = '▶';
+        icon.textContent = '\u25B6';
     }
 }
 
-// Toggle individual folder
+// ============================================================================
+// Folder Toggle
+// ============================================================================
+
 function toggleFolder(header) {
     const folder = header.parentElement;
     const content = folder.querySelector('.folder-content');
@@ -21,23 +60,26 @@ function toggleFolder(header) {
 
     if (content.style.display === 'none') {
         content.style.display = 'block';
-        icon.textContent = '▼';
+        icon.textContent = '\u25BC';
         folder.classList.remove('collapsed');
     } else {
         content.style.display = 'none';
-        icon.textContent = '▶';
+        icon.textContent = '\u25B6';
         folder.classList.add('collapsed');
     }
 }
 
-// Expand all folders
+// ============================================================================
+// Expand/Collapse All
+// ============================================================================
+
 function expandAll() {
     // Expand all type sections
     document.querySelectorAll('.type-section').forEach(section => {
         const content = section.querySelector('.type-content');
         const icon = section.querySelector('.type-icon');
         content.style.display = 'block';
-        icon.textContent = '▼';
+        icon.textContent = '\u25BC';
     });
 
     // Expand all folders
@@ -45,18 +87,25 @@ function expandAll() {
         const content = folder.querySelector('.folder-content');
         const icon = folder.querySelector('.folder-icon');
         content.style.display = 'block';
-        icon.textContent = '▼';
+        icon.textContent = '\u25BC';
         folder.classList.remove('collapsed');
     });
 }
 
-// Collapse all folders (but keep type sections expanded)
 function collapseAll() {
     document.querySelectorAll('.folder-node').forEach(folder => {
         const content = folder.querySelector('.folder-content');
         const icon = folder.querySelector('.folder-icon');
         content.style.display = 'none';
-        icon.textContent = '▶';
+        icon.textContent = '\u25B6';
         folder.classList.add('collapsed');
     });
 }
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    restoreUIState();
+});

@@ -2,8 +2,10 @@
 
 import base64
 import collections
+import html
 import importlib.resources
 import json
+import os
 import platform
 import site
 import sys
@@ -84,7 +86,6 @@ def get_python_path_info():
 
     # Get standard library path from os module location
     try:
-        import os
         if hasattr(os, '__file__') and os.__file__:
             info['stdlib'] = Path(os.__file__).parent
     except (AttributeError, OSError):
@@ -342,8 +343,6 @@ class _HtmlRenderer:
         Returns:
             Complete HTML string for all sections
         """
-        import html as html_module
-
         type_names = {
             'stdlib': '📚 Standard Library',
             'site-packages': '📦 Site Packages',
@@ -404,8 +403,6 @@ class _HtmlRenderer:
         Returns:
             HTML string for this folder and its contents
         """
-        import html as html_module
-
         indent = '  ' * level
         parts = []
 
@@ -413,7 +410,7 @@ class _HtmlRenderer:
         parts.append(f'{indent}<div class="folder-node collapsed" data-level="{level}">')
         parts.append(f'{indent}  <div class="folder-header" onclick="toggleFolder(this)">')
         parts.append(f'{indent}    <span class="folder-icon">▶</span>')
-        parts.append(f'{indent}    <span class="folder-name">📁 {html_module.escape(name)}</span>')
+        parts.append(f'{indent}    <span class="folder-name">📁 {html.escape(name)}</span>')
         parts.append(f'{indent}    <span class="folder-stats">({node.count} files, {node.samples:,} samples)</span>')
         parts.append(f'{indent}  </div>')
         parts.append(f'{indent}  <div class="folder-content" style="display: none;">')
@@ -448,10 +445,8 @@ class _HtmlRenderer:
         Returns:
             HTML string for file item
         """
-        import html as html_module
-
-        full_path = html_module.escape(stat.filename)
-        module_name = html_module.escape(stat.module_name)
+        full_path = html.escape(stat.filename)
+        module_name = html.escape(stat.module_name)
 
         intensity = stat.percentage / 100.0
         r, g, b, alpha = self.calculate_intensity_color(intensity)
@@ -519,7 +514,7 @@ class HeatmapCollector(StackTraceCollector):
         """Compatibility property for accessing color cache."""
         return self._color_gradient.cache
 
-    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, **kwargs):
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, missed_samples=None, **kwargs):
         """Set profiling statistics to include in heatmap output.
 
         Args:
@@ -527,6 +522,7 @@ class HeatmapCollector(StackTraceCollector):
             duration_sec: Total profiling duration in seconds
             sample_rate: Effective sampling rate
             error_rate: Optional error rate during profiling
+            missed_samples: Optional percentage of missed samples
             **kwargs: Additional statistics to include
         """
         self.stats = {
@@ -534,6 +530,7 @@ class HeatmapCollector(StackTraceCollector):
             "duration_sec": duration_sec,
             "sample_rate": sample_rate,
             "error_rate": error_rate,
+            "missed_samples": missed_samples,
             "python_version": sys.version,
             "python_implementation": platform.python_implementation(),
             "platform": platform.platform(),
@@ -752,6 +749,38 @@ class HeatmapCollector(StackTraceCollector):
                                 self._calculate_intensity_color)
         sections_html = renderer.render_hierarchical_html(tree)
 
+        # Format error rate and missed samples with bar classes
+        error_rate = self.stats.get('error_rate')
+        if error_rate is not None:
+            error_rate_str = f"{error_rate:.1f}%"
+            error_rate_width = min(error_rate, 100)
+            # Determine bar color class based on rate
+            if error_rate < 5:
+                error_rate_class = "good"
+            elif error_rate < 15:
+                error_rate_class = "warning"
+            else:
+                error_rate_class = "error"
+        else:
+            error_rate_str = "N/A"
+            error_rate_width = 0
+            error_rate_class = "good"
+
+        missed_samples = self.stats.get('missed_samples')
+        if missed_samples is not None:
+            missed_samples_str = f"{missed_samples:.1f}%"
+            missed_samples_width = min(missed_samples, 100)
+            if missed_samples < 5:
+                missed_samples_class = "good"
+            elif missed_samples < 15:
+                missed_samples_class = "warning"
+            else:
+                missed_samples_class = "error"
+        else:
+            missed_samples_str = "N/A"
+            missed_samples_width = 0
+            missed_samples_class = "good"
+
         # Populate template
         replacements = {
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.index_css}\n</style>",
@@ -761,6 +790,12 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:,}",
             "<!-- DURATION -->": f"{self.stats.get('duration_sec', 0):.1f}s",
             "<!-- SAMPLE_RATE -->": f"{self.stats.get('sample_rate', 0):.1f}",
+            "<!-- ERROR_RATE -->": error_rate_str,
+            "<!-- ERROR_RATE_WIDTH -->": str(error_rate_width),
+            "<!-- ERROR_RATE_CLASS -->": error_rate_class,
+            "<!-- MISSED_SAMPLES -->": missed_samples_str,
+            "<!-- MISSED_SAMPLES_WIDTH -->": str(missed_samples_width),
+            "<!-- MISSED_SAMPLES_CLASS -->": missed_samples_class,
             "<!-- SECTIONS_HTML -->": sections_html,
         }
 
@@ -827,8 +862,6 @@ class HeatmapCollector(StackTraceCollector):
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
         """Generate HTML for a single source file with heatmap coloring."""
-        import html
-
         # Read source file
         try:
             source_lines = Path(filename).read_text(encoding='utf-8', errors='replace').splitlines()
@@ -874,8 +907,6 @@ class HeatmapCollector(StackTraceCollector):
                         line_counts: Dict[int, int], self_counts: Dict[int, int],
                         max_samples: int, max_self_samples: int, filename: str) -> str:
         """Build HTML for a single line of source code."""
-        import html
-
         cumulative_samples = line_counts.get(line_num, 0)
         self_samples = self_counts.get(line_num, 0)
 
@@ -978,10 +1009,6 @@ class HeatmapCollector(StackTraceCollector):
     def _create_navigation_button(self, items_with_counts: List[Tuple[str, int, str, int]],
                                  btn_class: str, arrow: str) -> str:
         """Create HTML for a navigation button with sample counts."""
-        import html
-        import json
-        import os
-
         # Filter valid items
         valid_items = [(f, l, fn, cnt) for f, l, fn, cnt in items_with_counts
                       if f in self.file_index and l > 0]
