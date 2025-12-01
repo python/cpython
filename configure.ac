@@ -2338,10 +2338,6 @@ then
 	    ;;
         esac
 	;;
-
-    *)
-	OPT="-O"
-	;;
     esac
 fi
 
