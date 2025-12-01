@@ -13,6 +13,9 @@ let currentThreadFilter = 'all';
 // ============================================================================
 
 function resolveString(index) {
+  if (index === null || index === undefined) {
+    return null;
+  }
   if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
     return stringTable[index];
   }
@@ -338,14 +341,20 @@ function ensureLibraryLoaded() {
   }
 }
 
+const HEAT_THRESHOLDS = [
+  [0.6, 8],
+  [0.35, 7],
+  [0.18, 6],
+  [0.12, 5],
+  [0.06, 4],
+  [0.03, 3],
+  [0.01, 2],
+];
+
 function getHeatLevel(percentage) {
-  if (percentage >= 0.6) return 8;
-  if (percentage >= 0.35) return 7;
-  if (percentage >= 0.18) return 6;
-  if (percentage >= 0.12) return 5;
-  if (percentage >= 0.06) return 4;
-  if (percentage >= 0.03) return 3;
-  if (percentage >= 0.01) return 2;
+  for (const [threshold, level] of HEAT_THRESHOLDS) {
+    if (percentage >= threshold) return level;
+  }
   return 1;
 }
 
@@ -514,13 +523,11 @@ function clearSearch() {
 // Resize Handler
 // ============================================================================
 
-function handleResize(chart, data) {
+function handleResize() {
   let resizeTimeout;
   window.addEventListener("resize", function () {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(function () {
-      resizeChart();
-    }, 100);
+    resizeTimeout = setTimeout(resizeChart, 100);
   });
 }
 
@@ -735,11 +742,11 @@ function populateStats(data) {
   function collectFunctions(node) {
     if (!node) return;
 
-    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
-    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
+    let filename = resolveString(node.filename);
+    let funcname = resolveString(node.funcname);
 
     if (!filename || !funcname) {
-      const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
+      const nameStr = resolveString(node.name);
       if (nameStr?.includes('(')) {
         const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
         if (match) {
@@ -993,7 +1000,7 @@ function initFlamegraph() {
   renderFlamegraph(chart, processedData);
   initSearchHandlers();
   initSidebarResize();
-  handleResize(chart, processedData);
+  handleResize();
 }
 
 if (document.readyState === "loading") {
