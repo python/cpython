@@ -2004,6 +2004,13 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    // Update last_profiled_frame for remote profiler frame caching.
+    // By this point, tstate->current_frame is already set to the parent frame.
+    // The guarded check avoids writes when profiling is not active (predictable branch).
+    if (tstate->last_profiled_frame != NULL) {
+        tstate->last_profiled_frame = tstate->current_frame;
+    }
+
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);
     }
