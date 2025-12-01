@@ -649,15 +649,23 @@ class HTTPResponse(io.BufferedIOBase):
         """
         cursize = min(amt, _MIN_READ_BUF_SIZE)
         data = self.fp.read(cursize)
-        while len(data) < amt:
-            if len(data) < cursize:
-                raise IncompleteRead(data, amt-len(data))
+        if len(data) >= amt:
+            return data
+        if len(data) < cursize:
+            raise IncompleteRead(data, amt - len(data))
+
+        data = io.BytesIO(data)
+        data.seek(0, 2)
+        while True:
             # This is a geometric increase in read size (never more than
             # doubling out the current length of data per loop iteration).
             delta = min(cursize, amt - cursize)
-            data += self.fp.read(delta)
+            data.write(self.fp.read(delta))
+            if data.tell() >= amt:
+                return data.getvalue()
             cursize += delta
-        return data
+            if data.tell() < cursize:
+                raise IncompleteRead(data.getvalue(), amt - data.tell())
 
     def _safe_readinto(self, b):
         """Same as _safe_read, but for reading into a buffer."""
