@@ -1,1 +1,0 @@
-Add support of :term:`path-like objects <path-like object>` and :term:`bytes-like objects <bytes-like object>` in :func:`wave.open`.
