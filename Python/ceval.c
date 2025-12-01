@@ -514,7 +514,11 @@ tstate_set_stack(PyThreadState *tstate,
                  uintptr_t base, uintptr_t top)
 {
     assert(base < top);
+#if _Py_STACK_GROWS_DOWN
     assert((top - base) >= _PyOS_MIN_STACK_SIZE);
+#else
+    assert((base - top) >= _PyOS_MIN_STACK_SIZE);
+#endif
 
 #ifdef _Py_THREAD_SANITIZER
     // Thread sanitizer crashes if we use more than half the stack.
