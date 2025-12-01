@@ -419,15 +419,17 @@ PyBytes_FromFormat(const char *format, ...)
 } while (0)
 
 Py_LOCAL_INLINE(PyObject *)
-getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
+getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx, int allowone)
 {
     Py_ssize_t argidx = *p_argidx;
     if (argidx < arglen) {
         (*p_argidx)++;
-        if (arglen < 0)
-            return args;
-        else
+        if (arglen >= 0) {
             return PyTuple_GetItem(args, argidx);
+        }
+        else if (allowone) {
+            return args;
+        }
     }
     PyErr_Format(PyExc_TypeError,
                  "not enough arguments for format string (got %zd)",
@@ -452,7 +454,7 @@ formatfloat(PyObject *v, Py_ssize_t argidx, PyObject *key,
     if (x == -1.0 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             FORMAT_ERROR(PyExc_TypeError,
-                         "a real number is required for format %%%c, not %T",
+                         "%%%c requires a real number, not %T",
                          type, v);
         }
         return NULL;
@@ -511,10 +513,11 @@ formatlong(PyObject *v, Py_ssize_t argidx, PyObject *key,
             return NULL;
     }
     FORMAT_ERROR(PyExc_TypeError,
-                 "%s is required for format %%%c, not %T",
+                 "%%%c requires %s, not %T",
+                 type,
                  (type == 'o' || type == 'x' || type == 'X') ? "an integer"
                                                              : "a real number",
-                 type, v);
+                 v);
     return NULL;
 }
 
@@ -782,7 +785,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             (Py_ssize_t)(fmtstart - format - 1));
                     goto error;
                 }
-                v = getnextarg(args, arglen, &argidx);
+                v = getnextarg(args, arglen, &argidx, 0);
                 if (v == NULL)
                     goto error;
                 if (!PyLong_Check(v)) {
@@ -833,7 +836,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                                 (Py_ssize_t)(fmtstart - format - 1));
                         goto error;
                     }
-                    v = getnextarg(args, arglen, &argidx);
+                    v = getnextarg(args, arglen, &argidx, 0);
                     if (v == NULL)
                         goto error;
                     if (!PyLong_Check(v)) {
@@ -862,8 +865,8 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             break;
                         if (prec > (INT_MAX - ((int)c - '0')) / 10) {
                             PyErr_Format(PyExc_ValueError,
-                                         "precision too big at position %zd",
-                                         (Py_ssize_t)(fmtstart - format - 1));
+                                "precision too big at position %zd",
+                                (Py_ssize_t)(fmtstart - format - 1));
                             goto error;
                         }
                         prec = prec*10 + (c - '0');
@@ -882,7 +885,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                              (Py_ssize_t)(fmtstart - format - 1));
                 goto error;
             }
-            v = getnextarg(args, arglen, &argidx);
+            v = getnextarg(args, arglen, &argidx, 1);
             if (v == NULL)
                 goto error;
 
@@ -1011,6 +1014,14 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     PyErr_Format(PyExc_ValueError,
                                  "unsupported format %%%c at position %zd",
                                  c, (Py_ssize_t)(fmtstart - format - 1));
+                }
+                else if (c == '\'') {
+                    PyErr_Format(PyExc_ValueError,
+                                 "stray %% at position %zd or unexpected "
+                                 "format character \"'\" "
+                                 "at position %zd",
+                                 (Py_ssize_t)(fmtstart - format - 1),
+                                 (Py_ssize_t)(fmt - format - 1));
                 }
                 else if (c >= 32 && c < 127 && c != '\'') {
                     PyErr_Format(PyExc_ValueError,

@@ -781,16 +781,16 @@ class BaseBytesTest:
         pi = PseudoFloat(3.1415)
 
         exceptions_params = [
-            ('an integer is required for format %x, not float', b'%x', 3.14),
-            ('an integer is required for format %X, not float', b'%X', 2.11),
-            ('an integer is required for format %o, not float', b'%o', 1.79),
-            (r'an integer is required for format %x, not .*\.PseudoFloat', b'%x', pi),
-            ('an integer is required for format %x, not complex', b'%x', 3j),
-            ('an integer is required for format %X, not complex', b'%X', 2j),
-            ('an integer is required for format %o, not complex', b'%o', 1j),
-            ('a real number is required for format %u, not complex', b'%u', 3j),
-            ('a real number is required for format %i, not complex', b'%i', 2j),
-            ('a real number is required for format %d, not complex', b'%d', 2j),
+            ('%x requires an integer, not float', b'%x', 3.14),
+            ('%X requires an integer, not float', b'%X', 2.11),
+            ('%o requires an integer, not float', b'%o', 1.79),
+            (r'%x requires an integer, not .*\.PseudoFloat', b'%x', pi),
+            ('%x requires an integer, not complex', b'%x', 3j),
+            ('%X requires an integer, not complex', b'%X', 2j),
+            ('%o requires an integer, not complex', b'%o', 1j),
+            ('%u requires a real number, not complex', b'%u', 3j),
+            ('%i requires a real number, not complex', b'%i', 2j),
+            ('%d requires a real number, not complex', b'%d', 2j),
             (
                 r'%c requires an integer in range\(256\)'
                 r' or a single byte, not .*\.PseudoFloat',
