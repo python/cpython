@@ -35,13 +35,13 @@ class SampleProfiler:
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                skip_non_matching_threads=skip_non_matching_threads
+                skip_non_matching_threads=skip_non_matching_threads, cache_frames=True
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                skip_non_matching_threads=skip_non_matching_threads
+                skip_non_matching_threads=skip_non_matching_threads, cache_frames=True
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
