@@ -494,7 +494,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Should be valid HTML
         self.assertIn("<!doctype html>", content.lower())
         self.assertIn("<html", content)
-        self.assertIn("Python Performance Flamegraph", content)
+        self.assertIn("Tachyon Profiler - Flamegraph", content)
         self.assertIn("d3-flame-graph", content)
 
         # Should contain the data
