@@ -42,7 +42,7 @@ static PyModuleDef_Slot spam_module[] = {
     {Py_mod_name, "spam"},
     {Py_mod_doc, PyDoc_STR("A wonderful module with an example function")},
     {Py_mod_methods, spam_methods},
-    {0, NULL}  /* Sentinel */
+    {0, NULL}
 };
 
 

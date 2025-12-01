@@ -1,6 +1,8 @@
 .. highlight:: c
 
 
+.. _first-extension-module:
+
 *********************************
 Your first C API extension module
 *********************************
@@ -8,22 +10,22 @@ Your first C API extension module
 This tutorial will take you, line by line, through creating a simple
 Python extension module written in C or C++.
 
-This document assumes basic knowledge about Python: you should be able to
-define functions in Python code before writing them in another language.
+The tutorial assumes basic knowledge about Python: you should be able to
+define functions in Python code before starting to write them in C.
 See :ref:`tutorial-index` for an introduction to Python itself.
 
-It also assumes a working knowledge of the C language.
-We will use several concepts that a C beginner would not be expected to know,
-like ``static`` functions or linkage declarations, but the tutorial should
-be useful for anyone who can write a basic C library.
+The tutorial should be useful for anyone who can write a basic C library.
+While we will mention several concepts that a C beginner would not be expected
+to know, like ``static`` functions or linkage declarations, understanding these
+is not necessary for success.
 
-As a word warning before we begin: the compilation of an extension module can
-be tricky, as it depends on how your system is set up, and on how your Python
-is installed.
+As a word warning before we begin: after the code is written, you will need to
+compile it with the right tools and settings for your system.
 It is generally best to use a third-party tool to handle the details.
-This is covered in later chapters.
+This is covered in later chapters, not in this tutorial.
 
-The tutorial assumes that you use a Unix system (including macOS) or Windows.
+The tutorial assumes that you use a Unix-like system (including macOS and
+Linux) or Windows.
 
 .. include:: ../includes/tutorial-new-api.rst
 
@@ -338,8 +340,8 @@ This macro expands to a variable definition like
 ``static PyABIInfo abi_info = { ... data ... };``
 
 
-The slot table and export hook
-==============================
+The slot table
+==============
 
 Now, let's fit all the pieces of our module together.
 
@@ -349,15 +351,19 @@ an array of :c:type:`PyModuleDef_Slot` structures.
 Like with the method table, a zero-filled *sentinel* marks the end.
 
 Besides the method table, this "slot table" will contain the module's
-top-level information: the name, a docstring, and the
-ABI compatibility slot we defined earlier:
+top-level information: the name, a docstring, and the ABI compatibility
+information we've just defined:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module slot table
    :end-before: ///
 
-This structure, in turn, must be passed to the interpreter in the module's
-:ref:`export hook <extension-export-hook>` function.
+
+Module export hook
+==================
+
+The :c:type:`PyModuleDef_Slot` array must be passed to the interpreter in the
+module's :ref:`export hook <extension-export-hook>` function.
 The hook must be named :c:func:`!PyModExport_name`, where *name* is the name
 of the module, and it should be the only non-\ ``static`` item defined in the
 module file.

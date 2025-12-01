@@ -4,7 +4,7 @@
   Extending and Embedding the Python Interpreter
 ##################################################
 
-This tutorial describes how to write modules in C or C++ to extend the Python
+This document describes how to write modules in C or C++ to extend the Python
 interpreter with new modules.  Those modules can do what Python code does --
 define functions, object types and methods -- but also interact with native
 libraries or achieve better performance by avoiding the overhead of an
@@ -42,13 +42,31 @@ source file by including the header ``"Python.h"``.
    extension module.
 
 
+.. toctree::
+   :maxdepth: 2
+   :numbered:
+
+   first-extension-module.rst
+   extending.rst
+   newtypes_tutorial.rst
+   newtypes.rst
+   building.rst
+   windows.rst
+   embedding.rst
+
+
 Recommended third party tools
 =============================
 
-This guide only covers the basic tools for creating extensions provided
+This document only covers the basic tools for creating extensions provided
 as part of this version of CPython. Some :ref:`third party tools
 <c-api-tools>` offer both simpler and more sophisticated approaches to creating
 C and C++ extensions for Python.
+
+While this document is aimed at extension authors, it should also be helpful to
+the authors of such tools.
+For example, the tutorial module can serve as a simple test case for a build
+tool or sample expected output of a code generator.
 
 
 C API Tutorial
@@ -59,30 +77,22 @@ using the Python C API -- that is, using the basic tools provided
 as part of this version of CPython.
 
 
-.. toctree::
-   :maxdepth: 2
-   :numbered:
-
-   first-extension-module.rst
+#. :ref:`first-extension-module`
 
 
-Creating extensions without third party tools
-=============================================
+Guides for intermediate topics
+==============================
 
 This section of the guide covers creating C and C++ extensions without
 assistance from third party tools. It is intended primarily for creators
 of those tools, rather than being a recommended way to create your own
 C extensions.
 
-.. toctree::
-   :maxdepth: 2
-   :numbered:
-
-   extending.rst
-   newtypes_tutorial.rst
-   newtypes.rst
-   building.rst
-   windows.rst
+* :ref:`extending-intro`
+* :ref:`defining-new-types`
+* :ref:`new-types-topics`
+* :ref:`building`
+* :ref:`building-on-windows`
 
 Embedding the CPython runtime in a larger application
 =====================================================
@@ -92,8 +102,4 @@ interpreter as the main application, it is desirable to instead embed
 the CPython runtime inside a larger application. This section covers
 some of the details involved in doing that successfully.
 
-.. toctree::
-   :maxdepth: 2
-   :numbered:
-
-   embedding.rst
+* :ref:`embedding`
