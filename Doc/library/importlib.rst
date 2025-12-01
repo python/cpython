@@ -1251,7 +1251,7 @@ find and load modules.
    To accommodate this requirement, when running on iOS, extension module
    binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
    individual standalone frameworks. To discover those frameworks, this loader
-   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   is registered against the ``.fwork`` file extension, with a ``.fwork``
    file acting as a placeholder in the original location of the binary on
    ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
    the ``Frameworks`` folder, relative to the app bundle. To allow for

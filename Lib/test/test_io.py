@@ -869,6 +869,22 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
 
+    def test_RawIOBase_read_bounds_checking(self):
+        # Make sure a `.readinto` call which returns a value outside
+        # (0, len(buffer)) raises.
+        class Misbehaved(self.RawIOBase):
+            def __init__(self, readinto_return) -> None:
+                self._readinto_return = readinto_return
+            def readinto(self, b):
+                return self._readinto_return
+
+        with self.assertRaises(ValueError) as cm:
+            Misbehaved(2).read(1)
+        self.assertEqual(str(cm.exception), "readinto returned 2 outside buffer size 1")
+        for bad_size in (2147483647, sys.maxsize, -1, -1000):
+            with self.assertRaises(ValueError):
+                Misbehaved(bad_size).read()
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),
@@ -3302,6 +3318,24 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(f.readline(), "\u3046\u3048\n")
         self.assertEqual(f.tell(), p1)
         f.close()
+
+    def test_tell_after_readline_with_cr(self):
+        # Test for gh-141314: TextIOWrapper.tell() assertion failure
+        # when dealing with standalone carriage returns
+        data = b'line1\r'
+        with self.open(os_helper.TESTFN, "wb") as f:
+            f.write(data)
+
+        with self.open(os_helper.TESTFN, "r") as f:
+            # Read line that ends with \r
+            line = f.readline()
+            self.assertEqual(line, "line1\n")
+            # This should not cause an assertion failure
+            pos = f.tell()
+            # Verify we can seek back to this position
+            f.seek(pos)
+            remaining = f.read()
+            self.assertEqual(remaining, "")
 
     def test_seek_with_encoder_state(self):
         f = self.open(os_helper.TESTFN, "w", encoding="euc_jis_2004")

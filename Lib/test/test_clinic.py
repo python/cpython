@@ -2827,6 +2827,8 @@ class ClinicExternalTest(TestCase):
             "slice_index",
             "str",
             "unicode",
+            "unicode_fs_decoded",
+            "unicode_fs_encoded",
             "unsigned_char",
             "unsigned_int",
             "unsigned_long",

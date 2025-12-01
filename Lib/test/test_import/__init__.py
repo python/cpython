@@ -1206,6 +1206,7 @@ except ImportError as e:
 
     @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
     @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    @unittest.skipIf(sys.platform.startswith('aix'), 'Cannot delete cwd on AIX')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")
@@ -3178,6 +3179,7 @@ class SinglephaseInitTests(unittest.TestCase, ExtraAssertions):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    @no_rerun(reason="module state is not cleared (see gh-140657)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter

@@ -42,11 +42,11 @@ The :mod:`functools` module defines the following functions:
         def factorial(n):
             return n * factorial(n-1) if n else 1
 
-        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        >>> factorial(10)   # no previously cached result, makes 11 recursive calls
         3628800
-        >>> factorial(5)       # just looks up cached value result
+        >>> factorial(5)    # no new calls, just returns the cached result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)   # two new recursive calls, factorial(10) is cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
@@ -620,7 +620,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
@@ -638,7 +638,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
-   :func:`@classmethod<classmethod>`. Note that to allow for
+   :deco:`classmethod`. Note that to allow for
    ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
    decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
    the class, rather than an instance of the class::
@@ -660,8 +660,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :func:`@staticmethod<staticmethod>`,
-   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+   :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
 

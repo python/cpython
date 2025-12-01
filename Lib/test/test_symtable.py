@@ -493,6 +493,13 @@ class SymtableTest(unittest.TestCase):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
 
+    def test__symtable_refleak(self):
+        # Regression test for reference leak in PyUnicode_FSDecoder.
+        # See https://github.com/python/cpython/issues/139748.
+        mortal_str = 'this is a mortal string'
+        # check error path when 'compile_type' AC conversion failed
+        self.assertRaises(TypeError, symtable.symtable, '', mortal_str, 1)
+
 
 class CommandLineTest(unittest.TestCase):
     maxDiff = None

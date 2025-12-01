@@ -759,7 +759,7 @@ Window Objects
 
 .. method:: window.attron(attr)
 
-   Add attribute *attr* from the "background" set applied to all writes to the
+   Add attribute *attr* to the "background" set applied to all writes to the
    current window.
 
 
@@ -1328,7 +1328,6 @@ The :mod:`curses` module defines the following data members:
 
 
 .. data:: version
-.. data:: __version__
 
    A bytes object representing the current version of the module.
 

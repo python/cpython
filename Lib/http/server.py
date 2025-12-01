@@ -127,6 +127,10 @@ DEFAULT_ERROR_MESSAGE = """\
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
+
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
@@ -275,6 +279,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         error response has already been sent back.
 
         """
+        is_http_0_9 = False
         self.command = None  # set in case of error on the first line
         self.request_version = version = self.default_request_version
         self.close_connection = True
@@ -332,6 +337,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     HTTPStatus.BAD_REQUEST,
                     "Bad HTTP/0.9 request type (%r)" % command)
                 return False
+            is_http_0_9 = True
         self.command, self.path = command, path
 
         # gh-87389: The purpose of replacing '//' with '/' is to protect
@@ -340,6 +346,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         # without scheme (similar to http://path) rather than a path.
         if self.path.startswith('//'):
             self.path = '/' + self.path.lstrip('/')  # Reduce to a single /
+
+        # For HTTP/0.9, headers are not expected at all.
+        if is_http_0_9:
+            self.headers = {}
+            return True
 
         # Examine the headers and look for a Connection directive.
         try:
@@ -1227,7 +1238,16 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  env = env
                                  )
             if self.command.lower() == "post" and nbytes > 0:
-                data = self.rfile.read(nbytes)
+                cursize = 0
+                data = self.rfile.read(min(nbytes, _MIN_READ_BUF_SIZE))
+                while (len(data) < nbytes and len(data) != cursize and
+                       select.select([self.rfile._sock], [], [], 0)[0]):
+                    cursize = len(data)
+                    # This is a geometric increase in read size (never more
+                    # than doubling our the current length of data per loop
+                    # iteration).
+                    delta = min(cursize, nbytes - cursize)
+                    data += self.rfile.read(delta)
             else:
                 data = None
             # throw away additional data [see bug #427345]

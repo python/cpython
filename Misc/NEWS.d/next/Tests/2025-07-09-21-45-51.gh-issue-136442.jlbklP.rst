@@ -1,0 +1,1 @@
+Use exitcode ``1`` instead of ``5`` if :func:`unittest.TestCase.setUpClass` raises an exception

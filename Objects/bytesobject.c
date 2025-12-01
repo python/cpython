@@ -965,8 +965,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             /* 2: size preallocated for %s */
             if (alloc > 2) {
                 res = _PyBytesWriter_Prepare(&writer, res, alloc - 2);
-                if (res == NULL)
+                if (res == NULL) {
+                    Py_XDECREF(temp);
                     goto error;
+                }
             }
 #ifndef NDEBUG
             char *before = res;

@@ -412,9 +412,9 @@ static int test_pre_initialization_sys_options(void)
 
 
 /* bpo-20891: Avoid race condition when initialising the GIL */
-static void bpo20891_thread(void *lockp)
+static void bpo20891_thread(void *eventp)
 {
-    PyThread_type_lock lock = *((PyThread_type_lock*)lockp);
+    PyEvent *event = (PyEvent *)eventp;
 
     PyGILState_STATE state = PyGILState_Ensure();
     if (!PyGILState_Check()) {
@@ -423,8 +423,7 @@ static void bpo20891_thread(void *lockp)
     }
 
     PyGILState_Release(state);
-
-    PyThread_release_lock(lock);
+    _PyEvent_Notify(event);
 }
 
 static int test_bpo20891(void)
@@ -434,27 +433,17 @@ static int test_bpo20891(void)
 
     /* bpo-20891: Calling PyGILState_Ensure in a non-Python thread must not
        crash. */
-    PyThread_type_lock lock = PyThread_allocate_lock();
-    if (!lock) {
-        error("PyThread_allocate_lock failed!");
-        return 1;
-    }
 
     _testembed_Py_InitializeFromConfig();
+    PyEvent event = {0};
 
-    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
+    unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &event);
     if (thrd == PYTHREAD_INVALID_THREAD_ID) {
         error("PyThread_start_new_thread failed!");
         return 1;
     }
-    PyThread_acquire_lock(lock, WAIT_LOCK);
 
-    Py_BEGIN_ALLOW_THREADS
-    /* wait until the thread exit */
-    PyThread_acquire_lock(lock, WAIT_LOCK);
-    Py_END_ALLOW_THREADS
-
-    PyThread_free_lock(lock);
+    PyEvent_Wait(&event);
 
     Py_Finalize();
 
@@ -2136,6 +2125,177 @@ static int test_repeated_init_and_inittab(void)
     return 0;
 }
 
+/// Multi-phase initialization package & submodule ///
+
+int
+mp_pkg_exec(PyObject *mod)
+{
+    // make this a namespace package
+    // empty list = namespace package
+    if (PyModule_Add(mod, "__path__", PyList_New(0)) < 0) {
+        return -1;
+    }
+    if (PyModule_AddStringConstant(mod, "mp_pkg_exec_slot_ran", "yes") < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot mp_pkg_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, mp_pkg_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef mp_pkg_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "mp_pkg",
+    .m_size = 0,
+    .m_slots = mp_pkg_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_mp_pkg(void)
+{
+    return PyModuleDef_Init(&mp_pkg_def);
+}
+
+static PyObject *
+submod_greet(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("Hello from sub-module");
+}
+
+static PyMethodDef submod_methods[] = {
+    {"greet", submod_greet, METH_NOARGS, NULL},
+    {NULL},
+};
+
+int
+mp_submod_exec(PyObject *mod)
+{
+    return PyModule_AddStringConstant(mod, "mp_submod_exec_slot_ran", "yes");
+}
+
+static PyModuleDef_Slot mp_submod_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_exec, mp_submod_exec},
+    {0, NULL}
+};
+
+static struct PyModuleDef mp_submod_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "mp_pkg.mp_submod",
+    .m_size = 0,
+    .m_methods = submod_methods,
+    .m_slots = mp_submod_slots,
+};
+
+PyMODINIT_FUNC
+PyInit_mp_submod(void)
+{
+    return PyModuleDef_Init(&mp_submod_def);
+}
+
+static int
+test_inittab_submodule_multiphase(void)
+{
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        L"import sys;"
+        L"import mp_pkg.mp_submod;"
+        L"print(mp_pkg.mp_submod);"
+        L"print(sys.modules['mp_pkg.mp_submod']);"
+        L"print(mp_pkg.mp_submod.greet());"
+        L"print(f'{mp_pkg.mp_submod.mp_submod_exec_slot_ran=}');"
+        L"print(f'{mp_pkg.mp_pkg_exec_slot_ran=}');"
+    };
+    PyConfig config;
+    if (PyImport_AppendInittab("mp_pkg",
+                               &PyInit_mp_pkg) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    if (PyImport_AppendInittab("mp_pkg.mp_submod",
+                               &PyInit_mp_submod) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    return Py_RunMain();
+}
+
+/// Single-phase initialization package & submodule ///
+
+static struct PyModuleDef sp_pkg_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_pkg",
+    .m_size = 0,
+};
+
+PyMODINIT_FUNC
+PyInit_sp_pkg(void)
+{
+    PyObject *mod = PyModule_Create(&sp_pkg_def);
+    if (mod == NULL) {
+        return NULL;
+    }
+    // make this a namespace package
+    // empty list = namespace package
+    if (PyModule_Add(mod, "__path__", PyList_New(0)) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+static struct PyModuleDef sp_submod_def = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sp_pkg.sp_submod",
+    .m_size = 0,
+    .m_methods = submod_methods,
+};
+
+PyMODINIT_FUNC
+PyInit_sp_submod(void)
+{
+    return PyModule_Create(&sp_submod_def);
+}
+
+static int
+test_inittab_submodule_singlephase(void)
+{
+    wchar_t* argv[] = {
+        PROGRAM_NAME,
+        L"-c",
+        L"import sys;"
+        L"import sp_pkg.sp_submod;"
+        L"print(sp_pkg.sp_submod);"
+        L"print(sys.modules['sp_pkg.sp_submod']);"
+        L"print(sp_pkg.sp_submod.greet());"
+    };
+    PyConfig config;
+    if (PyImport_AppendInittab("sp_pkg",
+                               &PyInit_sp_pkg) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    if (PyImport_AppendInittab("sp_pkg.sp_submod",
+                               &PyInit_sp_submod) != 0) {
+        fprintf(stderr, "PyImport_AppendInittab() failed\n");
+        return 1;
+    }
+    PyConfig_InitPythonConfig(&config);
+    config.isolated = 1;
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+    return Py_RunMain();
+}
+
 static void wrap_allocator(PyMemAllocatorEx *allocator);
 static void unwrap_allocator(PyMemAllocatorEx *allocator);
 
@@ -2291,7 +2451,8 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
-
+    {"test_inittab_submodule_multiphase", test_inittab_submodule_multiphase},
+    {"test_inittab_submodule_singlephase", test_inittab_submodule_singlephase},
     {NULL, NULL}
 };
 

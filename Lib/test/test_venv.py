@@ -518,6 +518,8 @@ class BasicTest(BaseTest):
 
     # gh-124651: test quoted strings
     @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "NetBSD csh fails with quoted special chars; see gh-139308")
     def test_special_chars_csh(self):
         """
         Test that the template strings are quoted properly (csh)

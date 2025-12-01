@@ -238,8 +238,8 @@ Functions
 
    The result has the following attributes:
 
-   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
-     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be set to jump forward or backward
+     in time, ``False`` otherwise. Does not refer to gradual NTP rate adjustments.
    - *implementation*: The name of the underlying C function used to get
      the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
@@ -396,9 +396,9 @@ Functions
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
-   continues execution.  On Windows 8.1 and newer the implementation uses
+   continues execution.  On Windows 10 and newer the implementation uses
    a `high-resolution timer
-   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
    .. rubric:: Unix implementation
@@ -570,7 +570,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [1]_ ::
+   :rfc:`5322` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -1052,4 +1052,5 @@ Timezone Constants
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
    year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
-   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
+   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`,
+   with :rfc:`5322` continuing this requirement.

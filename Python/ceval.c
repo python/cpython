@@ -1962,6 +1962,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
                               "calling %R should have returned an instance of "
                               "BaseException, not %R",
                               cause, Py_TYPE(fixed_cause));
+                Py_DECREF(fixed_cause);
                 goto raise_error;
             }
             Py_DECREF(cause);
@@ -2338,21 +2339,10 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetProfile(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
     }
 }
 
@@ -2369,21 +2359,10 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetTrace(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
     }
 }
 

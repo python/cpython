@@ -612,8 +612,10 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
         }
         if (gdbm_delete(self->di_dbm, key) < 0) {
             PyErr_SetString(state->gdbm_error, "cannot delete item from database");
+            free(key.dptr);
             return NULL;
         }
+        free(key.dptr);
     }
     Py_RETURN_NONE;
 }

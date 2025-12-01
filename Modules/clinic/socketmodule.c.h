@@ -239,7 +239,7 @@ static PyObject *
 _socket_socket_if_nametoindex(PySocketSockObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *oname;
+    PyObject *oname = NULL;
 
     if (!PyUnicode_FSConverter(arg, &oname)) {
         goto exit;
@@ -247,6 +247,9 @@ _socket_socket_if_nametoindex(PySocketSockObject *self, PyObject *arg)
     return_value = _socket_socket_if_nametoindex_impl(self, oname);
 
 exit:
+    /* Cleanup for oname */
+    Py_XDECREF(oname);
+
     return return_value;
 }
 
@@ -259,4 +262,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=eb37b5d88a1e4661 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a58294cf2c87e33 input=a9049054013a1b77]*/

@@ -3044,17 +3044,6 @@ class dev_t_return_converter(unsigned_long_return_converter):
     conversion_fn = '_PyLong_FromDev'
     unsigned_cast = '(dev_t)'
 
-class FSConverter_converter(CConverter):
-    type = 'PyObject *'
-    converter = 'PyUnicode_FSConverter'
-    def converter_init(self):
-        if self.default is not unspecified:
-            fail("FSConverter_converter does not support default values")
-        self.c_default = 'NULL'
-
-    def cleanup(self):
-        return "Py_XDECREF(" + self.name + ");\n"
-
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
@@ -3093,7 +3082,7 @@ class confname_converter(CConverter):
         """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=a6199b1618d73f53]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1a078a0f42a586c1]*/
 
 /*[clinic input]
 
@@ -6013,14 +6002,14 @@ os_system_impl(PyObject *module, const wchar_t *command)
 /*[clinic input]
 os.system -> long
 
-    command: FSConverter
+    command: unicode_fs_encoded
 
 Execute the command in a subshell.
 [clinic start generated code]*/
 
 static long
 os_system_impl(PyObject *module, PyObject *command)
-/*[clinic end generated code: output=290fc437dd4f33a0 input=86a58554ba6094af]*/
+/*[clinic end generated code: output=290fc437dd4f33a0 input=47c6f24b6dc92881]*/
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
@@ -7891,53 +7880,19 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
 //
-// This should only be called from the parent process after
+// This MUST only be called from the parent process after
 // PyOS_AfterFork_Parent().
 static void
-warn_about_fork_with_threads(const char* name)
+warn_about_fork_with_threads(
+    const char* name,  // Name of the API to use in the warning message.
+    const Py_ssize_t num_os_threads  // Only trusted when >= 1.
+)
 {
     // It's not safe to issue the warning while the world is stopped, because
     // other threads might be holding locks that we need, which would deadlock.
     assert(!_PyRuntime.stoptheworld.world_stopped);
 
-    // TODO: Consider making an `os` module API to return the current number
-    // of threads in the process. That'd presumably use this platform code but
-    // raise an error rather than using the inaccurate fallback.
-    Py_ssize_t num_python_threads = 0;
-#if defined(__APPLE__) && defined(HAVE_GETPID)
-    mach_port_t macos_self = mach_task_self();
-    mach_port_t macos_task;
-    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
-        thread_array_t macos_threads;
-        mach_msg_type_number_t macos_n_threads;
-        if (task_threads(macos_task, &macos_threads,
-                         &macos_n_threads) == KERN_SUCCESS) {
-            num_python_threads = macos_n_threads;
-        }
-    }
-#elif defined(__linux__)
-    // Linux /proc/self/stat 20th field is the number of threads.
-    FILE* proc_stat = fopen("/proc/self/stat", "r");
-    if (proc_stat) {
-        size_t n;
-        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
-        // observed on the author's workstation.
-        char stat_line[160];
-        n = fread(&stat_line, 1, 159, proc_stat);
-        stat_line[n] = '\0';
-        fclose(proc_stat);
-
-        char *saveptr = NULL;
-        char *field = strtok_r(stat_line, " ", &saveptr);
-        unsigned int idx;
-        for (idx = 19; idx && field; --idx) {
-            field = strtok_r(NULL, " ", &saveptr);
-        }
-        if (idx == 0 && field) {  // found the 20th field
-            num_python_threads = atoi(field);  // 0 on error
-        }
-    }
-#endif
+    Py_ssize_t num_python_threads = num_os_threads;
     if (num_python_threads <= 0) {
         // Fall back to just the number our threading module knows about.
         // An incomplete view of the world, but better than nothing.
@@ -7990,6 +7945,51 @@ warn_about_fork_with_threads(const char* name)
         PyErr_Clear();
     }
 }
+
+// If this returns <= 0, we were unable to successfully use any OS APIs.
+// Returns a positive number of threads otherwise.
+static Py_ssize_t get_number_of_os_threads(void)
+{
+    // TODO: Consider making an `os` module API to return the current number
+    // of threads in the process. That'd presumably use this platform code but
+    // raise an error rather than using the inaccurate fallback.
+    Py_ssize_t num_python_threads = 0;
+#if defined(__APPLE__) && defined(HAVE_GETPID)
+    mach_port_t macos_self = mach_task_self();
+    mach_port_t macos_task;
+    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
+        thread_array_t macos_threads;
+        mach_msg_type_number_t macos_n_threads;
+        if (task_threads(macos_task, &macos_threads,
+                         &macos_n_threads) == KERN_SUCCESS) {
+            num_python_threads = macos_n_threads;
+        }
+    }
+#elif defined(__linux__)
+    // Linux /proc/self/stat 20th field is the number of threads.
+    FILE* proc_stat = fopen("/proc/self/stat", "r");
+    if (proc_stat) {
+        size_t n;
+        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
+        // observed on the author's workstation.
+        char stat_line[160];
+        n = fread(&stat_line, 1, 159, proc_stat);
+        stat_line[n] = '\0';
+        fclose(proc_stat);
+
+        char *saveptr = NULL;
+        char *field = strtok_r(stat_line, " ", &saveptr);
+        unsigned int idx;
+        for (idx = 19; idx && field; --idx) {
+            field = strtok_r(NULL, " ", &saveptr);
+        }
+        if (idx == 0 && field) {  // found the 20th field
+            num_python_threads = atoi(field);  // 0 on error
+        }
+    }
+#endif
+    return num_python_threads;
+}
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
@@ -8024,10 +8024,12 @@ os_fork1_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork1");
+        warn_about_fork_with_threads("fork1", num_os_threads);
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8073,10 +8075,12 @@ os_fork_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork");
+        warn_about_fork_with_threads("fork", num_os_threads);
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8186,7 +8190,7 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
 static PyObject *
 os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+    return Py_BuildValue("(O(O))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
 }
 
 static PyMethodDef os_sched_param_reduce_method = {
@@ -8930,10 +8934,12 @@ os_forkpty_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("forkpty");
+        warn_about_fork_with_threads("forkpty", num_os_threads);
     }
     if (pid == -1) {
         return posix_error();
@@ -9200,7 +9206,7 @@ error:
 /*[clinic input]
 os.initgroups
 
-    username as oname: FSConverter
+    username as oname: unicode_fs_encoded
     gid: int
     /
 
@@ -9213,12 +9219,12 @@ group id.
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, int gid)
-/*[clinic end generated code: output=7f074d30a425fd3a input=df3d54331b0af204]*/
+/*[clinic end generated code: output=7f074d30a425fd3a input=984e60c7fed88cb4]*/
 #else
 /*[clinic input]
 os.initgroups
 
-    username as oname: FSConverter
+    username as oname: unicode_fs_encoded
     gid: gid_t
     /
 
@@ -9231,7 +9237,7 @@ group id.
 
 static PyObject *
 os_initgroups_impl(PyObject *module, PyObject *oname, gid_t gid)
-/*[clinic end generated code: output=59341244521a9e3f input=0cb91bdc59a4c564]*/
+/*[clinic end generated code: output=59341244521a9e3f input=17d8fbe2dea42ca4]*/
 #endif
 {
     const char *username = PyBytes_AS_STRING(oname);
@@ -12956,8 +12962,8 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic input]
 os.putenv
 
-    name: FSConverter
-    value: FSConverter
+    name: unicode_fs_encoded
+    value: unicode_fs_encoded
     /
 
 Change or add an environment variable.
@@ -12965,7 +12971,7 @@ Change or add an environment variable.
 
 static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
-/*[clinic end generated code: output=d29a567d6b2327d2 input=a97bc6152f688d31]*/
+/*[clinic end generated code: output=d29a567d6b2327d2 input=84fcd30f873c8c45]*/
 {
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
@@ -13008,7 +13014,7 @@ os_unsetenv_impl(PyObject *module, PyObject *name)
 #else
 /*[clinic input]
 os.unsetenv
-    name: FSConverter
+    name: unicode_fs_encoded
     /
 
 Delete an environment variable.
@@ -13016,7 +13022,7 @@ Delete an environment variable.
 
 static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
+/*[clinic end generated code: output=54c4137ab1834f02 input=78ff12e505ade80a]*/
 {
     if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
         return NULL;
@@ -15074,14 +15080,14 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
 /*[clinic input]
 os.memfd_create
 
-    name: FSConverter
+    name: unicode_fs_encoded
     flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
 
 [clinic start generated code]*/
 
 static PyObject *
 os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
-/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+/*[clinic end generated code: output=6681ede983bdb9a6 input=cd0eb092cfac474b]*/
 {
     int fd;
     const char *bytes = PyBytes_AS_STRING(name);

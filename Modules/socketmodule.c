@@ -7098,7 +7098,7 @@ Returns a list of network interface information (index, name) tuples.");
 
 /*[clinic input]
 _socket.socket.if_nametoindex
-    oname: object(converter="PyUnicode_FSConverter")
+    oname: unicode_fs_encoded
     /
 
 Returns the interface index corresponding to the interface name if_name.
@@ -7106,7 +7106,7 @@ Returns the interface index corresponding to the interface name if_name.
 
 static PyObject *
 _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
-/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
+/*[clinic end generated code: output=f7fc00511a309a8e input=242c01253c533053]*/
 {
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
@@ -7114,11 +7114,10 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
     unsigned long index;
 #endif
 
+    errno = ENODEV;  // in case 'if_nametoindex' does not set errno
     index = if_nametoindex(PyBytes_AS_STRING(oname));
-    Py_DECREF(oname);
     if (index == 0) {
-        /* if_nametoindex() doesn't set errno */
-        PyErr_SetString(PyExc_OSError, "no interface with this name");
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -7145,6 +7144,7 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+    errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);

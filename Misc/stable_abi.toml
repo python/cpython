@@ -40,7 +40,7 @@
 # - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
 #   - 'full-abi': All of the struct is part of the ABI, including the size
 #     (users may define arrays of these structs).
-#     Typically used for initalization, rather than at runtime.
+#     Typically used for initialization, rather than at runtime.
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
@@ -1889,6 +1889,13 @@
     added = '3.5'
 [data.PyModuleDef_Type]
     added = '3.5'
+[const.Py_mod_create]
+    added = '3.5'
+[const.Py_mod_exec]
+    added = '3.5'
+[struct.PyModuleDef_Slot]
+    added = '3.5'
+    struct_abi_kind = 'full-abi'
 
 # New slots in 3.5:
 # d51374ed78a3e3145911a16cdf3b9b84b3ba7d15 - Matrix multiplication (PEP 465)
@@ -2293,6 +2300,10 @@
     added = '3.11'
 [function.PyMemoryView_FromBuffer]
     added = '3.11'
+[const.Py_bf_getbuffer]
+    added = '3.11'
+[const.Py_bf_releasebuffer]
+    added = '3.11'
 
 # Constants for Py_buffer API added to this list in Python 3.11.1 (https://github.com/python/cpython/issues/98680)
 # (they were available with 3.11.0)
@@ -2427,6 +2438,9 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
+[const.Py_mod_multiple_interpreters]
+    added = '3.12'
+
 [function.PyImport_AddModuleRef]
     added = '3.13'
 [function.PyWeakref_GetRef]
@@ -2505,3 +2519,6 @@
     added = '3.13'
 [function.PyEval_GetFrameLocals]
     added = '3.13'
+[const.Py_mod_gil]
+    added = '3.13'
+

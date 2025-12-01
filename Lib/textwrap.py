@@ -211,7 +211,7 @@ class TextWrapper:
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
-        if self.break_long_words:
+        if self.break_long_words and space_left > 0:
             end = space_left
             chunk = reversed_chunks[-1]
             if self.break_on_hyphens and len(chunk) > space_left:

@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
+import contextlib
 import os
 import socket
 import sys
@@ -314,6 +315,44 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
             data = res.read()
             self.assertEqual(b'', data)
+
+
+class HTTP09ServerTestCase(BaseTestCase):
+
+    class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        """Request handler for HTTP/0.9 server."""
+
+        def do_GET(self):
+            self.wfile.write(f'OK: here is {self.path}\r\n'.encode())
+
+    def setUp(self):
+        super().setUp()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = self.enterContext(self.sock)
+        self.sock.connect((self.HOST, self.PORT))
+
+    def test_simple_get(self):
+        self.sock.send(b'GET /index.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertEqual(res, b"OK: here is /index.html\r\n")
+
+    def test_invalid_request(self):
+        self.sock.send(b'POST /index.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertIn(b"Bad HTTP/0.9 request type ('POST')", res)
+
+    def test_single_request(self):
+        self.sock.send(b'GET /foo.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertEqual(res, b"OK: here is /foo.html\r\n")
+
+        # Ignore errors if the connection is already closed,
+        # as this is the expected behavior of HTTP/0.9.
+        with contextlib.suppress(OSError):
+            self.sock.send(b'GET /bar.html\r\n')
+            res = self.sock.recv(1024)
+            # The server should not process our request.
+            self.assertEqual(res, b'')
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
@@ -763,6 +802,20 @@ for k, v in os.environ.items():
 print("</pre>")
 """
 
+cgi_file7 = """\
+#!%s
+import os
+import sys
+
+print("Content-type: text/plain")
+print()
+
+content_length = int(os.environ["CONTENT_LENGTH"])
+body = sys.stdin.buffer.read(content_length)
+
+print(f"{content_length} {len(body)}")
+"""
+
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
@@ -802,6 +855,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.file3_path = None
         self.file4_path = None
         self.file5_path = None
+        self.file6_path = None
+        self.file7_path = None
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
@@ -856,6 +911,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file6.write(cgi_file6 % self.pythonexe)
         os.chmod(self.file6_path, 0o777)
 
+        self.file7_path = os.path.join(self.cgi_dir, 'file7.py')
+        with open(self.file7_path, 'w', encoding='utf-8') as file7:
+            file7.write(cgi_file7 % self.pythonexe)
+        os.chmod(self.file7_path, 0o777)
+
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -878,6 +938,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 os.remove(self.file5_path)
             if self.file6_path:
                 os.remove(self.file6_path)
+            if self.file7_path:
+                os.remove(self.file7_path)
             os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
             os.rmdir(self.cgi_dir_in_sub_dir)
@@ -949,6 +1011,21 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/file2.py', 'POST', params, headers)
 
         self.assertEqual(res.read(), b'1, python, 123456' + self.linesep)
+
+    def test_large_content_length(self):
+        for w in range(15, 25):
+            size = 1 << w
+            body = b'X' * size
+            headers = {'Content-Length' : str(size)}
+            res = self.request('/cgi-bin/file7.py', 'POST', body, headers)
+            self.assertEqual(res.read(), b'%d %d' % (size, size) + self.linesep)
+
+    def test_large_content_length_truncated(self):
+        for w in range(18, 65):
+            size = 1 << w
+            headers = {'Content-Length' : str(size)}
+            res = self.request('/cgi-bin/file1.py', 'POST', b'x', headers)
+            self.assertEqual(res.read(), b'Hello World' + self.linesep)
 
     def test_invaliduri(self):
         res = self.request('/cgi-bin/invalid')
