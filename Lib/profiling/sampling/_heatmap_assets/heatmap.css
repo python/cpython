@@ -1,253 +1,23 @@
 /* ==========================================================================
-   Heatmap Viewer - CSS
-   Python-branded profiler with dark/light theme support
-   Aligned with Flamegraph viewer design system
+   Heatmap Viewer - Component-Specific CSS
+
+   DEPENDENCY: Requires _shared_assets/base.css to be loaded first
+   This file extends the shared foundation with heatmap-specific styles.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   CSS Variables & Theme System
-   -------------------------------------------------------------------------- */
-
-:root {
-  /* Typography */
-  --font-sans: "Source Sans Pro", "Lucida Grande", "Lucida Sans Unicode",
-               "Geneva", "Verdana", sans-serif;
-  --font-mono: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
-
-  /* Python brand colors (theme-independent) */
-  --python-blue: #3776ab;
-  --python-blue-light: #4584bb;
-  --python-blue-lighter: #5592cc;
-  --python-gold: #ffd43b;
-  --python-gold-dark: #ffcd02;
-  --python-gold-light: #ffdc5c;
-
-  /* Heat palette - defined per theme below */
-
-  /* Layout */
-  --sidebar-width: 280px;
-  --sidebar-collapsed: 44px;
-  --topbar-height: 56px;
-  --statusbar-height: 32px;
-
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
-}
-
-/* Light theme (default) */
-:root, [data-theme="light"] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #e9ecef;
-  --border: #e9ecef;
-  --border-subtle: #f0f2f5;
-
-  --text-primary: #2e3338;
-  --text-secondary: #5a6c7d;
-  --text-muted: #8b949e;
-
-  --accent: #3776ab;
-  --accent-hover: #2d5aa0;
-  --accent-glow: rgba(55, 118, 171, 0.15);
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-
-  --header-gradient: linear-gradient(135deg, #3776ab 0%, #4584bb 100%);
-
-  /* Light mode heat palette */
-  --heat-1: #d6e9f8;
-  --heat-2: #a8d0ef;
-  --heat-3: #7ba3d1;
-  --heat-4: #ffe6a8;
-  --heat-5: #ffd43b;
-  --heat-6: #ffb84d;
-  --heat-7: #ff9966;
-  --heat-8: #ff6347;
-
-  /* Code view specific */
-  --code-bg: #ffffff;
-  --code-bg-line: #f8f9fa;
-  --code-border: #e9ecef;
-  --code-text: #2e3338;
-  --code-text-muted: #8b949e;
-  --code-accent: #3776ab;
-}
-
-/* Dark theme */
-[data-theme="dark"] {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --border: #30363d;
-  --border-subtle: #21262d;
-
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted: #6e7681;
-
-  --accent: #58a6ff;
-  --accent-hover: #79b8ff;
-  --accent-glow: rgba(88, 166, 255, 0.15);
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-
-  --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
-
-  /* Dark mode heat palette */
-  --heat-1: #1e3a5f;
-  --heat-2: #2d5580;
-  --heat-3: #4a7ba7;
-  --heat-4: #5a9fa8;
-  --heat-5: #7ec488;
-  --heat-6: #c4de6a;
-  --heat-7: #f4d44d;
-  --heat-8: #ff6b35;
-
-  /* Code view specific - dark mode */
-  --code-bg: #0d1117;
-  --code-bg-line: #161b22;
-  --code-border: #30363d;
-  --code-text: #e6edf3;
-  --code-text-muted: #6e7681;
-  --code-accent: #58a6ff;
-}
-
-/* --------------------------------------------------------------------------
-   Base Styles
-   -------------------------------------------------------------------------- */
-
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  background: var(--bg-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background var(--transition-normal), color var(--transition-normal);
-}
-
-/* --------------------------------------------------------------------------
-   Layout Structure
+   Layout Overrides (Heatmap-specific)
    -------------------------------------------------------------------------- */
 
 .app-layout {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
 }
 
-/* --------------------------------------------------------------------------
-   Top Bar
-   -------------------------------------------------------------------------- */
-
+/* Sticky top bar for heatmap views */
 .top-bar {
-  height: var(--topbar-height);
-  background: var(--header-gradient);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 10px rgba(55, 118, 171, 0.25);
-  border-bottom: 2px solid var(--python-gold);
   position: sticky;
   top: 0;
   z-index: 100;
-}
-
-/* Brand / Logo */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-  text-decoration: none;
-  flex-shrink: 0;
-}
-
-.brand-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-}
-
-.brand-logo svg,
-.brand-logo img {
-  width: 28px;
-  height: 28px;
-  display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-}
-
-.brand-text {
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.3px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-.brand-divider {
-  width: 1px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.brand-subtitle {
-  font-weight: 500;
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.toolbar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  font-size: 15px;
-  color: white;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
-.toolbar-btn:active {
-  transform: scale(0.95);
 }
 
 /* Back link in toolbar */
@@ -285,19 +55,19 @@ body {
 
 .stats-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 28px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: var(--bg-primary);
   border: 2px solid var(--border);
-  border-radius: 12px;
-  padding: 18px 20px;
+  border-radius: 10px;
+  padding: 14px 16px;
   transition: all var(--transition-fast);
   animation: slideUp 0.5s ease-out backwards;
   animation-delay: calc(var(--i, 0) * 0.08s);
@@ -327,8 +97,8 @@ body {
 .stat-card:hover {
   border-color: rgba(var(--card-color), 0.6);
   background: linear-gradient(135deg, rgba(var(--card-color), 0.08) 0%, var(--bg-primary) 100%);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(var(--card-color), 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(var(--card-color), 0.15);
 }
 
 .stat-card:hover::before {
@@ -336,21 +106,21 @@ body {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 18px;
   background: linear-gradient(135deg, rgba(var(--card-color), 0.15) 0%, rgba(var(--card-color), 0.05) 100%);
   border: 1px solid rgba(var(--card-color), 0.2);
-  border-radius: 12px;
+  border-radius: 10px;
   flex-shrink: 0;
   transition: all var(--transition-fast);
 }
 
 .stat-card:hover .stat-icon {
-  transform: scale(1.1) rotate(-3deg);
+  transform: scale(1.05) rotate(-2deg);
   background: linear-gradient(135deg, rgba(var(--card-color), 0.25) 0%, rgba(var(--card-color), 0.1) 100%);
 }
 
@@ -361,21 +131,21 @@ body {
 
 .stat-value {
   font-family: var(--font-mono);
-  font-size: 1.6em;
+  font-size: 1.35em;
   font-weight: 800;
   color: rgb(var(--card-color));
   display: block;
   line-height: 1.1;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .stat-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 4px;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
 }
 
 /* Sparkline decoration for stats */
@@ -503,11 +273,6 @@ body {
     transparent 100%
   );
   animation: shimmer 2.5s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
 }
 
 /* --------------------------------------------------------------------------
@@ -706,9 +471,22 @@ body {
   color: var(--text-secondary);
   font-weight: 600;
   white-space: nowrap;
-  min-width: 80px;
+  width: 130px;
+  flex-shrink: 0;
   text-align: right;
   font-family: var(--font-mono);
+}
+
+.heatmap-bar-container {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.heatmap-bar {
+  flex-shrink: 0;
+  border-radius: 2px;
 }
 
 /* Links */
@@ -769,51 +547,6 @@ body {
 [data-theme="dark"] .badge-project {
   background: rgba(255, 212, 59, 0.25);
   color: #ffd43b;
-}
-
-/* --------------------------------------------------------------------------
-   Status Bar
-   -------------------------------------------------------------------------- */
-
-.status-bar {
-  height: var(--statusbar-height);
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.status-item::before {
-  content: '';
-  width: 4px;
-  height: 4px;
-  background: var(--python-gold);
-  border-radius: 50%;
-}
-
-.status-item:first-child::before {
-  display: none;
-}
-
-.status-label {
-  color: var(--text-muted);
-}
-
-.status-value {
-  color: var(--text-primary);
-  font-weight: 500;
 }
 
 /* ==========================================================================
@@ -1359,51 +1092,18 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   Animations
+   Responsive (Heatmap-specific)
    -------------------------------------------------------------------------- */
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+@media (max-width: 1100px) {
+  .stats-summary {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
-
-/* --------------------------------------------------------------------------
-   Focus States (Accessibility)
-   -------------------------------------------------------------------------- */
-
-button:focus-visible,
-select:focus-visible,
-input:focus-visible {
-  outline: 2px solid var(--python-gold);
-  outline-offset: 2px;
-}
-
-/* --------------------------------------------------------------------------
-   Responsive
-   -------------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
   .main-content {
     padding: 16px;
-  }
-
-  .stats-summary {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .brand-subtitle {
-    display: none;
   }
 }
 

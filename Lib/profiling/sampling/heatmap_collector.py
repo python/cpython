@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
+from ._css_utils import get_combined_css
 from .stack_collector import StackTraceCollector
 
 
@@ -218,7 +219,7 @@ class _TemplateLoader:
             self.file_template = (assets_dir / "heatmap_pyfile_template.html").read_text(encoding="utf-8")
 
             # Load CSS (same file used for both index and file pages)
-            css_content = (assets_dir / "heatmap.css").read_text(encoding="utf-8")
+            css_content = get_combined_css("heatmap")
             self.index_css = css_content
             self.file_css = css_content
 
@@ -458,7 +459,7 @@ class _HtmlRenderer:
         return (f'{indent}<div class="file-item">\n'
                 f'{indent}  <a href="{html_file}" class="file-link" title="{full_path}">📄 {module_name}</a>\n'
                 f'{indent}  <span class="file-samples">{stat.total_samples:,} samples</span>\n'
-                f'{indent}  <div class="heatmap-bar" style="width: {bar_width}px; background-color: {bg_color}; height: {self.heatmap_bar_height}px;"></div>\n'
+                f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; background-color: {bg_color}; height: {self.heatmap_bar_height}px;"></div></div>\n'
                 f'{indent}</div>\n')
 
 
