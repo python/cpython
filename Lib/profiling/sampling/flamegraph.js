@@ -167,7 +167,7 @@ function updateStatusBar(nodeData, rootValue) {
   const filename = resolveString(nodeData.filename) || "";
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
-  const percent = ((nodeData.value / rootValue) * 100).toFixed(1);
+  const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
 
   const locationEl = document.getElementById('status-location');
   const funcItem = document.getElementById('status-func-item');
@@ -890,7 +890,7 @@ function filterByThread() {
   if (selectedThread === 'all') {
     filteredData = originalData;
   } else {
-    selectedThreadId = parseInt(selectedThread);
+    selectedThreadId = parseInt(selectedThread, 10);
     filteredData = filterDataByThread(originalData, selectedThreadId);
 
     if (filteredData.strings) {
@@ -956,17 +956,19 @@ function resetZoom() {
 
 function exportSVG() {
   const svgElement = document.querySelector("#chart svg");
-  if (svgElement) {
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
-    const blob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "python-performance-flamegraph.svg";
-    a.click();
-    URL.revokeObjectURL(url);
+  if (!svgElement) {
+    console.warn("Cannot export: No flamegraph SVG found");
+    return;
   }
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svgElement);
+  const blob = new Blob([svgString], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "python-performance-flamegraph.svg";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ============================================================================

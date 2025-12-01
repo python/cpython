@@ -112,10 +112,10 @@ class SampleProfiler:
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
-        sample_rate = num_samples / running_time
+        sample_rate = num_samples / running_time if running_time > 0 else 0
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
         expected_samples = int(duration_sec / sample_interval_sec)
-        missed_samples = (expected_samples - num_samples) / expected_samples * 100
+        missed_samples = (expected_samples - num_samples) / expected_samples * 100 if expected_samples > 0 else 0
 
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
