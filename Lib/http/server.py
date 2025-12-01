@@ -136,7 +136,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
-SAFE_BUF_SIZE = 1 << 20
+_MIN_READ_BUF_SIZE = 1 << 20
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -1289,10 +1289,13 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  )
             if self.command.lower() == "post" and nbytes > 0:
                 cursize = 0
-                data = self.rfile.read(min(nbytes, SAFE_BUF_SIZE))
+                data = self.rfile.read(min(nbytes, _MIN_READ_BUF_SIZE))
                 while (len(data) < nbytes and len(data) != cursize and
                        select.select([self.rfile._sock], [], [], 0)[0]):
                     cursize = len(data)
+                    # This is a geometric increase in read size (never more
+                    # than doubling our the current length of data per loop
+                    # iteration).
                     delta = min(cursize, nbytes - cursize)
                     data += self.rfile.read(delta)
             else:

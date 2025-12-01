@@ -1,6 +1,5 @@
-Fix a potential denial of service in the :mod:`http.server` module.
+Fix a potential memory denial of service in the :mod:`http.server` module.
 When a malicious user is connected to the CGI server on Windows, it could cause
 an arbitrary amount of memory to be allocated.
-In best case this could lead to a :exc:`MemoryError` or other process crash.
-In worst case it could lead to swapping which would dramatically slow down the
-whole system and make it less responcible.
+This could have led to symptoms including a :exc:`MemoryError`, swapping, out
+of memory (OOM) killed processes or containers, or even system crashes.
