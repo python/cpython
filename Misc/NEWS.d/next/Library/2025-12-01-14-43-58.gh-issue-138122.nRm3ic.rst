@@ -1,5 +1,5 @@
-The :mod:`_remote_debugging` module now implements frame caching in the
-:class:`RemoteUnwinder` class to reduce memory reads when profiling remote
+The ``_remote_debugging`` module now implements frame caching in the
+``RemoteUnwinder`` class to reduce memory reads when profiling remote
 processes. When ``cache_frames=True``, unchanged portions of the call stack
 are reused from previous samples, significantly improving profiling
 performance for deep call stacks.
