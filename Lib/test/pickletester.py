@@ -1164,7 +1164,14 @@ class AbstractUnpickleTests:
 
     def test_too_large_put(self):
         # Test that PUT with large id does not cause allocation of
-        # too large memo table.
+        # too large memo table. The C implementation uses a dict-based memo
+        # for sparse indices (when idx > memo_len * 2) instead of allocating
+        # a massive array. This test verifies large sparse indices work without
+        # causing memory exhaustion.
+        #
+        # The following simple pickle creates an empty list, memoizes it
+        # using a large index, then loads it back on the stack, builds
+        # a tuple containing 2 identical empty lists and returns it.
         data = lambda n: (b'((lp' + str(n).encode() + b'\n' +
                           b'g' + str(n).encode() + b'\nt.')
         #    0: (    MARK
@@ -1186,7 +1193,9 @@ class AbstractUnpickleTests:
         # a massive array. This test verifies large sparse indices work without
         # causing memory exhaustion.
         #
-        # If the threshold formula changes, ensure test indices still exceed it.
+        # The following simple pickle creates an empty list, memoizes it
+        # using a large index, then loads it back on the stack, builds
+        # a tuple containing 2 identical empty lists and returns it.
         data = lambda n: (b'(]r' + struct.pack('<I', n) +
                           b'j' + struct.pack('<I', n) + b't.')
         #    0: (    MARK
