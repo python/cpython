@@ -365,7 +365,6 @@ ABC hierarchy::
 
         - :attr:`module.__name__`
         - :attr:`module.__file__`
-        - :attr:`module.__cached__` *(deprecated)*
         - :attr:`module.__path__`
         - :attr:`module.__package__` *(deprecated)*
         - :attr:`module.__loader__` *(deprecated)*
@@ -1262,8 +1261,7 @@ find and load modules.
 
    .. attribute:: cached
 
-      The filename of a compiled version of the module's code
-      (see :attr:`module.__cached__`).
+      The filename of a compiled version of the module's code.
       The :term:`finder` should always set this attribute but it may be ``None``
       for modules that do not need compiled code stored.
 

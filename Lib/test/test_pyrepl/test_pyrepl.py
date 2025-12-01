@@ -1443,10 +1443,10 @@ class TestMain(ReplTestCase):
         case2 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+        case3 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+        case4 = f"{pre}, '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 

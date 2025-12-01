@@ -466,17 +466,6 @@ class ImportSideEffectTests(unittest.TestCase):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
 
-    def test_abs_paths_cached_None(self):
-        """Test for __cached__ is None.
-
-        Regarding to PEP 3147, __cached__ can be None.
-
-        See also: https://bugs.python.org/issue30167
-        """
-        sys.modules['test'].__cached__ = None
-        site.abs_paths()
-        self.assertIsNone(sys.modules['test'].__cached__)
-
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
         # Handled by removeduppaths()
