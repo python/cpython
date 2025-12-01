@@ -901,7 +901,7 @@ class Reader:
 
         self.vi_mode = VI_MODE_INSERT
 
-        if len(self.undo_stack) > MAX_VI_UNDO_STACK_SIZE:
+        if len(self.undo_stack) >= MAX_VI_UNDO_STACK_SIZE:
             self.undo_stack.pop(0)
 
         self.undo_stack.append(ViUndoState(
