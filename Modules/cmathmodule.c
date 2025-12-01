@@ -1215,7 +1215,8 @@ cmath_exec(PyObject *mod)
 }
 
 static int
-init_special_value_tables(void *Py_UNUSED(arg)) {
+init_special_value_tables(void *Py_UNUSED(arg))
+{
 
 #define INIT_SPECIAL_VALUES(NAME, BODY) { Py_complex* p = (Py_complex*)NAME; BODY }
 #define C(REAL, IMAG) p->real = REAL; p->imag = IMAG; ++p;

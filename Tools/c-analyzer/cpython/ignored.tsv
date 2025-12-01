@@ -26,6 +26,7 @@ Modules/posixmodule.c	os_dup2_impl	dup3_works	-
 ## guards around resource init
 Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 Modules/_struct.c	-	endian_tables_init_once	-
+Modules/cmathmodule.c	-	special_values_init_once	-
 
 ##-----------------------
 ## other values (not Python-specific)
@@ -167,7 +168,6 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 
 # thread-safety
 # XXX need race protection?
-Modules/cmathmodule.c	-	special_values_init_once	-
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Modules/grpmodule.c	-	group_db_mutex	-

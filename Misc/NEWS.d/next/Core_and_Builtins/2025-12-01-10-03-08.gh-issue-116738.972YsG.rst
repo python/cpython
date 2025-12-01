@@ -1,2 +1,2 @@
-Make the :mod:`cmath` module thread-safe during import in free-threading and
-subinterpreter use cases.
+Fix :mod:`cmath` data race when initializing trigonometric tables with
+subinterpreters.
