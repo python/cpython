@@ -151,17 +151,22 @@ function createPythonTooltip(data) {
     const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
     const filename = resolveString(d.data.filename) || "";
 
+    // Don't show file location for special frames like <GC> and <native>
+    const isSpecialFrame = filename === "~";
+    const fileLocationHTML = isSpecialFrame ? "" : `
+        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
+                    font-family: monospace; background: #f8f9fa;
+                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
+          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
+        </div>`;
+
     const tooltipHTML = `
       <div>
         <div style="color: #3776ab; font-weight: 600; font-size: 16px;
                     margin-bottom: 8px; line-height: 1.3; word-break: break-word; overflow-wrap: break-word;">
           ${funcname}
         </div>
-        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
-                    font-family: monospace; background: #f8f9fa;
-                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
-          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
-        </div>
+        ${fileLocationHTML}
         <div style="display: grid; grid-template-columns: auto 1fr;
                     gap: 8px 16px; font-size: 14px;">
           <span style="color: #5a6c7d; font-weight: 500;">Execution Time:</span>
@@ -396,8 +401,92 @@ if (document.readyState === "loading") {
   initFlamegraph();
 }
 
+// Mode constants (must match constants.py)
+const PROFILING_MODE_WALL = 0;
+const PROFILING_MODE_CPU = 1;
+const PROFILING_MODE_GIL = 2;
+const PROFILING_MODE_ALL = 3;
+
+function populateThreadStats(data, selectedThreadId = null) {
+  // Check if thread statistics are available
+  const stats = data?.stats;
+  if (!stats || !stats.thread_stats) {
+    return; // No thread stats available
+  }
+
+  const mode = stats.mode !== undefined ? stats.mode : PROFILING_MODE_WALL;
+  let threadStats;
+
+  // If a specific thread is selected, use per-thread stats
+  if (selectedThreadId !== null && stats.per_thread_stats && stats.per_thread_stats[selectedThreadId]) {
+    threadStats = stats.per_thread_stats[selectedThreadId];
+  } else {
+    threadStats = stats.thread_stats;
+  }
+
+  // Validate threadStats object
+  if (!threadStats || typeof threadStats.total !== 'number') {
+    return; // Invalid thread stats
+  }
+
+  const bar = document.getElementById('thread-stats-bar');
+  if (!bar) {
+    return; // DOM element not found
+  }
+
+  // Show the bar if we have valid thread stats
+  if (threadStats.total > 0) {
+    bar.style.display = 'flex';
+
+    // Hide/show GIL stats items in GIL mode
+    const gilHeldStat = document.getElementById('gil-held-stat');
+    const gilReleasedStat = document.getElementById('gil-released-stat');
+    const gilWaitingStat = document.getElementById('gil-waiting-stat');
+    const separators = bar.querySelectorAll('.thread-stat-separator');
+
+    if (mode === PROFILING_MODE_GIL) {
+      // In GIL mode, hide GIL-related stats
+      if (gilHeldStat) gilHeldStat.style.display = 'none';
+      if (gilReleasedStat) gilReleasedStat.style.display = 'none';
+      if (gilWaitingStat) gilWaitingStat.style.display = 'none';
+      separators.forEach((sep, i) => {
+        if (i < 3) sep.style.display = 'none';
+      });
+    } else {
+      // Show all stats in other modes
+      if (gilHeldStat) gilHeldStat.style.display = 'inline-flex';
+      if (gilReleasedStat) gilReleasedStat.style.display = 'inline-flex';
+      if (gilWaitingStat) gilWaitingStat.style.display = 'inline-flex';
+      separators.forEach(sep => sep.style.display = 'inline');
+
+      // GIL Held
+      const gilHeldPct = threadStats.has_gil_pct || 0;
+      const gilHeldPctElem = document.getElementById('gil-held-pct');
+      if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(2)}%`;
+
+      // GIL Released (threads running without GIL)
+      const gilReleasedPct = threadStats.on_cpu_pct || 0;
+      const gilReleasedPctElem = document.getElementById('gil-released-pct');
+      if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(2)}%`;
+
+      // Waiting for GIL
+      const gilWaitingPct = threadStats.gil_requested_pct || 0;
+      const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
+      if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(2)}%`;
+    }
+
+    // Garbage Collection (always show)
+    const gcPct = threadStats.gc_pct || 0;
+    const gcPctElem = document.getElementById('gc-pct');
+    if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(2)}%`;
+  }
+}
+
 function populateStats(data) {
   const totalSamples = data.value || 0;
+
+  // Populate thread statistics if available
+  populateThreadStats(data);
 
   // Collect all functions with their metrics, aggregated by function name
   const functionMap = new Map();
@@ -474,14 +563,23 @@ function populateStats(data) {
     if (i < hotSpots.length && hotSpots[i]) {
       const hotspot = hotSpots[i];
       const filename = hotspot.filename || 'unknown';
-      const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
       const lineno = hotspot.lineno ?? '?';
       let funcDisplay = hotspot.funcname || 'unknown';
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
       }
 
-      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${lineno}`;
+      // Don't show file:line for special frames like <GC> and <native>
+      const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
+      let fileDisplay;
+      if (isSpecialFrame) {
+        fileDisplay = '--';
+      } else {
+        const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
+        fileDisplay = `${basename}:${lineno}`;
+      }
+
+      document.getElementById(`hotspot-file-${num}`).textContent = fileDisplay;
       document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
       document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
     } else {
@@ -565,13 +663,15 @@ function filterByThread() {
   currentThreadFilter = selectedThread;
 
   let filteredData;
+  let selectedThreadId = null;
+
   if (selectedThread === 'all') {
     // Show all data
     filteredData = originalData;
   } else {
     // Filter data by thread
-    const threadId = parseInt(selectedThread);
-    filteredData = filterDataByThread(originalData, threadId);
+    selectedThreadId = parseInt(selectedThread);
+    filteredData = filterDataByThread(originalData, selectedThreadId);
 
     if (filteredData.strings) {
       stringTable = filteredData.strings;
@@ -583,6 +683,9 @@ function filterByThread() {
   const tooltip = createPythonTooltip(filteredData);
   const chart = createFlamegraph(tooltip, filteredData.value);
   renderFlamegraph(chart, filteredData);
+
+  // Update thread stats to show per-thread or aggregate stats
+  populateThreadStats(originalData, selectedThreadId);
 }
 
 function filterDataByThread(data, threadId) {

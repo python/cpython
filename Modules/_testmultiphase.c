@@ -1024,6 +1024,20 @@ PyModExport__test_from_modexport(void)
 {
     static PyModuleDef_Slot slots[] = {
         {Py_mod_name, "_test_from_modexport"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    return slots;
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_gil_used(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_gil_used"},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_USED},
         {0},
     };
     return slots;
@@ -1061,7 +1075,7 @@ PyModInit__test_from_modexport_exception(void)
 }
 
 static PyObject *
-modexport_create_string(PyObject *spec, PyObject *def)
+modexport_create_string(PyObject *spec, PyModuleDef *def)
 {
     assert(def == NULL);
     return PyUnicode_FromString("is this \xf0\x9f\xa6\x8b... a module?");
@@ -1073,6 +1087,21 @@ PyModExport__test_from_modexport_create_nonmodule(void)
     static PyModuleDef_Slot slots[] = {
         {Py_mod_name, "_test_from_modexport_create_nonmodule"},
         {Py_mod_create, modexport_create_string},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+        {0},
+    };
+    return slots;
+}
+
+PyMODEXPORT_FUNC
+PyModExport__test_from_modexport_create_nonmodule_gil_used(void)
+{
+    static PyModuleDef_Slot slots[] = {
+        {Py_mod_name, "_test_from_modexport_create_nonmodule"},
+        {Py_mod_create, modexport_create_string},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_USED},
         {0},
     };
     return slots;
@@ -1138,8 +1167,9 @@ modexport_get_empty_slots(PyObject *mod, PyObject *arg)
 }
 
 static void
-modexport_smoke_free(PyObject *mod)
+modexport_smoke_free(void *op)
 {
+    PyObject *mod = (PyObject *)op;
     int *state = PyModule_GetState(mod);
     if (!state) {
         PyErr_FormatUnraisable("Exception ignored in module %R free", mod);
@@ -1164,6 +1194,8 @@ PyModExport__test_from_modexport_smoke(void)
         {Py_mod_methods, methods},
         {Py_mod_state_free, modexport_smoke_free},
         {Py_mod_token, (void*)&modexport_smoke_test_token},
+        {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+        {Py_mod_gil, Py_MOD_GIL_NOT_USED},
         {0},
     };
     return slots;
