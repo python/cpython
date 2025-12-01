@@ -2559,6 +2559,59 @@ sock.connect(('localhost', {port}))
             # No cross-contamination
             self.assertNotIn("blech1", t2_blech)
 
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_new_unwinder_with_stale_last_profiled_frame(self):
+        """Test that a new unwinder returns complete stack when cache lookup misses."""
+        script_body = """\
+            def level4():
+                sock.sendall(b"sync1")
+                sock.recv(16)
+                sock.sendall(b"sync2")
+                sock.recv(16)
+
+            def level3():
+                level4()
+
+            def level2():
+                level3()
+
+            def level1():
+                level2()
+
+            level1()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            expected = {"level1", "level2", "level3", "level4"}
+
+            # First unwinder samples - this sets last_profiled_frame in target
+            unwinder1 = make_unwinder(cache_frames=True)
+            frames1 = self._sample_frames(client_socket, unwinder1, b"sync1", b"ack", expected)
+
+            # Create NEW unwinder (empty cache) and sample
+            # The target still has last_profiled_frame set from unwinder1
+            unwinder2 = make_unwinder(cache_frames=True)
+            frames2 = self._sample_frames(client_socket, unwinder2, b"sync2", b"done", expected)
+
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
+
+        funcs1 = [f.funcname for f in frames1]
+        funcs2 = [f.funcname for f in frames2]
+
+        # Both should have all levels
+        for level in ["level1", "level2", "level3", "level4"]:
+            self.assertIn(level, funcs1, f"{level} missing from first sample")
+            self.assertIn(level, funcs2, f"{level} missing from second sample")
+
+        # Should have same stack depth
+        self.assertEqual(len(frames1), len(frames2),
+                         "New unwinder should return complete stack despite stale last_profiled_frame")
+
 
 if __name__ == "__main__":
     unittest.main()

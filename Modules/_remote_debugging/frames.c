@@ -770,6 +770,14 @@ collect_frames_with_cache(
             Py_DECREF(frame_addresses);
             return -1;
         }
+        if (cache_result == 0) {
+            // Cache miss - continue walking from last_profiled_frame to get the rest
+            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, gc_frame,
+                                    0, NULL, frame_addresses) < 0) {
+                Py_DECREF(frame_addresses);
+                return -1;
+            }
+        }
     }
 
     // Convert frame_addresses (list of PyLong) to C array for efficient cache storage
