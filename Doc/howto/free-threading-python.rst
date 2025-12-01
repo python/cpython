@@ -6,13 +6,12 @@ Python support for free threading
 
 Starting with the 3.13 release, CPython has support for a build of
 Python called :term:`free threading` where the :term:`global interpreter lock`
-(GIL) is disabled. Free-threaded execution allows for full utilization of the
+(GIL) is disabled.  Free-threaded execution allows for full utilization of the
 available processing power by running threads in parallel on available CPU cores.
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-The free-threaded mode continues to be improved with each release.
-Additionally, third-party packages, in particular ones
+Some third-party packages, in particular ones
 with an :term:`extension module`, may not be ready for use in a
 free-threaded build, and will re-enable the :term:`GIL`.
 
@@ -102,7 +101,7 @@ Immortalization
 
 In the free-threaded build, some objects are :term:`immortal`.
 Immortal objects are not deallocated and have reference counts that are
-never modified.  This is done to avoid reference count contention that would
+never modified.  This is done to avoid reference count contention that would
 prevent efficient multi-threaded scaling.
 
 As of the 3.14 release, immortalization is limited to:
@@ -115,33 +114,26 @@ As of the 3.14 release, immortalization is limited to:
 Frame objects
 -------------
 
-It is not safe to access :ref:`frame <frame-objects>` objects from other
-threads. This means that
-:func:`sys._current_frames` is generally not safe to use in a free-threaded
-build. Functions like :func:`inspect.currentframe` and :func:`sys._getframe`
-are generally safe as long as the resulting frame object is not passed to
-another thread.
+It is not safe to access :attr:`frame.f_locals` from a :ref:`frame <frame-objects>`
+object if that frame is currently executing in another thread.
+
 
 Iterators
 ---------
 
-While sharing the same iterator object between multiple threads is generally not
-safe from a logical perspective (threads may see duplicate or missing elements
-when iterating), the 3.14 free-threaded build prevents interpreter crashes
-that occurred in earlier versions.
+It is generally not thread-safe to access the same iterator object from
+multiple threads concurrently, and threads may see duplicate or missing
+elements.
 
 
 Single-threaded performance
 ---------------------------
 
 The free-threaded build has additional overhead when executing Python code
-compared to the default GIL-enabled build. This overhead was reduced
-in the 3.14 release (which re-enabled the specializing adaptive
-interpreter, :pep:`659`). Reducing this overhead further remains an
-active development goal, with an aim for 10% or less on the
-`pyperformance <https://pyperformance.readthedocs.io/>`_ suite compared to the default GIL-enabled build.
-Programs that spend most of their time in C extensions or I/O will see
-less of an impact.
+compared to the default GIL-enabled build.  The amount of overhead depends
+on the workload and hardware.  On the pyperformance benchmark suite, the
+average overhead ranges from about 1% on macOS aarch64 to 8% on x86-64 Linux
+systems.
 
 
 Behavioral changes
