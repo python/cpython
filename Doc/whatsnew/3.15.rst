@@ -1247,6 +1247,12 @@ Build changes
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
+* The new configure option :option:`--with-missing-stdlib-config=FILE` allows
+  distributors to pass a `JSON <https://www.json.org/json-en.html>`_
+  configuration file containing custom error messages for :term:`standard library`
+  modules that are missing or packaged separately.
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
+
 
 Porting to Python 3.15
 ======================

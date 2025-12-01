@@ -307,6 +307,15 @@ if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   AC_MSG_ERROR([pkg-config is required])]
 fi
 
+dnl Allow distributors to provide custom missing stdlib module error messages
+AC_ARG_WITH([missing-stdlib-config],
+  [AS_HELP_STRING([--with-missing-stdlib-config=FILE],
+                  [File with custom module error messages for missing stdlib modules])],
+  [MISSING_STDLIB_CONFIG="$withval"],
+  [MISSING_STDLIB_CONFIG=""]
+)
+AC_SUBST([MISSING_STDLIB_CONFIG])
+
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING([MACHDEP])

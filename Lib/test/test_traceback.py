@@ -5051,7 +5051,7 @@ class MiscTest(unittest.TestCase):
              b"or to enable your virtual environment?"), stderr
         )
 
-    def test_missing_stdlib_package(self):
+    def test_missing_stdlib_module(self):
         code = """
             import sys
             sys.stdlib_module_names |= {'spam'}
@@ -5060,6 +5060,27 @@ class MiscTest(unittest.TestCase):
         _, _, stderr = assert_python_failure('-S', '-c', code)
 
         self.assertIn(b"Standard library module 'spam' was not found", stderr)
+
+        code = """
+            import sys
+            import traceback
+            traceback._MISSING_STDLIB_MODULE_MESSAGES = {'spam': "Install 'spam4life' for 'spam'"}
+            sys.stdlib_module_names |= {'spam'}
+            import spam
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(b"Install 'spam4life' for 'spam'", stderr)
+
+    @unittest.skipIf(sys.platform == "win32", "Non-Windows test")
+    def test_windows_only_module_error(self):
+        try:
+            import msvcrt  # noqa: F401
+        except ModuleNotFoundError:
+            formatted = traceback.format_exc()
+            self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
+        else:
+            self.fail("ModuleNotFoundError was not raised")
 
 
 class TestColorizedTraceback(unittest.TestCase):
