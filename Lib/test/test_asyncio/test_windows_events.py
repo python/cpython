@@ -325,7 +325,7 @@ class ProactorTests(WindowsEventsTestCase):
 
     def test_add_reader_invalid_argument(self):
         def assert_raises():
-            return self.assertRaisesRegex(ValueError, r'Invalid file object')
+            return self.assertRaisesRegex(ValueError, r"Invalid file object")
 
         def cb(sock):
             return None
@@ -343,6 +343,7 @@ class ProactorTests(WindowsEventsTestCase):
     def test_selector_thread(self):
         assert self.loop._selector_thread is None
         a, b = socket.socketpair()
+
         async def _test():
             read_future = asyncio.Future()
             sent = b"asdf"
