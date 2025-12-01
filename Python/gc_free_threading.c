@@ -2213,7 +2213,7 @@ record_deallocation(PyThreadState *tstate)
         int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
         int new_count;
         do {
-            if (count == 0) { 
+            if (count == 0) {
                 break;
             }
             new_count = count + (int)gc->alloc_count;
