@@ -690,7 +690,7 @@ function populateProfileSummary(data) {
 
   // Efficiency bar
   if (errorRate !== undefined && errorRate !== null) {
-    const efficiency = Math.max(0, Math.min(100, (1 - errorRate) * 100));
+    const efficiency = Math.max(0, Math.min(100, (100 - errorRate)));
 
     const efficiencySection = document.getElementById('efficiency-section');
     if (efficiencySection) efficiencySection.style.display = 'block';
