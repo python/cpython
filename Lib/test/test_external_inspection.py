@@ -2655,11 +2655,11 @@ recurse({depth})
             unwinder_no_cache = make_unwinder(cache_frames=False)
 
             frames_cached = self._sample_frames(
-                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}, 1024
+                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}, 1100
             )
             # Sample again with no cache for comparison
             frames_no_cache = self._sample_frames(
-                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}, 1024
+                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}, 1100
             )
 
         self.assertIsNotNone(frames_cached)
