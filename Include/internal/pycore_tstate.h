@@ -113,6 +113,10 @@ typedef struct _PyThreadStateImpl {
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
 
+    // Last known frame state for generators/coroutines in this thread
+    // Used by genobject.c
+    int8_t gen_last_frame_state;
+
 #ifdef Py_STATS
      // per-thread stats, will be merged into interp->pystats_struct
      PyStats *pystats_struct; // allocated by _PyStats_ThreadInit()

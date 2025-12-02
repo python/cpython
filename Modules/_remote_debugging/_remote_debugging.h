@@ -20,7 +20,7 @@ extern "C" {
 
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
-#include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
+#include <internal/pycore_genobject.h>      // FRAME_SUSPENDED_YIELD_FROM
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_INTERPRETER
 #include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_long.h>           // _PyLong_GetZero
