@@ -1,0 +1,5 @@
+Analysis confirms that 
+ctypes
+ does not support returning tuples from 
+as_parameter
+ for default conversions. Attempting to do so raises a TypeError (wrapped in an ArgumentError), meaning the described security risk does not exist in the current codebase.
