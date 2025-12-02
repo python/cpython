@@ -6,6 +6,7 @@ import decimal
 import fractions
 import io
 import itertools
+import locale
 import os
 import pickle
 import random
@@ -6294,6 +6295,15 @@ class Europe_Vilnius_1941(tzinfo):
 
 
 class TestLocalTimeDisambiguation(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.old_locale = locale.setlocale(locale.LC_ALL)
+        locale.setlocale(locale.LC_ALL, 'C')
+
+    @classmethod
+    def tearDownClass(cls):
+        locale.setlocale(locale.LC_ALL, cls.old_locale)
 
     def test_vilnius_1941_fromutc(self):
         Vilnius = Europe_Vilnius_1941()
