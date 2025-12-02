@@ -160,8 +160,8 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: prweek(theweek, width)
 
-      Print a week's calendar as returned by :meth:`formatweek` and sets the
-      end parameter to an empty string to prevent adding a newline character.
+      Print a week's calendar as returned by :meth:`formatweek` and without a
+      final newline.
 
 
    .. method:: formatday(theday, weekday, width)
