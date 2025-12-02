@@ -22,12 +22,14 @@ extern "C" {
 #define PY_MONITORING_EVENT_BRANCH_LEFT 8
 #define PY_MONITORING_EVENT_BRANCH_RIGHT 9
 #define PY_MONITORING_EVENT_STOP_ITERATION 10
+
+#define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
+((ev) <= PY_MONITORING_EVENT_STOP_ITERATION)
+
 #define PY_MONITORING_EVENT_PY_UNWIND 11
 
-// TODO: PY_UNWIND requires no instrumentation so this definition is not
-// entirely correct.
-#define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
-((ev) <= _PY_MONITORING_LOCAL_EVENTS)
+#define PY_MONITORING_IS_LOCAL_EVENT(ev) \
+((ev) < _PY_MONITORING_LOCAL_EVENTS)
 
 
 /* Other events, mainly exceptions */
