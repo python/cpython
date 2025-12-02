@@ -40,8 +40,8 @@ Executor Objects
          with ThreadPoolExecutor(max_workers=1) as executor:
              future = executor.submit(pow, 323, 1235)
              print(future.result())
-   
-             
+
+
    .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
