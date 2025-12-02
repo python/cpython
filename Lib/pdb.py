@@ -2679,6 +2679,16 @@ def set_trace(*, header=None, commands=None):
     just before debugging begins. *commands* is an optional list of
     pdb commands to run when the debugger starts.
     """
+    # gh-138641: Check if we're already in a pdb session.
+    frame = sys._getframe()
+    while frame:
+        if (frame.f_code.co_name == 'interaction'
+            and frame.f_code.co_filename.endswith('pdb.py')):
+            print("Nested breakpoint calls are not supported. "
+                  "Already running in the debugger.", file=sys.stderr)
+            return
+        frame = frame.f_back
+
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
@@ -2694,6 +2704,17 @@ async def set_trace_async(*, header=None, commands=None):
     if they enter the debugger with this function. Otherwise it's the same
     as set_trace().
     """
+    # gh-138641: Check if we're already in a pdb session.
+    frame = sys._getframe()
+    while frame:
+        if (frame.f_code.co_name == 'interaction' and
+            frame.f_code.co_filename.endswith('pdb.py')):
+            # We're already in a pdb session, just print a message and return
+            print("Nested breakpoint calls are not supported. "
+                  "Already running in the debugger.", file=sys.stderr)
+            return
+        frame = frame.f_back
+
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
