@@ -359,7 +359,7 @@ class _HtmlRenderer:
             tree = trees[module_type]
 
             # Project starts expanded, others start collapsed
-            is_collapsed = module_type in ('stdlib', 'site-packages')
+            is_collapsed = module_type in {'stdlib', 'site-packages', 'other'}
             icon = '▶' if is_collapsed else '▼'
             content_style = ' style="display: none;"' if is_collapsed else ''
 
