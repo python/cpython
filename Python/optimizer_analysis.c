@@ -144,10 +144,6 @@ incorrect_keys(PyObject *obj, uint32_t version)
 
 #define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
 
-#define WITHIN_STACK_BOUNDS() \
-    (CURRENT_FRAME_IS_INIT_SHIM() || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
-
-
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
 #define REPLACE_OP(INST, OP, ARG, OPERAND)    \
@@ -191,6 +187,13 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 #define JUMP_TO_LABEL(label) goto label;
+#define CHECK_STACK_BOUNDS() do { \
+    if (!CURRENT_FRAME_IS_INIT_SHIM() && (STACK_LEVEL() < 0 || STACK_LEVEL() > STACK_SIZE())) { \
+        ctx->contradiction = true; \
+        ctx->done = true; \
+        break; \
+    } \
+} while (0);
 
 static int
 optimize_to_bool(

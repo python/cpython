@@ -2116,7 +2116,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            CHECK_STACK_BOUNDS();
             break;
         }
         """
@@ -2133,7 +2133,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            CHECK_STACK_BOUNDS();
             break;
         }
         """
@@ -2155,7 +2155,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             foo = NULL;
             stack_pointer[0] = foo;
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            CHECK_STACK_BOUNDS();
             break;
         }
         """
@@ -2173,7 +2173,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         output = """
         case OP: {
             stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            CHECK_STACK_BOUNDS();
             break;
         }
         """

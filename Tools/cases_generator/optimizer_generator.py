@@ -148,7 +148,23 @@ class OptimizerEmitter(Emitter):
         self.stack = stack
 
     def emit_save(self, storage: Storage) -> None:
-        storage.flush(self.out)
+        storage.flush(self.out, check_stack_bounds=True)
+
+    def sync_sp(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        storage.clear_inputs("when syncing stack")
+        storage.flush(self.out, check_stack_bounds=True)
+        storage.stack.clear(self.out)
+        return True
 
     def emit_reload(self, storage: Storage) -> None:
         pass
@@ -256,7 +272,7 @@ class OptimizerEmitter(Emitter):
                         emitter.emit("}\n")
                         emitter.emit("}\n")
 
-        storage.flush(self.out)
+        storage.flush(self.out, check_stack_bounds=True)
         emitter.emit("break;\n")
         emitter.emit("}\n")
         return True
@@ -397,12 +413,12 @@ def write_uop(
                 var.in_local = False
             _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
-            storage.flush(out)
+            storage.flush(out, check_stack_bounds=True)
             out.start_line()
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out)
+            stack.flush(out, check_stack_bounds=True)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body.open) # from None
 

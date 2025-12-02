@@ -291,12 +291,15 @@ class Stack:
     ) -> None:
         out.emit(f"stack_pointer[{stack_offset.to_c()}] = {var.name};\n")
 
-    def _save_physical_sp(self, out: CWriter) -> None:
+    def _save_physical_sp(self, out: CWriter, check_stack_bounds: bool) -> None:
         if self.physical_sp != self.logical_sp:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+            if check_stack_bounds:
+                out.emit("CHECK_STACK_BOUNDS();\n")
+            else:
+                out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
@@ -316,10 +319,10 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
-    def flush(self, out: CWriter) -> None:
+    def flush(self, out: CWriter, check_stack_bounds: bool = False) -> None:
         self._print(out)
         self.save_variables(out)
-        self._save_physical_sp(out)
+        self._save_physical_sp(out, check_stack_bounds)
         out.start_line()
 
     def is_flushed(self) -> bool:
@@ -498,10 +501,10 @@ class Storage:
                 return True
         return False
 
-    def flush(self, out: CWriter) -> None:
+    def flush(self, out: CWriter, check_stack_bounds: bool = False) -> None:
         self.clear_dead_inputs()
         self._push_defined_outputs()
-        self.stack.flush(out)
+        self.stack.flush(out, check_stack_bounds=check_stack_bounds)
 
     def save(self, out: CWriter) -> None:
         assert self.spilled >= 0
