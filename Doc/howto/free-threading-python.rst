@@ -108,7 +108,7 @@ As of the 3.14 release, immortalization is limited to:
 
 * Code constants: numeric literals, string literals, and tuple literals
   composed of other constants.
-* Strings returned by :func:`sys.intern`.
+* Strings interned by :func:`sys.intern`.
 
 
 Frame objects
