@@ -115,7 +115,8 @@ Frame objects
 -------------
 
 It is not safe to access :attr:`frame.f_locals` from a :ref:`frame <frame-objects>`
-object if that frame is currently executing in another thread.
+object if that frame is currently executing in another thread, and doing so may
+crash the interpreter.
 
 
 Iterators
