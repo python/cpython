@@ -9,7 +9,6 @@
 #include "Python.h"
 #include "pycore_complexobject.h" // _Py_c_neg()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include "pycore_lock.h"          // _PyOnceFlag_CallOnce
 /* we need DBL_MAX, DBL_MIN, DBL_EPSILON, DBL_MANT_DIG and FLT_RADIX from
    float.h.  We assume that FLT_RADIX is either 2 or 16. */
 #include <float.h>
@@ -164,8 +163,16 @@ special_type(double d)
    raised.
 */
 
-static Py_complex acos_special_values[7][7];
-
+#define C(R, I) (Py_complex){(R), (I)}
+static Py_complex acos_special_values[7][7] = {
+  C(P34,INF), C(P,INF),  C(P,INF),  C(P,-INF),  C(P,-INF),  C(P34,-INF), C(N,INF),
+  C(P12,INF), C(U,U),    C(U,U),    C(U,U),     C(U,U),     C(P12,-INF), C(N,N),
+  C(P12,INF), C(U,U),    C(P12,0.), C(P12,-0.), C(U,U),     C(P12,-INF), C(P12,N),
+  C(P12,INF), C(U,U),    C(P12,0.), C(P12,-0.), C(U,U),     C(P12,-INF), C(P12,N),
+  C(P12,INF), C(U,U),    C(U,U),    C(U,U),     C(U,U),     C(P12,-INF), C(N,N),
+  C(P14,INF), C(0.,INF), C(0.,INF), C(0.,-INF), C(0.,-INF), C(P14,-INF), C(N,INF),
+  C(N,INF),   C(N,N),    C(N,N),    C(N,N),     C(N,N),     C(N,-INF),   C(N,N),
+};
 /*[clinic input]
 cmath.acos -> Py_complex_protected
 
@@ -203,7 +210,15 @@ cmath_acos_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex acosh_special_values[7][7];
+static Py_complex acosh_special_values[7][7] = {
+  C(INF,-P34), C(INF,-P),  C(INF,-P),  C(INF,P),  C(INF,P),  C(INF,P34), C(INF,N),
+  C(INF,-P12), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,P12), C(N,N),
+  C(INF,-P12), C(U,U),     C(0.,-P12), C(0.,P12), C(U,U),    C(INF,P12), C(N,P12),
+  C(INF,-P12), C(U,U),     C(0.,-P12), C(0.,P12), C(U,U),    C(INF,P12), C(N,P12),
+  C(INF,-P12), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,P12), C(N,N),
+  C(INF,-P14), C(INF,-0.), C(INF,-0.), C(INF,0.), C(INF,0.), C(INF,P14), C(INF,N),
+  C(INF,N),    C(N,N),     C(N,N),     C(N,N),    C(N,N),    C(INF,N),   C(N,N),
+};
 
 /*[clinic input]
 cmath.acosh = cmath.acos
@@ -258,7 +273,15 @@ cmath_asin_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex asinh_special_values[7][7];
+static Py_complex asinh_special_values[7][7] = {
+  C(-INF,-P14), C(-INF,-0.), C(-INF,-0.), C(-INF,0.), C(-INF,0.), C(-INF,P14), C(-INF,N),
+  C(-INF,-P12), C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(-INF,P12), C(N,N),
+  C(-INF,-P12), C(U,U),      C(-0.,-0.),  C(-0.,0.),  C(U,U),     C(-INF,P12), C(N,N),
+  C(INF,-P12),  C(U,U),      C(0.,-0.),   C(0.,0.),   C(U,U),     C(INF,P12),  C(N,N),
+  C(INF,-P12),  C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(INF,P12),  C(N,N),
+  C(INF,-P14),  C(INF,-0.),  C(INF,-0.),  C(INF,0.),  C(INF,0.),  C(INF,P14),  C(INF,N),
+  C(INF,N),     C(N,N),      C(N,-0.),    C(N,0.),    C(N,N),     C(INF,N),    C(N,N),
+};
 
 /*[clinic input]
 cmath.asinh = cmath.acos
@@ -319,7 +342,15 @@ cmath_atan_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex atanh_special_values[7][7];
+static Py_complex atanh_special_values[7][7] = {
+  C(-0.,-P12), C(-0.,-P12), C(-0.,-P12), C(-0.,P12), C(-0.,P12), C(-0.,P12), C(-0.,N),
+  C(-0.,-P12), C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(-0.,P12), C(N,N),
+  C(-0.,-P12), C(U,U),      C(-0.,-0.),  C(-0.,0.),  C(U,U),     C(-0.,P12), C(-0.,N),
+  C(0.,-P12),  C(U,U),      C(0.,-0.),   C(0.,0.),   C(U,U),     C(0.,P12),  C(0.,N),
+  C(0.,-P12),  C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(0.,P12),  C(N,N),
+  C(0.,-P12),  C(0.,-P12),  C(0.,-P12),  C(0.,P12),  C(0.,P12),  C(0.,P12),  C(0.,N),
+  C(0.,-P12),  C(N,N),      C(N,N),      C(N,N),     C(N,N),     C(0.,P12),  C(N,N),
+};
 
 /*[clinic input]
 cmath.atanh = cmath.acos
@@ -392,7 +423,15 @@ cmath_cos_impl(PyObject *module, Py_complex z)
 
 
 /* cosh(infinity + i*y) needs to be dealt with specially */
-static Py_complex cosh_special_values[7][7];
+static Py_complex cosh_special_values[7][7] = {
+  C(INF,N), C(U,U), C(INF,0.),  C(INF,-0.), C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),     C(U,U), C(N,N),   C(N,N),
+  C(N,0.),  C(U,U), C(1.,0.),   C(1.,-0.),  C(U,U), C(N,0.),  C(N,0.),
+  C(N,0.),  C(U,U), C(1.,-0.),  C(1.,0.),   C(U,U), C(N,0.),  C(N,0.),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),     C(U,U), C(N,N),   C(N,N),
+  C(INF,N), C(U,U), C(INF,-0.), C(INF,0.),  C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(N,N), C(N,0.),    C(N,0.),    C(N,N), C(N,N),   C(N,N),
+};
 
 /*[clinic input]
 cmath.cosh = cmath.acos
@@ -454,7 +493,15 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
 
 /* exp(infinity + i*y) and exp(-infinity + i*y) need special treatment for
    finite y */
-static Py_complex exp_special_values[7][7];
+static Py_complex exp_special_values[7][7] = {
+  C(0.,0.), C(U,U), C(0.,-0.),  C(0.,0.),  C(U,U), C(0.,0.), C(0.,0.),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),   C(N,N),
+  C(N,N),   C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(N,N),   C(N,N),
+  C(N,N),   C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(N,N),   C(N,N),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),   C(N,N),
+  C(INF,N), C(U,U), C(INF,-0.), C(INF,0.), C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(N,N), C(N,-0.),   C(N,0.),   C(N,N), C(N,N),   C(N,N),
+};
 
 /*[clinic input]
 cmath.exp = cmath.acos
@@ -513,7 +560,15 @@ cmath_exp_impl(PyObject *module, Py_complex z)
     return r;
 }
 
-static Py_complex log_special_values[7][7];
+static Py_complex log_special_values[7][7] = {
+  C(INF,-P34), C(INF,-P),  C(INF,-P),   C(INF,P),   C(INF,P),  C(INF,P34),  C(INF,N),
+  C(INF,-P12), C(U,U),     C(U,U),      C(U,U),     C(U,U),    C(INF,P12),  C(N,N),
+  C(INF,-P12), C(U,U),     C(-INF,-P),  C(-INF,P),  C(U,U),    C(INF,P12),  C(N,N),
+  C(INF,-P12), C(U,U),     C(-INF,-0.), C(-INF,0.), C(U,U),    C(INF,P12),  C(N,N),
+  C(INF,-P12), C(U,U),     C(U,U),      C(U,U),     C(U,U),    C(INF,P12),  C(N,N),
+  C(INF,-P14), C(INF,-0.), C(INF,-0.),  C(INF,0.),  C(INF,0.), C(INF,P14),  C(INF,N),
+  C(INF,N),    C(N,N),     C(N,N),      C(N,N),     C(N,N),    C(INF,N),    C(N,N),
+};
 
 static Py_complex
 c_log(Py_complex z)
@@ -629,7 +684,15 @@ cmath_sin_impl(PyObject *module, Py_complex z)
 
 
 /* sinh(infinity + i*y) needs to be dealt with specially */
-static Py_complex sinh_special_values[7][7];
+static Py_complex sinh_special_values[7][7] = {
+  C(INF,N), C(U,U), C(-INF,-0.), C(-INF,0.), C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(U,U), C(U,U),      C(U,U),     C(U,U), C(N,N),   C(N,N),
+  C(0.,N),  C(U,U), C(-0.,-0.),  C(-0.,0.),  C(U,U), C(0.,N),  C(0.,N),
+  C(0.,N),  C(U,U), C(0.,-0.),   C(0.,0.),   C(U,U), C(0.,N),  C(0.,N),
+  C(N,N),   C(U,U), C(U,U),      C(U,U),     C(U,U), C(N,N),   C(N,N),
+  C(INF,N), C(U,U), C(INF,-0.),  C(INF,0.),  C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(N,N), C(N,-0.),    C(N,0.),    C(N,N), C(N,N),   C(N,N),
+};
 
 /*[clinic input]
 cmath.sinh = cmath.acos
@@ -688,7 +751,15 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
 }
 
 
-static Py_complex sqrt_special_values[7][7];
+static Py_complex sqrt_special_values[7][7] = {
+  C(INF,-INF), C(0.,-INF), C(0.,-INF), C(0.,INF), C(0.,INF), C(INF,INF), C(N,INF),
+  C(INF,-INF), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,INF), C(N,N),
+  C(INF,-INF), C(U,U),     C(0.,-0.),  C(0.,0.),  C(U,U),    C(INF,INF), C(N,N),
+  C(INF,-INF), C(U,U),     C(0.,-0.),  C(0.,0.),  C(U,U),    C(INF,INF), C(N,N),
+  C(INF,-INF), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,INF), C(N,N),
+  C(INF,-INF), C(INF,-0.), C(INF,-0.), C(INF,0.), C(INF,0.), C(INF,INF), C(INF,N),
+  C(INF,-INF), C(N,N),     C(N,N),     C(N,N),    C(N,N),    C(INF,INF), C(N,N),
+};
 
 /*[clinic input]
 cmath.sqrt = cmath.acos
@@ -787,7 +858,15 @@ cmath_tan_impl(PyObject *module, Py_complex z)
 
 
 /* tanh(infinity + i*y) needs to be dealt with specially */
-static Py_complex tanh_special_values[7][7];
+static Py_complex tanh_special_values[7][7] = {
+  C(-1.,0.), C(U,U), C(-1.,-0.), C(-1.,0.), C(U,U), C(-1.,0.), C(-1.,0.),
+  C(N,N),    C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),    C(N,N),
+  C(-0.0,N), C(U,U), C(-0.,-0.), C(-0.,0.), C(U,U), C(-0.0,N), C(-0.,N),
+  C(0.0,N),  C(U,U), C(0.,-0.),  C(0.,0.),  C(U,U), C(0.0,N),  C(0.,N),
+  C(N,N),    C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),    C(N,N),
+  C(1.,0.),  C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(1.,0.),  C(1.,0.),
+  C(N,N),    C(N,N), C(N,-0.),   C(N,0.),   C(N,N), C(N,N),    C(N,N),
+};
 
 /*[clinic input]
 cmath.tanh = cmath.acos
@@ -970,7 +1049,15 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 
 */
 
-static Py_complex rect_special_values[7][7];
+static Py_complex rect_special_values[7][7] = {
+  C(INF,N), C(U,U), C(-INF,0.), C(-INF,-0.), C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),      C(U,U), C(N,N),   C(N,N),
+  C(0.,0.), C(U,U), C(-0.,0.),  C(-0.,-0.),  C(U,U), C(0.,0.), C(0.,0.),
+  C(0.,0.), C(U,U), C(0.,-0.),  C(0.,0.),    C(U,U), C(0.,0.), C(0.,0.),
+  C(N,N),   C(U,U), C(U,U),     C(U,U),      C(U,U), C(N,N),   C(N,N),
+  C(INF,N), C(U,U), C(INF,-0.), C(INF,0.),   C(U,U), C(INF,N), C(INF,N),
+  C(N,N),   C(N,N), C(N,0.),    C(N,0.),     C(N,N), C(N,N),   C(N,N),
+};
 
 /*[clinic input]
 cmath.rect
@@ -1174,9 +1261,6 @@ static PyMethodDef cmath_methods[] = {
     {NULL, NULL}  /* sentinel */
 };
 
-static int init_special_value_tables(void *Py_UNUSED(arg));
-static _PyOnceFlag special_values_init_once = {0};
-
 static int
 cmath_exec(PyObject *mod)
 {
@@ -1206,130 +1290,6 @@ cmath_exec(PyObject *mod)
         return -1;
     }
 
-    /* initialize special value tables */
-    if (_PyOnceFlag_CallOnce(&special_values_init_once, init_special_value_tables, NULL) < 0) {
-        return -1;
-    }
-
-    return 0;
-}
-
-static int
-init_special_value_tables(void *Py_UNUSED(arg))
-{
-
-#define INIT_SPECIAL_VALUES(NAME, BODY) { Py_complex* p = (Py_complex*)NAME; BODY }
-#define C(REAL, IMAG) p->real = REAL; p->imag = IMAG; ++p;
-
-    INIT_SPECIAL_VALUES(acos_special_values, {
-      C(P34,INF) C(P,INF)  C(P,INF)  C(P,-INF)  C(P,-INF)  C(P34,-INF) C(N,INF)
-      C(P12,INF) C(U,U)    C(U,U)    C(U,U)     C(U,U)     C(P12,-INF) C(N,N)
-      C(P12,INF) C(U,U)    C(P12,0.) C(P12,-0.) C(U,U)     C(P12,-INF) C(P12,N)
-      C(P12,INF) C(U,U)    C(P12,0.) C(P12,-0.) C(U,U)     C(P12,-INF) C(P12,N)
-      C(P12,INF) C(U,U)    C(U,U)    C(U,U)     C(U,U)     C(P12,-INF) C(N,N)
-      C(P14,INF) C(0.,INF) C(0.,INF) C(0.,-INF) C(0.,-INF) C(P14,-INF) C(N,INF)
-      C(N,INF)   C(N,N)    C(N,N)    C(N,N)     C(N,N)     C(N,-INF)   C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(acosh_special_values, {
-      C(INF,-P34) C(INF,-P)  C(INF,-P)  C(INF,P)  C(INF,P)  C(INF,P34) C(INF,N)
-      C(INF,-P12) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,P12) C(N,N)
-      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,P12)
-      C(INF,-P12) C(U,U)     C(0.,-P12) C(0.,P12) C(U,U)    C(INF,P12) C(N,P12)
-      C(INF,-P12) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,P12) C(N,N)
-      C(INF,-P14) C(INF,-0.) C(INF,-0.) C(INF,0.) C(INF,0.) C(INF,P14) C(INF,N)
-      C(INF,N)    C(N,N)     C(N,N)     C(N,N)    C(N,N)    C(INF,N)   C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(asinh_special_values, {
-      C(-INF,-P14) C(-INF,-0.) C(-INF,-0.) C(-INF,0.) C(-INF,0.) C(-INF,P14) C(-INF,N)
-      C(-INF,-P12) C(U,U)      C(U,U)      C(U,U)     C(U,U)     C(-INF,P12) C(N,N)
-      C(-INF,-P12) C(U,U)      C(-0.,-0.)  C(-0.,0.)  C(U,U)     C(-INF,P12) C(N,N)
-      C(INF,-P12)  C(U,U)      C(0.,-0.)   C(0.,0.)   C(U,U)     C(INF,P12)  C(N,N)
-      C(INF,-P12)  C(U,U)      C(U,U)      C(U,U)     C(U,U)     C(INF,P12)  C(N,N)
-      C(INF,-P14)  C(INF,-0.)  C(INF,-0.)  C(INF,0.)  C(INF,0.)  C(INF,P14)  C(INF,N)
-      C(INF,N)     C(N,N)      C(N,-0.)    C(N,0.)    C(N,N)     C(INF,N)    C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(atanh_special_values, {
-      C(-0.,-P12) C(-0.,-P12) C(-0.,-P12) C(-0.,P12) C(-0.,P12) C(-0.,P12) C(-0.,N)
-      C(-0.,-P12) C(U,U)      C(U,U)      C(U,U)     C(U,U)     C(-0.,P12) C(N,N)
-      C(-0.,-P12) C(U,U)      C(-0.,-0.)  C(-0.,0.)  C(U,U)     C(-0.,P12) C(-0.,N)
-      C(0.,-P12)  C(U,U)      C(0.,-0.)   C(0.,0.)   C(U,U)     C(0.,P12)  C(0.,N)
-      C(0.,-P12)  C(U,U)      C(U,U)      C(U,U)     C(U,U)     C(0.,P12)  C(N,N)
-      C(0.,-P12)  C(0.,-P12)  C(0.,-P12)  C(0.,P12)  C(0.,P12)  C(0.,P12)  C(0.,N)
-      C(0.,-P12)  C(N,N)      C(N,N)      C(N,N)     C(N,N)     C(0.,P12)  C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(cosh_special_values, {
-      C(INF,N) C(U,U) C(INF,0.)  C(INF,-0.) C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)     C(U,U) C(N,N)   C(N,N)
-      C(N,0.)  C(U,U) C(1.,0.)   C(1.,-0.)  C(U,U) C(N,0.)  C(N,0.)
-      C(N,0.)  C(U,U) C(1.,-0.)  C(1.,0.)   C(U,U) C(N,0.)  C(N,0.)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)     C(U,U) C(N,N)   C(N,N)
-      C(INF,N) C(U,U) C(INF,-0.) C(INF,0.)  C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(N,N) C(N,0.)    C(N,0.)    C(N,N) C(N,N)   C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(exp_special_values, {
-      C(0.,0.) C(U,U) C(0.,-0.)  C(0.,0.)  C(U,U) C(0.,0.) C(0.,0.)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)   C(N,N)
-      C(N,N)   C(U,U) C(1.,-0.)  C(1.,0.)  C(U,U) C(N,N)   C(N,N)
-      C(N,N)   C(U,U) C(1.,-0.)  C(1.,0.)  C(U,U) C(N,N)   C(N,N)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)   C(N,N)
-      C(INF,N) C(U,U) C(INF,-0.) C(INF,0.) C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(N,N) C(N,-0.)   C(N,0.)   C(N,N) C(N,N)   C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(log_special_values, {
-      C(INF,-P34) C(INF,-P)  C(INF,-P)   C(INF,P)   C(INF,P)  C(INF,P34)  C(INF,N)
-      C(INF,-P12) C(U,U)     C(U,U)      C(U,U)     C(U,U)    C(INF,P12)  C(N,N)
-      C(INF,-P12) C(U,U)     C(-INF,-P)  C(-INF,P)  C(U,U)    C(INF,P12)  C(N,N)
-      C(INF,-P12) C(U,U)     C(-INF,-0.) C(-INF,0.) C(U,U)    C(INF,P12)  C(N,N)
-      C(INF,-P12) C(U,U)     C(U,U)      C(U,U)     C(U,U)    C(INF,P12)  C(N,N)
-      C(INF,-P14) C(INF,-0.) C(INF,-0.)  C(INF,0.)  C(INF,0.) C(INF,P14)  C(INF,N)
-      C(INF,N)    C(N,N)     C(N,N)      C(N,N)     C(N,N)    C(INF,N)    C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(sinh_special_values, {
-      C(INF,N) C(U,U) C(-INF,-0.) C(-INF,0.) C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(U,U) C(U,U)      C(U,U)     C(U,U) C(N,N)   C(N,N)
-      C(0.,N)  C(U,U) C(-0.,-0.)  C(-0.,0.)  C(U,U) C(0.,N)  C(0.,N)
-      C(0.,N)  C(U,U) C(0.,-0.)   C(0.,0.)   C(U,U) C(0.,N)  C(0.,N)
-      C(N,N)   C(U,U) C(U,U)      C(U,U)     C(U,U) C(N,N)   C(N,N)
-      C(INF,N) C(U,U) C(INF,-0.)  C(INF,0.)  C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(N,N) C(N,-0.)    C(N,0.)    C(N,N) C(N,N)   C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(sqrt_special_values, {
-      C(INF,-INF) C(0.,-INF) C(0.,-INF) C(0.,INF) C(0.,INF) C(INF,INF) C(N,INF)
-      C(INF,-INF) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,INF) C(N,N)
-      C(INF,-INF) C(U,U)     C(0.,-0.)  C(0.,0.)  C(U,U)    C(INF,INF) C(N,N)
-      C(INF,-INF) C(U,U)     C(0.,-0.)  C(0.,0.)  C(U,U)    C(INF,INF) C(N,N)
-      C(INF,-INF) C(U,U)     C(U,U)     C(U,U)    C(U,U)    C(INF,INF) C(N,N)
-      C(INF,-INF) C(INF,-0.) C(INF,-0.) C(INF,0.) C(INF,0.) C(INF,INF) C(INF,N)
-      C(INF,-INF) C(N,N)     C(N,N)     C(N,N)    C(N,N)    C(INF,INF) C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(tanh_special_values, {
-      C(-1.,0.) C(U,U) C(-1.,-0.) C(-1.,0.) C(U,U) C(-1.,0.) C(-1.,0.)
-      C(N,N)    C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)    C(N,N)
-      C(-0.0,N)    C(U,U) C(-0.,-0.) C(-0.,0.) C(U,U) C(-0.0,N)    C(-0.,N)
-      C(0.0,N)    C(U,U) C(0.,-0.)  C(0.,0.)  C(U,U) C(0.0,N)    C(0.,N)
-      C(N,N)    C(U,U) C(U,U)     C(U,U)    C(U,U) C(N,N)    C(N,N)
-      C(1.,0.)  C(U,U) C(1.,-0.)  C(1.,0.)  C(U,U) C(1.,0.)  C(1.,0.)
-      C(N,N)    C(N,N) C(N,-0.)   C(N,0.)   C(N,N) C(N,N)    C(N,N)
-    })
-
-    INIT_SPECIAL_VALUES(rect_special_values, {
-      C(INF,N) C(U,U) C(-INF,0.) C(-INF,-0.) C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)      C(U,U) C(N,N)   C(N,N)
-      C(0.,0.) C(U,U) C(-0.,0.)  C(-0.,-0.)  C(U,U) C(0.,0.) C(0.,0.)
-      C(0.,0.) C(U,U) C(0.,-0.)  C(0.,0.)    C(U,U) C(0.,0.) C(0.,0.)
-      C(N,N)   C(U,U) C(U,U)     C(U,U)      C(U,U) C(N,N)   C(N,N)
-      C(INF,N) C(U,U) C(INF,-0.) C(INF,0.)   C(U,U) C(INF,N) C(INF,N)
-      C(N,N)   C(N,N) C(N,0.)    C(N,0.)     C(N,N) C(N,N)   C(N,N)
-    })
     return 0;
 }
 
