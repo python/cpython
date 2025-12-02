@@ -177,7 +177,8 @@ function buildScrollMarker() {
 
     if (document.body.scrollHeight <= window.innerHeight) return;
 
-    const lines = document.querySelectorAll('.code-line');
+    const allLines = document.querySelectorAll('.code-line');
+    const lines = Array.from(allLines).filter(line => line.style.display !== 'none');
     const markerScale = window.innerHeight / document.body.scrollHeight;
     const lineHeight = Math.min(Math.max(3, window.innerHeight / lines.length), 10);
     const maxSamples = Math.max(...Array.from(lines, getSampleCount));
@@ -236,6 +237,7 @@ function toggleColdCode() {
     coldCodeHidden = !coldCodeHidden;
     applyHotFilter();
     updateToggleUI('toggle-cold', coldCodeHidden);
+    buildScrollMarker();
 }
 
 function applyHotFilter() {
