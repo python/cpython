@@ -9,7 +9,12 @@ Python 3.11 or newer is required to build the JIT.
 
 The JIT compiler does not require end users to install any third-party dependencies, but part of it must be *built* using LLVM[^why-llvm]. You are *not* required to build the rest of CPython using LLVM, or even the same version of LLVM (in fact, this is uncommon).
 
-LLVM version 21 is the officially supported version. You can modify if needed using the `LLVM_VERSION` env var during configure. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-19`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code. If you have multiple matching LLVM installations, you can use `LLVM_TOOLS_INSTALL_DIR` to point to the preferred installation prefix.
+LLVM version 21 is the officially supported version. Both `clang` and `llvm-readobj` need to be installed and discoverable (version suffixes, like `clang-21`, are okay). It's highly recommended that you also have `llvm-objdump` available, since this allows the build script to dump human-readable assembly for the generated code.
+
+You can customize the LLVM configuration using environment variables before running configure:
+
+- LLVM_VERSION: Specify a different LLVM version (default: 21)
+- LLVM_TOOLS_INSTALL_DIR: Point to a specific LLVM installation prefix when multiple installations exist (the tools are expected in `<dir>/bin`)
 
 It's easy to install all of the required tools:
 
