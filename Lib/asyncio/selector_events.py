@@ -309,9 +309,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         else:
             return False
 
-    def _add_writer(self, fd, callback, *args):
+    def _add_writer(self, fd, callback, *args, context=None):
         self._check_closed()
-        handle = events.Handle(callback, args, self, None)
+        handle = events.Handle(callback, args, self, context=context)
         key = self._selector.get_map().get(fd)
         if key is None:
             self._selector.register(fd, selectors.EVENT_WRITE,
