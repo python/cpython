@@ -33,7 +33,6 @@ from idlelib.help import _get_dochome
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
-_py_version = ' (%s)' % platform.python_version()
 darwin = sys.platform == 'darwin'
 
 def _sphinx_version():
@@ -1008,12 +1007,16 @@ class EditorWindow:
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
+        _py_version = ' (%s)' % platform.python_version()
         if short and long and not macosx.isCocoaTk():
             # Don't use both values on macOS because
             # that doesn't match platform conventions.
             title = short + " - " + long + _py_version
         elif short:
-            title = short
+            if short == "IDLE Shell":
+                title = short + " " +  platform.python_version()
+            else:
+                title = short + _py_version
         elif long:
             title = long
         else:
