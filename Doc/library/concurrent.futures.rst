@@ -40,9 +40,8 @@ Executor Objects
          with ThreadPoolExecutor(max_workers=1) as executor:
              future = executor.submit(pow, 323, 1235)
              print(future.result())
-             # Note: calling future.result() outside this with statement would work fine,
-             # but calling it here is safe because we print it immediately and the executor
-             # can complete the task before the context manager exits.
+   
+             
    .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
@@ -153,7 +152,7 @@ And::
        print(f.result())
 
    executor = ThreadPoolExecutor(max_workers=1)
-   executor.submit(wait_on_future).result()
+   executor.submit(wait_on_future)
    # Note: calling future.result() here would cause a deadlock because the single
    # worker thread is already executing wait_on_future(), which itself is waiting
    # for a result from the same executor.
