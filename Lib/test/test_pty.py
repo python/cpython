@@ -306,10 +306,17 @@ class PtyTest(unittest.TestCase):
             os._exit(0)
 
         try:
+            buf = bytearray()
+            try:
+                while (data := os.read(fd, 1024)) != b'':
+                    buf.extend(data)
+            except OSError as e:
+                if e.errno != errno.EIO:
+                    raise
+
             (pid, status) = os.waitpid(pid, 0)
             self.assertEqual(status, 0)
-            data = os.read(fd, 1024)
-            self.assertEqual(data, b"hi there\r\n")
+            self.assertEqual(buf.take_bytes(), b"hi there\r\n")
         finally:
             os.close(fd)
 
