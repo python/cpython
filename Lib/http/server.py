@@ -1288,16 +1288,16 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  env = env
                                  )
             if self.command.lower() == "post" and nbytes > 0:
-                cursize = min(nbytes, _MIN_READ_BUF_SIZE)
-                data = self.rfile.read(cursize)
-                while (len(data) == cursize < nbytes and
-                       select.select([self.rfile._sock], [], [], 0)[0]):
+                cursize = 0
+                data = self.rfile.read(min(nbytes, _MIN_READ_BUF_SIZE))
+                while (len(data) < nbytes and len(data) != cursize and
+                       select.select([self.rfile._sock], [], [], self.timeout)[0]):
+                    cursize = len(data)
                     # This is a geometric increase in read size (never more
                     # than doubling our the current length of data per loop
                     # iteration).
                     delta = min(cursize, nbytes - cursize)
                     data += self.rfile.read(delta)
-                    cursize += delta
             else:
                 data = None
             # throw away additional data [see bug #427345]
