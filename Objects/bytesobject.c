@@ -25,13 +25,7 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-/* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
-   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
-
-   Using PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
-   3 or 7 bytes per bytes object allocation on a typical system.
-*/
-#define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
+#define PyBytesObject_SIZE _PyBytesObject_SIZE
 
 /* Forward declaration */
 static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
@@ -985,6 +979,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (alloc > 2) {
                 res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
                 if (res == NULL) {
+                    Py_XDECREF(temp);
                     goto error;
                 }
             }
@@ -3171,7 +3166,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         return;
     }
 
-    if (Py_REFCNT(*pv) == 1 && PyBytes_CheckExact(*pv)) {
+    if (_PyObject_IsUniquelyReferenced(*pv) && PyBytes_CheckExact(*pv)) {
         /* Only one reference, so we can resize in place */
         Py_ssize_t oldsize;
         Py_buffer wb;
@@ -3256,7 +3251,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         Py_DECREF(v);
         return 0;
     }
-    if (Py_REFCNT(v) != 1) {
+    if (!_PyObject_IsUniquelyReferenced(v)) {
         if (oldsize < newsize) {
             *pv = _PyBytes_FromSize(newsize, 0);
             if (*pv) {

@@ -55,13 +55,10 @@ do {                                                                       \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
-#undef GOTO_TIER_ONE
-#define GOTO_TIER_ONE(TARGET)                       \
-do {                                                \
-    tstate->current_executor = NULL;                \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    return TARGET;                                  \
-} while (0)
+#undef GOTO_TIER_ONE_SETUP
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
@@ -69,9 +66,11 @@ do {                                                \
     } while (0)
 
 #undef LLTRACE_RESUME_FRAME
-#define LLTRACE_RESUME_FRAME() \
-    do {                       \
-    } while (0)
+#ifdef Py_DEBUG
+#define LLTRACE_RESUME_FRAME() (frame->lltrace = 0)
+#else
+#define LLTRACE_RESUME_FRAME() do {} while (0)
+#endif
 
 #define PATCH_JUMP(ALIAS)                                                 \
 do {                                                                      \

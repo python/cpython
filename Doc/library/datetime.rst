@@ -535,7 +535,7 @@ Other constructors, all class methods:
       :c:func:`localtime` function. Raise :exc:`OSError` instead of
       :exc:`ValueError` on :c:func:`localtime` failure.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timestamp*, not only integer or float.
 
 
@@ -1023,7 +1023,7 @@ Other constructors, all class methods:
    .. versionchanged:: 3.6
       :meth:`fromtimestamp` may return instances with :attr:`.fold` set to 1.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timestamp*, not only integer or float.
 
 
@@ -1067,7 +1067,7 @@ Other constructors, all class methods:
 
       Use :meth:`datetime.fromtimestamp` with :const:`UTC` instead.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timestamp*, not only integer or float.
 
 
@@ -2641,7 +2641,7 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.12
    ``%:z`` was added for :meth:`~.datetime.strftime`
 
-.. versionadded:: next
+.. versionadded:: 3.15
    ``%:z`` was added for :meth:`~.datetime.strptime`
 
 Technical Detail
