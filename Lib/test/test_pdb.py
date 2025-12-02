@@ -4587,6 +4587,7 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
     def test_async_break(self):
         script = """
             import asyncio
