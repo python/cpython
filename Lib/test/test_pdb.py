@@ -4573,6 +4573,22 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
