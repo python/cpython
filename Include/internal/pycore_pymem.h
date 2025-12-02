@@ -12,8 +12,8 @@ extern "C" {
 #endif
 
 #if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
-#include <linux/prctl.h>
-#include <sys/prctl.h>
+#  include <linux/prctl.h>
+#  include <sys/prctl.h>
 #endif
 
 // Try to get the allocators name set by _PyMem_SetupAllocators().
