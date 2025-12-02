@@ -5,93 +5,219 @@ let stringTable = [];
 let originalData = null;
 let currentThreadFilter = 'all';
 
-// Function to resolve string indices to actual strings
+// Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
+// and automatically switch with theme changes - no JS color arrays needed!
+
+// ============================================================================
+// String Resolution
+// ============================================================================
+
 function resolveString(index) {
-    if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
-        return stringTable[index];
-    }
-    // Fallback for non-indexed strings or invalid indices
-    return String(index);
+  if (index === null || index === undefined) {
+    return null;
+  }
+  if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
+    return stringTable[index];
+  }
+  return String(index);
 }
 
-// Function to recursively resolve all string indices in flamegraph data
 function resolveStringIndices(node) {
-    if (!node) return node;
+  if (!node) return node;
 
-    // Create a copy to avoid mutating the original
-    const resolved = { ...node };
+  const resolved = { ...node };
 
-    // Resolve string fields
-    if (typeof resolved.name === 'number') {
-        resolved.name = resolveString(resolved.name);
-    }
-    if (typeof resolved.filename === 'number') {
-        resolved.filename = resolveString(resolved.filename);
-    }
-    if (typeof resolved.funcname === 'number') {
-        resolved.funcname = resolveString(resolved.funcname);
-    }
+  if (typeof resolved.name === 'number') {
+    resolved.name = resolveString(resolved.name);
+  }
+  if (typeof resolved.filename === 'number') {
+    resolved.filename = resolveString(resolved.filename);
+  }
+  if (typeof resolved.funcname === 'number') {
+    resolved.funcname = resolveString(resolved.funcname);
+  }
 
-    // Resolve source lines if present
-    if (Array.isArray(resolved.source)) {
-        resolved.source = resolved.source.map(index =>
-            typeof index === 'number' ? resolveString(index) : index
-        );
-    }
+  if (Array.isArray(resolved.source)) {
+    resolved.source = resolved.source.map(index =>
+      typeof index === 'number' ? resolveString(index) : index
+    );
+  }
 
-    // Recursively resolve children
-    if (Array.isArray(resolved.children)) {
-        resolved.children = resolved.children.map(child => resolveStringIndices(child));
-    }
+  if (Array.isArray(resolved.children)) {
+    resolved.children = resolved.children.map(child => resolveStringIndices(child));
+  }
 
-    return resolved;
+  return resolved;
 }
 
-// Python color palette - cold to hot
-const pythonColors = [
-  "#fff4bf", // Coldest - light yellow (<1%)
-  "#ffec9e", // Cold - yellow (1-3%)
-  "#ffe47d", // Cool - golden yellow (3-6%)
-  "#ffdc5c", // Medium - golden (6-12%)
-  "#ffd43b", // Warm - Python gold (12-18%)
-  "#5592cc", // Hot - light blue (18-35%)
-  "#4584bb", // Very hot - medium blue (35-60%)
-  "#3776ab", // Hottest - Python blue (≥60%)
-];
+// ============================================================================
+// Theme & UI Controls
+// ============================================================================
 
-function ensureLibraryLoaded() {
-  if (typeof flamegraph === "undefined") {
-    console.error("d3-flame-graph library not loaded");
-    document.getElementById("chart").innerHTML =
-      '<h2 style="text-align: center; color: #d32f2f;">Error: d3-flame-graph library failed to load</h2>';
-    throw new Error("d3-flame-graph library failed to load");
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('flamegraph-theme', next);
+
+  // Update theme button icon
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+  }
+
+  // Re-render flamegraph with new theme colors
+  if (window.flamegraphData && originalData) {
+    const tooltip = createPythonTooltip(originalData);
+    const chart = createFlamegraph(tooltip, originalData.value);
+    renderFlamegraph(chart, window.flamegraphData);
   }
 }
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) {
+    const isCollapsing = !sidebar.classList.contains('collapsed');
+
+    if (isCollapsing) {
+      // Save current width before collapsing
+      const currentWidth = sidebar.offsetWidth;
+      sidebar.dataset.expandedWidth = currentWidth;
+      localStorage.setItem('flamegraph-sidebar-width', currentWidth);
+    } else {
+      // Restore width when expanding
+      const savedWidth = sidebar.dataset.expandedWidth || localStorage.getItem('flamegraph-sidebar-width');
+      if (savedWidth) {
+        sidebar.style.width = savedWidth + 'px';
+      }
+    }
+
+    sidebar.classList.toggle('collapsed');
+    localStorage.setItem('flamegraph-sidebar', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+
+    // Resize chart after sidebar animation
+    setTimeout(() => {
+      resizeChart();
+    }, 300);
+  }
+}
+
+function resizeChart() {
+  if (window.flamegraphChart && window.flamegraphData) {
+    const chartArea = document.querySelector('.chart-area');
+    if (chartArea) {
+      window.flamegraphChart.width(chartArea.clientWidth - 32);
+      d3.select("#chart").datum(window.flamegraphData).call(window.flamegraphChart);
+    }
+  }
+}
+
+function toggleSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.classList.toggle('collapsed');
+    // Save state
+    const collapsedSections = JSON.parse(localStorage.getItem('flamegraph-collapsed-sections') || '{}');
+    collapsedSections[sectionId] = section.classList.contains('collapsed');
+    localStorage.setItem('flamegraph-collapsed-sections', JSON.stringify(collapsedSections));
+  }
+}
+
+function restoreUIState() {
+  // Restore theme
+  const savedTheme = localStorage.getItem('flamegraph-theme');
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+      btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+    }
+  }
+
+  // Restore sidebar state
+  const savedSidebar = localStorage.getItem('flamegraph-sidebar');
+  if (savedSidebar === 'collapsed') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.add('collapsed');
+  }
+
+  // Restore sidebar width
+  const savedWidth = localStorage.getItem('flamegraph-sidebar-width');
+  if (savedWidth) {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.style.width = savedWidth + 'px';
+    }
+  }
+
+  // Restore collapsed sections
+  const collapsedSections = JSON.parse(localStorage.getItem('flamegraph-collapsed-sections') || '{}');
+  for (const [sectionId, isCollapsed] of Object.entries(collapsedSections)) {
+    if (isCollapsed) {
+      const section = document.getElementById(sectionId);
+      if (section) section.classList.add('collapsed');
+    }
+  }
+}
+
+// ============================================================================
+// Status Bar
+// ============================================================================
+
+function updateStatusBar(nodeData, rootValue) {
+  const funcname = resolveString(nodeData.funcname) || resolveString(nodeData.name) || "--";
+  const filename = resolveString(nodeData.filename) || "";
+  const lineno = nodeData.lineno;
+  const timeMs = (nodeData.value / 1000).toFixed(2);
+  const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
+
+  const locationEl = document.getElementById('status-location');
+  const funcItem = document.getElementById('status-func-item');
+  const timeItem = document.getElementById('status-time-item');
+  const percentItem = document.getElementById('status-percent-item');
+
+  if (locationEl) locationEl.style.display = filename && filename !== "~" ? 'flex' : 'none';
+  if (funcItem) funcItem.style.display = 'flex';
+  if (timeItem) timeItem.style.display = 'flex';
+  if (percentItem) percentItem.style.display = 'flex';
+
+  const fileEl = document.getElementById('status-file');
+  if (fileEl && filename && filename !== "~") {
+    const basename = filename.split('/').pop();
+    fileEl.textContent = lineno ? `${basename}:${lineno}` : basename;
+  }
+
+  const funcEl = document.getElementById('status-func');
+  if (funcEl) funcEl.textContent = funcname.length > 40 ? funcname.substring(0, 37) + '...' : funcname;
+
+  const timeEl = document.getElementById('status-time');
+  if (timeEl) timeEl.textContent = `${timeMs} ms`;
+
+  const percentEl = document.getElementById('status-percent');
+  if (percentEl) percentEl.textContent = `${percent}%`;
+}
+
+function clearStatusBar() {
+  const ids = ['status-location', 'status-func-item', 'status-time-item', 'status-percent-item'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+// ============================================================================
+// Tooltip
+// ============================================================================
+
 function createPythonTooltip(data) {
   const pythonTooltip = flamegraph.tooltip.defaultFlamegraphTooltip();
+
   pythonTooltip.show = function (d, element) {
     if (!this._tooltip) {
-      this._tooltip = d3
-        .select("body")
+      this._tooltip = d3.select("body")
         .append("div")
         .attr("class", "python-tooltip")
-        .style("position", "absolute")
-        .style("padding", "20px")
-        .style("background", "white")
-        .style("color", "#2e3338")
-        .style("border-radius", "8px")
-        .style("font-size", "14px")
-        .style("border", "1px solid #e9ecef")
-        .style("box-shadow", "0 8px 30px rgba(0, 0, 0, 0.15)")
-        .style("z-index", "1000")
-        .style("pointer-events", "none")
-        .style("font-weight", "400")
-        .style("line-height", "1.5")
-        .style("max-width", "500px")
-        .style("word-wrap", "break-word")
-        .style("overflow-wrap", "break-word")
-        .style("font-family", "'Source Sans Pro', sans-serif")
         .style("opacity", 0);
     }
 
@@ -101,163 +227,153 @@ function createPythonTooltip(data) {
     const childCount = d.children ? d.children.length : 0;
     const source = d.data.source;
 
-    // Create source code section if available
+    const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
+    const filename = resolveString(d.data.filename) || "";
+    const isSpecialFrame = filename === "~";
+
+    // Build source section
     let sourceSection = "";
     if (source && Array.isArray(source) && source.length > 0) {
       const sourceLines = source
-        .map(
-          (line) =>
-            `<div style="font-family: 'SF Mono', 'Monaco', 'Consolas', ` +
-            `monospace; font-size: 12px; color: ${
-              line.startsWith("→") ? "#3776ab" : "#5a6c7d"
-            }; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; line-height: 1.4; padding: 2px 0;">${line
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")}</div>`,
-        )
+        .map((line) => {
+          const isCurrent = line.startsWith("→");
+          const escaped = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          return `<div class="tooltip-source-line${isCurrent ? ' current' : ''}">${escaped}</div>`;
+        })
         .join("");
 
       sourceSection = `
-        <div style="margin-top: 16px; padding-top: 12px;
-                    border-top: 1px solid #e9ecef;">
-          <div style="color: #3776ab; font-size: 13px;
-                      margin-bottom: 8px; font-weight: 600;">
-            Source Code:
-          </div>
-          <div style="background: #f8f9fa; border: 1px solid #e9ecef;
-                      border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto; overflow-x: hidden;">
-            ${sourceLines}
-          </div>
-        </div>`;
-    } else if (source) {
-      // Show debug info if source exists but isn't an array
-      sourceSection = `
-        <div style="margin-top: 16px; padding-top: 12px;
-                    border-top: 1px solid #e9ecef;">
-          <div style="color: #d32f2f; font-size: 13px;
-                      margin-bottom: 8px; font-weight: 600;">
-            [Debug] - Source data type: ${typeof source}
-          </div>
-          <div style="background: #f8f9fa; border: 1px solid #e9ecef;
-                      border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto; overflow-x: hidden; font-family: monospace; font-size: 11px; word-break: break-all; overflow-wrap: break-word;">
-            ${JSON.stringify(source, null, 2)}
-          </div>
+        <div class="tooltip-source">
+          <div class="tooltip-source-title">Source Code:</div>
+          <div class="tooltip-source-code">${sourceLines}</div>
         </div>`;
     }
 
-    // Resolve strings for display
-    const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
-    const filename = resolveString(d.data.filename) || "";
-
-    // Don't show file location for special frames like <GC> and <native>
-    const isSpecialFrame = filename === "~";
     const fileLocationHTML = isSpecialFrame ? "" : `
-        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
-                    font-family: monospace; background: #f8f9fa;
-                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
-          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
-        </div>`;
+      <div class="tooltip-location">${filename}${d.data.lineno ? ":" + d.data.lineno : ""}</div>`;
 
     const tooltipHTML = `
-      <div>
-        <div style="color: #3776ab; font-weight: 600; font-size: 16px;
-                    margin-bottom: 8px; line-height: 1.3; word-break: break-word; overflow-wrap: break-word;">
-          ${funcname}
-        </div>
+      <div class="tooltip-header">
+        <div class="tooltip-title">${funcname}</div>
         ${fileLocationHTML}
-        <div style="display: grid; grid-template-columns: auto 1fr;
-                    gap: 8px 16px; font-size: 14px;">
-          <span style="color: #5a6c7d; font-weight: 500;">Execution Time:</span>
-          <strong style="color: #2e3338;">${timeMs} ms</strong>
+      </div>
+      <div class="tooltip-stats">
+        <span class="tooltip-stat-label">Execution Time:</span>
+        <span class="tooltip-stat-value">${timeMs} ms</span>
 
-          <span style="color: #5a6c7d; font-weight: 500;">Percentage:</span>
-          <strong style="color: #3776ab;">${percentage}%</strong>
+        <span class="tooltip-stat-label">Percentage:</span>
+        <span class="tooltip-stat-value accent">${percentage}%</span>
 
-          ${calls > 0 ? `
-            <span style="color: #5a6c7d; font-weight: 500;">Function Calls:</span>
-            <strong style="color: #2e3338;">${calls.toLocaleString()}</strong>
-          ` : ''}
+        ${calls > 0 ? `
+          <span class="tooltip-stat-label">Function Calls:</span>
+          <span class="tooltip-stat-value">${calls.toLocaleString()}</span>
+        ` : ''}
 
-          ${childCount > 0 ? `
-            <span style="color: #5a6c7d; font-weight: 500;">Child Functions:</span>
-            <strong style="color: #2e3338;">${childCount}</strong>
-          ` : ''}
-        </div>
-        ${sourceSection}
-        <div style="margin-top: 16px; padding-top: 12px;
-                    border-top: 1px solid #e9ecef; font-size: 13px;
-                    color: #5a6c7d; text-align: center;">
-          ${childCount > 0 ?
-            "Click to focus on this function" :
-            "Leaf function - no children"}
-        </div>
+        ${childCount > 0 ? `
+          <span class="tooltip-stat-label">Child Functions:</span>
+          <span class="tooltip-stat-value">${childCount}</span>
+        ` : ''}
+      </div>
+      ${sourceSection}
+      <div class="tooltip-hint">
+        ${childCount > 0 ? "Click to zoom into this function" : "Leaf function - no children"}
       </div>
     `;
 
-    // Get mouse position
+    // Position tooltip
     const event = d3.event || window.event;
     const mouseX = event.pageX || event.clientX;
     const mouseY = event.pageY || event.clientY;
+    const padding = 12;
 
-    // Calculate tooltip dimensions (default to 320px width if not rendered yet)
-    let tooltipWidth = 320;
-    let tooltipHeight = 200;
-    if (this._tooltip && this._tooltip.node()) {
-      const node = this._tooltip
-        .style("opacity", 0)
-        .style("display", "block")
-        .node();
-      tooltipWidth = node.offsetWidth || 320;
-      tooltipHeight = node.offsetHeight || 200;
-      this._tooltip.style("display", null);
-    }
+    this._tooltip.html(tooltipHTML);
 
-    // Calculate horizontal position: if overflow, show to the left of cursor
-    const padding = 10;
-    const rightEdge = mouseX + padding + tooltipWidth;
-    const viewportWidth = window.innerWidth;
-    let left;
-    if (rightEdge > viewportWidth) {
+    // Measure tooltip
+    const node = this._tooltip.style("display", "block").style("opacity", 0).node();
+    const tooltipWidth = node.offsetWidth || 320;
+    const tooltipHeight = node.offsetHeight || 200;
+
+    // Calculate position
+    let left = mouseX + padding;
+    let top = mouseY + padding;
+
+    if (left + tooltipWidth > window.innerWidth) {
       left = mouseX - tooltipWidth - padding;
-      if (left < 0) left = padding; // prevent off left edge
-    } else {
-      left = mouseX + padding;
+      if (left < 0) left = padding;
     }
 
-    // Calculate vertical position: if overflow, show above cursor
-    const bottomEdge = mouseY + padding + tooltipHeight;
-    const viewportHeight = window.innerHeight;
-    let top;
-    if (bottomEdge > viewportHeight) {
+    if (top + tooltipHeight > window.innerHeight) {
       top = mouseY - tooltipHeight - padding;
-      if (top < 0) top = padding; // prevent off top edge
-    } else {
-      top = mouseY + padding;
+      if (top < 0) top = padding;
     }
 
     this._tooltip
-      .html(tooltipHTML)
       .style("left", left + "px")
       .style("top", top + "px")
       .transition()
-      .duration(200)
+      .duration(150)
       .style("opacity", 1);
+
+    // Update status bar
+    updateStatusBar(d.data, data.value);
   };
 
-  // Override the hide method
   pythonTooltip.hide = function () {
     if (this._tooltip) {
-      this._tooltip.transition().duration(200).style("opacity", 0);
+      this._tooltip.transition().duration(150).style("opacity", 0);
     }
+    clearStatusBar();
   };
+
   return pythonTooltip;
 }
 
+// ============================================================================
+// Flamegraph Creation
+// ============================================================================
+
+function ensureLibraryLoaded() {
+  if (typeof flamegraph === "undefined") {
+    console.error("d3-flame-graph library not loaded");
+    document.getElementById("chart").innerHTML =
+      '<div style="padding: 40px; text-align: center; color: var(--text-muted);">Error: d3-flame-graph library failed to load</div>';
+    throw new Error("d3-flame-graph library failed to load");
+  }
+}
+
+const HEAT_THRESHOLDS = [
+  [0.6, 8],
+  [0.35, 7],
+  [0.18, 6],
+  [0.12, 5],
+  [0.06, 4],
+  [0.03, 3],
+  [0.01, 2],
+];
+
+function getHeatLevel(percentage) {
+  for (const [threshold, level] of HEAT_THRESHOLDS) {
+    if (percentage >= threshold) return level;
+  }
+  return 1;
+}
+
+function getHeatColors() {
+  const style = getComputedStyle(document.documentElement);
+  const colors = {};
+  for (let i = 1; i <= 8; i++) {
+    colors[i] = style.getPropertyValue(`--heat-${i}`).trim();
+  }
+  return colors;
+}
+
 function createFlamegraph(tooltip, rootValue) {
+  const chartArea = document.querySelector('.chart-area');
+  const width = chartArea ? chartArea.clientWidth - 32 : window.innerWidth - 320;
+  const heatColors = getHeatColors();
+
   let chart = flamegraph()
-    .width(window.innerWidth - 80)
+    .width(width)
     .cellHeight(20)
     .transitionDuration(300)
     .minFrameSize(1)
@@ -265,141 +381,206 @@ function createFlamegraph(tooltip, rootValue) {
     .inverted(true)
     .setColorMapper(function (d) {
       const percentage = d.data.value / rootValue;
-      let colorIndex;
-      if (percentage >= 0.6) colorIndex = 7;
-      else if (percentage >= 0.35) colorIndex = 6;
-      else if (percentage >= 0.18) colorIndex = 5;
-      else if (percentage >= 0.12) colorIndex = 4;
-      else if (percentage >= 0.06) colorIndex = 3;
-      else if (percentage >= 0.03) colorIndex = 2;
-      else if (percentage >= 0.01) colorIndex = 1;
-      else colorIndex = 0; // <1%
-      return pythonColors[colorIndex];
+      const level = getHeatLevel(percentage);
+      return heatColors[level];
     });
+
   return chart;
 }
 
 function renderFlamegraph(chart, data) {
   d3.select("#chart").datum(data).call(chart);
-  window.flamegraphChart = chart; // for controls
-  window.flamegraphData = data;   // for resize/search
+  window.flamegraphChart = chart;
+  window.flamegraphData = data;
   populateStats(data);
 }
 
-function attachPanelControls() {
-  const infoBtn = document.getElementById("show-info-btn");
-  const infoPanel = document.getElementById("info-panel");
-  const closeBtn = document.getElementById("close-info-btn");
-  if (infoBtn && infoPanel) {
-    infoBtn.addEventListener("click", function () {
-      const isOpen = infoPanel.style.display === "block";
-      infoPanel.style.display = isOpen ? "none" : "block";
-    });
-  }
-  if (closeBtn && infoPanel) {
-    closeBtn.addEventListener("click", function () {
-      infoPanel.style.display = "none";
-    });
-  }
-}
+// ============================================================================
+// Search
+// ============================================================================
 
 function updateSearchHighlight(searchTerm, searchInput) {
   d3.selectAll("#chart rect")
-    .style("stroke", null)
-    .style("stroke-width", null)
-    .style("opacity", null);
+    .classed("search-match", false)
+    .classed("search-dim", false);
+
+  // Clear active state from all hotspots
+  document.querySelectorAll('.hotspot').forEach(h => h.classList.remove('active'));
+
   if (searchTerm && searchTerm.length > 0) {
-    d3.selectAll("#chart rect").style("opacity", 0.3);
     let matchCount = 0;
+
     d3.selectAll("#chart rect").each(function (d) {
       if (d && d.data) {
         const name = resolveString(d.data.name) || "";
         const funcname = resolveString(d.data.funcname) || "";
         const filename = resolveString(d.data.filename) || "";
+        const lineno = d.data.lineno;
         const term = searchTerm.toLowerCase();
-        const matches =
-          name.toLowerCase().includes(term) ||
-          funcname.toLowerCase().includes(term) ||
-          filename.toLowerCase().includes(term);
+
+        // Check if search term looks like file:line pattern
+        const fileLineMatch = term.match(/^(.+):(\d+)$/);
+        let matches = false;
+
+        if (fileLineMatch) {
+          // Exact file:line matching
+          const searchFile = fileLineMatch[1];
+          const searchLine = parseInt(fileLineMatch[2], 10);
+          const basename = filename.split('/').pop().toLowerCase();
+          matches = basename.includes(searchFile) && lineno === searchLine;
+        } else {
+          // Regular substring search
+          matches =
+            name.toLowerCase().includes(term) ||
+            funcname.toLowerCase().includes(term) ||
+            filename.toLowerCase().includes(term);
+        }
+
         if (matches) {
           matchCount++;
-          d3.select(this)
-            .style("opacity", 1)
-            .style("stroke", "#ff6b35")
-            .style("stroke-width", "2px")
-            .style("stroke-dasharray", "3,3");
+          d3.select(this).classed("search-match", true);
+        } else {
+          d3.select(this).classed("search-dim", true);
         }
       }
     });
+
     if (searchInput) {
-      if (matchCount > 0) {
-        searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
-        searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
-      } else {
-        searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
-        searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
-      }
+      searchInput.classList.remove("has-matches", "no-matches");
+      searchInput.classList.add(matchCount > 0 ? "has-matches" : "no-matches");
     }
+
+    // Mark matching hotspot as active
+    document.querySelectorAll('.hotspot').forEach(h => {
+      if (h.dataset.searchterm && h.dataset.searchterm.toLowerCase() === searchTerm.toLowerCase()) {
+        h.classList.add('active');
+      }
+    });
   } else if (searchInput) {
-    searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
-    searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
+    searchInput.classList.remove("has-matches", "no-matches");
+  }
+}
+
+function searchForHotspot(funcname) {
+  const searchInput = document.getElementById('search-input');
+  const searchWrapper = document.querySelector('.search-wrapper');
+  if (searchInput) {
+    // Toggle: if already searching for this term, clear it
+    if (searchInput.value.trim() === funcname) {
+      clearSearch();
+    } else {
+      searchInput.value = funcname;
+      if (searchWrapper) {
+        searchWrapper.classList.add('has-value');
+      }
+      performSearch();
+    }
   }
 }
 
 function initSearchHandlers() {
   const searchInput = document.getElementById("search-input");
+  const searchWrapper = document.querySelector(".search-wrapper");
   if (!searchInput) return;
+
   let searchTimeout;
   function performSearch() {
     const term = searchInput.value.trim();
     updateSearchHighlight(term, searchInput);
+    // Toggle has-value class for clear button visibility
+    if (searchWrapper) {
+      searchWrapper.classList.toggle("has-value", term.length > 0);
+    }
   }
+
   searchInput.addEventListener("input", function () {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(performSearch, 150);
   });
+
   window.performSearch = performSearch;
 }
 
-function handleResize(chart, data) {
+function clearSearch() {
+  const searchInput = document.getElementById("search-input");
+  const searchWrapper = document.querySelector(".search-wrapper");
+  if (searchInput) {
+    searchInput.value = "";
+    searchInput.classList.remove("has-matches", "no-matches");
+    if (searchWrapper) {
+      searchWrapper.classList.remove("has-value");
+    }
+    // Clear highlights
+    d3.selectAll("#chart rect")
+      .classed("search-match", false)
+      .classed("search-dim", false);
+    // Clear active hotspot
+    document.querySelectorAll('.hotspot').forEach(h => h.classList.remove('active'));
+  }
+}
+
+// ============================================================================
+// Resize Handler
+// ============================================================================
+
+function handleResize() {
+  let resizeTimeout;
   window.addEventListener("resize", function () {
-    if (chart && data) {
-      const newWidth = window.innerWidth - 80;
-      chart.width(newWidth);
-      d3.select("#chart").datum(data).call(chart);
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(resizeChart, 100);
+  });
+}
+
+function initSidebarResize() {
+  const sidebar = document.getElementById('sidebar');
+  const resizeHandle = document.getElementById('sidebar-resize-handle');
+  if (!sidebar || !resizeHandle) return;
+
+  let isResizing = false;
+  let startX = 0;
+  let startWidth = 0;
+  const minWidth = 200;
+  const maxWidth = 600;
+
+  resizeHandle.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = sidebar.offsetWidth;
+    resizeHandle.classList.add('resizing');
+    document.body.classList.add('resizing-sidebar');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+
+    const deltaX = e.clientX - startX;
+    const newWidth = Math.min(Math.max(startWidth + deltaX, minWidth), maxWidth);
+    sidebar.style.width = newWidth + 'px';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isResizing) {
+      isResizing = false;
+      resizeHandle.classList.remove('resizing');
+      document.body.classList.remove('resizing-sidebar');
+
+      // Save the new width
+      const width = sidebar.offsetWidth;
+      localStorage.setItem('flamegraph-sidebar-width', width);
+
+      // Resize chart after sidebar resize
+      setTimeout(() => {
+        resizeChart();
+      }, 10);
     }
   });
 }
 
-function initFlamegraph() {
-  ensureLibraryLoaded();
-
-  // Extract string table if present and resolve string indices
-  let processedData = EMBEDDED_DATA;
-  if (EMBEDDED_DATA.strings) {
-    stringTable = EMBEDDED_DATA.strings;
-    processedData = resolveStringIndices(EMBEDDED_DATA);
-  }
-
-  // Store original data for filtering
-  originalData = processedData;
-
-  // Initialize thread filter dropdown
-  initThreadFilter(processedData);
-
-  const tooltip = createPythonTooltip(processedData);
-  const chart = createFlamegraph(tooltip, processedData.value);
-  renderFlamegraph(chart, processedData);
-  attachPanelControls();
-  initSearchHandlers();
-  handleResize(chart, processedData);
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initFlamegraph);
-} else {
-  initFlamegraph();
-}
+// ============================================================================
+// Thread Stats
+// ============================================================================
 
 // Mode constants (must match constants.py)
 const PROFILING_MODE_WALL = 0;
@@ -408,97 +589,166 @@ const PROFILING_MODE_GIL = 2;
 const PROFILING_MODE_ALL = 3;
 
 function populateThreadStats(data, selectedThreadId = null) {
-  // Check if thread statistics are available
   const stats = data?.stats;
   if (!stats || !stats.thread_stats) {
-    return; // No thread stats available
+    return;
   }
 
   const mode = stats.mode !== undefined ? stats.mode : PROFILING_MODE_WALL;
   let threadStats;
 
-  // If a specific thread is selected, use per-thread stats
   if (selectedThreadId !== null && stats.per_thread_stats && stats.per_thread_stats[selectedThreadId]) {
     threadStats = stats.per_thread_stats[selectedThreadId];
   } else {
     threadStats = stats.thread_stats;
   }
 
-  // Validate threadStats object
-  if (!threadStats || typeof threadStats.total !== 'number') {
-    return; // Invalid thread stats
+  if (!threadStats || typeof threadStats.total !== 'number' || threadStats.total <= 0) {
+    return;
   }
 
-  const bar = document.getElementById('thread-stats-bar');
-  if (!bar) {
-    return; // DOM element not found
+  const section = document.getElementById('thread-stats-bar');
+  if (!section) {
+    return;
   }
 
-  // Show the bar if we have valid thread stats
-  if (threadStats.total > 0) {
-    bar.style.display = 'flex';
+  section.style.display = 'block';
 
-    // Hide/show GIL stats items in GIL mode
-    const gilHeldStat = document.getElementById('gil-held-stat');
-    const gilReleasedStat = document.getElementById('gil-released-stat');
-    const gilWaitingStat = document.getElementById('gil-waiting-stat');
-    const separators = bar.querySelectorAll('.thread-stat-separator');
+  const gilHeldStat = document.getElementById('gil-held-stat');
+  const gilReleasedStat = document.getElementById('gil-released-stat');
+  const gilWaitingStat = document.getElementById('gil-waiting-stat');
 
-    if (mode === PROFILING_MODE_GIL) {
-      // In GIL mode, hide GIL-related stats
-      if (gilHeldStat) gilHeldStat.style.display = 'none';
-      if (gilReleasedStat) gilReleasedStat.style.display = 'none';
-      if (gilWaitingStat) gilWaitingStat.style.display = 'none';
-      separators.forEach((sep, i) => {
-        if (i < 3) sep.style.display = 'none';
-      });
-    } else {
-      // Show all stats in other modes
-      if (gilHeldStat) gilHeldStat.style.display = 'inline-flex';
-      if (gilReleasedStat) gilReleasedStat.style.display = 'inline-flex';
-      if (gilWaitingStat) gilWaitingStat.style.display = 'inline-flex';
-      separators.forEach(sep => sep.style.display = 'inline');
+  if (mode === PROFILING_MODE_GIL) {
+    // In GIL mode, hide GIL-related stats
+    if (gilHeldStat) gilHeldStat.style.display = 'none';
+    if (gilReleasedStat) gilReleasedStat.style.display = 'none';
+    if (gilWaitingStat) gilWaitingStat.style.display = 'none';
+  } else {
+    // Show all stats
+    if (gilHeldStat) gilHeldStat.style.display = 'block';
+    if (gilReleasedStat) gilReleasedStat.style.display = 'block';
+    if (gilWaitingStat) gilWaitingStat.style.display = 'block';
 
-      // GIL Held
-      const gilHeldPct = threadStats.has_gil_pct || 0;
-      const gilHeldPctElem = document.getElementById('gil-held-pct');
-      if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(2)}%`;
+    const gilHeldPctElem = document.getElementById('gil-held-pct');
+    if (gilHeldPctElem) gilHeldPctElem.textContent = `${(threadStats.has_gil_pct || 0).toFixed(1)}%`;
 
-      // GIL Released (threads running without GIL)
-      const gilReleasedPct = threadStats.on_cpu_pct || 0;
-      const gilReleasedPctElem = document.getElementById('gil-released-pct');
-      if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(2)}%`;
+    const gilReleasedPctElem = document.getElementById('gil-released-pct');
+    // GIL Released = not holding GIL and not waiting for it
+    const gilReleasedPct = Math.max(0, 100 - (threadStats.has_gil_pct || 0) - (threadStats.gil_requested_pct || 0));
+    if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(1)}%`;
 
-      // Waiting for GIL
-      const gilWaitingPct = threadStats.gil_requested_pct || 0;
-      const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
-      if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(2)}%`;
-    }
+    const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
+    if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${(threadStats.gil_requested_pct || 0).toFixed(1)}%`;
+  }
 
-    // Garbage Collection (always show)
-    const gcPct = threadStats.gc_pct || 0;
-    const gcPctElem = document.getElementById('gc-pct');
-    if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(2)}%`;
+  const gcPctElem = document.getElementById('gc-pct');
+  if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+}
+
+// ============================================================================
+// Profile Summary Stats
+// ============================================================================
+
+function formatNumber(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toLocaleString();
+}
+
+function formatDuration(seconds) {
+  if (seconds >= 3600) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
+  }
+  if (seconds >= 60) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}m ${s}s`;
+  }
+  return seconds.toFixed(2) + 's';
+}
+
+function populateProfileSummary(data) {
+  const stats = data.stats || {};
+  const totalSamples = stats.total_samples || data.value || 0;
+  const duration = stats.duration_sec || 0;
+  const sampleRate = stats.sample_rate || (duration > 0 ? totalSamples / duration : 0);
+  const errorRate = stats.error_rate || 0;
+  const missedSamples= stats.missed_samples || 0;
+
+  const samplesEl = document.getElementById('stat-total-samples');
+  if (samplesEl) samplesEl.textContent = formatNumber(totalSamples);
+
+  const durationEl = document.getElementById('stat-duration');
+  if (durationEl) durationEl.textContent = duration > 0 ? formatDuration(duration) : '--';
+
+  const rateEl = document.getElementById('stat-sample-rate');
+  if (rateEl) rateEl.textContent = sampleRate > 0 ? formatNumber(Math.round(sampleRate)) : '--';
+
+  // Count unique functions
+  let functionCount = 0;
+  function countFunctions(node) {
+    if (!node) return;
+    functionCount++;
+    if (node.children) node.children.forEach(countFunctions);
+  }
+  countFunctions(data);
+
+  const functionsEl = document.getElementById('stat-functions');
+  if (functionsEl) functionsEl.textContent = formatNumber(functionCount);
+
+  // Efficiency bar
+  if (errorRate !== undefined && errorRate !== null) {
+    const efficiency = Math.max(0, Math.min(100, (100 - errorRate)));
+
+    const efficiencySection = document.getElementById('efficiency-section');
+    if (efficiencySection) efficiencySection.style.display = 'block';
+
+    const efficiencyValue = document.getElementById('stat-efficiency');
+    if (efficiencyValue) efficiencyValue.textContent = efficiency.toFixed(1) + '%';
+
+    const efficiencyFill = document.getElementById('efficiency-fill');
+    if (efficiencyFill) efficiencyFill.style.width = efficiency + '%';
+  }
+  // MissedSamples bar
+  if (missedSamples !== undefined && missedSamples !== null) {
+    const sampleEfficiency = Math.max(0, missedSamples);
+
+    const efficiencySection = document.getElementById('efficiency-section');
+    if (efficiencySection) efficiencySection.style.display = 'block';
+
+    const sampleEfficiencyValue = document.getElementById('stat-missed-samples');
+    if (sampleEfficiencyValue) sampleEfficiencyValue.textContent = sampleEfficiency.toFixed(1) + '%';
+
+    const sampleEfficiencyFill = document.getElementById('missed-samples-fill');
+    if (sampleEfficiencyFill) sampleEfficiencyFill.style.width = sampleEfficiency + '%';
   }
 }
+
+// ============================================================================
+// Hotspot Stats
+// ============================================================================
 
 function populateStats(data) {
   const totalSamples = data.value || 0;
 
+  // Populate profile summary
+  populateProfileSummary(data);
+
   // Populate thread statistics if available
   populateThreadStats(data);
 
-  // Collect all functions with their metrics, aggregated by function name
   const functionMap = new Map();
 
   function collectFunctions(node) {
     if (!node) return;
 
-    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
-    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
+    let filename = resolveString(node.filename);
+    let funcname = resolveString(node.funcname);
 
     if (!filename || !funcname) {
-      const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
+      const nameStr = resolveString(node.name);
       if (nameStr?.includes('(')) {
         const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
         if (match) {
@@ -512,21 +762,18 @@ function populateStats(data) {
     funcname = funcname || 'unknown';
 
     if (filename !== 'unknown' && funcname !== 'unknown' && node.value > 0) {
-      // Calculate direct samples (this node's value minus children's values)
       let childrenValue = 0;
       if (node.children) {
         childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
       }
       const directSamples = Math.max(0, node.value - childrenValue);
 
-      // Use file:line:funcname as key to ensure uniqueness
       const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
       if (functionMap.has(funcKey)) {
         const existing = functionMap.get(funcKey);
         existing.directSamples += directSamples;
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
-        // Keep the most representative file/line (the one with more samples)
         if (directSamples > existing.maxSingleSamples) {
           existing.filename = filename;
           existing.lineno = node.lineno || '?';
@@ -551,96 +798,81 @@ function populateStats(data) {
 
   collectFunctions(data);
 
-  // Convert map to array and get top 3 hotspots
   const hotSpots = Array.from(functionMap.values())
-    .filter(f => f.directPercent > 0.5) // At least 0.5% to be significant
+    .filter(f => f.directPercent > 0.5)
     .sort((a, b) => b.directPercent - a.directPercent)
     .slice(0, 3);
 
-  // Populate the 3 cards
+  // Populate and animate hotspot cards
   for (let i = 0; i < 3; i++) {
     const num = i + 1;
+    const card = document.getElementById(`hotspot-${num}`);
+    const funcEl = document.getElementById(`hotspot-func-${num}`);
+    const fileEl = document.getElementById(`hotspot-file-${num}`);
+    const percentEl = document.getElementById(`hotspot-percent-${num}`);
+    const samplesEl = document.getElementById(`hotspot-samples-${num}`);
+
     if (i < hotSpots.length && hotSpots[i]) {
-      const hotspot = hotSpots[i];
-      const filename = hotspot.filename || 'unknown';
-      const lineno = hotspot.lineno ?? '?';
-      let funcDisplay = hotspot.funcname || 'unknown';
-      if (funcDisplay.length > 35) {
-        funcDisplay = funcDisplay.substring(0, 32) + '...';
-      }
-
-      // Don't show file:line for special frames like <GC> and <native>
+      const h = hotSpots[i];
+      const filename = h.filename || 'unknown';
+      const lineno = h.lineno ?? '?';
       const isSpecialFrame = filename === '~' && (lineno === 0 || lineno === '?');
-      let fileDisplay;
-      if (isSpecialFrame) {
-        fileDisplay = '--';
+
+      let funcDisplay = h.funcname || 'unknown';
+      if (funcDisplay.length > 28) funcDisplay = funcDisplay.substring(0, 25) + '...';
+
+      if (funcEl) funcEl.textContent = funcDisplay;
+      if (fileEl) {
+        if (isSpecialFrame) {
+          fileEl.textContent = '--';
+        } else {
+          const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
+          fileEl.textContent = `${basename}:${lineno}`;
+        }
+      }
+      if (percentEl) percentEl.textContent = `${h.directPercent.toFixed(1)}%`;
+      if (samplesEl) samplesEl.textContent = ` (${h.directSamples.toLocaleString()})`;
+    } else {
+      if (funcEl) funcEl.textContent = '--';
+      if (fileEl) fileEl.textContent = '--';
+      if (percentEl) percentEl.textContent = '--';
+      if (samplesEl) samplesEl.textContent = '';
+    }
+
+    // Add click handler and animate entrance
+    if (card) {
+      if (i < hotSpots.length && hotSpots[i]) {
+        const h = hotSpots[i];
+        const basename = h.filename !== 'unknown' ? h.filename.split('/').pop() : '';
+        const searchTerm = basename && h.lineno !== '?' ? `${basename}:${h.lineno}` : h.funcname;
+        card.dataset.searchterm = searchTerm;
+        card.onclick = () => searchForHotspot(searchTerm);
+        card.style.cursor = 'pointer';
       } else {
-        const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
-        fileDisplay = `${basename}:${lineno}`;
+        card.onclick = null;
+        delete card.dataset.searchterm;
+        card.style.cursor = 'default';
       }
 
-      document.getElementById(`hotspot-file-${num}`).textContent = fileDisplay;
-      document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
-      document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
-    } else {
-      document.getElementById(`hotspot-file-${num}`).textContent = '--';
-      document.getElementById(`hotspot-func-${num}`).textContent = '--';
-      document.getElementById(`hotspot-detail-${num}`).textContent = '--';
+      setTimeout(() => {
+        card.classList.add('visible');
+      }, 100 + i * 80);
     }
   }
 }
 
-// Control functions
-function resetZoom() {
-  if (window.flamegraphChart) {
-    window.flamegraphChart.resetZoom();
-  }
-}
-
-function exportSVG() {
-  const svgElement = document.querySelector("#chart svg");
-  if (svgElement) {
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svgElement);
-    const blob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "python-performance-flamegraph.svg";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-}
-
-function toggleLegend() {
-  const legendPanel = document.getElementById("legend-panel");
-  const isHidden =
-    legendPanel.style.display === "none" || legendPanel.style.display === "";
-  legendPanel.style.display = isHidden ? "block" : "none";
-}
-
-function clearSearch() {
-  const searchInput = document.getElementById("search-input");
-  if (searchInput) {
-    searchInput.value = "";
-    if (window.flamegraphChart) {
-      window.flamegraphChart.clear();
-    }
-  }
-}
+// ============================================================================
+// Thread Filter
+// ============================================================================
 
 function initThreadFilter(data) {
   const threadFilter = document.getElementById('thread-filter');
-  const threadWrapper = document.querySelector('.thread-filter-wrapper');
+  const threadSection = document.getElementById('thread-section');
 
-  if (!threadFilter || !data.threads) {
-    return;
-  }
+  if (!threadFilter || !data.threads) return;
 
-  // Clear existing options except "All Threads"
   threadFilter.innerHTML = '<option value="all">All Threads</option>';
 
-  // Add thread options
   const threads = data.threads || [];
   threads.forEach(threadId => {
     const option = document.createElement('option');
@@ -649,9 +881,8 @@ function initThreadFilter(data) {
     threadFilter.appendChild(option);
   });
 
-  // Show filter if more than one thread
-  if (threads.length > 1 && threadWrapper) {
-    threadWrapper.style.display = 'inline-flex';
+  if (threads.length > 1 && threadSection) {
+    threadSection.style.display = 'block';
   }
 }
 
@@ -666,11 +897,9 @@ function filterByThread() {
   let selectedThreadId = null;
 
   if (selectedThread === 'all') {
-    // Show all data
     filteredData = originalData;
   } else {
-    // Filter data by thread
-    selectedThreadId = parseInt(selectedThread);
+    selectedThreadId = parseInt(selectedThread, 10);
     filteredData = filterDataByThread(originalData, selectedThreadId);
 
     if (filteredData.strings) {
@@ -679,12 +908,10 @@ function filterByThread() {
     }
   }
 
-  // Re-render flamegraph with filtered data
   const tooltip = createPythonTooltip(filteredData);
   const chart = createFlamegraph(tooltip, filteredData.value);
   renderFlamegraph(chart, filteredData);
 
-  // Update thread stats to show per-thread or aggregate stats
   populateThreadStats(originalData, selectedThreadId);
 }
 
@@ -694,10 +921,7 @@ function filterDataByThread(data, threadId) {
       return null;
     }
 
-    const filteredNode = {
-      ...node,
-      children: []
-    };
+    const filteredNode = { ...node, children: [] };
 
     if (node.children && Array.isArray(node.children)) {
       filteredNode.children = node.children
@@ -706,17 +930,6 @@ function filterDataByThread(data, threadId) {
     }
 
     return filteredNode;
-  }
-
-  const filteredRoot = {
-    ...data,
-    children: []
-  };
-
-  if (data.children && Array.isArray(data.children)) {
-    filteredRoot.children = data.children
-      .map(child => filterNode(child))
-      .filter(child => child !== null);
   }
 
   function recalculateValue(node) {
@@ -728,8 +941,72 @@ function filterDataByThread(data, threadId) {
     return node.value;
   }
 
-  recalculateValue(filteredRoot);
+  const filteredRoot = { ...data, children: [] };
 
+  if (data.children && Array.isArray(data.children)) {
+    filteredRoot.children = data.children
+      .map(child => filterNode(child))
+      .filter(child => child !== null);
+  }
+
+  recalculateValue(filteredRoot);
   return filteredRoot;
 }
 
+// ============================================================================
+// Control Functions
+// ============================================================================
+
+function resetZoom() {
+  if (window.flamegraphChart) {
+    window.flamegraphChart.resetZoom();
+  }
+}
+
+function exportSVG() {
+  const svgElement = document.querySelector("#chart svg");
+  if (!svgElement) {
+    console.warn("Cannot export: No flamegraph SVG found");
+    return;
+  }
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svgElement);
+  const blob = new Blob([svgString], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "python-performance-flamegraph.svg";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+function initFlamegraph() {
+  ensureLibraryLoaded();
+  restoreUIState();
+
+  let processedData = EMBEDDED_DATA;
+  if (EMBEDDED_DATA.strings) {
+    stringTable = EMBEDDED_DATA.strings;
+    processedData = resolveStringIndices(EMBEDDED_DATA);
+  }
+
+  originalData = processedData;
+  initThreadFilter(processedData);
+
+  const tooltip = createPythonTooltip(processedData);
+  const chart = createFlamegraph(tooltip, processedData.value);
+  renderFlamegraph(chart, processedData);
+  initSearchHandlers();
+  initSidebarResize();
+  handleResize();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFlamegraph);
+} else {
+  initFlamegraph();
+}
