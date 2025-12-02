@@ -558,6 +558,7 @@ OBJECT_OBJS=	\
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
+		Objects/unicode_codecs_utf.o \
 		Objects/unicode_format.o \
 		Objects/unicode_formatter.o \
 		Objects/unicode_writer.o \
