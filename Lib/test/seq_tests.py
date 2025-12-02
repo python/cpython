@@ -253,11 +253,16 @@ class CommonTest(unittest.TestCase):
     def check_compare_id(self, a, b):
         self.assertTrue(a == a)
         self.assertFalse(a != a)
+        self.assertTrue(b == b)
+        self.assertFalse(b != b)
         self.assertTrue(a == b)
         self.assertFalse(a != b)
         self.assertFalse(a < a)
+        self.assertFalse(b < b)
         self.assertFalse(a < b)
         self.assertFalse(a > b)
+        self.assertFalse(b < a)
+        self.assertFalse(b > a)
 
     def test_compare_nan(self):
         nan = float("nan")
@@ -276,8 +281,6 @@ class CommonTest(unittest.TestCase):
         a = self.type2test([0.0])
         b = self.type2test([-0.0])
         self.check_compare_id(a, b)
-        self.assertTrue(b == b)
-        self.assertFalse(b != b)
 
     def test_len(self):
         self.assertEqual(len(self.type2test()), 0)
