@@ -1,1 +1,1 @@
-Analysis confirms that :mod:`ctypes` does not support returning tuples from ``_as_parameter_`` for default conversions. Attempting to do so raises a :exc:`TypeError` (wrapped in an :exc:`ArgumentError`), meaning the described security risk does not exist in the current codebase.
+Analysis confirms that :mod:`ctypes` does not support returning tuples from ``_as_parameter_`` for default conversions. Attempting to do so raises a :exc:`TypeError` (wrapped in an ``ArgumentError``), meaning the described security risk does not exist in the current codebase.
