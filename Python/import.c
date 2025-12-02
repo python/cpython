@@ -4421,7 +4421,7 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
     }
 
     if (PyUnicode_GetLength(name) == 0) {
-        PyErr_Format(PyExc_TypeError,
+        PyErr_Format(PyExc_ValueError,
                      "name must not be empty");
         Py_DECREF(name);
         return NULL;

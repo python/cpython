@@ -1262,10 +1262,9 @@ os.does_not_exist
             _imp.create_builtin(spec)
 
         spec.name = ""
-        spec = Spec()
 
         # gh-142029
-        with self.assertRaisesRegex(TypeError,'name must not be empty'):
+        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
             _imp.create_builtin(spec)
 
     def test_filter_syntax_warnings_by_module(self):
