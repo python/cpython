@@ -668,8 +668,7 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
 
     /* Fast path based on identity: if both objects are the same tuple
      * object, we return immediately without comparing items. Elements that
-     * are not equal to themselves (see check_compare_id in
-     * Lib/tests/seq_tests.py) are therefore treated as equal here.
+     * are not equal to themselves are therefore treated as equal here.
      */
     if (v == w) {
         Py_RETURN_RICHCOMPARE(0, 0, op);
