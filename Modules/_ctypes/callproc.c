@@ -1516,7 +1516,7 @@ static void *libsystem_b_handle;
 static bool (*_dyld_shared_cache_contains_path)(const char *path);
 
 __attribute__((constructor)) void load_dyld_shared_cache_contains_path(void) {
-    libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY);
+    libsystem_b_handle = dlopen("/usr/lib/libSystem.B.dylib", RTLD_LAZY | RTLD_GLOBAL);
     if (libsystem_b_handle != NULL) {
         _dyld_shared_cache_contains_path = dlsym(libsystem_b_handle, "_dyld_shared_cache_contains_path");
     }
