@@ -2434,7 +2434,8 @@ create_builtin(
     if (initfunc == NULL) {
         struct _inittab *entry = lookup_inittab_entry(&info);
         if (entry == NULL) {
-            mod = Py_NewRef(Py_None);
+            mod = NULL;
+            _PyErr_SetModuleNotFoundError(name);
             goto finally;
         }
 
