@@ -74,7 +74,7 @@ extern PyObject _PyInstrumentation_DISABLE;
 /* Total tool ids available */
 #define  PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 11
+#define  _PY_MONITORING_LOCAL_EVENTS 12
 /* Count of all "real" monitoring events (not derived from other events) */
 #define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
