@@ -364,7 +364,7 @@ class Sniffer:
         """
         from collections import Counter, defaultdict
 
-        data = list(filter(None, data.split('\n')))
+        data = list(filter(None, data.splitlines()))
 
         # build frequency tables
         chunkLength = min(10, len(data))

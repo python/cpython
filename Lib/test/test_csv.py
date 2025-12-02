@@ -1517,6 +1517,12 @@ ghi\0jkl
         with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample)
 
+    def test_sniff_mixed_newlines(self):
+        # gh-142188: Sniffer should handle CR and mixed newlines
+        sample = "User,ID\rAlice,001\nBob,002"
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ',')
 
 class NUL:
     def write(s, *args):
