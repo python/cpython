@@ -1,1 +1,1 @@
-Search for LLVM tools in ``LLVM_TOOLS_INSTALL_DIR`` during the build.
+Allow for custom LLVM path using ``LLVM_TOOLS_INSTALL_DIR`` during JIT build.
