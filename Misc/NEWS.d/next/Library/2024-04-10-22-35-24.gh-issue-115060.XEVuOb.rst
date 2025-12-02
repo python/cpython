@@ -1,2 +1,0 @@
-Speed up :meth:`pathlib.Path.glob` by not scanning directories for
-non-wildcard pattern segments.

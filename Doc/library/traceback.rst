@@ -1,5 +1,5 @@
-:mod:`traceback` --- Print or retrieve a stack traceback
-========================================================
+:mod:`!traceback` --- Print or retrieve a stack traceback
+=========================================================
 
 .. module:: traceback
    :synopsis: Print or retrieve a stack traceback.
@@ -8,11 +8,15 @@
 
 --------------
 
-This module provides a standard interface to extract, format and print stack
-traces of Python programs.  It exactly mimics the behavior of the Python
-interpreter when it prints a stack trace.  This is useful when you want to print
-stack traces under program control, such as in a "wrapper" around the
-interpreter.
+This module provides a standard interface to extract, format and print
+stack traces of Python programs. It is more flexible than the
+interpreter's default traceback display, and therefore makes it
+possible to configure certain aspects of the output. Finally,
+it contains a utility for capturing enough information about an
+exception to print it later, without the need to save a reference
+to the actual exception. Since exceptions can be the roots of large
+objects graph, this utility can significantly improve
+memory management.
 
 .. index:: pair: object; traceback
 
@@ -29,7 +33,24 @@ which are assigned to the :attr:`~BaseException.__traceback__` field of
    Module :mod:`pdb`
       Interactive source code debugger for Python programs.
 
-The module defines the following functions:
+The module's API can be divided into two parts:
+
+* Module-level functions offering basic functionality, which are useful for interactive
+  inspection of exceptions and tracebacks.
+
+* :class:`TracebackException` class and its helper classes
+  :class:`StackSummary` and :class:`FrameSummary`. These offer both more
+  flexibility in the output generated and the ability to store the information
+  necessary for later formatting without holding references to actual exception
+  and traceback objects.
+
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+
+Module-Level Functions
+----------------------
 
 .. function:: print_tb(tb, limit=None, file=None)
 
@@ -41,6 +62,14 @@ The module defines the following functions:
    :data:`sys.stderr`; otherwise it should be an open
    :term:`file <file object>` or :term:`file-like object` to
    receive the output.
+
+   .. note::
+
+      The meaning of the *limit* parameter is different than the meaning
+      of :const:`sys.tracebacklimit`. A negative *limit* value corresponds to
+      a positive value of :const:`!sys.tracebacklimit`, whereas the behaviour of
+      a positive *limit* value cannot be achieved with
+      :const:`!sys.tracebacklimit`.
 
    .. versionchanged:: 3.5
        Added negative *limit* support.
@@ -86,14 +115,14 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.exception(), limit, file,
-   chain)``.
+   This is a shorthand for ``print_exception(sys.exception(), limit=limit, file=file,
+   chain=chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
-   chain)``.  In general it will work only after an exception has reached
+   This is a shorthand for ``print_exception(sys.last_exc, limit=limit, file=file,
+   chain=chain)``.  In general it will work only after an exception has reached
    an interactive prompt (see :data:`sys.last_exc`).
 
 
@@ -130,6 +159,13 @@ The module defines the following functions:
    :ref:`stack frame <frame-objects>`.  The return value has
    the same format as for :func:`extract_tb`.  The optional *f* and *limit*
    arguments have the same meaning as for :func:`print_stack`.
+
+
+.. function:: print_list(extracted_list, file=None)
+
+   Print the list of tuples as returned by :func:`extract_tb` or
+   :func:`extract_stack` as a formatted stack trace to the given file.
+   If *file* is ``None``, the output is written to :data:`sys.stderr`.
 
 
 .. function:: format_list(extracted_list)
@@ -221,6 +257,11 @@ The module defines the following functions:
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.14
+      This function previously returned a generator that would walk the stack
+      when first iterated over. The generator returned now is the state of the
+      stack when ``walk_stack`` is called.
+
 .. function:: walk_tb(tb)
 
    Walk a traceback following :attr:`~traceback.tb_next` yielding the frame and
@@ -229,7 +270,6 @@ The module defines the following functions:
 
    .. versionadded:: 3.5
 
-The module also defines the following classes:
 
 :class:`!TracebackException` Objects
 ------------------------------------
@@ -237,12 +277,17 @@ The module also defines the following classes:
 .. versionadded:: 3.5
 
 :class:`!TracebackException` objects are created from actual exceptions to
-capture data for later printing in a lightweight fashion.
+capture data for later printing.  They offer a more lightweight method of
+storing this information by avoiding holding references to
+:ref:`traceback<traceback-objects>` and :ref:`frame<frame-objects>` objects.
+In addition, they expose more options to configure the output compared to
+the module-level functions described above.
 
 .. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
-   Capture an exception for later rendering. *limit*, *lookup_lines* and
-   *capture_locals* are as for the :class:`StackSummary` class.
+   Capture an exception for later rendering. The meaning of *limit*,
+   *lookup_lines* and *capture_locals* are as for the :class:`StackSummary`
+   class.
 
    If *compact* is true, only data that is required by
    :class:`!TracebackException`'s :meth:`format` method
@@ -463,7 +508,9 @@ capture data for later printing in a lightweight fashion.
 A :class:`!FrameSummary` object represents a single :ref:`frame <frame-objects>`
 in a :ref:`traceback <traceback-objects>`.
 
-.. class:: FrameSummary(filename, lineno, name, lookup_line=True, locals=None, line=None)
+.. class:: FrameSummary(filename, lineno, name, *,\
+                        lookup_line=True, locals=None,\
+                        line=None, end_lineno=None, colno=None, end_colno=None)
 
    Represents a single :ref:`frame <frame-objects>` in the
    :ref:`traceback <traceback-objects>` or stack that is being formatted
@@ -473,7 +520,7 @@ in a :ref:`traceback <traceback-objects>`.
    attribute accessed (which also happens when casting it to a :class:`tuple`).
    :attr:`~FrameSummary.line` may be directly provided, and will prevent line
    lookups happening at all. *locals* is an optional local variable
-   dictionary, and if supplied the variable representations are stored in the
+   mapping, and if supplied the variable representations are stored in the
    summary for later display.
 
    :class:`!FrameSummary` instances have the following attributes:
@@ -499,10 +546,29 @@ in a :ref:`traceback <traceback-objects>`.
       trailing whitespace stripped.
       If the source is not available, it is ``None``.
 
+   .. attribute:: FrameSummary.end_lineno
+
+      The last line number of the source code for this frame.
+      By default, it is set to ``lineno`` and indexation starts from 1.
+
+      .. versionchanged:: 3.13
+         The default value changed from ``None`` to ``lineno``.
+
+   .. attribute:: FrameSummary.colno
+
+      The column number of the source code for this frame.
+      By default, it is ``None`` and indexation starts from 0.
+
+   .. attribute:: FrameSummary.end_colno
+
+      The last column number of the source code for this frame.
+      By default, it is ``None`` and indexation starts from 0.
+
+
 .. _traceback-example:
 
-Traceback Examples
-------------------
+Examples of Using the Module-Level Functions
+--------------------------------------------
 
 This simple example implements a basic read-eval-print loop, similar to (but
 less useful than) the standard Python interactive interpreter loop.  For a more
@@ -541,8 +607,7 @@ exception and traceback:
 
    try:
        lumberjack()
-   except IndexError:
-       exc = sys.exception()
+   except IndexError as exc:
        print("*** print_tb:")
        traceback.print_tb(exc.__traceback__, limit=1, file=sys.stdout)
        print("*** print_exception:")
@@ -645,5 +710,88 @@ This last example demonstrates the final few formatting functions:
    ['  File "spam.py", line 3, in <module>\n    spam.eggs()\n',
     '  File "eggs.py", line 42, in eggs\n    return "bacon"\n']
    >>> an_error = IndexError('tuple index out of range')
-   >>> traceback.format_exception_only(type(an_error), an_error)
+   >>> traceback.format_exception_only(an_error)
    ['IndexError: tuple index out of range\n']
+
+
+Examples of Using :class:`TracebackException`
+---------------------------------------------
+
+With the helper class, we have more options::
+
+   >>> import sys
+   >>> from traceback import TracebackException
+   >>>
+   >>> def lumberjack():
+   ...     bright_side_of_life()
+   ...
+   >>> def bright_side_of_life():
+   ...     t = "bright", "side", "of", "life"
+   ...     return t[5]
+   ...
+   >>> try:
+   ...     lumberjack()
+   ... except IndexError as e:
+   ...     exc = e
+   ...
+   >>> try:
+   ...     try:
+   ...         lumberjack()
+   ...     except:
+   ...         1/0
+   ... except Exception as e:
+   ...     chained_exc = e
+   ...
+   >>> # limit works as with the module-level functions
+   >>> TracebackException.from_exception(exc, limit=-2).print()
+   Traceback (most recent call last):
+     File "<python-input-1>", line 6, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-1>", line 10, in bright_side_of_life
+       return t[5]
+              ~^^^
+   IndexError: tuple index out of range
+
+   >>> # capture_locals adds local variables in frames
+   >>> TracebackException.from_exception(exc, limit=-2, capture_locals=True).print()
+   Traceback (most recent call last):
+     File "<python-input-1>", line 6, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-1>", line 10, in bright_side_of_life
+       return t[5]
+              ~^^^
+       t = ("bright", "side", "of", "life")
+   IndexError: tuple index out of range
+
+   >>> # The *chain* kwarg to print() controls whether chained
+   >>> # exceptions are displayed
+   >>> TracebackException.from_exception(chained_exc).print()
+   Traceback (most recent call last):
+     File "<python-input-19>", line 4, in <module>
+       lumberjack()
+       ~~~~~~~~~~^^
+     File "<python-input-8>", line 7, in lumberjack
+       bright_side_of_life()
+       ~~~~~~~~~~~~~~~~~~~^^
+     File "<python-input-8>", line 11, in bright_side_of_life
+       return t[5]
+              ~^^^
+   IndexError: tuple index out of range
+
+   During handling of the above exception, another exception occurred:
+
+   Traceback (most recent call last):
+     File "<python-input-19>", line 6, in <module>
+       1/0
+       ~^~
+   ZeroDivisionError: division by zero
+
+   >>> TracebackException.from_exception(chained_exc).print(chain=False)
+   Traceback (most recent call last):
+     File "<python-input-19>", line 6, in <module>
+       1/0
+       ~^~
+   ZeroDivisionError: division by zero
+

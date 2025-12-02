@@ -127,7 +127,7 @@ Dictionary Objects
       Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
    .. versionchanged:: 3.10
-      Calling this API without :term:`GIL` held had been allowed for historical
+      Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
 
 
@@ -156,7 +156,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_GetItemStringRef(PyObject *p, const char *key, PyObject **result)
 
-   Similar than :c:func:`PyDict_GetItemRef`, but *key* is specified as a
+   Similar to :c:func:`PyDict_GetItemRef`, but *key* is specified as a
    :c:expr:`const char*` UTF-8 encoded bytes string, rather than a
    :c:expr:`PyObject*`.
 
@@ -191,6 +191,7 @@ Dictionary Objects
    to both *default_value* and *\*result* (if it's not ``NULL``).
    These may refer to the same object: in that case you hold two separate
    references to it.
+
    .. versionadded:: 3.13
 
 
@@ -205,7 +206,7 @@ Dictionary Objects
      ``NULL``, and return ``0``.
    - On error, raise an exception and return ``-1``.
 
-   This is similar to :meth:`dict.pop`, but without the default value and
+   Similar to :meth:`dict.pop`, but without the default value and
    not raising :exc:`KeyError` if the key missing.
 
    .. versionadded:: 3.13
@@ -289,6 +290,26 @@ Dictionary Objects
           Py_DECREF(o);
       }
 
+   The function is not thread-safe in the :term:`free-threaded <free threading>`
+   build without external synchronization.  You can use
+   :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
+   over it::
+
+      Py_BEGIN_CRITICAL_SECTION(self->dict);
+      while (PyDict_Next(self->dict, &pos, &key, &value)) {
+          ...
+      }
+      Py_END_CRITICAL_SECTION();
+
+   .. note::
+
+      On the free-threaded build, this function can be used safely inside a
+      critical section. However, the references returned for *pkey* and *pvalue*
+      are :term:`borrowed <borrowed reference>` and are only valid while the
+      critical section is held. If you need to use these objects outside the
+      critical section or when the critical section can be suspended, create a
+      :term:`strong reference <strong reference>` (for example, using
+      :c:func:`Py_NewRef`).
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 

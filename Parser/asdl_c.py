@@ -131,7 +131,7 @@ class EmitVisitor(asdl.VisitorBase):
     def metadata(self):
         if self._metadata is None:
             raise ValueError(
-                "%s was expecting to be annnotated with metadata"
+                "%s was expecting to be annotated with metadata"
                 % type(self).__name__
             )
         return self._metadata
@@ -738,7 +738,7 @@ class SequenceConstructorVisitor(EmitVisitor):
 class PyTypesDeclareVisitor(PickleVisitor):
 
     def visitProduct(self, prod, name):
-        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, void*);" % name, 0)
+        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, void*);" % name, 0)
         if prod.attributes:
             self.emit("static const char * const %s_attributes[] = {" % name, 0)
             for a in prod.attributes:
@@ -759,7 +759,7 @@ class PyTypesDeclareVisitor(PickleVisitor):
         ptype = "void*"
         if is_simple(sum):
             ptype = get_c_type(name)
-        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, %s);" % (name, ptype), 0)
+        self.emit("static PyObject* ast2obj_%s(struct ast_state *state, %s);" % (name, ptype), 0)
         for t in sum.types:
             self.visitConstructor(t, name)
 
@@ -843,8 +843,9 @@ typedef struct {
 } AST_object;
 
 static void
-ast_dealloc(AST_object *self)
+ast_dealloc(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -856,16 +857,18 @@ ast_dealloc(AST_object *self)
 }
 
 static int
-ast_traverse(AST_object *self, visitproc visit, void *arg)
+ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-ast_clear(AST_object *self)
+ast_clear(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -880,20 +883,18 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 
     Py_ssize_t i, numfields = 0;
     int res = -1;
-    PyObject *key, *value, *fields, *remaining_fields = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+    PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
+
+    fields = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_fields);
+    if (fields == NULL) {
         goto cleanup;
     }
-    if (fields) {
-        numfields = PySequence_Size(fields);
-        if (numfields == -1) {
-            goto cleanup;
-        }
-        remaining_fields = PySet_New(fields);
+
+    numfields = PySequence_Size(fields);
+    if (numfields == -1) {
+        goto cleanup;
     }
-    else {
-        remaining_fields = PySet_New(NULL);
-    }
+    remaining_fields = PySet_New(fields);
     if (remaining_fields == NULL) {
         goto cleanup;
     }
@@ -947,21 +948,31 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
             }
-            else if (
-                PyUnicode_CompareWithASCIIString(key, "lineno") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "col_offset") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "end_lineno") != 0 &&
-                PyUnicode_CompareWithASCIIString(key, "end_col_offset") != 0
-            ) {
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ got an unexpected keyword argument '%U'. "
-                    "Support for arbitrary keyword arguments is deprecated "
-                    "and will be removed in Python 3.15.",
-                    Py_TYPE(self)->tp_name, key
-                ) < 0) {
+            else {
+                // Lazily initialize "attributes"
+                if (attributes == NULL) {
+                    attributes = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_attributes);
+                    if (attributes == NULL) {
+                        res = -1;
+                        goto cleanup;
+                    }
+                }
+                int contains = PySequence_Contains(attributes, key);
+                if (contains == -1) {
                     res = -1;
                     goto cleanup;
+                }
+                else if (contains == 0) {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
+                        "Support for arbitrary keyword arguments is deprecated "
+                        "and will be removed in Python 3.15.",
+                        Py_TYPE(self)->tp_name, key
+                    ) < 0) {
+                        res = -1;
+                        goto cleanup;
+                    }
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -979,14 +990,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             goto cleanup;
         }
         if (field_types == NULL) {
-            if (PyErr_WarnFormat(
-                PyExc_DeprecationWarning, 1,
-                "%.400s provides _fields but not _field_types. "
-                "This will become an error in Python 3.15.",
-                Py_TYPE(self)->tp_name
-            ) < 0) {
-                res = -1;
-            }
+            // Probably a user-defined subclass of AST that lacks _field_types.
+            // This will continue to work as it did before 3.13; i.e., attributes
+            // that are not passed in simply do not exist on the instance.
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
@@ -997,12 +1003,21 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
             if (!type) {
-                if (!PyErr_Occurred()) {
-                    PyErr_SetObject(PyExc_KeyError, name);
+                if (PyErr_Occurred()) {
+                    goto set_remaining_cleanup;
                 }
-                goto set_remaining_cleanup;
+                else {
+                    if (PyErr_WarnFormat(
+                        PyExc_DeprecationWarning, 1,
+                        "Field '%U' is missing from %.400s._field_types. "
+                        "This will become an error in Python 3.15.",
+                        name, Py_TYPE(self)->tp_name
+                    ) < 0) {
+                        goto set_remaining_cleanup;
+                    }
+                }
             }
-            if (_PyUnion_Check(type)) {
+            else if (_PyUnion_Check(type)) {
                 // optional field
                 // do nothing, we'll have set a None default on the class
             }
@@ -1018,6 +1033,13 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
             }
+            else if (type == state->expr_context_type) {
+                // special case for expr_context: default to Load()
+                res = PyObject_SetAttr(self, name, state->Load_singleton);
+                if (res < 0) {
+                    goto set_remaining_cleanup;
+                }
+            }
             else {
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
@@ -1026,8 +1048,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
-                    res = -1;
-                    goto cleanup;
+                    goto set_remaining_cleanup;
                 }
             }
         }
@@ -1035,6 +1056,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         Py_DECREF(field_types);
     }
   cleanup:
+    Py_XDECREF(attributes);
     Py_XDECREF(fields);
     Py_XDECREF(remaining_fields);
     return res;
@@ -1054,17 +1076,22 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *remaining_dict = NULL, *positional_args = NULL;
+    PyObject *dict = NULL, *fields = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
     PyObject *result = NULL;
     if (dict) {
-        // Serialize the fields as positional args if possible, because if we
-        // serialize them as a dict, during unpickling they are set only *after*
-        // the object is constructed, which will now trigger a DeprecationWarning
-        // if the AST type has required fields.
+        // Unpickling (or copying) works as follows:
+        // - Construct the object with only positional arguments
+        // - Set the fields from the dict
+        // We have two constraints:
+        // - We must set all the required fields in the initial constructor call,
+        //   or the unpickling or deepcopying of the object will trigger DeprecationWarnings.
+        // - We must not include child nodes in the positional args, because
+        //   that may trigger runaway recursion during copying (gh-120108).
+        // To satisfy both constraints, we set all the fields to None in the
+        // initial list of positional args, and then set the fields from the dict.
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -1072,11 +1099,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             Py_ssize_t numfields = PySequence_Size(fields);
             if (numfields == -1) {
                 Py_DECREF(dict);
-                goto cleanup;
-            }
-            remaining_dict = PyDict_Copy(dict);
-            Py_DECREF(dict);
-            if (!remaining_dict) {
                 goto cleanup;
             }
             positional_args = PyList_New(0);
@@ -1089,7 +1111,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                     goto cleanup;
                 }
                 PyObject *value;
-                int rc = PyDict_Pop(remaining_dict, name, &value);
+                int rc = PyDict_GetItemRef(dict, name, &value);
                 Py_DECREF(name);
                 if (rc < 0) {
                     goto cleanup;
@@ -1097,7 +1119,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!value) {
                     break;
                 }
-                rc = PyList_Append(positional_args, value);
+                rc = PyList_Append(positional_args, Py_None);
                 Py_DECREF(value);
                 if (rc < 0) {
                     goto cleanup;
@@ -1107,8 +1129,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
-                                   remaining_dict);
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple, dict);
         }
         else {
             result = Py_BuildValue("O()N", Py_TYPE(self), dict);
@@ -1119,9 +1140,306 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 cleanup:
     Py_XDECREF(fields);
-    Py_XDECREF(remaining_fields);
-    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
+    return result;
+}
+
+/*
+ * Perform the following validations:
+ *
+ *   - All keyword arguments are known 'fields' or 'attributes'.
+ *   - No field or attribute would be left unfilled after copy.replace().
+ *
+ * On success, this returns 1. Otherwise, set a TypeError
+ * exception and returns -1 (no exception is set if some
+ * other internal errors occur).
+ *
+ * Parameters
+ *
+ *      self          The AST node instance.
+ *      dict          The AST node instance dictionary (self.__dict__).
+ *      fields        The list of fields (self._fields).
+ *      attributes    The list of attributes (self._attributes).
+ *      kwargs        Keyword arguments passed to ast_type_replace().
+ *
+ * The 'dict', 'fields', 'attributes' and 'kwargs' arguments can be NULL.
+ *
+ * Note: this function can be removed in 3.15 since the verification
+ *       will be done inside the constructor.
+ */
+static inline int
+ast_type_replace_check(PyObject *self,
+                       PyObject *dict,
+                       PyObject *fields,
+                       PyObject *attributes,
+                       PyObject *kwargs)
+{
+    // While it is possible to make some fast paths that would avoid
+    // allocating objects on the stack, this would cost us readability.
+    // For instance, if 'fields' and 'attributes' are both empty, and
+    // 'kwargs' is not empty, we could raise a TypeError immediately.
+    PyObject *expecting = PySet_New(fields);
+    if (expecting == NULL) {
+        return -1;
+    }
+    if (attributes) {
+        if (_PySet_Update(expecting, attributes) < 0) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+    }
+    // Any keyword argument that is neither a field nor attribute is rejected.
+    // We first need to check whether a keyword argument is accepted or not.
+    // If all keyword arguments are accepted, we compute the required fields
+    // and attributes. A field or attribute is not needed if:
+    //
+    //  1) it is given in 'kwargs', or
+    //  2) it already exists on 'self'.
+    if (kwargs) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(kwargs, &pos, &key, &value)) {
+            int rc = PySet_Discard(expecting, key);
+            if (rc < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            if (rc == 0) {
+                PyErr_Format(PyExc_TypeError,
+                             "%.400s.__replace__ got an unexpected keyword "
+                             "argument '%U'.", Py_TYPE(self)->tp_name, key);
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+    }
+    // check that the remaining fields or attributes would be filled
+    if (dict) {
+        Py_ssize_t pos = 0;
+        PyObject *key, *value;
+        while (PyDict_Next(dict, &pos, &key, &value)) {
+            // Mark fields or attributes that are found on the instance
+            // as non-mandatory. If they are not given in 'kwargs', they
+            // will be shallow-coied; otherwise, they would be replaced
+            // (not in this function).
+            if (PySet_Discard(expecting, key) < 0) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+        }
+        if (attributes) {
+            // Some attributes may or may not be present at runtime.
+            // In particular, now that we checked whether 'kwargs'
+            // is correct or not, we allow any attribute to be missing.
+            //
+            // Note that fields must still be entirely determined when
+            // calling the constructor later.
+            PyObject *unused = PyObject_CallMethodOneArg(expecting,
+                                                         &_Py_ID(difference_update),
+                                                         attributes);
+            if (unused == NULL) {
+                Py_DECREF(expecting);
+                return -1;
+            }
+            Py_DECREF(unused);
+        }
+    }
+
+    // Discard fields from 'expecting' that default to None
+    PyObject *field_types = NULL;
+    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self),
+                                 &_Py_ID(_field_types),
+                                 &field_types) < 0)
+    {
+        Py_DECREF(expecting);
+        return -1;
+    }
+    if (field_types != NULL) {
+        Py_ssize_t pos = 0;
+        PyObject *field_name, *field_type;
+        while (PyDict_Next(field_types, &pos, &field_name, &field_type)) {
+            if (_PyUnion_Check(field_type)) {
+                // optional field
+                if (PySet_Discard(expecting, field_name) < 0) {
+                    Py_DECREF(expecting);
+                    Py_DECREF(field_types);
+                    return -1;
+                }
+            }
+        }
+        Py_DECREF(field_types);
+    }
+
+    // Now 'expecting' contains the fields or attributes
+    // that would not be filled inside ast_type_replace().
+    Py_ssize_t m = PySet_GET_SIZE(expecting);
+    if (m > 0) {
+        PyObject *names = PyList_New(m);
+        if (names == NULL) {
+            Py_DECREF(expecting);
+            return -1;
+        }
+        Py_ssize_t i = 0, pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        while (_PySet_NextEntry(expecting, &pos, &item, &hash)) {
+            PyObject *name = PyObject_Repr(item);
+            if (name == NULL) {
+                Py_DECREF(expecting);
+                Py_DECREF(names);
+                return -1;
+            }
+            // steal the reference 'name'
+            PyList_SET_ITEM(names, i++, name);
+        }
+        Py_DECREF(expecting);
+        if (PyList_Sort(names) < 0) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *sep = PyUnicode_FromString(", ");
+        if (sep == NULL) {
+            Py_DECREF(names);
+            return -1;
+        }
+        PyObject *str_names = PyUnicode_Join(sep, names);
+        Py_DECREF(sep);
+        Py_DECREF(names);
+        if (str_names == NULL) {
+            return -1;
+        }
+        PyErr_Format(PyExc_TypeError,
+                     "%.400s.__replace__ missing %ld keyword argument%s: %U.",
+                     Py_TYPE(self)->tp_name, m, m == 1 ? "" : "s", str_names);
+        Py_DECREF(str_names);
+        return -1;
+    }
+    else {
+        Py_DECREF(expecting);
+        return 1;
+    }
+}
+
+/*
+ * Python equivalent:
+ *
+ *   for key in keys:
+ *       if hasattr(self, key):
+ *           payload[key] = getattr(self, key)
+ *
+ * The 'keys' argument is a sequence corresponding to
+ * the '_fields' or the '_attributes' of an AST node.
+ *
+ * This returns -1 if an error occurs and 0 otherwise.
+ *
+ * Parameters
+ *
+ *      payload   A dictionary to fill.
+ *      keys      A sequence of keys or NULL for an empty sequence.
+ *      dict      The AST node instance dictionary (must not be NULL).
+ */
+static inline int
+ast_type_replace_update_payload(PyObject *payload,
+                                PyObject *keys,
+                                PyObject *dict)
+{
+    assert(dict != NULL);
+    if (keys == NULL) {
+        return 0;
+    }
+    Py_ssize_t n = PySequence_Size(keys);
+    if (n == -1) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *key = PySequence_GetItem(keys, i);
+        if (key == NULL) {
+            return -1;
+        }
+        PyObject *value;
+        if (PyDict_GetItemRef(dict, key, &value) < 0) {
+            Py_DECREF(key);
+            return -1;
+        }
+        if (value == NULL) {
+            Py_DECREF(key);
+            // If a field or attribute is not present at runtime, it should
+            // be explicitly given in 'kwargs'. If not, the constructor will
+            // issue a warning (which becomes an error in 3.15).
+            continue;
+        }
+        int rc = PyDict_SetItem(payload, key, value);
+        Py_DECREF(key);
+        Py_DECREF(value);
+        if (rc < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* copy.replace() support (shallow copy) */
+static PyObject *
+ast_type_replace(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = NULL;
+    // known AST class fields and attributes
+    PyObject *fields = NULL, *attributes = NULL;
+    // current instance dictionary
+    PyObject *dict = NULL;
+    // constructor positional and keyword arguments
+    PyObject *empty_tuple = NULL, *payload = NULL;
+
+    PyObject *type = (PyObject *)Py_TYPE(self);
+    if (PyObject_GetOptionalAttr(type, state->_fields, &fields) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(type, state->_attributes, &attributes) < 0) {
+        goto cleanup;
+    }
+    if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
+        goto cleanup;
+    }
+    if (ast_type_replace_check(self, dict, fields, attributes, kwargs) < 0) {
+        goto cleanup;
+    }
+    empty_tuple = PyTuple_New(0);
+    if (empty_tuple == NULL) {
+        goto cleanup;
+    }
+    payload = PyDict_New();
+    if (payload == NULL) {
+        goto cleanup;
+    }
+    if (dict) { // in case __dict__ is missing (for some obscure reason)
+        // copy the instance's fields (possibly NULL)
+        if (ast_type_replace_update_payload(payload, fields, dict) < 0) {
+            goto cleanup;
+        }
+        // copy the instance's attributes (possibly NULL)
+        if (ast_type_replace_update_payload(payload, attributes, dict) < 0) {
+            goto cleanup;
+        }
+    }
+    if (kwargs && PyDict_Update(payload, kwargs) < 0) {
+        goto cleanup;
+    }
+    result = PyObject_Call(type, empty_tuple, payload);
+cleanup:
+    Py_XDECREF(payload);
+    Py_XDECREF(empty_tuple);
+    Py_XDECREF(dict);
+    Py_XDECREF(attributes);
+    Py_XDECREF(fields);
     return result;
 }
 
@@ -1132,6 +1450,10 @@ static PyMemberDef ast_type_members[] = {
 
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
+    {"__replace__", _PyCFunction_CAST(ast_type_replace), METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("__replace__($self, /, **fields)\\n--\\n\\n"
+               "Return a copy of the AST node with new values "
+               "for the specified fields.")},
     {NULL}
 };
 
@@ -1140,8 +1462,233 @@ static PyGetSetDef ast_type_getsets[] = {
     {NULL}
 };
 
+static PyObject *
+ast_repr_max_depth(AST_object *self, int depth);
+
+/* Format list and tuple properties of AST nodes.
+   Note that, only the first and last elements are shown.
+   Anything in between is represented with an ellipsis ('...').
+   For example, the list [1, 2, 3] is formatted as
+   'List(elts=[Constant(1), ..., Constant(3)])'. */
+static PyObject *
+ast_repr_list(PyObject *list, int depth)
+{
+    assert(PyList_Check(list) || PyTuple_Check(list));
+
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t length = PySequence_Size(list);
+    if (length < 0) {
+        return NULL;
+    }
+    else if (length == 0) {
+        return PyObject_Repr(list);
+    }
+
+    PyObject *items[2] = {NULL, NULL};
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+
+    items[0] = PySequence_GetItem(list, 0);
+    if (!items[0]) {
+        goto error;
+    }
+    if (length > 1) {
+        items[1] = PySequence_GetItem(list, length - 1);
+        if (!items[1]) {
+            goto error;
+        }
+    }
+
+    bool is_list = PyList_Check(list);
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? '[' : '(') < 0) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
+        if (i > 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+
+        PyObject *item = items[i];
+        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
+            PyObject *item_repr;
+            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
+            if (!item_repr) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteStr(writer, item_repr) < 0) {
+                Py_DECREF(item_repr);
+                goto error;
+            }
+            Py_DECREF(item_repr);
+        } else {
+            if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
+                goto error;
+            }
+        }
+
+        if (i == 0 && length > 2) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ...", 5) < 0) {
+                goto error;
+            }
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? ']' : ')') < 0) {
+        goto error;
+    }
+
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    Py_XDECREF(items[0]);
+    Py_XDECREF(items[1]);
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+static PyObject *
+ast_repr_max_depth(AST_object *self, int depth)
+{
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+
+    if (depth <= 0) {
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    int status = Py_ReprEnter((PyObject *)self);
+    if (status != 0) {
+        if (status < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(self)->tp_name);
+    }
+
+    PyObject *fields;
+    if (PyObject_GetOptionalAttr((PyObject *)Py_TYPE(self), state->_fields, &fields) < 0) {
+        Py_ReprLeave((PyObject *)self);
+        return NULL;
+    }
+
+    Py_ssize_t numfields = PySequence_Size(fields);
+    if (numfields < 0) {
+        Py_ReprLeave((PyObject *)self);
+        Py_DECREF(fields);
+        return NULL;
+    }
+
+    if (numfields == 0) {
+        Py_ReprLeave((PyObject *)self);
+        Py_DECREF(fields);
+        return PyUnicode_FromFormat("%s()", Py_TYPE(self)->tp_name);
+    }
+
+    const char* tp_name = Py_TYPE(self)->tp_name;
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+
+    if (PyUnicodeWriter_WriteUTF8(writer, tp_name, -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
+        goto error;
+    }
+
+    for (Py_ssize_t i = 0; i < numfields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (!name) {
+            goto error;
+        }
+
+        PyObject *value = PyObject_GetAttr((PyObject *)self, name);
+        if (!value) {
+            Py_DECREF(name);
+            goto error;
+        }
+
+        PyObject *value_repr;
+        if (PyList_Check(value) || PyTuple_Check(value)) {
+            value_repr = ast_repr_list(value, depth);
+        }
+        else if (PyType_IsSubtype(Py_TYPE(value), (PyTypeObject *)state->AST_type)) {
+            value_repr = ast_repr_max_depth((AST_object*)value, depth - 1);
+        }
+        else {
+            value_repr = PyObject_Repr(value);
+        }
+
+        Py_DECREF(value);
+
+        if (!value_repr) {
+            Py_DECREF(name);
+            goto error;
+        }
+
+        if (i > 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                Py_DECREF(name);
+                Py_DECREF(value_repr);
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_WriteStr(writer, name) < 0) {
+            Py_DECREF(name);
+            Py_DECREF(value_repr);
+            goto error;
+        }
+
+        Py_DECREF(name);
+
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+        if (PyUnicodeWriter_WriteStr(writer, value_repr) < 0) {
+            Py_DECREF(value_repr);
+            goto error;
+        }
+
+        Py_DECREF(value_repr);
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+    Py_ReprLeave((PyObject *)self);
+    Py_DECREF(fields);
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    Py_ReprLeave((PyObject *)self);
+    Py_DECREF(fields);
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+static PyObject *
+ast_repr(PyObject *self)
+{
+    return ast_repr_max_depth((AST_object*)self, 3);
+}
+
 static PyType_Slot AST_type_slots[] = {
     {Py_tp_dealloc, ast_dealloc},
+    {Py_tp_repr, ast_repr},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
@@ -1213,8 +1760,8 @@ add_attributes(struct ast_state *state, PyObject *type, const char * const *attr
 
 /* Conversion AST -> Python */
 
-static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate, asdl_seq *seq,
-                              PyObject* (*func)(struct ast_state *state, struct validator *vstate, void*))
+static PyObject* ast2obj_list(struct ast_state *state, asdl_seq *seq,
+                              PyObject* (*func)(struct ast_state *state, void*))
 {
     Py_ssize_t i, n = asdl_seq_LEN(seq);
     PyObject *result = PyList_New(n);
@@ -1222,7 +1769,7 @@ static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate,
     if (!result)
         return NULL;
     for (i = 0; i < n; i++) {
-        value = func(state, vstate, asdl_seq_GET_UNTYPED(seq, i));
+        value = func(state, asdl_seq_GET_UNTYPED(seq, i));
         if (!value) {
             Py_DECREF(result);
             return NULL;
@@ -1232,7 +1779,7 @@ static PyObject* ast2obj_list(struct ast_state *state, struct validator *vstate,
     return result;
 }
 
-static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), void *o)
+static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), void *o)
 {
     PyObject *op = (PyObject*)o;
     if (!op) {
@@ -1244,7 +1791,7 @@ static PyObject* ast2obj_object(struct ast_state *Py_UNUSED(state), struct valid
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 
-static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), struct validator *Py_UNUSED(vstate), long b)
+static PyObject* ast2obj_int(struct ast_state *Py_UNUSED(state), long b)
 {
     return PyLong_FromLong(b);
 }
@@ -1330,8 +1877,9 @@ static int add_ast_fields(struct ast_state *state)
 
         self.file.write(textwrap.dedent('''
             static int
-            init_types(struct ast_state *state)
+            init_types(void *arg)
             {
+                struct ast_state *state = arg;
                 if (init_identifiers(state) < 0) {
                     return -1;
                 }
@@ -1443,6 +1991,7 @@ class ASTModuleVisitor(PickleVisitor):
 static PyModuleDef_Slot astmodule_slots[] = {
     {Py_mod_exec, astmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 
@@ -1491,7 +2040,7 @@ class ObjVisitor(PickleVisitor):
     def func_begin(self, name):
         ctype = get_c_type(name)
         self.emit("PyObject*", 0)
-        self.emit("ast2obj_%s(struct ast_state *state, struct validator *vstate, void* _o)" % (name), 0)
+        self.emit("ast2obj_%s(struct ast_state *state, void* _o)" % (name), 0)
         self.emit("{", 0)
         self.emit("%s o = (%s)_o;" % (ctype, ctype), 1)
         self.emit("PyObject *result = NULL, *value = NULL;", 1)
@@ -1499,17 +2048,15 @@ class ObjVisitor(PickleVisitor):
         self.emit('if (!o) {', 1)
         self.emit("Py_RETURN_NONE;", 2)
         self.emit("}", 1)
-        self.emit("if (++vstate->recursion_depth > vstate->recursion_limit) {", 1)
-        self.emit("PyErr_SetString(PyExc_RecursionError,", 2)
-        self.emit('"maximum recursion depth exceeded during ast construction");', 3)
+        self.emit('if (Py_EnterRecursiveCall("during  ast construction")) {', 1)
         self.emit("return NULL;", 2)
         self.emit("}", 1)
 
     def func_end(self):
-        self.emit("vstate->recursion_depth--;", 1)
+        self.emit("Py_LeaveRecursiveCall();", 1)
         self.emit("return result;", 1)
         self.emit("failed:", 0)
-        self.emit("vstate->recursion_depth--;", 1)
+        self.emit("Py_LeaveRecursiveCall();", 1)
         self.emit("Py_XDECREF(value);", 1)
         self.emit("Py_XDECREF(result);", 1)
         self.emit("return NULL;", 1)
@@ -1527,7 +2074,7 @@ class ObjVisitor(PickleVisitor):
             self.visitConstructor(t, i + 1, name)
         self.emit("}", 1)
         for a in sum.attributes:
-            self.emit("value = ast2obj_%s(state, vstate, o->%s);" % (a.type, a.name), 1)
+            self.emit("value = ast2obj_%s(state, o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
             self.emit('if (PyObject_SetAttr(result, state->%s, value) < 0)' % a.name, 1)
             self.emit('goto failed;', 2)
@@ -1535,7 +2082,7 @@ class ObjVisitor(PickleVisitor):
         self.func_end()
 
     def simpleSum(self, sum, name):
-        self.emit("PyObject* ast2obj_%s(struct ast_state *state, struct validator *vstate, %s_ty o)" % (name, name), 0)
+        self.emit("PyObject* ast2obj_%s(struct ast_state *state, %s_ty o)" % (name, name), 0)
         self.emit("{", 0)
         self.emit("switch(o) {", 1)
         for t in sum.types:
@@ -1553,7 +2100,7 @@ class ObjVisitor(PickleVisitor):
         for field in prod.fields:
             self.visitField(field, name, 1, True)
         for a in prod.attributes:
-            self.emit("value = ast2obj_%s(state, vstate, o->%s);" % (a.type, a.name), 1)
+            self.emit("value = ast2obj_%s(state, o->%s);" % (a.type, a.name), 1)
             self.emit("if (!value) goto failed;", 1)
             self.emit("if (PyObject_SetAttr(result, state->%s, value) < 0)" % a.name, 1)
             self.emit('goto failed;', 2)
@@ -1594,7 +2141,7 @@ class ObjVisitor(PickleVisitor):
                 self.emit("for(i = 0; i < n; i++)", depth+1)
                 # This cannot fail, so no need for error handling
                 self.emit(
-                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, vstate, ({0}_ty)asdl_seq_GET({1}, i)));".format(
+                    "PyList_SET_ITEM(value, i, ast2obj_{0}(state, ({0}_ty)asdl_seq_GET({1}, i)));".format(
                         field.type,
                         value
                     ),
@@ -1603,9 +2150,9 @@ class ObjVisitor(PickleVisitor):
                 )
                 self.emit("}", depth)
             else:
-                self.emit("value = ast2obj_list(state, vstate, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
+                self.emit("value = ast2obj_list(state, (asdl_seq*)%s, ast2obj_%s);" % (value, field.type), depth)
         else:
-            self.emit("value = ast2obj_%s(state, vstate, %s);" % (field.type, value), depth, reflow=False)
+            self.emit("value = ast2obj_%s(state, %s);" % (field.type, value), depth, reflow=False)
 
 
 class PartingShots(StaticVisitor):
@@ -1617,37 +2164,41 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (state == NULL) {
         return NULL;
     }
+    PyObject *result = ast2obj_mod(state, t);
 
-    int starting_recursion_depth;
-    /* Be careful here to prevent overflow. */
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (!tstate) {
-        return NULL;
-    }
-    struct validator vstate;
-    vstate.recursion_limit = Py_C_RECURSION_LIMIT;
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    vstate.recursion_depth = starting_recursion_depth;
-
-    PyObject *result = ast2obj_mod(state, &vstate, t);
-
-    /* Check that the recursion depth counting balanced correctly */
-    if (result && vstate.recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "AST constructor recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, vstate.recursion_depth);
-        return NULL;
-    }
     return result;
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
-mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+int PyAst_CheckMode(PyObject *ast, int mode)
 {
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
-    int isinstance;
 
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
+    PyObject *req_type[3];
+    req_type[0] = state->Module_type;
+    req_type[1] = state->Expression_type;
+    req_type[2] = state->Interactive_type;
+
+    assert(0 <= mode && mode <= 2);
+    int isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (!isinstance) {
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
+                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        return -1;
+    }
+    return 0;
+}
+
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+{
     if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
         return NULL;
     }
@@ -1657,19 +2208,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     }
 
-    PyObject *req_type[3];
-    req_type[0] = state->Module_type;
-    req_type[1] = state->Expression_type;
-    req_type[2] = state->Interactive_type;
-
-    assert(0 <= mode && mode <= 2);
-
-    isinstance = PyObject_IsInstance(ast, req_type[mode]);
-    if (isinstance == -1)
-        return NULL;
-    if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+    if (PyAst_CheckMode(ast, mode) < 0) {
         return NULL;
     }
 
@@ -1721,8 +2260,6 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
@@ -1762,21 +2299,19 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "Python.h"
         #include "pycore_ast.h"
         #include "pycore_ast_state.h"     // struct ast_state
-        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+        #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
         #include "pycore_lock.h"          // _PyOnceFlag
-        #include "pycore_interp.h"        // _PyInterpreterState.ast
+        #include "pycore_modsupport.h"    // _PyArg_NoPositional()
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+        #include "pycore_runtime.h"       // _Py_ID()
+        #include "pycore_setobject.h"     // _PySet_NextEntry()
         #include "pycore_unionobject.h"   // _Py_union_type_or
-        #include "structmember.h"
-        #include <stddef.h>
 
-        struct validator {
-            int recursion_depth;            /* current recursion depth */
-            int recursion_limit;            /* recursion limit */
-        };
+        #include <stddef.h>               // offsetof()
+
 
         // Forward declaration
-        static int init_types(struct ast_state *state);
+        static int init_types(void *arg);
 
         static struct ast_state*
         get_ast_state(void)
@@ -1833,6 +2368,7 @@ def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
 
         PyObject* PyAST_mod2obj(mod_ty t);
+        int PyAst_CheckMode(PyObject *ast, int mode);
         mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
         int PyAST_Check(PyObject* obj);
 
@@ -1858,7 +2394,7 @@ def write_internal_h_header(mod, f):
         #ifndef Py_INTERNAL_AST_STATE_H
         #define Py_INTERNAL_AST_STATE_H
 
-        #include "pycore_lock.h"    // _PyOnceFlag
+        #include "pycore_lock.h"          // _PyOnceFlag
 
         #ifdef __cplusplus
         extern "C" {

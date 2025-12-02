@@ -4,43 +4,44 @@
 #
 # reference: https://github.com/google/sanitizers/wiki/ThreadSanitizerSuppressions
 
-## Default build suppresssions
-
-race:get_allocator_unlocked
-race:set_allocator_unlocked
-
 ## Free-threaded suppressions
 
-race:_add_to_weak_set
-race:_in_weak_set
-race:_mi_heap_delayed_free_partial
-race:_Py_IsImmortal
-race:_Py_IsOwnedByCurrentThread
-race:_PyEval_EvalFrameDefault
-race:_PyFunction_SetVersion
-race:_PyImport_AcquireLock
-race:_PyImport_ReleaseLock
-race:_PyInterpreterState_SetNotRunningMain
-race:_PyInterpreterState_IsRunningMain
-race:_PyObject_GC_IS_SHARED
-race:_PyObject_GC_SET_SHARED
-race:_PyObject_GC_TRACK
-race:_PyType_HasFeature
-race:assign_version_tag
-race:compare_unicode_unicode
-race:delitem_common
-race:dictresize
-race:gc_collect_main
-race:gc_restore_tid
-race:initialize_new_array
-race:insertdict
-race:lookup_tp_dict
-race:mi_heap_visit_pages
-race:PyMember_GetOne
-race:PyMember_SetOne
-race:new_reference
-race:set_contains_key
-race:set_inheritable
-race:start_the_world
-race:tstate_set_detached
-race:unicode_hash
+
+# These entries are for warnings that trigger in a library function, as called
+# by a CPython function.
+
+# These warnings trigger directly in a CPython function.
+
+race_top:dump_traceback
+race_top:fatal_error
+race_top:_PyFrame_GetCode
+race_top:_PyFrame_Initialize
+race_top:_PyObject_TryGetInstanceAttribute
+race_top:PyUnstable_InterpreterFrame_GetLine
+race_top:write_thread_id
+
+# gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
+race_top:rangeiter_next
+
+# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
+race_top:mi_block_set_nextx
+
+# https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
+thread:pthread_create
+
+# Range iteration is not thread-safe yet (issue #129068)
+race_top:rangeiter_next
+
+# List resizing happens through different paths ending in memcpy or memmove
+# (for efficiency), which will probably need to rewritten as explicit loops
+# of ptr-sized copies to be thread-safe. (Issue #129069)
+race:list_ass_slice_lock_held
+race:list_inplace_repeat_lock_held
+
+# PyObject_Realloc internally does memcpy which isn't atomic so can race
+# with non-locking reads. See #132070
+race:PyObject_Realloc
+
+# gh-133467.  Some of these could be hard to trigger.
+race_top:set_tp_bases
+race_top:type_set_bases_unlocked

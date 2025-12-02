@@ -1,4 +1,0 @@
-Only treat ``'\n'``, ``'\r'`` and ``'\r\n'`` as line separators in
-re-folding the :mod:`email` messages. Preserve control characters ``'\v'``,
-``'\f'``, ``'\x1c'``, ``'\x1d'`` and ``'\x1e'`` and Unicode line separators
-``'\x85'``, ``'\u2028'`` and ``'\u2029'`` as is.

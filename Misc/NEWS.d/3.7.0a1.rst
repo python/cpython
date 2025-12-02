@@ -214,7 +214,7 @@ Fix possible undefined behavior in _PyObject_FastCall_Prepend.
 .. nonce: Kl_fS5
 .. section: Core and Builtins
 
-Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
+Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C library
 plans to remove the functions from sys/types.h.
 
 ..
@@ -1479,7 +1479,7 @@ memcpy().
 .. nonce: e5xc1i
 .. section: Core and Builtins
 
-Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
+Fix dict.pop() for split dictionary when trying to remove a "pending key"
 (Not yet inserted in split-table). Patch by Xiang Zhang.
 
 ..
@@ -2516,7 +2516,7 @@ stdin.write() if the child process is still running but closed the pipe.
 .. nonce: CdOuSl
 .. section: Library
 
-Addded empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
+Added empty __slots__ to abc.ABC.  This allows subclassers to deny __dict__
 and __weakref__ creation.  Patch by Aaron Hall.
 
 ..

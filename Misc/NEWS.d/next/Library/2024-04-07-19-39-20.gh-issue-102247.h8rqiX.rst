@@ -1,3 +1,0 @@
-the status codes enum with constants in http.HTTPStatus are updated to include the names from RFC9110. This RFC includes some HTTP statuses previously only used for WEBDAV and assigns more generic names to them.
-
-The old constants are preserved for backwards compatibility.

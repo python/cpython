@@ -1,5 +1,5 @@
-:mod:`cmd` --- Support for line-oriented command interpreters
-=============================================================
+:mod:`!cmd` --- Support for line-oriented command interpreters
+==============================================================
 
 .. module:: cmd
    :synopsis: Build line-oriented command interpreters.

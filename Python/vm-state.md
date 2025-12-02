@@ -73,7 +73,8 @@ It will be more complex in the JIT.
 
 Another important piece of VM state is the **thread state**, held in `tstate`.
 The current frame pointer, `frame`, is always equal to `tstate->current_frame`.
-The thread state also holds the exception state (`tstate->exc_info`) and the recursion counters (`tstate->c_recursion_remaining` and `tstate->py_recursion_remaining`).
+The thread state also holds the exception state (`tstate->exc_info`) and
+recursion tracking data (`tstate->py_recursion_remaining`, `tstate->c_stack*`).
 
 The thread state is also used to access the **interpreter state** (`tstate->interp`), which is important since the "eval breaker" flags are stored there (`tstate->interp->ceval.eval_breaker`, an "atomic" variable), as well as the "PEP 523 function" (`tstate->interp->eval_frame`).
 The interpreter state also holds the optimizer state (`optimizer` and some counters).
@@ -87,4 +88,4 @@ Tier 2 IR entries are all the same size; there is no equivalent to `EXTENDED_ARG
 
 - **opcode**: Sometimes the same as a Tier 1 opcode, sometimes a separate micro opcode. Tier 2 opcodes are 9 bits (as opposed to Tier 1 opcodes, which fit in 8 bits). By convention, Tier 2 opcode names start with `_`.
 - **oparg**: The argument. Usually the same as the Tier 1 oparg after expansion of `EXTENDED_ARG` prefixes. Up to 32 bits.
-- **operand**: An aditional argument, Typically the value of *one* cache item from the Tier 1 inline cache, up to 64 bits.
+- **operand**: An additional argument, Typically the value of *one* cache item from the Tier 1 inline cache, up to 64 bits.

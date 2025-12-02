@@ -86,16 +86,15 @@ Specializing JSON object encoding::
     '[2.0, 1.0]'
 
 
-Using json.tool from the shell to validate and pretty-print::
+Using json from the shell to validate and pretty-print::
 
-    $ echo '{"json":"obj"}' | python -m json.tool
+    $ echo '{"json":"obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{ 1.2:3.4}' | python -m json.tool
+    $ echo '{ 1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
 """
-__version__ = '2.0.9'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
@@ -357,3 +356,12 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     if parse_constant is not None:
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "2.0.9"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

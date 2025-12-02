@@ -459,9 +459,11 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(event), },
     };
     #undef NUM_KEYWORDS
@@ -484,7 +486,8 @@ _overlapped_Overlapped(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
     HANDLE event = INVALID_HANDLE_VALUE;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -515,9 +518,9 @@ static PyObject *
 _overlapped_Overlapped_cancel_impl(OverlappedObject *self);
 
 static PyObject *
-_overlapped_Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
+_overlapped_Overlapped_cancel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _overlapped_Overlapped_cancel_impl(self);
+    return _overlapped_Overlapped_cancel_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_overlapped_Overlapped_getresult__doc__,
@@ -536,7 +539,7 @@ static PyObject *
 _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait);
 
 static PyObject *
-_overlapped_Overlapped_getresult(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_getresult(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     BOOL wait = FALSE;
@@ -552,7 +555,7 @@ _overlapped_Overlapped_getresult(OverlappedObject *self, PyObject *const *args, 
         goto exit;
     }
 skip_optional:
-    return_value = _overlapped_Overlapped_getresult_impl(self, wait);
+    return_value = _overlapped_Overlapped_getresult_impl((OverlappedObject *)self, wait);
 
 exit:
     return return_value;
@@ -607,7 +610,7 @@ _overlapped_Overlapped_ReadFile_impl(OverlappedObject *self, HANDLE handle,
                                      DWORD size);
 
 static PyObject *
-_overlapped_Overlapped_ReadFile(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_ReadFile(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -623,7 +626,7 @@ _overlapped_Overlapped_ReadFile(OverlappedObject *self, PyObject *const *args, P
     if (!_PyLong_UnsignedLong_Converter(args[1], &size)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_ReadFile_impl(self, handle, size);
+    return_value = _overlapped_Overlapped_ReadFile_impl((OverlappedObject *)self, handle, size);
 
 exit:
     return return_value;
@@ -643,7 +646,7 @@ _overlapped_Overlapped_ReadFileInto_impl(OverlappedObject *self,
                                          HANDLE handle, Py_buffer *bufobj);
 
 static PyObject *
-_overlapped_Overlapped_ReadFileInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_ReadFileInto(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -659,7 +662,7 @@ _overlapped_Overlapped_ReadFileInto(OverlappedObject *self, PyObject *const *arg
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_ReadFileInto_impl(self, handle, &bufobj);
+    return_value = _overlapped_Overlapped_ReadFileInto_impl((OverlappedObject *)self, handle, &bufobj);
 
 exit:
     /* Cleanup for bufobj */
@@ -684,7 +687,7 @@ _overlapped_Overlapped_WSARecv_impl(OverlappedObject *self, HANDLE handle,
                                     DWORD size, DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_WSARecv(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSARecv(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -708,7 +711,7 @@ _overlapped_Overlapped_WSARecv(OverlappedObject *self, PyObject *const *args, Py
         goto exit;
     }
 skip_optional:
-    return_value = _overlapped_Overlapped_WSARecv_impl(self, handle, size, flags);
+    return_value = _overlapped_Overlapped_WSARecv_impl((OverlappedObject *)self, handle, size, flags);
 
 exit:
     return return_value;
@@ -729,7 +732,7 @@ _overlapped_Overlapped_WSARecvInto_impl(OverlappedObject *self,
                                         DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_WSARecvInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSARecvInto(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -749,7 +752,7 @@ _overlapped_Overlapped_WSARecvInto(OverlappedObject *self, PyObject *const *args
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WSARecvInto_impl(self, handle, &bufobj, flags);
+    return_value = _overlapped_Overlapped_WSARecvInto_impl((OverlappedObject *)self, handle, &bufobj, flags);
 
 exit:
     /* Cleanup for bufobj */
@@ -774,7 +777,7 @@ _overlapped_Overlapped_WriteFile_impl(OverlappedObject *self, HANDLE handle,
                                       Py_buffer *bufobj);
 
 static PyObject *
-_overlapped_Overlapped_WriteFile(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WriteFile(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -790,7 +793,7 @@ _overlapped_Overlapped_WriteFile(OverlappedObject *self, PyObject *const *args, 
     if (PyObject_GetBuffer(args[1], &bufobj, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WriteFile_impl(self, handle, &bufobj);
+    return_value = _overlapped_Overlapped_WriteFile_impl((OverlappedObject *)self, handle, &bufobj);
 
 exit:
     /* Cleanup for bufobj */
@@ -815,7 +818,7 @@ _overlapped_Overlapped_WSASend_impl(OverlappedObject *self, HANDLE handle,
                                     Py_buffer *bufobj, DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_WSASend(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSASend(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -835,7 +838,7 @@ _overlapped_Overlapped_WSASend(OverlappedObject *self, PyObject *const *args, Py
     if (!_PyLong_UnsignedLong_Converter(args[2], &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_WSASend_impl(self, handle, &bufobj, flags);
+    return_value = _overlapped_Overlapped_WSASend_impl((OverlappedObject *)self, handle, &bufobj, flags);
 
 exit:
     /* Cleanup for bufobj */
@@ -861,7 +864,7 @@ _overlapped_Overlapped_AcceptEx_impl(OverlappedObject *self,
                                      HANDLE AcceptSocket);
 
 static PyObject *
-_overlapped_Overlapped_AcceptEx(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_AcceptEx(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE ListenSocket;
@@ -878,7 +881,7 @@ _overlapped_Overlapped_AcceptEx(OverlappedObject *self, PyObject *const *args, P
     if (!AcceptSocket && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_AcceptEx_impl(self, ListenSocket, AcceptSocket);
+    return_value = _overlapped_Overlapped_AcceptEx_impl((OverlappedObject *)self, ListenSocket, AcceptSocket);
 
 exit:
     return return_value;
@@ -901,7 +904,7 @@ _overlapped_Overlapped_ConnectEx_impl(OverlappedObject *self,
                                       PyObject *AddressObj);
 
 static PyObject *
-_overlapped_Overlapped_ConnectEx(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_ConnectEx(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE ConnectSocket;
@@ -919,7 +922,7 @@ _overlapped_Overlapped_ConnectEx(OverlappedObject *self, PyObject *const *args, 
         goto exit;
     }
     AddressObj = args[1];
-    return_value = _overlapped_Overlapped_ConnectEx_impl(self, ConnectSocket, AddressObj);
+    return_value = _overlapped_Overlapped_ConnectEx_impl((OverlappedObject *)self, ConnectSocket, AddressObj);
 
 exit:
     return return_value;
@@ -938,7 +941,7 @@ _overlapped_Overlapped_DisconnectEx_impl(OverlappedObject *self,
                                          HANDLE Socket, DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_DisconnectEx(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_DisconnectEx(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE Socket;
@@ -954,7 +957,7 @@ _overlapped_Overlapped_DisconnectEx(OverlappedObject *self, PyObject *const *arg
     if (!_PyLong_UnsignedLong_Converter(args[1], &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_DisconnectEx_impl(self, Socket, flags);
+    return_value = _overlapped_Overlapped_DisconnectEx_impl((OverlappedObject *)self, Socket, flags);
 
 exit:
     return return_value;
@@ -978,7 +981,7 @@ _overlapped_Overlapped_TransmitFile_impl(OverlappedObject *self,
                                          DWORD count_per_send, DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_TransmitFile(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_TransmitFile(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE Socket;
@@ -1015,7 +1018,7 @@ _overlapped_Overlapped_TransmitFile(OverlappedObject *self, PyObject *const *arg
     if (!_PyLong_UnsignedLong_Converter(args[6], &flags)) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_TransmitFile_impl(self, Socket, File, offset, offset_high, count_to_write, count_per_send, flags);
+    return_value = _overlapped_Overlapped_TransmitFile_impl((OverlappedObject *)self, Socket, File, offset, offset_high, count_to_write, count_per_send, flags);
 
 exit:
     return return_value;
@@ -1035,7 +1038,7 @@ _overlapped_Overlapped_ConnectNamedPipe_impl(OverlappedObject *self,
                                              HANDLE Pipe);
 
 static PyObject *
-_overlapped_Overlapped_ConnectNamedPipe(OverlappedObject *self, PyObject *arg)
+_overlapped_Overlapped_ConnectNamedPipe(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HANDLE Pipe;
@@ -1044,7 +1047,7 @@ _overlapped_Overlapped_ConnectNamedPipe(OverlappedObject *self, PyObject *arg)
     if (!Pipe && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_ConnectNamedPipe_impl(self, Pipe);
+    return_value = _overlapped_Overlapped_ConnectNamedPipe_impl((OverlappedObject *)self, Pipe);
 
 exit:
     return return_value;
@@ -1064,7 +1067,7 @@ _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
                                         const wchar_t *Address);
 
 static PyObject *
-_overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
+_overlapped_Overlapped_ConnectPipe(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const wchar_t *Address = NULL;
@@ -1077,7 +1080,7 @@ _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
     if (Address == NULL) {
         goto exit;
     }
-    return_value = _overlapped_Overlapped_ConnectPipe_impl(self, Address);
+    return_value = _overlapped_Overlapped_ConnectPipe_impl((OverlappedObject *)self, Address);
 
 exit:
     /* Cleanup for Address */
@@ -1139,7 +1142,7 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
                                       PyObject *AddressObj);
 
 static PyObject *
-_overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSASendTo(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -1165,7 +1168,7 @@ _overlapped_Overlapped_WSASendTo(OverlappedObject *self, PyObject *const *args, 
         goto exit;
     }
     AddressObj = args[3];
-    return_value = _overlapped_Overlapped_WSASendTo_impl(self, handle, &bufobj, flags, AddressObj);
+    return_value = _overlapped_Overlapped_WSASendTo_impl((OverlappedObject *)self, handle, &bufobj, flags, AddressObj);
 
 exit:
     /* Cleanup for bufobj */
@@ -1191,7 +1194,7 @@ _overlapped_Overlapped_WSARecvFrom_impl(OverlappedObject *self,
                                         DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSARecvFrom(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -1215,7 +1218,7 @@ _overlapped_Overlapped_WSARecvFrom(OverlappedObject *self, PyObject *const *args
         goto exit;
     }
 skip_optional:
-    return_value = _overlapped_Overlapped_WSARecvFrom_impl(self, handle, size, flags);
+    return_value = _overlapped_Overlapped_WSARecvFrom_impl((OverlappedObject *)self, handle, size, flags);
 
 exit:
     return return_value;
@@ -1236,7 +1239,7 @@ _overlapped_Overlapped_WSARecvFromInto_impl(OverlappedObject *self,
                                             DWORD size, DWORD flags);
 
 static PyObject *
-_overlapped_Overlapped_WSARecvFromInto(OverlappedObject *self, PyObject *const *args, Py_ssize_t nargs)
+_overlapped_Overlapped_WSARecvFromInto(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -1264,7 +1267,7 @@ _overlapped_Overlapped_WSARecvFromInto(OverlappedObject *self, PyObject *const *
         goto exit;
     }
 skip_optional:
-    return_value = _overlapped_Overlapped_WSARecvFromInto_impl(self, handle, &bufobj, size, flags);
+    return_value = _overlapped_Overlapped_WSARecvFromInto_impl((OverlappedObject *)self, handle, &bufobj, size, flags);
 
 exit:
     /* Cleanup for bufobj */
@@ -1274,4 +1277,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1f395db21c8adb3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e4cb2b55342cd96 input=a9049054013a1b77]*/

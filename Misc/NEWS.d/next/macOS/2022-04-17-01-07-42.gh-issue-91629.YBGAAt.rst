@@ -1,1 +1,0 @@
-Use :file:`~/.config/fish/conf.d` configs and :program:`fish_add_path` to set :envvar:`PATH` when installing for the Fish shell.

@@ -1,5 +1,5 @@
-:mod:`trace` --- Trace or track Python statement execution
-==========================================================
+:mod:`!trace` --- Trace or track Python statement execution
+===========================================================
 
 .. module:: trace
    :synopsis: Trace or track Python statement execution.
