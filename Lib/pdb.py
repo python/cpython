@@ -1487,7 +1487,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             f = self.lookupmodule(parts[0])
             if f:
                 fname = f
-            item = parts[1]
+                item = parts[1]
+            else:
+                return failed
         answer = find_function(item, self.canonic(fname))
         return answer or failed
 
