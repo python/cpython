@@ -339,7 +339,7 @@ General Options
    .. code-block:: json
 
       {
-          "_gdbm": "The '_gdbm' module is not available in this distribution"
+          "_gdbm": "The '_gdbm' module is not available in this distribution",
           "tkinter": "Install the python-tk package to use tkinter",
           "_tkinter": "Install the python-tk package to use tkinter",
       }
