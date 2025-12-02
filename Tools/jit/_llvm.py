@@ -80,7 +80,7 @@ async def _find_tool(
 ) -> str | None:
     # Explicitly defined LLVM installation location
     if llvm_tools_install_dir:
-        path = os.path.join(llvm_tools_install_dir, tool)
+        path = os.path.join(llvm_tools_install_dir, "bin", tool)
         if await _check_tool_version(path, llvm_version, echo=echo):
             return path
     # Unversioned executables:
