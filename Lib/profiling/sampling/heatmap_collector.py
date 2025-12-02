@@ -927,7 +927,7 @@ class HeatmapCollector(StackTraceCollector):
 
             self_display = f"{self_samples:,}" if self_samples > 0 else ""
             cumulative_display = f"{cumulative_samples:,}"
-            tooltip = f"Self: {self_samples:,}, Cumulative: {cumulative_samples:,}"
+            tooltip = f"Self: {self_samples:,}, Total: {cumulative_samples:,}"
         else:
             bg_color = "transparent"
             self_bg_color = "transparent"
