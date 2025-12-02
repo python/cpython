@@ -341,7 +341,7 @@ class ProactorTests(WindowsEventsTestCase):
             self.loop.remove_writer(object())
 
     def test_selector_thread(self):
-        assert self.loop._selector_thread is None
+        self.assertIsNone(self.loop._selector_thread)
         a, b = socket.socketpair()
 
         async def _test():
@@ -358,21 +358,21 @@ class ProactorTests(WindowsEventsTestCase):
 
             self.loop.add_reader(b, read)
             _selector_thread = self.loop._selector_thread
-            assert b.fileno() in _selector_thread._readers
-            assert _selector_thread is not None
+            self.assertIn(b.fileno(), _selector_thread._readers)
+            self.assertIsNotNone(_selector_thread)
             self.loop.add_writer(a, write)
-            assert self.loop._selector_thread is _selector_thread
-            assert a.fileno() in _selector_thread._writers
+            self.assertIs(self.loop._selector_thread, _selector_thread)
+            self.assertIn(a.fileno(), _selector_thread._writers)
             msg = await asyncio.wait_for(read_future, timeout=10)
 
             self.loop.remove_writer(a)
-            assert a.fileno() not in _selector_thread._writers
+            self.assertNotIn(a.fileno(), _selector_thread._writers)
             self.loop.remove_reader(b)
-            assert b.fileno() not in _selector_thread._readers
+            self.assertNotIn(b.fileno(), _selector_thread._readers)
             a.close()
             b.close()
-            assert self.loop._selector_thread is _selector_thread
-            assert msg == sent
+            self.assertIs(self.loop._selector_thread, _selector_thread)
+            self.assertEqual(msg, sent)
 
         self.loop.run_until_complete(_test())
 

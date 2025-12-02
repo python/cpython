@@ -109,15 +109,15 @@ class SelectorThreadTest((unittest.IsolatedAsyncioTestCase)):
             read_future.set_result(msg)
 
         selector_thread.add_reader(b, read)
-        assert b.fileno() in selector_thread._readers
+        self.assertIn(b.fileno(), selector_thread._readers)
         selector_thread.add_writer(a, write)
-        assert a.fileno() in selector_thread._writers
+        self.assertIn(a.fileno(), selector_thread._writers)
         msg = await asyncio.wait_for(read_future, timeout=10)
 
         selector_thread.remove_writer(a)
-        assert a.fileno() not in selector_thread._writers
+        self.assertNotIn(a.fileno() , selector_thread._writers)
         selector_thread.remove_reader(b)
-        assert b.fileno() not in selector_thread._readers
+        self.assertNotIn(b.fileno() , selector_thread._readers)
         a.close()
         b.close()
-        assert msg == sent
+        self.assertEqual(msg, sent)
