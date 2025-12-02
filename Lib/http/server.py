@@ -1293,6 +1293,11 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 while select.select([self.rfile._sock], [], [], 0)[0]:
                     if not self.rfile._sock.recv(1):
                         break
+                try:
+                    p.stdin.close()
+                except OSError:
+                    # already closed?
+                    pass
             if self.command.lower() == "post" and nbytes > 0:
                 def _in_task():
                     """Pipe the input into the process stdin"""
@@ -1312,11 +1317,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                         bytes_left -= len(data)
                         p.stdin.write(data)
                     finish_request()
-                    try:
-                        p.stdin.close()
-                    except OSError:
-                        # already closed
-                        pass
                 request_relay_thread = threading.Thread(target=_in_task)
                 request_relay_thread.start()
             else:
