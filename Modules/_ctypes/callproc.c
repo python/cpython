@@ -620,9 +620,6 @@ PyType_Spec carg_spec = {
  *    by value, or a 2-tuple or 3-tuple which will be used according
  *    to point 2 above. The third item (if any), is ignored. It is normally
  *    used to keep the object alive where this parameter refers to.
- *    XXX This convention is dangerous - you can construct arbitrary tuples
- *    in Python and pass them. Would it be safer to use a custom container
- *    datatype instead of a tuple?
  *
  * 4. Other Python objects cannot be passed as parameters - an exception is raised.
  *

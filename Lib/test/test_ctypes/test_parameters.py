@@ -297,6 +297,20 @@ class SimpleTypesTestCase(unittest.TestCase):
 
         self.assertEqual(trace, [1, 2, 3, 4, 5])
 
+    def test_as_parameter_tuple(self):
+        class Dangerous(object):
+            @property
+            def _as_parameter_(self):
+                return ('i', 42)
+
+        func = CDLL(_ctypes_test.__file__)._testfunc_p_p
+        func.restype = c_int
+        # func.argtypes = [c_void_p]  # Do not set argtypes to force default conversion
+
+        # Should raise TypeError because tuples are not supported in default conversion
+        with self.assertRaisesRegex(TypeError, "Don't know how to convert parameter 1"):
+            func(Dangerous(), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
