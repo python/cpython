@@ -1,2 +1,1 @@
-Jit stencils should not contain debug data. Only Windows was affected. Fixed
-by Chris Eibl.
+Fixed a bug where JIT stencils produced on Windows contained debug data. Patch by Chris Eibl.
