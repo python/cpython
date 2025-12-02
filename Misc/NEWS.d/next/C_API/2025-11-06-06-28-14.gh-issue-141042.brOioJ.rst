@@ -1,3 +1,0 @@
-Make qNaN in :c:func:`PyFloat_Pack2` and :c:func:`PyFloat_Pack4`, if while
-conversion to a narrower precision floating-point format --- the remaining
-after truncation payload will be zero.  Patch by Sergey B Kirpichev.
