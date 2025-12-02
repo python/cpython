@@ -163,15 +163,14 @@ special_type(double d)
    raised.
 */
 
-#define C(R, I) {(R), (I)}
 static Py_complex acos_special_values[7][7] = {
-  { C(P34,INF), C(P,INF),  C(P,INF),  C(P,-INF),  C(P,-INF),  C(P34,-INF), C(N,INF) },
-  { C(P12,INF), C(U,U),    C(U,U),    C(U,U),     C(U,U),     C(P12,-INF), C(N,N) },
-  { C(P12,INF), C(U,U),    C(P12,0.), C(P12,-0.), C(U,U),     C(P12,-INF), C(P12,N) },
-  { C(P12,INF), C(U,U),    C(P12,0.), C(P12,-0.), C(U,U),     C(P12,-INF), C(P12,N) },
-  { C(P12,INF), C(U,U),    C(U,U),    C(U,U),     C(U,U),     C(P12,-INF), C(N,N) },
-  { C(P14,INF), C(0.,INF), C(0.,INF), C(0.,-INF), C(0.,-INF), C(P14,-INF), C(N,INF) },
-  { C(N,INF),   C(N,N),    C(N,N),    C(N,N),     C(N,N),     C(N,-INF),   C(N,N) }
+  { {P34,INF}, {P,INF},  {P,INF},  {P,-INF},  {P,-INF},  {P34,-INF}, {N,INF} },
+  { {P12,INF}, {U,U},    {U,U},    {U,U},     {U,U},     {P12,-INF}, {N,N} },
+  { {P12,INF}, {U,U},    {P12,0.}, {P12,-0.}, {U,U},     {P12,-INF}, {P12,N} },
+  { {P12,INF}, {U,U},    {P12,0.}, {P12,-0.}, {U,U},     {P12,-INF}, {P12,N} },
+  { {P12,INF}, {U,U},    {U,U},    {U,U},     {U,U},     {P12,-INF}, {N,N} },
+  { {P14,INF}, {0.,INF}, {0.,INF}, {0.,-INF}, {0.,-INF}, {P14,-INF}, {N,INF} },
+  { {N,INF},   {N,N},    {N,N},    {N,N},     {N,N},     {N,-INF},   {N,N} }
 };
 /*[clinic input]
 cmath.acos -> Py_complex_protected
@@ -211,13 +210,13 @@ cmath_acos_impl(PyObject *module, Py_complex z)
 
 
 static Py_complex acosh_special_values[7][7] = {
-  { C(INF,-P34), C(INF,-P),  C(INF,-P),  C(INF,P),  C(INF,P),  C(INF,P34), C(INF,N) },
-  { C(INF,-P12), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,P12), C(N,N) },
-  { C(INF,-P12), C(U,U),     C(0.,-P12), C(0.,P12), C(U,U),    C(INF,P12), C(N,P12) },
-  { C(INF,-P12), C(U,U),     C(0.,-P12), C(0.,P12), C(U,U),    C(INF,P12), C(N,P12) },
-  { C(INF,-P12), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,P12), C(N,N) },
-  { C(INF,-P14), C(INF,-0.), C(INF,-0.), C(INF,0.), C(INF,0.), C(INF,P14), C(INF,N) },
-  { C(INF,N),    C(N,N),     C(N,N),     C(N,N),    C(N,N),    C(INF,N),   C(N,N) }
+  { {INF,-P34}, {INF,-P},  {INF,-P},  {INF,P},  {INF,P},  {INF,P34}, {INF,N} },
+  { {INF,-P12}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,P12}, {N,N} },
+  { {INF,-P12}, {U,U},     {0.,-P12}, {0.,P12}, {U,U},    {INF,P12}, {N,P12} },
+  { {INF,-P12}, {U,U},     {0.,-P12}, {0.,P12}, {U,U},    {INF,P12}, {N,P12} },
+  { {INF,-P12}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,P12}, {N,N} },
+  { {INF,-P14}, {INF,-0.}, {INF,-0.}, {INF,0.}, {INF,0.}, {INF,P14}, {INF,N} },
+  { {INF,N},    {N,N},     {N,N},     {N,N},    {N,N},    {INF,N},   {N,N} }
 };
 
 /*[clinic input]
@@ -274,13 +273,13 @@ cmath_asin_impl(PyObject *module, Py_complex z)
 
 
 static Py_complex asinh_special_values[7][7] = {
-  { C(-INF,-P14), C(-INF,-0.), C(-INF,-0.), C(-INF,0.), C(-INF,0.), C(-INF,P14), C(-INF,N) },
-  { C(-INF,-P12), C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(-INF,P12), C(N,N) },
-  { C(-INF,-P12), C(U,U),      C(-0.,-0.),  C(-0.,0.),  C(U,U),     C(-INF,P12), C(N,N) },
-  { C(INF,-P12),  C(U,U),      C(0.,-0.),   C(0.,0.),   C(U,U),     C(INF,P12),  C(N,N) },
-  { C(INF,-P12),  C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(INF,P12),  C(N,N) },
-  { C(INF,-P14),  C(INF,-0.),  C(INF,-0.),  C(INF,0.),  C(INF,0.),  C(INF,P14),  C(INF,N) },
-  { C(INF,N),     C(N,N),      C(N,-0.),    C(N,0.),    C(N,N),     C(INF,N),    C(N,N) }
+  { {-INF,-P14}, {-INF,-0.}, {-INF,-0.}, {-INF,0.}, {-INF,0.}, {-INF,P14}, {-INF,N} },
+  { {-INF,-P12}, {U,U},      {U,U},      {U,U},     {U,U},     {-INF,P12}, {N,N} },
+  { {-INF,-P12}, {U,U},      {-0.,-0.},  {-0.,0.},  {U,U},     {-INF,P12}, {N,N} },
+  { {INF,-P12},  {U,U},      {0.,-0.},   {0.,0.},   {U,U},     {INF,P12},  {N,N} },
+  { {INF,-P12},  {U,U},      {U,U},      {U,U},     {U,U},     {INF,P12},  {N,N} },
+  { {INF,-P14},  {INF,-0.},  {INF,-0.},  {INF,0.},  {INF,0.},  {INF,P14},  {INF,N} },
+  { {INF,N},     {N,N},      {N,-0.},    {N,0.},    {N,N},     {INF,N},    {N,N} }
 };
 
 /*[clinic input]
@@ -343,13 +342,13 @@ cmath_atan_impl(PyObject *module, Py_complex z)
 
 
 static Py_complex atanh_special_values[7][7] = {
-  { C(-0.,-P12), C(-0.,-P12), C(-0.,-P12), C(-0.,P12), C(-0.,P12), C(-0.,P12), C(-0.,N) },
-  { C(-0.,-P12), C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(-0.,P12), C(N,N) },
-  { C(-0.,-P12), C(U,U),      C(-0.,-0.),  C(-0.,0.),  C(U,U),     C(-0.,P12), C(-0.,N) },
-  { C(0.,-P12),  C(U,U),      C(0.,-0.),   C(0.,0.),   C(U,U),     C(0.,P12),  C(0.,N) },
-  { C(0.,-P12),  C(U,U),      C(U,U),      C(U,U),     C(U,U),     C(0.,P12),  C(N,N) },
-  { C(0.,-P12),  C(0.,-P12),  C(0.,-P12),  C(0.,P12),  C(0.,P12),  C(0.,P12),  C(0.,N) },
-  { C(0.,-P12),  C(N,N),      C(N,N),      C(N,N),     C(N,N),     C(0.,P12),  C(N,N) }
+  { {-0.,-P12}, {-0.,-P12}, {-0.,-P12}, {-0.,P12}, {-0.,P12}, {-0.,P12}, {-0.,N} },
+  { {-0.,-P12}, {U,U},      {U,U},      {U,U},     {U,U},     {-0.,P12}, {N,N} },
+  { {-0.,-P12}, {U,U},      {-0.,-0.},  {-0.,0.},  {U,U},     {-0.,P12}, {-0.,N} },
+  { {0.,-P12},  {U,U},      {0.,-0.},   {0.,0.},   {U,U},     {0.,P12},  {0.,N} },
+  { {0.,-P12},  {U,U},      {U,U},      {U,U},     {U,U},     {0.,P12},  {N,N} },
+  { {0.,-P12},  {0.,-P12},  {0.,-P12},  {0.,P12},  {0.,P12},  {0.,P12},  {0.,N} },
+  { {0.,-P12},  {N,N},      {N,N},      {N,N},     {N,N},     {0.,P12},  {N,N} }
 };
 
 /*[clinic input]
@@ -424,13 +423,13 @@ cmath_cos_impl(PyObject *module, Py_complex z)
 
 /* cosh(infinity + i*y) needs to be dealt with specially */
 static Py_complex cosh_special_values[7][7] = {
-  { C(INF,N), C(U,U), C(INF,0.),  C(INF,-0.), C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),     C(U,U), C(N,N),   C(N,N) },
-  { C(N,0.),  C(U,U), C(1.,0.),   C(1.,-0.),  C(U,U), C(N,0.),  C(N,0.) },
-  { C(N,0.),  C(U,U), C(1.,-0.),  C(1.,0.),   C(U,U), C(N,0.),  C(N,0.) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),     C(U,U), C(N,N),   C(N,N) },
-  { C(INF,N), C(U,U), C(INF,-0.), C(INF,0.),  C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(N,N), C(N,0.),    C(N,0.),    C(N,N), C(N,N),   C(N,N) }
+  { {INF,N}, {U,U}, {INF,0.},  {INF,-0.}, {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {U,U}, {U,U},     {U,U},     {U,U}, {N,N},   {N,N} },
+  { {N,0.},  {U,U}, {1.,0.},   {1.,-0.},  {U,U}, {N,0.},  {N,0.} },
+  { {N,0.},  {U,U}, {1.,-0.},  {1.,0.},   {U,U}, {N,0.},  {N,0.} },
+  { {N,N},   {U,U}, {U,U},     {U,U},     {U,U}, {N,N},   {N,N} },
+  { {INF,N}, {U,U}, {INF,-0.}, {INF,0.},  {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {N,N}, {N,0.},    {N,0.},    {N,N}, {N,N},   {N,N} }
 };
 
 /*[clinic input]
@@ -494,13 +493,13 @@ cmath_cosh_impl(PyObject *module, Py_complex z)
 /* exp(infinity + i*y) and exp(-infinity + i*y) need special treatment for
    finite y */
 static Py_complex exp_special_values[7][7] = {
-  { C(0.,0.), C(U,U), C(0.,-0.),  C(0.,0.),  C(U,U), C(0.,0.), C(0.,0.) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),   C(N,N) },
-  { C(N,N),   C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(N,N),   C(N,N) },
-  { C(N,N),   C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(N,N),   C(N,N) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),   C(N,N) },
-  { C(INF,N), C(U,U), C(INF,-0.), C(INF,0.), C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(N,N), C(N,-0.),   C(N,0.),   C(N,N), C(N,N),   C(N,N) }
+  { {0.,0.}, {U,U}, {0.,-0.},  {0.,0.},  {U,U}, {0.,0.}, {0.,0.} },
+  { {N,N},   {U,U}, {U,U},     {U,U},    {U,U}, {N,N},   {N,N} },
+  { {N,N},   {U,U}, {1.,-0.},  {1.,0.},  {U,U}, {N,N},   {N,N} },
+  { {N,N},   {U,U}, {1.,-0.},  {1.,0.},  {U,U}, {N,N},   {N,N} },
+  { {N,N},   {U,U}, {U,U},     {U,U},    {U,U}, {N,N},   {N,N} },
+  { {INF,N}, {U,U}, {INF,-0.}, {INF,0.}, {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {N,N}, {N,-0.},   {N,0.},   {N,N}, {N,N},   {N,N} }
 };
 
 /*[clinic input]
@@ -561,13 +560,13 @@ cmath_exp_impl(PyObject *module, Py_complex z)
 }
 
 static Py_complex log_special_values[7][7] = {
-  { C(INF,-P34), C(INF,-P),  C(INF,-P),   C(INF,P),   C(INF,P),  C(INF,P34),  C(INF,N) },
-  { C(INF,-P12), C(U,U),     C(U,U),      C(U,U),     C(U,U),    C(INF,P12),  C(N,N) },
-  { C(INF,-P12), C(U,U),     C(-INF,-P),  C(-INF,P),  C(U,U),    C(INF,P12),  C(N,N) },
-  { C(INF,-P12), C(U,U),     C(-INF,-0.), C(-INF,0.), C(U,U),    C(INF,P12),  C(N,N) },
-  { C(INF,-P12), C(U,U),     C(U,U),      C(U,U),     C(U,U),    C(INF,P12),  C(N,N) },
-  { C(INF,-P14), C(INF,-0.), C(INF,-0.),  C(INF,0.),  C(INF,0.), C(INF,P14),  C(INF,N) },
-  { C(INF,N),    C(N,N),     C(N,N),      C(N,N),     C(N,N),    C(INF,N),    C(N,N) }
+  { {INF,-P34}, {INF,-P},  {INF,-P},   {INF,P},   {INF,P},  {INF,P34},  {INF,N} },
+  { {INF,-P12}, {U,U},     {U,U},      {U,U},     {U,U},    {INF,P12},  {N,N} },
+  { {INF,-P12}, {U,U},     {-INF,-P},  {-INF,P},  {U,U},    {INF,P12},  {N,N} },
+  { {INF,-P12}, {U,U},     {-INF,-0.}, {-INF,0.}, {U,U},    {INF,P12},  {N,N} },
+  { {INF,-P12}, {U,U},     {U,U},      {U,U},     {U,U},    {INF,P12},  {N,N} },
+  { {INF,-P14}, {INF,-0.}, {INF,-0.},  {INF,0.},  {INF,0.}, {INF,P14},  {INF,N} },
+  { {INF,N},    {N,N},     {N,N},      {N,N},     {N,N},    {INF,N},    {N,N} }
 };
 
 static Py_complex
@@ -685,13 +684,13 @@ cmath_sin_impl(PyObject *module, Py_complex z)
 
 /* sinh(infinity + i*y) needs to be dealt with specially */
 static Py_complex sinh_special_values[7][7] = {
-  { C(INF,N), C(U,U), C(-INF,-0.), C(-INF,0.), C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(U,U), C(U,U),      C(U,U),     C(U,U), C(N,N),   C(N,N) },
-  { C(0.,N),  C(U,U), C(-0.,-0.),  C(-0.,0.),  C(U,U), C(0.,N),  C(0.,N) },
-  { C(0.,N),  C(U,U), C(0.,-0.),   C(0.,0.),   C(U,U), C(0.,N),  C(0.,N) },
-  { C(N,N),   C(U,U), C(U,U),      C(U,U),     C(U,U), C(N,N),   C(N,N) },
-  { C(INF,N), C(U,U), C(INF,-0.),  C(INF,0.),  C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(N,N), C(N,-0.),    C(N,0.),    C(N,N), C(N,N),   C(N,N) }
+  { {INF,N}, {U,U}, {-INF,-0.}, {-INF,0.}, {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {U,U}, {U,U},      {U,U},     {U,U}, {N,N},   {N,N} },
+  { {0.,N},  {U,U}, {-0.,-0.},  {-0.,0.},  {U,U}, {0.,N},  {0.,N} },
+  { {0.,N},  {U,U}, {0.,-0.},   {0.,0.},   {U,U}, {0.,N},  {0.,N} },
+  { {N,N},   {U,U}, {U,U},      {U,U},     {U,U}, {N,N},   {N,N} },
+  { {INF,N}, {U,U}, {INF,-0.},  {INF,0.},  {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {N,N}, {N,-0.},    {N,0.},    {N,N}, {N,N},   {N,N} }
 };
 
 /*[clinic input]
@@ -752,13 +751,13 @@ cmath_sinh_impl(PyObject *module, Py_complex z)
 
 
 static Py_complex sqrt_special_values[7][7] = {
-  { C(INF,-INF), C(0.,-INF), C(0.,-INF), C(0.,INF), C(0.,INF), C(INF,INF), C(N,INF) },
-  { C(INF,-INF), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,INF), C(N,N) },
-  { C(INF,-INF), C(U,U),     C(0.,-0.),  C(0.,0.),  C(U,U),    C(INF,INF), C(N,N) },
-  { C(INF,-INF), C(U,U),     C(0.,-0.),  C(0.,0.),  C(U,U),    C(INF,INF), C(N,N) },
-  { C(INF,-INF), C(U,U),     C(U,U),     C(U,U),    C(U,U),    C(INF,INF), C(N,N) },
-  { C(INF,-INF), C(INF,-0.), C(INF,-0.), C(INF,0.), C(INF,0.), C(INF,INF), C(INF,N) },
-  { C(INF,-INF), C(N,N),     C(N,N),     C(N,N),    C(N,N),    C(INF,INF), C(N,N) }
+  { {INF,-INF}, {0.,-INF}, {0.,-INF}, {0.,INF}, {0.,INF}, {INF,INF}, {N,INF} },
+  { {INF,-INF}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,INF}, {N,N} },
+  { {INF,-INF}, {U,U},     {0.,-0.},  {0.,0.},  {U,U},    {INF,INF}, {N,N} },
+  { {INF,-INF}, {U,U},     {0.,-0.},  {0.,0.},  {U,U},    {INF,INF}, {N,N} },
+  { {INF,-INF}, {U,U},     {U,U},     {U,U},    {U,U},    {INF,INF}, {N,N} },
+  { {INF,-INF}, {INF,-0.}, {INF,-0.}, {INF,0.}, {INF,0.}, {INF,INF}, {INF,N} },
+  { {INF,-INF}, {N,N},     {N,N},     {N,N},    {N,N},    {INF,INF}, {N,N} }
 };
 
 /*[clinic input]
@@ -859,13 +858,13 @@ cmath_tan_impl(PyObject *module, Py_complex z)
 
 /* tanh(infinity + i*y) needs to be dealt with specially */
 static Py_complex tanh_special_values[7][7] = {
-  { C(-1.,0.), C(U,U), C(-1.,-0.), C(-1.,0.), C(U,U), C(-1.,0.), C(-1.,0.) },
-  { C(N,N),    C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),    C(N,N) },
-  { C(-0.0,N), C(U,U), C(-0.,-0.), C(-0.,0.), C(U,U), C(-0.0,N), C(-0.,N) },
-  { C(0.0,N),  C(U,U), C(0.,-0.),  C(0.,0.),  C(U,U), C(0.0,N),  C(0.,N) },
-  { C(N,N),    C(U,U), C(U,U),     C(U,U),    C(U,U), C(N,N),    C(N,N) },
-  { C(1.,0.),  C(U,U), C(1.,-0.),  C(1.,0.),  C(U,U), C(1.,0.),  C(1.,0.) },
-  { C(N,N),    C(N,N), C(N,-0.),   C(N,0.),   C(N,N), C(N,N),    C(N,N) }
+  { {-1.,0.}, {U,U}, {-1.,-0.}, {-1.,0.}, {U,U}, {-1.,0.}, {-1.,0.} },
+  { {N,N},    {U,U}, {U,U},     {U,U},    {U,U}, {N,N},    {N,N} },
+  { {-0.0,N}, {U,U}, {-0.,-0.}, {-0.,0.}, {U,U}, {-0.0,N}, {-0.,N} },
+  { {0.0,N},  {U,U}, {0.,-0.},  {0.,0.},  {U,U}, {0.0,N},  {0.,N} },
+  { {N,N},    {U,U}, {U,U},     {U,U},    {U,U}, {N,N},    {N,N} },
+  { {1.,0.},  {U,U}, {1.,-0.},  {1.,0.},  {U,U}, {1.,0.},  {1.,0.} },
+  { {N,N},    {N,N}, {N,-0.},   {N,0.},   {N,N}, {N,N},    {N,N} }
 };
 
 /*[clinic input]
@@ -1050,13 +1049,13 @@ cmath_polar_impl(PyObject *module, Py_complex z)
 */
 
 static Py_complex rect_special_values[7][7] = {
-  { C(INF,N), C(U,U), C(-INF,0.), C(-INF,-0.), C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),      C(U,U), C(N,N),   C(N,N) },
-  { C(0.,0.), C(U,U), C(-0.,0.),  C(-0.,-0.),  C(U,U), C(0.,0.), C(0.,0.) },
-  { C(0.,0.), C(U,U), C(0.,-0.),  C(0.,0.),    C(U,U), C(0.,0.), C(0.,0.) },
-  { C(N,N),   C(U,U), C(U,U),     C(U,U),      C(U,U), C(N,N),   C(N,N) },
-  { C(INF,N), C(U,U), C(INF,-0.), C(INF,0.),   C(U,U), C(INF,N), C(INF,N) },
-  { C(N,N),   C(N,N), C(N,0.),    C(N,0.),     C(N,N), C(N,N),   C(N,N) }
+  { {INF,N}, {U,U}, {-INF,0.}, {-INF,-0.}, {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {U,U}, {U,U},     {U,U},      {U,U}, {N,N},   {N,N} },
+  { {0.,0.}, {U,U}, {-0.,0.},  {-0.,-0.},  {U,U}, {0.,0.}, {0.,0.} },
+  { {0.,0.}, {U,U}, {0.,-0.},  {0.,0.},    {U,U}, {0.,0.}, {0.,0.} },
+  { {N,N},   {U,U}, {U,U},     {U,U},      {U,U}, {N,N},   {N,N} },
+  { {INF,N}, {U,U}, {INF,-0.}, {INF,0.},   {U,U}, {INF,N}, {INF,N} },
+  { {N,N},   {N,N}, {N,0.},    {N,0.},     {N,N}, {N,N},   {N,N} }
 };
 
 /*[clinic input]
