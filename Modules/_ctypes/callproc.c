@@ -739,6 +739,13 @@ static int ConvParam(ctypes_state *st,
            attribute)
         */
         if (arg) {
+            if (PyTuple_Check(arg) || PyList_Check(arg)) {
+                Py_DECREF(arg);
+                PyErr_Format(PyExc_TypeError,
+                             "Don't know how to convert parameter %d",
+                             Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
+                return -1;
+            }
             int result;
             result = ConvParam(st, arg, index, pa);
             Py_DECREF(arg);

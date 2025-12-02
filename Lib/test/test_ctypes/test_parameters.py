@@ -307,8 +307,8 @@ class SimpleTypesTestCase(unittest.TestCase):
         func.restype = c_int
         # func.argtypes = [c_void_p]  # Do not set argtypes to force default conversion
 
-        # Should raise TypeError because tuples are not supported in default conversion
-        with self.assertRaisesRegex(TypeError, "Don't know how to convert parameter 1"):
+        # Should raise ArgumentError because tuples are not supported in default conversion
+        with self.assertRaisesRegex(ArgumentError, "argument 1: TypeError: Don't know how to convert parameter 1"):
             func(Dangerous(), 0)
 
 

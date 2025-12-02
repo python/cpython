@@ -91,7 +91,9 @@ reftotal_add(PyThreadState *tstate, Py_ssize_t n)
     Py_ssize_t reftotal = tstate_impl->reftotal + n;
     _Py_atomic_store_ssize_relaxed(&tstate_impl->reftotal, reftotal);
 #else
-    REFTOTAL(tstate->interp) += n;
+    if (tstate && tstate->interp) {
+        REFTOTAL(tstate->interp) += n;
+    }
 #endif
 }
 
