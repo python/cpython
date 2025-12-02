@@ -1,0 +1,1 @@
+Fix `csv.Sniffer` to correctly handle CR (`\r`) and mixed line endings by using `splitlines()`.
