@@ -6,6 +6,7 @@ import json
 import linecache
 import os
 
+from ._css_utils import get_combined_css
 from .collector import Collector
 from .string_table import StringTable
 
@@ -331,9 +332,9 @@ class FlamegraphCollector(StackTraceCollector):
         fg_js_path = d3_flame_graph_dir / "d3-flamegraph.min.js"
         fg_tooltip_js_path = d3_flame_graph_dir / "d3-flamegraph-tooltip.min.js"
 
-        html_template = (template_dir / "flamegraph_template.html").read_text(encoding="utf-8")
-        css_content = (template_dir / "flamegraph.css").read_text(encoding="utf-8")
-        js_content = (template_dir / "flamegraph.js").read_text(encoding="utf-8")
+        html_template = (template_dir / "_flamegraph_assets" / "flamegraph_template.html").read_text(encoding="utf-8")
+        css_content = get_combined_css("flamegraph")
+        js_content = (template_dir /  "_flamegraph_assets" / "flamegraph.js").read_text(encoding="utf-8")
 
         # Inline first-party CSS/JS
         html_template = html_template.replace(

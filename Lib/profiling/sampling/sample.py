@@ -10,6 +10,7 @@ from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .constants import (
     PROFILING_MODE_WALL,
@@ -23,7 +24,6 @@ except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-
 
 
 class SampleProfiler:
