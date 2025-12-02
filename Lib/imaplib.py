@@ -112,7 +112,7 @@ InternalDate = re.compile(br'.*INTERNALDATE "'
         br'"')
 # Literal is no longer used; kept for backward compatibility.
 Literal = re.compile(br'.*{(?P<size>\d+)}$', re.ASCII)
-MapCRLF = re.compile(br'\r\n|\r|\n')
+MapCRLF = re.compile(br'[\r\n]')
 # We no longer exclude the ']' character from the data portion of the response
 # code, even though it violates the RFC.  Popular IMAP servers such as Gmail
 # allow flags with ']', and there are programs (including imaplib!) that can
@@ -130,6 +130,8 @@ Untagged_status = re.compile(
 _Literal = br'.*{(?P<size>\d+)}$'
 _Untagged_status = br'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?'
 
+_Atom_Specials = re.compile(r'[\x00-\x1F\(\)\{ %\*"\\\]]')
+_Quoted_Invalid = re.compile(r'[\r\n]')
 
 
 class IMAP4:
@@ -149,13 +151,10 @@ class IMAP4:
 
     All arguments to commands are converted to strings, except for
     AUTHENTICATE, and the last argument to APPEND which is passed as
-    an IMAP4 literal.  If necessary (the string contains any
-    non-printing characters or white-space and isn't enclosed with
-    either parentheses or double quotes) each string is quoted.
-    However, the 'password' argument to the LOGIN command is always
-    quoted.  If you want to avoid having an argument string quoted
-    (eg: the 'flags' argument to STORE) then enclose the string in
-    parentheses (eg: "(\Deleted)").
+    an IMAP4 literal.  If necessary, each string is quoted.  If you
+    want to avoid having an argument string quoted (eg: the 'flags'
+    argument to STORE) then enclose the string in parentheses
+    (eg: "(\Deleted)").
 
     Each command returns a tuple: (type, [data, ...]) where 'type'
     is usually 'OK' or 'NO', and 'data' is either the text from the
@@ -698,10 +697,8 @@ class IMAP4:
         """Identify client using plaintext password.
 
         (typ, [data]) = <instance>.login(user, password)
-
-        NB: 'password' will be quoted.
         """
-        typ, dat = self._simple_command('LOGIN', user, self._quote(password))
+        typ, dat = self._simple_command('LOGIN', user, password)
         if typ != 'OK':
             raise self.error(dat[-1])
         self.state = 'AUTH'
@@ -1104,6 +1101,12 @@ class IMAP4:
         for arg in args:
             if arg is None: continue
             if isinstance(arg, str):
+                if _Quoted_Invalid.search(arg):
+                    raise self.error('illegal cr or lf in argument')
+                if len(arg) > 2 and [arg[0], arg[-1]] == ['(', ')']:
+                    arg = arg[1:-1]
+                elif _Atom_Specials.search(arg):
+                    arg = self._quote(arg)
                 arg = bytes(arg, self._encoding)
             data = data + b' ' + arg
 
