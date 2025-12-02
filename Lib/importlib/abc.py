@@ -128,7 +128,6 @@ class InspectLoader(Loader):
         return compile(data, path, 'exec', dont_inherit=True, module=fullname)
 
     exec_module = _bootstrap_external._LoaderBasics.exec_module
-    load_module = _bootstrap_external._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
