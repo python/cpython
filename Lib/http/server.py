@@ -104,6 +104,7 @@ import shutil
 import socket
 import socketserver
 import sys
+import threading
 import time
 import urllib.parse
 
@@ -136,7 +137,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 # Data larger than this will be read in chunks, to prevent extreme
 # overallocation.
-_MIN_READ_BUF_SIZE = 1 << 20
+_READ_BUF_SIZE = 1 << 20
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -1287,30 +1288,62 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  stderr=subprocess.PIPE,
                                  env = env
                                  )
+            def finish_request():
+                # throw away additional data [see bug #427345, gh-34546]
+                while select.select([self.rfile._sock], [], [], 0)[0]:
+                    if not self.rfile._sock.recv(1):
+                        break
             if self.command.lower() == "post" and nbytes > 0:
-                cursize = 0
-                data = self.rfile.read(min(nbytes, _MIN_READ_BUF_SIZE))
-                while (len(data) < nbytes and len(data) != cursize and
-                       select.select([self.rfile._sock], [], [], 0)[0]):
-                    cursize = len(data)
-                    # This is a geometric increase in read size (never more
-                    # than doubling our the current length of data per loop
-                    # iteration).
-                    delta = min(cursize, nbytes - cursize)
-                    data += self.rfile.read(delta)
+                def _in_task():
+                    """Pipe the input into the process stdin"""
+                    bytes_left = nbytes
+                    # We need to wait until either there's new data in rfile,
+                    # or the process has exited.
+                    # This spins (with short sleeps) polling for process exit.
+                    TIMEOUT = 0.1
+                    while (
+                        bytes_left
+                        and not p.returncode
+                        and select.select([self.rfile._sock], [], [], TIMEOUT)[0]
+                    ):
+                        data = self.rfile.read(min(bytes_left, _READ_BUF_SIZE))
+                        if not data:
+                            break
+                        bytes_left -= len(data)
+                        p.stdin.write(data)
+                    finish_request()
+                    try:
+                        p.stdin.close()
+                    except OSError:
+                        # already closed
+                        pass
+                request_relay_thread = threading.Thread(target=_in_task)
+                request_relay_thread.start()
             else:
                 data = None
-            # throw away additional data [see bug #427345]
-            while select.select([self.rfile._sock], [], [], 0)[0]:
-                if not self.rfile._sock.recv(1):
-                    break
-            stdout, stderr = p.communicate(data)
-            self.wfile.write(stdout)
-            if stderr:
-                self.log_error('%s', stderr)
-            p.stderr.close()
+                finish_request()
+                request_relay_thread = None
+            def _out_task():
+                """Pipe the process's stdout into the socket"""
+                while data := p.stdout.read(_READ_BUF_SIZE):
+                    self.wfile.write(data)
+            response_relay_thread = threading.Thread(target=_out_task)
+            response_relay_thread.start()
+            stderr_chunks = []
+            def _err_task():
+                """Collect all of stderr, to log as single message"""
+                while data := p.stderr.read(_READ_BUF_SIZE):
+                     stderr_chunks.append(data)
+            error_log_thread = threading.Thread(target=_err_task)
+            error_log_thread.start()
+            status = p.wait()
+            response_relay_thread.join()
             p.stdout.close()
-            status = p.returncode
+            error_log_thread.join()
+            self.log_error('%s', b''.join(stderr_chunks))
+            p.stderr.close()
+            if request_relay_thread:
+                request_relay_thread.join()
             if status:
                 self.log_error("CGI script exit status %#x", status)
             else:
