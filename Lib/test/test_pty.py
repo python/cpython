@@ -3,7 +3,6 @@ from test.support import (
     is_android, is_apple_mobile, is_wasm32, reap_children, verbose, warnings_helper
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
 
 # Skip these tests if termios is not available
 import_module('termios')
