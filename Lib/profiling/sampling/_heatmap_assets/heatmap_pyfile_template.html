@@ -21,6 +21,7 @@
                     class="toolbar-btn theme-toggle"
                     onclick="toggleTheme()"
                     title="Toggle theme"
+                    aria-label="Toggle theme"
                     id="theme-btn"
                 >&#9790;</button>
             </div>
@@ -63,9 +64,10 @@
                 <div class="legend-gradient"></div>
                 <div class="legend-labels">
                     <span>Cold</span>
-                    <span>→</span>
+                    <span aria-hidden="true">→</span>
                     <span>Hot</span>
                 </div>
+                <div class="legend-separator" aria-hidden="true"></div>
                 <div class="toggle-switch" id="toggle-color-mode" title="Toggle between self time and total time coloring">
                     <span class="toggle-label active">Self Time</span>
                     <div class="toggle-track"></div>
@@ -76,6 +78,15 @@
                     <div class="toggle-track"></div>
                     <span class="toggle-label">Hot Only</span>
                 </div>
+                <div class="toggle-switch" id="toggle-spec-view" title="Color lines by specialization level (requires bytecode data)">
+                    <span class="toggle-label active">Heat</span>
+                    <div class="toggle-track"></div>
+                    <span class="toggle-label">Specialization</span>
+                </div>
+                <div class="legend-separator" aria-hidden="true"></div>
+                <button class="bytecode-expand-all" id="toggle-all-bytecode" title="Expand/collapse all bytecode panels (keyboard: b)">
+                    <span class="expand-icon" aria-hidden="true">▶</span> Bytecode
+                </button>
             </div>
         </div>
 

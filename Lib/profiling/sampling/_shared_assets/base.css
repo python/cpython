@@ -29,6 +29,11 @@
   --topbar-height: 56px;
   --statusbar-height: 32px;
 
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
@@ -79,6 +84,17 @@
   --nav-caller-hover: #1d4ed8;
   --nav-callee: #dc2626;
   --nav-callee-hover: #b91c1c;
+
+  /* Specialization status colors */
+  --spec-high: #4caf50;
+  --spec-high-text: #2e7d32;
+  --spec-high-bg: rgba(76, 175, 80, 0.15);
+  --spec-medium: #ff9800;
+  --spec-medium-text: #e65100;
+  --spec-medium-bg: rgba(255, 152, 0, 0.15);
+  --spec-low: #9e9e9e;
+  --spec-low-text: #616161;
+  --spec-low-bg: rgba(158, 158, 158, 0.15);
 }
 
 /* Dark theme */
@@ -126,6 +142,17 @@
   --nav-caller-hover: #4184e4;
   --nav-callee: #f87171;
   --nav-callee-hover: #e53e3e;
+
+  /* Specialization status colors - dark theme */
+  --spec-high: #81c784;
+  --spec-high-text: #81c784;
+  --spec-high-bg: rgba(129, 199, 132, 0.2);
+  --spec-medium: #ffb74d;
+  --spec-medium-text: #ffb74d;
+  --spec-medium-bg: rgba(255, 183, 77, 0.2);
+  --spec-low: #bdbdbd;
+  --spec-low-text: #9e9e9e;
+  --spec-low-bg: rgba(189, 189, 189, 0.15);
 }
 
 /* --------------------------------------------------------------------------
