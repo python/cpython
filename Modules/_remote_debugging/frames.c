@@ -466,6 +466,10 @@ try_full_cache_hit(
     // Full hit! Extend frame_info with entire cached list
     Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
     int result = PyList_SetSlice(frame_info, cur_size, cur_size, entry->frame_list);
+    if (result >= 0) {
+        STATS_INC(unwinder, frame_cache_hits);
+        STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(entry->frame_list));
+    }
     return result < 0 ? -1 : 1;
 }
 
@@ -490,6 +494,7 @@ collect_frames_with_cache(
 
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs = 0;
+    Py_ssize_t frames_before = PyList_GET_SIZE(frame_info);
 
     int stopped_at_cached = 0;
     if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, gc_frame,
@@ -498,8 +503,12 @@ collect_frames_with_cache(
         return -1;
     }
 
+    // Track frames read from memory (frames added by process_frame_chain)
+    STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(frame_info) - frames_before);
+
     // If stopped at cached frame, extend with cached continuation (both frames and addresses)
     if (stopped_at_cached) {
+        Py_ssize_t frames_before_cache = PyList_GET_SIZE(frame_info);
         int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id, last_profiled_frame,
                                                          frame_info, addrs, &num_addrs,
                                                          FRAME_CACHE_MAX_FRAMES);
@@ -508,11 +517,21 @@ collect_frames_with_cache(
         }
         if (cache_result == 0) {
             // Cache miss - continue walking from last_profiled_frame to get the rest
+            STATS_INC(unwinder, frame_cache_misses);
+            Py_ssize_t frames_before_walk = PyList_GET_SIZE(frame_info);
             if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, gc_frame,
                                     0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
                 return -1;
             }
+            STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(frame_info) - frames_before_walk);
+        } else {
+            // Partial cache hit
+            STATS_INC(unwinder, frame_cache_partial_hits);
+            STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(frame_info) - frames_before_cache);
         }
+    } else if (last_profiled_frame == 0) {
+        // No cache involvement (no last_profiled_frame or cache disabled)
+        STATS_INC(unwinder, frame_cache_misses);
     }
 
     // Store in cache (frame_cache_store handles truncation if num_addrs > FRAME_CACHE_MAX_FRAMES)

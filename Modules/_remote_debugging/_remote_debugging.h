@@ -165,6 +165,27 @@ typedef struct {
     PyObject *frame_list;                    // owned reference, NULL if empty
 } FrameCacheEntry;
 
+/* Statistics for profiling performance analysis */
+typedef struct {
+    uint64_t total_samples;                  // Total number of get_stack_trace calls
+    uint64_t frame_cache_hits;               // Full cache hits (entire stack unchanged)
+    uint64_t frame_cache_misses;             // Cache misses requiring full walk
+    uint64_t frame_cache_partial_hits;       // Partial hits (stopped at cached frame)
+    uint64_t frames_read_from_cache;         // Total frames retrieved from cache
+    uint64_t frames_read_from_memory;        // Total frames read from remote memory
+    uint64_t memory_reads;                   // Total remote memory read operations
+    uint64_t code_object_cache_hits;         // Code object cache hits
+    uint64_t code_object_cache_misses;       // Code object cache misses
+    uint64_t stale_cache_invalidations;      // Times stale entries were cleared
+} UnwinderStats;
+
+/* Stats tracking macros - no-op when stats collection is disabled */
+#define STATS_INC(unwinder, field) \
+    do { if ((unwinder)->collect_stats) (unwinder)->stats.field++; } while(0)
+
+#define STATS_ADD(unwinder, field, val) \
+    do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
     PyTypeObject *TaskInfo_Type;
@@ -207,9 +228,11 @@ typedef struct {
     int native;
     int gc;
     int cache_frames;
+    int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
+    UnwinderStats stats;  // statistics for performance analysis
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;

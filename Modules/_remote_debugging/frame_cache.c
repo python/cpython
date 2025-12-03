@@ -124,6 +124,7 @@ frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result)
             Py_CLEAR(unwinder->frame_cache[i].frame_list);
             unwinder->frame_cache[i].thread_id = 0;
             unwinder->frame_cache[i].num_addrs = 0;
+            STATS_INC(unwinder, stale_cache_invalidations);
         }
     }
 }
