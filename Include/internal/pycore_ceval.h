@@ -33,8 +33,6 @@ extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
 
-extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
-
 extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
 extern unsigned long _PyEval_GetSwitchInterval(void);
 

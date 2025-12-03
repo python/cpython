@@ -2829,12 +2829,6 @@ _PyEval_GetBuiltin(PyObject *name)
 }
 
 PyObject *
-_PyEval_GetBuiltinId(_Py_Identifier *name)
-{
-    return _PyEval_GetBuiltin(_PyUnicode_FromId(name));
-}
-
-PyObject *
 PyEval_GetLocals(void)
 {
     // We need to return a borrowed reference here, so some tricks are needed
