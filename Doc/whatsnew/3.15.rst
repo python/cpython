@@ -1247,6 +1247,10 @@ Build changes
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
+* Annotating anonymous mmap usage is now supported if Linux kernel supports `PR_SET_VMA_ANON_NAME`.
+  Annotations are visible in `/proc/<pid>/maps` if the kernel supports the feature 
+  and `-X dev` is passed to the interpreter.
+  (Contributed by Donghee Na in :gh:`141770`)
 
 Porting to Python 3.15
 ======================
