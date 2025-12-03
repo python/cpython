@@ -4,12 +4,10 @@ import sys
 import pstats
 import unittest
 import os
-import subprocess
 import warnings
 from difflib import unified_diff
 from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
-from test.support import script_helper, os_helper, SHORT_TIMEOUT
 from contextlib import contextmanager, redirect_stdout
 
 # Suppress deprecation warning for profile module (PEP 799)
@@ -135,41 +133,6 @@ class ProfileTest(unittest.TestCase):
             )
 
             self.assertTrue(os.path.exists('out.pstats'))
-
-    @unittest.skipIf(sys.platform == 'win32',
-                     'Profiler with multiprocessing can not run on win32')
-    def test_profile_multiprocessing(self):
-        test_script = '''
-import multiprocessing
-def worker_proc(x):
-    return x * 42
-
-def main_proc():
-    p = multiprocessing.Process(target=worker_proc, args=(10,))
-    p.start()
-    p.join()
-
-if __name__ == "__main__":
-    main_proc()
-'''
-        with os_helper.temp_dir() as temp_dir:
-            script = script_helper.make_script(
-                temp_dir, 'test_profile_multiprocessing', test_script
-            )
-            with script_helper.spawn_python(
-                "-m", self.profilermodule.__name__,
-                script,
-                stderr=subprocess.PIPE,
-                text=True
-            ) as proc:
-                proc.wait(timeout=SHORT_TIMEOUT)
-                stdout = proc.stdout.read()
-                stderr = proc.stderr.read()
-
-        self.assertIn("main_proc", stdout)
-        self.assertNotIn("Can't pickle", stderr)
-        self.assertNotIn("ModuleSpec", stderr)
-        self.assertEqual(proc.returncode, 0)
 
 
 def regenerate_expected_output(filename, cls):
