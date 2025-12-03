@@ -551,13 +551,13 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
 
     # Track visited directories to detect cycles (e.g., Windows junctions)
     if _seen is None:
-        _seen = set()
+        _seen = frozenset()
     src_st = os.stat(src)
     src_id = (src_st.st_dev, src_st.st_ino)
     if src_id in _seen:
         raise Error([(src, dst, "Infinite recursion detected")])
-    _seen = _seen.copy()
-    _seen.add(src_id)
+
+    _seen = _seen | {src_id}
 
     os.makedirs(dst, exist_ok=dirs_exist_ok)
     errors = []

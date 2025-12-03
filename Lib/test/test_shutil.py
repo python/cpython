@@ -1102,13 +1102,12 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     @unittest.skipUnless(sys.platform == "win32", "Windows-specific test")
     def test_copytree_recursive_junction(self):
         # Test that copytree raises Error for recursive junctions (Windows)
-        import subprocess
         base_dir = self.mkdtemp()
         self.addCleanup(shutil.rmtree, base_dir, ignore_errors=True)
 
         # Create source directory structure
-        src_dir = os.path.join(base_dir, "Source")
-        junction_dir = os.path.join(src_dir, "Junction")
+        src_dir = os.path.join(base_dir, "source")
+        junction_dir = os.path.join(src_dir, "junction")
         os.makedirs(junction_dir)
 
         # Create a junction pointing to its parent, creating a cycle
