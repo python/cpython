@@ -1131,14 +1131,6 @@ class CGIHTTPServerTestCase(BaseTestCase):
             res = self.request('/cgi-bin/file7.py', 'POST', body, headers)
             self.assertEqual(res.read(), b'%d %d' % (size, size) + self.linesep)
 
-    @unittest.skipIf(True, "Waits forever for input")
-    def test_large_content_length_truncated(self):
-        for w in range(18, 65):
-            size = 1 << w
-            headers = {'Content-Length' : str(size)}
-            res = self.request('/cgi-bin/file1.py', 'POST', b'x', headers)
-            self.assertEqual(res.read(), b'Hello World' + self.linesep)
-
     def test_invaliduri(self):
         res = self.request('/cgi-bin/invalid')
         res.read()
