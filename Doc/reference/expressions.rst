@@ -975,7 +975,8 @@ Syntactically, these are all equivalent::
 
 At runtime, the interpreter will evaluate the primary and
 the subscript, and call the primary's :meth:`~object.__getitem__` or
-:meth:`~object.__class_getitem__` method with the subscript as argument.
+:meth:`~object.__class_getitem__` :term:`special method` with the subscript
+as argument.
 For more details on which of these methods is called, see
 :ref:`classgetitem-versus-getitem`.
 
@@ -999,8 +1000,8 @@ subscription.
 Subscriptions may also be used as targets in :ref:`assignment <assignment>` or
 :ref:`deletion <del>` statements.
 In these cases, the interpreter will call the subscripted object's
-:meth:`~object.__setitem__` or :meth:`~object.__delitem__` method,
-respectively, instead of :meth:`~object.__getitem__`.
+:meth:`~object.__setitem__` or :meth:`~object.__delitem__`
+:term:`special method`, respectively, instead of :meth:`~object.__getitem__`.
 
 .. code-block::
 
@@ -1063,7 +1064,7 @@ whose :attr:`~slice.start`, :attr:`~slice.stop` and
 expressions between the colons.
 Any missing expression evaluates to :const:`None`.
 This :class:`!slice` object is then passed to the :meth:`~object.__getitem__`
-or :meth:`~object.__class_getitem__` method, as above. ::
+or :meth:`~object.__class_getitem__` :term:`special method`, as above. ::
 
    # continuing with the SubscriptionDemo instance defined above:
    >>> demo[2:3]
@@ -1088,7 +1089,7 @@ This form is commonly used with numerical libraries for slicing
 multi-dimensional data.
 In this case, the interpreter constructs a :class:`tuple` of the results of the
 expressions or slices, and passes this tuple to the :meth:`~object.__getitem__`
-or :meth:`~object.__class_getitem__` method, as above.
+or :meth:`~object.__class_getitem__` :term:`special method`, as above.
 
 The subscript may also be given as a single expression or slice followed
 by a comma, to specify a one-element tuple::
