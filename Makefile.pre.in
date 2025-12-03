@@ -1604,6 +1604,11 @@ sharedmods: $(SHAREDMODS) pybuilddir.txt
 # dependency on BUILDPYTHON ensures that the target is run last
 .PHONY: checksharedmods
 checksharedmods: sharedmods $(PYTHON_FOR_BUILD_DEPS) $(BUILDPYTHON)
+	@if [ -n "@MISSING_STDLIB_CONFIG@" ]; then \
+		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info --with-missing-stdlib-config="@MISSING_STDLIB_CONFIG@"; \
+	else \
+		$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py --generate-missing-stdlib-info; \
+	fi
 	@$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/check_extension_modules.py
 
 .PHONY: rundsymutil
@@ -2573,6 +2578,9 @@ LIBSUBDIRS=	asyncio \
 		profile \
 		profiling profiling/sampling profiling/tracing \
 		profiling/sampling/_assets \
+		profiling/sampling/_heatmap_assets \
+		profiling/sampling/_flamegraph_assets \
+		profiling/sampling/_shared_assets \
 		profiling/sampling/live_collector \
 		profiling/sampling/_vendor/d3/7.8.5 \
 		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
@@ -2820,6 +2828,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/_missing_stdlib_info.py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the
 	@ # installed library code. The patch has been previously validated against

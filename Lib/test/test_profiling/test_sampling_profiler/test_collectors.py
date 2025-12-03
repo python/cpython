@@ -14,6 +14,15 @@ try:
         FlamegraphCollector,
     )
     from profiling.sampling.gecko_collector import GeckoCollector
+    from profiling.sampling.constants import (
+        PROFILING_MODE_WALL,
+        PROFILING_MODE_CPU,
+    )
+    from _remote_debugging import (
+        THREAD_STATUS_HAS_GIL,
+        THREAD_STATUS_ON_CPU,
+        THREAD_STATUS_GIL_REQUESTED,
+    )
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -485,7 +494,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Should be valid HTML
         self.assertIn("<!doctype html>", content.lower())
         self.assertIn("<html", content)
-        self.assertIn("Python Performance Flamegraph", content)
+        self.assertIn("Tachyon Profiler - Flamegraph", content)
         self.assertIn("d3-flame-graph", content)
 
         # Should contain the data
@@ -657,17 +666,6 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
     def test_gecko_collector_markers(self):
         """Test Gecko profile markers for GIL and CPU state tracking."""
-        try:
-            from _remote_debugging import (
-                THREAD_STATUS_HAS_GIL,
-                THREAD_STATUS_ON_CPU,
-                THREAD_STATUS_GIL_REQUESTED,
-            )
-        except ImportError:
-            THREAD_STATUS_HAS_GIL = 1 << 0
-            THREAD_STATUS_ON_CPU = 1 << 1
-            THREAD_STATUS_GIL_REQUESTED = 1 << 3
-
         collector = GeckoCollector(1000)
 
         # Status combinations for different thread states
@@ -894,3 +892,312 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(func1_stats[1], 2)  # nc (non-recursive calls)
         self.assertEqual(func1_stats[2], 2.0)  # tt (total time)
         self.assertEqual(func1_stats[3], 2.0)  # ct (cumulative time)
+
+    def test_flamegraph_collector_stats_accumulation(self):
+        """Test that FlamegraphCollector accumulates stats across samples."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # First sample
+        stack_frames_1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_1)
+        self.assertEqual(collector.thread_status_counts["has_gil"], 1)
+        self.assertEqual(collector.thread_status_counts["on_cpu"], 1)
+        self.assertEqual(collector.thread_status_counts["total"], 2)
+
+        # Second sample
+        stack_frames_2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_GIL_REQUESTED),
+                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(3, [("c.py", 3, "func_c")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_2)
+
+        # Should accumulate
+        self.assertEqual(collector.thread_status_counts["has_gil"], 2)  # 1 + 1
+        self.assertEqual(collector.thread_status_counts["on_cpu"], 2)   # 1 + 1
+        self.assertEqual(collector.thread_status_counts["gil_requested"], 1)  # 0 + 1
+        self.assertEqual(collector.thread_status_counts["total"], 5)  # 2 + 3
+
+        # Test GC sample tracking
+        stack_frames_gc = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("~", 0, "<GC>")], status=THREAD_STATUS_HAS_GIL),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_gc)
+        self.assertEqual(collector.samples_with_gc_frames, 1)
+
+        # Another sample without GC
+        collector.collect(stack_frames_1)
+        self.assertEqual(collector.samples_with_gc_frames, 1)  # Still 1
+
+        # Another GC sample
+        collector.collect(stack_frames_gc)
+        self.assertEqual(collector.samples_with_gc_frames, 2)
+
+    def test_flamegraph_collector_per_thread_stats(self):
+        """Test per-thread statistics tracking in FlamegraphCollector."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Multiple threads with different states
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(3, [("c.py", 3, "func_c")], status=THREAD_STATUS_GIL_REQUESTED),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Check per-thread stats
+        self.assertIn(1, collector.per_thread_stats)
+        self.assertIn(2, collector.per_thread_stats)
+        self.assertIn(3, collector.per_thread_stats)
+
+        # Thread 1: has GIL
+        self.assertEqual(collector.per_thread_stats[1]["has_gil"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["on_cpu"], 0)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 1)
+
+        # Thread 2: on CPU
+        self.assertEqual(collector.per_thread_stats[2]["has_gil"], 0)
+        self.assertEqual(collector.per_thread_stats[2]["on_cpu"], 1)
+        self.assertEqual(collector.per_thread_stats[2]["total"], 1)
+
+        # Thread 3: waiting
+        self.assertEqual(collector.per_thread_stats[3]["gil_requested"], 1)
+        self.assertEqual(collector.per_thread_stats[3]["total"], 1)
+
+        # Test accumulation across samples
+        stack_frames_2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames_2)
+
+        self.assertEqual(collector.per_thread_stats[1]["has_gil"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["on_cpu"], 1)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 2)
+
+    def test_flamegraph_collector_percentage_calculations(self):
+        """Test that percentage calculations are correct in exported data."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Create scenario: 60% GIL held, 40% not held
+        for i in range(6):
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        for i in range(4):
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_ON_CPU),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        # Export to get calculated percentages
+        data = collector._convert_to_flamegraph_format()
+        thread_stats = data["stats"]["thread_stats"]
+
+        self.assertAlmostEqual(thread_stats["has_gil_pct"], 60.0, places=1)
+        self.assertAlmostEqual(thread_stats["on_cpu_pct"], 40.0, places=1)
+        self.assertEqual(thread_stats["total"], 10)
+
+    def test_flamegraph_collector_mode_handling(self):
+        """Test that profiling mode is correctly passed through to exported data."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Collect some data
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Set stats with mode
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_CPU
+        )
+
+        data = collector._convert_to_flamegraph_format()
+        self.assertEqual(data["stats"]["mode"], PROFILING_MODE_CPU)
+
+    def test_flamegraph_collector_zero_samples_edge_case(self):
+        """Test that collector handles zero samples gracefully."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Export without collecting any samples
+        data = collector._convert_to_flamegraph_format()
+
+        # Should return a valid structure with no data
+        self.assertIn("name", data)
+        self.assertEqual(data["value"], 0)
+        self.assertIn("children", data)
+        self.assertEqual(len(data["children"]), 0)
+
+    def test_flamegraph_collector_json_structure_includes_stats(self):
+        """Test that exported JSON includes thread_stats and per_thread_stats."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Collect some data with multiple threads
+        stack_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                ],
+            )
+        ]
+        collector.collect(stack_frames)
+
+        # Set stats
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_WALL
+        )
+
+        # Export and verify structure
+        data = collector._convert_to_flamegraph_format()
+
+        # Check that stats object exists and contains expected fields
+        self.assertIn("stats", data)
+        stats = data["stats"]
+
+        # Verify thread_stats exists and has expected structure
+        self.assertIn("thread_stats", stats)
+        thread_stats = stats["thread_stats"]
+        self.assertIn("has_gil_pct", thread_stats)
+        self.assertIn("on_cpu_pct", thread_stats)
+        self.assertIn("gil_requested_pct", thread_stats)
+        self.assertIn("gc_pct", thread_stats)
+        self.assertIn("total", thread_stats)
+
+        # Verify per_thread_stats exists and has data for both threads
+        self.assertIn("per_thread_stats", stats)
+        per_thread_stats = stats["per_thread_stats"]
+        self.assertIn(1, per_thread_stats)
+        self.assertIn(2, per_thread_stats)
+
+        # Check per-thread structure
+        for thread_id in [1, 2]:
+            thread_data = per_thread_stats[thread_id]
+            self.assertIn("has_gil_pct", thread_data)
+            self.assertIn("on_cpu_pct", thread_data)
+            self.assertIn("gil_requested_pct", thread_data)
+            self.assertIn("gc_pct", thread_data)
+            self.assertIn("total", thread_data)
+
+    def test_flamegraph_collector_per_thread_gc_percentage(self):
+        """Test that per-thread GC percentage uses total samples as denominator."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Create 10 samples total:
+        # - Thread 1 appears in all 10 samples, has GC in 2 of them
+        # - Thread 2 appears in only 5 samples, has GC in 1 of them
+
+        # First 5 samples: both threads, thread 1 has GC in 2
+        for i in range(5):
+            has_gc = i < 2  # First 2 samples have GC for thread 1
+            frames_1 = [("~", 0, "<GC>")] if has_gc else [("a.py", 1, "func_a")]
+            stack_frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(1, frames_1, status=THREAD_STATUS_HAS_GIL),
+                        MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    ],
+                )
+            ]
+            collector.collect(stack_frames)
+
+        # Next 5 samples: only thread 1, thread 2 appears in first of these with GC
+        for i in range(5):
+            if i == 0:
+                # Thread 2 appears in this sample with GC
+                stack_frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                            MockThreadInfo(2, [("~", 0, "<GC>")], status=THREAD_STATUS_ON_CPU),
+                        ],
+                    )
+                ]
+            else:
+                # Only thread 1
+                stack_frames = [
+                    MockInterpreterInfo(
+                        0,
+                        [
+                            MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                        ],
+                    )
+                ]
+            collector.collect(stack_frames)
+
+        # Set stats and export
+        collector.set_stats(
+            sample_interval_usec=1000,
+            duration_sec=1.0,
+            sample_rate=1000.0,
+            mode=PROFILING_MODE_WALL
+        )
+
+        data = collector._convert_to_flamegraph_format()
+        per_thread_stats = data["stats"]["per_thread_stats"]
+
+        # Thread 1: appeared in 10 samples, had GC in 2
+        # GC percentage should be 2/10 = 20% (using total samples, not thread appearances)
+        self.assertEqual(collector.per_thread_stats[1]["gc_samples"], 2)
+        self.assertEqual(collector.per_thread_stats[1]["total"], 10)
+        self.assertAlmostEqual(per_thread_stats[1]["gc_pct"], 20.0, places=1)
+
+        # Thread 2: appeared in 6 samples, had GC in 1
+        # GC percentage should be 1/10 = 10% (using total samples, not thread appearances)
+        self.assertEqual(collector.per_thread_stats[2]["gc_samples"], 1)
+        self.assertEqual(collector.per_thread_stats[2]["total"], 6)
+        self.assertAlmostEqual(per_thread_stats[2]["gc_pct"], 10.0, places=1)
