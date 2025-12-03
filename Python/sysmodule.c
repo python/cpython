@@ -2892,30 +2892,6 @@ sys_get_lazy_imports_impl(PyObject *module)
     }
 }
 
-/*[clinic input]
-sys.get_lazy_modules
-
-Gets the set of module names that have been lazily imported.
-
-Returns a set of fully-qualified module names that have been lazily
-imported at some point (primarily for diagnostics and introspection).
-Note that modules are removed from this set when they are reified
-(actually loaded).
-
-[clinic start generated code]*/
-
-static PyObject *
-sys_get_lazy_modules_impl(PyObject *module)
-/*[clinic end generated code: output=4c641f8881ba87c0 input=511b3a9682c09282]*/
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *lazy_modules_set = FT_ATOMIC_LOAD_PTR_RELAXED(interp->imports.lazy_modules_set);
-    if (lazy_modules_set == NULL) {
-        return PySet_New(NULL);
-    }
-    return Py_NewRef(lazy_modules_set);
-}
-
 static PyMethodDef sys_methods[] = {
     /* Might as well keep this in alphabetic order */
     SYS_ADDAUDITHOOK_METHODDEF
@@ -2984,7 +2960,6 @@ static PyMethodDef sys_methods[] = {
     SYS_SET_LAZY_IMPORTS_METHODDEF
     SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
-    SYS_GET_LAZY_MODULES_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
@@ -4098,14 +4073,6 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("path_importer_cache", PyDict_New());
     SET_SYS("path_hooks", PyList_New(0));
 
-    /* adding sys.lazy_modules set (PEP 810) */
-    PyObject *lazy_modules_set = PySet_New(NULL);
-    if (lazy_modules_set == NULL) {
-        goto err_occurred;
-    }
-    interp->imports.lazy_modules_set = lazy_modules_set;
-    SET_SYS("lazy_modules", Py_NewRef(lazy_modules_set));
-
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;
     }
@@ -4336,6 +4303,15 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
 
     if (PyDict_SetItemString(sysdict, "modules", modules) < 0) {
+        goto error;
+    }
+
+    PyObject *lazy_modules = _PyImport_InitLazyModules(interp); // borrowed reference
+    if (lazy_modules == NULL) {
+        goto error;
+    }
+
+    if (PyDict_SetItemString(sysdict, "lazy_modules", lazy_modules) < 0) {
         goto error;
     }
 

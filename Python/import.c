@@ -92,6 +92,8 @@ static struct _inittab *inittab_copy = NULL;
     (interp)->imports.modules
 #define MODULES_BY_INDEX(interp) \
     (interp)->imports.modules_by_index
+#define LAZY_MODULES(interp) \
+    (interp)->imports.lazy_modules
 #define IMPORTLIB(interp) \
     (interp)->imports.importlib
 #define OVERRIDE_MULTI_INTERP_EXTENSIONS_CHECK(interp) \
@@ -255,6 +257,20 @@ import_get_module(PyThreadState *tstate, PyObject *name)
     (void)PyMapping_GetOptionalItem(modules, name, &m);
     Py_DECREF(modules);
     return m;
+}
+
+PyObject *
+_PyImport_InitLazyModules(PyInterpreterState *interp)
+{
+    assert(LAZY_MODULES(interp) == NULL);
+    LAZY_MODULES(interp) = PyDict_New();
+    return LAZY_MODULES(interp);
+}
+
+void
+_PyImport_ClearLazyModules(PyInterpreterState *interp)
+{
+    Py_CLEAR(LAZY_MODULES(interp));
 }
 
 static int
@@ -3801,7 +3817,7 @@ PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 {
     PyObject *obj = NULL;
-    PyObject *fromlist = NULL;
+    PyObject *fromlist = Py_None;
     PyObject *import_func = NULL;
     assert(lazy_import != NULL);
     assert(PyLazyImport_CheckExact(lazy_import));
@@ -4095,7 +4111,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
     PyObject *package = NULL;
-    PyObject *lazy_modules = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
@@ -4214,7 +4229,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
   error:
-    Py_XDECREF(lazy_modules);
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
     Py_XDECREF(package);
@@ -4243,24 +4257,9 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
     PyObject *parent_module = NULL;
     PyObject *parent_dict = NULL;
 
-    // Acquire import lock to safely initialize lazy_modules if needed
-    // This prevents a race where multiple threads could create different dicts
     PyInterpreterState *interp = tstate->interp;
-    _PyImport_AcquireLock(interp);
-
-    PyObject *lazy_modules = interp->imports.lazy_modules;
-    if (lazy_modules == NULL) {
-        lazy_modules = interp->imports.lazy_modules = PyDict_New();
-        if (lazy_modules == NULL) {
-            _PyImport_ReleaseLock(interp);
-            return -1;
-        }
-    }
-
-    // Release the lock - we only needed it for initialization.
-    // The dict operations below use PyDict_SetDefaultRef which uses
-    // critical sections for thread-safety in free-threaded builds.
-    _PyImport_ReleaseLock(interp);
+    PyObject *lazy_modules = LAZY_MODULES(interp);
+    assert(lazy_modules != NULL);
 
     Py_INCREF(name);
     while (true) {
@@ -4282,33 +4281,30 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
             goto done;
         }
 
-        /* Add the lazy import for the child to the parent */
-        Py_XSETREF(parent_module, PyImport_GetModule(parent));
-        if (parent_module == NULL) {
-            if (PyErr_Occurred()) {
+        // Record the child as being lazily imported from the parent.
+        PyObject *lazy_submodules;
+        if (PyDict_GetItemRef(lazy_modules, parent, &lazy_submodules) < 0) {
+            goto done;
+        }
+        if (lazy_submodules == NULL) {
+            lazy_submodules = PySet_New(NULL);
+            if (lazy_submodules == NULL) {
                 goto done;
             }
-
-            // Record the child to be added when the parent is imported.
-            // Use PyDict_SetDefaultRef to atomically get-or-create the set,
-            // avoiding TOCTOU races in free-threaded builds.
-            PyObject *empty_set = PySet_New(NULL);
-            if (empty_set == NULL) {
-                goto done;
-            }
-            PyObject *lazy_submodules;
-            int setdefault_result = PyDict_SetDefaultRef(lazy_modules, parent, empty_set, &lazy_submodules);
-            Py_DECREF(empty_set);
-            if (setdefault_result < 0) {
-                goto done;
-            }
-            assert(PyAnySet_CheckExact(lazy_submodules));
-            if (PySet_Add(lazy_submodules, child) < 0) {
+            if (PyDict_SetItem(lazy_modules, parent, lazy_submodules) < 0) {
                 Py_DECREF(lazy_submodules);
                 goto done;
             }
+        }
+        if (PySet_Add(lazy_submodules, child) < 0) {
             Py_DECREF(lazy_submodules);
-        } else {
+            goto done;
+        }
+        Py_DECREF(lazy_submodules);
+
+        /* Add the lazy import for the child to the parent */
+        Py_XSETREF(parent_module, PyImport_GetModule(parent));
+        if (parent_module != NULL) {
             Py_XSETREF(parent_dict, get_mod_dict(parent_module));
             if (parent_dict == NULL) {
                 goto done;
@@ -4330,6 +4326,8 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
                     Py_DECREF(lazy_module_attr);
                 }
             }
+            ret = 0;
+            goto done;
         }
 
         Py_SETREF(name, parent);
@@ -4343,6 +4341,19 @@ done:
     Py_XDECREF(parent);
     Py_XDECREF(name);
     return ret;
+}
+
+static int
+register_from_lazy_on_parent(PyThreadState *tstate, PyObject *abs_name,
+                             PyObject *from, PyObject *builtins)
+{
+    PyObject *fromname = PyUnicode_FromFormat("%U.%U", abs_name, from);
+    if (fromname == NULL) {
+        return -1;
+    }
+    int res = register_lazy_on_parent(tstate, fromname, builtins);
+    Py_DECREF(fromname);
+    return res;
 }
 
 PyObject *
@@ -4418,30 +4429,27 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         Py_DECREF(abs_name);
         return NULL;
     }
-    if (register_lazy_on_parent(tstate, abs_name, builtins) < 0) {
-        Py_DECREF(res);
-        Py_DECREF(abs_name);
-        return NULL;
-    }
-
-    // Add the module name to sys.lazy_modules set (PEP 810).
-    // We must hold a reference to the set while using it to prevent
-    // use-after-free if another thread clears it during interpreter shutdown.
-    PyObject *lazy_modules_set = FT_ATOMIC_LOAD_PTR_RELAXED(interp->imports.lazy_modules_set);
-    Py_XINCREF(lazy_modules_set);
-    if (lazy_modules_set != NULL) {
-        assert(PyAnySet_CheckExact(lazy_modules_set));
-        if (PySet_Add(lazy_modules_set, abs_name) < 0) {
-            Py_DECREF(lazy_modules_set);
-            Py_DECREF(res);
-            Py_DECREF(abs_name);
-            return NULL;
+    if (fromlist && PyUnicode_Check(fromlist)) {
+        if (register_from_lazy_on_parent(tstate, abs_name, fromlist, builtins) < 0) {
+            goto error;
         }
-        Py_DECREF(lazy_modules_set);
+    } else if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
+            if (register_from_lazy_on_parent(tstate, abs_name, PyTuple_GET_ITEM(fromlist, i), builtins) < 0) {
+                goto error;
+            }
+        }
+    }
+    else if (register_lazy_on_parent(tstate, abs_name, builtins) < 0) {
+        goto error;
     }
 
     Py_DECREF(abs_name);
     return res;
+error:
+    Py_DECREF(abs_name);
+    Py_DECREF(res);
+    return NULL;
 }
 
 PyObject *
@@ -4652,7 +4660,6 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(IMPORT_FUNC(interp));
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
     Py_CLEAR(interp->imports.lazy_modules);
-    Py_CLEAR(interp->imports.lazy_modules_set);
     Py_CLEAR(interp->imports.lazy_importing_modules);
     Py_CLEAR(interp->imports.lazy_imports_filter);
 }
@@ -5445,73 +5452,89 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
     return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
 }
 
+static int
+publish_lazy_imports_on_module(PyThreadState *tstate, PyObject *lazy_submodules, PyObject *name, PyObject *module_dict)
+{
+    PyObject *builtins = _PyEval_GetBuiltins(tstate);
+    PyObject *attr_name;
+    Py_ssize_t pos = 0;
+    Py_hash_t hash;
+
+    // enumerate the set of lazy submodules which have been imported from the
+    // parent module.
+    while (_PySet_NextEntryRef(lazy_submodules, &pos, &attr_name, &hash)) {
+        if (_PyDict_Contains_KnownHash(module_dict, attr_name, hash)) {
+            Py_DECREF(attr_name);
+            continue;
+        }
+        // create a new lazy module attr for the subpackage which was previously
+        // lazily imported
+        PyObject *lazy_module_attr = _PyLazyImport_New(builtins, name, attr_name);
+        if (lazy_module_attr == NULL) {
+            Py_DECREF(attr_name);
+            return -1;
+        }
+
+        // publish on the module that was just imported
+        if (_PyModule_ReplaceLazyValue(module_dict, attr_name, lazy_module_attr) < 0) {
+            Py_DECREF(lazy_module_attr);
+            Py_DECREF(attr_name);
+            return -1;
+        }
+        Py_DECREF(lazy_module_attr);
+        Py_DECREF(attr_name);
+    }
+    return 0;
+}
+
 /*[clinic input]
 _imp._set_lazy_attributes
-    child_module: object
+    module: object
     name: unicode
     /
 Sets attributes to lazy submodules on the module, as side effects.
 [clinic start generated code]*/
 
 static PyObject *
-_imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
+_imp__set_lazy_attributes_impl(PyObject *sys_module, PyObject *module,
                                PyObject *name)
 /*[clinic end generated code: output=bd34f2e16f215c29 input=d959fbfa236f4d59]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *child_dict = NULL;
+    PyObject *module_dict = NULL;
     PyObject *ret = NULL;
-    // Use atomic load and hold a reference to prevent use-after-free
-    // if another thread clears lazy_modules during interpreter shutdown.
-    PyObject *lazy_modules = FT_ATOMIC_LOAD_PTR_RELAXED(tstate->interp->imports.lazy_modules);
-    Py_XINCREF(lazy_modules);
-    if (lazy_modules != NULL) {
-        PyObject *lazy_submodules = PyDict_GetItemWithError(lazy_modules, name);
-        if (lazy_submodules == NULL) {
-            if (PyErr_Occurred()) {
-                goto error;
-            }
-            goto done;
-        }
+    PyObject *lazy_modules = LAZY_MODULES(tstate->interp);
+    assert(lazy_modules != NULL);
 
-        child_dict = get_mod_dict(child_module);
-        if (child_dict == NULL) {
-            goto error;
-        }
-        else if (!PyDict_CheckExact(child_dict)) {
-            goto done;
-        }
-        assert(PyAnySet_CheckExact(lazy_submodules));
-        Py_ssize_t pos = 0;
-        PyObject *attr_name;
-        Py_hash_t hash;
-        while (_PySet_NextEntry(lazy_submodules, &pos, &attr_name, &hash)) {
-            if (_PyDict_Contains_KnownHash(child_dict, attr_name, hash)) {
-                continue;
-            }
-            PyObject *builtins = _PyEval_GetBuiltins(tstate);
-            PyObject *lazy_module_attr = _PyLazyImport_New(builtins, name, attr_name);
-            if (lazy_module_attr == NULL) {
-                goto error;
-            }
+    PyObject *lazy_submodules;
+    if (PyDict_GetItemRef(lazy_modules, name, &lazy_submodules) < 0) {
+        return NULL;
+    }
+    else if (lazy_submodules == NULL) {
+        Py_RETURN_NONE;
+    }
 
-            if (_PyModule_ReplaceLazyValue(child_dict, attr_name, lazy_module_attr) < 0) {
-                Py_DECREF(lazy_module_attr);
-                goto error;
-            }
-            Py_DECREF(lazy_module_attr);
-        }
-        if (PyDict_DelItem(lazy_modules, name) < 0) {
-            goto error;
-        }
+    module_dict = get_mod_dict(module);
+    if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
+        goto done;
+    }
+
+    assert(PyAnySet_CheckExact(lazy_submodules));
+    Py_BEGIN_CRITICAL_SECTION(lazy_submodules);
+    publish_lazy_imports_on_module(tstate, lazy_submodules, name, module_dict);
+    Py_END_CRITICAL_SECTION();
+    Py_DECREF(lazy_submodules);
+
+    // once a module is imported it is removed from sys.lazy_modules
+    if (PyDict_DelItem(lazy_modules, name) < 0) {
+        goto error;
     }
 
 done:
     ret = Py_NewRef(Py_None);
 
 error:
-    Py_XDECREF(lazy_modules);
-    Py_XDECREF(child_dict);
+    Py_XDECREF(module_dict);
     return ret;
 }
 

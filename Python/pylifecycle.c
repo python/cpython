@@ -1811,6 +1811,9 @@ finalize_modules(PyThreadState *tstate)
     // initialization API)
     _PyImport_ClearModulesByIndex(interp);
 
+    // Clear the dict of lazily loaded module nname to submodule names
+    _PyImport_ClearLazyModules(interp);
+
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
     // destructor.

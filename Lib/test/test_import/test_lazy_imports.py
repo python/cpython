@@ -19,11 +19,26 @@ class LazyImportTests(unittest.TestCase):
 
         sys.set_lazy_imports_filter(None)
         sys.set_lazy_imports("normal")
+        sys.lazy_modules.clear()
 
     def test_basic_unused(self):
         """Lazy imported module should not be loaded if never accessed."""
         import test.test_import.data.lazy_imports.basic_unused
         self.assertNotIn("test.test_import.data.lazy_imports.basic2", sys.modules)
+        self.assertIn("test.test_import.data.lazy_imports", sys.lazy_modules)
+        self.assertEqual(sys.lazy_modules["test.test_import.data.lazy_imports"], {"basic2"})
+
+    def test_sys_lazy_modules(self):
+        try:
+            import test.test_import.data.lazy_imports.basic_from_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+        self.assertIn("test.test_import.data.lazy_imports", sys.lazy_modules)
+        self.assertEqual(sys.lazy_modules["test.test_import.data.lazy_imports"], {"basic2"})
+        test.test_import.data.lazy_imports.basic_from_unused.basic2
+        self.assertNotIn("test.test_import.data", sys.lazy_modules)
 
     def test_basic_unused_use_externally(self):
         """Lazy import should load module when accessed from outside."""
@@ -402,7 +417,7 @@ class DunderLazyImportTests(unittest.TestCase):
         from test.test_import.data.lazy_imports import dunder_lazy_import_builtins
 
         self.assertNotIn("test.test_import.data.lazy_imports.basic2", sys.modules)
-        self.assertEqual(dunder_lazy_import_builtins.basic, 42)
+        self.assertEqual(dunder_lazy_import_builtins.basic.basic2, 42)
 
 
 class SysLazyImportsAPITests(unittest.TestCase):
@@ -458,15 +473,9 @@ class SysLazyImportsAPITests(unittest.TestCase):
         sys.set_lazy_imports_filter(my_filter)
         self.assertIs(sys.get_lazy_imports_filter(), my_filter)
 
-    def test_get_lazy_modules_returns_set(self):
-        """get_lazy_modules should return a set per PEP 810."""
-        result = sys.get_lazy_modules()
-        self.assertIsInstance(result, set)
-
     def test_lazy_modules_attribute_is_set(self):
         """sys.lazy_modules should be a set per PEP 810."""
-        self.assertIsInstance(sys.lazy_modules, set)
-        self.assertIs(sys.lazy_modules, sys.get_lazy_modules())
+        self.assertIsInstance(sys.lazy_modules, dict)
 
     def test_lazy_modules_tracks_lazy_imports(self):
         """sys.lazy_modules should track lazily imported module names."""
@@ -474,7 +483,8 @@ class SysLazyImportsAPITests(unittest.TestCase):
             import sys
             initial_count = len(sys.lazy_modules)
             import test.test_import.data.lazy_imports.basic_unused
-            assert "test.test_import.data.lazy_imports.basic2" in sys.lazy_modules
+            assert "test.test_import.data.lazy_imports" in sys.lazy_modules
+            assert sys.lazy_modules["test.test_import.data.lazy_imports"] == {"basic2"}
             assert len(sys.lazy_modules) > initial_count
             print("OK")
         """)
@@ -854,14 +864,15 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
             lazy import test.test_import.data.lazy_imports.basic2
 
             # Should be in lazy_modules after lazy import
-            assert "test.test_import.data.lazy_imports.basic2" in sys.lazy_modules
+            assert "test.test_import.data.lazy_imports" in sys.lazy_modules
+            assert sys.lazy_modules["test.test_import.data.lazy_imports"] == {"basic2"}
             assert len(sys.lazy_modules) > initial_count
 
             # Trigger reification
             _ = test.test_import.data.lazy_imports.basic2.x
 
             # Module should still be tracked (for diagnostics per PEP 810)
-            assert "test.test_import.data.lazy_imports.basic2" in sys.lazy_modules
+            assert "test.test_import.data.lazy_imports" not in sys.lazy_modules
             print("OK")
         """)
         result = subprocess.run(
@@ -875,8 +886,7 @@ class SysLazyModulesTrackingTests(unittest.TestCase):
     def test_lazy_modules_is_per_interpreter(self):
         """Each interpreter should have independent sys.lazy_modules."""
         # Basic test that sys.lazy_modules exists and is a set
-        self.assertIsInstance(sys.lazy_modules, set)
-        self.assertIs(sys.lazy_modules, sys.get_lazy_modules())
+        self.assertIsInstance(sys.lazy_modules, dict)
 
 
 class CommandLineAndEnvVarTests(unittest.TestCase):
@@ -1467,7 +1477,7 @@ class ThreadSafetyTests(unittest.TestCase):
                 t.join()
 
             assert not errors, f"Errors: {errors}"
-            assert isinstance(sys.lazy_modules, set), "sys.lazy_modules is not a set"
+            assert isinstance(sys.lazy_modules, dict), "sys.lazy_modules is not a dict"
             print("OK")
         """)
 

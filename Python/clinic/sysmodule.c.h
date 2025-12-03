@@ -1994,29 +1994,6 @@ sys_get_lazy_imports(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_get_lazy_imports_impl(module);
 }
 
-PyDoc_STRVAR(sys_get_lazy_modules__doc__,
-"get_lazy_modules($module, /)\n"
-"--\n"
-"\n"
-"Gets the set of module names that have been lazily imported.\n"
-"\n"
-"Returns a set of fully-qualified module names that have been lazily\n"
-"imported at some point (primarily for diagnostics and introspection).\n"
-"Note that modules are removed from this set when they are reified\n"
-"(actually loaded).");
-
-#define SYS_GET_LAZY_MODULES_METHODDEF    \
-    {"get_lazy_modules", (PyCFunction)sys_get_lazy_modules, METH_NOARGS, sys_get_lazy_modules__doc__},
-
-static PyObject *
-sys_get_lazy_modules_impl(PyObject *module);
-
-static PyObject *
-sys_get_lazy_modules(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return sys_get_lazy_modules_impl(module);
-}
-
 PyDoc_STRVAR(_jit_is_available__doc__,
 "is_available($module, /)\n"
 "--\n"
@@ -2144,4 +2121,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=a64004ec17cceb34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=adbadb629b98eabf input=a9049054013a1b77]*/
