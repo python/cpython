@@ -271,7 +271,7 @@ def wasi_sdk_env(context):
     for env_var, binary_name in list(env.items()):
         env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)
 
-    if wasi_sdk_path != pathlib.Path("/opt/wasi-sdk"):
+    if not wasi_sdk_path.name.startswith("wasi-sdk"):
         for compiler in ["CC", "CPP", "CXX"]:
             env[compiler] += f" --sysroot={sysroot}"
 
