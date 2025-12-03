@@ -1403,8 +1403,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # Fix the class reference in the __annotate__ method
     init = newcls.__init__
-    if hasattr(init, "__annotate__"):
-        init_annotate = init.__annotate__
+    if init_annotate := getattr(init, "__annotate__", None):
         if getattr(init_annotate, "__generated_by_dataclasses__", False):
             _update_func_cell_for__class__(init_annotate, cls, newcls)
 
