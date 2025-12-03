@@ -307,6 +307,15 @@ if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   AC_MSG_ERROR([pkg-config is required])]
 fi
 
+dnl Allow distributors to provide custom missing stdlib module error messages
+AC_ARG_WITH([missing-stdlib-config],
+  [AS_HELP_STRING([--with-missing-stdlib-config=FILE],
+                  [File with custom module error messages for missing stdlib modules])],
+  [MISSING_STDLIB_CONFIG="$withval"],
+  [MISSING_STDLIB_CONFIG=""]
+)
+AC_SUBST([MISSING_STDLIB_CONFIG])
+
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING([MACHDEP])
@@ -1201,6 +1210,14 @@ if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
 AC_SUBST([MULTIARCH_CPPFLAGS])
+
+# Guess C stack direction
+AS_CASE([$host],
+  [hppa*], [_Py_STACK_GROWS_DOWN=0],
+  [_Py_STACK_GROWS_DOWN=1])
+AC_DEFINE_UNQUOTED([_Py_STACK_GROWS_DOWN], [$_Py_STACK_GROWS_DOWN],
+  [Define to 1 if the machine stack grows down (default); 0 if it grows up.])
+AC_SUBST([_Py_STACK_GROWS_DOWN])
 
 dnl Support tiers according to https://peps.python.org/pep-0011/
 dnl
@@ -7186,6 +7203,7 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \

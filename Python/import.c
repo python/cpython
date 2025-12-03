@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -309,13 +310,8 @@ PyImport_GetModule(PyObject *name)
    if not, create a new one and insert it in the modules dictionary. */
 
 static PyObject *
-import_add_module(PyThreadState *tstate, PyObject *name)
+import_add_module_lock_held(PyObject *modules, PyObject *name)
 {
-    PyObject *modules = get_modules_dict(tstate, false);
-    if (modules == NULL) {
-        return NULL;
-    }
-
     PyObject *m;
     if (PyMapping_GetOptionalItem(modules, name, &m) < 0) {
         return NULL;
@@ -332,6 +328,21 @@ import_add_module(PyThreadState *tstate, PyObject *name)
         return NULL;
     }
 
+    return m;
+}
+
+static PyObject *
+import_add_module(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *modules = get_modules_dict(tstate, false);
+    if (modules == NULL) {
+        return NULL;
+    }
+
+    PyObject *m;
+    Py_BEGIN_CRITICAL_SECTION(modules);
+    m = import_add_module_lock_held(modules, name);
+    Py_END_CRITICAL_SECTION();
     return m;
 }
 
@@ -1550,31 +1561,39 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
     if (!PyModule_Check(module) ||
         ((PyModuleObject *)module)->md_requires_gil)
     {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            int warn_result = PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-            if (warn_result < 0) {
-                return warn_result;
-            }
+        if (PyModule_Check(module)) {
+            assert(((PyModuleObject *)module)->md_token_is_def);
         }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
+        if (_PyImport_EnableGILAndWarn(tstate, module_name) < 0) {
+            return -1;
         }
     }
     else {
         _PyEval_DisableGIL(tstate);
     }
 
+    return 0;
+}
+
+int
+_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name)
+{
+    if (_PyEval_EnableGILPermanent(tstate)) {
+        return PyErr_WarnFormat(
+            PyExc_RuntimeWarning,
+            1,
+            "The global interpreter lock (GIL) has been enabled to load "
+            "module '%U', which has not declared that it can run safely "
+            "without the GIL. To override this behavior and keep the GIL "
+            "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+            module_name
+        );
+    }
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+        PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                            module_name);
+    }
     return 0;
 }
 #endif
@@ -4785,6 +4804,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
     if (ex0) {
         mod = import_run_modexport(tstate, ex0, &info, spec);
+        // Modules created from slots handle GIL enablement (Py_mod_gil slot)
+        // when they're created.
         goto cleanup;
     }
     if (p0 == NULL) {

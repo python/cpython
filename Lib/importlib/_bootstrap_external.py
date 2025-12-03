@@ -208,12 +208,8 @@ def _write_atomic(path, data, mode=0o666):
     try:
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
-        with _io.FileIO(fd, 'wb') as file:
-            bytes_written = file.write(data)
-        if bytes_written != len(data):
-            # Raise an OSError so the 'except' below cleans up the partially
-            # written file.
-            raise OSError("os.write() didn't write the full pyc file")
+        with _io.open(fd, 'wb') as file:
+            file.write(data)
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -552,8 +548,7 @@ def decode_source(source_bytes):
     import tokenize  # To avoid bootstrap issues.
     source_bytes_readline = _io.BytesIO(source_bytes).readline
     encoding = tokenize.detect_encoding(source_bytes_readline)
-    newline_decoder = _io.IncrementalNewlineDecoder(None, True)
-    return newline_decoder.decode(source_bytes.decode(encoding[0]))
+    return _io.TextIOWrapper(_io.BytesIO(source_bytes), encoding=encoding[0], newline=None).read()
 
 
 # Module specifications #######################################################

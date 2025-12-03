@@ -967,6 +967,7 @@ LDLIBRARY
 LIBRARY
 BUILDEXEEXT
 NO_AS_NEEDED
+_Py_STACK_GROWS_DOWN
 MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
@@ -1011,6 +1012,7 @@ UNIVERSALSDK
 host_exec_prefix
 host_prefix
 MACHDEP
+MISSING_STDLIB_CONFIG
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
@@ -1082,6 +1084,7 @@ ac_user_opts='
 enable_option_checking
 with_build_python
 with_pkg_config
+with_missing_stdlib_config
 enable_universalsdk
 with_universal_archs
 with_framework_name
@@ -1861,6 +1864,9 @@ Optional Packages:
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
+  --with-missing-stdlib-config=FILE
+                          File with custom module error messages for missing
+                          stdlib modules
   --with-universal-archs=ARCH
                           specify the kind of macOS universal binary that
                           should be created. This option is only valid when
@@ -4093,6 +4099,19 @@ esac
 if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   as_fn_error $? "pkg-config is required" "$LINENO" 5]
 fi
+
+
+# Check whether --with-missing-stdlib-config was given.
+if test ${with_missing_stdlib_config+y}
+then :
+  withval=$with_missing_stdlib_config; MISSING_STDLIB_CONFIG="$withval"
+else case e in #(
+  e) MISSING_STDLIB_CONFIG=""
+ ;;
+esac
+fi
+
+
 
 # Set name for machine-dependent library files
 
@@ -7211,6 +7230,18 @@ esac
 if test x$MULTIARCH != x; then
   MULTIARCH_CPPFLAGS="-DMULTIARCH=\\\"$MULTIARCH\\\""
 fi
+
+
+# Guess C stack direction
+case $host in #(
+  hppa*) :
+    _Py_STACK_GROWS_DOWN=0 ;; #(
+  *) :
+    _Py_STACK_GROWS_DOWN=1 ;;
+esac
+
+printf "%s\n" "#define _Py_STACK_GROWS_DOWN $_Py_STACK_GROWS_DOWN" >>confdefs.h
+
 
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PEP 11 support tier" >&5
@@ -29974,6 +30005,7 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \

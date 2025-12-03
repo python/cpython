@@ -40,6 +40,17 @@ def get_first_executor(func):
             pass
     return None
 
+def get_all_executors(func):
+    code = func.__code__
+    co_code = code.co_code
+    executors = []
+    for i in range(0, len(co_code), 2):
+        try:
+            executors.append(_opcode.get_executor(code, i))
+        except ValueError:
+            pass
+    return executors
+
 
 def iter_opnames(ex):
     for item in ex:
@@ -2469,8 +2480,6 @@ class TestUopsOptimization(unittest.TestCase):
 
 
         testfunc(_testinternalcapi.TIER2_THRESHOLD)
-        ex = get_first_executor(testfunc)
-        assert ex is not None
         """))
 
     def test_pop_top_specialize_none(self):
@@ -2628,6 +2637,63 @@ class TestUopsOptimization(unittest.TestCase):
             g = gen()
             next(g)
         """ % _testinternalcapi.SPECIALIZATION_THRESHOLD))
+
+    def test_executor_side_exits_create_another_executor(self):
+        def f():
+            for x in range(TIER2_THRESHOLD + 3):
+                for y in range(TIER2_THRESHOLD + 3):
+                    z = x + y
+
+        f()
+        all_executors = get_all_executors(f)
+        # Inner loop warms up first.
+        # Outer loop warms up later, linking to the inner one.
+        # Therefore, we have at least two executors.
+        self.assertGreaterEqual(len(all_executors), 2)
+        for executor in all_executors:
+            opnames = list(get_opnames(executor))
+            # Assert all executors first terminator ends in
+            # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
+            for idx, op in enumerate(opnames):
+                if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
+                    break
+                elif op == "_DEOPT":
+                    self.fail(f"_DEOPT encountered first at executor"
+                              f" {executor} at offset {idx} rather"
+                              f" than expected _EXIT_TRACE")
+
+    def test_enter_executor_valid_op_arg(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            sys.setrecursionlimit(30) # reduce time of the run
+
+            str_v1 = ''
+            tuple_v2 = (None, None, None, None, None)
+            small_int_v3 = 4
+
+            def f1():
+
+                for _ in range(10):
+                    abs(0)
+
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+
+                def recursive_wrapper_4569():
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    recursive_wrapper_4569()
+
+                recursive_wrapper_4569()
+
+            for i_f1 in range(19000):
+                try:
+                    f1()
+                except RecursionError:
+                    pass
+        """))
 
 
 def global_identity(x):
