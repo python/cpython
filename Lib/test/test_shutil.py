@@ -1134,6 +1134,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         # Verify the error message contains "Infinite recursion detected"
         self.assertIn("Infinite recursion detected", str(cm.exception))
 
+
 class TestCopy(BaseTest, unittest.TestCase):
 
     ### shutil.copymode
