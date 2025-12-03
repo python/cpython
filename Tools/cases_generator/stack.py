@@ -296,7 +296,7 @@ class Stack:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+            out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
