@@ -7,6 +7,7 @@ import threading
 import time
 
 from .collector import Collector
+from .opcode_utils import get_opcode_info, format_opcode
 try:
     from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED
 except ImportError:
@@ -26,6 +27,7 @@ GECKO_CATEGORIES = [
     {"name": "GIL", "color": "green", "subcategories": ["Other"]},
     {"name": "CPU", "color": "purple", "subcategories": ["Other"]},
     {"name": "Code Type", "color": "red", "subcategories": ["Other"]},
+    {"name": "Opcodes", "color": "magenta", "subcategories": ["Other"]},
 ]
 
 # Category indices
@@ -36,6 +38,7 @@ CATEGORY_GC = 3
 CATEGORY_GIL = 4
 CATEGORY_CPU = 5
 CATEGORY_CODE_TYPE = 6
+CATEGORY_OPCODES = 7
 
 # Subcategory indices
 DEFAULT_SUBCATEGORY = 0
@@ -56,9 +59,10 @@ STACKWALK_DISABLED = 0
 
 
 class GeckoCollector(Collector):
-    def __init__(self, sample_interval_usec, *, skip_idle=False):
+    def __init__(self, sample_interval_usec, *, skip_idle=False, opcodes=False):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
+        self.opcodes_enabled = opcodes
         self.start_time = time.time() * 1000  # milliseconds since epoch
 
         # Global string table (shared across all threads)
@@ -90,6 +94,9 @@ class GeckoCollector(Collector):
 
         # Track which threads have been initialized for state tracking
         self.initialized_threads = set()
+
+        # Opcode state tracking per thread: tid -> (opcode, lineno, col_offset, funcname, filename, start_time)
+        self.opcode_state = {}
 
     def _track_state_transition(self, tid, condition, active_dict, inactive_dict,
                                   active_name, inactive_name, category, current_time):
@@ -232,6 +239,30 @@ class GeckoCollector(Collector):
                 samples["time"].append(current_time)
                 samples["eventDelay"].append(None)
 
+                # Track opcode state changes for interval markers (leaf frame only)
+                if self.opcodes_enabled:
+                    leaf_frame = frames[0]
+                    filename, location, funcname, opcode = leaf_frame
+                    if isinstance(location, tuple):
+                        lineno, _, col_offset, _ = location
+                    else:
+                        lineno = location
+                        col_offset = -1
+
+                    current_state = (opcode, lineno, col_offset, funcname, filename)
+
+                    if tid not in self.opcode_state:
+                        # First observation - start tracking
+                        self.opcode_state[tid] = (*current_state, current_time)
+                    elif self.opcode_state[tid][:5] != current_state:
+                        # State changed - emit marker for previous state
+                        prev_opcode, prev_lineno, prev_col, prev_funcname, prev_filename, prev_start = self.opcode_state[tid]
+                        self._add_opcode_interval_marker(
+                            tid, prev_opcode, prev_lineno, prev_col, prev_funcname, prev_start, current_time
+                        )
+                        # Start tracking new state
+                        self.opcode_state[tid] = (*current_state, current_time)
+
         self.sample_count += 1
 
     def _create_thread(self, tid):
@@ -369,6 +400,36 @@ class GeckoCollector(Collector):
             "tid": tid
         })
 
+    def _add_opcode_interval_marker(self, tid, opcode, lineno, col_offset, funcname, start_time, end_time):
+        """Add an interval marker for opcode execution span."""
+        if tid not in self.threads or opcode is None:
+            return
+
+        thread_data = self.threads[tid]
+        opcode_info = get_opcode_info(opcode)
+        # Use formatted opcode name (with base opcode for specialized ones)
+        formatted_opname = format_opcode(opcode)
+
+        name_idx = self._intern_string(formatted_opname)
+
+        markers = thread_data["markers"]
+        markers["name"].append(name_idx)
+        markers["startTime"].append(start_time)
+        markers["endTime"].append(end_time)
+        markers["phase"].append(1)  # 1 = interval marker
+        markers["category"].append(CATEGORY_OPCODES)
+        markers["data"].append({
+            "type": "Opcode",
+            "opcode": opcode,
+            "opname": formatted_opname,
+            "base_opname": opcode_info["base_opname"],
+            "is_specialized": opcode_info["is_specialized"],
+            "line": lineno,
+            "column": col_offset if col_offset >= 0 else None,
+            "function": funcname,
+            "duration": end_time - start_time,
+        })
+
     def _process_stack(self, thread_data, frames):
         """Process a stack and return the stack index."""
         if not frames:
@@ -386,17 +447,25 @@ class GeckoCollector(Collector):
         prefix_stack_idx = None
 
         for frame_tuple in reversed(frames):
-            # frame_tuple is (filename, lineno, funcname)
-            filename, lineno, funcname = frame_tuple
+            # frame_tuple is (filename, location, funcname, opcode)
+            # location is (lineno, end_lineno, col_offset, end_col_offset) or just lineno
+            filename, location, funcname, opcode = frame_tuple
+            if isinstance(location, tuple):
+                lineno, end_lineno, col_offset, end_col_offset = location
+            else:
+                # Legacy format: location is just lineno
+                lineno = location
+                col_offset = -1
+                end_col_offset = -1
 
             # Get or create function
             func_idx = self._get_or_create_func(
                 thread_data, filename, funcname, lineno
             )
 
-            # Get or create frame
+            # Get or create frame (include column for precise source location)
             frame_idx = self._get_or_create_frame(
-                thread_data, func_idx, lineno
+                thread_data, func_idx, lineno, col_offset
             )
 
             # Check stack cache
@@ -494,10 +563,11 @@ class GeckoCollector(Collector):
         resource_cache[filename] = resource_idx
         return resource_idx
 
-    def _get_or_create_frame(self, thread_data, func_idx, lineno):
+    def _get_or_create_frame(self, thread_data, func_idx, lineno, col_offset=-1):
         """Get or create a frame entry."""
         frame_cache = thread_data["_frameCache"]
-        frame_key = (func_idx, lineno)
+        # Include column in cache key for precise frame identification
+        frame_key = (func_idx, lineno, col_offset if col_offset >= 0 else None)
 
         if frame_key in frame_cache:
             return frame_cache[frame_key]
@@ -531,7 +601,8 @@ class GeckoCollector(Collector):
         frame_inner_window_ids.append(None)
         frame_implementations.append(None)
         frame_lines.append(lineno if lineno else None)
-        frame_columns.append(None)
+        # Store column offset if available (>= 0), otherwise None
+        frame_columns.append(col_offset if col_offset >= 0 else None)
         frame_optimizations.append(None)
 
         frame_cache[frame_key] = frame_idx
@@ -557,6 +628,12 @@ class GeckoCollector(Collector):
             for tid in list(state_dict.keys()):
                 self._add_marker(tid, marker_name, state_dict[tid], end_time, category)
                 del state_dict[tid]
+
+        # Close any open opcode markers
+        for tid, state in list(self.opcode_state.items()):
+            opcode, lineno, col_offset, funcname, filename, start_time = state
+            self._add_opcode_interval_marker(tid, opcode, lineno, col_offset, funcname, start_time, end_time)
+        self.opcode_state.clear()
 
     def export(self, filename):
         """Export the profile to a Gecko JSON file."""
@@ -599,6 +676,31 @@ class GeckoCollector(Collector):
         print(
             f"Open in Firefox Profiler: https://profiler.firefox.com/"
         )
+
+    def _build_marker_schema(self):
+        """Build marker schema definitions for Firefox Profiler."""
+        schema = []
+
+        # Opcode marker schema (only if opcodes enabled)
+        if self.opcodes_enabled:
+            schema.append({
+                "name": "Opcode",
+                "display": ["marker-table", "marker-chart"],
+                "tooltipLabel": "{marker.data.opname}",
+                "tableLabel": "{marker.data.opname} at line {marker.data.line}",
+                "chartLabel": "{marker.data.opname}",
+                "fields": [
+                    {"key": "opname", "label": "Opcode", "format": "string", "searchable": True},
+                    {"key": "base_opname", "label": "Base Opcode", "format": "string"},
+                    {"key": "is_specialized", "label": "Specialized", "format": "string"},
+                    {"key": "line", "label": "Line", "format": "integer"},
+                    {"key": "column", "label": "Column", "format": "integer"},
+                    {"key": "function", "label": "Function", "format": "string"},
+                    {"key": "duration", "label": "Duration", "format": "duration"},
+                ],
+            })
+
+        return schema
 
     def _build_profile(self):
         """Build the complete profile structure in processed format."""
@@ -649,7 +751,7 @@ class GeckoCollector(Collector):
                 "CPUName": "",
                 "product": "Python",
                 "symbolicated": True,
-                "markerSchema": [],
+                "markerSchema": self._build_marker_schema(),
                 "importedFrom": "Tachyon Sampling Profiler",
                 "extensions": {
                     "id": [],
