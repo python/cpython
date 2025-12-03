@@ -34,7 +34,7 @@ from .helpers import (
     skip_if_not_supported,
     PROCESS_VM_READV_SUPPORTED,
 )
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
+from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo
 
 # Duration for profiling tests - long enough for process to complete naturally
 PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))
@@ -301,10 +301,10 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            ("factorial.py", 10, "factorial"),  # recursive
-                            ("factorial.py", 10, "factorial"),  # deeper
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # recursive
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # deeper
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
@@ -315,13 +315,9 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            (
-                                "factorial.py",
-                                10,
-                                "factorial",
-                            ),  # different depth
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # different depth
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
@@ -385,7 +381,7 @@ def cpu_intensive_work():
 
 def main_loop():
     """Main test loop."""
-    max_iterations = 200
+    max_iterations = 1000
 
     for iteration in range(max_iterations):
         if iteration % 2 == 0:

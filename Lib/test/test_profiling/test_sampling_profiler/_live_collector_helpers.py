@@ -5,17 +5,7 @@ from profiling.sampling.constants import (
     THREAD_STATUS_ON_CPU,
 )
 
-
-class MockFrameInfo:
-    """Mock FrameInfo for testing."""
-
-    def __init__(self, filename, lineno, funcname):
-        self.filename = filename
-        self.lineno = lineno
-        self.funcname = funcname
-
-    def __repr__(self):
-        return f"MockFrameInfo(filename='{self.filename}', lineno={self.lineno}, funcname='{self.funcname}')"
+from .mocks import LocationInfo, MockFrameInfo
 
 
 class MockThreadInfo:

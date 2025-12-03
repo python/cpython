@@ -155,12 +155,12 @@ class TestGetStackTrace(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
 
             thread_expected_stack_trace = [
-                FrameInfo([script_name, 15, "foo"]),
-                FrameInfo([script_name, 12, "baz"]),
-                FrameInfo([script_name, 9, "bar"]),
-                FrameInfo([threading.__file__, ANY, "Thread.run"]),
-                FrameInfo([threading.__file__, ANY, "Thread._bootstrap_inner"]),
-                FrameInfo([threading.__file__, ANY, "Thread._bootstrap"]),
+                FrameInfo([script_name, (15, ANY, ANY, ANY), "foo", ANY]),
+                FrameInfo([script_name, (12, ANY, ANY, ANY), "baz", ANY]),
+                FrameInfo([script_name, (9, ANY, ANY, ANY), "bar", ANY]),
+                FrameInfo([threading.__file__, ANY, "Thread.run", ANY]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap_inner", ANY]),
+                FrameInfo([threading.__file__, ANY, "Thread._bootstrap", ANY]),
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
@@ -175,7 +175,7 @@ class TestGetStackTrace(unittest.TestCase):
             self.assertTrue(found_expected_stack, "Expected thread stack trace not found")
 
             # Check that the main thread stack trace is in the result
-            frame = FrameInfo([script_name, 19, "<module>"])
+            frame = FrameInfo([script_name, (19, ANY, ANY, ANY), "<module>", ANY])
             main_thread_found = False
             for interpreter_info in stack_trace:
                 for thread_info in interpreter_info.threads:
@@ -323,6 +323,7 @@ class TestGetStackTrace(unittest.TestCase):
                                         taskgroups.__file__,
                                         ANY,
                                         "TaskGroup._aexit",
+                                        None,
                                     ]
                                 ),
                                 tuple(
@@ -330,21 +331,22 @@ class TestGetStackTrace(unittest.TestCase):
                                         taskgroups.__file__,
                                         ANY,
                                         "TaskGroup.__aexit__",
+                                        None,
                                     ]
                                 ),
-                                tuple([script_name, 26, "main"]),
+                                tuple([script_name, (26, ANY, ANY, ANY), "main", None]),
                             )
                         ],
                         "c2_root": [
                             (
-                                tuple([script_name, 10, "c5"]),
-                                tuple([script_name, 14, "c4"]),
-                                tuple([script_name, 17, "c3"]),
-                                tuple([script_name, 20, "c2"]),
+                                tuple([script_name, (10, ANY, ANY, ANY), "c5", None]),
+                                tuple([script_name, (14, ANY, ANY, ANY), "c4", None]),
+                                tuple([script_name, (17, ANY, ANY, ANY), "c3", None]),
+                                tuple([script_name, (20, ANY, ANY, ANY), "c2", None]),
                             )
                         ],
-                        "sub_main_1": [(tuple([script_name, 23, "c1"]),)],
-                        "sub_main_2": [(tuple([script_name, 23, "c1"]),)],
+                        "sub_main_1": [(tuple([script_name, (23, ANY, ANY, ANY), "c1", None]),)],
+                        "sub_main_2": [(tuple([script_name, (23, ANY, ANY, ANY), "c1", None]),)],
                     },
                 )
 
@@ -372,6 +374,7 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup._aexit",
+                                            None,
                                         ]
                                     ),
                                     tuple(
@@ -379,13 +382,14 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup.__aexit__",
+                                            None,
                                         ]
                                     ),
-                                    tuple([script_name, 26, "main"]),
+                                    tuple([script_name, (26, ANY, ANY, ANY), "main", None]),
                                 ),
                             ),
-                            ("sub_main_1", (tuple([script_name, 23, "c1"]),)),
-                            ("sub_main_2", (tuple([script_name, 23, "c1"]),)),
+                            ("sub_main_1", (tuple([script_name, (23, ANY, ANY, ANY), "c1", None]),)),
+                            ("sub_main_2", (tuple([script_name, (23, ANY, ANY, ANY), "c1", None]),)),
                         ],
                         "sub_main_1": [
                             (
@@ -396,6 +400,7 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup._aexit",
+                                            None,
                                         ]
                                     ),
                                     tuple(
@@ -403,9 +408,10 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup.__aexit__",
+                                            None,
                                         ]
                                     ),
-                                    tuple([script_name, 26, "main"]),
+                                    tuple([script_name, (26, ANY, ANY, ANY), "main", None]),
                                 ),
                             )
                         ],
@@ -418,6 +424,7 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup._aexit",
+                                            None,
                                         ]
                                     ),
                                     tuple(
@@ -425,9 +432,10 @@ class TestGetStackTrace(unittest.TestCase):
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup.__aexit__",
+                                            None,
                                         ]
                                     ),
-                                    tuple([script_name, 26, "main"]),
+                                    tuple([script_name, (26, ANY, ANY, ANY), "main", None]),
                                 ),
                             )
                         ],
@@ -512,9 +520,9 @@ class TestGetStackTrace(unittest.TestCase):
                 coroutine_stack,
                 [
                     (
-                        tuple([script_name, 10, "gen_nested_call"]),
-                        tuple([script_name, 16, "gen"]),
-                        tuple([script_name, 19, "main"]),
+                        tuple([script_name, (10, ANY, ANY, ANY), "gen_nested_call", None]),
+                        tuple([script_name, (16, ANY, ANY, ANY), "gen", None]),
+                        tuple([script_name, (19, ANY, ANY, ANY), "main", None]),
                     )
                 ],
             )
@@ -624,11 +632,11 @@ class TestGetStackTrace(unittest.TestCase):
             self.assertEqual(
                 coroutine_stacks,
                 {
-                    "Task-1": [(tuple([script_name, 21, "main"]),)],
+                    "Task-1": [(tuple([script_name, (21, ANY, ANY, ANY), "main", None]),)],
                     "Task-2": [
                         (
-                            tuple([script_name, 11, "deep"]),
-                            tuple([script_name, 15, "c1"]),
+                            tuple([script_name, (11, ANY, ANY, ANY), "deep", None]),
+                            tuple([script_name, (15, ANY, ANY, ANY), "c1", None]),
                         )
                     ],
                 },
@@ -650,7 +658,7 @@ class TestGetStackTrace(unittest.TestCase):
                 {
                     "Task-1": [],
                     "Task-2": [
-                        ("Task-1", (tuple([script_name, 21, "main"]),))
+                        ("Task-1", (tuple([script_name, (21, ANY, ANY, ANY), "main", None]),))
                     ],
                 },
             )
@@ -762,19 +770,20 @@ class TestGetStackTrace(unittest.TestCase):
                 {
                     "Task-1": [
                         (
-                            tuple([staggered.__file__, ANY, "staggered_race"]),
-                            tuple([script_name, 21, "main"]),
+                            tuple([staggered.__file__, ANY, "staggered_race", None]),
+                            tuple([script_name, (21, ANY, ANY, ANY), "main", None]),
                         )
                     ],
                     "Task-2": [
                         (
-                            tuple([script_name, 11, "deep"]),
-                            tuple([script_name, 15, "c1"]),
+                            tuple([script_name, (11, ANY, ANY, ANY), "deep", None]),
+                            tuple([script_name, (15, ANY, ANY, ANY), "c1", None]),
                             tuple(
                                 [
                                     staggered.__file__,
                                     ANY,
                                     "staggered_race.<locals>.run_one_coro",
+                                    None,
                                 ]
                             ),
                         )
@@ -802,9 +811,9 @@ class TestGetStackTrace(unittest.TestCase):
                             "Task-1",
                             (
                                 tuple(
-                                    [staggered.__file__, ANY, "staggered_race"]
+                                    [staggered.__file__, ANY, "staggered_race", None]
                                 ),
-                                tuple([script_name, 21, "main"]),
+                                tuple([script_name, (21, ANY, ANY, ANY), "main", None]),
                             ),
                         )
                     ],
@@ -938,11 +947,11 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertGreaterEqual(len(entries), 1000)
                 # the first three tasks stem from the code structure
                 main_stack = [
-                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
+                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit", ANY]),
                     FrameInfo(
-                        [taskgroups.__file__, ANY, "TaskGroup.__aexit__"]
+                        [taskgroups.__file__, ANY, "TaskGroup.__aexit__", ANY]
                     ),
-                    FrameInfo([script_name, 60, "main"]),
+                    FrameInfo([script_name, (60, ANY, ANY, ANY), "main", ANY]),
                 ]
                 self.assertIn(
                     TaskInfo(
@@ -964,6 +973,7 @@ class TestGetStackTrace(unittest.TestCase):
                                                     base_events.__file__,
                                                     ANY,
                                                     "Server.serve_forever",
+                                                    ANY,
                                                 ]
                                             )
                                         ],
@@ -980,6 +990,7 @@ class TestGetStackTrace(unittest.TestCase):
                                                     taskgroups.__file__,
                                                     ANY,
                                                     "TaskGroup._aexit",
+                                                    ANY,
                                                 ]
                                             ),
                                             FrameInfo(
@@ -987,11 +998,10 @@ class TestGetStackTrace(unittest.TestCase):
                                                     taskgroups.__file__,
                                                     ANY,
                                                     "TaskGroup.__aexit__",
+                                                    ANY,
                                                 ]
                                             ),
-                                            FrameInfo(
-                                                [script_name, ANY, "main"]
-                                            ),
+                                            FrameInfo([script_name, ANY, "main", ANY]),
                                         ],
                                         ANY,
                                     ]
@@ -1010,14 +1020,13 @@ class TestGetStackTrace(unittest.TestCase):
                                 CoroInfo(
                                     [
                                         [
-                                            FrameInfo(
-                                                [tasks.__file__, ANY, "sleep"]
-                                            ),
+                                            FrameInfo([tasks.__file__, ANY, "sleep", ANY]),
                                             FrameInfo(
                                                 [
                                                     script_name,
-                                                    38,
+                                                    (38, ANY, ANY, ANY),
                                                     "echo_client",
+                                                    ANY,
                                                 ]
                                             ),
                                         ],
@@ -1034,6 +1043,7 @@ class TestGetStackTrace(unittest.TestCase):
                                                     taskgroups.__file__,
                                                     ANY,
                                                     "TaskGroup._aexit",
+                                                    ANY,
                                                 ]
                                             ),
                                             FrameInfo(
@@ -1041,13 +1051,15 @@ class TestGetStackTrace(unittest.TestCase):
                                                     taskgroups.__file__,
                                                     ANY,
                                                     "TaskGroup.__aexit__",
+                                                    ANY,
                                                 ]
                                             ),
                                             FrameInfo(
                                                 [
                                                     script_name,
-                                                    41,
+                                                    (41, ANY, ANY, ANY),
                                                     "echo_client_spam",
+                                                    ANY,
                                                 ]
                                             ),
                                         ],
@@ -1069,6 +1081,7 @@ class TestGetStackTrace(unittest.TestCase):
                                         taskgroups.__file__,
                                         ANY,
                                         "TaskGroup._aexit",
+                                        ANY,
                                     ]
                                 ),
                                 FrameInfo(
@@ -1076,11 +1089,10 @@ class TestGetStackTrace(unittest.TestCase):
                                         taskgroups.__file__,
                                         ANY,
                                         "TaskGroup.__aexit__",
+                                        ANY,
                                     ]
                                 ),
-                                FrameInfo(
-                                    [script_name, 41, "echo_client_spam"]
-                                ),
+                                FrameInfo([script_name, (41, ANY, ANY, ANY), "echo_client_spam", ANY]),
                             ],
                             ANY,
                         ]
@@ -1137,19 +1149,222 @@ class TestGetStackTrace(unittest.TestCase):
                 FrameInfo(
                     [
                         __file__,
-                        get_stack_trace.__code__.co_firstlineno + 2,
+                        (get_stack_trace.__code__.co_firstlineno + 2, ANY, ANY, ANY),
                         "get_stack_trace",
+                        ANY,
                     ]
                 ),
                 FrameInfo(
                     [
                         __file__,
-                        self.test_self_trace.__code__.co_firstlineno + 6,
+                        (self.test_self_trace.__code__.co_firstlineno + 6, ANY, ANY, ANY),
                         "TestGetStackTrace.test_self_trace",
+                        ANY,
                     ]
                 ),
             ],
         )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_opcodes_collection(self):
+        """Test that opcodes are collected when the opcodes flag is set."""
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time
+            import sys
+            import socket
+
+            def compute():
+                # Do some work that involves bytecode execution
+                total = 0
+                for i in range(1000):
+                    total += i
+                return total
+
+            def bar():
+                compute()
+
+            def foo():
+                bar()
+
+            # Signal that we're ready
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+            sock.sendall(b"ready")
+            sock.close()
+
+            # Keep computing in a loop
+            while True:
+                foo()
+            """
+        )
+
+        with os.fdopen(os.dup(1), "w") as stdout:
+            with subprocess.Popen(
+                [sys.executable, "-c", script],
+                stdout=stdout,
+                stderr=stdout,
+                text=True,
+            ) as p:
+                client_socket = None
+                try:
+                    # Accept the ready signal
+                    server_socket = socket.socket(
+                        socket.AF_INET, socket.SOCK_STREAM
+                    )
+                    server_socket.setsockopt(
+                        socket.SOL_SOCKET, socket.SO_REUSEADDR, 1
+                    )
+                    server_socket.bind(("localhost", port))
+                    server_socket.settimeout(SHORT_TIMEOUT)
+                    server_socket.listen(1)
+                    client_socket, _ = server_socket.accept()
+                    client_socket.settimeout(SHORT_TIMEOUT)
+                    response = client_socket.recv(1024)
+                    self.assertEqual(response, b"ready")
+                    server_socket.close()
+
+                    # Get stack trace with opcodes=True
+                    unwinder = RemoteUnwinder(p.pid, opcodes=True)
+                    stack_trace = unwinder.get_stack_trace()
+
+                    # Find the thread with our compute/bar/foo stack
+                    found_opcodes = False
+                    for interpreter_info in stack_trace:
+                        for thread_info in interpreter_info.threads:
+                            for frame in thread_info.frame_info:
+                                # Check that frames have opcodes (not None)
+                                # when opcodes=True is set
+                                if frame.funcname in ("compute", "bar", "foo"):
+                                    # Opcode should be an integer, not None
+                                    self.assertIsInstance(
+                                        frame.opcode,
+                                        int,
+                                        f"Expected opcode to be int for {frame.funcname}, got {type(frame.opcode)}"
+                                    )
+                                    self.assertGreaterEqual(frame.opcode, 0)
+                                    found_opcodes = True
+
+                    self.assertTrue(
+                        found_opcodes,
+                        "Did not find any frames with opcodes from compute/bar/foo"
+                    )
+
+                finally:
+                    if client_socket is not None:
+                        client_socket.close()
+                    p.kill()
+                    p.terminate()
+                    p.wait(timeout=SHORT_TIMEOUT)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_location_extraction(self):
+        """Test that location tuples (lineno, end_lineno, col_offset, end_col_offset) are correctly extracted."""
+        port = find_unused_port()
+        # Script with predictable column positions
+        # Line 1: import time, sys, socket
+        # Line 2: (empty or comment)
+        # ...
+        # The key is foo() function where we can predict column offsets
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket
+
+            def foo():
+                x = 1 + 2
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(('localhost', {port}))
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            foo()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                response = client_socket.recv(1024)
+                self.assertEqual(response, b"ready")
+
+                # Get stack trace with opcodes to ensure we get full location info
+                unwinder = RemoteUnwinder(p.pid, opcodes=True)
+                stack_trace = unwinder.get_stack_trace()
+
+                # Find the foo function frame
+                foo_frame = None
+                for interpreter_info in stack_trace:
+                    for thread_info in interpreter_info.threads:
+                        for frame in thread_info.frame_info:
+                            if frame.funcname == "foo":
+                                foo_frame = frame
+                                break
+                        if foo_frame:
+                            break
+                    if foo_frame:
+                        break
+
+                self.assertIsNotNone(foo_frame, "Should find 'foo' function in stack trace")
+
+                # Verify location is a tuple with 4 elements
+                location = foo_frame.location
+                self.assertIsInstance(location, tuple, "location should be a tuple")
+                self.assertEqual(len(location), 4, "location should have 4 elements")
+
+                lineno, end_lineno, col_offset, end_col_offset = location
+
+                # Verify lineno is reasonable (should be line 8 where time.sleep is)
+                self.assertIsInstance(lineno, int, "lineno should be an integer")
+                self.assertEqual(lineno, 8, "lineno should be 8 (time.sleep line)")
+
+                # Verify end_lineno
+                self.assertIsInstance(end_lineno, int, "end_lineno should be an integer")
+                self.assertGreaterEqual(end_lineno, lineno, "end_lineno should be >= lineno")
+
+                # Verify col_offset and end_col_offset are integers
+                # They may be -1 if not available, or valid column offsets
+                self.assertIsInstance(col_offset, int, "col_offset should be an integer")
+                self.assertIsInstance(end_col_offset, int, "end_col_offset should be an integer")
+
+                # If column info is available (not -1), verify it's reasonable
+                if col_offset >= 0:
+                    self.assertLess(col_offset, 100, "col_offset should be reasonable")
+                if end_col_offset >= 0:
+                    self.assertLess(end_col_offset, 100, "end_col_offset should be reasonable")
+                    if col_offset >= 0:
+                        self.assertGreaterEqual(end_col_offset, col_offset,
+                                              "end_col_offset should be >= col_offset")
+
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1605,7 +1820,7 @@ class TestGetStackTrace(unittest.TestCase):
                             current_frame = thread_info.frame_info[0]
                             if (
                                 current_frame.funcname == "main_work"
-                                and current_frame.lineno > 15
+                                and current_frame.location[0] > 15
                             ):
                                 found = True
                                 break
