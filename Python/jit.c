@@ -60,6 +60,10 @@ jit_error(const char *message)
 static unsigned char *
 jit_alloc(size_t size)
 {
+    if (size > PY_MAX_JIT_CODE_SIZE) {
+        jit_error("code too big; refactor bytecodes.c to keep uop size down, or reduce maximum trace length.");
+        return NULL;
+    }
     assert(size);
     assert(size % get_page_size() == 0);
 #ifdef MS_WINDOWS

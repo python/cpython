@@ -278,6 +278,36 @@ get_co_name(JitOptContext *ctx, int index)
     return PyTuple_GET_ITEM(get_current_code_object(ctx)->co_names, index);
 }
 
+#ifdef Py_DEBUG
+void
+_Py_opt_assert_within_stack_bounds(
+    _Py_UOpsAbstractFrame *frame, JitOptRef *stack_pointer,
+    const char *filename, int lineno
+) {
+    if (frame->code == ((PyCodeObject *)&_Py_InitCleanup)) {
+        return;
+    }
+    int level = (int)(stack_pointer - frame->stack);
+    if (level < 0) {
+        printf("Stack underflow (depth = %d) at %s:%d\n", level, filename, lineno);
+        fflush(stdout);
+        abort();
+    }
+    int size = (int)(frame->stack_len);
+    if (level > size) {
+        printf("Stack overflow (depth = %d) at %s:%d\n", level, filename, lineno);
+        fflush(stdout);
+        abort();
+    }
+}
+#endif
+
+#ifdef Py_DEBUG
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_opt_assert_within_stack_bounds(ctx->frame, stack_pointer, (F), (L))
+#else
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
+#endif
+
 // TODO (gh-134584) generate most of this table automatically
 const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
     [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
