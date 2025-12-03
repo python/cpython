@@ -170,9 +170,9 @@ class Dialog(Toplevel):
 
         box = Frame(self)
 
-        w = Button(box, text="OK", width=10, command=self.ok, default=ACTIVE)
+        w = Button(box, text=_localize(self, "OK"), width=10, command=self.ok, default=ACTIVE)
         w.pack(side=LEFT, padx=5, pady=5)
-        w = Button(box, text="Cancel", width=10, command=self.cancel)
+        w = Button(box, text=_localize(self, "Cancel"), width=10, command=self.cancel)
         w.pack(side=LEFT, padx=5, pady=5)
 
         self.bind("<Return>", self.ok)
@@ -263,6 +263,11 @@ def _setup_dialog(w):
                   w, "moveableModal", "")
     elif w._windowingsystem == "x11":
         w.wm_attributes(type="dialog")
+
+
+def _localize(w, s):
+    return w.tk.call("namespace", "eval", "::tk", "::msgcat::mc", s)
+
 
 # --------------------------------------------------------------------
 # convenience dialogues
