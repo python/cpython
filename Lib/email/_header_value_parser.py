@@ -949,7 +949,7 @@ class WhiteSpaceTerminal(Terminal):
         return ' '
 
     def startswith_fws(self):
-        return True
+        return self and self[0] in WSP
 
 
 class ValueTerminal(Terminal):
