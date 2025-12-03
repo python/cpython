@@ -11,6 +11,51 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   .. versionadded:: 3.15
+
+   An object containing information about the ABI of the currently running
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that
+   require a specific build of the interpreter chosen from variants that can
+   co-exist on a single machine.
+   For example, it does not encode the base OS (Linux or Windows), but does
+   include pointer size since some systems support both 32- and 64-bit builds.
+   The available entries are the same on all platforms;
+   e.g. *pointer_size* is available even on 64-bit-only architectures.
+
+   The following attributes are available:
+
+   .. attribute:: abi_info.pointer_bits
+
+      The width of pointers in bits, as an integer,
+      equivalent to ``8 * sizeof(void *)``.
+      Usually, this is  ``32`` or ``64``.
+
+   .. attribute:: abi_info.free_threaded
+
+      A Boolean indicating whether the interpreter was built with
+      :term:`free threading` support.
+      This reflects either the presence of the :option:`--disable-gil`
+      :file:`configure` option (on Unix)
+      or setting the ``DisableGil`` property (on Windows).
+
+   .. attribute:: abi_info.debug
+
+      A Boolean indicating whether the interpreter was built in
+      :ref:`debug mode <debug-build>`.
+      This reflects either the presence of the :option:`--with-pydebug`
+      :file:`configure` option (on Unix)
+      or the ``Debug`` configuration (on Windows).
+
+   .. attribute:: abi_info.byteorder
+
+      A string indicating the native byte order,
+      either ``'big'`` or ``'little'``.
+      This is the same as the :data:`byteorder` attribute.
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``
@@ -523,8 +568,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
-   are honored, and it is possible to intercept the exit attempt at an outer level.
+   intercepted. Cleanup actions specified by :keyword:`finally` clauses of
+   :keyword:`try` statements are honored, and it is possible to intercept the
+   exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter
@@ -1130,10 +1176,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
       The size of the seed key of the hash algorithm
 
+   .. attribute:: hash_info.cutoff
+
+      Cutoff for small string DJBX33A optimization in range ``[1, cutoff)``.
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.4
-      Added *algorithm*, *hash_bits* and *seed_bits*
+      Added *algorithm*, *hash_bits*, *seed_bits*, and *cutoff*.
 
 
 .. data:: hexversion
@@ -1764,7 +1814,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
-   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   *arg*. *frame* is the :ref:`current stack frame <frame-objects>`. *event* is a string: ``'call'``,
    ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
    the event type.
 
@@ -2159,7 +2209,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Exceptions are now printed with colorful text.
 
    .. seealso::

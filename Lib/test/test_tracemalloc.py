@@ -8,7 +8,7 @@ from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
 from test import support
-from test.support import force_not_colorized
+from test.support import force_not_colorized, warnings_helper
 from test.support import os_helper
 from test.support import threading_helper
 
@@ -354,6 +354,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         # everything is fine
         return 0
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def test_fork(self):
         # check that tracemalloc is still working after fork
