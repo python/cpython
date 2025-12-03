@@ -615,18 +615,16 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
 static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
-    PyTypeObject *PyCType_Type;
-    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
-        return NULL;
+    PyTypeObject *PyCType_Type = Py_TYPE(type);
+    while (PyCType_Type != NULL && PyCType_Type->tp_base != &PyType_Type) {
+        PyCType_Type = PyCType_Type->tp_base;
     }
     if (PyCType_Type == NULL) {
         PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
         return NULL;
     }
 
-    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
-    Py_DECREF(PyCType_Type);
-    return info;
+    return PyObject_GetTypeData(type, PyCType_Type);
 }
 
 // Initialize StgInfo on a newly created type
