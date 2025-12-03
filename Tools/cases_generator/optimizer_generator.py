@@ -148,7 +148,7 @@ class OptimizerEmitter(Emitter):
         self.stack = stack
 
     def emit_save(self, storage: Storage) -> None:
-        storage.flush(self.out, check_stack_bounds=True)
+        storage.flush(self.out)
 
     def sync_sp(
         self,
@@ -162,7 +162,7 @@ class OptimizerEmitter(Emitter):
         next(tkn_iter)
         next(tkn_iter)
         storage.clear_inputs("when syncing stack")
-        storage.flush(self.out, check_stack_bounds=True)
+        storage.flush(self.out)
         storage.stack.clear(self.out)
         return True
 
@@ -272,7 +272,7 @@ class OptimizerEmitter(Emitter):
                         emitter.emit("}\n")
                         emitter.emit("}\n")
 
-        storage.flush(self.out, check_stack_bounds=True)
+        storage.flush(self.out)
         emitter.emit("break;\n")
         emitter.emit("}\n")
         return True
@@ -413,12 +413,12 @@ def write_uop(
                 var.in_local = False
             _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
-            storage.flush(out, check_stack_bounds=True)
+            storage.flush(out)
             out.start_line()
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out, check_stack_bounds=True)
+            stack.flush(out)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body.open) # from None
 
@@ -461,7 +461,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack()
+        stack = Stack(check_stack_bounds=True)
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
