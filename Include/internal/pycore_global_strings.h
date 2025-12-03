@@ -777,6 +777,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(stacklevel)
         STRUCT_FOR_ID(start)
         STRUCT_FOR_ID(statement)
+        STRUCT_FOR_ID(stats)
         STRUCT_FOR_ID(status)
         STRUCT_FOR_ID(stderr)
         STRUCT_FOR_ID(stdin)

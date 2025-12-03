@@ -2054,6 +2054,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stacklevel));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(start));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(statement));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stats));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(status));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stderr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(stdin));

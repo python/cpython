@@ -2052,6 +2052,7 @@ extern "C" {
     INIT_ID(stacklevel), \
     INIT_ID(start), \
     INIT_ID(statement), \
+    INIT_ID(stats), \
     INIT_ID(status), \
     INIT_ID(stderr), \
     INIT_ID(stdin), \
