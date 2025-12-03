@@ -602,8 +602,6 @@ def main():
                 code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules['__main__'] = module
             globs = {
                 '__spec__': spec,
                 '__file__': spec.origin,
