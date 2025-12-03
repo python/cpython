@@ -315,7 +315,7 @@ unregister = _resource_tracker.unregister
 getfd = _resource_tracker.getfd
 
 
-def decode_message(line):
+def _decode_message(line):
     if line.startswith(b'{'):
         try:
             obj = json.loads(line.decode('ascii'))
@@ -361,7 +361,7 @@ def main(fd):
         with open(fd, 'rb') as f:
             for line in f:
                 try:
-                    cmd, rtype, name = decode_message(line)
+                    cmd, rtype, name = _decode_message(line)
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
                     if cleanup_func is None:
                         raise ValueError(
