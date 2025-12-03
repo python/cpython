@@ -7370,13 +7370,17 @@ class ForkInThreads(unittest.TestCase):
 
 @unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
 class TestSharedMemoryNames(unittest.TestCase):
-    @resource_tracker_format_subtests
-    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(self):
+    @subTests('use_simple_format', (True, False))
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(
+            self, use_simple_format):
         # Test script that creates and cleans up shared memory with colon in name
         test_script = textwrap.dedent("""
             import sys
             from multiprocessing import shared_memory
+            from multiprocessing import resource_tracker
             import time
+
+            resource_tracker._resource_tracker._use_simple_format = %s
 
             # Test various patterns of colons in names
             test_names = [
@@ -7405,7 +7409,7 @@ class TestSharedMemoryNames(unittest.TestCase):
                     sys.exit(1)
 
             print("SUCCESS")
-        """)
+        """ % use_simple_format)
 
         rc, out, err = assert_python_ok("-c", test_script)
         self.assertIn(b"SUCCESS", out)

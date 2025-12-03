@@ -276,7 +276,7 @@ class ResourceTracker(object):
         assert nbytes == len(msg), f"{nbytes=} != {len(msg)=}"
 
     def _send(self, cmd, name, rtype):
-        if self._use_simple_format and ':' not in name:
+        if self._use_simple_format and '\n' not in name:
             msg = f"{cmd}:{name}:{rtype}\n".encode("ascii")
             if len(msg) > 512:
                 # posix guarantees that writes to a pipe of less than PIPE_BUF
@@ -334,7 +334,8 @@ def decode_message(line):
         except ValueError as e:
             raise ValueError("malformed resource_tracker base64_name: %r" % (b64,)) from e
     else:
-        cmd, name, rtype = line.strip().decode('ascii').split(':')
+        cmd, rest = line.strip().decode('ascii').split(':', maxsplit=1)
+        name, rtype = rest.rsplit(':', maxsplit=1)
     return cmd, rtype, name
 
 
