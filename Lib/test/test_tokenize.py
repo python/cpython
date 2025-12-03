@@ -1495,6 +1495,61 @@ class TestDetectEncoding(TestCase):
         expected = [b"print('\xc2\xa3')\n"]
         self.assertEqual(consumed_lines, expected)
 
+    def test_first_non_utf8_coding_line(self):
+        lines = (
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_first_utf8_coding_line_error(self):
+        lines = (
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_second_non_utf8_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_second_utf8_coding_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_non_utf8_shebang(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n',
+            b'#coding:iso-8859-15\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_utf8_shebang_error(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'#coding:ascii\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
     def test_cookie_second_line_empty_first_line(self):
         lines = (
             b'\n',
@@ -1547,6 +1602,28 @@ class TestDetectEncoding(TestCase):
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_nul_in_first_coding_line(self):
+        lines = (
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_nul_in_second_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_latin1_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -3106,6 +3183,7 @@ async def f():
             f'__{
                 x:d
             }__'""",
+            " a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)

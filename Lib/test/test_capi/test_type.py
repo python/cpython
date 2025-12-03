@@ -195,6 +195,24 @@ class TypeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testcapi.pytype_getmodulebydef(H2)
 
+    def test_get_module_by_token(self):
+        token = _testcapi.pymodule_get_token(_testcapi)
+
+        heaptype = _testcapi.create_type_with_token('_testcapi.H', 0)
+        mod = _testcapi.pytype_getmodulebytoken(heaptype, token)
+        self.assertIs(mod, _testcapi)
+
+        class H1(heaptype): pass
+        mod = _testcapi.pytype_getmodulebytoken(H1, token)
+        self.assertIs(mod, _testcapi)
+
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getmodulebytoken(int, token)
+
+        class H2(int): pass
+        with self.assertRaises(TypeError):
+            _testcapi.pytype_getmodulebytoken(H2, token)
+
     def test_freeze(self):
         # test PyType_Freeze()
         type_freeze = _testcapi.type_freeze
@@ -274,3 +292,10 @@ class TypeTests(unittest.TestCase):
         obj.__dict__ = {'bar': 3}
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
+
+    def test_extension_managed_weakref_nogc_type(self):
+        msg = ("type _testcapi.ManagedWeakrefNoGCType "
+               "has the Py_TPFLAGS_MANAGED_WEAKREF "
+               "flag but not Py_TPFLAGS_HAVE_GC flag")
+        with self.assertRaisesRegex(SystemError, msg):
+            _testcapi.create_managed_weakref_nogc_type()

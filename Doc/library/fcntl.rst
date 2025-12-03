@@ -132,7 +132,7 @@ The module defines the following functions:
       Add support of arbitrary :term:`bytes-like objects <bytes-like object>`,
       not only :class:`bytes`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The size of bytes-like objects is no longer limited to 1024 bytes.
 
 
@@ -194,7 +194,7 @@ The module defines the following functions:
       The GIL is always released during a system call.
       System calls failing with EINTR are automatically retried.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The size of not mutated bytes-like objects is no longer
       limited to 1024 bytes.
 

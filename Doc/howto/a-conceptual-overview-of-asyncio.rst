@@ -1,7 +1,7 @@
 .. _a-conceptual-overview-of-asyncio:
 
 ****************************************
-A Conceptual Overview of :mod:`!asyncio`
+A conceptual overview of :mod:`!asyncio`
 ****************************************
 
 This :ref:`HOWTO <how-tos>` article seeks to help you build a sturdy mental
@@ -9,12 +9,11 @@ model of how :mod:`asyncio` fundamentally works, helping you understand the
 how and why behind the recommended patterns.
 
 You might be curious about some key :mod:`!asyncio` concepts.
-You'll be comfortably able to answer these questions by the end of this
-article:
+By the end of this article, you'll be able to comfortably answer these questions:
 
 - What's happening behind the scenes when an object is awaited?
 - How does :mod:`!asyncio` differentiate between a task which doesn't need
-  CPU-time (such as a network request or file read) as opposed to a task that
+  CPU time (such as a network request or file read) as opposed to a task that
   does (such as computing n-factorial)?
 - How to write an asynchronous variant of an operation, such as
   an async sleep or database request.
@@ -35,18 +34,18 @@ A conceptual overview part 1: the high-level
 --------------------------------------------
 
 In part 1, we'll cover the main, high-level building blocks of :mod:`!asyncio`:
-the event loop, coroutine functions, coroutine objects, tasks and ``await``.
+the event loop, coroutine functions, coroutine objects, tasks, and ``await``.
 
 ==========
-Event Loop
+Event loop
 ==========
 
 Everything in :mod:`!asyncio` happens relative to the event loop.
-It's the star of the show.
+It's the star of the show, but prefers to work behind the scenes, managing
+and coordinating resources.
 It's like an orchestra conductor.
-It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
-done comes from the respect and cooperation of its worker bees.
+done comes from the respect and cooperation of its band members.
 
 In more technical terms, the event loop contains a collection of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
@@ -56,11 +55,11 @@ Once it pauses or completes, it returns control to the event loop.
 The event loop will then select another job from its pool and invoke it.
 You can *roughly* think of the collection of jobs as a queue: jobs are added and
 then processed one at a time, generally (but not always) in order.
-This process repeats indefinitely with the event loop cycling endlessly
+This process repeats indefinitely, with the event loop cycling endlessly
 onwards.
 If there are no more jobs pending execution, the event loop is smart enough to
 rest and avoid needlessly wasting CPU cycles, and will come back when there's
-more work to be done.
+more work to be done, such as when I/O operations complete or timers expire.
 
 Effective execution relies on jobs sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
@@ -171,14 +170,17 @@ Roughly speaking, :ref:`tasks <asyncio-task-obj>` are coroutines (not coroutine
 functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
 clear in a moment when we discuss :keyword:`await`.
-The recommended way to create tasks is via :func:`asyncio.create_task`.
 
 Creating a task automatically schedules it for execution (by adding a
 callback to run it in the event loop's to-do list, that is, collection of jobs).
+The recommended way to create tasks is via :func:`asyncio.create_task`.
 
-Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
-associating the task with the event loop for you. As such, there's no need
-to specify the event loop.
+:mod:`!asyncio` automatically associates tasks with the event loop for you.
+This automatic association was purposely designed into :mod:`!asyncio` for
+the sake of simplicity.
+Without it, you'd have to keep track of the event loop object and pass it to
+any coroutine function that wants to create tasks, adding redundant clutter
+to your code.
 
 ::
 
@@ -251,6 +253,10 @@ different ways::
 In a crucial way, the behavior of ``await`` depends on the type of object
 being awaited.
 
+^^^^^^^^^^^^^^
+Awaiting tasks
+^^^^^^^^^^^^^^
+
 Awaiting a task will cede control from the current task or coroutine to
 the event loop.
 In the process of relinquishing control, a few important things happen.
@@ -276,11 +282,15 @@ in this case, a call to resume ``plant_a_tree()``.
 
 Generally speaking, when the awaited task finishes (``dig_the_hole_task``),
 the original task or coroutine (``plant_a_tree()``) is added back to the event
-loops to-do list to be resumed.
+loop's to-do list to be resumed.
 
 This is a basic, yet reliable mental model.
 In practice, the control handoffs are slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
+
+^^^^^^^^^^^^^^^^^^^
+Awaiting coroutines
+^^^^^^^^^^^^^^^^^^^
 
 **Unlike tasks, awaiting a coroutine does not hand control back to the event
 loop!**
@@ -310,7 +320,7 @@ Consider this program::
 The first statement in the coroutine ``main()`` creates ``task_b`` and schedules
 it for execution via the event loop.
 Then, ``coro_a()`` is repeatedly awaited. Control never cedes to the
-event loop which is why we see the output of all three ``coro_a()``
+event loop, which is why we see the output of all three ``coro_a()``
 invocations before ``coro_b()``'s output:
 
 .. code-block:: none
@@ -338,8 +348,8 @@ This behavior of ``await coroutine`` can trip a lot of people up!
 That example highlights how using only ``await coroutine`` could
 unintentionally hog control from other tasks and effectively stall the event
 loop.
-:func:`asyncio.run` can help you detect such occurences via the
-``debug=True`` flag which accordingly enables
+:func:`asyncio.run` can help you detect such occurrences via the
+``debug=True`` flag, which enables
 :ref:`debug mode <asyncio-debug-mode>`.
 Among other things, it will log any coroutines that monopolize execution for
 100ms or longer.
@@ -348,8 +358,10 @@ The design intentionally trades off some conceptual clarity around usage of
 ``await`` for improved performance.
 Each time a task is awaited, control needs to be passed all the way up the
 call stack to the event loop.
-That might sound minor, but in a large program with many ``await``'s and a deep
-callstack that overhead can add up to a meaningful performance drag.
+Then, the event loop needs to manage its internal state and work through
+its processing logic to resume the next job.
+That might sound minor, but in a large program with many ``await``\ s, that
+overhead can add up to a non-negligible performance drag.
 
 ------------------------------------------------
 A conceptual overview part 2: the nuts and bolts
@@ -365,14 +377,15 @@ and how to make your own asynchronous operators.
 The inner workings of coroutines
 ================================
 
-:mod:`!asyncio` leverages four components to pass around control.
+:mod:`!asyncio` leverages four components of Python to pass
+around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or
 resume a coroutine.
 If the coroutine was paused and is now being resumed, the argument ``arg``
 will be sent in as the return value of the ``yield`` statement which originally
 paused it.
-If the coroutine is being used for the first time (as opposed to being resumed)
+If the coroutine is being used for the first time (as opposed to being resumed),
 ``arg`` must be ``None``.
 
 .. code-block::
@@ -403,14 +416,14 @@ If the coroutine is being used for the first time (as opposed to being resumed)
        returned_value = e.value
    print(f"Coroutine main() finished and provided value: {returned_value}.")
 
-:ref:`yield <yieldexpr>`, like usual, pauses execution and returns control
+:ref:`yield <yieldexpr>`, as usual, pauses execution and returns control
 to the caller.
 In the example above, the ``yield``, on line 3, is called by
 ``... = await rock`` on line 11.
 More broadly speaking, ``await`` calls the :meth:`~object.__await__` method of
 the given object.
 ``await`` also does one more very special thing: it propagates (or "passes
-along") any ``yield``\ s it receives up the call-chain.
+along") any ``yield``\ s it receives up the call chain.
 In this case, that's back to ``... = coroutine.send(None)`` on line 16.
 
 The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
@@ -449,9 +462,9 @@ That might sound odd to you. You might be thinking:
    That causes the error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
    one way of using coroutines.
+   Despite that, ``yield from`` and ``await`` effectively do the same thing.
    Initially ``yield`` was barred as well, but was re-accepted to allow for
    async generators.
-   Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
 Futures
@@ -462,12 +475,12 @@ computation's status and result.
 The term is a nod to the idea of something still to come or not yet happened,
 and the object is a way to keep an eye on that something.
 
-A future has a few important attributes. One is its state which can be either
-"pending", "cancelled" or "done".
+A future has a few important attributes. One is its state, which can be either
+"pending", "cancelled", or "done".
 Another is its result, which is set when the state transitions to done.
 Unlike a coroutine, a future does not represent the actual computation to be
 done; instead, it represents the status and result of that computation, kind of
-like a status light (red, yellow or green) or indicator.
+like a status light (red, yellow, or green) or indicator.
 
 :class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain
 these various capabilities.
@@ -490,8 +503,8 @@ We'll go through an example of how you could leverage a future to create your
 own variant of asynchronous sleep (``async_sleep``) which mimics
 :func:`asyncio.sleep`.
 
-This snippet registers a few tasks with the event loop and then awaits a
-coroutine wrapped in a task: ``async_sleep(3)``.
+This snippet registers a few tasks with the event loop and then awaits the task
+created by ``asyncio.create_task``, which wraps the ``async_sleep(3)`` coroutine.
 We want that task to finish only after three seconds have elapsed, but without
 preventing other tasks from running.
 
@@ -540,8 +553,8 @@ will monitor how much time has elapsed and, accordingly, call
        # Block until the future is marked as done.
        await future
 
-Below, we'll use a rather bare object, ``YieldToEventLoop()``, to ``yield``
-from ``__await__`` in order to cede control to the event loop.
+Below, we use a rather bare ``YieldToEventLoop()`` object to ``yield``
+from its ``__await__`` method, ceding control to the event loop.
 This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
 ``asyncio.sleep`` when showcasing how to implement it!
@@ -552,13 +565,13 @@ The ``watcher_task``, which runs the coroutine ``_sleep_watcher(...)``, will
 be invoked once per full cycle of the event loop.
 On each resumption, it'll check the time and if not enough has elapsed, then
 it'll pause once again and hand control back to the event loop.
-Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
-mark the future as done, and then itself finish too by breaking out of the
+Once enough time has elapsed, ``_sleep_watcher(...)``
+marks the future as done and completes by exiting its
 infinite ``while`` loop.
 Given this helper task is only invoked once per cycle of the event loop,
 you'd be correct to note that this asynchronous sleep will sleep *at least*
 three seconds, rather than exactly three seconds.
-Note this is also of true of ``asyncio.sleep``.
+Note this is also true of ``asyncio.sleep``.
 
 ::
 
@@ -601,6 +614,6 @@ For reference, you could implement it without futures, like so::
            else:
                await YieldToEventLoop()
 
-But, that's all for now. Hopefully you're ready to more confidently dive into
+But that's all for now. Hopefully you're ready to more confidently dive into
 some async programming or check out advanced topics in the
 :mod:`rest of the documentation <asyncio>`.

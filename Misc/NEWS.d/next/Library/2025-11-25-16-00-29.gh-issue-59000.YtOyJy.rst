@@ -1,0 +1,1 @@
+Fix :mod:`pdb` breakpoint resolution for class methods when the module defining the class is not imported.
