@@ -932,8 +932,8 @@ method, that method is called as a fallback.
 
 .. _subscriptions:
 
-Subscriptions and slicing
--------------------------
+Subscriptions and slicings
+--------------------------
 
 .. index::
    single: subscription
@@ -1030,8 +1030,8 @@ are also usable for assignment and deletion.
 
 .. _slicings:
 
-Slicing
-^^^^^^^
+Slicings
+^^^^^^^^
 
 A more advanced form of subscription, :dfn:`slicing`, is commonly used
 to extract a portion of a :ref:`sequence <datamodel-sequences>`.
@@ -1066,8 +1066,8 @@ or :meth:`~object.__class_getitem__` method, as above. ::
    subscripted with: slice(None, None, 'spam')
 
 
-Tuple subscription
-^^^^^^^^^^^^^^^^^^
+Comma-separated subscripts
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The subscript can also be given as two or more comma-separated expressions
 or slices::
@@ -1090,8 +1090,8 @@ by a comma, to specify a one-element tuple::
    subscripted with ('spam',)
 
 
-"Starred" subscription
-^^^^^^^^^^^^^^^^^^^^^^
+"Starred" subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.11
    Expressions in *tuple_slices* may be starred. See :pep:`646`.
@@ -2144,7 +2144,7 @@ precedence and have a left-to-right chaining feature as described in the
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |
 +-----------------------------------------------+-------------------------------------+
-| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x[index]``, ``x[index:index]``              | Subscription (including slicing),   |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`await x <await>`                    | Await expression                    |
