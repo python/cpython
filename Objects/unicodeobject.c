@@ -11194,47 +11194,6 @@ _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
            memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
 }
 
-int
-_PyUnicode_EqualToASCIIId(PyObject *left, _Py_Identifier *right)
-{
-    PyObject *right_uni;
-
-    assert(_PyUnicode_CHECK(left));
-    assert(right->string);
-#ifndef NDEBUG
-    for (const char *p = right->string; *p; p++) {
-        assert((unsigned char)*p < 128);
-    }
-#endif
-
-    if (!PyUnicode_IS_ASCII(left))
-        return 0;
-
-    right_uni = _PyUnicode_FromId(right);       /* borrowed */
-    if (right_uni == NULL) {
-        /* memory error or bad data */
-        PyErr_Clear();
-        return _PyUnicode_EqualToASCIIString(left, right->string);
-    }
-
-    if (left == right_uni)
-        return 1;
-
-    assert(PyUnicode_CHECK_INTERNED(right_uni));
-    if (PyUnicode_CHECK_INTERNED(left)) {
-        return 0;
-    }
-
-    Py_hash_t right_hash = PyUnicode_HASH(right_uni);
-    assert(right_hash != -1);
-    Py_hash_t hash = PyUnicode_HASH(left);
-    if (hash != -1 && hash != right_hash) {
-        return 0;
-    }
-
-    return unicode_eq(left, right_uni);
-}
-
 PyObject *
 PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
 {

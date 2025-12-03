@@ -2528,18 +2528,6 @@ _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
 }
 
 PyObject *
-_PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
-{
-    PyObject *kv;
-    kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return NULL;
-    Py_hash_t hash = unicode_get_hash(kv);
-    assert (hash != -1);  /* interned strings have their hash value initialised */
-    return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
-}
-
-PyObject *
 _PyDict_GetItemStringWithError(PyObject *v, const char *key)
 {
     PyObject *kv, *rv;
@@ -4845,16 +4833,6 @@ _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     return 0;
 }
 
-int
-_PyDict_ContainsId(PyObject *op, _Py_Identifier *key)
-{
-    PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL) {
-        return -1;
-    }
-    return PyDict_Contains(op, kv);
-}
-
 /* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_length */
@@ -5036,16 +5014,6 @@ PyDict_GetItemStringRef(PyObject *v, const char *key, PyObject **result)
 }
 
 int
-_PyDict_SetItemId(PyObject *v, _Py_Identifier *key, PyObject *item)
-{
-    PyObject *kv;
-    kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return -1;
-    return PyDict_SetItem(v, kv, item);
-}
-
-int
 PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
     PyObject *kv;
@@ -5058,15 +5026,6 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
-}
-
-int
-_PyDict_DelItemId(PyObject *v, _Py_Identifier *key)
-{
-    PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return -1;
-    return PyDict_DelItem(v, kv);
 }
 
 int
