@@ -344,8 +344,8 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
          * Just returning other doesn't work as __init__ calls this and can't
          * change self. */
         if (PyByteArray_CheckExact(other)) {
-            PyObject *taken = PyObject_CallMethodNoArgs(other,
-                                                        &_Py_ID(take_bytes));
+            PyObject *taken;
+            taken = bytearray_take_bytes_impl((PyByteArrayObject*)other, Py_None);
             if (taken == NULL) {
                 return NULL;
             }
