@@ -1,7 +1,6 @@
 import re
 import sys
 import copy
-import trace
 import types
 import inspect
 import keyword
