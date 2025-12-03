@@ -723,6 +723,14 @@ Glossary
       An object that both finds and loads a module; both a
       :term:`finder` and :term:`loader` object.
 
+   index
+      A numeric value that represents the position of an entry in
+      a :term:`sequence`.
+      In some contexts, Python allows negative indexes for counting from the
+      end of a sequence, and indexing using :term:`slices <slice>`.
+
+      See also :term:`subscript`.
+
    interactive
       Python has an interactive interpreter which means you can enter
       statements and expressions at the interpreter prompt, immediately
@@ -800,8 +808,7 @@ Glossary
          the thread-safety of iterator operations.
 
    key
-
-      A value that "names" an entry in a :term:`mapping`,
+      A value that identifies an entry in a :term:`mapping`.
       See also :term:`subscript`.
 
    key function
@@ -1283,10 +1290,11 @@ Glossary
       chosen based on the type of a single argument.
 
    slice
-      An object usually containing a portion of a :term:`sequence`.  A slice is
-      created using the subscript notation, ``[]`` with colons between numbers
-      when several are given, such as in ``variable_name[1:3:5]``.  The bracket
-      (subscript) notation uses :class:`slice` objects internally.
+      An object of type :class:`slice`, used to describe a portion of
+      a :term:`sequence`.
+      A slice object is created when using the :ref:`slicing <slicings>` form
+      of :ref:`subscript notation <subscriptions>`, with colons inside square
+      brackets, such as in ``variable_name[1:3:5]``.
 
    soft deprecated
       A soft deprecated API should not be used in new code,
@@ -1345,11 +1353,11 @@ Glossary
       See also :term:`borrowed reference`.
 
    subscript
-
-      The expression in square brackets of a :ref:`subscription <subscriptions>`
-      expression, usually used to select an element of a container.
-      Also called a :term:`key` (when subscipting a :term:`mapping`) or
-      an :term:`index` (when subscipting a :term:`sequence`).
+      The expression in square brackets of a
+      :ref:`subscription expression <subscriptions>`, usually used to select
+      an element of a container.
+      Also called a :term:`key` when subscipting a :term:`mapping`,
+      or :term:`index` when subscipting a :term:`sequence`.
 
    t-string
    t-strings
