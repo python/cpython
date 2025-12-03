@@ -1621,6 +1621,14 @@ class DictTest(unittest.TestCase):
 
         self.assertEqual(len(d), 1)
 
+    def test_split_table_update_with_str_subclass(self):
+        class MyStr(str): pass
+        class MyClass: pass
+        obj = MyClass()
+        obj.attr = 1
+        obj.__dict__[MyStr('attr')] = 2
+        self.assertEqual(obj.attr, 2)
+
 
 class CAPITest(unittest.TestCase):
 
