@@ -1450,7 +1450,6 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define DONT_SLP_VECTORIZE
 #endif
 
-
 typedef struct {
     _PyInterpreterFrame frame;
     _PyStackRef stack[1];
