@@ -335,7 +335,7 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
 
     // optimization: Avoid copying the bytes coming in when possible.
     if (self->ob_alloc == 0 && _PyObject_IsUniquelyReferenced(other)) {
-        assert(_Py_IsImmortal(self->ob_bytes_object));
+        assert(self->ob_bytes_object == Py_GetConstantBorrow(Py_CONSTANT_EMPTY_BYTES));
         if (!_canresize(self)) {
             return NULL;
         }
