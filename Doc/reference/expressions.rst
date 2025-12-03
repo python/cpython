@@ -1044,11 +1044,11 @@ colon::
    >>> number_names[1:3]
    ['one', 'two']
    >>> number_names[1:]
-   ['one', two', 'three', 'four', 'five']
+   ['one', 'two', 'three', 'four', 'five']
    >>> number_names[:3]
    ['zero', 'one', 'two']
    >>> number_names[:]
-   ['zero', 'one', 'two']
+   ['zero', 'one', 'two', 'three', 'four', 'five']
    >>> number_names[::2]
    ['zero', 'two', 'four']
 
@@ -1101,13 +1101,13 @@ In this case, the interpreter unpacks the result into a tuple, and passes
 this tuple to :meth:`~object.__getitem__` or :meth:`~object.__class_getitem__`::
 
    >>> demo[*range(10)]
-   subscripted with (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+   subscripted with: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
 Starred expressions may be combined with comma-separated expressions
-and slices:::
+and slices::
 
    >>> demo['a', 'b', *range(3), 'c']
-  subscripted with: ('a', 'b', 0, 1, 2, 'c')
+   subscripted with: ('a', 'b', 0, 1, 2, 'c')
 
 
 Formal subscription grammar
@@ -1123,7 +1123,7 @@ Formal subscription grammar
    proper_slice: [`expression`] ":" [`expression`] [ ":" [`expression`] ]
 
 There is a semantic difference between the alternatives for *subscript*.
-If *subscript* contains ony one unstarred *slice* without a trailing comma,
+If *subscript* contains only one unstarred *slice* without a trailing comma,
 it will evaluate to the value of that *slice*.
 Otherwise, *subscript* will evaluate to a :class:`tuple` containing
 the items of *tuple_slices*.
