@@ -28,11 +28,28 @@ PyStructSequence_Desc TaskInfo_desc = {
     4
 };
 
+// LocationInfo structseq type
+static PyStructSequence_Field LocationInfo_fields[] = {
+    {"lineno", "Line number"},
+    {"end_lineno", "End line number"},
+    {"col_offset", "Column offset"},
+    {"end_col_offset", "End column offset"},
+    {NULL}
+};
+
+PyStructSequence_Desc LocationInfo_desc = {
+    "_remote_debugging.LocationInfo",
+    "Source location information: (lineno, end_lineno, col_offset, end_col_offset)",
+    LocationInfo_fields,
+    4
+};
+
 // FrameInfo structseq type
 static PyStructSequence_Field FrameInfo_fields[] = {
     {"filename", "Source code filename"},
-    {"lineno", "Line number"},
+    {"location", "LocationInfo structseq or None for synthetic frames"},
     {"funcname", "Function name"},
+    {"opcode", "Opcode being executed (None if not gathered)"},
     {NULL}
 };
 
@@ -40,7 +57,7 @@ PyStructSequence_Desc FrameInfo_desc = {
     "_remote_debugging.FrameInfo",
     "Information about a frame",
     FrameInfo_fields,
-    3
+    4
 };
 
 // CoroInfo structseq type
@@ -235,6 +252,7 @@ _remote_debugging.RemoteUnwinder.__init__
     skip_non_matching_threads: bool = True
     native: bool = False
     gc: bool = False
+    opcodes: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
 
@@ -253,6 +271,8 @@ Args:
             non-Python code.
     gc: If True, include artificial "<GC>" frames to denote active garbage
         collection.
+    opcodes: If True, gather bytecode opcode information for instruction-level
+             profiling.
 
 The RemoteUnwinder provides functionality to inspect and debug a running Python
 process, including examining thread states, stack frames and other runtime data.
@@ -270,8 +290,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
-                                               int native, int gc)
-/*[clinic end generated code: output=e9eb6b4df119f6e0 input=606d099059207df2]*/
+                                               int native, int gc,
+                                               int opcodes)
+/*[clinic end generated code: output=e7f77865c7dd662f input=3dba9e3da913a1e0]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -290,6 +311,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     self->native = native;
     self->gc = gc;
+    self->opcodes = opcodes;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
@@ -844,6 +866,14 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
+    st->LocationInfo_Type = PyStructSequence_NewType(&LocationInfo_desc);
+    if (st->LocationInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->LocationInfo_Type) < 0) {
+        return -1;
+    }
+
     st->FrameInfo_Type = PyStructSequence_NewType(&FrameInfo_desc);
     if (st->FrameInfo_Type == NULL) {
         return -1;
@@ -917,6 +947,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_VISIT(state->RemoteDebugging_Type);
     Py_VISIT(state->TaskInfo_Type);
+    Py_VISIT(state->LocationInfo_Type);
     Py_VISIT(state->FrameInfo_Type);
     Py_VISIT(state->CoroInfo_Type);
     Py_VISIT(state->ThreadInfo_Type);
@@ -931,6 +962,7 @@ remote_debugging_clear(PyObject *mod)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_CLEAR(state->RemoteDebugging_Type);
     Py_CLEAR(state->TaskInfo_Type);
+    Py_CLEAR(state->LocationInfo_Type);
     Py_CLEAR(state->FrameInfo_Type);
     Py_CLEAR(state->CoroInfo_Type);
     Py_CLEAR(state->ThreadInfo_Type);
