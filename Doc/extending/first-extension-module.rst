@@ -149,7 +149,7 @@ Including the Header
 
 
 Now, put the first line in the file: include :file:`Python.h` to pull in
-all definitions of the Python C API:
+all declarations of the Python C API:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-at: <Python.h>
@@ -158,8 +158,8 @@ all definitions of the Python C API:
 This header contains all of the Python C API.
 
 Next, bring in the declaration of the C library function we want to call.
-Documentation of the :c:func:`system` function tells us that we need
-``stdlib.h``:
+Documentation of the :c:func:`system` function tells us that teh necessary
+header is:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-at: <stdlib.h>
@@ -177,6 +177,181 @@ which affect the standard headers on some systems.
    and ``stdlib`` is one of them.
    However, it is good practice to explicitly include what you need.
 
+With the includes in place, compile and import the extension again.
+You should get the same exception as with the empty file.
+
+.. note::
+
+   Third-party build tools should handle pointing the compiler to
+   the CPython headers and libraries, and setting appropriate options.
+
+   If you are running the compiler directly, you will need to do this yourself.
+   If your installation of Python comes with a corresponding ``python-config``
+   command, you can run something like:
+
+   .. code-block:: shell
+
+      gcc --shared $(python-config --cflags --ldflags) spammodule.c -o spam.so
+
+
+Module export hook
+==================
+
+The exception you should be getting tells you that Python is looking for an
+module :ref:`export hook <extension-export-hook>` function.
+Let's define one.
+
+First, let's add a prototype:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-after: /// Export hook prototype
+   :end-before: ///
+
+The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
+return type, and adds any special linkage declarations required by the platform
+to make the compiled extension export the function.
+For C++, it declares the function as ``extern "C"``.
+
+.. tip::
+   The prototype is not strictly necessary, but some modern C compilers emit
+   warnings when a public, exported function has no prototype declaration.
+   It's better to add a prototype than disable the warning, so that in other
+   code you're notified in common cases of forgetting a header or misspelling
+   a name.
+
+After the prototype, add the function itself.
+For now, make it return ``NULL``:
+
+.. code-block:: c
+
+   PyMODEXPORT_FUNC
+   PyModExport_spam(void)
+   {
+      return NULL;
+   }
+
+Compile and load the module again.
+You should get a different error this time:
+
+.. code-block:: pycon
+
+   >>> import spam
+   Traceback (most recent call last):
+   File "<string>", line 1, in <module>
+      import spam
+   SystemError: module export hook for module 'spam' failed without setting an exception
+
+Many functions in the Python C API, including export hooks, are expected to
+do two things to signal that they have failed: return ``NULL``, and
+set an exception.
+Here, Python assumes that you only did half of this.
+
+.. note::
+
+   This is one of a few situation where CPython checks this situation and
+   emits a "nice" error message.
+   Elsewhere, returning ``NULL`` without setting an exception can
+   trigger undefined behavior.
+
+
+The slot table
+==============
+
+Rather than ``NULL``, the export hook should return the information needed to
+create a module, as a ``static`` array of :c:type:`PyModuleDef_Slot` entries.
+Define this array just before your export hook:
+
+.. code-block:: c
+
+   static PyModuleDef_Slot spam_slots[] = {
+      {Py_mod_name, "spam"},
+      {Py_mod_doc, PyDoc_STR("A wonderful module with an example function")},
+      {0, NULL}
+   };
+
+The array contains:
+
+* the module name (as a NUL-terminated UTF-8 encoded C string),
+* the docstring (similarly encoded), and
+* a zero-filled *sentinel* marking the end of the array.
+
+.. tip::
+
+   The :c:func:`PyDoc_STR` macro can, in a special build mode, omit the
+   docstring to save a bit of memory.
+
+Return this array from your export hook, instead of ``NULL``:
+
+.. code-block:: c
+   :emphasize-lines: 4
+
+   PyMODEXPORT_FUNC
+   PyModExport_spam(void)
+   {
+      return spam_slots;
+   }
+
+Now, recompile and try it out:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> print(spam)
+   <module 'spam' from '/home/encukou/dev/cpython/spam.so'>
+
+You now have a extension module!
+Try ``help(spam)`` to see the docstring.
+
+The next step will be adding a function to it.
+
+
+Adding a function
+=================
+
+To expose a C function to Python, you need three things:
+
+* The *implementation*: a C function that does what you need, and
+* a *name* to use in Python code.
+
+You can also add a *dosctring*.
+OK, *amongst* the things you need to expose a C function are
+
+
+
+
+The :c:type:`PyModuleDef_Slot` array must be passed to the interpreter in the
+module's :ref:`export hook <extension-export-hook>` function.
+The hook must be named :c:func:`!PyModExport_name`, where *name* is the name
+of the module, and it should be the only non-\ ``static`` item defined in the
+module file.
+
+Several modern C compilers emit warnings when you define a public function
+without a prototype declaration.
+Normally, prototypes go in a header file so they can be used from other
+C files.
+A function without a prototype is allowed in C, but is normally a strong
+hint that something is wrong -- for example, the name is misspelled.
+
+In our case, Python will load our function dynamically, so a prototype
+isn't needed.
+We'll only add one to avoid well-meaning compiler warnings:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-after: /// Export hook prototype
+   :end-before: ///
+
+The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
+``PyModuleDef_Slot *`` return type, and adds any special linkage
+declarations required by the platform.
+For C++, it declares the function as ``extern "C"``.
+
+Just after the prototype, we'll add the function itself.
+Its only job is to return the slot array, which in turn contains
+all the information needed to create our module object:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-after: /// Module export hook
+   :end-before: ///
 
 
 The ``spam`` module

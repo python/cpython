@@ -37,8 +37,7 @@ PyABIInfo_VAR(abi_info);
 
 /// Module slot table
 
-static PyModuleDef_Slot spam_module[] = {
-    {Py_mod_abi, &abi_info},
+static PyModuleDef_Slot spam_slots[] = {
     {Py_mod_name, "spam"},
     {Py_mod_doc, PyDoc_STR("A wonderful module with an example function")},
     {Py_mod_methods, spam_methods},
@@ -55,7 +54,7 @@ PyMODEXPORT_FUNC PyModExport_spam(void);
 PyMODEXPORT_FUNC
 PyModExport_spam(void)
 {
-    return spam_module;
+    return spam_slots;
 }
 
 
