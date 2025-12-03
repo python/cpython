@@ -621,7 +621,7 @@ Andrew Svetlov.
 .. nonce: jQ0CvW
 .. section: Library
 
-Update the deprecation warning of :meth:`importlib.abc.Loader.load_module`.
+Update the deprecation warning of ``importlib.abc.Loader.load_module``.
 
 ..
 
