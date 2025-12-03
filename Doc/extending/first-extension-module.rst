@@ -7,7 +7,7 @@
 Your first C API extension module
 *********************************
 
-This tutorial will take you, line by line, through creating a simple
+This tutorial will take you through creating a simple
 Python extension module written in C or C++.
 
 The tutorial assumes basic knowledge about Python: you should be able to
@@ -19,15 +19,30 @@ While we will mention several concepts that a C beginner would not be expected
 to know, like ``static`` functions or linkage declarations, understanding these
 is not necessary for success.
 
-As a word warning before we begin: after the code is written, you will need to
+As a word warning before we begin: as the code is written, you will need to
 compile it with the right tools and settings for your system.
 It is generally best to use a third-party tool to handle the details.
 This is covered in later chapters, not in this tutorial.
 
 The tutorial assumes that you use a Unix-like system (including macOS and
 Linux) or Windows.
+If you don't have a preference, currently you're most likely to get the best
+experience on Linux.
 
-.. include:: ../includes/tutorial-new-api.rst
+If you learn better by having the full context at the beginning,
+skip to the end to see :ref:`the resulting source <first-extension-result>`,
+then return here.
+The tutorial will explain every line, although in a different order.
+
+.. note::
+
+   This tutorial uses API that was added in CPython 3.15.
+   To create an extension that's compatible with earlier versions of CPython,
+   please follow an earlier version of this documentation.
+
+   This tutorial uses some syntax added in C11 and C++20.
+   If your extension needs to be compatible with earlier standards,
+   please follow tutorials in documentation for Python 3.14 or below.
 
 
 What we'll do
@@ -65,25 +80,108 @@ We want this function to be callable from Python as follows:
    both Unix and Windows.
 
 
-.. _extending-spammodule:
+Warming up your build tool: an empty module
+===========================================
+
+Begin by creating a file named :file:`spammodule.c`.
+The name is entirely up to you, though some tools can be picky about
+the ``.c`` extension.
+(Some people would just use :file:`spam.c` to implement a module
+named ``spam``, for example.
+If you do this, you'll need to adjust some instructions below.)
+
+Now, while the file is emptly, we'll compile it, so that you can make
+and test incremental changes as you follow the rest of the tutorial.
+
+Choose a build tool such as Setuptools or Meson, and follow its instructions
+to compile and install the empty :file:`spammodule.c` as if it was a
+C extension module.
+
+.. note:: Workaround for missing ``PyInit``
+
+   If your build tool output complains about missing ``PyInit_spam``,
+   add the following function to your module for now:
+
+   .. code-block:: c
+
+      // A workaround
+      void *PyInit_spam(void) { return NULL; }
+
+   This is a shim for an old-style :ref:`initialization function <extension-export-hook>`,
+   which was required in extension modules for CPython 3.14 and below.
+   Current CPython will not call it, but some build tools may still assume that
+   all extension modules need to define it.
+
+   If you use this workaround, you will get the exception
+   ``SystemError: initialization of spam failed without raising an exception``
+   instead of an :py:exc:`ImportError` in the next step.
+
+.. note::
+
+   Using a third-party build tool is heavily recommended, as in will take
+   care of various details of your platform and Python installation,
+   naming the resulting extension, and, later, distributing your work.
+
+   If you don't want to use a tool, you can try to run your compiler directly.
+   The following command should work for many flavors of Linux, and generate
+   a ``spam.so`` file that you need to put in a directory
+   in :py:attr:`sys.path`:
+
+   .. code-block:: shell
+
+      gcc --shared spammodule.c -o spam.so
+
+When your extension is compiled and installed, start Python and try to import
+your extension.
+This should fail with the following exception:
+
+.. code-block:: pycon
+
+   >>> import spam
+   Traceback (most recent call last):
+   File "<string>", line 1, in <module>
+      import spam
+   ImportError: dynamic module does not define module export function (PyModExport_spam or PyInit_spam)
+
+
+Including the Header
+====================
+
+
+Now, put the first line in the file: include :file:`Python.h` to pull in
+all definitions of the Python C API:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-at: <Python.h>
+   :end-at: <Python.h>
+
+This header contains all of the Python C API.
+
+Next, bring in the declaration of the C library function we want to call.
+Documentation of the :c:func:`system` function tells us that we need
+``stdlib.h``:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-at: <stdlib.h>
+   :end-at: <stdlib.h>
+
+Be sure to put this, and any other standard library includes, *after*
+:file:`Python.h`, since Python may define some pre-processor definitions
+which affect the standard headers on some systems.
+
+.. tip::
+
+   The ``<stdlib.h>`` include is technically not necessary.
+   :file:`Python.h` :ref:`includes several standard header files <capi-system-includes>`
+   for its own use and for backwards compatibility,
+   and ``stdlib`` is one of them.
+   However, it is good practice to explicitly include what you need.
+
+
 
 The ``spam`` module
 ===================
 
-
-Begin by creating a file :file:`spammodule.c`.
-
-.. note::
-
-   Historically, if a module is called ``spam``, the C file containing its
-   implementation is called :file:`spammodule.c`.
-   But the naming is entirely up to you.
-   If you use a different name, remember to adjust the commands later,
-   when you build the extension.
-
-You can add code to this file as you go through the tutorial.
-Alternatively, if you'd like to copy the final result to the file now,
-get it :ref:`below <extending-spammodule-source>` and come back here.
 
 The first line of this file (after any comment describing the purpose of
 the module, copyright notices, and the like) will pull in the Python API:
@@ -419,6 +517,8 @@ When called, it raises a :py:exc:`SystemError` exception using
 Thus, if this extension does end up loaded on Python 3.14, the user will
 get a proper error message.
 
+
+.. _first-extension-result:
 
 End of file
 ===========
