@@ -27,9 +27,6 @@
         <File Include="$(OutputPath)\*.exe;$(OutputPath)\*.zip">
             <CopyTo>$(EXETarget)</CopyTo>
         </File>
-        <File Include="$(PySourcePath)Doc\build\htmlhelp\python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm" Condition="$(IncludeDoc)">
-            <CopyTo>$(EXETarget)</CopyTo>
-        </File>
     </ItemGroup>
     
     <Target Name="_ValidateProperties">

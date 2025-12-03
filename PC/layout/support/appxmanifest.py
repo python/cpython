@@ -171,10 +171,6 @@ REGISTRY = {
                 ),
             },
             "Help": {
-                "Main Python Documentation": {
-                    "_condition": lambda ns: ns.include_chm,
-                    "": "[{{AppVPackageRoot}}]\\Doc\\{}".format(PYTHON_CHM_NAME),
-                },
                 "Local Python Documentation": {
                     "_condition": lambda ns: ns.include_html_doc,
                     "": "[{AppVPackageRoot}]\\Doc\\html\\index.html",

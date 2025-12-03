@@ -278,13 +278,6 @@ if os.getenv("READTHEDOCS"):
         '<a href="https://about.readthedocs.com/">Read the Docs</a>'
     )
 
-# Override stylesheet fingerprinting for Windows CHM htmlhelp to fix GH-91207
-# https://github.com/python/cpython/issues/91207
-if any('htmlhelp' in arg for arg in sys.argv):
-    html_style = 'pydoctheme.css'
-    print("\nWARNING: Windows CHM Help is no longer supported.")
-    print("It may be removed in the future\n")
-
 # Short title used e.g. for <title> HTML tags.
 html_short_title = f'{release} Documentation'
 
@@ -326,9 +319,6 @@ html_use_opensearch = 'https://docs.python.org/' + version
 
 # Additional static files.
 html_static_path = ['_static', 'tools/static']
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'python' + release.replace('.', '')
 
 # Split the index
 html_split_index = True

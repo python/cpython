@@ -84,8 +84,7 @@ html: build
 .PHONY: htmlhelp
 htmlhelp: BUILDER = htmlhelp
 htmlhelp: build
-	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      "build/htmlhelp/pydoc.hhp project file."
+	@echo "Build finished. The HTML Help files are in build/htmlhelp."
 
 .PHONY: latex
 latex: BUILDER = latex

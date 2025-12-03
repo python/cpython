@@ -59,7 +59,6 @@
         <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist-1\$(Platform)</CRTRedist>
         <CRTRedist>$([System.IO.Path]::GetFullPath($(CRTRedist)))</CRTRedist>
         <TclTkLibraryDir Condition="$(TclTkLibraryDir) == ''">$(tcltkDir)lib</TclTkLibraryDir>
-        <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
     </PropertyGroup>
