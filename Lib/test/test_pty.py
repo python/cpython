@@ -314,7 +314,7 @@ class PtyTest(unittest.TestCase):
 
             (pid, status) = os.waitpid(pid, 0)
             self.assertEqual(status, 0)
-            self.assertEqual(buf.take_bytes(), b"hi there\r\n")
+            self.assertEqual(bytes(buf), b"hi there\r\n")
         finally:
             os.close(fd)
 
