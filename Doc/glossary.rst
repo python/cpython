@@ -724,8 +724,13 @@ Glossary
       :term:`finder` and :term:`loader` object.
 
    index
-      A numeric value that represents the position of an entry in
+      A numeric value that represents the position of an element in
       a :term:`sequence`.
+
+      In Python, indexing starts at zero.
+      For example, ``things[0]`` names the *first* element of ``things``;
+      ``things[1]`` names the second one.
+
       In some contexts, Python allows negative indexes for counting from the
       end of a sequence, and indexing using :term:`slices <slice>`.
 
@@ -1354,10 +1359,11 @@ Glossary
 
    subscript
       The expression in square brackets of a
-      :ref:`subscription expression <subscriptions>`, usually used to select
-      an element of a container.
-      Also called a :term:`key` when subscipting a :term:`mapping`,
-      or :term:`index` when subscipting a :term:`sequence`.
+      :ref:`subscription expression <subscriptions>`, for example,
+      the ``3`` in ``items[3]``.
+      Usually used to select an element of a container.
+      Also called a :term:`key` when subscripting a :term:`mapping`,
+      or :term:`index` when subscripting a :term:`sequence`.
 
    t-string
    t-strings
