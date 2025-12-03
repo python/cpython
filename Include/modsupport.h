@@ -140,7 +140,7 @@ PyAPI_FUNC(int) PyABIInfo_Check(PyABIInfo *info, const char *module_name);
     /////////////////////////////////////////////////////////
 
 #define PyABIInfo_VAR(NAME) \
-    static PyABIInfo NAME = _PyABIInfo_DEFAULT;
+    static PyABIInfo NAME = _PyABIInfo_DEFAULT();
 
 #undef _PyABIInfo_DEFAULT_STABLE
 #undef _PyABIInfo_DEFAULT_FT
