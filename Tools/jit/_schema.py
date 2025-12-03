@@ -89,6 +89,7 @@ class COFFSection(typing.TypedDict):
     Characteristics: dict[
         typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]
     ]
+    Name: dict[typing.Literal["Value"], str]
     Number: int
     RawDataSize: int
     Relocations: list[dict[typing.Literal["Relocation"], COFFRelocation]]
