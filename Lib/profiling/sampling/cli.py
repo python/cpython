@@ -195,6 +195,12 @@ def _add_sampling_options(parser):
         dest="gc",
         help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
     )
+    sampling_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Gather bytecode opcode information for instruction-level profiling "
+        "(shows which bytecode instructions are executing, including specializations).",
+    )
 
 
 def _add_mode_options(parser):
@@ -304,13 +310,15 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 
-def _create_collector(format_type, interval, skip_idle):
+def _create_collector(format_type, interval, skip_idle, opcodes=False):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
         interval: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
+        opcodes: Whether to collect opcode information (only used by gecko format
+                 for creating interval markers in Firefox Profiler)
 
     Returns:
         A collector instance of the appropriate type
@@ -320,8 +328,10 @@ def _create_collector(format_type, interval, skip_idle):
         raise ValueError(f"Unknown format: {format_type}")
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
+    # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
+        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
 
     return collector_class(interval, skip_idle=skip_idle)
 
@@ -411,6 +421,13 @@ def _validate_args(args, parser):
         parser.error(
             "--mode option is incompatible with --gecko. "
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
+        )
+
+    # Validate --opcodes is only used with compatible formats
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
+    if args.opcodes and args.format not in opcodes_compatible_formats:
+        parser.error(
+            f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
         )
 
     # Validate pstats-specific options are only used with pstats format
@@ -560,7 +577,7 @@ def _handle_attach(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Sample the process
     collector = sample(
@@ -572,6 +589,7 @@ def _handle_attach(args):
         mode=mode,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
     # Handle output
@@ -607,7 +625,7 @@ def _handle_run(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Profile the subprocess
     try:
@@ -620,6 +638,7 @@ def _handle_run(args):
             mode=mode,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
 
         # Handle output
@@ -650,6 +669,7 @@ def _handle_live_attach(args, pid):
         limit=20,  # Default limit
         pid=pid,
         mode=mode,
+        opcodes=args.opcodes,
     )
 
     # Sample in live mode
@@ -662,6 +682,7 @@ def _handle_live_attach(args, pid):
         mode=mode,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
 
@@ -689,6 +710,7 @@ def _handle_live_run(args):
         limit=20,  # Default limit
         pid=process.pid,
         mode=mode,
+        opcodes=args.opcodes,
     )
 
     # Profile the subprocess in live mode
@@ -702,6 +724,7 @@ def _handle_live_run(args):
             mode=mode,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
     finally:
         # Clean up the subprocess

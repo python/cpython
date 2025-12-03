@@ -1,10 +1,39 @@
 from abc import ABC, abstractmethod
 from .constants import (
+    DEFAULT_LOCATION,
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_GIL_REQUESTED,
 )
+
+
+def normalize_location(location):
+    """Normalize location to a 4-tuple format.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        tuple: (lineno, end_lineno, col_offset, end_col_offset)
+    """
+    if location is None:
+        return DEFAULT_LOCATION
+    return location
+
+
+def extract_lineno(location):
+    """Extract lineno from location.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        int: The line number (0 for synthetic frames)
+    """
+    if location is None:
+        return 0
+    return location[0]
 
 class Collector(ABC):
     @abstractmethod

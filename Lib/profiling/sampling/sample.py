@@ -27,7 +27,7 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, skip_non_matching_threads=True):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
@@ -35,13 +35,13 @@ class SampleProfiler:
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                skip_non_matching_threads=skip_non_matching_threads
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                skip_non_matching_threads=skip_non_matching_threads
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -193,6 +193,7 @@ def sample(
     mode=PROFILING_MODE_WALL,
     native=False,
     gc=True,
+    opcodes=False,
 ):
     """Sample a process using the provided collector.
 
@@ -206,6 +207,7 @@ def sample(
               GIL (only when holding GIL), ALL (includes GIL and CPU status)
         native: Whether to include native frames
         gc: Whether to include GC frames
+        opcodes: Whether to include opcode information
 
     Returns:
         The collector with collected samples
@@ -228,6 +230,7 @@ def sample(
         mode=mode,
         native=native,
         gc=gc,
+        opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads
     )
     profiler.realtime_stats = realtime_stats
@@ -248,6 +251,7 @@ def sample_live(
     mode=PROFILING_MODE_WALL,
     native=False,
     gc=True,
+    opcodes=False,
 ):
     """Sample a process in live/interactive mode with curses TUI.
 
@@ -261,6 +265,7 @@ def sample_live(
               GIL (only when holding GIL), ALL (includes GIL and CPU status)
         native: Whether to include native frames
         gc: Whether to include GC frames
+        opcodes: Whether to include opcode information
 
     Returns:
         The collector with collected samples
@@ -283,6 +288,7 @@ def sample_live(
         mode=mode,
         native=native,
         gc=gc,
+        opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads
     )
     profiler.realtime_stats = realtime_stats
