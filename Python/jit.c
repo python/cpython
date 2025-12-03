@@ -16,6 +16,7 @@
 #include "pycore_intrinsics.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
+#include "pycore_mmap.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"

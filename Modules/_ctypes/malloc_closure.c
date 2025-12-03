@@ -14,7 +14,7 @@
 #  endif
 #endif
 #include "ctypes.h"
-#include "pycore_obmalloc.h"      // _PyAnnotateMemoryMap()
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 
 /* BLOCKSIZE can be adjusted.  Larger blocksize will take a larger memory
    overhead, but allocate less blocks from the system.  It may be that some

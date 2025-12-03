@@ -26,7 +26,7 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
-#include "pycore_pymem.h"         // _PyAnnotateMemoryMap()
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()

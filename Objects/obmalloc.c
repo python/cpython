@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
 #include "pycore_obmalloc_init.h"

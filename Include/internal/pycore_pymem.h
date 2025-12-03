@@ -11,11 +11,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
-#  include <linux/prctl.h>
-#  include <sys/prctl.h>
-#endif
-
 // Try to get the allocators name set by _PyMem_SetupAllocators().
 // Return NULL if unknown.
 // Export for '_testinternalcapi' shared extension.
@@ -94,19 +89,6 @@ static inline int _PyMem_IsULongFreed(unsigned long value)
 #else
 #  error "unknown long size"
 #endif
-}
-
-static inline int
-_PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
-{
-#if defined(Py_DEBUG) && defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
-    assert(strlen(name) < 80);
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
-    // Ignore errno from prctl
-    // See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
-    errno = 0;
-#endif
-    return 0;
 }
 
 extern int _PyMem_GetAllocatorName(
