@@ -1,2 +1,2 @@
-Annotate anonymous mmap usage in debug builds only when supported by the
-Linux kernel. Patch by Donghee Na.
+Annotate anonymous mmap usage only when supported by the
+Linux kernel and if "-X dev" is used. Patch by Donghee Na.
