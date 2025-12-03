@@ -300,7 +300,7 @@ class Stack:
             if self.check_stack_bounds:
                 out.emit("CHECK_STACK_BOUNDS();\n")
             else:
-                out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+                out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
