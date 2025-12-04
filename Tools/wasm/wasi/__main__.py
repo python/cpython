@@ -450,7 +450,7 @@ def main():
         "make-host", help="Run `make` for the host/WASI"
     )
     build_host = subcommands.add_parser(
-        "build-host", help="Build the host/WASI"
+        "build-host", help="Build the host/WASI Python"
     )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
