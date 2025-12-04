@@ -3580,6 +3580,20 @@ def quux():
             ('bœr', 5),
         )
 
+    def test_print_stack_entry_uses_dynamic_line_prefix(self):
+        """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
+        stdout = io.StringIO()
+        p = pdb.Pdb(stdout=stdout)
+
+        # Get the current frame to use for printing
+        frame = sys._getframe()
+
+        with support.swap_attr(pdb, 'line_prefix', 'CUSTOM_PREFIX> '):
+            p.print_stack_entry((frame, frame.f_lineno))
+
+        # Check if the custom prefix appeared in the output
+        self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
+
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
             """\
@@ -4572,6 +4586,41 @@ def bœr():
                 'q'
             ]))
             self.assertIn('break in bar', stdout)
+
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                pass
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
+        self.assertIn("pass", stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
 
 class ChecklineTests(unittest.TestCase):
