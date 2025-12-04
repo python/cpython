@@ -552,8 +552,10 @@ def _make_annotate_function(__class__, method_name, annotation_fields, return_ty
                 for k in annotation_fields:
                     # gh-142214: The annotation may be missing in unusual dynamic cases.
                     # If so, just skip it.
-                    if k in cls_annotations:
+                    try:
                         new_annotations[k] = cls_annotations[k]
+                    except KeyError:
+                        pass
 
                 if return_type is not MISSING:
                     if format == Format.STRING:
