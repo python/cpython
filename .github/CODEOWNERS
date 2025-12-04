@@ -44,6 +44,7 @@ Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon
 Tools/c-analyzer/             @ericsnowcurrently
+Tools/check-c-api-docs/       @ZeroIntensity
 
 # dbm
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka

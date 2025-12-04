@@ -187,6 +187,9 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
+      - name: Check for undocumented C APIs
+        run: make check-c-api-docs
+
 
   build-windows:
     name: >-
