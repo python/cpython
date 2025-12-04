@@ -2,9 +2,144 @@
 #include "pycore_token.h"
 #include "pycore_unicodeobject.h"
 #include "errcode.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "state.h"
 #include "../tokenizer/helpers.h"
+#include "firmament2.h"   /* gate + current source info */
+
+/* The internal lexer function is defined later in this file */
+static int tok_get(struct tok_state *tok, struct token *token);
+
+/* Optional envelope helpers (decls may also live in firmament2.h) */
+extern unsigned long long _firm2_next_eid(void);
+extern unsigned long       _firm2_pid(void);
+extern unsigned long long  _firm2_tid(void);
+extern long long           _firm2_now_ns(void);
+
+/* Emit one tokenizer event as JSON (guarded by FIRMAMENT2_ENABLE). */
+static void
+emit_tokenizer_event_json(struct tok_state *tok, struct token *token, int type)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+
+    /* Envelope */
+    unsigned long long eid = _firm2_next_eid();
+    unsigned long      pid = _firm2_pid();
+    unsigned long long tid = _firm2_tid();
+    long long          ts  = _firm2_now_ns();
+
+    /* Scope (compilation unit) */
+    const char *filename  = _firm2_current_filename();
+    const char *source_id = _firm2_current_source_id_hex();
+    if (!filename)  filename  = "<unknown>";
+    if (!source_id) source_id = "";
+
+    char kind_buf[32];
+    char value_buf[256];
+    char json_buf[800];
+
+    /* Render token type as a string. */
+    snprintf(kind_buf, sizeof(kind_buf), "%d", type);
+
+    /* Compute token text. */
+    const char *start = token->start;
+    const char *end   = token->end;
+    if (start == NULL || end == NULL || end <= start) {
+        value_buf[0] = '\0';
+    } else {
+        int src_len = (int)(end - start);
+        int out_idx = 0;
+        for (int i = 0; i < src_len && out_idx < (int)sizeof(value_buf) - 1; i++) {
+            unsigned char c = (unsigned char)start[i];
+            if (c == '"' || c == '\\') {
+                if (out_idx < (int)sizeof(value_buf) - 2) {
+                    value_buf[out_idx++] = '\\';
+                    value_buf[out_idx++] = (char)c;
+                } else {
+                    break;
+                }
+            }
+            else if (c == '\n' || c == '\r' || c == '\t') {
+                if (out_idx < (int)sizeof(value_buf) - 2) {
+                    value_buf[out_idx++] = '\\';
+                    value_buf[out_idx++] = (c == '\n') ? 'n' : (c == '\r' ? 'r' : 't');
+                } else {
+                    break;
+                }
+            }
+            else if (c < 0x20) {
+                continue; /* skip other control chars */
+            }
+            else {
+                value_buf[out_idx++] = (char)c;
+            }
+        }
+        value_buf[out_idx] = '\0';
+    }
+
+    /* Line/column */
+    int lineno = 0;
+    int col_offset = 0;
+    if (tok != NULL) {
+        lineno = tok->lineno;
+        if (token->start != NULL && tok->line_start != NULL) {
+            col_offset = (int)(token->start - tok->line_start);
+            if (col_offset < 0) col_offset = 0;
+        }
+    }
+
+    /* Build NDJSON line */
+    (void)snprintf(
+        json_buf,
+        sizeof(json_buf),
+        "{"
+          "\"type\":\"tokenizer\","
+          "\"envelope\":{"
+            "\"event_id\":%llu,"
+            "\"pid\":%lu,"
+            "\"tid\":%llu,"
+            "\"ts_ns\":%lld"
+          "},"
+          "\"payload\":{"
+            "\"kind\":\"%s\","
+            "\"value\":\"%s\","
+            "\"lineno\":%d,"
+            "\"col_offset\":%d,"
+            "\"filename\":\"%s\","
+            "\"source_id\":\"%s\""
+          "}"
+        "}",
+        eid, pid, tid, ts,
+        kind_buf, value_buf, lineno, col_offset, filename, source_id
+    );
+
+    printf("%s\n", json_buf);
+    fflush(stdout);
+}
+
+/* Interpose on token production to emit JSON per token. */
+int
+_PyTokenizer_Get(struct tok_state *tok, struct token *token)
+{
+    /* Call the real lexer */
+    int result = tok_get(tok, token);
+    if (tok->decoding_erred) {
+        result = ERRORTOKEN;
+        tok->done = E_DECODE;
+    }
+
+    /* Emit JSON event for every token we successfully produced (when enabled). */
+    if (token != NULL && token->start != NULL && token->end != NULL) {
+        emit_tokenizer_event_json(tok, token, result);
+    }
+    return result;
+}
+
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -538,9 +673,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 if ((c = tok_continuation_line(tok)) == -1) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
-            }
-            else if (c == EOF && PyErr_Occurred()) {
-                return MAKE_TOKEN(ERRORTOKEN);
             }
             else {
                 break;
@@ -1379,7 +1511,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
-    if( c == '=' && INSIDE_FSTRING_EXPR_AT_TOP(current_tok)) {
+    if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
         current_tok->in_debug = 1;
     }
 
@@ -1621,15 +1753,4 @@ tok_get(struct tok_state *tok, struct token *token)
     } else {
         return tok_get_fstring_mode(tok, current_tok, token);
     }
-}
-
-int
-_PyTokenizer_Get(struct tok_state *tok, struct token *token)
-{
-    int result = tok_get(tok, token);
-    if (tok->decoding_erred) {
-        result = ERRORTOKEN;
-        tok->done = E_DECODE;
-    }
-    return result;
 }

@@ -22,6 +22,66 @@ builtin_type_to_c_type = {
     "constant": "PyBaseObject_Type",
 }
 
+AST_EVENT_HELPER_C = r"""
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "firmament2.h"
+
+/* Emit one AST event line, gated by FIRMAMENT2_ENABLE. */
+static void
+emit_ast_event_json(const char *kind,
+                    int lineno, int col_offset,
+                    int end_lineno, int end_col_offset)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+
+    /* Envelope */
+    unsigned long long eid = _firm2_next_eid();
+    unsigned long      pid = _firm2_pid();
+    unsigned long long tid = _firm2_tid();
+    long long          ts  = _firm2_now_ns();
+
+    /* Source scope */
+    const char *filename  = _firm2_current_filename();
+    const char *source_id = _firm2_current_source_id_hex();
+    if (!filename)  filename  = "<unknown>";
+    if (!source_id) source_id = "";
+
+    char json_buf[640];
+    (void)snprintf(
+        json_buf,
+        sizeof(json_buf),
+        "{"
+          "\"type\":\"ast\","
+          "\"envelope\":{"
+            "\"event_id\":%llu,"
+            "\"pid\":%lu,"
+            "\"tid\":%llu,"
+            "\"ts_ns\":%lld"
+          "},"
+          "\"payload\":{"
+            "\"kind\":\"%s\","
+            "\"lineno\":%d,"
+            "\"col_offset\":%d,"
+            "\"end_lineno\":%d,"
+            "\"end_col_offset\":%d,"
+            "\"filename\":\"%s\","
+            "\"source_id\":\"%s\""
+          "}"
+        "}",
+        eid, pid, tid, ts,
+        kind,
+        lineno, col_offset, end_lineno, end_col_offset,
+        filename, source_id
+    );
+    printf("%s\n", json_buf);
+    fflush(stdout);
+}
+"""
+
 def get_c_type(name):
     """Return a string for the C name of the type.
 
@@ -407,40 +467,58 @@ class PrototypeVisitor(EmitVisitor):
                            self.get_args(prod.attributes),
                            union=False)
 
-
 class FunctionVisitor(PrototypeVisitor):
     """Visitor to generate constructor functions for AST."""
 
     def emit_function(self, name, ctype, args, attrs, union=True):
         def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
-        argstr = ", ".join(["%s %s" % (atype, aname)
-                            for atype, aname, opt in args + attrs])
+
+        # Build full C argument list (fields + attributes)
+        all_args = args + attrs
+        argstr = ", ".join(f"{atype} {aname}" for atype, aname, opt in all_args)
         if argstr:
             argstr += ", PyArena *arena"
         else:
             argstr = "PyArena *arena"
-        self.emit("%s" % ctype, 0)
-        emit("%s(%s)" % (ast_func_name(name), argstr))
+
+        # Function signature
+        self.emit(f"{ctype}", 0)
+        emit(f"{ast_func_name(name)}({argstr})")
         emit("{")
-        emit("%s p;" % ctype, 1)
+        emit(f"{ctype} p;", 1)
+
+        # Required argument checks (non-optional, non-int)
         for argtype, argname, opt in args:
             if not opt and argtype != "int":
-                emit("if (!%s) {" % argname, 1)
+                emit(f"if (!{argname}) {{", 1)
                 emit("PyErr_SetString(PyExc_ValueError,", 2)
-                msg = "field '%s' is required for %s" % (argname, name)
-                emit('                "%s");' % msg,
-                     2, reflow=False)
-                emit('return NULL;', 2)
-                emit('}', 1)
+                msg = f"field '{argname}' is required for {name}"
+                emit(f'                "{msg}");', 2, reflow=False)
+                emit("return NULL;", 2)
+                emit("}", 1)
 
-        emit("p = (%s)_PyArena_Malloc(arena, sizeof(*p));" % ctype, 1);
+        # Allocate node
+        emit(f"p = ({ctype})_PyArena_Malloc(arena, sizeof(*p));", 1)
         emit("if (!p)", 1)
-        emit("return NULL;", 2)
+        emit("    return NULL;", 2)
+
+        # Initialize node fields and attributes
         if union:
             self.emit_body_union(name, args, attrs)
         else:
             self.emit_body_struct(name, args, attrs)
+
+        # Emit JSON event for nodes with location info
+        attr_names = {aname for _, aname, _ in attrs}
+        if "lineno" in attr_names and "col_offset" in attr_names:
+            end_lineno_expr = "end_lineno" if "end_lineno" in attr_names else "lineno"
+            end_col_expr    = "end_col_offset" if "end_col_offset" in attr_names else "col_offset"
+            emit(
+                f'emit_ast_event_json("{name}", lineno, col_offset, {end_lineno_expr}, {end_col_expr});',
+                1, reflow=False
+            )
+
         emit("return p;", 1)
         emit("}")
         emit("")
@@ -448,20 +526,19 @@ class FunctionVisitor(PrototypeVisitor):
     def emit_body_union(self, name, args, attrs):
         def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
-        emit("p->kind = %s_kind;" % name, 1)
+        emit(f"p->kind = {name}_kind;", 1)
         for argtype, argname, opt in args:
-            emit("p->v.%s.%s = %s;" % (name, argname, argname), 1)
+            emit(f"p->v.{name}.{argname} = {argname};", 1)
         for argtype, argname, opt in attrs:
-            emit("p->%s = %s;" % (argname, argname), 1)
+            emit(f"p->{argname} = {argname};", 1)
 
     def emit_body_struct(self, name, args, attrs):
         def emit(s, depth=0, reflow=True):
             self.emit(s, depth, reflow)
         for argtype, argname, opt in args:
-            emit("p->%s = %s;" % (argname, argname), 1)
+            emit(f"p->{argname} = {argname};", 1)
         for argtype, argname, opt in attrs:
-            emit("p->%s = %s;" % (argname, argname), 1)
-
+            emit(f"p->{argname} = {argname};", 1)
 
 class PickleVisitor(EmitVisitor):
 
@@ -1009,7 +1086,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 else {
                     if (PyErr_WarnFormat(
                         PyExc_DeprecationWarning, 1,
-                        "Field %R is missing from %.400s._field_types. "
+                        "Field '%U' is missing from %.400s._field_types. "
                         "This will become an error in Python 3.15.",
                         name, Py_TYPE(self)->tp_name
                     ) < 0) {
@@ -1044,7 +1121,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 // simple field (e.g., identifier)
                 if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: %R. "
+                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
                     "This will become an error in Python 3.15.",
                     Py_TYPE(self)->tp_name, name
                 ) < 0) {
@@ -2249,7 +2326,6 @@ def generate_ast_state(module_state, f):
         f.write('    PyObject *' + s + ';\n')
     f.write('};')
 
-
 def generate_ast_fini(module_state, f):
     f.write(textwrap.dedent("""
             void _PyAST_Fini(PyInterpreterState *interp)
@@ -2265,7 +2341,6 @@ def generate_ast_fini(module_state, f):
             }
 
     """))
-
 
 def generate_module_def(mod, metadata, f, internal_h):
     # Gather all the data needed for ModuleSpec
@@ -2326,6 +2401,9 @@ def generate_module_def(mod, metadata, f, internal_h):
         }
     """).strip(), file=f)
 
+    # Firmament2: helper used by generated _PyAST_* constructors.
+    f.write(AST_EVENT_HELPER_C)
+
     generate_ast_fini(module_state, f)
 
     f.write('static int init_identifiers(struct ast_state *state)\n')
@@ -2336,6 +2414,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         f.write(identifier + '")) == NULL) return -1;\n')
     f.write('    return 0;\n')
     f.write('};\n\n')
+
 
 def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
