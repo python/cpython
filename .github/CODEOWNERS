@@ -126,6 +126,9 @@ Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
 # C Analyser
 Tools/c-analyzer/             @ericsnowcurrently
 
+# C API Documentation Checks
+Tools/check-c-api-docs/       @ZeroIntensity
+
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
 
