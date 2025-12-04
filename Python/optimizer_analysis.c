@@ -187,15 +187,27 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 #define JUMP_TO_LABEL(label) goto label;
+
+static int
+check_stack_bounds(JitOptContext *ctx, JitOptRef *stack_pointer, int offset, int opcode)
+{
+    int stack_level = (int)(stack_pointer + (offset) - ctx->frame->stack);
+    int should_check = !CURRENT_FRAME_IS_INIT_SHIM() ||
+        (opcode == _RETURN_VALUE) ||
+        (opcode == _RETURN_GENERATOR) ||
+        (opcode == _YIELD_VALUE);
+    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE())) {
+        ctx->contradiction = true;
+        ctx->done = true;
+        return 1;
+    }
+    return 0;
+}
+
 #define CHECK_STACK_BOUNDS(offset) \
-do { \
-    int stack_level = (int)(stack_pointer + (offset) - ctx->frame->stack); \
-    if (stack_level < 0 || stack_level > STACK_SIZE()) { \
-        ctx->contradiction = true; \
-        ctx->done = true; \
+    if (check_stack_bounds(ctx, stack_pointer, offset, opcode)) { \
         break; \
     } \
-} while (0);
 
 static int
 optimize_to_bool(
