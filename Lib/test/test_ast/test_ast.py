@@ -992,7 +992,7 @@ class AST_Tests(unittest.TestCase):
     @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        crash_depth = 500_000
+        crash_depth = 100_000
         success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()

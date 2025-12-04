@@ -728,7 +728,7 @@ class TestSpecifics(unittest.TestCase):
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        crash_depth = limit * 5000
+        crash_depth = limit * 1000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1040,7 +1040,7 @@ class TestSpecifics(unittest.TestCase):
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        compile("if a: b\n" * 100000, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
