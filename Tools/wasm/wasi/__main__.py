@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
-# /// script
-# requires-python = ">=3.13"
-# ///
-
 import argparse
 import contextlib
 import functools
 import os
+
 import tomllib
 
 try:
