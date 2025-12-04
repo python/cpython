@@ -297,10 +297,7 @@ class Stack:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            if self.check_stack_bounds:
-                out.emit("CHECK_STACK_BOUNDS();\n")
-            else:
-                out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
+            out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
@@ -320,8 +317,16 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
+    def stack_bound_check(self, out: CWriter):
+        if not self.check_stack_bounds:
+            return
+        if self.physical_sp != self.logical_sp:
+            diff =  self.logical_sp - self.physical_sp
+            out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
+
     def flush(self, out: CWriter) -> None:
         self._print(out)
+        self.stack_bound_check(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
