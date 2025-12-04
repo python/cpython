@@ -317,7 +317,7 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
-    def stack_bound_check(self, out: CWriter):
+    def stack_bound_check(self, out: CWriter) -> None:
         if not self.check_stack_bounds:
             return
         if self.physical_sp != self.logical_sp:
