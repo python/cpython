@@ -298,13 +298,14 @@ Glossary
       it's almost certain you can safely ignore them.
 
    concurrency
-      The ability of different parts of a program to be executed out-of-order
-      or in partial order without affecting the outcome.  This allows for
-      multiple tasks to make progress during overlapping time periods, though
-      not necessarily simultaneously.  In Python, concurrency can be achieved
-      through :mod:`threading` (using OS threads), :mod:`asyncio` (cooperative
-      multitasking), or :mod:`multiprocessing` (separate processes).
-      See also :term:`parallelism`.
+      The ability of a computer program to perform multiple tasks at the same
+      time.  Python provides libraries for writing programs that make use of
+      different forms of concurrency.  :mod:`asyncio` is a library for dealing
+      with asynchronous tasks and coroutines.  :mod:`threading`` provides
+      access to operating system threads and :mod:`multiprocessing` to
+      operating system processes. Multi-core processors can execute threads and
+      processes on different CPU cores at the same time (see
+      :term:`parallelism`).
 
    concurrent modification
       When multiple threads modify shared data at the same time without
@@ -1226,13 +1227,6 @@ Glossary
       :func:`os.fsdecode` and :func:`os.fsencode` can be used to guarantee a
       :class:`str` or :class:`bytes` result instead, respectively. Introduced
       by :pep:`519`.
-
-   per-module state
-      State that is stored separately for each instance of a module, rather
-      than in :term:`global state`.  Per-module state is accessed through the
-      module object rather than through C static variables.
-      See :ref:`isolating-extensions-howto` for more information.  See also
-      :term:`global state`.
 
    PEP
       Python Enhancement Proposal. A PEP is a design document
