@@ -2,7 +2,7 @@
   What's New In Python 3.4
 ****************************
 
-:Author: R. David Murray <rdmurray@bitdance.com> (Editor)
+:Author: \R. David Murray <rdmurray@bitdance.com> (Editor)
 
 .. Rules for maintenance:
 

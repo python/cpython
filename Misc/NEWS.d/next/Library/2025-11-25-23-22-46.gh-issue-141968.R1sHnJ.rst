@@ -1,0 +1,2 @@
+Remove data copy from :func:`wave.Wave_read.readframes` and
+:func:`wave.Wave_write.writeframes` by using :meth:`bytearray.take_bytes`.

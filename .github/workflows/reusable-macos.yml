@@ -3,9 +3,6 @@ name: Reusable macOS
 on:
   workflow_call:
     inputs:
-      config_hash:
-        required: true
-        type: string
       free-threading:
         required: false
         type: boolean

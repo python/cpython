@@ -113,6 +113,9 @@ struct _ts {
     /* Currently holds the GIL. Must be its own field to avoid data races */
     int holds_gil;
 
+    /* Currently requesting the GIL */
+    int gil_requested;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
@@ -275,6 +278,18 @@ PyAPI_FUNC(int) PyGILState_Check(void);
    thread id to that thread's current frame.
 */
 PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
+
+// Set the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(int) PyUnstable_ThreadState_SetStackProtection(
+    PyThreadState *tstate,
+    void *stack_start_addr,  // Stack start address
+    size_t stack_size);      // Stack size (in bytes)
+
+// Reset the stack protection start address and stack protection size
+// of a Python thread state
+PyAPI_FUNC(void) PyUnstable_ThreadState_ResetStackProtection(
+    PyThreadState *tstate);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

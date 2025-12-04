@@ -832,8 +832,8 @@ raising an exception.
 
 One difference from other Python queue implementations, is that :mod:`multiprocessing`
 queues serializes all objects that are put into them using :mod:`pickle`.
-The object return by the get method is a re-created object that does not share memory
-with the original object.
+The object returned by the get method is a re-created object that does not share
+memory with the original object.
 
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
@@ -890,7 +890,7 @@ For an example of the usage of queues for interprocess communication see
 :ref:`multiprocessing-examples`.
 
 
-.. function:: Pipe([duplex])
+.. function:: Pipe(duplex=True)
 
    Returns a pair ``(conn1, conn2)`` of
    :class:`~multiprocessing.connection.Connection` objects representing the
@@ -1577,11 +1577,21 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+
+   .. method:: get_value()
+
+      Return the current value of semaphore.
+
+      Note that this may raise :exc:`NotImplementedError` on platforms like
+      macOS where ``sem_getvalue()`` is not implemented.
+
+
    .. method:: locked()
 
       Return a boolean indicating whether this object is locked right now.
 
       .. versionadded:: 3.14
+
 
 .. note::
 

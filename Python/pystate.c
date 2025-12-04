@@ -552,10 +552,6 @@ init_interpreter(PyInterpreterState *interp,
     _Py_brc_init_state(interp);
 #endif
 
-#ifdef _Py_TIER2
-     // Ensure the buffer is to be set as NULL.
-    interp->jit_uop_buffer = NULL;
-#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
@@ -805,10 +801,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
-    if (interp->jit_uop_buffer != NULL) {
-        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
-        interp->jit_uop_buffer = NULL;
-    }
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -830,6 +822,14 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         assert(cold->vm_data.valid);
         assert(cold->vm_data.warm);
         _PyExecutor_Free(cold);
+    }
+
+    struct _PyExecutorObject *cold_dynamic = interp->cold_dynamic_executor;
+    if (cold_dynamic != NULL) {
+        interp->cold_dynamic_executor = NULL;
+        assert(cold_dynamic->vm_data.valid);
+        assert(cold_dynamic->vm_data.warm);
+        _PyExecutor_Free(cold_dynamic);
     }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
@@ -1495,9 +1495,15 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     _tstate->c_stack_top = 0;
     _tstate->c_stack_hard_limit = 0;
 
+    _tstate->c_stack_init_base = 0;
+    _tstate->c_stack_init_top = 0;
+
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
 
+#ifdef _Py_TIER2
+    _tstate->jit_tracer_state.code_buffer = NULL;
+#endif
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
@@ -1802,6 +1808,14 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     tstate->interp->object_state.reftotal += tstate_impl->reftotal;
     tstate_impl->reftotal = 0;
     assert(tstate_impl->refcounts.values == NULL);
+#endif
+
+#if _Py_TIER2
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->jit_tracer_state.code_buffer != NULL) {
+        _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
+        _tstate->jit_tracer_state.code_buffer = NULL;
+    }
 #endif
 
     HEAD_UNLOCK(runtime);

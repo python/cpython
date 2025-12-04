@@ -46,13 +46,12 @@ import subprocess
 import sys
 import sysconfig
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Callable
 
 EnvironmentT = dict[str, str]
 ArgsT = Sequence[str | Path]
@@ -140,17 +139,15 @@ def print_env(env: EnvironmentT) -> None:
 def apple_env(host: str) -> EnvironmentT:
     """Construct an Apple development environment for the given host."""
     env = {
-        "PATH": ":".join(
-            [
-                str(PYTHON_DIR / "Apple/iOS/Resources/bin"),
-                str(subdir(host) / "prefix"),
-                "/usr/bin",
-                "/bin",
-                "/usr/sbin",
-                "/sbin",
-                "/Library/Apple/usr/bin",
-            ]
-        ),
+        "PATH": ":".join([
+            str(PYTHON_DIR / "Apple/iOS/Resources/bin"),
+            str(subdir(host) / "prefix"),
+            "/usr/bin",
+            "/bin",
+            "/usr/sbin",
+            "/sbin",
+            "/Library/Apple/usr/bin",
+        ]),
     }
 
     return env
@@ -196,14 +193,10 @@ def clean(context: argparse.Namespace, target: str = "all") -> None:
         paths.append(target)
 
     if target in {"all", "hosts", "test"}:
-        paths.extend(
-            [
-                path.name
-                for path in CROSS_BUILD_DIR.glob(
-                    f"{context.platform}-testbed.*"
-                )
-            ]
-        )
+        paths.extend([
+            path.name
+            for path in CROSS_BUILD_DIR.glob(f"{context.platform}-testbed.*")
+        ])
 
     for path in paths:
         delete_path(path)
@@ -352,18 +345,16 @@ def download(url: str, target_dir: Path) -> Path:
 
     out_path = target_path / basename(url)
     if not Path(out_path).is_file():
-        run(
-            [
-                "curl",
-                "-Lf",
-                "--retry",
-                "5",
-                "--retry-all-errors",
-                "-o",
-                out_path,
-                url,
-            ]
-        )
+        run([
+            "curl",
+            "-Lf",
+            "--retry",
+            "5",
+            "--retry-all-errors",
+            "-o",
+            out_path,
+            url,
+        ])
     else:
         print(f"Using cached version of {basename(url)}")
     return out_path
@@ -468,8 +459,7 @@ def package_version(prefix_path: Path) -> str:
 
 
 def lib_platform_files(dirname, names):
-    """A file filter that ignores platform-specific files in the lib directory.
-    """
+    """A file filter that ignores platform-specific files in lib."""
     path = Path(dirname)
     if (
         path.parts[-3] == "lib"
@@ -478,7 +468,7 @@ def lib_platform_files(dirname, names):
     ):
         return names
     elif path.parts[-2] == "lib" and path.parts[-1].startswith("python"):
-        ignored_names = set(
+        ignored_names = {
             name
             for name in names
             if (
@@ -486,7 +476,13 @@ def lib_platform_files(dirname, names):
                 or name.startswith("_sysconfig_vars_")
                 or name == "build-details.json"
             )
-        )
+        }
+    elif path.parts[-1] == "lib":
+        ignored_names = {
+            name
+            for name in names
+            if name.startswith("libpython") and name.endswith(".dylib")
+        }
     else:
         ignored_names = set()
 
@@ -499,7 +495,9 @@ def lib_non_platform_files(dirname, names):
     """
     path = Path(dirname)
     if path.parts[-2] == "lib" and path.parts[-1].startswith("python"):
-        return set(names) - lib_platform_files(dirname, names) - {"lib-dynload"}
+        return (
+            set(names) - lib_platform_files(dirname, names) - {"lib-dynload"}
+        )
     else:
         return set()
 
@@ -514,7 +512,8 @@ def create_xcframework(platform: str) -> str:
         package_path.mkdir()
     except FileExistsError:
         raise RuntimeError(
-            f"{platform} XCframework already exists; do you need to run with --clean?"
+            f"{platform} XCframework already exists; do you need to run "
+            "with --clean?"
         ) from None
 
     frameworks = []
@@ -607,7 +606,7 @@ def create_xcframework(platform: str) -> str:
         print(f" - {slice_name} binaries")
         shutil.copytree(first_path / "bin", slice_path / "bin")
 
-        # Copy the include path (this will be a symlink to the framework headers)
+        # Copy the include path (a symlink to the framework headers)
         print(f" - {slice_name} include files")
         shutil.copytree(
             first_path / "include",
@@ -621,6 +620,12 @@ def create_xcframework(platform: str) -> str:
             slice_framework / "Headers/pyconfig.h",
         )
 
+        print(f" - {slice_name} shared library")
+        # Create a simlink for the fat library
+        shared_lib = slice_path / f"lib/libpython{version_tag}.dylib"
+        shared_lib.parent.mkdir()
+        shared_lib.symlink_to("../Python.framework/Python")
+
         print(f" - {slice_name} architecture-specific files")
         for host_triple, multiarch in slice_parts.items():
             print(f"   - {multiarch} standard library")
@@ -632,6 +637,7 @@ def create_xcframework(platform: str) -> str:
                     framework_path(host_triple, multiarch) / "lib",
                     package_path / "Python.xcframework/lib",
                     ignore=lib_platform_files,
+                    symlinks=True,
                 )
                 has_common_stdlib = True
 
@@ -639,6 +645,7 @@ def create_xcframework(platform: str) -> str:
                 framework_path(host_triple, multiarch) / "lib",
                 slice_path / f"lib-{arch}",
                 ignore=lib_non_platform_files,
+                symlinks=True,
             )
 
             # Copy the host's pyconfig.h to an architecture-specific name.
@@ -659,7 +666,8 @@ def create_xcframework(platform: str) -> str:
             # statically link those libraries into a Framework, you become
             # responsible for providing a privacy manifest for that framework.
             xcprivacy_file = {
-                "OpenSSL": subdir(host_triple) / "prefix/share/OpenSSL.xcprivacy"
+                "OpenSSL": subdir(host_triple)
+                / "prefix/share/OpenSSL.xcprivacy"
             }
             print(f"   - {multiarch} xcprivacy files")
             for module, lib in [
@@ -669,7 +677,8 @@ def create_xcframework(platform: str) -> str:
                 shutil.copy(
                     xcprivacy_file[lib],
                     slice_path
-                    / f"lib-{arch}/python{version_tag}/lib-dynload/{module}.xcprivacy",
+                    / f"lib-{arch}/python{version_tag}"
+                    / f"lib-dynload/{module}.xcprivacy",
                 )
 
     print(" - build tools")
@@ -692,18 +701,16 @@ def package(context: argparse.Namespace) -> None:
 
         # Clone testbed
         print()
-        run(
-            [
-                sys.executable,
-                "Apple/testbed",
-                "clone",
-                "--platform",
-                context.platform,
-                "--framework",
-                CROSS_BUILD_DIR / context.platform / "Python.xcframework",
-                CROSS_BUILD_DIR / context.platform / "testbed",
-            ]
-        )
+        run([
+            sys.executable,
+            "Apple/testbed",
+            "clone",
+            "--platform",
+            context.platform,
+            "--framework",
+            CROSS_BUILD_DIR / context.platform / "Python.xcframework",
+            CROSS_BUILD_DIR / context.platform / "testbed",
+        ])
 
         # Build the final archive
         archive_name = (
@@ -757,7 +764,7 @@ def build(context: argparse.Namespace, host: str | None = None) -> None:
         package(context)
 
 
-def test(context: argparse.Namespace, host: str | None = None) -> None:
+def test(context: argparse.Namespace, host: str | None = None) -> None:  # noqa: PT028
     """The implementation of the "test" command."""
     if host is None:
         host = context.host
@@ -795,18 +802,16 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
                     / f"Frameworks/{apple_multiarch(host)}"
                 )
 
-        run(
-            [
-                sys.executable,
-                "Apple/testbed",
-                "clone",
-                "--platform",
-                context.platform,
-                "--framework",
-                framework_path,
-                testbed_dir,
-            ]
-        )
+        run([
+            sys.executable,
+            "Apple/testbed",
+            "clone",
+            "--platform",
+            context.platform,
+            "--framework",
+            framework_path,
+            testbed_dir,
+        ])
 
         run(
             [
@@ -840,7 +845,7 @@ def apple_sim_host(platform_name: str) -> str:
     """Determine the native simulator target for this platform."""
     for _, slice_parts in HOSTS[platform_name].items():
         for host_triple in slice_parts:
-            parts = host_triple.split('-')
+            parts = host_triple.split("-")
             if parts[0] == platform.machine() and parts[-1] == "simulator":
                 return host_triple
 
@@ -968,20 +973,29 @@ def parse_args() -> argparse.Namespace:
         cmd.add_argument(
             "--simulator",
             help=(
-                "The name of the simulator to use (eg: 'iPhone 16e'). Defaults to "
-                "the most recently released 'entry level' iPhone device. Device "
-                "architecture and OS version can also be specified; e.g., "
-                "`--simulator 'iPhone 16 Pro,arch=arm64,OS=26.0'` would run on "
-                "an ARM64 iPhone 16 Pro simulator running iOS 26.0."
+                "The name of the simulator to use (eg: 'iPhone 16e'). "
+                "Defaults to the most recently released 'entry level' "
+                "iPhone device. Device architecture and OS version can also "
+                "be specified; e.g., "
+                "`--simulator 'iPhone 16 Pro,arch=arm64,OS=26.0'` would "
+                "run on an ARM64 iPhone 16 Pro simulator running iOS 26.0."
             ),
         )
         group = cmd.add_mutually_exclusive_group()
         group.add_argument(
-            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
-            help="Add test arguments for GitHub Actions")
+            "--fast-ci",
+            action="store_const",
+            dest="ci_mode",
+            const="fast",
+            help="Add test arguments for GitHub Actions",
+        )
         group.add_argument(
-            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
-            help="Add test arguments for buildbots")
+            "--slow-ci",
+            action="store_const",
+            dest="ci_mode",
+            const="slow",
+            help="Add test arguments for buildbots",
+        )
 
     for subcommand in [configure_build, configure_host, build, ci]:
         subcommand.add_argument(

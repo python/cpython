@@ -21,14 +21,6 @@ typedef struct _PyExecutorLinkListNode {
 } _PyExecutorLinkListNode;
 
 
-/* Bloom filter with m = 256
- * https://en.wikipedia.org/wiki/Bloom_filter */
-#define _Py_BLOOM_FILTER_WORDS 8
-
-typedef struct {
-    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
-} _PyBloomFilter;
-
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
@@ -44,7 +36,9 @@ typedef struct {
 
 typedef struct _PyExitData {
     uint32_t target;
-    uint16_t index;
+    uint16_t index:14;
+    uint16_t is_dynamic:1;
+    uint16_t is_control_flow:1;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -94,9 +88,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 // This value is arbitrary and was not optimized.
 #define JIT_CLEANUP_THRESHOLD 1000
 
-#define TRACE_STACK_SIZE 5
-
-int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(
+    PyFunctionObject *func,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
@@ -130,7 +123,7 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 #define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
-#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
+#define MAX_ABSTRACT_FRAME_DEPTH (16)
 
 // The maximum number of side exits that we can take before requiring forward
 // progress (and inserting a new ENTER_EXECUTOR instruction). In practice, this
@@ -258,6 +251,7 @@ struct _Py_UOpsAbstractFrame {
     int stack_len;
     int locals_len;
     PyFunctionObject *func;
+    PyCodeObject *code;
 
     JitOptRef *stack_pointer;
     JitOptRef *stack;
@@ -333,11 +327,11 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     int curr_stackentries,
     JitOptRef *args,
     int arg_len);
-extern int _Py_uop_frame_pop(JitOptContext *ctx);
+extern int _Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, PyThreadState *tstate);
 
 static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 {
@@ -346,6 +340,7 @@ static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
 }
 
 extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
+extern _PyExecutorObject *_PyExecutor_GetColdDynamicExecutor(void);
 
 PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
 
@@ -354,7 +349,9 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     int opcode = uop->opcode;
     return (
         opcode == _EXIT_TRACE ||
-        opcode == _JUMP_TO_TOP
+        opcode == _DEOPT ||
+        opcode == _JUMP_TO_TOP ||
+        opcode == _DYNAMIC_EXIT
     );
 }
 
@@ -364,6 +361,18 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2
 extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
+
+int _PyJit_translate_single_bytecode_to_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int stop_tracing_opcode);
+
+PyAPI_FUNC(int)
+_PyJit_TryInitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame,
+    _Py_CODEUNIT *curr_instr, _Py_CODEUNIT *start_instr,
+    _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit,
+    int oparg);
+
+void _PyJit_FinalizeTracing(PyThreadState *tstate);
+
+void _PyJit_Tracer_InvalidateDependency(PyThreadState *old_tstate, void *obj);
 
 #ifdef __cplusplus
 }

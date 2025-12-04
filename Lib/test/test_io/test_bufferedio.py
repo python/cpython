@@ -1277,7 +1277,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
         def _readinto(bufio, n=-1):
             b = bytearray(n if n >= 0 else 9999)
             n = bufio.readinto(b)
-            return bytes(b[:n])
+            b.resize(n)
+            return b.take_bytes()
         self.check_flush_and_read(_readinto)
 
     def test_flush_and_peek(self):

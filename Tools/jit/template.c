@@ -55,13 +55,10 @@ do {                                                                       \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
-#undef GOTO_TIER_ONE
-#define GOTO_TIER_ONE(TARGET)                       \
-do {                                                \
-    tstate->current_executor = NULL;                \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    return TARGET;                                  \
-} while (0)
+#undef GOTO_TIER_ONE_SETUP
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
@@ -88,6 +85,12 @@ do {                                                                      \
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
 #define TIER_TWO 2
+
+#ifdef Py_DEBUG
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#else
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
+#endif
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)

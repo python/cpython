@@ -426,7 +426,7 @@ A pointer to the module definition must be returned via :c:func:`PyModuleDef_Ini
 so that the import machinery can create the module and store it in ``sys.modules``.
 
 When embedding Python, the :c:func:`!PyInit_spam` function is not called
-automatically unless there's an entry in the :c:data:`!PyImport_Inittab` table.
+automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
 To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
 optionally followed by an import of the module::
 

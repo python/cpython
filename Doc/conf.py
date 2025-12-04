@@ -361,7 +361,7 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Guido van Rossum and the Python development team'
+_stdauthor = 'The Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
     (

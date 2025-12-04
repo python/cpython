@@ -13,6 +13,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+/* To be able to reason about code layout and branches, keep code size below 1 MB */
+#define PY_MAX_JIT_CODE_SIZE ((1 << 20)-1)
+
 #ifdef _Py_JIT
 
 typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);

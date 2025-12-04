@@ -213,28 +213,29 @@ extern "C" {
 #define UNPACK_SEQUENCE_LIST                   207
 #define UNPACK_SEQUENCE_TUPLE                  208
 #define UNPACK_SEQUENCE_TWO_TUPLE              209
-#define INSTRUMENTED_END_FOR                   234
-#define INSTRUMENTED_POP_ITER                  235
-#define INSTRUMENTED_END_SEND                  236
-#define INSTRUMENTED_FOR_ITER                  237
-#define INSTRUMENTED_INSTRUCTION               238
-#define INSTRUMENTED_JUMP_FORWARD              239
-#define INSTRUMENTED_NOT_TAKEN                 240
-#define INSTRUMENTED_POP_JUMP_IF_TRUE          241
-#define INSTRUMENTED_POP_JUMP_IF_FALSE         242
-#define INSTRUMENTED_POP_JUMP_IF_NONE          243
-#define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      244
-#define INSTRUMENTED_RESUME                    245
-#define INSTRUMENTED_RETURN_VALUE              246
-#define INSTRUMENTED_YIELD_VALUE               247
-#define INSTRUMENTED_END_ASYNC_FOR             248
-#define INSTRUMENTED_LOAD_SUPER_ATTR           249
-#define INSTRUMENTED_CALL                      250
-#define INSTRUMENTED_CALL_KW                   251
-#define INSTRUMENTED_CALL_FUNCTION_EX          252
-#define INSTRUMENTED_JUMP_BACKWARD             253
-#define INSTRUMENTED_LINE                      254
-#define ENTER_EXECUTOR                         255
+#define INSTRUMENTED_END_FOR                   233
+#define INSTRUMENTED_POP_ITER                  234
+#define INSTRUMENTED_END_SEND                  235
+#define INSTRUMENTED_FOR_ITER                  236
+#define INSTRUMENTED_INSTRUCTION               237
+#define INSTRUMENTED_JUMP_FORWARD              238
+#define INSTRUMENTED_NOT_TAKEN                 239
+#define INSTRUMENTED_POP_JUMP_IF_TRUE          240
+#define INSTRUMENTED_POP_JUMP_IF_FALSE         241
+#define INSTRUMENTED_POP_JUMP_IF_NONE          242
+#define INSTRUMENTED_POP_JUMP_IF_NOT_NONE      243
+#define INSTRUMENTED_RESUME                    244
+#define INSTRUMENTED_RETURN_VALUE              245
+#define INSTRUMENTED_YIELD_VALUE               246
+#define INSTRUMENTED_END_ASYNC_FOR             247
+#define INSTRUMENTED_LOAD_SUPER_ATTR           248
+#define INSTRUMENTED_CALL                      249
+#define INSTRUMENTED_CALL_KW                   250
+#define INSTRUMENTED_CALL_FUNCTION_EX          251
+#define INSTRUMENTED_JUMP_BACKWARD             252
+#define INSTRUMENTED_LINE                      253
+#define ENTER_EXECUTOR                         254
+#define TRACE_RECORD                           255
 #define ANNOTATIONS_PLACEHOLDER                256
 #define JUMP                                   257
 #define JUMP_IF_FALSE                          258
@@ -249,7 +250,7 @@ extern "C" {
 
 #define HAVE_ARGUMENT                           43
 #define MIN_SPECIALIZED_OPCODE                 129
-#define MIN_INSTRUMENTED_OPCODE                234
+#define MIN_INSTRUMENTED_OPCODE                233
 
 #ifdef __cplusplus
 }

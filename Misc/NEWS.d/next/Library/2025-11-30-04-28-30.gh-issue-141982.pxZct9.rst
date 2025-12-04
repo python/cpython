@@ -1,0 +1,1 @@
+Allow :mod:`pdb` to set breakpoints on async functions with function names.

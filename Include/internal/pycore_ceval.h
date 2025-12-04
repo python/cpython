@@ -33,8 +33,6 @@ extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
 
-extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
-
 extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
 extern unsigned long _PyEval_GetSwitchInterval(void);
 
@@ -217,7 +215,14 @@ extern void _PyEval_DeactivateOpCache(void);
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    return here_addr < _tstate->c_stack_soft_limit;
+    // Overflow if stack pointer is between soft limit and the base of the hardware stack.
+    // If it is below the hardware stack base, assume that we have the wrong stack limits, and do nothing.
+    // We could have the wrong stack limits because of limited platform support, or user-space threads.
+#if _Py_STACK_GROWS_DOWN
+    return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
+#else
+    return here_addr > _tstate->c_stack_soft_limit && here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
+#endif
 }
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
@@ -249,8 +254,17 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
 }
+
+// Export for test_peg_generator
+PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
+    PyThreadState *tstate,
+    int margin_count);
 
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
@@ -391,6 +405,66 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL___AENTER__  2
 #define SPECIAL___AEXIT__   3
 #define SPECIAL_MAX   3
+
+PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
+
+/* Helper functions for large uops */
+
+PyAPI_FUNC(PyObject *)
+_Py_VectorCall_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args,
+    _PyStackRef kwnames);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFast_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFast_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_CallBuiltinClass_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildString_StackRefSteal(
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildMap_StackRefSteal(
+    _PyStackRef *arguments,
+    int half_args);
+
+PyAPI_FUNC(void)
+_Py_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+    const char *filename, int lineno);
 
 #ifdef __cplusplus
 }

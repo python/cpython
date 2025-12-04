@@ -150,6 +150,8 @@ typedef struct _optimization_stats {
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t optimizer_attempts;
     uint64_t optimizer_successes;
+    uint64_t optimizer_contradiction;
+    uint64_t optimizer_frame_overflow;
     uint64_t optimizer_failure_reason_no_memory;
     uint64_t remove_globals_builtins_changed;
     uint64_t remove_globals_incorrect_keys;

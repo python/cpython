@@ -239,6 +239,37 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         lines = "\n".join(lines) + "\n"
         self.assertEqual(out, lines)
 
+    def test_create_module_from_initfunc(self):
+        out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
+        self.assertEqual(self._nogil_filtered_err(err, "embedded_ext"), "")
+        self.assertEqual(out,
+                         "<module 'my_test_extension' (static-extension)>\n"
+                         "my_test_extension.executed='yes'\n"
+                         "my_test_extension.exec_slot_ran='yes'\n"
+                         "<module 'embedded_ext' (static-extension)>\n"
+                         "embedded_ext.executed='yes'\n"
+                         )
+
+    def test_inittab_submodule_multiphase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_multiphase")
+        self.assertEqual(err, "")
+        self.assertEqual(out,
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         "mp_pkg.mp_submod.mp_submod_exec_slot_ran='yes'\n"
+                         "mp_pkg.mp_pkg_exec_slot_ran='yes'\n"
+                         )
+
+    def test_inittab_submodule_singlephase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_singlephase")
+        self.assertEqual(self._nogil_filtered_err(err, "sp_pkg"), "")
+        self.assertEqual(out,
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         )
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
@@ -515,6 +546,24 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         """)
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
+
+    @staticmethod
+    def _nogil_filtered_err(err: str, mod_name: str) -> str:
+        if not support.Py_GIL_DISABLED:
+            return err
+
+        # the test imports a singlephase init extension, so it emits a warning
+        # under the free-threaded build
+        expected_runtime_warning = (
+            "RuntimeWarning: The global interpreter lock (GIL)"
+            f" has been enabled to load module '{mod_name}'"
+        )
+        filtered_err_lines = [
+            line
+            for line in err.strip().splitlines()
+            if expected_runtime_warning not in line
+        ]
+        return "\n".join(filtered_err_lines)
 
 
 def config_dev_mode(preconfig, config):

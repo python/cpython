@@ -1,0 +1,2 @@
+Fix the ``HAVE_THREAD_LOCAL`` macro being defined without the
+``Py_BUILD_CORE`` macro set after including :file:`Python.h`.
