@@ -32,6 +32,7 @@ Linux), or Windows.
 On other systems, you might need to adjust some details -- for example,
 a system command name.
 
+
 .. note::
 
    This tutorial uses API that was added in CPython 3.15.
@@ -82,19 +83,15 @@ We want this function to be callable from Python as follows:
 Warming up your build tool
 ==========================
 
-Begin by creating a file named :file:`spammodule.c`.
-The name is entirely up to you, though some tools can be picky about
-the ``.c`` extension.
-(Some people would just use :file:`spam.c` to implement a module
-named ``spam``, for example.
-If you do this, you'll need to adjust some instructions below.)
+Begin by creating a file named :file:`spammodule.c`. [#why-spammodule]_
 
-Now, while the file is empty, we'll compile it, so that you can make
-and test incremental changes as you follow the rest of the tutorial.
+Now, while the file is empty, we'll compile it.
 
 Choose a build tool such as Setuptools or Meson, and follow its instructions
-to compile and install the empty :file:`spammodule.c` as if it was a
-C extension module.
+to compile and install the empty :file:`spammodule.c` as a C extension module.
+
+This will ensure that your build tool works, so that you can make
+and test incremental changes as you follow the rest of the text.
 
 .. note:: Workaround for missing ``PyInit``
 
@@ -119,14 +116,14 @@ C extension module.
 
    Using a third-party build tool is heavily recommended, as in will take
    care of various details of your platform and Python installation,
-   naming the resulting extension, and, later, distributing your work.
+   of naming the resulting extension, and, later, of distributing your work.
 
    If you don't want to use a tool, you can try to run your compiler directly.
    The following command should work for many flavors of Linux, and generate
    a ``spam.so`` file that you need to put in a directory
    in :py:attr:`sys.path`:
 
-   .. code-block:: shell
+   .. code-block:: sh
 
       gcc --shared spammodule.c -o spam.so
 
@@ -138,35 +135,30 @@ This should fail with the following exception:
 
    >>> import spam
    Traceback (most recent call last):
-   File "<string>", line 1, in <module>
-      import spam
+      ...
    ImportError: dynamic module does not define module export function (PyModExport_spam or PyInit_spam)
 
 
 Including the Header
 ====================
 
-
-Now, put the first line in the file: include :file:`Python.h` to pull in
+Now, add the first line to your file: include :file:`Python.h` to pull in
 all declarations of the Python C API:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-at: <Python.h>
    :end-at: <Python.h>
 
-This header contains all of the Python C API.
-
-Next, bring in the declaration of the C library function we want to call.
-Documentation of the :c:func:`system` function tells us that teh necessary
-header is:
+Next, include the header for the :c:func:`system` function:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-at: <stdlib.h>
    :end-at: <stdlib.h>
 
 Be sure to put this, and any other standard library includes, *after*
-:file:`Python.h`, since Python may define some pre-processor definitions
-which affect the standard headers on some systems.
+:file:`Python.h`.
+On some systems, Python may define some pre-processor definitions
+that affect the standard headers.
 
 .. tip::
 
@@ -196,27 +188,25 @@ You should get the same exception as with the empty file.
 Module export hook
 ==================
 
-The exception you should be getting tells you that Python is looking for an
-module :ref:`export hook <extension-export-hook>` function.
+The exception you got when you tried to import the module told you that Python
+is looking for a "module export function", also known as a
+:ref:`module export hook <extension-export-hook>`.
 Let's define one.
 
-First, let's add a prototype:
+First, add a prototype below the ``#include`` lines:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Export hook prototype
    :end-before: ///
 
-The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
-return type, and adds any special linkage declarations required by the platform
-to make the compiled extension export the function.
-For C++, it declares the function as ``extern "C"``.
-
 .. tip::
-   The prototype is not strictly necessary, but some modern C compilers emit
-   warnings when a public, exported function has no prototype declaration.
-   It's better to add a prototype than disable the warning, so that in other
-   code you're notified in common cases of forgetting a header or misspelling
-   a name.
+   The prototype is not strictly necessary, but some modern compilers emit
+   warnings without it.
+   It's generally better to add the prototype than to disable the warning.
+
+The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
+return type, and adds any special linkage declarations needed
+to make the function visible and usable when CPython loads it.
 
 After the prototype, add the function itself.
 For now, make it return ``NULL``:
@@ -230,56 +220,53 @@ For now, make it return ``NULL``:
    }
 
 Compile and load the module again.
-You should get a different error this time:
+You should get a different error this time.
 
 .. code-block:: pycon
 
    >>> import spam
    Traceback (most recent call last):
-   File "<string>", line 1, in <module>
-      import spam
+      ...
    SystemError: module export hook for module 'spam' failed without setting an exception
 
-Many functions in the Python C API, including export hooks, are expected to
-do two things to signal that they have failed: return ``NULL``, and
-set an exception.
-Here, Python assumes that you only did half of this.
-
-.. note::
-
-   This is one of a few situation where CPython checks this situation and
-   emits a "nice" error message.
-   Elsewhere, returning ``NULL`` without setting an exception can
-   trigger undefined behavior.
+Simply returning ``NULL`` is *not* correct behavior for an export hook,
+and CPython complains about it.
+That's good -- it means that CPython found the function!
+Let's now make it do something useful.
 
 
 The slot table
 ==============
 
 Rather than ``NULL``, the export hook should return the information needed to
-create a module, as a ``static`` array of :c:type:`PyModuleDef_Slot` entries.
+create a module.
+Let's with the basics: the name and docstring.
+
+The information should de defined in as ``static`` array of
+:c:type:`PyModuleDef_Slot` entries, which are essentially key-value pairs.
 Define this array just before your export hook:
 
 .. code-block:: c
 
    static PyModuleDef_Slot spam_slots[] = {
       {Py_mod_name, "spam"},
-      {Py_mod_doc, PyDoc_STR("A wonderful module with an example function")},
+      {Py_mod_doc, "A wonderful module with an example function"},
       {0, NULL}
    };
 
-The array contains:
+For both name and docstring, the values are C strings -- that is,
+NUL-terminated UTF-8 encoded byte arrays.
 
-* the module name (as a NUL-terminated UTF-8 encoded C string),
-* the docstring (similarly encoded), and
-* a zero-filled *sentinel* marking the end of the array.
+Note the zero-filled sentinel entry at the end.
+If you forget it, you'll trigger undefined behavior.
 
-.. tip::
+The array is defined as ``static`` -- not visible outside this ``.c`` file.
+This will be a common theme.
+CPython only needs to access the export hook; all global variables
+and all other functions should generally be ``static``, so that they don't
+clash with other extensions.
 
-   The :c:func:`PyDoc_STR` macro can, in a special build mode, omit the
-   docstring to save a bit of memory.
-
-Return this array from your export hook, instead of ``NULL``:
+Return this array from your export hook instead of ``NULL``:
 
 .. code-block:: c
    :emphasize-lines: 4
@@ -298,17 +285,27 @@ Now, recompile and try it out:
    >>> print(spam)
    <module 'spam' from '/home/encukou/dev/cpython/spam.so'>
 
-You now have a extension module!
+You have a extension module!
 Try ``help(spam)`` to see the docstring.
 
-The next step will be adding a function to it.
+The next step will be adding a function.
 
+
+.. _backtoexample:
 
 Exposing a function
 ===================
 
-To add a function to the module, you will need a C function to call.
-Add a minimal one now::
+To expose the ``system`` C function directly to Python,
+we'll need to write a layer of glue code to convert arguments from Python
+objects to C values, and the C return value back to Python.
+
+One of the simplest glue code is a ":c:data:`METH_O`" function,
+which takes two Python objects and returns one.
+All Pyton objects -- regardless of the Python type -- are represented in C
+as pointers to the ``PyObject`` structure.
+
+Add such a function above the slots array::
 
    static PyObject *
    spam_system(PyObject *self, PyObject *arg)
@@ -316,52 +313,32 @@ Add a minimal one now::
       Py_RETURN_NONE;
    }
 
-This function is defined as ``static``.
-This will be a common theme: usually, the only non-``static`` function
-in a Python extension module is the export hook.
-Data declarations are typically ``static`` as well.
-
-As a Python function, our ``spam_system`` returns a Python object.
-In the C API, this is represented as a pointer to the ``PyObject`` structure.
-
-This function also takes two pointers to Python objects as arguments.
-The "real" argument, as passed in from Python code, will be *arg*.
-Meanwhile, *self* will be set to the module object -- in the C API,
-module-level functions behave a bit like "methods" of the module object.
-
-The macro :c:macro:`Py_RETURN_NONE`, which we use as a body for now,
-properly ``return``\s a Python :py:data:`None` object.
+For now, we'll ignor the arguments, and use the :c:macro:`Py_RETURN_NONE`
+macro to properly ``return`` a Python :py:data:`None` object.
 
 Recompile your extension to make sure you don't have syntax errors.
-You might get a warning that ``spam_system`` is unused.
-This is true: we haven't yet added the function to the module.
+We haven't yet added ``spam_system`` to the module, so you might get a
+warning that ``spam_system`` is unused.
 
 
 Method definitions
 ------------------
 
 To expose the C function to Python, you will need to provide several pieces of
-information.
-These are collected in a structure called :c:type:`PyMethodDef`,
-They are:
+information in a structure called
+:c:type:`PyMethodDef` [#why-pymethoddef]_:
 
-* ``ml_name``: the name of the function to use in Python code;
-* ``ml_meth``: the *implementation* -- the C function that does what
-  you need;
+* ``ml_name``: the name of the Python function;
+* ``ml_doc``: a docstring;
+* ``ml_meth``: the C function to be called; and
 * ``ml_flags``: a set of flags describing details like how Python arguments are
-  passed to the C function; and
-* ``ml_doc``: a docstring.
-
-The name and docstring are encoded as for module.
-For ``ml_meth``, we'll use the ``spam_system`` function you just defined.
-
-For ``ml_flags``, we'll use :c:data:`METH_O` -- a flag that specifies that a
-C function with two ``PyObject*`` arguments (your ``spam_system``) will be
-exposed as a Python function taking a single unnamed argument.
-(Other flags exist to handle named arguments, but they are harder to use.)
+  passed to the C function.
+  We'll use :c:data:`METH_O` here -- the flag that matches our
+  ``spam_system`` function's signature.
 
 Because modules typically create several functions, these definitions
-need to be collected in an array:
+need to be collected in an array, with a zero-filled sentinel at the end.
+Add this array just below the ``spam_system`` function:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module method table
@@ -369,19 +346,8 @@ need to be collected in an array:
 
 As with module slots, a zero-filled sentinel marks the end of the array.
 
-Add the array to your module, between the ``spam_system`` function and
-the module slots.
-
-.. note::
-
-   Why :c:type:`!PyMethodDef` and not :c:type:`!PyFunctionDef`?
-
-   In the C API, module-level functions behave a bit like "methods"
-   of a module object: they take an extra *self* argument, and
-   you need to provide the same information to create.
-
-To add the method(s) defined in a :c:type:`PyMethodDef` array,
-add a :c:data:`Py_mod_methods` slot:
+Next, we'll add the method to the module.
+Add a :c:data:`Py_mod_methods` slot to your a :c:type:`PyMethodDef` array:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module slot table
@@ -389,7 +355,7 @@ add a :c:data:`Py_mod_methods` slot:
    :emphasize-lines: 6
 
 Recompile your extension again, and test it.
-You should now be able to call the function, and get ``None`` from it:
+You should now be able to call the function, and get ``None`` back:
 
 .. code-block:: pycon
 
@@ -403,19 +369,18 @@ You should now be able to call the function, and get ``None`` from it:
 Returning an integer
 ====================
 
-Your ``spam_system`` function currently returns ``None``.
-We want it to return a number -- that is, a Python :py:type:`int` object.
-Ultimately, this will be the exit code of a system command,
-but let's start with a fixed value: ``3``.
+Now, let's take a look at the return value.
+Instead of ``None``, we'll want ``spam.system`` to return a number -- that is,
+a Python :py:type:`int` object.
+Eventually this will be the exit code of a system command,
+but let's start with a fixed value, say, ``3``.
 
 The Python C API provides a function to create a Python :py:type:`int` object
-from a C ``int`` values: :c:func:`PyLong_FromLong`.
-(The name might not seem obvious to you; it'll get better as you get used to
-C API naming conventions.)
+from a C ``int`` values: :c:func:`PyLong_FromLong`. [#why-pylongfromlong]_
 
-Let's call it:
+To call it, replace the ``Py_RETURN_NONE`` with the following 3 lines:
 
-.. this could be a one-liner, we use 3 lines to show the data types.
+.. this could be a one-liner, but we want to how the data types here.
 
 .. code-block:: c
    :emphasize-lines: 4-6
@@ -429,7 +394,7 @@ Let's call it:
    }
 
 
-Recompile and run again, and check that you get a 3:
+Recompile and run again, and check that the function now returns 3:
 
 .. code-block:: pycon
 
@@ -441,21 +406,28 @@ Recompile and run again, and check that you get a 3:
 Accepting a string
 ==================
 
-Your ``spam_system`` function should accepts one argument,
-which is passed in as ``PyObject *arg``.
+Finally, let's handle the function argument.
+
+Our C function, :c:func:`!spam_system`, takes two arguments.
+The first one, ``PyObject *self``, will be set to the ``spam`` module
+object.
+This isn't useful in our case, so we'll ignore it.
+
+The other one, ``PyObject *arg``, will be set to the object that the user
+called the Python with.
+We expect that it should be a Python string.
 In order to use the information in it, we will need
 to convert it to a C value --- in this case, a C string (``const char *``).
 
-The argument should be a Python string.
 There's a slight type mismatch here: Python's :c:type:`str` objects store
 Unicode text, but C strings are arrays of bytes.
-So, we'll need to *encode* the data.
-In our example, we'll use the UTF-8 encoding.
-It might not always be correct for system commands, but it's what
+So, we'll need to *encode* the data, and we'll use the UTF-8 encoding for it.
+(UTF-8 might not always be correct for system commands, but it's what
 :py:meth:`str.decode` uses by default,
-and the C API has special support for it.
+and the C API has special support for it.)
 
-The function to decode into a UTF-8 buffer is named :c:func:`PyUnicode_AsUTF8`.
+The function to decode a Python string into a UTF-8 buffer is named
+:c:func:`PyUnicode_AsUTF8` [#why-pyunicodeasutf8]_.
 Call it like this:
 
 .. code-block:: c
@@ -472,20 +444,24 @@ Call it like this:
 
 If :c:func:`PyUnicode_AsUTF8` is successful, *command* will point to the
 resulting array of bytes.
-This buffer is managed by the *arg* object,
-which means limited:
+This buffer is managed by the *arg* object, which means we don't need to free
+it, but we must follow some rules:
 
-* You should only use the buffer inside the ``spam_system`` function.
-  When ``spam_system`` returns, *arg* and the array it manages might be
+* We should only use the buffer inside the ``spam_system`` function.
+  When ``spam_system`` returns, *arg* and the buffer it manages might be
   garbage-collected.
-*  You must not modify it. This is why we use ``const``.
-
-Both are fine for our use.
+* We must not modify it. This is why we use ``const``.
 
 If :c:func:`PyUnicode_AsUTF8` was *not* successful, it returns a ``NULL``
 pointer.
-When using the Python C API, we always need to handle such error cases.
-Here, the correct thing to do is returning ``NULL`` also from ``spam_system``:
+When calling *any* Python C API, we always need to handle such error cases.
+The way to do this in general is left for later chapters of this documentation.
+For now, be assured that we are already handling errors from
+:c:func:`PyLong_FromLong` correctly.
+
+For the :c:func:`PyUnicode_AsUTF8` call, the correct way to handle errors is
+returning ``NULL`` from ``spam_system``.
+Add an ``if`` block for this:
 
 
 .. code-block:: c
@@ -522,7 +498,7 @@ the ``char *`` buffer, and using its result instead of the ``3``:
       return result;
    }
 
-Compile it, and test:
+Compile your module, and test:
 
 .. code-block:: pycon
 
@@ -544,10 +520,13 @@ You might also want to test error cases:
 
    >>> spam.system(3)
    Traceback (most recent call last):
-     File "<python-input-1>", line 1, in <module>
-       spam.system(3)
-       ~~~~~~~~~~~^^^
+      ...
    TypeError: bad argument type for built-in operation
+
+   >>> print(spam.system('too', 'many', 'arguments'))
+   Traceback (most recent call last):
+      ...
+   TypeError: spam.system() takes exactly one argument (3 given)
 
 
 The result
@@ -563,406 +542,26 @@ Here is the entire source file, for your convenience:
 .. _extending-spammodule-source:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-at: ///
 
 
 .. rubric:: Footnotes
 
 .. [#why-spam] ``spam`` is the favorite food of Monty Python fans...
-
-
-Accepting a string
-==================
-
-
-
-The :c:type:`PyModuleDef_Slot` array must be passed to the interpreter in the
-module's :ref:`export hook <extension-export-hook>` function.
-The hook must be named :c:func:`!PyModExport_name`, where *name* is the name
-of the module, and it should be the only non-\ ``static`` item defined in the
-module file.
-
-Several modern C compilers emit warnings when you define a public function
-without a prototype declaration.
-Normally, prototypes go in a header file so they can be used from other
-C files.
-A function without a prototype is allowed in C, but is normally a strong
-hint that something is wrong -- for example, the name is misspelled.
-
-In our case, Python will load our function dynamically, so a prototype
-isn't needed.
-We'll only add one to avoid well-meaning compiler warnings:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Export hook prototype
-   :end-before: ///
-
-The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
-``PyModuleDef_Slot *`` return type, and adds any special linkage
-declarations required by the platform.
-For C++, it declares the function as ``extern "C"``.
-
-Just after the prototype, we'll add the function itself.
-Its only job is to return the slot array, which in turn contains
-all the information needed to create our module object:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Module export hook
-   :end-before: ///
-
-
-The ``spam`` module
-===================
-
-
-The first line of this file (after any comment describing the purpose of
-the module, copyright notices, and the like) will pull in the Python API:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: <Python.h>
-   :end-at: <Python.h>
-
-Next, we bring in the declaration of the C library function we want to call.
-Documentation of the :c:func:`system` function tells us that we need
-``stdlib.h``:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: <stdlib.h>
-   :end-at: <stdlib.h>
-
-Be sure to put this, and any other standard library includes, *after*
-:file:`Python.h`, since Python may define some pre-processor definitions
-which affect the standard headers on some systems.
-
-.. tip::
-
-   The ``<stdlib.h>`` include is technically not necessary.
-   :file:`Python.h` :ref:`includes several standard header files <capi-system-includes>`
-   for its own use and for backwards compatibility,
-   and ``stdlib`` is one of them.
-   However, it is good practice to explicitly include what you need.
-
-The next thing we add to our module file is the C function that will be called
-when the Python expression ``spam.system(string)`` is evaluated.
-We'll see shortly how it ends up being called.
-The function should look like this:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Implementation of spam.system
-   :end-before: ///
-
-Let's go through this line by line.
-
-This function will not be needed outside the current ``.c`` file, so we will
-define it as ``static``.
-(This can prevent name conflicts with similarly named functions elsewhere.)
-It will return a pointer to a Python object -- the result that Python code
-should receive when it calls ``spam.system``:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: static PyObject *
-   :end-at: static PyObject *
-
-We'll name the function ``spam_system``.
-Combining the module name and the function name like this is standard practice,
-and avoids clashes with other uses of ``system``.
-
-The Python function we are defining will take a single argument.
-Its C implementation takes two arguments, here named *self* and *arg*,
-both pointers to a Python object:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: spam_system(PyObject *self, PyObject *arg)
-   :end-at: {
-
-Since this is a module-level function, the *self* argument will point to
-a module object.
-For a method, *self* would point to the object instance, like a *self*
-argument in Python.
-
-The *arg* will be a pointer to a Python object that the Python function
-received as its single argument.
-
-In order for our C code to use the information in a Python object, we will need
-to convert it to a C value --- in this case, a C string (``char *``).
-The :c:func:`PyUnicode_AsUTF8` function does just that: it decodes a Python
-string to a C one:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: const char *command = PyUnicode_AsUTF8(arg);
-   :end-at: const char *command = PyUnicode_AsUTF8(arg);
-
-If :c:func:`PyUnicode_AsUTF8` was successful, the string value of the argument
-has been stored in the local variable *command*.
-This is a C string, that is, a pointer to an array of bytes.
-You are not supposed to modify the string to which it points,
-which is why the variable is declared as ``const char *command``.
-
-.. note::
-
-   As its name implies, :c:func:`PyUnicode_AsUTF8` uses the UTF-8 encoding
-   --- the same that :py:meth:`str.decode` uses by default.
-   This is not always the correct encoding to use for system commands, but
-   it will do for our purposes.
-
-If :c:func:`PyUnicode_AsUTF8` was *not* successful, it returns a ``NULL``
-pointer.
-When using the Python C API, we always need to handle such error cases.
-Let's study this one in a bit more detail.
-
-Errors and exceptions
----------------------
-
-An important convention throughout the Python interpreter is the following:
-when a function fails, it should do two things: ensure an exception is set,
-and return an error value.
-
-The error value is usually ``-1`` for functions that return :c:type:`!int`,
-and ``NULL`` for functions that return a pointer.
-However, this convention is not used in *all* cases.
-You should always check the documentation for the functions you use.
-
-"Setting an exception"  means that an exception object is stored in the
-interpreter's thread state.
-(If you are not familiar with threads, think of it like a global variable.)
-
-In our example, :c:func:`PyUnicode_AsUTF8` follows the convention:
-on failure, it sets an exception and returns ``NULL``.
-
-Our function needs to detect this, and also return the ``NULL``
-error indicator:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: if (command == NULL) {
-   :end-at: }
-
-Our function does not neeed to set an exception itself, since
-:c:func:`PyUnicode_AsUTF8` has already set it in the error case.
-
-In the non-error case, the ``return`` statement is skipped and execution
-continues.
-
-.. note::
-
-   If we were calling a function that does *not* follow the Python convention
-   (for example, :c:func:`malloc`), we would need to set an exception using,
-   for example, :c:func:`PyErr_SetString`.
-
-
-Back to the example
--------------------
-
-The next statement is a call to the standard C function :c:func:`system`,
-passing it the C string we just got, and storing its result --- a C
-integer:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: int status = system(command);
-   :end-at: int status = system(command);
-
-Our function must then convert the C integer into a Python integer.
-This is done using the function :c:func:`PyLong_FromLong`:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: PyLong_FromLong
-   :end-at: return
-
-In this case, it will return a Python :py:class:`int` object.
-(Yes, even integers are objects on the heap in Python!)
-We return this object directly, as the result of our function.
-
-Note that when :c:func:`PyLong_FromLong` fails, it sets an exception and
-returns ``NULL``, just like :c:func:`PyUnicode_AsUTF8` we used before.
-In this case, our function should --- also like before --- return ``NULL``
-as well.
-In both cases --- on success and on error --- we are returning
-:c:func:`PyLong_FromLong`'s result, so we do not need an ``if`` here.
-
-.. note::
-
-   The names used in the C API are peculiar:
-
-   * ``PyUnicode`` is used for Python :py:type:`str`
-   * ``PyLong`` is used for Python :py:type:`int`
-
-   This convention dates back to the time when Python strings were implemented
-   by what is now :py:type:`bytes`, and integers were restricted to 64 bits
-   or so.
-   Unicode strings (then named :py:class:`!unicode`) and arbitrarily large
-   integers (then named :py:class:`!long`) were added later,
-   and in time, were renamed to :py:type:`str` and :py:type:`int` we know
-   today.
-
-   However, the C API retains the old naming for backwards compatibility.
-
-   Thus, the :c:func:`PyLong_FromLong` function creates a ``PyLong``
-   (Python :py:class:`int`) object from a C :c:type:`!long`.
-   (C converts from C :c:type:`!int` to C :c:type:`!long` automatically.)
-   And the :c:func:`PyUnicode_AsUTF8` function represents a ``PyUnicode``
-   (Python :py:class:`str`) object as a UTF-8-encoded, NUL-terminatedC string.
-
-That is it for the C implementation of the ``spam.function``!
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: }
-   :end-at: }
-
-But, we are not done yet: we still need to define how the implementation
-is called from Python code.
-
-
-The module's method table
-=========================
-
-To make our function available to Python programs,
-we need to list it in a "method table" -- an array of :c:type:`PyMethodDef`
-structures with a zero-filled *sentinel*
-marking the end of the array.
-
-.. note:: Why not "PyFunctionDef"?
-
-   The C API uses a common mechanism to define both functions of modules
-   and methods of classes.
-   You might say that, in the C API, module-level functions act like methods
-   of a module object.
-
-Since we are defining a single function, the array will have a single entry
-before the sentinel:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Module method table
-   :end-before: ///
-
-The :c:member:`!PyMethodDef.ml_name` and :c:member:`!PyMethodDef.ml_meth`
-fields contain the Python name of the function, and the address of
-the implementation.
-
-The :c:member:`!PyMethodDef.ml_flags` field tells the interpreter
-the calling convention to be used for the C function.
-In particular, :c:data:`METH_O` specifies that this function takes a single
-unnamed (positional-only) argument.
-This is among the simplest, but least powerful, calling conventions.
-Perfect for your first function!
-
-Finally, :c:member:`!PyMethodDef.ml_doc` gives the docstring.
-If this is left out (or ``NULL``), the function will not have a docstring.
-The :c:func:`PyDoc_STR` macro is used to save a bit of memory when building
-without docstrings.
-
-
-ABI information
-===============
-
-Before defining the module itself, we'll add one more piece of boilerplate:
-a variable with ABI compatibility information.
-This is a variable that CPython checks to avoid loading incompatible modules
---- it allows raising an exception rather than crashing (or worse)
-if we, for example, load the extension on an incompatible Python version.
-
-The ABI information defined using a macro that collects the relevant
-build-time settings:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// ABI information
-   :end-before: ///
-
-This macro expands to a variable definition like
-``static PyABIInfo abi_info = { ... data ... };``
-
-
-The slot table
-==============
-
-Now, let's fit all the pieces of our module together.
-
-The method table we just defined, ``spam_methods``,
-must be referenced in the module definition table:
-an array of :c:type:`PyModuleDef_Slot` structures.
-Like with the method table, a zero-filled *sentinel* marks the end.
-
-Besides the method table, this "slot table" will contain the module's
-top-level information: the name, a docstring, and the ABI compatibility
-information we've just defined:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Module slot table
-   :end-before: ///
-
-
-Module export hook
-==================
-
-The :c:type:`PyModuleDef_Slot` array must be passed to the interpreter in the
-module's :ref:`export hook <extension-export-hook>` function.
-The hook must be named :c:func:`!PyModExport_name`, where *name* is the name
-of the module, and it should be the only non-\ ``static`` item defined in the
-module file.
-
-Several modern C compilers emit warnings when you define a public function
-without a prototype declaration.
-Normally, prototypes go in a header file so they can be used from other
-C files.
-A function without a prototype is allowed in C, but is normally a strong
-hint that something is wrong -- for example, the name is misspelled.
-
-In our case, Python will load our function dynamically, so a prototype
-isn't needed.
-We'll only add one to avoid well-meaning compiler warnings:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Export hook prototype
-   :end-before: ///
-
-The :c:macro:`PyMODEXPORT_FUNC` macro declares the function's
-``PyModuleDef_Slot *`` return type, and adds any special linkage
-declarations required by the platform.
-For C++, it declares the function as ``extern "C"``.
-
-Just after the prototype, we'll add the function itself.
-Its only job is to return the slot array, which in turn contains
-all the information needed to create our module object:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Module export hook
-   :end-before: ///
-
-
-Legacy initialization function
-==============================
-
-Lastly, we will add a function that serves no purpose but to detect
-installation mistakes, and to avoid errors with older versions of some common
-build tools.
-You may want to try building the extension without this, and only add it
-if you encounter errors involving ``PyInit``:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-after: /// Legacy initialization function
-
-This is an old-style :ref:`initialization function <extension-export-hook>`
-that was required in extension modules for CPython 3.14 and below.
-Current CPython will not call it, but some build tools may still assume that
-all extension modules need to define it.
-
-When called, it raises a :py:exc:`SystemError` exception using
-:c:func:`PyErr_SetString`, and returns the error indicator, ``NULL``.
-Thus, if this extension does end up loaded on Python 3.14, the user will
-get a proper error message.
-
-
-.. _first-extension-result:
-
-End of file
-===========
-
-That's it!
-You have written a simple Python C API extension module.
-The result is repeated below.
-
-Now, you'll need to compile it.
-We'll see how to do this in :ref:`building`.
-
-Here is the entire source file, for your convenience:
-
-.. _extending-spammodule-source:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+.. [#why-spammodule] The source file name is entirely up to you,
+   though some tools can be picky about the ``.c`` extension.
+   This tutorial uses the traditional ``*module.c`` suffix.
+   Some people would just use :file:`spam.c` to implement a module
+   named ``spam``,
+   projects where Python isn't the primary language might use ``py_spam.c``,
+   and so on.
+.. [#why-pymethoddef] The :c:type:`!PyMethodDef` structure is also used
+   to create methods of classes, so there's no separate
+   ":c:type:`!PyFunctionDef`".
+.. [#why-pylongfromlong] The name :c:func:`PyLong_FromLong`
+   might not seem obvious.
+   ``PyLong`` refers to a the Python :py:class:`int`, which was originally
+   called ``long``; the ``FromLong`` refers to the C ``long`` (or ``long int``)
+   type.
+.. [#why-pyunicodeasutf8] Here, ``PyUnicode`` refers to the original name of
+   the Python :py:class:`str` class: ``unicode``.

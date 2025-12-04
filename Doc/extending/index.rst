@@ -43,8 +43,7 @@ source file by including the header ``"Python.h"``.
 
 
 .. toctree::
-   :maxdepth: 2
-   :numbered:
+   :hidden:
 
    first-extension-module.rst
    extending.rst
