@@ -39,16 +39,19 @@ class OpcodeTest(unittest.TestCase):
     def test_use_existing_annotations(self):
         ns = {'__annotations__': {1: 2}}
         exec('x: int', ns)
-        self.assertEqual(ns['__annotations__'], {'x': int, 1: 2})
+        self.assertEqual(ns['__annotations__'], {1: 2})
 
     def test_do_not_recreate_annotations(self):
         # Don't rely on the existence of the '__annotations__' global.
         with support.swap_item(globals(), '__annotations__', {}):
-            del globals()['__annotations__']
+            globals().pop('__annotations__', None)
             class C:
-                del __annotations__
-                with self.assertRaises(NameError):
-                    x: int
+                try:
+                    del __annotations__
+                except NameError:
+                    pass
+                x: int
+            self.assertEqual(C.__annotations__, {"x": int})
 
     def test_raise_class_exceptions(self):
 

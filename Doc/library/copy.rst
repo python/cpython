@@ -1,5 +1,5 @@
-:mod:`copy` --- Shallow and deep copy operations
-================================================
+:mod:`!copy` --- Shallow and deep copy operations
+=================================================
 
 .. module:: copy
    :synopsis: Shallow and deep copy operations.
@@ -121,6 +121,8 @@ and only supports named tuples created by :func:`~collections.namedtuple`,
 
    This method should create a new object of the same type,
    replacing fields with values from *changes*.
+
+   .. versionadded:: 3.13
 
 
 .. seealso::

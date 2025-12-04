@@ -1,5 +1,5 @@
-:mod:`http.cookies` --- HTTP state management
-=============================================
+:mod:`!http.cookies` --- HTTP state management
+==============================================
 
 .. module:: http.cookies
    :synopsis: Support for HTTP state management (cookies).
@@ -28,8 +28,10 @@ The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed ':' as a valid cookie name character.
+   Allowed '``:``' as a valid cookie name character.
 
+.. versionchanged:: 3.15
+   Allowed '``"``' as a valid cookie value character.
 
 .. note::
 
@@ -98,7 +100,7 @@ Cookie Objects
 .. method:: BaseCookie.output(attrs=None, header='Set-Cookie:', sep='\r\n')
 
    Return a string representation suitable to be sent as HTTP headers. *attrs* and
-   *header* are sent to each :class:`Morsel`'s :meth:`output` method. *sep* is used
+   *header* are sent to each :class:`Morsel`'s :meth:`~Morsel.output` method. *sep* is used
    to join the headers together, and is by default the combination ``'\r\n'``
    (CRLF).
 
@@ -142,14 +144,31 @@ Morsel Objects
                     version
                     httponly
                     samesite
+                    partitioned
 
    The attribute :attr:`httponly` specifies that the cookie is only transferred
    in HTTP requests, and is not accessible through JavaScript. This is intended
    to mitigate some forms of cross-site scripting.
 
-   The attribute :attr:`samesite` specifies that the browser is not allowed to
-   send the cookie along with cross-site requests. This helps to mitigate CSRF
-   attacks. Valid values for this attribute are "Strict" and "Lax".
+   The attribute :attr:`samesite` controls when the browser sends the cookie with
+   cross-site requests. This helps to mitigate CSRF attacks. Valid values are
+   "Strict" (only sent with same-site requests), "Lax" (sent with same-site
+   requests and top-level navigations), and "None" (sent with same-site and
+   cross-site requests). When using "None", the "secure" attribute must also
+   be set, as required by modern browsers.
+
+   The attribute :attr:`partitioned` indicates to user agents that these
+   cross-site cookies *should* only be available in the same top-level context
+   that the cookie was first set in. For this to be accepted by the user agent,
+   you **must** also set ``Secure``.
+
+   In addition, it is recommended to use the ``__Host`` prefix when setting
+   partitioned cookies to make them bound to the hostname and not the
+   registrable domain. Read
+   `CHIPS (Cookies Having Independent Partitioned State)`_
+   for full details and examples.
+
+   .. _CHIPS (Cookies Having Independent Partitioned State): https://github.com/privacycg/CHIPS/blob/main/README.md
 
    The keys are case-insensitive and their default value is ``''``.
 
@@ -164,6 +183,9 @@ Morsel Objects
 
    .. versionchanged:: 3.8
       Added support for the :attr:`samesite` attribute.
+
+   .. versionchanged:: 3.14
+      Added support for the :attr:`partitioned` attribute.
 
 
 .. attribute:: Morsel.value
@@ -294,3 +316,10 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+   >>> import json
+   >>> C = cookies.SimpleCookie()
+   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
+   >>> print(C)
+   Set-Cookie: cookies=7
+   Set-Cookie: mixins="{"chips": "dark chocolate"}"
+   Set-Cookie: state=gooey

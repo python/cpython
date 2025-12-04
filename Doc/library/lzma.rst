@@ -1,5 +1,5 @@
-:mod:`lzma` --- Compression using the LZMA algorithm
-====================================================
+:mod:`!lzma` --- Compression using the LZMA algorithm
+=====================================================
 
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
@@ -22,6 +22,8 @@ The interface provided by this module is very similar to that of the :mod:`bz2`
 module. Note that :class:`LZMAFile` and :class:`bz2.BZ2File` are *not*
 thread-safe, so if you need to use a single :class:`LZMAFile` instance
 from multiple threads, it is necessary to protect it with a lock.
+
+.. include:: ../includes/optional-module.rst
 
 
 .. exception:: LZMAError

@@ -1,5 +1,5 @@
-:mod:`http` --- HTTP modules
-============================
+:mod:`!http` --- HTTP modules
+=============================
 
 .. module:: http
    :synopsis: HTTP status codes and messages
@@ -139,7 +139,8 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionchanged:: 3.13
    Implemented RFC9110 naming for status constants. Old constant names are preserved for
-   backwards compatibility.
+   backwards compatibility: ``413 REQUEST_ENTITY_TOO_LARGE``, ``414 REQUEST_URI_TOO_LONG``,
+   ``416 REQUESTED_RANGE_NOT_SATISFIABLE`` and ``422 UNPROCESSABLE_ENTITY``.
 
 HTTP status category
 --------------------

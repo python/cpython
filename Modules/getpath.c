@@ -17,8 +17,11 @@
 #endif
 
 #ifdef __APPLE__
-#  include <dlfcn.h>
 #  include <mach-o/dyld.h>
+#endif
+
+#ifdef HAVE_DLFCN_H
+#  include <dlfcn.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -108,7 +111,7 @@ getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
     Py_ssize_t end = PyUnicode_GET_LENGTH(path);
     Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
     if (pos < 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     return PyUnicode_Substring(path, 0, pos);
 }
@@ -258,7 +261,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
@@ -302,7 +305,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
             PyErr_NoMemory();
             return NULL;
         }
-        return PyUnicode_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
 
     final[0] = '\0';
@@ -687,7 +690,7 @@ env_to_dict(PyObject *dict, const char *key, int and_clear)
     // Quick convert to wchar_t, since we know key is ASCII
     wchar_t *wp = wkey;
     for (const char *p = &key[4]; *p; ++p) {
-        assert(*p < 128);
+        assert(!(*p & 0x80));
         *wp++ = *p;
     }
     *wp = L'\0';
@@ -803,36 +806,25 @@ progname_to_dict(PyObject *dict, const char *key)
 static int
 library_to_dict(PyObject *dict, const char *key)
 {
+/* macOS framework builds do not link against a libpython dynamic library, but
+   instead link against a macOS Framework. */
+#if defined(Py_ENABLE_SHARED) || defined(WITH_NEXT_FRAMEWORK)
+
 #ifdef MS_WINDOWS
-#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
 #endif
-#elif defined(WITH_NEXT_FRAMEWORK)
-    static char modPath[MAXPATHLEN + 1];
-    static int modPathInitialized = -1;
-    if (modPathInitialized < 0) {
-        modPathInitialized = 0;
 
-        /* On Mac OS X we have a special case if we're running from a framework.
-           This is because the python home should be set relative to the library,
-           which is in the framework, not relative to the executable, which may
-           be outside of the framework. Except when we're in the build
-           directory... */
-        Dl_info pythonInfo;
-        if (dladdr(&Py_Initialize, &pythonInfo)) {
-            if (pythonInfo.dli_fname) {
-                strncpy(modPath, pythonInfo.dli_fname, MAXPATHLEN);
-                modPathInitialized = 1;
-            }
-        }
-    }
-    if (modPathInitialized > 0) {
-        return decode_to_dict(dict, key, modPath);
+#if HAVE_DLADDR
+    Dl_info libpython_info;
+    if (dladdr(&Py_Initialize, &libpython_info) && libpython_info.dli_fname) {
+        return decode_to_dict(dict, key, libpython_info.dli_fname);
     }
 #endif
+#endif
+
     return PyDict_SetItemString(dict, key, Py_None) == 0;
 }
 
@@ -951,6 +943,11 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         !wchar_to_dict(dict, "executable_dir", NULL) ||
         !wchar_to_dict(dict, "py_setpath", _PyPathConfig_GetGlobalModuleSearchPath()) ||
         !funcs_to_dict(dict, config->pathconfig_warnings) ||
+#ifdef Py_GIL_DISABLED
+        !decode_to_dict(dict, "ABI_THREAD", "t") ||
+#else
+        !decode_to_dict(dict, "ABI_THREAD", "") ||
+#endif
 #ifndef MS_WINDOWS
         PyDict_SetItemString(dict, "winreg", Py_None) < 0 ||
 #endif
@@ -958,7 +955,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
+        PyErr_FormatUnraisable("Exception ignored while preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -967,13 +964,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in running getpath");
+        PyErr_FormatUnraisable("Exception ignored while running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
+        PyErr_FormatUnraisable("Exception ignored while reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }

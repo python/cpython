@@ -37,15 +37,22 @@ printing space-separated values. There are several ways to format output.
 * The :meth:`str.format` method of strings requires more manual
   effort.  You'll still use ``{`` and ``}`` to mark where a variable
   will be substituted and can provide detailed formatting directives,
-  but you'll also need to provide the information to be formatted.
+  but you'll also need to provide the information to be formatted. In the following code
+  block there are two examples of how to format variables:
+
 
   ::
 
      >>> yes_votes = 42_572_654
-     >>> no_votes = 43_132_495
-     >>> percentage = yes_votes / (yes_votes + no_votes)
+     >>> total_votes = 85_705_149
+     >>> percentage = yes_votes / total_votes
      >>> '{:-9} YES votes  {:2.2%}'.format(yes_votes, percentage)
      ' 42572654 YES votes  49.67%'
+
+  Notice how the ``yes_votes`` are padded with spaces and a negative sign only for negative numbers.
+  The example also prints ``percentage`` multiplied by 100, with 2 decimal
+  places and followed by a percent sign (see :ref:`formatspec` for details).
+
 
 * Finally, you can do all the string handling yourself by using string slicing and
   concatenation operations to create any layout you can imagine.  The
@@ -80,19 +87,27 @@ Some examples::
    >>> print(s)
    The value of x is 32.5, and y is 40000...
    >>> # The repr() of a string adds string quotes and backslashes:
-   ... hello = 'hello, world\n'
+   >>> hello = 'hello, world\n'
    >>> hellos = repr(hello)
    >>> print(hellos)
    'hello, world\n'
    >>> # The argument to repr() may be any Python object:
-   ... repr((x, y, ('spam', 'eggs')))
+   >>> repr((x, y, ('spam', 'eggs')))
    "(32.5, 40000, ('spam', 'eggs'))"
 
-The :mod:`string` module contains a :class:`~string.Template` class that offers
-yet another way to substitute values into strings, using placeholders like
-``$x`` and replacing them with values from a dictionary, but offers much less
-control of the formatting.
+The :mod:`string` module contains support for a simple templating approach
+based upon regular expressions, via :class:`string.Template`.
+This offers yet another way to substitute values into strings,
+using placeholders like ``$x`` and replacing them with values from a dictionary.
+This syntax is easy to use, although it offers much less control for formatting.
 
+.. index::
+   single: formatted string literal
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: f-string
+   single: fstring
 
 .. _tut-f-strings:
 
@@ -197,7 +212,12 @@ notation. ::
    Jack: 4098; Sjoerd: 4127; Dcab: 8637678
 
 This is particularly useful in combination with the built-in function
-:func:`vars`, which returns a dictionary containing all local variables.
+:func:`vars`, which returns a dictionary containing all local variables::
+
+   >>> table = {k: str(v) for k, v in vars().items()}
+   >>> message = " ".join([f'{k}: ' + '{' + k +'};' for k in table.keys()])
+   >>> print(message.format(**table))
+   __name__: __main__; __doc__: None; __package__: None; __loader__: ...
 
 As an example, the following lines produce a tidily aligned
 set of columns giving integers and their squares and cubes::
@@ -267,9 +287,11 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` in ``string`` are replaced with zero or more
-elements of ``values``. This operation is commonly known as string
+The % operator (modulo) can also be used for string formatting.
+Given ``format % values`` (where *format* is a string),
+``%`` conversion specifications in *format* are replaced with
+zero or more elements of *values*.
+This operation is commonly known as string
 interpolation. For example::
 
    >>> import math

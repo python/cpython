@@ -19,7 +19,7 @@ class TestCopy(unittest.TestCase):
 
     def test_exceptions(self):
         self.assertIs(copy.Error, copy.error)
-        self.assertTrue(issubclass(copy.Error, Exception))
+        self.assertIsSubclass(copy.Error, Exception)
 
     # The copy() method
 
@@ -371,6 +371,8 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x[0], y[0])
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_list(self):
         x = []
         x.append(x)
@@ -398,6 +400,8 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIs(x, y)
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_tuple(self):
         x = ([],)
         x[0].append(x)
@@ -415,6 +419,8 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
         x = {}
         x['foo'] = x
@@ -666,7 +672,7 @@ class TestCopy(unittest.TestCase):
     def test_reduce_5tuple(self):
         class C(dict):
             def __reduce__(self):
-                return (C, (), self.__dict__, None, self.items())
+                return (C, (), self.__dict__, None, iter(self.items()))
             def __eq__(self, other):
                 return (dict(self) == dict(other) and
                         self.__dict__ == other.__dict__)
@@ -971,6 +977,10 @@ class TestReplace(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
             copy.replace(c, x=1, error=2)
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, copy, not_exported={"dispatch_table", "error"})
 
 def global_foo(x, y): return x+y
 

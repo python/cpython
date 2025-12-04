@@ -1,5 +1,5 @@
-:mod:`bz2` --- Support for :program:`bzip2` compression
-=======================================================
+:mod:`!bz2` --- Support for :program:`bzip2` compression
+========================================================
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
@@ -24,6 +24,8 @@ The :mod:`bz2` module contains:
   incremental (de)compression.
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
+
+.. include:: ../includes/optional-module.rst
 
 
 (De)compression of files
