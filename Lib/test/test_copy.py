@@ -1,4 +1,5 @@
 """Unit tests for the copy module."""
+import sys
 
 import copy
 import copyreg
@@ -434,25 +435,38 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(len(y), 1)
 
     def test_deepcopy_keepalive(self):
-        memo = {}
-        x = []
-        y = copy.deepcopy(x, memo)
-        self.assertIs(memo[id(memo)][0], x)
+        mutable = []
+        def count_refs():
+            return sys.getrefcount(mutable)
+        class C:
+            def __deepcopy__(self, memo):
+                self.recorded = count_refs()
+                return self
+        x = [mutable, 42, observer := C()]
+        y = copy.deepcopy(x)
+        support.gc_collect()  # For PyPy or other GCs.
+        # Additional keepalive ref dropped after copy:
+        self.assertGreater(observer.recorded, count_refs())
+        self.assertEqual(observer.recorded - count_refs(), 1)
 
     def test_deepcopy_dont_memo_immutable(self):
-        memo = {}
-        x = [1, 2, 3, 4]
-        y = copy.deepcopy(x, memo)
-        self.assertEqual(y, x)
-        # There's the entry for the new list, and the keep alive.
-        self.assertEqual(len(memo), 2)
-
-        memo = {}
-        x = [(1, 2)]
-        y = copy.deepcopy(x, memo)
-        self.assertEqual(y, x)
+        def run_case(immutable):
+            def count_refs():
+                return sys.getrefcount(immutable)
+            class C:
+                def __deepcopy__(self, memo):
+                    self.recorded = count_refs()
+                    return self
+            x = [immutable, 42, observer := C()]
+            y = copy.deepcopy(x)
+            support.gc_collect()  # For PyPy or other GCs
+            self.assertIs(y[0], x[0])
+            self.assertEqual(count_refs(), observer.recorded)
+        with self.subTest(kind="string"):
+            run_case(f"mortal_immutable_{id(object())}")
         # Tuples with immutable contents are immutable for deepcopy.
-        self.assertEqual(len(memo), 2)
+        with self.subTest(kind="tuple_with_string"):
+            run_case((f"mortal_immutable_{id(object())}",))
 
     def test_deepcopy_inst_vanilla(self):
         class C:
