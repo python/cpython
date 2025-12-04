@@ -1310,6 +1310,30 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     return _PyCode_CheckLineNumber(addrq, &bounds);
 }
 
+int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (co == NULL) {
+        return -1;
+    }
+    /*
+     * dump_frame() may be called from signal handlers or other contexts where
+     * the code object could already be in the process of being torn down.
+     * Basic sanity checks help us avoid dereferencing obviously invalid
+     * objects while still providing a best-effort line number when possible.
+     */
+    if (!Py_IS_TYPE(co, &PyCode_Type)) {
+        return -1;
+    }
+    if (Py_REFCNT(co) <= 0) {
+        return -1;
+    }
+    if (addrq < 0 || addrq >= _PyCode_NBYTES(co)) {
+        return -1;
+    }
+    return PyCode_Addr2Line(co, addrq);
+}
+
 void
 _PyLineTable_InitAddressRange(const char *linetable, Py_ssize_t length, int firstlineno, PyCodeAddressRange *range)
 {
