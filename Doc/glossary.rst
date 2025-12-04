@@ -137,10 +137,10 @@ Glossary
    atomic operation
       An operation that appears to execute as a single, indivisible step: no
       other thread can observe it half-done, and its effects become visible all
-      at once.  Python does not guarantee that ordinary high-level statements
-      are atomic (for example, ``x += 1`` performs multiple bytecode operations
-      and is not atomic).  Atomicity is only guaranteed where explicitly
-      documented.  See also :term:`race condition` and :term:`data race`.
+      at once.  Python does not guarantee that high-level statements are atomic
+      (for example, ``x += 1`` performs multiple bytecode operations and is not
+      atomic).  Atomicity is only guaranteed where explicitly documented.  See
+      also :term:`race condition` and :term:`data race`.
 
    attached thread state
 
