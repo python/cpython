@@ -62,6 +62,13 @@ _PyEval_NoToolsForUnwind(PyThreadState *tstate)
      * unwinding.  In that situation we can skip some of the normal unwinding
      * machinery.
      */
+    if (tstate->tracing) {
+        return false;
+    }
+    if (tstate->c_profilefunc || tstate->c_tracefunc) {
+        return false;
+    }
+    return tstate->interp->monitors.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0;
     return !tstate->cframe->use_tracing;
 }
 
