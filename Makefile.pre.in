@@ -2402,16 +2402,20 @@ sharedinstall: all
 			else    true; \
 			fi; \
 		done
-		@for i in X $(SHAREDMODS); do \
-		  if test $$i != X; then \
-		    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
-		    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
-			if test -d "$$i.dSYM"; then \
-				echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
-				$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
-			fi; \
-		  fi; \
-		done
+	@for i in X $(SHAREDMODS); do \
+	  if test $$i != X; then \
+	    if test ! -f $$i; then \
+	      echo "Skipping installation of $$i because it was not built."; \
+	      continue; \
+	    fi; \
+	    echo $(INSTALL_SHARED) $$i $(DESTSHARED)/`basename $$i`; \
+	    $(INSTALL_SHARED) $$i $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+		if test -d "$$i.dSYM"; then \
+			echo $(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+			$(DSYMUTIL_PATH) $(DESTDIR)$(DESTSHARED)/`basename $$i`; \
+		fi; \
+	  fi; \
+	done
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
