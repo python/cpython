@@ -1824,7 +1824,8 @@ Optional Features:
                           no)
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
-                          (default is no); WASI requires external support
+                          (default is no); WASI requires an external dynamic
+                          loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
   --enable-shared         enable building a shared Python library (default is
