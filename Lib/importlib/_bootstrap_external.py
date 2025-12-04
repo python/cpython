@@ -757,11 +757,6 @@ class _LoaderBasics:
                               'get_code() returns None')
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
-    def load_module(self, fullname):
-        """This method is deprecated."""
-        # Warning implemented in _load_module_shim().
-        return _bootstrap._load_module_shim(self, fullname)
-
 
 class SourceLoader(_LoaderBasics):
 
@@ -926,18 +921,6 @@ class FileLoader:
 
     def __hash__(self):
         return hash(self.name) ^ hash(self.path)
-
-    @_check_name
-    def load_module(self, fullname):
-        """Load a module from a file.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # The only reason for this method is for the name check.
-        # Issue #14857: Avoid the zero-argument form of super so the implementation
-        # of that form can be updated without breaking the frozen module.
-        return super(FileLoader, self).load_module(fullname)
 
     @_check_name
     def get_filename(self, fullname):
@@ -1189,18 +1172,6 @@ class NamespaceLoader:
 
     def exec_module(self, module):
         pass
-
-    def load_module(self, fullname):
-        """Load a namespace module.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # The import system never calls this method.
-        _bootstrap._verbose_message('namespace module loaded with path {!r}',
-                                    self._path)
-        # Warning implemented in _load_module_shim().
-        return _bootstrap._load_module_shim(self, fullname)
 
     def get_resource_reader(self, module):
         from importlib.readers import NamespaceReader
