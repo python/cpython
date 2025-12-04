@@ -345,7 +345,15 @@ Whitespace between tokens
 
 Except at the beginning of a logical line or in string literals, the whitespace
 characters space, tab and formfeed can be used interchangeably to separate
-tokens.  Whitespace is needed between two tokens only if their concatenation
+tokens:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   whitespace:  ' ' | tab | formfeed
+
+
+Whitespace is needed between two tokens only if their concatenation
 could otherwise be interpreted as a different token. For example, ``ab`` is one
 token, but ``a b`` is two tokens. However, ``+a`` and ``+ a`` both produce
 two tokens, ``+`` and ``a``, as ``+a`` is not a valid token.
@@ -1032,124 +1040,59 @@ f-strings
 ---------
 
 .. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+   within f-strings.
+.. versionchanged:: 3.8
+   Added the debug specifier (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with '``f``' or '``F``'.  These strings may contain
-replacement fields, which are expressions delimited by curly braces ``{}``.
-While other string literals always have a constant value, formatted strings
-are really expressions evaluated at run time.
+that is prefixed with '``f``' or '``F``'.
+Unlike other string literals, f-strings do not have a constant value.
+They may contain *replacement fields* delimited by curly braces ``{}``.
+Replacement fields contain expressions which are evaluated at run time.
+For example::
 
-Escape sequences are decoded like in ordinary string literals (except when
-a literal is also marked as a raw string).  After decoding, the grammar
-for the contents of the string is:
+   >>> who = 'nobody'
+   >>> nationality = 'Spanish'
+   >>> f'{who.title()} expects the {nationality} Inquisition!'
+   'Nobody expects the Spanish Inquisition!'
 
-.. productionlist:: python-grammar
-   f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
-   f_expression: (`conditional_expression` | "*" `or_expr`)
-               :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
-               : | `yield_expression`
-   conversion: "s" | "r" | "a"
-   format_spec: (`literal_char` | `replacement_field`)*
-   literal_char: <any code point except "{", "}" or NULL>
+Any doubled curly braces (``{{`` or ``}}``) outside replacement fields
+are replaced with the corresponding single curly brace::
 
-The parts of the string outside curly braces are treated literally,
-except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
-with the corresponding single curly brace.  A single opening curly
-bracket ``'{'`` marks a replacement field, which starts with a
-Python expression. To display both the expression text and its value after
-evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
-expression. A conversion field, introduced by an exclamation point ``'!'`` may
-follow.  A format specifier may also be appended, introduced by a colon ``':'``.
-A replacement field ends with a closing curly bracket ``'}'``.
+   >>> print(f'{{...}}')
+   {...}
+
+Other characters outside replacement fields are treated like in ordinary
+string literals.
+This means that escape sequences are decoded (except when a literal is
+also marked as a raw string), and newlines are possible in triple-quoted
+f-strings::
+
+   >>> name = 'Galahad'
+   >>> favorite_color = 'blue'
+   >>> print(f'{name}:\t{favorite_color}')
+   Galahad:       blue
+   >>> print(rf"C:\Users\{name}")
+   C:\Users\Galahad
+   >>> print(f'''Three shall be the number of the counting
+   ... and the number of the counting shall be three.''')
+   Three shall be the number of the counting
+   and the number of the counting shall be three.
 
 Expressions in formatted string literals are treated like regular
-Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and both :keyword:`lambda`  and
-assignment expressions ``:=`` must be surrounded by explicit parentheses.
+Python expressions.
 Each expression is evaluated in the context where the formatted string literal
-appears, in order from left to right.  Replacement expressions can contain
-newlines in both single-quoted and triple-quoted f-strings and they can contain
-comments.  Everything that comes after a ``#`` inside a replacement field
-is a comment (even closing braces and quotes). In that case, replacement fields
-must be closed in a different line.
+appears, in order from left to right.
+An empty expression is not allowed, and both :keyword:`lambda` and
+assignment expressions ``:=`` must be surrounded by explicit parentheses::
 
-.. code-block:: text
-
-   >>> f"abc{a # This is a comment }"
-   ... + 3}"
-   'abc5'
-
-.. versionchanged:: 3.7
-   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
-   containing an :keyword:`async for` clause were illegal in the expressions
-   in formatted string literals due to a problem with the implementation.
-
-.. versionchanged:: 3.12
-   Prior to Python 3.12, comments were not allowed inside f-string replacement
-   fields.
-
-When the equal sign ``'='`` is provided, the output will have the expression
-text, the ``'='`` and the evaluated value. Spaces after the opening brace
-``'{'``, within the expression and after the ``'='`` are all retained in the
-output. By default, the ``'='`` causes the :func:`repr` of the expression to be
-provided, unless there is a format specified. When a format is specified it
-defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
-declared.
-
-.. versionadded:: 3.8
-   The equal sign ``'='``.
-
-If a conversion is specified, the result of evaluating the expression
-is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
-the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
-
-The result is then formatted using the :func:`format` protocol.  The
-format specifier is passed to the :meth:`~object.__format__` method of the
-expression or conversion result.  An empty string is passed when the
-format specifier is omitted.  The formatted result is then included in
-the final value of the whole string.
-
-Top-level format specifiers may include nested replacement fields. These nested
-fields may include their own conversion fields and :ref:`format specifiers
-<formatspec>`, but may not include more deeply nested replacement fields. The
-:ref:`format specifier mini-language <formatspec>` is the same as that used by
-the :meth:`str.format` method.
-
-Formatted string literals may be concatenated, but replacement fields
-cannot be split across literals.
-
-Some examples of formatted string literals::
-
-   >>> name = "Fred"
-   >>> f"He said his name is {name!r}."
-   "He said his name is 'Fred'."
-   >>> f"He said his name is {repr(name)}."  # repr() is equivalent to !r
-   "He said his name is 'Fred'."
-   >>> width = 10
-   >>> precision = 4
-   >>> value = decimal.Decimal("12.34567")
-   >>> f"result: {value:{width}.{precision}}"  # nested fields
-   'result:      12.35'
-   >>> today = datetime(year=2017, month=1, day=27)
-   >>> f"{today:%B %d, %Y}"  # using date format specifier
-   'January 27, 2017'
-   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
-   'today=January 27, 2017'
-   >>> number = 1024
-   >>> f"{number:#0x}"  # using integer format specifier
-   '0x400'
-   >>> foo = "bar"
-   >>> f"{ foo = }" # preserves whitespace
-   " foo = 'bar'"
-   >>> line = "The mill's closed"
-   >>> f"{line = }"
-   'line = "The mill\'s closed"'
-   >>> f"{line = :20}"
-   "line = The mill's closed   "
-   >>> f"{line = !r:20}"
-   'line = "The mill\'s closed" '
-
+   >>> f'{(half := 1/2)}, {half * 42}'
+   '0.5, 21.0'
 
 Reusing the outer f-string quoting type inside a replacement field is
 permitted::
@@ -1157,10 +1100,6 @@ permitted::
    >>> a = dict(x=2)
    >>> f"abc {a["x"]} def"
    'abc 2 def'
-
-.. versionchanged:: 3.12
-   Prior to Python 3.12, reuse of the same quoting type of the outer f-string
-   inside a replacement field was not possible.
 
 Backslashes are also allowed in replacement fields and are evaluated the same
 way as in any other context::
@@ -1172,23 +1111,84 @@ way as in any other context::
    b
    c
 
-.. versionchanged:: 3.12
-   Prior to Python 3.12, backslashes were not permitted inside an f-string
-   replacement field.
+It is possible to nest f-strings::
 
-Formatted string literals cannot be used as docstrings, even if they do not
-include expressions.
+   >>> name = 'world'
+   >>> f'Repeated:{f' hello {name}' * 3}'
+   'Repeated: hello world hello world hello world'
 
-::
+Portable Python programs should not use more than 5 levels of nesting.
+
+.. impl-detail::
+
+   CPython does not limit nesting of f-strings.
+
+Replacement expressions can contain newlines in both single-quoted and
+triple-quoted f-strings and they can contain comments.
+Everything that comes after a ``#`` inside a replacement field
+is a comment (even closing braces and quotes).
+This means that replacement fields with comments must be closed in a
+different line:
+
+.. code-block:: text
+
+   >>> a = 2
+   >>> f"abc{a  # This comment  }"  continues until the end of the line
+   ...       + 3}"
+   'abc5'
+
+After the expression, replacement fields may optionally contain:
+
+* a *debug specifier* -- an equal sign (``=``), optionally surrounded by
+  whitespace on one or both sides;
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
+
+See the :ref:`Standard Library section on f-strings <stdtypes-fstrings>`
+for details on how these fields are evaluated.
+
+As that section explains, *format specifiers* are passed as the second argument
+to the :func:`format` function to format a replacement field value.
+For example, they can be used to specify a field width and padding characters
+using the :ref:`Format Specification Mini-Language <formatspec>`::
+
+   >>> number = 14.3
+   >>> f'{number:20.7f}'
+   '          14.3000000'
+
+Top-level format specifiers may include nested replacement fields::
+
+   >>> field_size = 20
+   >>> precision = 7
+   >>> f'{number:{field_size}.{precision}f}'
+   '          14.3000000'
+
+These nested fields may include their own conversion fields and
+:ref:`format specifiers <formatspec>`::
+
+   >>> number = 3
+   >>> f'{number:{field_size}}'
+   '                   3'
+   >>> f'{number:{field_size:05}}'
+   '00000000000000000003'
+
+However, these nested fields may not include more deeply nested replacement
+fields.
+
+Formatted string literals cannot be used as :term:`docstrings <docstring>`,
+even if they do not include expressions::
 
    >>> def foo():
    ...     f"Not a docstring"
    ...
-   >>> foo.__doc__ is None
-   True
+   >>> print(foo.__doc__)
+   None
 
-See also :pep:`498` for the proposal that added formatted string literals,
-and :meth:`str.format`, which uses a related format string mechanism.
+.. seealso::
+
+   * :pep:`498` -- Literal String Interpolation
+   * :pep:`701` -- Syntactic formalization of f-strings
+   * :meth:`str.format`, which uses a related format string mechanism.
 
 
 .. _t-strings:
@@ -1201,36 +1201,99 @@ t-strings
 
 A :dfn:`template string literal` or :dfn:`t-string` is a string literal
 that is prefixed with '``t``' or '``T``'.
-These strings follow the same syntax and evaluation rules as
-:ref:`formatted string literals <f-strings>`, with the following differences:
+These strings follow the same syntax rules as
+:ref:`formatted string literals <f-strings>`.
+For differences in evaluation rules, see the
+:ref:`Standard Library section on t-strings <stdtypes-tstrings>`
 
-* Rather than evaluating to a ``str`` object, template string literals evaluate
-  to a :class:`string.templatelib.Template` object.
 
-* The :func:`format` protocol is not used.
-  Instead, the format specifier and conversions (if any) are passed to
-  a new :class:`~string.templatelib.Interpolation` object that is created
-  for each evaluated expression.
-  It is up to code that processes the resulting :class:`~string.templatelib.Template`
-  object to decide how to handle format specifiers and conversions.
+Formal grammar for f-strings
+----------------------------
 
-* Format specifiers containing nested replacement fields are evaluated eagerly,
-  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
-  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
-  evaluate the inner expression ``{precision}`` to determine the value of the
-  ``format_spec`` attribute.
-  If ``precision`` were to be ``2``, the resulting format specifier
-  would be ``'.2f'``.
+F-strings are handled partly by the :term:`lexical analyzer`, which produces the
+tokens :py:data:`~token.FSTRING_START`, :py:data:`~token.FSTRING_MIDDLE`
+and :py:data:`~token.FSTRING_END`, and partly by the parser, which handles
+expressions in the replacement field.
+The exact way the work is split is a CPython implementation detail.
 
-* When the equals sign ``'='`` is provided in an interpolation expression,
-  the text of the expression is appended to the literal string that precedes
-  the relevant interpolation.
-  This includes the equals sign and any surrounding whitespace.
-  The :class:`!Interpolation` instance for the expression will be created as
-  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
-  be set to '``r``' (:func:`repr`) by default.
-  If an explicit conversion or format specifier are provided,
-  this will override the default behaviour.
+Correspondingly, the f-string grammar is a mix of
+:ref:`lexical and syntactic definitions <notation-lexical-vs-syntactic>`.
+
+Whitespace is significant in these situations:
+
+* There may be no whitespace in :py:data:`~token.FSTRING_START` (between
+  the prefix and quote).
+* Whitespace in :py:data:`~token.FSTRING_MIDDLE` is part of the literal
+  string contents.
+* In ``fstring_replacement_field``, if ``f_debug_specifier`` is present,
+  all whitespace after the opening brace until the ``f_debug_specifier``,
+  as well as whitespace immediatelly following ``f_debug_specifier``,
+  is retained as part of the expression.
+
+  .. impl-detail::
+
+     The expression is not handled in the tokenization phase; it is
+     retrieved from the source code using locations of the ``{`` token
+     and the token after ``=``.
+
+
+The ``FSTRING_MIDDLE`` definition uses
+:ref:`negative lookaheads <lexical-lookaheads>` (``!``)
+to indicate special characters (backslash, newline, ``{``, ``}``) and
+sequences (``f_quote``).
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   fstring:    `FSTRING_START` `fstring_middle`* `FSTRING_END`
+
+   FSTRING_START:      `fstringprefix` ("'" | '"' | "'''" | '"""')
+   FSTRING_END:        `f_quote`
+   fstringprefix:      <("f" | "fr" | "rf"), case-insensitive>
+   f_debug_specifier:  '='
+   f_quote:            <the quote character(s) used in FSTRING_START>
+
+   fstring_middle:
+      | `fstring_replacement_field`
+      | `FSTRING_MIDDLE`
+   FSTRING_MIDDLE:
+      | (!"\" !`newline` !'{' !'}' !`f_quote`) `source_character`
+      | `stringescapeseq`
+      | "{{"
+      | "}}"
+      | <newline, in triple-quoted f-strings only>
+   fstring_replacement_field:
+      | '{' `f_expression` [`f_debug_specifier`] [`fstring_conversion`]
+            [`fstring_full_format_spec`] '}'
+   fstring_conversion:
+      | "!" ("s" | "r" | "a")
+   fstring_full_format_spec:
+      | ':' `fstring_format_spec`*
+   fstring_format_spec:
+      | `FSTRING_MIDDLE`
+      | `fstring_replacement_field`
+   f_expression:
+      | ','.(`conditional_expression` | "*" `or_expr`)+ [","]
+      | `yield_expression`
+
+.. note::
+
+   In the above grammar snippet, the ``f_quote`` and ``FSTRING_MIDDLE`` rules
+   are context-sensitive -- they depend on the contents of ``FSTRING_START``
+   of the nearest enclosing ``fstring``.
+
+   Constructing a more traditional formal grammar from this template is left
+   as an exercise for the reader.
+
+The grammar for t-strings is identical to the one for f-strings, with *t*
+instead of *f* at the beginning of rule and token names and in the prefix.
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   tstring:    TSTRING_START tstring_middle* TSTRING_END
+
+   <rest of the t-string grammar is omitted; see above>
 
 
 .. _numbers:
