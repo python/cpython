@@ -2115,6 +2115,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -2132,6 +2133,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -2153,6 +2155,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         case OP: {
             JitOptRef foo;
             foo = NULL;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = foo;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -2172,6 +2175,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
+            CHECK_STACK_BOUNDS(1);
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
