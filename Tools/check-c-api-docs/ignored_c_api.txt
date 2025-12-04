@@ -91,3 +91,9 @@ Py_FrozenMain
 # cpython/unicodeobject.h
 PyUnicode_IS_COMPACT
 PyUnicode_IS_COMPACT_ASCII
+# 3.14 only
+Py_TPFLAGS_PREHEADER
+PyUnicode_AsDecodedObject
+PyUnicode_AsDecodedUnicode
+PyUnicode_AsEncodedObject
+PyUnicode_AsEncodedUnicode
