@@ -57,6 +57,12 @@ On Unix, Linux, BSD, macOS, and Cygwin::
 
 This will install Python as ``python3``.
 
+Quickly checking that a source change still compiles requires only the first
+two steps above: run ``./configure`` once (or reuse a previous build directory),
+then run ``make -j`` from the top level to rebuild the changed files.  If you
+want to be sure no stale artifacts interfere, run ``make clean`` before the
+``make`` step.
+
 You can pass many options to the configure script; run ``./configure --help``
 to find out more.  On macOS case-insensitive file systems and on Cygwin,
 the executable is called ``python.exe``; elsewhere it's just ``python``.
