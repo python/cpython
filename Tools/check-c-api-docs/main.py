@@ -46,7 +46,7 @@ def found_undocumented(singular: bool) -> str:
     (pycore_*.h files).
 
     In exceptional cases, certain APIs can be ignored by adding them to
-    Tools/c-api-docs-check/ignored_c_api.txt
+    Tools/check-c-api-docs/ignored_c_api.txt
     """
         )
         + MISTAKE
