@@ -70,6 +70,7 @@ typedef struct {
     unsigned int writable : 1;
     unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
+    unsigned int truncate : 1;
     unsigned int closefd : 1;
     char finalizing;
     /* Stat result which was grabbed at file open, useful for optimizing common
@@ -209,6 +210,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->writable = 0;
     self->appending = 0;
     self->seekable = -1;
+    self->truncate = 0;
     self->stat_atopen = NULL;
     self->closefd = 1;
     self->weakreflist = NULL;
@@ -341,6 +343,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
+            self->truncate = 1;
             flags |= O_CREAT | O_TRUNC;
             break;
         case 'a':
@@ -722,7 +725,11 @@ new_buffersize(fileio *self, size_t currentsize)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.readall
+
+    cls: defining_class
+    /
 
 Read all data from the file, returned as bytes.
 
@@ -734,17 +741,21 @@ data is available (EAGAIN is returned before bytes are read) returns None.
 [clinic start generated code]*/
 
 static PyObject *
-_io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
+_io_FileIO_readall_impl(fileio *self, PyTypeObject *cls)
+/*[clinic end generated code: output=d546737ec895c462 input=cecda40bf9961299]*/
 {
     Py_off_t pos, end;
-    PyObject *result;
+    PyBytesWriter *writer;
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
 
     if (self->fd < 0) {
         return err_closed();
+    }
+    if (!self->readable) {
+        _PyIO_State *state = get_io_state_by_cls(cls);
+        return err_mode(state, "reading");
     }
 
     if (self->stat_atopen != NULL && self->stat_atopen->st_size < _PY_READ_MAX) {
@@ -793,10 +804,10 @@ _io_FileIO_readall_impl(fileio *self)
         }
     }
 
-
-    result = PyBytes_FromStringAndSize(NULL, bufsize);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(bufsize);
+    if (writer == NULL) {
         return NULL;
+    }
 
     while (1) {
         if (bytes_read >= (Py_ssize_t)bufsize) {
@@ -805,18 +816,18 @@ _io_FileIO_readall_impl(fileio *self)
                 PyErr_SetString(PyExc_OverflowError,
                                 "unbounded read returned more bytes "
                                 "than a Python bytes object can hold");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
 
-            if (PyBytes_GET_SIZE(result) < (Py_ssize_t)bufsize) {
-                if (_PyBytes_Resize(&result, bufsize) < 0)
+            if (PyBytesWriter_GetSize(writer) < (Py_ssize_t)bufsize) {
+                if (PyBytesWriter_Resize(writer, bufsize) < 0)
                     return NULL;
             }
         }
 
         n = _Py_read(self->fd,
-                     PyBytes_AS_STRING(result) + bytes_read,
+                     (char*)PyBytesWriter_GetData(writer) + bytes_read,
                      bufsize - bytes_read);
 
         if (n == 0)
@@ -826,23 +837,20 @@ _io_FileIO_readall_impl(fileio *self)
                 PyErr_Clear();
                 if (bytes_read > 0)
                     break;
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 Py_RETURN_NONE;
             }
-            Py_DECREF(result);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
         bytes_read += n;
     }
 
-    if (PyBytes_GET_SIZE(result) > bytes_read) {
-        if (_PyBytes_Resize(&result, bytes_read) < 0)
-            return NULL;
-    }
-    return result;
+    return PyBytesWriter_FinishWithSize(writer, bytes_read);
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.read
     cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -862,12 +870,8 @@ bytes object at EOF.
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=752d1ad3db8564a5]*/
 {
-    char *ptr;
-    Py_ssize_t n;
-    PyObject *bytes;
-
     if (self->fd < 0)
         return err_closed();
     if (!self->readable) {
@@ -876,22 +880,23 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
     }
 
     if (size < 0)
-        return _io_FileIO_readall_impl(self);
+        return _io_FileIO_readall_impl(self, cls);
 
     if (size > _PY_READ_MAX) {
         size = _PY_READ_MAX;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    ptr = PyBytes_AS_STRING(bytes);
+    }
+    char *ptr = PyBytesWriter_GetData(writer);
 
-    n = _Py_read(self->fd, ptr, size);
+    Py_ssize_t n = _Py_read(self->fd, ptr, size);
     if (n == -1) {
-        /* copy errno because Py_DECREF() can indirectly modify it */
+        // copy errno because PyBytesWriter_Discard() can indirectly modify it
         int err = errno;
-        Py_DECREF(bytes);
+        PyBytesWriter_Discard(writer);
         if (err == EAGAIN) {
             PyErr_Clear();
             Py_RETURN_NONE;
@@ -899,14 +904,7 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
         return NULL;
     }
 
-    if (n != size) {
-        if (_PyBytes_Resize(&bytes, n) < 0) {
-            Py_CLEAR(bytes);
-            return NULL;
-        }
-    }
-
-    return (PyObject *) bytes;
+    return PyBytesWriter_FinishWithSize(writer, n);
 }
 
 /*[clinic input]
@@ -1018,6 +1016,7 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.seek
     pos: object
     whence: int = 0
@@ -1036,7 +1035,7 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
-/*[clinic end generated code: output=c976acdf054e6655 input=0439194b0774d454]*/
+/*[clinic end generated code: output=c976acdf054e6655 input=f077c492a84c9e62]*/
 {
     if (self->fd < 0)
         return err_closed();
@@ -1156,10 +1155,17 @@ mode_string(fileio *self)
             return "ab";
     }
     else if (self->readable) {
-        if (self->writable)
-            return "rb+";
-        else
+        if (self->writable) {
+            if (self->truncate) {
+                return "wb+";
+            }
+            else {
+                return "rb+";
+            }
+        }
+        else {
             return "rb";
+        }
     }
     else
         return "wb";
@@ -1330,7 +1336,7 @@ static PyType_Slot fileio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec fileio_spec = {
+PyType_Spec _Py_fileio_spec = {
     .name = "_io.FileIO",
     .basicsize = sizeof(fileio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

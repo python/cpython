@@ -48,7 +48,7 @@ static PyObject *
 _ssl__test_decode_cert(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    PyObject *path;
+    PyObject *path = NULL;
 
     if (!PyUnicode_FSConverter(arg, &path)) {
         goto exit;
@@ -56,6 +56,9 @@ _ssl__test_decode_cert(PyObject *module, PyObject *arg)
     return_value = _ssl__test_decode_cert_impl(module, path);
 
 exit:
+    /* Cleanup for path */
+    Py_XDECREF(path);
+
     return return_value;
 }
 
@@ -214,6 +217,52 @@ _ssl__SSLSocket_group(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLSocket_group_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_client_sigalg__doc__,
+"client_sigalg($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_CLIENT_SIGALG_METHODDEF    \
+    {"client_sigalg", (PyCFunction)_ssl__SSLSocket_client_sigalg, METH_NOARGS, _ssl__SSLSocket_client_sigalg__doc__},
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_client_sigalg_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLSocket_server_sigalg__doc__,
+"server_sigalg($self, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_SERVER_SIGALG_METHODDEF    \
+    {"server_sigalg", (PyCFunction)_ssl__SSLSocket_server_sigalg, METH_NOARGS, _ssl__SSLSocket_server_sigalg__doc__},
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self);
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_server_sigalg_impl((PySSLSocket *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -969,6 +1018,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_set_ciphersuites__doc__,
+"set_ciphersuites($self, ciphersuites, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF    \
+    {"set_ciphersuites", (PyCFunction)_ssl__SSLContext_set_ciphersuites, METH_O, _ssl__SSLContext_set_ciphersuites__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
+                                       const char *ciphersuites);
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *ciphersuites;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_ciphersuites", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t ciphersuites_length;
+    ciphersuites = PyUnicode_AsUTF8AndSize(arg, &ciphersuites_length);
+    if (ciphersuites == NULL) {
+        goto exit;
+    }
+    if (strlen(ciphersuites) != (size_t)ciphersuites_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_ciphersuites_impl((PySSLContext *)self, ciphersuites);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLContext_get_ciphers__doc__,
 "get_ciphers($self, /)\n"
 "--\n"
@@ -1091,6 +1179,84 @@ _ssl__SSLContext_get_groups(PyObject *self, PyObject *const *args, Py_ssize_t na
 skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _ssl__SSLContext_get_groups_impl((PySSLContext *)self, include_aliases);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_client_sigalgs__doc__,
+"set_client_sigalgs($self, sigalgslist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_CLIENT_SIGALGS_METHODDEF    \
+    {"set_client_sigalgs", (PyCFunction)_ssl__SSLContext_set_client_sigalgs, METH_O, _ssl__SSLContext_set_client_sigalgs__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist);
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sigalgslist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_client_sigalgs", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sigalgslist_length;
+    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    if (sigalgslist == NULL) {
+        goto exit;
+    }
+    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_client_sigalgs_impl((PySSLContext *)self, sigalgslist);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_server_sigalgs__doc__,
+"set_server_sigalgs($self, sigalgslist, /)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_SERVER_SIGALGS_METHODDEF    \
+    {"set_server_sigalgs", (PyCFunction)_ssl__SSLContext_set_server_sigalgs, METH_O, _ssl__SSLContext_set_server_sigalgs__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist);
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *sigalgslist;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_server_sigalgs", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t sigalgslist_length;
+    sigalgslist = PyUnicode_AsUTF8AndSize(arg, &sigalgslist_length);
+    if (sigalgslist == NULL) {
+        goto exit;
+    }
+    if (strlen(sigalgslist) != (size_t)sigalgslist_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLContext_set_server_sigalgs_impl((PySSLContext *)self, sigalgslist);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -2853,6 +3019,23 @@ _ssl_get_default_verify_paths(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_get_sigalgs__doc__,
+"get_sigalgs($module, /)\n"
+"--\n"
+"\n");
+
+#define _SSL_GET_SIGALGS_METHODDEF    \
+    {"get_sigalgs", (PyCFunction)_ssl_get_sigalgs, METH_NOARGS, _ssl_get_sigalgs__doc__},
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module);
+
+static PyObject *
+_ssl_get_sigalgs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _ssl_get_sigalgs_impl(module);
+}
+
 PyDoc_STRVAR(_ssl_txt2obj__doc__,
 "txt2obj($module, /, txt, name=False)\n"
 "--\n"
@@ -3142,4 +3325,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c409bdf3c123b28b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b6c9cbfc4660ecb input=a9049054013a1b77]*/

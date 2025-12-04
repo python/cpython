@@ -837,7 +837,7 @@ The following attribute and methods should only be used by classes derived from
    1. a :class:`Request` object,
    #. a file-like object with the HTTP error body,
    #. the three-digit code of the error, as a string,
-   #. the user-visible explanation of the code, as as string, and
+   #. the user-visible explanation of the code, as a string, and
    #. the headers of the error, as a mapping object.
 
    Return values and exceptions raised should be the same as those of

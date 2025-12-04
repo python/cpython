@@ -11,16 +11,108 @@ extern "C" {
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
-/* --- Characters Type APIs ----------------------------------------------- */
 
-extern int _PyUnicode_IsXidStart(Py_UCS4 ch);
-extern int _PyUnicode_IsXidContinue(Py_UCS4 ch);
-extern int _PyUnicode_ToLowerFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToTitleFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToUpperFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_ToFoldedFull(Py_UCS4 ch, Py_UCS4 *res);
-extern int _PyUnicode_IsCaseIgnorable(Py_UCS4 ch);
-extern int _PyUnicode_IsCased(Py_UCS4 ch);
+// Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
+#define _Py_MAX_UNICODE 0x10ffff
+
+
+extern int _PyUnicode_IsModifiable(PyObject *unicode);
+extern void _PyUnicodeWriter_InitWithBuffer(
+    _PyUnicodeWriter *writer,
+    PyObject *buffer);
+extern PyObject* _PyUnicode_Result(PyObject *unicode);
+extern int _PyUnicode_DecodeUTF8Writer(
+    _PyUnicodeWriter *writer,
+    const char *s,
+    Py_ssize_t size,
+    _Py_error_handler error_handler,
+    const char *errors,
+    Py_ssize_t *consumed);
+extern PyObject* _PyUnicode_ResizeCompact(
+    PyObject *unicode,
+    Py_ssize_t length);
+extern PyObject* _PyUnicode_GetEmpty(void);
+
+
+/* Generic helper macro to convert characters of different types.
+   from_type and to_type have to be valid type names, begin and end
+   are pointers to the source characters which should be of type
+   "from_type *".  to is a pointer of type "to_type *" and points to the
+   buffer where the result characters are written to. */
+#define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
+    do {                                                \
+        to_type *_to = (to_type *)(to);                 \
+        const from_type *_iter = (const from_type *)(begin);\
+        const from_type *_end = (const from_type *)(end);\
+        Py_ssize_t n = (_end) - (_iter);                \
+        const from_type *_unrolled_end =                \
+            _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
+        while (_iter < (_unrolled_end)) {               \
+            _to[0] = (to_type) _iter[0];                \
+            _to[1] = (to_type) _iter[1];                \
+            _to[2] = (to_type) _iter[2];                \
+            _to[3] = (to_type) _iter[3];                \
+            _iter += 4; _to += 4;                       \
+        }                                               \
+        while (_iter < (_end))                          \
+            *_to++ = (to_type) *_iter++;                \
+    } while (0)
+
+
+static inline void
+_PyUnicode_Fill(int kind, void *data, Py_UCS4 value,
+                Py_ssize_t start, Py_ssize_t length)
+{
+    assert(0 <= start);
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND: {
+        assert(value <= 0xff);
+        Py_UCS1 ch = (unsigned char)value;
+        Py_UCS1 *to = (Py_UCS1 *)data + start;
+        memset(to, ch, length);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND: {
+        assert(value <= 0xffff);
+        Py_UCS2 ch = (Py_UCS2)value;
+        Py_UCS2 *to = (Py_UCS2 *)data + start;
+        const Py_UCS2 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    case PyUnicode_4BYTE_KIND: {
+        assert(value <= _Py_MAX_UNICODE);
+        Py_UCS4 ch = value;
+        Py_UCS4 * to = (Py_UCS4 *)data + start;
+        const Py_UCS4 *end = to + length;
+        for (; to < end; ++to) *to = ch;
+        break;
+    }
+    default: Py_UNREACHABLE();
+    }
+}
+
+static inline int
+_PyUnicode_EnsureUnicode(PyObject *obj)
+{
+    if (!PyUnicode_Check(obj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "must be str, not %T", obj);
+        return -1;
+    }
+    return 0;
+}
+
+static inline int
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    assert(ch <= _Py_MAX_UNICODE);
+    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
+        return -1;
+    PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+    writer->pos++;
+    return 0;
+}
 
 /* --- Unicode API -------------------------------------------------------- */
 
@@ -82,12 +174,16 @@ extern int _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+/* PyUnicodeWriter_Format, with va_list instead of `...` */
+extern int _PyUnicodeWriter_FormatV(
+    PyUnicodeWriter *writer,
+    const char *format,
+    va_list vargs);
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors);        /* error handling */
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */
@@ -211,14 +307,6 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     Py_ssize_t seqlen
     );
 
-/* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
-   0 otherwise.  The right argument must be ASCII identifier.
-   Any error occurs inside will be cleared before return. */
-extern int _PyUnicode_EqualToASCIIId(
-    PyObject *left,             /* Left string */
-    _Py_Identifier *right       /* Right identifier */
-    );
-
 // Test whether a unicode is equal to ASCII string.  Return 1 if true,
 // 0 otherwise.  The right argument must be ASCII-encoded string.
 // Any error occurs inside will be cleared before return.
@@ -235,21 +323,6 @@ extern PyObject* _PyUnicode_XStrip(
     PyObject *sepobj
     );
 
-
-/* Using explicit passed-in values, insert the thousands grouping
-   into the string pointed to by buffer.  For the argument descriptions,
-   see Objects/stringlib/localeutil.h */
-extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
-    _PyUnicodeWriter *writer,
-    Py_ssize_t n_buffer,
-    PyObject *digits,
-    Py_ssize_t d_pos,
-    Py_ssize_t n_digits,
-    Py_ssize_t min_width,
-    const char *grouping,
-    PyObject *thousands_sep,
-    Py_UCS4 *maxchar,
-    int forward);
 
 /* Dedent a string.
    Behaviour is expected to be an exact match of `textwrap.dedent`.

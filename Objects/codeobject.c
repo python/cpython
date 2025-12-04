@@ -550,16 +550,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */
@@ -689,7 +685,7 @@ intern_code_constants(struct _PyCodeConstructor *con)
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _py_code_state *state = &interp->code_state;
-    PyMutex_Lock(&state->mutex);
+    FT_MUTEX_LOCK(&state->mutex);
 #endif
     if (intern_strings(con->names) < 0) {
         goto error;
@@ -700,15 +696,11 @@ intern_code_constants(struct _PyCodeConstructor *con)
     if (intern_strings(con->localsplusnames) < 0) {
         goto error;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return 0;
 
 error:
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return -1;
 }
 
@@ -1013,8 +1005,8 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
+static int
+_PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1026,6 +1018,33 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
+    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+        return -1;
+    }
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
+{
+    int lineno;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    lineno = _PyCode_Addr2Line(co, addrq);
+    Py_END_CRITICAL_SECTION();
+    return lineno;
 }
 
 void
@@ -2413,6 +2432,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _PyJit_Tracer_InvalidateDependency(tstate, self);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
@@ -2723,6 +2743,7 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, /, **changes)"
 code.replace
 
@@ -2759,7 +2780,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=e944fdac8b456114]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \

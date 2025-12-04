@@ -120,9 +120,6 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pylock.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -254,15 +251,6 @@
     </ClInclude>
     <ClInclude Include="..\Include\weakrefobject.h">
       <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_hashlib\hashlib_buffer.h">
-      <Filter>Modules\_hashlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_hashlib\hashlib_fetch.h">
-      <Filter>Modules\_hashlib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Modules\_hashlib\hashlib_mutex.h">
-      <Filter>Modules\_hashlib</Filter>
     </ClInclude>
     <ClInclude Include="..\Modules\_math.h">
       <Filter>Modules</Filter>
@@ -498,7 +486,13 @@
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\structseq.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\tupleobject.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\sliceobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\traceback.h">
@@ -533,6 +527,9 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_unicodectype.h">
+      <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h">
       <Filter>Include\internal</Filter>
@@ -891,6 +888,15 @@
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_ids.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_metadata.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
@@ -980,9 +986,6 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_HMAC.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_hashlib\hashlib_buffer.c">
-      <Filter>Modules\_hashlib</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
@@ -1065,6 +1068,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\main.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\mathintegermodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\mathmodule.c">
@@ -1271,7 +1277,16 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_format.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicodectype.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_formatter.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\unicode_writer.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\unicodeobject.c">
@@ -1380,9 +1395,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\flowgraph.c">
-      <Filter>Python</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\formatter_unicode.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\frozen.c">
