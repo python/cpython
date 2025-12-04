@@ -321,7 +321,8 @@ class Stack:
         if not self.check_stack_bounds:
             return
         if self.physical_sp != self.logical_sp:
-            diff =  self.logical_sp - self.physical_sp
+            diff = self.logical_sp - self.physical_sp
+            out.start_line()
             out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
 
     def flush(self, out: CWriter) -> None:

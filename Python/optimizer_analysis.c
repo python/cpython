@@ -190,7 +190,7 @@ incorrect_keys(PyObject *obj, uint32_t version)
 #define CHECK_STACK_BOUNDS(offset) \
 do { \
     int stack_level = (int)(stack_pointer + (offset) - ctx->frame->stack); \
-    if (!CURRENT_FRAME_IS_INIT_SHIM() && (stack_level < 0 || stack_level > STACK_SIZE())) { \
+    if (stack_level < 0 || stack_level > STACK_SIZE()) { \
         ctx->contradiction = true; \
         ctx->done = true; \
         break; \
