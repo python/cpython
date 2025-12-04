@@ -52,6 +52,25 @@
 #include <stdlib.h>
 #include <stdbool.h>              // bool
 
+bool
+_PyEval_NoToolsForUnwind(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    /*
+     * The generator fast-path in gen_close() only applies when we are sure
+     * that no tracing or profiling callbacks are going to observe the stack
+     * unwinding.  In that situation we can skip some of the normal unwinding
+     * machinery.
+     */
+    if (tstate->tracing) {
+        return false;
+    }
+    if (tstate->c_profilefunc || tstate->c_tracefunc) {
+        return false;
+    }
+    return tstate->interp->monitors.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0;
+}
+
 /* ======================== Firmament2 source scope ======================== */
 #include <pythread.h>   /* Py_tss_t */
 #include <string.h>     /* strlen, memcpy */
