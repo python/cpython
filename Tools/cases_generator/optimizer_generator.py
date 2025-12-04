@@ -150,22 +150,6 @@ class OptimizerEmitter(Emitter):
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
 
-    def sync_sp(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        next(tkn_iter)
-        next(tkn_iter)
-        storage.clear_inputs("when syncing stack")
-        storage.flush(self.out)
-        storage.stack.clear(self.out)
-        return True
-
     def emit_reload(self, storage: Storage) -> None:
         pass
 
