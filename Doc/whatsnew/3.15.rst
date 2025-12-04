@@ -1255,7 +1255,7 @@ Build changes
 
 * Annotating anonymous mmap usage is now supported if Linux kernel supports ``PR_SET_VMA_ANON_NAME``.
   Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
-  and ``-X dev`` is passed to the interpreter.
+  and ``-X dev`` is passed to the Python or Python is built in debug mode.
   (Contributed by Donghee Na in :gh:`141770`)
 
 
