@@ -33,8 +33,6 @@ extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
 
-extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
-
 extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
 extern unsigned long _PyEval_GetSwitchInterval(void);
 
@@ -409,6 +407,64 @@ _PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame
 #define SPECIAL_MAX   3
 
 PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
+
+/* Helper functions for large uops */
+
+PyAPI_FUNC(PyObject *)
+_Py_VectorCall_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args,
+    _PyStackRef kwnames);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFast_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFast_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_CallBuiltinClass_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildString_StackRefSteal(
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildMap_StackRefSteal(
+    _PyStackRef *arguments,
+    int half_args);
+
+PyAPI_FUNC(void)
+_Py_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+    const char *filename, int lineno);
 
 #ifdef __cplusplus
 }

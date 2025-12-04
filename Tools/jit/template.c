@@ -86,6 +86,12 @@ do {                                                                      \
 
 #define TIER_TWO 2
 
+#ifdef Py_DEBUG
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#else
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
+#endif
+
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
 {
