@@ -3310,6 +3310,8 @@ class TestFolding(TestEmailBase):
              '(Escaped \\( \\) chars \\\\ in comments stay\n escaped)<spy@example.org>\n'),
             ('((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>',
              '((loremipsum)(loremipsum)(loremipsum)(loremipsum))<spy@example.org>\n'),
+            ('((loremipsum)(loremipsum)(loremipsum) (loremipsum))<spy@example.org>',
+             '((loremipsum)(loremipsum)(loremipsum)\n (loremipsum))<spy@example.org>\n'),
         ]
         for (to, folded) in cases:
             with self.subTest(to=to):
