@@ -14,7 +14,8 @@ spam_system(PyObject *self, PyObject *arg)
         return NULL;
     }
     int status = system(command);
-    return PyLong_FromLong(status);
+    PyObject *result = PyLong_FromLong(status);
+    return result;
 }
 
 
@@ -38,6 +39,7 @@ PyABIInfo_VAR(abi_info);
 /// Module slot table
 
 static PyModuleDef_Slot spam_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_name, "spam"},
     {Py_mod_doc, PyDoc_STR("A wonderful module with an example function")},
     {Py_mod_methods, spam_methods},

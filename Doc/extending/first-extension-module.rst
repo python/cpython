@@ -10,7 +10,7 @@ Your first C API extension module
 This tutorial will take you through creating a simple
 Python extension module written in C or C++.
 
-The tutorial assumes basic knowledge about Python: you should be able to
+It assumes basic knowledge about Python: you should be able to
 define functions in Python code before starting to write them in C.
 See :ref:`tutorial-index` for an introduction to Python itself.
 
@@ -19,20 +19,18 @@ While we will mention several concepts that a C beginner would not be expected
 to know, like ``static`` functions or linkage declarations, understanding these
 is not necessary for success.
 
-As a word warning before we begin: as the code is written, you will need to
-compile it with the right tools and settings for your system.
-It is generally best to use a third-party tool to handle the details.
-This is covered in later chapters, not in this tutorial.
+We will focus on giving you a "feel" of what Python's C API is like.
+It will not teach you important concepts, like error handling
+and reference counting, which are covered in later chapters.
 
-The tutorial assumes that you use a Unix-like system (including macOS and
-Linux) or Windows.
-If you don't have a preference, currently you're most likely to get the best
-experience on Linux.
+As you write the code, you will need to compile it.
+Prepare to spend some time choosing, installing and configuring a build tool,
+since CPython itself does not include one.
 
-If you learn better by having the full context at the beginning,
-skip to the end to see :ref:`the resulting source <first-extension-result>`,
-then return here.
-The tutorial will explain every line, although in a different order.
+We will assume that you use a Unix-like system (including macOS and
+Linux), or Windows.
+On other systems, you might need to adjust some details -- for example,
+a system command name.
 
 .. note::
 
@@ -48,20 +46,21 @@ The tutorial will explain every line, although in a different order.
 What we'll do
 =============
 
-Let's create an extension module called ``spam`` (the favorite food of Monty
-Python fans...) and let's say we want to create a Python interface to the C
+Let's create an extension module called ``spam`` [#why-spam]_,
+which will include a Python interface to the C
 standard library function :c:func:`system`.
-This function takes a C string as argument, runs the argument as a system
+This function is defined in ``stdlib.h``.
+It takes a C string as argument, runs the argument as a system
 command, and returns a result value as an integer.
-In documentation, it might be summarized as::
+A manual page for ``system`` might summarize it this way::
 
    #include <stdlib.h>
-
    int system(const char *command);
 
 Note that like many functions in the C standard library,
-this function is already exposed in Python, as :py:func:`os.system`.
-We'll make our own "wrapper".
+this function is already exposed in Python.
+In production, use :py:func:`os.system` or :py:func:`subprocess.run`
+rather than the module you'll write here.
 
 We want this function to be callable from Python as follows:
 
@@ -80,8 +79,8 @@ We want this function to be callable from Python as follows:
    both Unix and Windows.
 
 
-Warming up your build tool: an empty module
-===========================================
+Warming up your build tool
+==========================
 
 Begin by creating a file named :file:`spammodule.c`.
 The name is entirely up to you, though some tools can be picky about
@@ -90,7 +89,7 @@ the ``.c`` extension.
 named ``spam``, for example.
 If you do this, you'll need to adjust some instructions below.)
 
-Now, while the file is emptly, we'll compile it, so that you can make
+Now, while the file is empty, we'll compile it, so that you can make
 and test incremental changes as you follow the rest of the tutorial.
 
 Choose a build tool such as Setuptools or Meson, and follow its instructions
@@ -305,17 +304,274 @@ Try ``help(spam)`` to see the docstring.
 The next step will be adding a function to it.
 
 
-Adding a function
-=================
+Exposing a function
+===================
 
-To expose a C function to Python, you need three things:
+To add a function to the module, you will need a C function to call.
+Add a minimal one now::
 
-* The *implementation*: a C function that does what you need, and
-* a *name* to use in Python code.
+   static PyObject *
+   spam_system(PyObject *self, PyObject *arg)
+   {
+      Py_RETURN_NONE;
+   }
 
-You can also add a *dosctring*.
-OK, *amongst* the things you need to expose a C function are
+This function is defined as ``static``.
+This will be a common theme: usually, the only non-``static`` function
+in a Python extension module is the export hook.
+Data declarations are typically ``static`` as well.
 
+As a Python function, our ``spam_system`` returns a Python object.
+In the C API, this is represented as a pointer to the ``PyObject`` structure.
+
+This function also takes two pointers to Python objects as arguments.
+The "real" argument, as passed in from Python code, will be *arg*.
+Meanwhile, *self* will be set to the module object -- in the C API,
+module-level functions behave a bit like "methods" of the module object.
+
+The macro :c:macro:`Py_RETURN_NONE`, which we use as a body for now,
+properly ``return``\s a Python :py:data:`None` object.
+
+Recompile your extension to make sure you don't have syntax errors.
+You might get a warning that ``spam_system`` is unused.
+This is true: we haven't yet added the function to the module.
+
+
+Method definitions
+------------------
+
+To expose the C function to Python, you will need to provide several pieces of
+information.
+These are collected in a structure called :c:type:`PyMethodDef`,
+They are:
+
+* ``ml_name``: the name of the function to use in Python code;
+* ``ml_meth``: the *implementation* -- the C function that does what
+  you need;
+* ``ml_flags``: a set of flags describing details like how Python arguments are
+  passed to the C function; and
+* ``ml_doc``: a docstring.
+
+The name and docstring are encoded as for module.
+For ``ml_meth``, we'll use the ``spam_system`` function you just defined.
+
+For ``ml_flags``, we'll use :c:data:`METH_O` -- a flag that specifies that a
+C function with two ``PyObject*`` arguments (your ``spam_system``) will be
+exposed as a Python function taking a single unnamed argument.
+(Other flags exist to handle named arguments, but they are harder to use.)
+
+Because modules typically create several functions, these definitions
+need to be collected in an array:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-after: /// Module method table
+   :end-before: ///
+
+As with module slots, a zero-filled sentinel marks the end of the array.
+
+Add the array to your module, between the ``spam_system`` function and
+the module slots.
+
+.. note::
+
+   Why :c:type:`!PyMethodDef` and not :c:type:`!PyFunctionDef`?
+
+   In the C API, module-level functions behave a bit like "methods"
+   of a module object: they take an extra *self* argument, and
+   you need to provide the same information to create.
+
+To add the method(s) defined in a :c:type:`PyMethodDef` array,
+add a :c:data:`Py_mod_methods` slot:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-after: /// Module slot table
+   :end-before: ///
+   :emphasize-lines: 6
+
+Recompile your extension again, and test it.
+You should now be able to call the function, and get ``None`` from it:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> print(spam.system)
+   <built-in function system>
+   >>> print(spam.system('whoami'))
+   None
+
+
+Returning an integer
+====================
+
+Your ``spam_system`` function currently returns ``None``.
+We want it to return a number -- that is, a Python :py:type:`int` object.
+Ultimately, this will be the exit code of a system command,
+but let's start with a fixed value: ``3``.
+
+The Python C API provides a function to create a Python :py:type:`int` object
+from a C ``int`` values: :c:func:`PyLong_FromLong`.
+(The name might not seem obvious to you; it'll get better as you get used to
+C API naming conventions.)
+
+Let's call it:
+
+.. this could be a one-liner, we use 3 lines to show the data types.
+
+.. code-block:: c
+   :emphasize-lines: 4-6
+
+   static PyObject *
+   spam_system(PyObject *self, PyObject *arg)
+   {
+      int status = 3;
+      PyObject *result = PyLong_FromLong(status);
+      return result;
+   }
+
+
+Recompile and run again, and check that you get a 3:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> spam.system('whoami')
+   3
+
+
+Accepting a string
+==================
+
+Your ``spam_system`` function should accepts one argument,
+which is passed in as ``PyObject *arg``.
+In order to use the information in it, we will need
+to convert it to a C value --- in this case, a C string (``const char *``).
+
+The argument should be a Python string.
+There's a slight type mismatch here: Python's :c:type:`str` objects store
+Unicode text, but C strings are arrays of bytes.
+So, we'll need to *encode* the data.
+In our example, we'll use the UTF-8 encoding.
+It might not always be correct for system commands, but it's what
+:py:meth:`str.decode` uses by default,
+and the C API has special support for it.
+
+The function to decode into a UTF-8 buffer is named :c:func:`PyUnicode_AsUTF8`.
+Call it like this:
+
+.. code-block:: c
+   :emphasize-lines: 4
+
+   static PyObject *
+   spam_system(PyObject *self, PyObject *arg)
+   {
+      const char *command = PyUnicode_AsUTF8(arg);
+      int status = 3;
+      PyObject *result = PyLong_FromLong(status);
+      return result;
+   }
+
+If :c:func:`PyUnicode_AsUTF8` is successful, *command* will point to the
+resulting array of bytes.
+This buffer is managed by the *arg* object,
+which means limited:
+
+* You should only use the buffer inside the ``spam_system`` function.
+  When ``spam_system`` returns, *arg* and the array it manages might be
+  garbage-collected.
+*  You must not modify it. This is why we use ``const``.
+
+Both are fine for our use.
+
+If :c:func:`PyUnicode_AsUTF8` was *not* successful, it returns a ``NULL``
+pointer.
+When using the Python C API, we always need to handle such error cases.
+Here, the correct thing to do is returning ``NULL`` also from ``spam_system``:
+
+
+.. code-block:: c
+   :emphasize-lines: 5-7
+
+   static PyObject *
+   spam_system(PyObject *self, PyObject *arg)
+   {
+      const char *command = PyUnicode_AsUTF8(arg);
+      if (command == NULL) {
+         return NULL;
+      }
+      int status = 3;
+      PyObject *result = PyLong_FromLong(status);
+      return result;
+   }
+
+That's it for the setup.
+Now, all that is left is calling C library function ``system`` with
+the ``char *`` buffer, and using its result instead of the ``3``:
+
+.. code-block:: c
+   :emphasize-lines: 8
+
+   static PyObject *
+   spam_system(PyObject *self, PyObject *arg)
+   {
+      const char *command = PyUnicode_AsUTF8(arg);
+      if (command == NULL) {
+         return NULL;
+      }
+      int status = system(command);
+      PyObject *result = PyLong_FromLong(status);
+      return result;
+   }
+
+Compile it, and test:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> result = spam.system('whoami')
+   User Name
+   >>> result
+   0
+
+You might also want to test error cases:
+
+.. code-block:: pycon
+
+   >>> import spam
+   >>> result = spam.system('nonexistent-command')
+   sh: line 1: nonexistent-command: command not found
+   >>> result
+   32512
+
+   >>> spam.system(3)
+   Traceback (most recent call last):
+     File "<python-input-1>", line 1, in <module>
+       spam.system(3)
+       ~~~~~~~~~~~^^^
+   TypeError: bad argument type for built-in operation
+
+
+The result
+==========
+
+
+Congratulations!
+You have written a complete Python C API extension module,
+and completed this tutorial!
+
+Here is the entire source file, for your convenience:
+
+.. _extending-spammodule-source:
+
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+
+
+.. rubric:: Footnotes
+
+.. [#why-spam] ``spam`` is the favorite food of Monty Python fans...
+
+
+Accepting a string
+==================
 
 
 
@@ -507,8 +763,8 @@ Our function must then convert the C integer into a Python integer.
 This is done using the function :c:func:`PyLong_FromLong`:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: return PyLong_FromLong(status);
-   :end-at: return PyLong_FromLong(status);
+   :start-at: PyLong_FromLong
+   :end-at: return
 
 In this case, it will return a Python :py:class:`int` object.
 (Yes, even integers are objects on the heap in Python!)
