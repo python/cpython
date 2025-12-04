@@ -9,6 +9,7 @@ import sys
 from .sample import sample, sample_live
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .constants import (
     PROFILING_MODE_ALL,
@@ -71,6 +72,7 @@ FORMAT_EXTENSIONS = {
     "collapsed": "txt",
     "flamegraph": "html",
     "gecko": "json",
+    "heatmap": "html",
 }
 
 COLLECTOR_MAP = {
@@ -78,6 +80,7 @@ COLLECTOR_MAP = {
     "collapsed": CollapsedStackCollector,
     "flamegraph": FlamegraphCollector,
     "gecko": GeckoCollector,
+    "heatmap": HeatmapCollector,
 }
 
 
@@ -238,14 +241,21 @@ def _add_format_options(parser):
         dest="format",
         help="Generate Gecko format for Firefox Profiler",
     )
+    format_group.add_argument(
+        "--heatmap",
+        action="store_const",
+        const="heatmap",
+        dest="format",
+        help="Generate interactive HTML heatmap visualization with line-level sample counts",
+    )
     parser.set_defaults(format="pstats")
 
     output_group.add_argument(
         "-o",
         "--output",
         dest="outfile",
-        help="Save output to a file (default: stdout for pstats, "
-        "auto-generated filename for other formats)",
+        help="Output path (default: stdout for pstats, auto-generated for others). "
+        "For heatmap: directory name (default: heatmap_PID)",
     )
 
 
@@ -327,6 +337,9 @@ def _generate_output_filename(format_type, pid):
         Generated filename
     """
     extension = FORMAT_EXTENSIONS.get(format_type, "txt")
+    # For heatmap, use cleaner directory name without extension
+    if format_type == "heatmap":
+        return f"heatmap_{pid}"
     return f"{format_type}.{pid}.{extension}"
 
 
