@@ -301,7 +301,7 @@ Glossary
       The ability of a computer program to perform multiple tasks at the same
       time.  Python provides libraries for writing programs that make use of
       different forms of concurrency.  :mod:`asyncio` is a library for dealing
-      with asynchronous tasks and coroutines.  :mod:`threading`` provides
+      with asynchronous tasks and coroutines.  :mod:`threading` provides
       access to operating system threads and :mod:`multiprocessing` to
       operating system processes. Multi-core processors can execute threads and
       processes on different CPU cores at the same time (see
@@ -714,10 +714,7 @@ Glossary
       <extension module>`.  In multi-threaded programs, global state shared
       between threads typically requires synchronization to avoid
       :term:`race conditions <race condition>` and
-      :term:`data races <data race>`.  In the
-      :term:`free-threaded <free threading>` build, :term:`per-module state`
-      is often preferred over global state for C extension modules.
-      See also :term:`per-module state`.
+      :term:`data races <data race>`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
