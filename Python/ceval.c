@@ -47,8 +47,201 @@
 #include "pydtrace.h"
 #include "setobject.h"
 #include "pycore_stackref.h"
-
+#include "firmament2.h"   /* _firm2_enabled(), source scope */
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>              // bool
+
+/* ======================== Firmament2 source scope ======================== */
+#include <pythread.h>   /* Py_tss_t */
+#include <string.h>     /* strlen, memcpy */
+
+static Py_tss_t _firm2_source_tss = Py_tss_NEEDS_INIT;
+
+struct _firm2_source_ctx {
+    char *filename;                     /* owned copy */
+    char  id_hex[17];                   /* 16 hex chars + NUL */
+    struct _firm2_source_ctx *prev;     /* simple stack per thread */
+};
+
+static struct _firm2_source_ctx *
+_firm2_get_ctx(void)
+{
+    if (!PyThread_tss_is_created(&_firm2_source_tss)) {
+        return NULL;
+    }
+    return (struct _firm2_source_ctx *)PyThread_tss_get(&_firm2_source_tss);
+}
+
+static void
+_firm2_set_ctx(struct _firm2_source_ctx *ctx)
+{
+    if (!PyThread_tss_is_created(&_firm2_source_tss)) {
+        if (PyThread_tss_create(&_firm2_source_tss) != 0) {
+            return; /* give up silently */
+        }
+    }
+    PyThread_tss_set(&_firm2_source_tss, (void *)ctx);
+}
+
+const char *
+_firm2_current_filename(void)
+{
+    struct _firm2_source_ctx *ctx = _firm2_get_ctx();
+    return ctx ? ctx->filename : NULL;
+}
+
+const char *
+_firm2_current_source_id_hex(void)
+{
+    struct _firm2_source_ctx *ctx = _firm2_get_ctx();
+    return ctx ? ctx->id_hex : NULL;
+}
+
+void
+_firm2_source_begin(const char *filename_utf8)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+
+    struct _firm2_source_ctx *head = _firm2_get_ctx();
+    struct _firm2_source_ctx *ctx =
+        (struct _firm2_source_ctx *)PyMem_Malloc(sizeof(*ctx));
+    if (!ctx) {
+        return;
+    }
+
+    if (!filename_utf8 || filename_utf8[0] == '\0') {
+        filename_utf8 = "<unknown>";
+    }
+    size_t n = strlen(filename_utf8);
+    ctx->filename = (char *)PyMem_Malloc(n + 1);
+    if (!ctx->filename) {
+        PyMem_Free(ctx);
+        return;
+    }
+    memcpy(ctx->filename, filename_utf8, n + 1);
+
+    /* Process-local counter to form a simple hex id */
+    static unsigned long long ctr = 0;
+    unsigned long long v = ++ctr;
+    (void)snprintf(ctx->id_hex, sizeof(ctx->id_hex), "%016llx",
+                   (unsigned long long)v);
+
+    ctx->prev = head;
+    _firm2_set_ctx(ctx);
+
+    /* Emit SOURCE_BEGIN */
+    char json[512];
+    (void)snprintf(json, sizeof(json),
+        "{\"type\":\"c\",\"payload\":{"
+          "\"event\":\"SOURCE_BEGIN\","
+          "\"filename\":\"%s\","
+          "\"source_id\":\"%s\""
+        "}}",
+        ctx->filename,
+        ctx->id_hex);
+    printf("%s\n", json);
+    fflush(stdout);
+}
+
+void
+_firm2_source_end(void)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+    struct _firm2_source_ctx *ctx = _firm2_get_ctx();
+    if (!ctx) {
+        return;
+    }
+
+    /* Emit SOURCE_END before popping */
+    char json[512];
+    (void)snprintf(json, sizeof(json),
+        "{\"type\":\"c\",\"payload\":{"
+          "\"event\":\"SOURCE_END\","
+          "\"filename\":\"%s\","
+          "\"source_id\":\"%s\""
+        "}}",
+        ctx->filename, ctx->id_hex);
+    printf("%s\n", json);
+    fflush(stdout);
+
+    _firm2_set_ctx(ctx->prev);
+    PyMem_Free(ctx->filename);
+    PyMem_Free(ctx);
+}
+
+/* ===================== (end) Firmament2 source scope ===================== */
+static void
+_firm2_emit_frame_event(const char *event, _PyInterpreterFrame *frame)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+
+    const char *name = "<unknown>";
+    const char *qualname = "<unknown>";
+    const char *filename = "<unknown>";
+
+    if (co && co->co_name && PyUnicode_Check(co->co_name)) {
+        const char *s = PyUnicode_AsUTF8(co->co_name);
+        if (s) name = s;
+    }
+    if (co && co->co_qualname && PyUnicode_Check(co->co_qualname)) {
+        const char *s = PyUnicode_AsUTF8(co->co_qualname);
+        if (s) qualname = s;
+    } else {
+        qualname = name;
+    }
+    if (co && co->co_filename && PyUnicode_Check(co->co_filename)) {
+        const char *s = PyUnicode_AsUTF8(co->co_filename);
+        if (s) filename = s;
+    }
+
+    int firstlineno = (co ? co->co_firstlineno : 0);
+
+    /* Envelope */
+    unsigned long long eid = _firm2_next_eid();
+    unsigned long      pid = _firm2_pid();
+    unsigned long long tid = _firm2_tid();
+    long long          ts  = _firm2_now_ns();
+
+    char json[896];
+    (void)snprintf(json, sizeof(json),
+        "{"
+          "\"type\":\"c\","
+          "\"envelope\":{"
+            "\"event_id\":%llu,"
+            "\"pid\":%lu,"
+            "\"tid\":%llu,"
+            "\"ts_ns\":%lld"
+          "},"
+          "\"payload\":{"
+            "\"event\":\"%s\","
+            "\"code_addr\":\"%p\","
+            "\"frame_addr\":\"%p\","
+            "\"name\":\"%s\","
+            "\"qualname\":\"%s\","
+            "\"filename\":\"%s\","
+            "\"firstlineno\":%d"
+          "}"
+        "}",
+        eid, pid, tid, ts,
+        event,
+        (void *)co,
+        (void *)frame,
+        name, qualname, filename,
+        firstlineno
+    );
+
+    printf("%s\n", json);
+    fflush(stdout);
+}
 
 #if !defined(Py_BUILD_CORE)
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
@@ -333,23 +526,13 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-#if _Py_STACK_GROWS_DOWN
     if (here_addr > _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES) {
-#else
-    if (here_addr <= _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES) {
-#endif
         return 0;
     }
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-#if _Py_STACK_GROWS_DOWN
-    return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES &&
-        here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
-#else
-    return here_addr > _tstate->c_stack_soft_limit - margin_count * _PyOS_STACK_MARGIN_BYTES &&
-        here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
-#endif
+    return here_addr <= _tstate->c_stack_soft_limit + margin_count * _PyOS_STACK_MARGIN_BYTES;
 }
 
 void
@@ -357,11 +540,7 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-#if _Py_STACK_GROWS_DOWN
     if (here_addr < _tstate->c_stack_hard_limit) {
-#else
-    if (here_addr > _tstate->c_stack_hard_limit) {
-#endif
         Py_FatalError("Unchecked stack overflow.");
     }
 }
@@ -438,26 +617,24 @@ int pthread_attr_destroy(pthread_attr_t *a)
 
 #endif
 
-static void
-hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
+
+void
+_Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
 #ifdef WIN32
     ULONG_PTR low, high;
     GetCurrentThreadStackLimits(&low, &high);
-    *top = (uintptr_t)high;
+    _tstate->c_stack_top = (uintptr_t)high;
     ULONG guarantee = 0;
     SetThreadStackGuarantee(&guarantee);
-    *base = (uintptr_t)low + guarantee;
-#elif defined(__APPLE__)
-    pthread_t this_thread = pthread_self();
-    void *stack_addr = pthread_get_stackaddr_np(this_thread); // top of the stack
-    size_t stack_size = pthread_get_stacksize_np(this_thread);
-    *top = (uintptr_t)stack_addr;
-    *base = ((uintptr_t)stack_addr) - stack_size;
+    _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + _PyOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
 #else
-    /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
-    /// (on alpine at least) is much smaller than expected and imposes undue limits
-    /// compared to the old stack size estimation.  (We assume musl is not glibc.)
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+/// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
+/// (on alpine at least) is much smaller than expected and imposes undue limits
+/// compared to the old stack size estimation.  (We assume musl is not glibc.)
 #  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
         !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
     size_t stack_size, guard_size;
@@ -470,118 +647,28 @@ hardware_stack_limits(uintptr_t *base, uintptr_t *top, uintptr_t sp)
         err |= pthread_attr_destroy(&attr);
     }
     if (err == 0) {
-        *base = ((uintptr_t)stack_addr) + guard_size;
-        *top = (uintptr_t)stack_addr + stack_size;
-        return;
-    }
-#  endif
-    // Add some space for caller function then round to minimum page size
-    // This is a guess at the top of the stack, but should be a reasonably
-    // good guess if called from _PyThreadState_Attach when creating a thread.
-    // If the thread is attached deep in a call stack, then the guess will be poor.
-#if _Py_STACK_GROWS_DOWN
-    uintptr_t top_addr = _Py_SIZE_ROUND_UP(sp + 8*sizeof(void*), SYSTEM_PAGE_SIZE);
-    *top = top_addr;
-    *base = top_addr - Py_C_STACK_SIZE;
-#  else
-    uintptr_t base_addr = _Py_SIZE_ROUND_DOWN(sp - 8*sizeof(void*), SYSTEM_PAGE_SIZE);
-    *base = base_addr;
-    *top = base_addr + Py_C_STACK_SIZE;
-#endif
-#endif
-}
-
-static void
-tstate_set_stack(PyThreadState *tstate,
-                 uintptr_t base, uintptr_t top)
-{
-    assert(base < top);
-    assert((top - base) >= _PyOS_MIN_STACK_SIZE);
-
+        uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
+        _tstate->c_stack_top = base + stack_size;
 #ifdef _Py_THREAD_SANITIZER
-    // Thread sanitizer crashes if we use more than half the stack.
-    uintptr_t stacksize = top - base;
-#  if _Py_STACK_GROWS_DOWN
-    base += stacksize / 2;
-#  else
-    top -= stacksize / 2;
-#  endif
-#endif
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-#if _Py_STACK_GROWS_DOWN
-    _tstate->c_stack_top = top;
-    _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
-    _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
-#  ifndef NDEBUG
-    // Sanity checks
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
-    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
-    assert(ts->c_stack_soft_limit < ts->c_stack_top);
-#  endif
+        // Thread sanitizer crashes if we use a bit more than half the stack.
+        _tstate->c_stack_soft_limit = base + (stack_size / 2);
 #else
-    _tstate->c_stack_top = base;
-    _tstate->c_stack_hard_limit = top - _PyOS_STACK_MARGIN_BYTES;
-    _tstate->c_stack_soft_limit = top - _PyOS_STACK_MARGIN_BYTES * 2;
-#  ifndef NDEBUG
-    // Sanity checks
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
-    assert(ts->c_stack_hard_limit >= ts->c_stack_soft_limit);
-    assert(ts->c_stack_soft_limit > ts->c_stack_top);
-#  endif
+        _tstate->c_stack_soft_limit = base + _PyOS_STACK_MARGIN_BYTES * 2;
 #endif
-}
-
-
-void
-_Py_InitializeRecursionLimits(PyThreadState *tstate)
-{
-    uintptr_t base, top;
-    uintptr_t here_addr = _Py_get_machine_stack_pointer();
-    hardware_stack_limits(&base, &top, here_addr);
-    assert(top != 0);
-
-    tstate_set_stack(tstate, base, top);
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
-    ts->c_stack_init_base = base;
-    ts->c_stack_init_top = top;
-}
-
-
-int
-PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate,
-                                void *stack_start_addr, size_t stack_size)
-{
-    if (stack_size < _PyOS_MIN_STACK_SIZE) {
-        PyErr_Format(PyExc_ValueError,
-                     "stack_size must be at least %zu bytes",
-                     _PyOS_MIN_STACK_SIZE);
-        return -1;
-    }
-
-    uintptr_t base = (uintptr_t)stack_start_addr;
-    uintptr_t top = base + stack_size;
-    tstate_set_stack(tstate, base, top);
-    return 0;
-}
-
-
-void
-PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
-{
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
-    if (ts->c_stack_init_top != 0) {
-        tstate_set_stack(tstate,
-                         ts->c_stack_init_base,
-                         ts->c_stack_init_top);
+        _tstate->c_stack_hard_limit = base + _PyOS_STACK_MARGIN_BYTES;
+        assert(_tstate->c_stack_soft_limit < here_addr);
+        assert(here_addr < _tstate->c_stack_top);
         return;
     }
-
-    _Py_InitializeRecursionLimits(tstate);
+#  endif
+    _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
+    _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + _PyOS_STACK_MARGIN_BYTES);
+#endif
 }
-
 
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
-   if the stack pointer is between the stack base and c_stack_hard_limit. */
+   if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
@@ -589,17 +676,9 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
     assert(_tstate->c_stack_hard_limit != 0);
-#if _Py_STACK_GROWS_DOWN
-    assert(here_addr >= _tstate->c_stack_hard_limit - _PyOS_STACK_MARGIN_BYTES);
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
-#else
-    assert(here_addr <= _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES);
-    if (here_addr > _tstate->c_stack_hard_limit) {
-        /* Overflowing while handling an overflow. Give up. */
-        int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
-#endif
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -608,11 +687,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return 0;
     }
     else {
-#if _Py_STACK_GROWS_DOWN
         int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
-#else
-        int kbytes_used = (int)(here_addr - _tstate->c_stack_top)/1024;
-#endif
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
                     "Stack overflow (used %d kB)%s",
@@ -1169,6 +1244,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.previous = tstate->current_frame;
     frame->previous = &entry.frame;
     tstate->current_frame = frame;
+
+    /* Firmament2: frame entry event */
+    _firm2_emit_frame_event("FRAME_ENTER", frame);
+
     entry.frame.localsplus[0] = PyStackRef_NULL;
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
@@ -1331,6 +1410,9 @@ jump_to_jump_target:
 #endif // _Py_TIER2
 
 early_exit:
+    /* Firmament2: frame exit event */
+    _firm2_emit_frame_event("FRAME_EXIT", frame);
+
     assert(_PyErr_Occurred(tstate));
     _Py_LeaveRecursiveCallPy(tstate);
     assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -2226,7 +2308,6 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
                               "calling %R should have returned an instance of "
                               "BaseException, not %R",
                               cause, Py_TYPE(fixed_cause));
-                Py_DECREF(fixed_cause);
                 goto raise_error;
             }
             Py_DECREF(cause);
@@ -2545,10 +2626,6 @@ monitor_unwind(PyThreadState *tstate,
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
-bool
-_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
-    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
-}
 
 static int
 monitor_handled(PyThreadState *tstate,
@@ -2616,10 +2693,21 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyEval_SetProfileAllThreads(interp, func, arg) < 0) {
-        /* Log _PySys_Audit() error */
-        PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
+    while (ts) {
+        if (_PyEval_SetProfile(ts, func, arg) < 0) {
+            PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
     }
 }
 
@@ -2636,10 +2724,21 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (_PyEval_SetTraceAllThreads(interp, func, arg) < 0) {
-        /* Log _PySys_Audit() error */
-        PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+
+    while (ts) {
+        if (_PyEval_SetTrace(ts, func, arg) < 0) {
+            PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
     }
 }
 
