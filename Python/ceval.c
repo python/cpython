@@ -69,7 +69,6 @@ _PyEval_NoToolsForUnwind(PyThreadState *tstate)
         return false;
     }
     return tstate->interp->monitors.tools[PY_MONITORING_EVENT_PY_UNWIND] == 0;
-    return !tstate->cframe->use_tracing;
 }
 
 /* ======================== Firmament2 source scope ======================== */
