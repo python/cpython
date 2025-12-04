@@ -69,6 +69,35 @@ usable on all platforms.  Refer to the
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
 
+Platform dependency quick start
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The exact packages vary by distribution, but the following commands install
+the most common build prerequisites:
+
+* Debian/Ubuntu::
+
+      sudo apt update
+      sudo apt install build-essential gdb lcov pkg-config \ \
+           libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev \ \
+           liblzma-dev libncursesw5-dev libreadline6-dev libsqlite3-dev \ \
+           libssl-dev tk-dev uuid-dev xz-utils zlib1g-dev
+
+* Fedora/RHEL::
+
+      sudo dnf install @development-tools gdb lcov make pkgconfig bzip2-devel \ \
+           expat-devel ffi-devel gdbm-devel ncurses-devel openssl-devel \ \
+           readline-devel sqlite-devel tk-devel xz-devel zlib-devel
+
+* macOS (Homebrew)::
+
+      brew update
+      brew install pkg-config gdbm openssl readline sqlite tcl-tk xz zlib
+
+Some extension modules require additional platform SDKs or libraries (for
+example, Bluetooth, multimedia codecs, or database drivers).  Consult the
+`Developer Guide`_ for distribution-specific notes and optional dependencies.
+
 On macOS, there are additional configure and build options related
 to macOS framework and universal builds.  Refer to `Mac/README.rst
 <https://github.com/python/cpython/blob/main/Mac/README.rst>`_.
