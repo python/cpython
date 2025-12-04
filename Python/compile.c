@@ -29,6 +29,8 @@
 
 #include <stdbool.h>
 
+#include "firmament2.h"
+
 
 #undef SUCCESS
 #undef ERROR
@@ -103,7 +105,6 @@ typedef struct _PyCompiler {
     bool c_save_nested_seqs;     /* if true, construct recursive instruction sequences
                                   * (including instructions for nested code objects)
                                   */
-    int c_disable_warning;
 } compiler;
 
 static int
@@ -136,7 +137,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged, 0, 1)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, c->c_optimize, merged, 0)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -766,9 +767,6 @@ _PyCompile_PushFBlock(compiler *c, location loc,
     f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
-    if (t == COMPILE_FBLOCK_FINALLY_END) {
-        c->c_disable_warning++;
-    }
     return SUCCESS;
 }
 
@@ -780,9 +778,6 @@ _PyCompile_PopFBlock(compiler *c, fblocktype t, jump_target_label block_label)
     u->u_nfblocks--;
     assert(u->u_fblock[u->u_nfblocks].fb_type == t);
     assert(SAME_JUMP_TARGET_LABEL(u->u_fblock[u->u_nfblocks].fb_block, block_label));
-    if (t == COMPILE_FBLOCK_FINALLY_END) {
-        c->c_disable_warning--;
-    }
 }
 
 fblockinfo *
@@ -1210,9 +1205,6 @@ _PyCompile_Error(compiler *c, location loc, const char *format, ...)
 int
 _PyCompile_Warn(compiler *c, location loc, const char *format, ...)
 {
-    if (c->c_disable_warning) {
-        return 0;
-    }
     va_list vargs;
     va_start(vargs, format);
     PyObject *msg = PyUnicode_FromFormatV(format, vargs);
@@ -1473,7 +1465,7 @@ _PyCompile_OptimizeAndAssemble(compiler *c, int addNone)
 
     return optimize_and_assemble_code_unit(u, const_cache, code_flags, filename);
 }
-
+/* ==================== Firmament2: source scope around public API ==================== */
 PyCodeObject *
 _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
                int optimize, PyArena *arena)
@@ -1489,7 +1481,31 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
     assert(co || PyErr_Occurred());
     return co;
 }
+/* Public API: place SOURCE_BEGIN/SOURCE_END so tokenizer+AST+codegen can inherit scope
+   when callers go through PyAST_CompileObject(). */
+PyCodeObject *
+PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
+                    int optimize, PyArena *arena)
+{
+    const char *fn_utf8 = NULL;
+    int began_scope = 0;
 
+    if (_firm2_enabled()) {
+        if (filename && PyUnicode_Check(filename)) {
+            fn_utf8 = PyUnicode_AsUTF8(filename);  /* borrowed */
+        }
+        _firm2_source_begin(fn_utf8);
+        began_scope = 1;
+    }
+
+    PyCodeObject *co = _PyAST_Compile(mod, filename, pflags, optimize, arena);
+
+    if (began_scope) {
+        _firm2_source_end();
+    }
+    return co;
+}
+/* ================== end Firmament2: source scope around public API =================== */
 int
 _PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
                          int optimize, PyArena *arena, int no_const_folding)
@@ -1502,7 +1518,7 @@ _PyCompile_AstPreprocess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags, no_const_folding, 0)) {
+    if (!_PyAST_Preprocess(mod, arena, filename, optimize, flags, no_const_folding)) {
         return -1;
     }
     return 0;

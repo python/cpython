@@ -41,6 +41,9 @@
 #  include "windows.h"
 #endif
 
+/* Firmament2 */
+#include "firmament2.h"
+
 /* Forward */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
@@ -1234,35 +1237,48 @@ _PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
                            int generate_new_source)
 {
     PyObject *ret = NULL;
-    mod_ty mod;
-    PyArena *arena;
-
-    arena = _PyArena_New();
+    PyArena *arena = _PyArena_New();
     if (arena == NULL)
         return NULL;
 
     PyObject* source = NULL;
     _Py_DECLARE_STR(anon_string, "<string>");
 
-    if (name) {
+    if (!name) {
+        name = &_Py_STR(anon_string);
+    } else {
         source = PyUnicode_FromString(str);
         if (!source) {
             PyErr_Clear();
         }
-    } else {
-        name = &_Py_STR(anon_string);
     }
 
-    mod = _PyParser_ASTFromString(str, name, start, flags, arena);
-
-   if (mod != NULL) {
-        ret = run_mod(mod, name, globals, locals, flags, arena, source, generate_new_source);
+    /* Begin source scope before parsing so tokens are attributed correctly */
+    int began_scope = 0;
+    const char *fn_utf8 = NULL;
+    if (_firm2_enabled()) {
+        if (name && PyUnicode_Check(name)) {
+            fn_utf8 = PyUnicode_AsUTF8(name);
+        }
+        _firm2_source_begin(fn_utf8);
+        began_scope = 1;
     }
+
+    mod_ty mod = _PyParser_ASTFromString(str, name, start, flags, arena);
+
+    if (mod != NULL) {
+        ret = run_mod(mod, name, globals, locals, flags, arena,
+                      source, generate_new_source);
+    }
+
+    if (began_scope) {
+        _firm2_source_end();
+    }
+
     Py_XDECREF(source);
     _PyArena_Free(arena);
     return ret;
 }
-
 
 PyObject *
 PyRun_StringFlags(const char *str, int start, PyObject *globals,
@@ -1280,26 +1296,36 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
         return NULL;
     }
 
-    mod_ty mod;
-    mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
-                                flags, NULL, arena);
+    /* Begin source scope before we tokenize/parse so tokens get filename/source_id */
+    int began_scope = 0;
+    const char *fn_utf8 = NULL;
+    if (_firm2_enabled()) {
+        if (filename && PyUnicode_Check(filename)) {
+            fn_utf8 = PyUnicode_AsUTF8(filename);
+        }
+        _firm2_source_begin(fn_utf8);
+        began_scope = 1;
+    }
+
+    mod_ty mod = _PyParser_ASTFromFile(fp, filename, NULL, start, NULL, NULL,
+                                       flags, NULL, arena);
 
     if (closeit) {
         fclose(fp);
     }
 
-    PyObject *ret;
+    PyObject *ret = NULL;
     if (mod != NULL) {
         ret = run_mod(mod, filename, globals, locals, flags, arena, NULL, 0);
     }
-    else {
-        ret = NULL;
-    }
-    _PyArena_Free(arena);
 
+    if (began_scope) {
+        _firm2_source_end();
+    }
+
+    _PyArena_Free(arena);
     return ret;
 }
-
 
 PyObject *
 PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
@@ -1508,30 +1534,60 @@ PyObject *
 Py_CompileStringObject(const char *str, PyObject *filename, int start,
                        PyCompilerFlags *flags, int optimize)
 {
-    PyCodeObject *co;
-    mod_ty mod;
+    PyObject *res = NULL;          /* return value: AST or PyCodeObject* */
+    mod_ty mod = NULL;
     PyArena *arena = _PyArena_New();
-    if (arena == NULL)
+    if (arena == NULL) {
         return NULL;
+    }
+
+    /* ---- Firmament2 source scope: begin before tokenization ---- */
+    const char *fn_utf8 = NULL;
+    int began_scope = 0;
+    if (_firm2_enabled()) {
+        if (filename && PyUnicode_Check(filename)) {
+            fn_utf8 = PyUnicode_AsUTF8(filename);  /* borrowed; may be NULL */
+        }
+        if (fn_utf8 == NULL) {
+            /* Provide a stable label for string inputs if not a PyUnicode */
+            fn_utf8 = "<string>";
+        }
+        _firm2_source_begin(fn_utf8);
+        began_scope = 1;
+    }
+    /* ------------------------------------------------------------ */
 
     mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
     if (mod == NULL) {
-        _PyArena_Free(arena);
-        return NULL;
+        goto done;  /* arena freed + scope ended in done: block */
     }
+
     if (flags && (flags->cf_flags & PyCF_ONLY_AST)) {
-        int syntax_check_only = ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
-        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena, syntax_check_only) < 0) {
-            _PyArena_Free(arena);
-            return NULL;
+        /* Return AST object (optionally preprocessed), not bytecode */
+        int syntax_check_only =
+            ((flags->cf_flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptimized AST */
+        if (_PyCompile_AstPreprocess(mod, filename, flags, optimize, arena,
+                                     syntax_check_only) < 0) {
+            goto done;
         }
-        PyObject *result = PyAST_mod2obj(mod);
-        _PyArena_Free(arena);
-        return result;
+        res = PyAST_mod2obj(mod);
+        goto done;
     }
-    co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+
+    /* Compile to code object WITHOUT calling the public wrapper, so we
+       keep exactly one SOURCE_BEGIN/SOURCE_END from this scope. */
+    {
+        PyCodeObject *co = _PyAST_Compile(mod, filename, flags, optimize, arena);
+        res = (PyObject *)co;  /* may be NULL on error */
+    }
+
+done:
     _PyArena_Free(arena);
-    return (PyObject *)co;
+
+    if (began_scope) {
+        _firm2_source_end();
+    }
+    return res;
 }
 
 PyObject *
