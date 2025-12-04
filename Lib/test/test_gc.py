@@ -846,11 +846,14 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(stats), 3)
         for st in stats:
             self.assertIsInstance(st, dict)
-            self.assertEqual(set(st),
-                             {"collected", "collections", "uncollectable", "duration"})
+            self.assertEqual(
+                set(st),
+                {"collected", "collections", "uncollectable", "candidates", "duration"}
+            )
             self.assertGreaterEqual(st["collected"], 0)
             self.assertGreaterEqual(st["collections"], 0)
             self.assertGreaterEqual(st["uncollectable"], 0)
+            self.assertGreaterEqual(st["candidates"], 0)
             self.assertGreaterEqual(st["duration"], 0)
         # Check that collection counts are incremented correctly
         if gc.isenabled():
@@ -865,7 +868,7 @@ class GCTests(unittest.TestCase):
         self.assertGreater(new[0]["duration"], old[0]["duration"])
         self.assertEqual(new[1]["duration"], old[1]["duration"])
         self.assertEqual(new[2]["duration"], old[2]["duration"])
-        for stat in ["collected", "uncollectable"]:
+        for stat in ["collected", "uncollectable", "candidates"]:
             self.assertGreaterEqual(new[0][stat], old[0][stat])
             self.assertEqual(new[1][stat], old[1][stat])
             self.assertEqual(new[2][stat], old[2][stat])
@@ -877,7 +880,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["duration"], old[0]["duration"])
         self.assertEqual(new[1]["duration"], old[1]["duration"])
         self.assertGreater(new[2]["duration"], old[2]["duration"])
-        for stat in ["collected", "uncollectable"]:
+        for stat in ["collected", "uncollectable", "candidates"]:
             self.assertEqual(new[0][stat], old[0][stat])
             self.assertEqual(new[1][stat], old[1][stat])
             self.assertGreaterEqual(new[2][stat], old[2][stat])
@@ -1316,6 +1319,7 @@ class GCCallbackTests(unittest.TestCase):
             self.assertIn("generation", info)
             self.assertIn("collected", info)
             self.assertIn("uncollectable", info)
+            self.assertIn("candidates", info)
             self.assertIn("duration", info)
 
     def test_collect_generation(self):

@@ -197,7 +197,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         | (GLIBC_([0-9.]+))
         | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
         | (musl-([0-9.]+))
-        | (libc.musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
+        | ((?:libc\.|ld-)musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
         """,
         re.ASCII | re.VERBOSE)
 
@@ -236,7 +236,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 elif V(glibcversion) > V(ver):
                     ver = glibcversion
             elif so:
-                if lib != 'glibc':
+                if lib not in ('glibc', 'musl'):
                     lib = 'libc'
                     if soversion and (not ver or V(soversion) > V(ver)):
                         ver = soversion

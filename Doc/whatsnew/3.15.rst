@@ -416,6 +416,10 @@ Improved modules
 argparse
 --------
 
+* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+  long options and alternate prefix characters.
+  (Contributed by Serhiy Storchaka in :gh:`138525`.)
+
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
@@ -1242,6 +1246,12 @@ Build changes
   Now this should be explicitly enabled with :option:`--with-system-libmpdec`
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
+
+* The new configure option :option:`--with-missing-stdlib-config=FILE` allows
+  distributors to pass a `JSON <https://www.json.org/json-en.html>`_
+  configuration file containing custom error messages for :term:`standard library`
+  modules that are missing or packaged separately.
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
 
 
 Porting to Python 3.15

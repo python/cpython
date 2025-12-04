@@ -748,7 +748,14 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
             if action.default is not SUPPRESS:
                 defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
                 if action.option_strings or action.nargs in defaulting_nargs:
-                    help += _(' (default: %(default)s)')
+                    t = self._theme
+                    default_str = _(" (default: %(default)s)")
+                    prefix, suffix = default_str.split("%(default)s")
+                    help += (
+                        f" {t.default}{prefix.lstrip()}"
+                        f"{t.default_value}%(default)s"
+                        f"{t.default}{suffix}{t.reset}"
+                    )
         return help
 
 
@@ -932,15 +939,26 @@ class BooleanOptionalAction(Action):
                  deprecated=False):
 
         _option_strings = []
+        neg_option_strings = []
         for option_string in option_strings:
             _option_strings.append(option_string)
 
-            if option_string.startswith('--'):
-                if option_string.startswith('--no-'):
+            if len(option_string) > 2 and option_string[0] == option_string[1]:
+                # two-dash long option: '--foo' -> '--no-foo'
+                if option_string.startswith('no-', 2):
                     raise ValueError(f'invalid option name {option_string!r} '
                                      f'for BooleanOptionalAction')
-                option_string = '--no-' + option_string[2:]
+                option_string = option_string[:2] + 'no-' + option_string[2:]
                 _option_strings.append(option_string)
+                neg_option_strings.append(option_string)
+            elif len(option_string) > 2 and option_string[0] != option_string[1]:
+                # single-dash long option: '-foo' -> '-nofoo'
+                if option_string.startswith('no', 1):
+                    raise ValueError(f'invalid option name {option_string!r} '
+                                     f'for BooleanOptionalAction')
+                option_string = option_string[:1] + 'no' + option_string[1:]
+                _option_strings.append(option_string)
+                neg_option_strings.append(option_string)
 
         super().__init__(
             option_strings=_option_strings,
@@ -950,11 +968,12 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             deprecated=deprecated)
+        self.neg_option_strings = neg_option_strings
 
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
-            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+            setattr(namespace, self.dest, option_string not in self.neg_option_strings)
 
     def format_usage(self):
         return ' | '.join(self.option_strings)
