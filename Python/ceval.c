@@ -1228,6 +1228,8 @@ _Py_BuildString_StackRefSteal(
         goto cleanup;
     }
     res = _PyUnicode_JoinArray(&_Py_STR(empty), args_o, total_args);
+    STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
     // arguments is a pointer into the GC visible stack,
     // so we must NULL out values as we clear them.
@@ -1238,8 +1240,6 @@ cleanup:
     }
     return res;
 }
-
-
 
 PyObject *
 _Py_BuildMap_StackRefSteal(
@@ -1257,6 +1257,8 @@ _Py_BuildMap_StackRefSteal(
         args_o+1, 2,
         half_args
     );
+    STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+    assert((res != NULL) ^ (PyErr_Occurred() != NULL));
 cleanup:
     // arguments is a pointer into the GC visible stack,
     // so we must NULL out values as we clear them.
