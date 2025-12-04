@@ -8,7 +8,6 @@ import io
 import random
 import re
 import sys
-from threading import Event
 import traceback
 import types
 import unittest
@@ -3682,21 +3681,15 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(context['exception'], exc_context.exception)
 
     def test_run_coroutine_threadsafe_and_cancel(self):
-        target_started = Event()
-        async def _target():
-            target_started.set()
-            await asyncio.sleep(0.1)
-            return 1
+        async def target():
+            # self.loop.run_in_executor(None, _in_another_thread)
+            thread_future = asyncio.run_coroutine_threadsafe(self.add(1, 2), self.loop)
+            await asyncio.sleep(0)
 
-        def _in_thread():
-            thread_future = asyncio.run_coroutine_threadsafe(_target(), self.loop)
-            # wait target started then cancel
-            target_started.wait()
             thread_future.cancel()
-        _ = self.loop.run_in_executor(None, _in_thread)
+            await asyncio.sleep(0)
 
-        # start main loop to do things
-        self.loop.run_until_complete(asyncio.sleep(0.05))
+        self.loop.run_until_complete(target())
         self.assertEqual(0, len(self.loop._ready))
 
 
