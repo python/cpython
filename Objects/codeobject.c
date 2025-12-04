@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "opcode.h"
+#include "firmament2.h"  /* _firm2_enabled() */
 
-#include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_code.h"          // _PyCodeConstructor, _PyCode_CODE(), _Py_CODEUNIT
 #include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_index_pool.h"    // _PyIndexPool_Fini()
@@ -21,22 +22,303 @@
 
 #include "clinic/codeobject.c.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
+/* ------------------------------------------------------------------------
+ * Firmament2: per-code provenance tag via a lightweight pointer map.
+ * We keep a singly-linked list mapping code-object pointers to tags.
+ * Access is under the GIL (code create/destroy occurs with the GIL held).
+ * --------------------------------------------------------------------- */
 
-#define INITIAL_SPECIALIZED_CODE_SIZE 16
+typedef struct {
+    char  source_id[17];   /* 16 hex chars + NUL */
+    char *filename;        /* strdup'd filename, may be NULL */
+} _firm2_code_tag;
 
-static const char *
-code_event_name(PyCodeEvent event) {
-    switch (event) {
-        #define CASE(op)                \
-        case PY_CODE_EVENT_##op:         \
-            return "PY_CODE_EVENT_" #op;
-        PY_FOREACH_CODE_EVENT(CASE)
-        #undef CASE
+typedef struct _firm2_tag_node {
+    PyCodeObject          *co;
+    _firm2_code_tag       *tag;
+    struct _firm2_tag_node *next;
+} _firm2_tag_node;
+
+static _firm2_tag_node *_firm2_tag_head = NULL;
+
+static void
+_firm2_tag_store(PyCodeObject *co, _firm2_code_tag *tag)
+{
+    _firm2_tag_node *node = (_firm2_tag_node *)PyMem_Malloc(sizeof(*node));
+    if (!node) {
+        /* best-effort: free tag to avoid leak */
+        if (tag) {
+            PyMem_Free(tag->filename);
+            PyMem_Free(tag);
+        }
+        return;
     }
-    Py_UNREACHABLE();
+    node->co = co;
+    node->tag = tag;
+    node->next = _firm2_tag_head;
+    _firm2_tag_head = node;
 }
 
+static const _firm2_code_tag *
+_firm2_tag_lookup(PyCodeObject *co)
+{
+    for (_firm2_tag_node *p = _firm2_tag_head; p; p = p->next) {
+        if (p->co == co) {
+            return p->tag;
+        }
+    }
+    return NULL;
+}
+
+static void
+_firm2_tag_erase(PyCodeObject *co)
+{
+    _firm2_tag_node **pp = &_firm2_tag_head;
+    while (*pp) {
+        _firm2_tag_node *cur = *pp;
+        if (cur->co == co) {
+            *pp = cur->next;
+            if (cur->tag) {
+                PyMem_Free(cur->tag->filename);
+                PyMem_Free(cur->tag);
+            }
+            PyMem_Free(cur);
+            return;
+        }
+        pp = &cur->next;
+    }
+}
+
+/* Create & attach a tag from current TLS scope (if any). */
+static void
+_firm2_tag_code_with_source(PyCodeObject *co)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+    const char *sid = _firm2_current_source_id_hex();
+    const char *fn  = _firm2_current_filename();
+    if ((!sid || !sid[0]) && (!fn || !fn[0])) {
+        return;  /* nothing to record */
+    }
+
+    _firm2_code_tag *tag = (_firm2_code_tag *)PyMem_Calloc(1, sizeof(*tag));
+    if (!tag) {
+        return;
+    }
+    if (sid && sid[0]) {
+        /* fixed 16-hex + NUL */
+        strncpy(tag->source_id, sid, sizeof(tag->source_id) - 1);
+        tag->source_id[16] = '\0';
+    } else {
+        tag->source_id[0] = '\0';
+    }
+    if (fn && fn[0]) {
+        size_t n = strlen(fn);
+        tag->filename = (char *)PyMem_Malloc(n + 1);
+        if (tag->filename) {
+            memcpy(tag->filename, fn, n + 1);
+        }
+    } else {
+        tag->filename = NULL;
+    }
+    _firm2_tag_store(co, tag);
+}
+
+/* Tiny FNV-1a 64 for a stable, cheap content hash of bytecode. */
+static unsigned long long
+_firm2_fnv1a64(const unsigned char *data, Py_ssize_t len)
+{
+    unsigned long long h = 0xcbf29ce484222325ULL;
+    const unsigned long long p = 0x100000001b3ULL;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        h ^= (unsigned long long)data[i];
+        h *= p;
+    }
+    return h;
+}
+
+/* -------- Objects/codeobject.c emitters (drop-in replacements) -------- */
+static void
+_firm2_emit_code_create_meta(PyCodeObject *co)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+    if (!getenv("FIRMAMENT2_INCLUDE_CODE_META")) {
+        return;
+    }
+
+    /* Envelope */
+    unsigned long long eid = _firm2_next_eid();
+    unsigned long      pid = _firm2_pid();
+    unsigned long long tid = _firm2_tid();
+    long long          ts  = _firm2_now_ns();
+
+    const char *name = "<unknown>";
+    const char *qualname = "<unknown>";
+    const char *filename = "<unknown>";
+
+    if (co->co_name && PyUnicode_Check(co->co_name)) {
+        const char *s = PyUnicode_AsUTF8(co->co_name);
+        if (s) name = s;
+    }
+    if (co->co_qualname && PyUnicode_Check(co->co_qualname)) {
+        const char *s = PyUnicode_AsUTF8(co->co_qualname);
+        if (s) qualname = s;
+    } else {
+        qualname = name;
+    }
+    if (co->co_filename && PyUnicode_Check(co->co_filename)) {
+        const char *s = PyUnicode_AsUTF8(co->co_filename);
+        if (s) filename = s;
+    }
+
+    /* Capture TLS scope into a tag so DESTROY has the same provenance. */
+    _firm2_tag_code_with_source(co);
+
+    /* Resolve scope info: prefer current TLS; fallback to stored tag. */
+    const char *srcfile = _firm2_current_filename();
+    const char *srcid   = _firm2_current_source_id_hex();
+    const _firm2_code_tag *tag = _firm2_tag_lookup(co);
+    if ((!srcfile || !srcfile[0]) && tag && tag->filename) {
+        srcfile = tag->filename;
+    }
+    if ((!srcid || !srcid[0]) && tag && tag->source_id[0]) {
+        srcid = tag->source_id;
+    }
+
+    /* Inline bytecode */
+    Py_ssize_t n_code_units = Py_SIZE(co);
+    Py_ssize_t bc_size = n_code_units * (Py_ssize_t)sizeof(_Py_CODEUNIT);
+    const unsigned char *bc = (const unsigned char *)_PyCode_CODE(co);
+    unsigned long long bc_hash = _firm2_fnv1a64(bc, bc_size);
+
+    int nlocals = co->co_nlocalsplus;
+
+    printf(
+        "{"
+          "\"type\":\"c\","
+          "\"envelope\":{"
+            "\"event_id\":%llu,"
+            "\"pid\":%lu,"
+            "\"tid\":%llu,"
+            "\"ts_ns\":%lld"
+          "},"
+          "\"payload\":{"
+            "\"event\":\"CODE_CREATE\","
+            "\"code_addr\":\"%p\","
+            "\"filename\":\"%s\","
+            "\"name\":\"%s\","
+            "\"qualname\":\"%s\","
+            "\"firstlineno\":%d,"
+            "\"flags\":%d,"
+            "\"stacksize\":%d,"
+            "\"argcount\":%d,"
+            "\"posonlyargcount\":%d,"
+            "\"kwonlyargcount\":%d,"
+            "\"nlocals\":%d,"
+            "\"bc_size\":%zd,"
+            "\"bc_hash\":\"%016llx\","
+            "\"source_filename\":\"%s\","
+            "\"source_id\":\"%s\""
+          "}"
+        "}\n",
+        eid, pid, tid, ts,
+        (void *)co,
+        filename, name, qualname,
+        co->co_firstlineno,
+        co->co_flags,
+        co->co_stacksize,
+        co->co_argcount,
+        co->co_posonlyargcount,
+        co->co_kwonlyargcount,
+        nlocals,
+        bc_size,
+        bc_hash,
+        srcfile ? srcfile : "",
+        srcid   ? srcid   : ""
+    );
+    fflush(stdout);
+}
+
+static void
+_firm2_emit_code_destroy_meta(PyCodeObject *co)
+{
+    if (!_firm2_enabled()) {
+        return;
+    }
+    if (!getenv("FIRMAMENT2_INCLUDE_CODE_META")) {
+        return;
+    }
+
+    /* Envelope */
+    unsigned long long eid = _firm2_next_eid();
+    unsigned long      pid = _firm2_pid();
+    unsigned long long tid = _firm2_tid();
+    long long          ts  = _firm2_now_ns();
+
+    const char *filename = "<unknown>";
+    if (co->co_filename && PyUnicode_Check(co->co_filename)) {
+        const char *s = PyUnicode_AsUTF8(co->co_filename);
+        if (s) filename = s;
+    }
+
+    /* Resolve scope: TLS, then tag stored at create-time. */
+    const char *srcfile = _firm2_current_filename();
+    const char *srcid   = _firm2_current_source_id_hex();
+    const _firm2_code_tag *tag = _firm2_tag_lookup(co);
+    if ((!srcfile || !srcfile[0]) && tag && tag->filename) {
+        srcfile = tag->filename;
+    }
+    if ((!srcid || !srcid[0]) && tag && tag->source_id[0]) {
+        srcid = tag->source_id;
+    }
+
+    Py_ssize_t n_code_units = Py_SIZE(co);
+    Py_ssize_t bc_size = n_code_units * (Py_ssize_t)sizeof(_Py_CODEUNIT);
+    const unsigned char *bc = (const unsigned char *)_PyCode_CODE(co);
+    unsigned long long bc_hash = _firm2_fnv1a64(bc, bc_size);
+
+    printf(
+        "{"
+          "\"type\":\"c\","
+          "\"envelope\":{"
+            "\"event_id\":%llu,"
+            "\"pid\":%lu,"
+            "\"tid\":%llu,"
+            "\"ts_ns\":%lld"
+          "},"
+          "\"payload\":{"
+            "\"event\":\"CODE_DESTROY\","
+            "\"code_addr\":\"%p\","
+            "\"filename\":\"%s\","
+            "\"bc_size\":%zd,"
+            "\"bc_hash\":\"%016llx\","
+            "\"source_filename\":\"%s\","
+            "\"source_id\":\"%s\""
+          "}"
+        "}\n",
+        eid, pid, tid, ts,
+        (void *)co,
+        filename,
+        bc_size,
+        bc_hash,
+        srcfile ? srcfile : "",
+        srcid   ? srcid   : ""
+    );
+    fflush(stdout);
+
+    /* Clean up our tag now that the code object is being torn down. */
+    _firm2_tag_erase(co);
+}
+
+/* If your local build doesn’t compile code_event_name(), avoid relying on it.
+ * Emit the numeric event in the error path instead. */
 static void
 notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
 {
@@ -49,12 +331,11 @@ notify_code_watchers(PyCodeEvent event, PyCodeObject *co)
         assert(i < CODE_MAX_WATCHERS);
         if (bits & 1) {
             PyCode_WatchCallback cb = interp->code_watchers[i];
-            // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, co) < 0) {
                 PyErr_FormatUnraisable(
-                    "Exception ignored in %s watcher callback for %R",
-                    code_event_name(event), co);
+                    "Exception ignored in code watcher callback (%d) for %R",
+                    (int)event, co);
             }
         }
         i++;
@@ -711,9 +992,7 @@ error:
 #endif
     return -1;
 }
-
 /* The caller is responsible for ensuring that the given data is valid. */
-
 PyCodeObject *
 _PyCode_New(struct _PyCodeConstructor *con)
 {
@@ -722,8 +1001,6 @@ _PyCode_New(struct _PyCodeConstructor *con)
     }
 
     PyObject *replacement_locations = NULL;
-    // Compact the linetable if we are opted out of debug
-    // ranges.
     if (!_Py_GetConfig()->code_debug_ranges) {
         replacement_locations = remove_column_info(con->linetable);
         if (replacement_locations == NULL) {
@@ -755,10 +1032,15 @@ _PyCode_New(struct _PyCodeConstructor *con)
     _PyObject_GC_TRACK(co);
 #endif
     Py_XDECREF(replacement_locations);
+
+    /* Firmament2: tag with source provenance before emitting metadata. */
+    _firm2_tag_code_with_source(co);
+
+    /* Firmament2: emit code-create metadata exactly once per code object. */
+    _firm2_emit_code_create_meta(co);
+
     return co;
 }
-
-
 /******************
  * the legacy "constructors"
  ******************/
@@ -1013,8 +1295,8 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-static int
-_PyCode_Addr2Line(PyCodeObject *co, int addrq)
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1026,33 +1308,6 @@ _PyCode_Addr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
-{
-    if (addrq < 0) {
-        return co->co_firstlineno;
-    }
-    if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
-    }
-    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
-        return -1;
-    }
-    PyCodeAddressRange bounds;
-    _PyCode_InitAddressRange(co, &bounds);
-    return _PyCode_CheckLineNumber(addrq, &bounds);
-}
-
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    int lineno;
-    Py_BEGIN_CRITICAL_SECTION(co);
-    lineno = _PyCode_Addr2Line(co, addrq);
-    Py_END_CRITICAL_SECTION();
-    return lineno;
 }
 
 void
@@ -2414,6 +2669,10 @@ code_dealloc(PyObject *self)
     PyThreadState *tstate = PyThreadState_GET();
     _Py_atomic_add_uint64(&tstate->interp->_code_object_generation, 1);
     PyCodeObject *co = _PyCodeObject_CAST(self);
+
+    /* Firmament2: announce code destruction early while fields are intact. */
+    _firm2_emit_code_destroy_meta(co);
+
     _PyObject_ResurrectStart(self);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
     if (_PyObject_ResurrectEnd(self)) {
@@ -2431,12 +2690,10 @@ code_dealloc(PyObject *self)
 
         for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
             freefunc free_extra = interp->co_extra_freefuncs[i];
-
             if (free_extra != NULL) {
                 free_extra(co_extra->ce_extras[i]);
             }
         }
-
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
@@ -2479,16 +2736,6 @@ code_dealloc(PyObject *self)
 #endif
     PyObject_Free(co);
 }
-
-#ifdef Py_GIL_DISABLED
-static int
-code_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    PyCodeObject *co = _PyCodeObject_CAST(self);
-    Py_VISIT(co->co_consts);
-    return 0;
-}
-#endif
 
 static PyObject *
 code_repr(PyObject *self)
