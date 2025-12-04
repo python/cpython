@@ -1994,10 +1994,16 @@ expression support in the :mod:`re` module).
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument.
+   the corresponding argument. For example:
+
+   .. doctest::
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
+      >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
+      'Nobody expects the Spanish Inquisition!'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -2057,13 +2063,32 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ASCII characters have code points in the range U+0000-U+007F. For example:
+
+   .. doctest::
+
+      >>> 'ASCII characters'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
 
    .. versionadded:: 3.7
 
@@ -2073,9 +2098,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   numbers in base 10, such as U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   General Category "Nd". For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
+      True
+      >>> 'alphabetic'.isdecimal()
+      False
 
 
 .. method:: str.isdigit()
@@ -2194,7 +2228,16 @@ expression support in the :mod:`re` module).
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   elements is the string providing this method. For example:
+
+   .. doctest::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   See also :meth:`split`.
 
 
 .. method:: str.ljust(width, fillchar=' ', /)
@@ -2408,6 +2451,8 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
+   See also :meth:`join`.
+
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -2611,6 +2656,8 @@ expression support in the :mod:`re` module).
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
 
+.. _stdtypes-fstrings:
+
 Formatted String Literals (f-strings)
 -------------------------------------
 
@@ -2619,123 +2666,147 @@ Formatted String Literals (f-strings)
    The :keyword:`await` and :keyword:`async for` can be used in expressions
    within f-strings.
 .. versionchanged:: 3.8
-   Added the debugging operator (``=``)
+   Added the debug specifier (``=``)
 .. versionchanged:: 3.12
    Many restrictions on expressions within f-strings have been removed.
    Notably, nested strings, comments, and backslashes are now permitted.
 
 An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
 a string literal that is prefixed with ``f`` or ``F``.
-This type of string literal allows embedding arbitrary Python expressions
-within *replacement fields*, which are delimited by curly brackets (``{}``).
-These expressions are evaluated at runtime, similarly to :meth:`str.format`,
-and are converted into regular :class:`str` objects.
-For example:
+This type of string literal allows embedding the results of arbitrary Python
+expressions within *replacement fields*, which are delimited by curly
+brackets (``{}``).
+Each replacement field must contain an expression, optionally followed by:
 
-.. doctest::
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
 
-   >>> who = 'nobody'
-   >>> nationality = 'Spanish'
-   >>> f'{who.title()} expects the {nationality} Inquisition!'
-   'Nobody expects the Spanish Inquisition!'
+See the :ref:`Lexical Analysis section on f-strings <f-strings>` for details
+on the syntax of these fields.
 
-It is also possible to use a multi line f-string:
+Debug specifier
+^^^^^^^^^^^^^^^
 
-.. doctest::
+.. versionadded:: 3.8
 
-   >>> f'''This is a string
-   ... on two lines'''
-   'This is a string\non two lines'
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
 
-A single opening curly bracket, ``'{'``, marks a *replacement field* that
-can contain any Python expression:
+   >>> number = 14.3
+   >>> f'{number=}'
+   'number=14.3'
 
-.. doctest::
+Whitespace before, inside and after the expression, as well as whitespace
+after the equal sign, is significant --- it is retained in the result::
 
-   >>> nationality = 'Spanish'
-   >>> f'The {nationality} Inquisition!'
-   'The Spanish Inquisition!'
+   >>> f'{ number  -  4  = }'
+   ' number  -  4  = 10.3'
 
-To include a literal ``{`` or ``}``, use a double bracket:
 
-.. doctest::
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
 
-   >>> x = 42
-   >>> f'{{x}} is {x}'
-   '{x} is 42'
-
-Functions can also be used, and :ref:`format specifiers <formatstrings>`:
-
-.. doctest::
-
-   >>> from math import sqrt
-   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
-   '√2 ≈ 1.41421'
-
-Any non-string expression is converted using :func:`str`, by default:
-
-.. doctest::
+By default, the value of a replacement field expression is converted to
+a string using :func:`str`::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)}'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
    '1/3'
 
-To use an explicit conversion, use the ``!`` (exclamation mark) operator,
-followed by any of the valid formats, which are:
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
 
-========== ==============
-Conversion  Meaning
-========== ==============
-``!a``      :func:`ascii`
-``!r``      :func:`repr`
-``!s``      :func:`str`
-========== ==============
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
 
-For example:
+The conversion can be specified explicitly using one of these specifiers:
 
-.. doctest::
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
 
-   >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)!s}'
+For example::
+
+   >>> str(one_third)
    '1/3'
-   >>> f'{Fraction(1, 3)!r}'
+   >>> repr(one_third)
    'Fraction(1, 3)'
-   >>> question = '¿Dónde está el Presidente?'
-   >>> print(f'{question!a}')
-   '\xbfD\xf3nde est\xe1 el Presidente?'
 
-While debugging it may be helpful to see both the expression and its value,
-by using the equals sign (``=``) after the expression.
-This preserves spaces within the brackets, and can be used with a converter.
-By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
-For example:
+   >>> f'{one_third!s} is {one_third!r}'
+   '1/3 is Fraction(1, 3)'
 
-.. doctest::
+   >>> string = "¡kočka 😸!"
+   >>> ascii(string)
+   "'\\xa1ko\\u010dka \\U0001f638!'"
 
-   >>> from fractions import Fraction
-   >>> calculation = Fraction(1, 3)
-   >>> f'{calculation=}'
-   'calculation=Fraction(1, 3)'
-   >>> f'{calculation = }'
-   'calculation = Fraction(1, 3)'
-   >>> f'{calculation = !s}'
-   'calculation = 1/3'
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
 
-Once the output has been evaluated, it can be formatted using a
-:ref:`format specifier <formatstrings>` following a colon (``':'``).
-After the expression has been evaluated, and possibly converted to a string,
-the :meth:`!__format__` method of the result is called with the format specifier,
-or the empty string if no format specifier is given.
-The formatted result is then used as the final value for the replacement field.
-For example:
 
-.. doctest::
+Format specifier
+^^^^^^^^^^^^^^^^
+
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier* introduced by a colon
+(``:``), the specifier is passed to :func:`!format` as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 7):.6f}'
-   '0.142857'
-   >>> f'{Fraction(1, 7):_^+10}'
-   '___+1/7___'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
+
+.. _stdtypes-tstrings:
+
+Template String Literals (t-strings)
+------------------------------------
+
+An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+a string literal that is prefixed with ``t`` or ``T``.
+
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <stdtypes-fstrings>`,
+with for the following differences:
+
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
+
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
+
+* Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
+
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
 
 
 .. _old-string-formatting:
@@ -3172,6 +3243,30 @@ objects.
       (bytearray(b'abc\x00\x00'), 5)
 
       .. versionadded:: 3.14
+
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: 3.15
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :meth:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4580,7 +4675,7 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=sys.maxsize, /)
+   .. method:: index(value, start=0, stop=sys.maxsize, /)
 
       Return the index of the first occurrence of *value* (at or after
       index *start* and before index *stop*).
@@ -4731,11 +4826,12 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
-hash value and cannot be used as either a dictionary key or as an element of
-another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
-its contents cannot be altered after it is created; it can therefore be used as
-a dictionary key or as an element of another set.
+like :meth:`add <frozenset.add>` and :meth:`remove <frozenset.add>`.
+Since it is mutable, it has no hash value and cannot be used as
+either a dictionary key or as an element of another set.
+The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created;
+it can therefore be used as a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the

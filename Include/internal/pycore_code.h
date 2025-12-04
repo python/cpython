@@ -274,8 +274,13 @@ extern void _PyLineTable_InitAddressRange(
 /** API for traversing the line number table. */
 PyAPI_FUNC(int) _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
-// This is used in dump_frame() in traceback.c without an attached tstate.
-extern int _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addr);
+
+// Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
+// and can be called without an attached tstate. Used by dump_frame() in
+// Python/traceback.c. The function uses heuristics to detect freed memory,
+// it's not 100% reliable.
+extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
+
 
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
@@ -306,8 +311,8 @@ PyAPI_FUNC(void) _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins
                                       _Py_CODEUNIT *instr, PyObject *name);
 PyAPI_FUNC(void) _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
-PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
-                                int nargs);
+PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _PyStackRef self_or_null,
+                                _Py_CODEUNIT *instr, int nargs);
 PyAPI_FUNC(void) _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
 PyAPI_FUNC(void) _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
