@@ -739,8 +739,16 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         closure, _ = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=False
         )
+        try:
+            annotate_code = annotate.__code__
+        except AttributeError:
+            raise AttributeError(
+                "annotate function requires __code__ attribute",
+                name="__code__",
+                obj=annotate
+            )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
             argdefs=annotate_defaults,
@@ -784,8 +792,16 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         closure, cell_dict = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=True
         )
+        try:
+            annotate_code = annotate.__code__
+        except AttributeError:
+            raise AttributeError(
+                "annotate function requires __code__ attribute",
+                name="__code__",
+                obj=annotate
+            )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
             argdefs=annotate_defaults,
@@ -815,7 +831,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
             argdefs=annotate_defaults,
