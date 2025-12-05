@@ -1,0 +1,3 @@
+Revert changes to the undocumented :class:`!re.Scanner` class. Capturing
+groups are still allowed for backward compatibility, although using them can
+lead to incorrect result. They will be forbidden in future Python versions.
