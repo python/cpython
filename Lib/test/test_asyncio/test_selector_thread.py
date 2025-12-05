@@ -8,6 +8,10 @@ from test import support
 from unittest import mock
 
 
+def tearDownModule():
+    asyncio.events._set_event_loop_policy(None)
+
+
 class SelectorThreadTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self._sockets = []
