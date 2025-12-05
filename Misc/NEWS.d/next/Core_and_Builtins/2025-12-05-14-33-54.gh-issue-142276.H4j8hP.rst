@@ -1,0 +1,1 @@
+Fix a bug with attribute loads treated as constants in the JIT. Patch by Ken Jin. Reproducer by Yuancheng Jiang.
