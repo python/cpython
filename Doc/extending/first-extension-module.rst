@@ -1,6 +1,7 @@
 .. highlight:: c
 
 
+.. _extending-simpleexample:
 .. _first-extension-module:
 
 *********************************
@@ -320,6 +321,7 @@ Recompile your extension to make sure you don't have syntax errors.
 We haven't yet added ``spam_system`` to the module, so you might get a
 warning that ``spam_system`` is unused.
 
+.. _methodtable:
 
 Method definitions
 ------------------
