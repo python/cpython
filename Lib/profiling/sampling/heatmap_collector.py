@@ -11,7 +11,7 @@ import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple
 
 from ._css_utils import get_combined_css
 from .stack_collector import StackTraceCollector
