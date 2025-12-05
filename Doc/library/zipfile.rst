@@ -536,6 +536,11 @@ ZipFile objects
       a closed ZipFile will raise a :exc:`ValueError`.  Previously,
       a :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: 3.14
+      Now respects the :envvar:`SOURCE_DATE_EPOCH` environment variable. If set, it uses this
+      value as the modification timestamp for the file written into the ZIP archive,
+      instead of using the current time.
+
 .. method:: ZipFile.mkdir(zinfo_or_directory, mode=511)
 
    Create a directory inside the archive.  If *zinfo_or_directory* is a string,
