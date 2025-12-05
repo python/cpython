@@ -358,7 +358,7 @@ class HelpFormatter(object):
                 # keep optionals and positionals together to preserve
                 # mutually exclusive group formatting (gh-75949)
                 all_actions = optionals + positionals
-                parts, pos_start = self._get_actions_usage_parts(
+                parts, pos_start = self._get_actions_usage_parts_with_split(
                     all_actions, groups, len(optionals)
                 )
                 opt_parts = parts[:pos_start]
@@ -420,13 +420,23 @@ class HelpFormatter(object):
         return f'{t.usage}{prefix}{t.reset}{usage}\n\n'
 
     def _format_actions_usage(self, actions, groups):
-        parts, _ = self._get_actions_usage_parts(actions, groups)
-        return ' '.join(parts)
+        return ' '.join(self._get_actions_usage_parts(actions, groups))
 
     def _is_long_option(self, string):
         return len(string) > 2
 
-    def _get_actions_usage_parts(self, actions, groups, opt_count=None):
+    def _get_actions_usage_parts(self, actions, groups):
+        parts, _ = self._get_actions_usage_parts_with_split(actions, groups)
+        return parts
+
+    def _get_actions_usage_parts_with_split(self, actions, groups, opt_count=None):
+        """Get usage parts with split index for optionals/positionals.
+
+        Returns (parts, pos_start) where pos_start is the index in parts
+        where positionals begin. When opt_count is None, pos_start is None.
+        This preserves mutually exclusive group formatting across the
+        optionals/positionals boundary (gh-75949).
+        """
         # find group indices and identify actions in groups
         group_actions = set()
         inserts = {}
