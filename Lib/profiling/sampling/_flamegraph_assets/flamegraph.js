@@ -693,16 +693,35 @@ function populateProfileSummary(data) {
   if (rateEl) rateEl.textContent = sampleRate > 0 ? formatNumber(Math.round(sampleRate)) : '--';
 
   // Count unique functions
-  let functionCount = 0;
-  function countFunctions(node) {
+  // Use normal (non-inverted) tree structure, but respect thread filtering
+  const uniqueFunctions = new Set();
+  function collectUniqueFunctions(node) {
     if (!node) return;
-    functionCount++;
-    if (node.children) node.children.forEach(countFunctions);
+    const filename = resolveString(node.filename) || 'unknown';
+    const funcname = resolveString(node.funcname) || resolveString(node.name) || 'unknown';
+    const lineno = node.lineno || 0;
+    const key = `${filename}|${lineno}|${funcname}`;
+    uniqueFunctions.add(key);
+    if (node.children) node.children.forEach(collectUniqueFunctions);
   }
-  countFunctions(data);
+  // In inverted mode, use normalData (with thread filter if active)
+  // In normal mode, use the passed data (already has thread filter applied if any)
+  let functionCountSource;
+  if (!normalData) {
+    functionCountSource = data;
+  } else if (isInverted) {
+    if (currentThreadFilter !== 'all') {
+      functionCountSource = filterDataByThread(normalData, parseInt(currentThreadFilter));
+    } else {
+      functionCountSource = normalData;
+    }
+  } else {
+    functionCountSource = data;
+  }
+  collectUniqueFunctions(functionCountSource);
 
   const functionsEl = document.getElementById('stat-functions');
-  if (functionsEl) functionsEl.textContent = formatNumber(functionCount);
+  if (functionsEl) functionsEl.textContent = formatNumber(uniqueFunctions.size);
 
   // Efficiency bar
   if (errorRate !== undefined && errorRate !== null) {
@@ -737,13 +756,30 @@ function populateProfileSummary(data) {
 // ============================================================================
 
 function populateStats(data) {
-  const totalSamples = data.value || 0;
-
   // Populate profile summary
   populateProfileSummary(data);
 
   // Populate thread statistics if available
   populateThreadStats(data);
+
+  // For hotspots: use normal (non-inverted) tree structure, but respect thread filtering.
+  // In inverted view, the tree structure changes but the hottest functions remain the same.
+  // However, if a thread filter is active, we need to show that thread's hotspots.
+  let hotspotSource;
+  if (!normalData) {
+    hotspotSource = data;
+  } else if (isInverted) {
+    // In inverted mode, use normalData (with thread filter if active)
+    if (currentThreadFilter !== 'all') {
+      hotspotSource = filterDataByThread(normalData, parseInt(currentThreadFilter));
+    } else {
+      hotspotSource = normalData;
+    }
+  } else {
+    // In normal mode, use the passed data (already has thread filter applied if any)
+    hotspotSource = data;
+  }
+  const totalSamples = hotspotSource.value || 0;
 
   const functionMap = new Map();
 
@@ -802,7 +838,7 @@ function populateStats(data) {
     }
   }
 
-  collectFunctions(data);
+  collectFunctions(hotspotSource);
 
   const hotSpots = Array.from(functionMap.values())
     .filter(f => f.directPercent > 0.5)
