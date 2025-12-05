@@ -383,9 +383,12 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
-        goto error;
+    // In cache mode, copying stack chunks is more expensive than direct memory reads
+    if (!unwinder->cache_frames) {
+        if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
+            goto error;
+        }
     }
 
     if (unwinder->cache_frames) {

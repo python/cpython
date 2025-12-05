@@ -435,8 +435,12 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
     return 0;
 }
 
-// Fast path: check if we have a full cache hit (entire stack unchanged)
-// Returns: 1 if full hit (frame_info populated), 0 if miss, -1 on error
+// Fast path: check if we have a full cache hit (parent stack unchanged)
+// A "full hit" means current frame == last profiled frame, so we can reuse
+// cached parent frames. We always read the current frame from memory to get
+// updated line numbers (the line within a frame can change between samples).
+// Returns: 1 if full hit (frame_info populated with current frame + cached parents),
+//          0 if miss, -1 on error
 static int
 try_full_cache_hit(
     RemoteUnwinderObject *unwinder,
@@ -463,14 +467,44 @@ try_full_cache_hit(
         return 0;
     }
 
-    // Full hit! Extend frame_info with entire cached list
-    Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
-    int result = PyList_SetSlice(frame_info, cur_size, cur_size, entry->frame_list);
-    if (result >= 0) {
-        STATS_INC(unwinder, frame_cache_hits);
-        STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(entry->frame_list));
+    // Always read the current frame from memory to get updated line number
+    PyObject *current_frame = NULL;
+    uintptr_t code_object_addr = 0;
+    uintptr_t previous_frame = 0;
+    int parse_result = parse_frame_object(unwinder, &current_frame, frame_addr,
+                                          &code_object_addr, &previous_frame);
+    if (parse_result < 0) {
+        return -1;
     }
-    return result < 0 ? -1 : 1;
+
+    // Add current frame if valid
+    if (current_frame != NULL) {
+        if (PyList_Append(frame_info, current_frame) < 0) {
+            Py_DECREF(current_frame);
+            return -1;
+        }
+        Py_DECREF(current_frame);
+        STATS_ADD(unwinder, frames_read_from_memory, 1);
+    }
+
+    // Extend with cached parent frames (from index 1 onwards, skipping the current frame)
+    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
+    if (cached_size > 1) {
+        PyObject *parent_slice = PyList_GetSlice(entry->frame_list, 1, cached_size);
+        if (!parent_slice) {
+            return -1;
+        }
+        Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
+        int result = PyList_SetSlice(frame_info, cur_size, cur_size, parent_slice);
+        Py_DECREF(parent_slice);
+        if (result < 0) {
+            return -1;
+        }
+        STATS_ADD(unwinder, frames_read_from_cache, cached_size - 1);
+    }
+
+    STATS_INC(unwinder, frame_cache_hits);
+    return 1;
 }
 
 // High-level helper: collect frames with cache optimization

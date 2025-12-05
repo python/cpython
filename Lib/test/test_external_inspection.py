@@ -2131,7 +2131,12 @@ sock.connect(('localhost', {port}))
         "Test only runs on Linux with process_vm_readv support",
     )
     def test_cache_hit_same_stack(self):
-        """Test that 3 consecutive samples reuse cached frame objects (identity check)."""
+        """Test that consecutive samples reuse cached parent frame objects.
+
+        The current frame (index 0) is always re-read from memory to get
+        updated line numbers, so it may be a different object. Parent frames
+        (index 1+) should be identical objects from cache.
+        """
         script_body = """\
             def level3():
                 sock.sendall(b"sync1")
@@ -2164,11 +2169,71 @@ sock.connect(('localhost', {port}))
         self.assertEqual(len(frames1), len(frames2))
         self.assertEqual(len(frames2), len(frames3))
 
-        # All frames must be identical objects (cache reuse)
-        for i, (f1, f2, f3) in enumerate(zip(frames1, frames2, frames3)):
+        # Current frame (index 0) is always re-read, so check value equality
+        self.assertEqual(frames1[0].funcname, frames2[0].funcname)
+        self.assertEqual(frames2[0].funcname, frames3[0].funcname)
+
+        # Parent frames (index 1+) must be identical objects (cache reuse)
+        for i in range(1, len(frames1)):
+            f1, f2, f3 = frames1[i], frames2[i], frames3[i]
             self.assertIs(f1, f2, f"Frame {i}: samples 1-2 must be same object")
             self.assertIs(f2, f3, f"Frame {i}: samples 2-3 must be same object")
-            self.assertIs(f1, f3, f"Frame {i}: samples 1-3 must be same object")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_line_number_updates_in_same_frame(self):
+        """Test that line numbers are correctly updated when execution moves within a function.
+
+        When the profiler samples at different points within the same function,
+        it must report the correct line number for each sample, not stale cached values.
+        """
+        script_body = """\
+            def outer():
+                inner()
+
+            def inner():
+                sock.sendall(b"line_a"); sock.recv(16)
+                sock.sendall(b"line_b"); sock.recv(16)
+                sock.sendall(b"line_c"); sock.recv(16)
+                sock.sendall(b"line_d"); sock.recv(16)
+
+            outer()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            frames_a = self._sample_frames(client_socket, unwinder, b"line_a", b"ack", {"inner"})
+            frames_b = self._sample_frames(client_socket, unwinder, b"line_b", b"ack", {"inner"})
+            frames_c = self._sample_frames(client_socket, unwinder, b"line_c", b"ack", {"inner"})
+            frames_d = self._sample_frames(client_socket, unwinder, b"line_d", b"done", {"inner"})
+
+        self.assertIsNotNone(frames_a)
+        self.assertIsNotNone(frames_b)
+        self.assertIsNotNone(frames_c)
+        self.assertIsNotNone(frames_d)
+
+        # Get the 'inner' frame from each sample (should be index 0)
+        inner_a = frames_a[0]
+        inner_b = frames_b[0]
+        inner_c = frames_c[0]
+        inner_d = frames_d[0]
+
+        self.assertEqual(inner_a.funcname, "inner")
+        self.assertEqual(inner_b.funcname, "inner")
+        self.assertEqual(inner_c.funcname, "inner")
+        self.assertEqual(inner_d.funcname, "inner")
+
+        # Line numbers must be different and increasing (execution moves forward)
+        self.assertLess(inner_a.lineno, inner_b.lineno,
+                        "Line B should be after line A")
+        self.assertLess(inner_b.lineno, inner_c.lineno,
+                        "Line C should be after line B")
+        self.assertLess(inner_c.lineno, inner_d.lineno,
+                        "Line D should be after line C")
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2351,9 +2416,13 @@ sock.connect(('localhost', {port}))
 
         self.assertEqual(len(frames1), len(frames2))
 
-        # All frames should be identical objects (cache reuse)
-        for i, (f1, f2) in enumerate(zip(frames1, frames2)):
-            self.assertIs(f1, f2, f"Frame {i}: recursive frames must be same object")
+        # Current frame (index 0) is re-read, check value equality
+        self.assertEqual(frames1[0].funcname, frames2[0].funcname)
+
+        # Parent frames (index 1+) should be identical objects (cache reuse)
+        for i in range(1, len(frames1)):
+            self.assertIs(frames1[i], frames2[i],
+                          f"Frame {i}: recursive frames must be same object")
 
     @skip_if_not_supported
     @unittest.skipIf(

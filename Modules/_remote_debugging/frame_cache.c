@@ -16,7 +16,11 @@ int
 frame_cache_init(RemoteUnwinderObject *unwinder)
 {
     unwinder->frame_cache = PyMem_Calloc(FRAME_CACHE_MAX_THREADS, sizeof(FrameCacheEntry));
-    return unwinder->frame_cache ? 0 : -1;
+    if (!unwinder->frame_cache) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
 }
 
 void

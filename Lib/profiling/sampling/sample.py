@@ -307,7 +307,7 @@ def sample(
         native=native,
         gc=gc,
         skip_non_matching_threads=skip_non_matching_threads,
-        collect_stats=realtime_stats  # Collect stats when realtime_stats is enabled
+        collect_stats=realtime_stats,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -363,7 +363,7 @@ def sample_live(
         native=native,
         gc=gc,
         skip_non_matching_threads=skip_non_matching_threads,
-        collect_stats=realtime_stats  # Collect stats when realtime_stats is enabled
+        collect_stats=realtime_stats,
     )
     profiler.realtime_stats = realtime_stats
 
