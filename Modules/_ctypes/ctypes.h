@@ -615,12 +615,9 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
 static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
-    PyTypeObject *PyCType_Type = Py_TYPE(type);
-    while (PyCType_Type != NULL && PyCType_Type->tp_base != &PyType_Type) {
-        PyCType_Type = PyCType_Type->tp_base;
-    }
-    if (PyCType_Type == NULL) {
-        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+    PyTypeObject *PyCType_Type;
+    if (_PyType_GetBaseByToken_Borrow(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0 ||
+        PyCType_Type == NULL) {
         return NULL;
     }
 
