@@ -389,18 +389,6 @@ def make_wasi_python(context, working_dir):
     )
 
 
-def build_all(context):
-    """Build everything."""
-    steps = [
-        configure_build_python,
-        make_build_python,
-        configure_wasi_python,
-        make_wasi_python,
-    ]
-    for step in steps:
-        step(context)
-
-
 def clean_contents(context):
     """Delete all files created by this script."""
     if CROSS_BUILD_DIR.exists():
@@ -410,6 +398,16 @@ def clean_contents(context):
     if LOCAL_SETUP.exists():
         if LOCAL_SETUP.read_bytes() == LOCAL_SETUP_MARKER:
             log("🧹", f"Deleting generated {LOCAL_SETUP} ...")
+
+
+def build_steps(*steps):
+    """Construct a command from other steps."""
+
+    def builder(context):
+        for step in steps:
+            step(context)
+
+    return builder
 
 
 def main():
@@ -439,6 +437,9 @@ def main():
     make_build = subcommands.add_parser(
         "make-build-python", help="Run `make` for the build Python"
     )
+    build_python = subcommands.add_parser(
+        "build-python", help="Build the build Python"
+    )
     configure_host = subcommands.add_parser(
         "configure-host",
         help="Run `configure` for the "
@@ -449,6 +450,9 @@ def main():
     make_host = subcommands.add_parser(
         "make-host", help="Run `make` for the host/WASI"
     )
+    build_host = subcommands.add_parser(
+        "build-host", help="Build the host/WASI Python"
+    )
     subcommands.add_parser(
         "clean", help="Delete files and directories created by this script"
     )
@@ -456,8 +460,10 @@ def main():
         build,
         configure_build,
         make_build,
+        build_python,
         configure_host,
         make_host,
+        build_host,
     ):
         subcommand.add_argument(
             "--quiet",
@@ -472,7 +478,12 @@ def main():
             default=default_logdir,
             help=f"Directory to store log files; defaults to {default_logdir}",
         )
-    for subcommand in configure_build, configure_host:
+    for subcommand in (
+        configure_build,
+        configure_host,
+        build_python,
+        build_host,
+    ):
         subcommand.add_argument(
             "--clean",
             action="store_true",
@@ -480,11 +491,17 @@ def main():
             dest="clean",
             help="Delete any relevant directories before building",
         )
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in (
+        build,
+        configure_build,
+        configure_host,
+        build_python,
+        build_host,
+    ):
         subcommand.add_argument(
             "args", nargs="*", help="Extra arguments to pass to `configure`"
         )
-    for subcommand in build, configure_host:
+    for subcommand in build, configure_host, build_host:
         subcommand.add_argument(
             "--wasi-sdk",
             type=pathlib.Path,
@@ -500,7 +517,7 @@ def main():
             help="Command template for running the WASI host; defaults to "
             f"`{default_host_runner}`",
         )
-    for subcommand in build, configure_host, make_host:
+    for subcommand in build, configure_host, make_host, build_host:
         subcommand.add_argument(
             "--host-triple",
             action="store",
@@ -512,12 +529,17 @@ def main():
     context = parser.parse_args()
     context.init_dir = pathlib.Path().absolute()
 
+    build_build_python = build_steps(configure_build_python, make_build_python)
+    build_wasi_python = build_steps(configure_wasi_python, make_wasi_python)
+
     dispatch = {
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
+        "build-python": build_build_python,
         "configure-host": configure_wasi_python,
         "make-host": make_wasi_python,
-        "build": build_all,
+        "build-host": build_wasi_python,
+        "build": build_steps(build_build_python, build_wasi_python),
         "clean": clean_contents,
     }
     dispatch[context.subcommand](context)
