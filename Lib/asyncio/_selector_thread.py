@@ -271,7 +271,7 @@ class SelectorThread:
         """Return fd, file object
 
         Keeps a handle on the fileobject given,
-        but always registers integer FD
+        but always registers integer FD.
         """
         fileno = fd
         if not isinstance(fileno, int):
