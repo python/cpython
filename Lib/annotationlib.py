@@ -737,7 +737,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         globals = _StringifierDict({}, format=format)
         is_class = isinstance(owner, type)
         closure, _ = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=False
+            annotate, owner, is_class, globals,
+            getattr(annotate, "__globals__", {}), allow_evaluation=False
         )
         try:
             annotate_code = annotate.__code__
@@ -790,7 +791,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             format=format,
         )
         closure, cell_dict = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=True
+            annotate, owner, is_class, globals, annotate_globals, allow_evaluation=True
         )
         try:
             annotate_code = annotate.__code__
@@ -828,7 +829,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             format=format,
         )
         closure, cell_dict = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=False
+            annotate, owner, is_class, globals, annotate_globals, allow_evaluation=False
         )
         func = types.FunctionType(
             annotate_code,
@@ -861,12 +862,12 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
-    if not annotate.__closure__:
+def _build_closure(annotate, owner, is_class, stringifier_dict, annotate_globals, *, allow_evaluation):
+    if not (annotate_closure := getattr(annotate, "__closure__", None)):
         return None, None
     new_closure = []
     cell_dict = {}
-    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
+    for name, cell in zip(annotate.__code__.co_freevars, annotate_closure, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
@@ -881,7 +882,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
                 name,
                 cell=cell,
                 owner=owner,
-                globals=annotate.__globals__,
+                globals=annotate_globals,
                 is_class=is_class,
                 stringifier_dict=stringifier_dict,
             )
