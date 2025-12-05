@@ -1,0 +1,12 @@
+Fix two regressions in :mod:`dataclasses` in Python 3.14.1 related to
+annotations.
+
+* An exception is no longer raised if ``slots=True`` is used and the
+  ``__init__`` method does not have an ``__annotate__`` attribute
+  (likely because ``init=False`` was used).
+
+* An exception is no longer raised if annotations are requested on the
+  ``__init__`` method and one of the fields is not present in the class
+  annotations. This can occur in certain dynamic scenarios.
+
+Patch by Jelle Zijlstra.

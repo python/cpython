@@ -927,6 +927,20 @@ class TestCase(unittest.TestCase):
 
         validate_class(C)
 
+    def test_incomplete_annotations(self):
+        # gh-142214
+        @dataclass
+        class C:
+            "doc"  # needed because otherwise we fetch the annotations at the wrong time
+            x: int
+
+        C.__annotate__ = lambda _: {}
+
+        self.assertEqual(
+            annotationlib.get_annotations(C.__init__),
+            {"return": None}
+        )
+
     def test_missing_default(self):
         # Test that MISSING works the same as a default not being
         #  specified.
@@ -2577,6 +2591,20 @@ class TestInitAnnotate(unittest.TestCase):
         )
 
         self.assertFalse(hasattr(E.__init__.__annotate__, "__generated_by_dataclasses__"))
+
+    def test_slots_true_init_false(self):
+        # Test that slots=True and init=False work together and
+        #  that __annotate__ is not added to __init__.
+
+        @dataclass(slots=True, init=False)
+        class F:
+            x: int
+
+        f = F()
+        f.x = 10
+        self.assertEqual(f.x, 10)
+
+        self.assertFalse(hasattr(F.__init__, "__annotate__"))
 
     def test_init_false_forwardref(self):
         # Test forward references in fields not required for __init__ annotations.
