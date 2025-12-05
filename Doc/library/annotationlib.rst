@@ -559,7 +559,7 @@ used with all formats, and takes advantage of class encapsulation:
 
 This can then be called with:
 
-.. doctest::
+.. code-block:: python
 
    >>> from annotationlib import call_annotate_function, Format
    >>> call_annotate_function(Annotate(), format=Format.STRING)
@@ -567,7 +567,7 @@ This can then be called with:
 
 Or used as the annotate function for an object:
 
-.. doctest::
+.. code-block:: python
 
    >>> from annotationlib import get_annotations, Format
    >>> class C:
