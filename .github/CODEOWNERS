@@ -80,10 +80,15 @@ Tools/patchcheck/             @AA-Turner
 # ----------------------------------------------------------------------------
 
 # Autotools
-configure*                       @erlend-aasland @corona10 @AA-Turner
-Makefile.pre.in                  @erlend-aasland @AA-Turner
-Modules/Setup*                   @erlend-aasland @AA-Turner
+configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
+Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
+Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
+Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
 Tools/build/regen-configure.sh   @AA-Turner
+
+# generate-build-details
+Tools/build/generate-build-details.py   @FFY00
+Lib/test/test_build_details.py          @FFY00
 
 
 # ----------------------------------------------------------------------------
@@ -121,6 +126,9 @@ Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
 # C Analyser
 Tools/c-analyzer/             @ericsnowcurrently
 
+# C API Documentation Checks
+Tools/check-c-api-docs/       @ZeroIntensity
+
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
 
@@ -149,6 +157,7 @@ Lib/test/test_android.py      @mhsmith @freakboy3742
 # iOS
 Doc/using/ios.rst             @freakboy3742
 Lib/_ios_support.py           @freakboy3742
+Apple/                        @freakboy3742
 iOS/                          @freakboy3742
 
 # macOS
@@ -157,16 +166,16 @@ Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
 # WebAssembly
-Tools/wasm/README.md          @brettcannon @freakboy3742
+Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
 
 # WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
-Tools/wasm/emscripten                     @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
+Tools/wasm/emscripten                     @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
-Tools/wasm/wasi-env           @brettcannon
-Tools/wasm/wasi.py            @brettcannon
-Tools/wasm/wasi               @brettcannon
+Tools/wasm/wasi-env           @brettcannon @emmatyping
+Tools/wasm/wasi.py            @brettcannon @emmatyping
+Tools/wasm/wasi               @brettcannon @emmatyping
 
 # Windows
 PC/                           @python/windows-team
@@ -239,10 +248,10 @@ Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
 # Hashing / ``hash()`` and related
-Include/cpython/pyhash.h         @gpshead @picnixz @tiran
-Include/internal/pycore_pyhash.h @gpshead @picnixz @tiran
-Include/pyhash.h                 @gpshead @picnixz @tiran
-Python/pyhash.c                  @gpshead @picnixz @tiran
+Include/cpython/pyhash.h         @gpshead @picnixz
+Include/internal/pycore_pyhash.h @gpshead @picnixz
+Include/pyhash.h                 @gpshead @picnixz
+Python/pyhash.c                  @gpshead @picnixz
 
 # The import system (including importlib)
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
@@ -369,14 +378,14 @@ Lib/calendar.py               @AA-Turner
 Lib/test/test_calendar.py     @AA-Turner
 
 # Cryptographic Primitives and Applications
-**/*hashlib*                  @gpshead @picnixz @tiran
-**/*hashopenssl*              @gpshead @picnixz @tiran
+**/*hashlib*                  @gpshead @picnixz
+**/*hashopenssl*              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
 **/*ssl*                      @gpshead @picnixz
 Modules/_hacl/                @gpshead @picnixz
-Modules/*blake*               @gpshead @picnixz @tiran
-Modules/*md5*                 @gpshead @picnixz @tiran
-Modules/*sha*                 @gpshead @picnixz @tiran
+Modules/*blake*               @gpshead @picnixz
+Modules/*md5*                 @gpshead @picnixz
+Modules/*sha*                 @gpshead @picnixz
 
 # Codecs
 Modules/cjkcodecs/            @corona10
@@ -405,11 +414,15 @@ Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
 Doc/**/*time.rst                 @pganssle @abalkin
+Doc/library/zoneinfo.rst         @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/test/test_zoneinfo/          @pganssle
+Lib/zoneinfo/                    @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
+Modules/*zoneinfo*               @pganssle
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
 
@@ -603,9 +616,9 @@ Lib/test/test_zipfile/_path/  @jaraco
 Lib/zipfile/_path/            @jaraco
 
 # Zstandard
-Lib/compression/zstd/         @AA-Turner
-Lib/test/test_zstd.py         @AA-Turner
-Modules/_zstd/                @AA-Turner
+Lib/compression/zstd/         @AA-Turner @emmatyping
+Lib/test/test_zstd.py         @AA-Turner @emmatyping
+Modules/_zstd/                @AA-Turner @emmatyping
 
 # ----------------------------------------------------------------------------
 

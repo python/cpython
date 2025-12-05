@@ -47,7 +47,7 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libDir = file("$prefix/lib")
     val version = run {
         for (filename in libDir.list()!!) {
-            """python(\d+\.\d+)""".toRegex().matchEntire(filename)?.let {
+            """python(\d+\.\d+[a-z]*)""".toRegex().matchEntire(filename)?.let {
                 return@run it.groupValues[1]
             }
         }
@@ -64,9 +64,10 @@ for ((i, prefix) in prefixes.withIndex()) {
     val libPythonDir = file("$libDir/python$pythonVersion")
     val triplet = run {
         for (filename in libPythonDir.list()!!) {
-            """_sysconfigdata__android_(.+).py""".toRegex().matchEntire(filename)?.let {
-                return@run it.groupValues[1]
-            }
+            """_sysconfigdata_[a-z]*_android_(.+).py""".toRegex()
+                .matchEntire(filename)?.let {
+                    return@run it.groupValues[1]
+                }
         }
         throw GradleException("Failed to find Python triplet in $libPythonDir")
     }
@@ -78,7 +79,7 @@ android {
     val androidEnvFile = file("../../android-env.sh").absoluteFile
 
     namespace = "org.python.testbed"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.python.testbed"
@@ -91,7 +92,7 @@ android {
             }
             throw GradleException("Failed to find API level in $androidEnvFile")
         }
-        targetSdk = 34
+        targetSdk = 35
 
         versionCode = 1
         versionName = "1.0"

@@ -964,7 +964,8 @@ PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
 }
 
 
-PyObject *
+/* removed in 3.15, but kept for stable ABI compatibility */
+PyAPI_FUNC(PyObject *)
 PyWeakref_GetObject(PyObject *ref)
 {
     if (ref == NULL || !PyWeakref_Check(ref)) {

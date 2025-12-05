@@ -58,11 +58,11 @@ SIMPLE_STR = True
 
 
 class Rule:
-    def __init__(self, name: str, type: str | None, rhs: Rhs, memo: object | None = None):
+    def __init__(self, name: str, type: str | None, rhs: Rhs, flags: frozenset[str] | None = None):
         self.name = name
         self.type = type
         self.rhs = rhs
-        self.memo = bool(memo)
+        self.flags = flags or frozenset()
         self.left_recursive = False
         self.leader = False
 
@@ -135,7 +135,6 @@ class StringLeaf(Leaf):
 class Rhs:
     def __init__(self, alts: list[Alt]):
         self.alts = alts
-        self.memo: tuple[str | None, str] | None = None
 
     def __str__(self) -> str:
         return " | ".join(str(alt) for alt in self.alts)
@@ -263,7 +262,6 @@ class Repeat:
 
     def __init__(self, node: Plain):
         self.node = node
-        self.memo: tuple[str | None, str] | None = None
 
     def __iter__(self) -> Iterator[Plain]:
         yield self.node

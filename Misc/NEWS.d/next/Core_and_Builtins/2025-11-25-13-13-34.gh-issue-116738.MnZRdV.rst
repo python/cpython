@@ -1,0 +1,2 @@
+Fix thread safety issue with :mod:`re` scanner objects in free-threaded
+builds.
