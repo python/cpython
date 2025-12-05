@@ -20,7 +20,7 @@ import tempfile
 
 HERE = pathlib.Path(__file__).parent
 
-# Path is: wasi wasm   Tools  cpython
+# Path is: cpython/Tools/wasm/wasi
 CHECKOUT = HERE.parent.parent.parent
 assert (CHECKOUT / "configure").is_file(), (
     "Please update the location of the file"
