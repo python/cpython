@@ -242,7 +242,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 }
 
 static JitOptRef
-lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
+lookup_attr(JitOptContext *ctx, _PyBloomFilter *dependencies, _PyUOpInstruction *this_instr,
             PyTypeObject *type, PyObject *name, uint16_t immortal,
             uint16_t mortal)
 {
@@ -252,6 +252,8 @@ lookup_attr(JitOptContext *ctx, _PyUOpInstruction *this_instr,
         if (lookup) {
             int opcode = _Py_IsImmortal(lookup) ? immortal : mortal;
             REPLACE_OP(this_instr, opcode, 0, (uintptr_t)lookup);
+            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+            _Py_BloomFilter_Add(dependencies, type);
             return sym_new_const(ctx, lookup);
         }
     }

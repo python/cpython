@@ -1848,7 +1848,7 @@
             (void)descr;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2495,7 +2495,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2516,7 +2516,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2536,7 +2536,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2551,7 +2551,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2571,7 +2571,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
