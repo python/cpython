@@ -306,7 +306,6 @@ class EnvBuilder:
             binpath = context.bin_path
             path = context.env_exe
             copier = self.symlink_or_copy
-            dirname = context.python_dir
             copier(context.executable, path)
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
