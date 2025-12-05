@@ -73,7 +73,7 @@ class ResourceTracker(object):
         # Filenames not supported by the simple format will always be sent
         # using JSON.
         # The reader should understand all formats.
-        self._use_simple_format = False
+        self._use_simple_format = True
 
     def _reentrant_call_error(self):
         # gh-109629: this happens if an explicit call to the ResourceTracker
