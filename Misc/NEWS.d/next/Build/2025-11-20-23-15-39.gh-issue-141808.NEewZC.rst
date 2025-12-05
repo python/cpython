@@ -1,0 +1,4 @@
+When running ``make clean-retain-profile``, keep the
+generated JIT stencils. That way, the stencils are not generated twice when
+Profile-guided optimization (PGO) is used. It also allows distributors to
+supply their own pre-built JIT stencils.
