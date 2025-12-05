@@ -861,10 +861,12 @@ class LiveStatsCollector(Collector):
         # Handle help toggle keys
         if ch == ord("h") or ch == ord("H") or ch == ord("?"):
             self.show_help = not self.show_help
+            return
 
         # If showing help, any other key closes it
-        elif self.show_help and ch != -1:
+        if self.show_help and ch != -1:
             self.show_help = False
+            return
 
         # Handle regular commands
         if ch == ord("q") or ch == ord("Q"):
