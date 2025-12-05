@@ -1,0 +1,2 @@
+Remove data copy from :mod:`zipfile` decryption using
+:meth:`bytearray.take_bytes`.
