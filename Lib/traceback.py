@@ -14,6 +14,11 @@ import _colorize
 
 from contextlib import suppress
 
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
+
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
@@ -1110,7 +1115,11 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
-                self._str = f"Standard library module '{module_name}' was not found"
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
             elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "

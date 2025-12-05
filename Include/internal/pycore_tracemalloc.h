@@ -30,8 +30,8 @@ struct _PyTraceMalloc_Config {
 };
 
 
-/* Pack the frame_t structure to reduce the memory footprint on 64-bit
-   architectures: 12 bytes instead of 16. */
+/* Pack the tracemalloc_frame and tracemalloc_traceback structures to reduce
+   the memory footprint on 64-bit architectures: 12 bytes instead of 16. */
 #if defined(_MSC_VER)
 #pragma pack(push, 4)
 #endif
@@ -46,18 +46,22 @@ tracemalloc_frame {
     PyObject *filename;
     unsigned int lineno;
 };
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif
 
-struct tracemalloc_traceback {
+struct
+#ifdef __GNUC__
+__attribute__((packed))
+#endif
+tracemalloc_traceback {
     Py_uhash_t hash;
     /* Number of frames stored */
     uint16_t nframe;
     /* Total number of frames the traceback had */
     uint16_t total_nframe;
-    struct tracemalloc_frame frames[1];
+    struct tracemalloc_frame frames[];
 };
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 
 struct _tracemalloc_runtime_state {
@@ -95,7 +99,7 @@ struct _tracemalloc_runtime_state {
        Protected by TABLES_LOCK(). */
     _Py_hashtable_t *domains;
 
-    struct tracemalloc_traceback empty_traceback;
+    struct tracemalloc_traceback *empty_traceback;
 
     Py_tss_t reentrant_key;
 };
