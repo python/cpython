@@ -52,7 +52,6 @@ hasjback = [op for op in hasjump if _is_backward_jump_op(op)]
 
 
 
-_intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()

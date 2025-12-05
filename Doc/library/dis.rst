@@ -819,7 +819,7 @@ not have to be) the original ``STACK[-2]``.
    when awaiting a next item. The stack contains the async iterable in
    ``STACK[-2]`` and the raised exception in ``STACK[-1]``. Both are popped.
    If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
-   
+
    Decrements the bytecode counter by *delta* to jump back to the loop start
    if continuing iteration.
 
@@ -2095,7 +2095,7 @@ instructions:
 
 .. data:: hasjback
 
-   Sequence of bytecodes that perform backward jumps, such as 
+   Sequence of bytecodes that perform backward jumps, such as
    :opcode:`JUMP_BACKWARD`, :opcode:`FOR_ITER`, and :opcode:`END_ASYNC_FOR`.
 
    .. versionadded:: 3.14
