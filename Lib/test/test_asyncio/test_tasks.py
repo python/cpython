@@ -3687,6 +3687,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             await asyncio.sleep(0)
 
             thread_future.cancel()
+
             await asyncio.sleep(0)
 
         self.loop.run_until_complete(target())
