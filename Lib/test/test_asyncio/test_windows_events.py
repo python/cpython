@@ -5,6 +5,7 @@ import sys
 import time
 import threading
 import unittest
+from test import support
 from unittest import mock
 
 if sys.platform != 'win32':

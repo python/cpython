@@ -4,6 +4,7 @@ import socket
 import time
 import unittest
 from asyncio._selector_thread import SelectorThread
+from test import support
 from unittest import mock
 
 
@@ -115,9 +116,9 @@ class SelectorThreadTest(unittest.IsolatedAsyncioTestCase):
         msg = await asyncio.wait_for(read_future, timeout=10)
 
         selector_thread.remove_writer(a)
-        self.assertNotIn(a.fileno() , selector_thread._writers)
+        self.assertNotIn(a.fileno(), selector_thread._writers)
         selector_thread.remove_reader(b)
-        self.assertNotIn(b.fileno() , selector_thread._readers)
+        self.assertNotIn(b.fileno(), selector_thread._readers)
         a.close()
         b.close()
         self.assertEqual(msg, sent)
