@@ -161,17 +161,6 @@ function getSampleCount(line) {
     return parseInt(text) || 0;
 }
 
-function getIntensityClass(ratio) {
-    if (ratio <= 0.125) return 'cold';
-    if (ratio <= 0.25) return 'cool';
-    if (ratio <= 0.375) return 'mild';
-    if (ratio <= 0.5) return 'warm';
-    if (ratio <= 0.625) return 'hot';
-    if (ratio <= 0.75) return 'very-hot';
-    if (ratio <= 0.875) return 'intense';
-    return 'extreme';
-}
-
 // ============================================================================
 // Scroll Minimap
 // ============================================================================
@@ -199,7 +188,7 @@ function buildScrollMarker() {
 
         const lineTop = Math.floor(line.offsetTop * markerScale);
         const lineNumber = index + 1;
-        const intensityClass = maxSamples > 0 ? getIntensityClass(samples / maxSamples) : 'cold';
+        const intensityClass = maxSamples > 0 ? (intensityToClass(samples / maxSamples) || 'cold') : 'cold';
 
         if (lineNumber === prevLine + 1 && lastMark?.classList.contains(intensityClass)) {
             lastMark.style.height = `${lineTop + lineHeight - lastTop}px`;
