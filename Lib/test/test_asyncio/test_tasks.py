@@ -3696,7 +3696,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         # .BaseProactorEventLoop._loop_self_reading as ready task
         # We should filter it out.
         ready_tasks = [
-            i for i in self.loop._ready 
+            i for i in self.loop._ready
             if i._callback.__name__ != "_loop_self_reading"]
         self.assertEqual(0, len(ready_tasks))
 
