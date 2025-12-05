@@ -1,1 +1,1 @@
-Remove ``color`` parameter from :class:`argparse.HelpFormatter` constructor. Color is controlled by :class:`ArgumentParser`.
+Remove ``color`` parameter from :class:`!argparse.HelpFormatter` constructor. Color is controlled by :class:`~argparse.ArgumentParser`.
