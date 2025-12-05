@@ -3691,7 +3691,14 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
             await asyncio.sleep(0)
 
         self.loop.run_until_complete(target())
-        self.assertEqual(0, len(self.loop._ready))
+
+        # For windows, it's likely to see asyncio.proactor_events
+        # .BaseProactorEventLoop._loop_self_reading as ready task
+        # We should filter it out.
+        ready_tasks = [
+            i for i in self.loop._ready 
+            if i._callback.__name__ != "_loop_self_reading"]
+        self.assertEqual(0, len(ready_tasks))
 
 
 class SleepTests(test_utils.TestCase):
