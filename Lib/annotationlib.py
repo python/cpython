@@ -867,7 +867,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-def _build_closure(annotate, owner, is_class, stringifier_dict, annotate_globals, *, allow_evaluation):
+def _build_closure(annotate, owner, is_class, stringifier_dict,
+                   annotate_globals, *, allow_evaluation):
     if not (annotate_closure := getattr(annotate, "__closure__", None)):
         return None, None
     new_closure = []
