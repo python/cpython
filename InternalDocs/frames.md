@@ -126,7 +126,9 @@ and can be retrieved from a cache. This significantly reduces the amount of remo
 memory reads needed when call stacks are deep and stable at their base.
 
 The update in `_PyEval_FrameClearAndPop` is guarded: it only writes when
-`last_profiled_frame` is non-NULL, avoiding any overhead when profiling is inactive.
+`last_profiled_frame` is non-NULL AND matches the frame being popped. This
+prevents transient frames (called and returned between profiler samples) from
+corrupting the cache pointer, while avoiding any overhead when profiling is inactive.
 
 
 ### The Instruction Pointer

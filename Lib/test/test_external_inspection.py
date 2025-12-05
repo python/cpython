@@ -2745,6 +2745,60 @@ recurse({depth})
         self.assertEqual(len(frames_cached), len(frames_no_cache),
                         "Cache exhaustion should not affect stack completeness")
 
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stats(self):
+        """Test that get_stats() returns statistics when stats=True."""
+        script_body = """\
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            unwinder = RemoteUnwinder(p.pid, all_threads=True, stats=True)
+            self._wait_for_signal(client_socket, b"ready")
+
+            # Take a sample
+            unwinder.get_stack_trace()
+
+            stats = unwinder.get_stats()
+            client_socket.sendall(b"done")
+
+        # Verify expected keys exist
+        expected_keys = [
+            'total_samples', 'frame_cache_hits', 'frame_cache_misses',
+            'frame_cache_partial_hits', 'frames_read_from_cache',
+            'frames_read_from_memory', 'frame_cache_hit_rate'
+        ]
+        for key in expected_keys:
+            self.assertIn(key, stats)
+
+        self.assertEqual(stats['total_samples'], 1)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stats_disabled_raises(self):
+        """Test that get_stats() raises RuntimeError when stats=False."""
+        script_body = """\
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            unwinder = RemoteUnwinder(p.pid, all_threads=True)  # stats=False by default
+            self._wait_for_signal(client_socket, b"ready")
+
+            with self.assertRaises(RuntimeError):
+                unwinder.get_stats()
+
+            client_socket.sendall(b"done")
+
 
 if __name__ == "__main__":
     unittest.main()

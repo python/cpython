@@ -189,6 +189,8 @@ parse_frame_object(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read interpreter frame");
         return -1;
     }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, SIZEOF_INTERP_FRAME);
 
     *previous_frame = GET_MEMBER(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.previous);
     uintptr_t code_object = GET_MEMBER_NO_TAG(uintptr_t, frame, unwinder->debug_offsets.interpreter_frame.executable);
@@ -477,23 +479,30 @@ try_full_cache_hit(
         return -1;
     }
 
-    // Add current frame if valid
+    // Get cached parent frames first (before modifying frame_info)
+    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
+    PyObject *parent_slice = NULL;
+    if (cached_size > 1) {
+        parent_slice = PyList_GetSlice(entry->frame_list, 1, cached_size);
+        if (!parent_slice) {
+            Py_XDECREF(current_frame);
+            return -1;
+        }
+    }
+
+    // Now safe to modify frame_info - add current frame if valid
     if (current_frame != NULL) {
         if (PyList_Append(frame_info, current_frame) < 0) {
             Py_DECREF(current_frame);
+            Py_XDECREF(parent_slice);
             return -1;
         }
         Py_DECREF(current_frame);
         STATS_ADD(unwinder, frames_read_from_memory, 1);
     }
 
-    // Extend with cached parent frames (from index 1 onwards, skipping the current frame)
-    Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
-    if (cached_size > 1) {
-        PyObject *parent_slice = PyList_GetSlice(entry->frame_list, 1, cached_size);
-        if (!parent_slice) {
-            return -1;
-        }
+    // Extend with cached parent frames
+    if (parent_slice) {
         Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
         int result = PyList_SetSlice(frame_info, cur_size, cur_size, parent_slice);
         Py_DECREF(parent_slice);
@@ -569,7 +578,9 @@ collect_frames_with_cache(
     }
 
     // Store in cache (frame_cache_store handles truncation if num_addrs > FRAME_CACHE_MAX_FRAMES)
-    frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs);
+    if (frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs) < 0) {
+        return -1;
+    }
 
     return 0;
 }

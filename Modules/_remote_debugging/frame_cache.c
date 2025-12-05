@@ -194,6 +194,7 @@ frame_cache_lookup_and_extend(
 }
 
 // Store frame list with addresses in cache
+// Returns: 1 = stored successfully, 0 = not stored (graceful degradation), -1 = error
 int
 frame_cache_store(
     RemoteUnwinderObject *unwinder,
@@ -220,11 +221,14 @@ frame_cache_store(
     // Clear old frame_list if replacing
     Py_CLEAR(entry->frame_list);
 
-    // Store data
+    // Store data - truncate frame_list to match num_addrs
+    entry->frame_list = PyList_GetSlice(frame_list, 0, num_addrs);
+    if (!entry->frame_list) {
+        return -1;
+    }
     entry->thread_id = thread_id;
     memcpy(entry->addrs, addrs, num_addrs * sizeof(uintptr_t));
     entry->num_addrs = num_addrs;
-    entry->frame_list = Py_NewRef(frame_list);
 
-    return 0;
+    return 1;
 }

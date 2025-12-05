@@ -296,6 +296,8 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
         goto error;
     }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
@@ -309,6 +311,8 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
         goto error;
     }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.gc.size);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;

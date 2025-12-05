@@ -174,6 +174,7 @@ typedef struct {
     uint64_t frames_read_from_cache;         // Total frames retrieved from cache
     uint64_t frames_read_from_memory;        // Total frames read from remote memory
     uint64_t memory_reads;                   // Total remote memory read operations
+    uint64_t memory_bytes_read;              // Total bytes read from remote memory
     uint64_t code_object_cache_hits;         // Code object cache hits
     uint64_t code_object_cache_misses;       // Code object cache misses
     uint64_t stale_cache_invalidations;      // Times stale entries were cleared
@@ -422,6 +423,7 @@ extern int frame_cache_lookup_and_extend(
     uintptr_t *frame_addrs,
     Py_ssize_t *num_addrs,
     Py_ssize_t max_addrs);
+// Returns: 1 = stored, 0 = not stored (graceful), -1 = error
 extern int frame_cache_store(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,

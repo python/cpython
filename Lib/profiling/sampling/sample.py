@@ -255,6 +255,18 @@ class SampleProfiler:
         print(f"    Hits:             {code_hits:,} ({ANSIColors.GREEN}{code_hits_pct:.1f}%{ANSIColors.RESET})")
         print(f"    Misses:           {code_misses:,} ({ANSIColors.RED}{code_misses_pct:.1f}%{ANSIColors.RESET})")
 
+        # Memory operations
+        memory_reads = stats.get('memory_reads', 0)
+        memory_bytes = stats.get('memory_bytes_read', 0)
+        if memory_bytes >= 1024 * 1024:
+            memory_str = f"{memory_bytes / (1024 * 1024):.1f} MB"
+        elif memory_bytes >= 1024:
+            memory_str = f"{memory_bytes / 1024:.1f} KB"
+        else:
+            memory_str = f"{memory_bytes} B"
+        print(f"  {ANSIColors.CYAN}Memory:{ANSIColors.RESET}")
+        print(f"    Read operations:  {memory_reads:,} ({memory_str})")
+
         # Stale invalidations
         stale_invalidations = stats.get('stale_cache_invalidations', 0)
         if stale_invalidations > 0:

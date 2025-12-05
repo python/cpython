@@ -814,6 +814,7 @@ Returns:
         - frames_read_from_cache: Total frames retrieved from cache
         - frames_read_from_memory: Total frames read from remote memory
         - memory_reads: Total remote memory read operations
+        - memory_bytes_read: Total bytes read from remote memory
         - code_object_cache_hits: Code object cache hits
         - code_object_cache_misses: Code object cache misses
         - stale_cache_invalidations: Times stale cache entries were cleared
@@ -826,7 +827,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=21e36477122be2a0 input=0a037cbf1c572d2b]*/
+/*[clinic end generated code: output=21e36477122be2a0 input=75fef4134c12a8c9]*/
 {
     if (!self->collect_stats) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -857,6 +858,7 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     ADD_STAT(frames_read_from_cache);
     ADD_STAT(frames_read_from_memory);
     ADD_STAT(memory_reads);
+    ADD_STAT(memory_bytes_read);
     ADD_STAT(code_object_cache_hits);
     ADD_STAT(code_object_cache_misses);
     ADD_STAT(stale_cache_invalidations);
