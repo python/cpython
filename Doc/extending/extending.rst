@@ -478,7 +478,7 @@ Some example calls::
 Keyword Parameters for Extension Functions
 ==========================================
 
-If you also want your function to accest *keyword* arguments,
+If you also want your function to accept *keyword* arguments,
 use the :c:data:`METH_KEYWORDS` flag in combination with
 :c:data:`METH_VARARGS`.
 (It can also be used with other flags; see its documentation for the allowed
