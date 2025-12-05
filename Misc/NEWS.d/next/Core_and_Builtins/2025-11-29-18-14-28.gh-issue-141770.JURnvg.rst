@@ -1,2 +1,2 @@
 Annotate anonymous mmap usage only when supported by the
-Linux kernel and if "-X dev" is used. Patch by Donghee Na.
+Linux kernel and if ``-X dev`` is used. Patch by Donghee Na.
