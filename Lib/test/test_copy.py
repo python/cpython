@@ -435,38 +435,45 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(len(y), 1)
 
     def test_deepcopy_keepalive(self):
-        mutable = []
-        def count_refs():
-            return sys.getrefcount(mutable)
-        class C:
+        class Target:
+            pass
+        class Dropper:
+            def __init__(self, to_clear):
+                self.to_clear = to_clear
             def __deepcopy__(self, memo):
-                self.recorded = count_refs()
+                self.to_clear.clear()
                 return self
-        x = [mutable, 42, observer := C()]
-        y = copy.deepcopy(x)
+        class Checker:
+            def __init__(self, ref):
+                self.ref = ref
+                self.was_alive = None
+            def __deepcopy__(self, memo):
+                support.gc_collect()  # For PyPy or other GCs.
+                self.was_alive = self.ref() is not None
+                return self
+        weak_ref = weakref.ref(target := Target())
+        holder = [target]
+        del target  # holder[0] is now only strong ref
+        container = [holder, Dropper(holder), *((1,) * 1000), (checker := Checker(weak_ref))]
+        copy.deepcopy(container)
+        self.assertTrue(checker.was_alive)
         support.gc_collect()  # For PyPy or other GCs.
-        # Additional keepalive ref dropped after copy:
-        self.assertGreater(observer.recorded, count_refs())
-        self.assertEqual(observer.recorded - count_refs(), 1)
+        self.assertIsNone(weak_ref())
 
     def test_deepcopy_dont_memo_immutable(self):
-        def run_case(immutable):
-            def count_refs():
-                return sys.getrefcount(immutable)
-            class C:
-                def __deepcopy__(self, memo):
-                    self.recorded = count_refs()
-                    return self
-            x = [immutable, 42, observer := C()]
-            y = copy.deepcopy(x)
-            support.gc_collect()  # For PyPy or other GCs
-            self.assertIs(y[0], x[0])
-            self.assertEqual(count_refs(), observer.recorded)
-        with self.subTest(kind="string"):
-            run_case(f"mortal_immutable_{id(object())}")
+        class ByRef:
+            def __init__(self):
+                self.copied = 0
+            def __deepcopy__(self, memo):
+                self.copied += 1
+                return self
+        y = copy.deepcopy(x := [br := ByRef(), br])
+        self.assertEqual(br.copied, 2)
+        self.assertEqual(y, x)
         # Tuples with immutable contents are immutable for deepcopy.
-        with self.subTest(kind="tuple_with_string"):
-            run_case((f"mortal_immutable_{id(object())}",))
+        y = copy.deepcopy(x := [(br := ByRef()), (br,)])
+        self.assertEqual(br.copied, 2)
+        self.assertEqual(y, x)
 
     def test_deepcopy_inst_vanilla(self):
         class C:
