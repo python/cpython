@@ -1639,10 +1639,6 @@ else # shared is disabled
 fi
 AC_MSG_RESULT([$LDLIBRARY])
 
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
-
 # HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
 if test -z "$HOSTRUNNER"
