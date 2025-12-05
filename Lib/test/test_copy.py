@@ -453,7 +453,9 @@ class TestCopy(unittest.TestCase):
         weak_ref = weakref.ref(target := Target())
         holder = [target]
         del target  # holder[0] is now only strong ref
-        container = [holder, Dropper(holder), *((1,) * 1000), (checker := Checker(weak_ref))]
+        large_tuple = ((1,) * 1000)
+        checker = Checker(weak_ref)
+        container = [holder, Dropper(holder), *large_tuple, checker]
         copy.deepcopy(container)
         self.assertTrue(checker.was_alive)
         support.gc_collect()  # For PyPy or other GCs.
@@ -466,11 +468,14 @@ class TestCopy(unittest.TestCase):
             def __deepcopy__(self, memo):
                 self.copied += 1
                 return self
-        y = copy.deepcopy(x := [br := ByRef(), br])
+        br = ByRef()
+        y = copy.deepcopy(x := [br, br])
         self.assertEqual(br.copied, 2)
         self.assertEqual(y, x)
         # Tuples with immutable contents are immutable for deepcopy.
-        y = copy.deepcopy(x := [(br := ByRef()), (br,)])
+        t = (ByRef(),)
+        x = [t, t]
+        y = copy.deepcopy(x)
         self.assertEqual(br.copied, 2)
         self.assertEqual(y, x)
 
