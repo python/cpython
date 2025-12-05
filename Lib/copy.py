@@ -120,8 +120,7 @@ def deepcopy(x, memo=None):
 
     d = id(x)
     if memo is None:
-        memo = {}
-        memo[id(memo)] = []
+        memo = {...: []}
     else:
         y = memo.get(d, None)
         if y is not None:
@@ -160,7 +159,7 @@ def deepcopy(x, memo=None):
     # If is its own copy, don't memoize.
     if y is not x:
         memo[d] = y
-        memo[id(memo)].append(x) # Make sure x lives at least as long as d
+        memo[...].append(x) # Make sure x lives at least as long as d
     return y
 
 _atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
