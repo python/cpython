@@ -5167,7 +5167,6 @@
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
-            DISPATCH();
         }
 
         TARGET(EXIT_INIT_CHECK) {
@@ -7472,7 +7471,7 @@
             _Py_CODEUNIT* const this_instr = next_instr - 10;
             (void)this_instr;
             _PyStackRef owner;
-            _PyStackRef *attr;
+            _PyStackRef attr;
             _PyStackRef *self_or_null;
             // _SPECIALIZE_LOAD_ATTR
             {
@@ -7495,17 +7494,18 @@
             /* Skip 8 cache entries */
             // _LOAD_ATTR
             {
-                attr = &stack_pointer[-1];
                 self_or_null = &stack_pointer[0];
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
                 if (oparg & 1) {
-                    *attr = PyStackRef_NULL;
+                    _PyCStackRef method;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, attr);
+                    _PyThreadState_PushCStackRef(tstate, &method);
+                    int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (is_meth) {
-                        assert(!PyStackRef_IsNull(*attr));
+                        assert(!PyStackRef_IsNull(method.ref));
                         self_or_null[0] = owner;
+                        attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
                     }
                     else {
                         stack_pointer += -1;
@@ -7513,10 +7513,11 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         PyStackRef_CLOSE(owner);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        if (PyStackRef_IsNull(*attr)) {
+                        self_or_null[0] = PyStackRef_NULL;
+                        attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
+                        if (PyStackRef_IsNull(attr)) {
                             JUMP_TO_LABEL(error);
                         }
-                        self_or_null[0] = PyStackRef_NULL;
                         stack_pointer += 1;
                     }
                 }
@@ -7532,10 +7533,11 @@
                     if (attr_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    *attr = PyStackRef_FromPyObjectSteal(attr_o);
+                    attr = PyStackRef_FromPyObjectSteal(attr_o);
                     stack_pointer += 1;
                 }
             }
+            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
