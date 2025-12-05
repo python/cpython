@@ -807,7 +807,8 @@ class IMAP4:
         (typ, [data]) = <instance>.proxyauth(user)
         """
 
-        return self._simple_command('PROXYAUTH', user)
+        name = 'PROXYAUTH'
+        return self._simple_command(name, user)
 
 
     def rename(self, oldmailbox, newmailbox):
