@@ -166,7 +166,6 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        color=True,
     ):
         # default setting for width
         if width is None:
@@ -174,7 +173,6 @@ class HelpFormatter(object):
             width = shutil.get_terminal_size().columns
             width -= 2
 
-        self._set_color(color)
         self._prog = prog
         self._indent_increment = indent_increment
         self._max_help_position = min(max_help_position,
@@ -1570,8 +1568,8 @@ class _ActionsContainer(object):
                             f'instance of it must be passed')
 
         # raise an error if the metavar does not match the type
-        if hasattr(self, "_get_formatter"):
-            formatter = self._get_formatter()
+        if hasattr(self, "_get_validation_formatter"):
+            formatter = self._get_validation_formatter()
             try:
                 formatter._format_args(action, None)
             except TypeError:
@@ -1765,8 +1763,8 @@ class _ActionsContainer(object):
                 action.container._remove_action(action)
 
     def _check_help(self, action):
-        if action.help and hasattr(self, "_get_formatter"):
-            formatter = self._get_formatter()
+        if action.help and hasattr(self, "_get_validation_formatter"):
+            formatter = self._get_validation_formatter()
             try:
                 formatter._expand_help(action)
             except (ValueError, TypeError, KeyError) as exc:
@@ -1920,6 +1918,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.exit_on_error = exit_on_error
         self.suggest_on_error = suggest_on_error
         self.color = color
+
+        # Cached formatter for validation (avoids repeated _set_color calls)
+        self._cached_formatter = None
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2751,6 +2752,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         formatter = self.formatter_class(prog=self.prog)
         formatter._set_color(self.color)
         return formatter
+
+    def _get_validation_formatter(self):
+        # Return cached formatter for read-only validation operations
+        # (_expand_help and _format_args). Avoids repeated slow _set_color calls.
+        if self._cached_formatter is None:
+            self._cached_formatter = self._get_formatter()
+        return self._cached_formatter
 
     # =====================
     # Help-printing methods
