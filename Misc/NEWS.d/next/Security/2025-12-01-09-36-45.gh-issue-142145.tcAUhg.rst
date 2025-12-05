@@ -1,1 +1,0 @@
-Remove quadratic behavior in ``xml.minidom`` node ID cache clearing.

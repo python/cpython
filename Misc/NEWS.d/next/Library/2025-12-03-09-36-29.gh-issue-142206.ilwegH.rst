@@ -1,7 +1,0 @@
-The resource tracker in the :mod:`multiprocessing` module now uses the
-original communication protocol, as in Python 3.14.0 and below,
-by default.
-This avoids issues with upgrading Python while it is running.
-(Note that such 'in-place' upgrades are not tested.)
-The tracker remains compatible with subprocesses that use new protocol
-(that is, subprocesses using Python 3.13.10, 3.14.1 and 3.15).
