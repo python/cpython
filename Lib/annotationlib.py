@@ -781,7 +781,12 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
         annotate_globals = getattr(annotate, "__globals__", {})
-        namespace = {**getattr(annotate, "__builtins__", builtins.__dict__), **annotate_globals}
+        if annotate_builtins := getattr(annotate, "__builtins__", None):
+            namespace = {**annotate_builtins, **annotate_globals}
+        elif annotate_builtins := annotate_globals.get("__builtins__"):
+            namespace = {**annotate_builtins, **annotate_globals}
+        else:
+            namespace = {**builtins.__dict__, **annotate_globals}
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
             namespace,
