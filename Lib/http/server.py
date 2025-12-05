@@ -127,6 +127,10 @@ DEFAULT_ERROR_MESSAGE = """\
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = 1 << 20
+
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
@@ -1234,7 +1238,18 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  env = env
                                  )
             if self.command.lower() == "post" and nbytes > 0:
-                data = self.rfile.read(nbytes)
+                cursize = 0
+                data = self.rfile.read(min(nbytes, _MIN_READ_BUF_SIZE))
+                while len(data) < nbytes and len(data) != cursize:
+                    cursize = len(data)
+                    # This is a geometric increase in read size (never more
+                    # than doubling out the current length of data per loop
+                    # iteration).
+                    delta = min(cursize, nbytes - cursize)
+                    try:
+                        data += self.rfile.read(delta)
+                    except TimeoutError:
+                        break
             else:
                 data = None
             # throw away additional data [see bug #427345]
