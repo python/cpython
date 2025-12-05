@@ -510,6 +510,72 @@ annotations from the class and puts them in a separate attribute:
          return typ
 
 
+
+Creating a custom callable annotate function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Custom :term:`annotate functions <annotate function>` may be literal functions like those
+automatically generated for functions, classes, and modules. Or, they may wish to utilise
+the encapsulation provided by classes, in which case any :term:`callable` can be used as
+an :term:`annotate function`.
+
+However, :term:`methods <method>`, class instances that implement
+:meth:`object.__call__`, and most other callables, do not provide the same attributes as
+true functions, which are needed for the :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
+machinery to work. :func:`call_annotate_function` and other :mod:`annotationlib`
+functions will attempt to infer those attributes where possible, but some of them must
+always be present for :attr:`~Format.VALUE_WITH_FAKE_GLOBALS` to work.
+
+Below is an example of a callable class that provides the necessary attributes to be
+used with all formats, and takes advantage of class encapsulation:
+
+.. code-block:: python
+
+  class Annotate:
+      called_formats = []
+
+      def __call__(self, format=None, *, _self=None):
+          # When called with fake globals, `_self` will be the
+          # actual self value, and `self` will be the format.
+          if _self is not None:
+              self, format = _self, self
+
+          self.called_formats.append(format)
+          if format <= 2:  # VALUE or VALUE_WITH_FAKE_GLOBALS
+              return {"x": MyType}
+          raise NotImplementedError
+
+      @property
+      def __defaults__(self):
+          return (None,)
+
+      @property
+      def __kwdefaults__(self):
+          return {"_self": self}
+
+      @property
+      def __code__(self):
+          return self.__call__.__code__
+
+This can then be called with:
+
+.. doctest::
+
+   >>> from annotationlib import call_annotate_function, Format
+   >>> call_annotate_function(Annotate(), format=Format.STRING)
+   {'x': 'MyType'}
+
+Or used as the annotate function for an object:
+
+.. doctest::
+
+   >>> from annotationlib import get_annotations, Format
+   >>> class C:
+   ...   pass
+   >>> C.__annotate__ = Annotate()
+   >>> get_annotations(Annotate(), format=Format.STRING)
+   {'x': 'MyType'}
+
 Limitations of the ``STRING`` format
 ------------------------------------
 
