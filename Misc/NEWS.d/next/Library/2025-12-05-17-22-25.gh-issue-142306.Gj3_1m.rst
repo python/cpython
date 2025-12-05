@@ -1,0 +1,2 @@
+Improve errors for :meth:`Element.remove
+<xml.etree.ElementTree.Element.remove>`.
