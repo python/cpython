@@ -2,8 +2,10 @@ const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
 // Global string table for resolving string indices
 let stringTable = [];
-let originalData = null;
+let normalData = null;
+let invertedData = null;
 let currentThreadFilter = 'all';
+let isInverted = false;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -68,9 +70,10 @@ function toggleTheme() {
   }
 
   // Re-render flamegraph with new theme colors
-  if (window.flamegraphData && originalData) {
-    const tooltip = createPythonTooltip(originalData);
-    const chart = createFlamegraph(tooltip, originalData.value);
+  if (window.flamegraphData && normalData) {
+    const currentData = isInverted ? invertedData : normalData;
+    const tooltip = createPythonTooltip(currentData);
+    const chart = createFlamegraph(tooltip, currentData.value);
     renderFlamegraph(chart, window.flamegraphData);
   }
 }
@@ -380,6 +383,9 @@ function createFlamegraph(tooltip, rootValue) {
     .tooltip(tooltip)
     .inverted(true)
     .setColorMapper(function (d) {
+      // Root node should be transparent
+      if (d.depth === 0) return 'transparent';
+
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
       return heatColors[level];
@@ -888,19 +894,20 @@ function initThreadFilter(data) {
 
 function filterByThread() {
   const threadFilter = document.getElementById('thread-filter');
-  if (!threadFilter || !originalData) return;
+  if (!threadFilter || !normalData) return;
 
   const selectedThread = threadFilter.value;
   currentThreadFilter = selectedThread;
+  const baseData = isInverted ? invertedData : normalData;
 
   let filteredData;
   let selectedThreadId = null;
 
   if (selectedThread === 'all') {
-    filteredData = originalData;
+    filteredData = baseData;
   } else {
     selectedThreadId = parseInt(selectedThread, 10);
-    filteredData = filterDataByThread(originalData, selectedThreadId);
+    filteredData = filterDataByThread(baseData, selectedThreadId);
 
     if (filteredData.strings) {
       stringTable = filteredData.strings;
@@ -912,7 +919,7 @@ function filterByThread() {
   const chart = createFlamegraph(tooltip, filteredData.value);
   renderFlamegraph(chart, filteredData);
 
-  populateThreadStats(originalData, selectedThreadId);
+  populateThreadStats(baseData, selectedThreadId);
 }
 
 function filterDataByThread(data, threadId) {
@@ -981,6 +988,131 @@ function exportSVG() {
 }
 
 // ============================================================================
+// Inverted Flamegraph
+// ============================================================================
+
+// Example: "file.py|10|foo" or "~|0|<GC>" for special frames
+function getInvertNodeKey(node) {
+  return `${node.filename || '~'}|${node.lineno || 0}|${node.funcname || node.name}`;
+}
+
+function accumulateInvertedNode(parent, stackFrame, leaf) {
+  const key = getInvertNodeKey(stackFrame);
+
+  if (!parent.children[key]) {
+    parent.children[key] = {
+      name: stackFrame.name,
+      value: 0,
+      children: {},
+      filename: stackFrame.filename,
+      lineno: stackFrame.lineno,
+      funcname: stackFrame.funcname,
+      source: stackFrame.source,
+      threads: new Set()
+    };
+  }
+
+  const node = parent.children[key];
+  node.value += leaf.value;
+  if (leaf.threads) {
+    leaf.threads.forEach(t => node.threads.add(t));
+  }
+
+  return node;
+}
+
+function traverseInvert(path, currentNode, invertedRoot) {
+  if (!currentNode.children || currentNode.children.length === 0) {
+    // We've reached a leaf node
+    if (!path || path.length === 0) {
+      return;
+    }
+
+    let invertedParent = accumulateInvertedNode(invertedRoot, currentNode, currentNode);
+
+    // Walk backwards through the call stack
+    for (let i = path.length - 2; i >= 0; i--) {
+      invertedParent = accumulateInvertedNode(invertedParent, path[i], currentNode);
+    }
+  } else {
+    // Not a leaf, continue traversing down the tree
+    for (const child of currentNode.children) {
+      traverseInvert(path.concat([child]), child, invertedRoot);
+    }
+  }
+}
+
+function convertInvertDictToArray(node) {
+  if (node.threads instanceof Set) {
+    node.threads = Array.from(node.threads).sort((a, b) => a - b);
+  }
+
+  const children = node.children;
+  if (children && typeof children === 'object' && !Array.isArray(children)) {
+    node.children = Object.values(children);
+    node.children.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+    node.children.forEach(convertInvertDictToArray);
+  }
+  return node;
+}
+
+function generateInvertedFlamegraph(data) {
+  const invertedRoot = {
+    name: data.name,
+    value: data.value,
+    children: {},
+    stats: data.stats,
+    threads: data.threads
+  };
+
+  data.children?.forEach(child => {
+    traverseInvert([child], child, invertedRoot);
+  });
+
+  // Convert children dictionaries to arrays for rendering
+  convertInvertDictToArray(invertedRoot);
+
+  return invertedRoot;
+}
+
+function updateToggleUI(toggleId, isOn) {
+  const toggle = document.getElementById(toggleId);
+  if (toggle) {
+    const track = toggle.querySelector('.toggle-track');
+    const labels = toggle.querySelectorAll('.toggle-label');
+    if (isOn) {
+      track.classList.add('on');
+      labels[0].classList.remove('active');
+      labels[1].classList.add('active');
+    } else {
+      track.classList.remove('on');
+      labels[0].classList.add('active');
+      labels[1].classList.remove('active');
+    }
+  }
+}
+
+function toggleInvert() {
+  isInverted = !isInverted;
+  updateToggleUI('toggle-invert', isInverted);
+
+  // Build inverted data on first use
+  if (isInverted && !invertedData) {
+    invertedData = generateInvertedFlamegraph(normalData);
+  }
+
+  let dataToRender = isInverted ? invertedData : normalData;
+
+  if (currentThreadFilter !== 'all') {
+    dataToRender = filterDataByThread(dataToRender, parseInt(currentThreadFilter));
+  }
+
+  const tooltip = createPythonTooltip(dataToRender);
+  const chart = createFlamegraph(tooltip, dataToRender.value);
+  renderFlamegraph(chart, dataToRender);
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 
@@ -988,21 +1120,29 @@ function initFlamegraph() {
   ensureLibraryLoaded();
   restoreUIState();
 
-  let processedData = EMBEDDED_DATA;
   if (EMBEDDED_DATA.strings) {
     stringTable = EMBEDDED_DATA.strings;
-    processedData = resolveStringIndices(EMBEDDED_DATA);
+    normalData = resolveStringIndices(EMBEDDED_DATA);
+  } else {
+    normalData = EMBEDDED_DATA;
   }
 
-  originalData = processedData;
-  initThreadFilter(processedData);
+  // Inverted data will be built on first toggle
+  invertedData = null;
 
-  const tooltip = createPythonTooltip(processedData);
-  const chart = createFlamegraph(tooltip, processedData.value);
-  renderFlamegraph(chart, processedData);
+  initThreadFilter(normalData);
+
+  const tooltip = createPythonTooltip(normalData);
+  const chart = createFlamegraph(tooltip, normalData.value);
+  renderFlamegraph(chart, normalData);
   initSearchHandlers();
   initSidebarResize();
   handleResize();
+
+  const toggleInvertBtn = document.getElementById('toggle-invert');
+  if (toggleInvertBtn) {
+    toggleInvertBtn.addEventListener('click', toggleInvert);
+  }
 }
 
 if (document.readyState === "loading") {
