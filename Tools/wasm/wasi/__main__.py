@@ -5,6 +5,8 @@ import contextlib
 import functools
 import os
 
+import tomllib
+
 try:
     from os import process_cpu_count as cpu_count
 except ImportError:
@@ -18,6 +20,7 @@ import tempfile
 
 HERE = pathlib.Path(__file__).parent
 
+# Path is: cpython/Tools/wasm/wasi
 CHECKOUT = HERE.parent.parent.parent
 assert (CHECKOUT / "configure").is_file(), (
     "Please update the location of the file"
@@ -213,9 +216,10 @@ def make_build_python(context, working_dir):
     log("🎉", f"{binary} {version}")
 
 
-def find_wasi_sdk():
+def find_wasi_sdk(config):
     """Find the path to the WASI SDK."""
     wasi_sdk_path = None
+    wasi_sdk_version = config["targets"]["wasi-sdk"]
 
     if wasi_sdk_path_env_var := os.environ.get("WASI_SDK_PATH"):
         wasi_sdk_path = pathlib.Path(wasi_sdk_path_env_var)
@@ -229,7 +233,7 @@ def find_wasi_sdk():
         # ``wasi-sdk-{WASI_SDK_VERSION}.0-x86_64-linux``.
         potential_sdks = [
             path
-            for path in opt_path.glob(f"wasi-sdk-{WASI_SDK_VERSION}.0*")
+            for path in opt_path.glob(f"wasi-sdk-{wasi_sdk_version}.0*")
             if path.is_dir()
         ]
         if len(potential_sdks) == 1:
@@ -245,12 +249,12 @@ def find_wasi_sdk():
         found_version = version_details.splitlines()[0]
         # Make sure there's a trailing dot to avoid false positives if somehow the
         # supported version is a prefix of the found version (e.g. `25` and `2567`).
-        if not found_version.startswith(f"{WASI_SDK_VERSION}."):
+        if not found_version.startswith(f"{wasi_sdk_version}."):
             major_version = found_version.partition(".")[0]
             log(
                 "⚠️",
                 f" Found WASI SDK {major_version}, "
-                f"but WASI SDK {WASI_SDK_VERSION} is the supported version",
+                f"but WASI SDK {wasi_sdk_version} is the supported version",
             )
 
     return wasi_sdk_path
@@ -408,8 +412,10 @@ def build_steps(*steps):
 
 
 def main():
-    default_host_triple = "wasm32-wasip1"
-    default_wasi_sdk = find_wasi_sdk()
+    with (HERE / "config.toml").open("rb") as file:
+        config = tomllib.load(file)
+    default_wasi_sdk = find_wasi_sdk(config)
+    default_host_triple = config["targets"]["host-triple"]
     default_host_runner = (
         f"{WASMTIME_HOST_RUNNER_VAR} run "
         # For setting PYTHONPATH to the sysconfig data directory.
