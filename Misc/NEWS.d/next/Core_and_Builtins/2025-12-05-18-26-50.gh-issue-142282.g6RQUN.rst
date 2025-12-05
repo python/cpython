@@ -1,0 +1,1 @@
+Fix winreg.QueryValueEx not to accidently read garbage buffer
