@@ -361,7 +361,7 @@ is merged with any exceptions that were raised or re-raised from within
 
    >>> try:
    ...     raise ExceptionGroup("eg",
-   ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+   ...         (ValueError(1), TypeError(2), OSError(3), OSError(4)))
    ... except* TypeError as e:
    ...     print(f'caught {type(e)} with nested {e.exceptions}')
    ... except* OSError as e:
@@ -372,7 +372,7 @@ is merged with any exceptions that were raised or re-raised from within
      + Exception Group Traceback (most recent call last):
      |   File "<doctest default[0]>", line 2, in <module>
      |     raise ExceptionGroup("eg",
-     |         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
+     |         (ValueError(1), TypeError(2), OSError(3), OSError(4)))
      | ExceptionGroup: eg (1 sub-exception)
      +-+---------------- 1 ----------------
        | ValueError: 1
