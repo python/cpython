@@ -140,6 +140,11 @@ _PyOptimizer_Optimize(
     }
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state.initial_state.stack_depth >= 0);
+    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
+    if (exit != NULL && (!exit->executor->vm_data.linked || !exit->executor->vm_data.valid)) {
+        // gh-141786 Parent executor is either unlinked or invalid - cannot optimize.
+        return 0;
+    }
 #ifndef Py_GIL_DISABLED
     assert(_tstate->jit_tracer_state.initial_state.func != NULL);
     interp->compiling = true;
@@ -185,7 +190,6 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
     if (exit != NULL) {
         exit->executor = executor;
     }
