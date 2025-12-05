@@ -1,6 +1,4 @@
 """Unit tests for the copy module."""
-import sys
-
 import copy
 import copyreg
 import weakref
