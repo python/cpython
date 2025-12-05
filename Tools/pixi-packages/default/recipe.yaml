@@ -1,0 +1,54 @@
+context:
+  # XXX: keep up to date
+  version: "3.15"
+  minor_version: "3.15"
+
+package:
+  name: python
+  version: ${{ version }}
+
+source:
+  - path: ../../..
+
+build:
+  files:
+    exclude:
+      - "*.o"
+  script:
+    file: ../build.sh
+    env:
+      MINOR_VERSION: ${{ minor_version }}
+
+# XXX: maybe not all requirements necessary
+# derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+    - make
+    - libtool
+    - pkg-config
+    # configure script looks for llvm-ar for lto
+    - clang-18
+    - llvm-tools-18
+
+  host:
+    - bzip2
+    - sqlite
+    - liblzma-devel
+    - zlib
+    - openssl
+    - readline
+    - tk
+    # These two are just to get the headers needed for tk.h, but is unused
+    - xorg-libx11
+    - xorg-xorgproto
+    - ncurses
+    - libffi
+    - libmpdec-devel
+    - expat
+
+about:
+  homepage: https://www.python.org/
+  license: Python-2.0
+  license_file: LICENSE
