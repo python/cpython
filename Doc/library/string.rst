@@ -547,10 +547,8 @@ The available presentation types for :class:`float` and
    |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
    |         | point is omitted unless the ``#`` option is used.        |
    |         |                                                          |
-   |         | The number of zeros padding to the exponent is           |
-   |         | determined by the implementation. When the coefficient   |
-   |         | is zero, the exponent value is also determined by the    |
-   |         | implementation.                                          |
+   |         | For :class:`float`, the exponent always contains at      |
+   |         | least two digits, and is zero if the value is zero.      |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
