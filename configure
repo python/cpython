@@ -7808,10 +7808,6 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
 
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
-
 # HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
 printf %s "checking HOSTRUNNER... " >&6; }
