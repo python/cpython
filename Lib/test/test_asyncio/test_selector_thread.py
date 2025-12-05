@@ -7,7 +7,7 @@ from asyncio._selector_thread import SelectorThread
 from unittest import mock
 
 
-class SelectorThreadTest((unittest.IsolatedAsyncioTestCase)):
+class SelectorThreadTest(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self._sockets = []
         self.selector_thread = SelectorThread(asyncio.get_running_loop())
@@ -39,7 +39,7 @@ class SelectorThreadTest((unittest.IsolatedAsyncioTestCase)):
             self.selector_thread.add_reader(b, mock_recv)
             # ready event, but main event loop is blocked for some time
             time.sleep(0.1)
-            recvd = await asyncio.wait_for(first_recv, timeout=10)
+            recvd = await asyncio.wait_for(first_recv, timeout=support.SHORT_TIMEOUT)
         self.assertEqual(recvd, b"msg")
         # make sure recv wasn't scheduled more than once
         self.assertEqual(mock_recv.call_count, 1)
@@ -84,7 +84,7 @@ class SelectorThreadTest((unittest.IsolatedAsyncioTestCase)):
         with mock.patch.object(
             selector_thread, "_start_select", wraps=selector_thread._start_select
         ) as start_select:
-            await asyncio.wait_for(bad_recv_done, timeout=10)
+            await asyncio.wait_for(bad_recv_done, timeout=support.SHORT_TIMEOUT)
 
         # make sure recv is called N + 1 times,
         # exception N times,

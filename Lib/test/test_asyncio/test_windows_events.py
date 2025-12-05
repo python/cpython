@@ -363,7 +363,7 @@ class ProactorTests(WindowsEventsTestCase):
             self.loop.add_writer(a, write)
             self.assertIs(self.loop._selector_thread, _selector_thread)
             self.assertIn(a.fileno(), _selector_thread._writers)
-            msg = await asyncio.wait_for(read_future, timeout=10)
+            msg = await asyncio.wait_for(read_future, timeout=support.SHORT_TIMEOUT)
 
             self.loop.remove_writer(a)
             self.assertNotIn(a.fileno(), _selector_thread._writers)
