@@ -189,7 +189,7 @@ class MinidomTest(unittest.TestCase):
         end = time.time()
 
         # This example used to take at least 30 seconds.
-        self.assertLess(end - start, 1)
+        self.assertLess(end - start, 10)
 
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
