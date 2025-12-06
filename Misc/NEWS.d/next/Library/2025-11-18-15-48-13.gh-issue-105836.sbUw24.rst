@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.run_coroutine_threadsafe` leaving underlying cancelled
+asyncio task running.
