@@ -616,17 +616,12 @@ static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
     PyTypeObject *PyCType_Type;
-    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
-        return NULL;
-    }
-    if (PyCType_Type == NULL) {
-        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+    if (_PyType_GetBaseByToken_Borrow(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0 ||
+        PyCType_Type == NULL) {
         return NULL;
     }
 
-    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
-    Py_DECREF(PyCType_Type);
-    return info;
+    return PyObject_GetTypeData(type, PyCType_Type);
 }
 
 // Initialize StgInfo on a newly created type

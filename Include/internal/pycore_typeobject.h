@@ -155,6 +155,9 @@ extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject 
 // Precalculates count of non-unique slots and fills wrapperbase.name_count.
 extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
 
+PyAPI_FUNC(int)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result);
+
 #ifdef __cplusplus
 }
 #endif
