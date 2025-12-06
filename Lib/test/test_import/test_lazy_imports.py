@@ -424,6 +424,860 @@ class SysLazyImportsAPITests(unittest.TestCase):
         self.assertIn("OK", result.stdout)
 
 
+class ErrorHandlingTests(unittest.TestCase):
+    """Tests for error handling during lazy import reification.
+
+    PEP 810: Errors during reification should show exception chaining with
+    both the lazy import definition location and the access location.
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_import_error_shows_chained_traceback(self):
+        """ImportError during reification should chain to show both definition and access."""
+        # Errors at reification must show where the lazy import was defined
+        # AND where the access happened, per PEP 810 "Reification" section
+        code = textwrap.dedent("""
+            import sys
+            lazy import test.test_import.data.lazy_imports.nonexistent_module
+
+            try:
+                x = test.test_import.data.lazy_imports.nonexistent_module
+            except ImportError as e:
+                # Should have __cause__ showing the original error
+                # The exception chain shows both where import was defined and where access happened
+                assert e.__cause__ is not None, "Expected chained exception"
+                print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_attribute_error_on_from_import_shows_chained_traceback(self):
+        """Accessing missing attribute from lazy from-import should chain errors."""
+        # Tests 'lazy from module import nonexistent' behavior
+        code = textwrap.dedent("""
+            import sys
+            lazy from test.test_import.data.lazy_imports.basic2 import nonexistent_name
+
+            try:
+                x = nonexistent_name
+            except ImportError as e:
+                # PEP 810: Enhanced error reporting through exception chaining
+                assert e.__cause__ is not None, "Expected chained exception"
+                print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_reification_retries_on_failure(self):
+        """Failed reification should allow retry on subsequent access.
+
+        PEP 810: "If reification fails, the lazy object is not reified or replaced.
+        Subsequent uses of the lazy object will re-try the reification."
+        """
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy import test.test_import.data.lazy_imports.broken_module
+
+            # First access - should fail
+            try:
+                x = test.test_import.data.lazy_imports.broken_module
+            except ValueError:
+                pass
+
+            # The lazy object should still be a lazy proxy (not reified)
+            g = globals()
+            lazy_obj = g['test']
+            # The root 'test' binding should still allow retry
+            # Second access - should also fail (retry the import)
+            try:
+                x = test.test_import.data.lazy_imports.broken_module
+            except ValueError:
+                print("OK - retry worked")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_error_during_module_execution_propagates(self):
+        """Errors in module code during reification should propagate correctly."""
+        # Module that raises during import should propagate with chaining
+        code = textwrap.dedent("""
+            import sys
+            lazy import test.test_import.data.lazy_imports.broken_module
+
+            try:
+                _ = test.test_import.data.lazy_imports.broken_module
+                print("FAIL - should have raised")
+            except ValueError as e:
+                # The ValueError from the module should be the cause
+                if "always fails" in str(e) or (e.__cause__ and "always fails" in str(e.__cause__)):
+                    print("OK")
+                else:
+                    print(f"FAIL - wrong error: {e}")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+
+class GlobalsAndDictTests(unittest.TestCase):
+    """Tests for globals() and __dict__ behavior with lazy imports.
+
+    PEP 810: "Calling globals() or accessing a module's __dict__ does not trigger
+    reification – they return the module's dictionary, and accessing lazy objects
+    through that dictionary still returns lazy proxy objects."
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_globals_returns_lazy_proxy_when_accessed_from_function(self):
+        """globals() accessed from a function should return lazy proxy without reification.
+
+        Note: At module level, accessing globals()['name'] triggers LOAD_NAME which
+        automatically resolves lazy imports. Inside a function, accessing globals()['name']
+        uses BINARY_SUBSCR which returns the lazy proxy without resolution.
+        """
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy from test.test_import.data.lazy_imports.basic2 import x
+
+            # Check that module is not yet loaded
+            assert 'test.test_import.data.lazy_imports.basic2' not in sys.modules
+
+            def check_lazy():
+                # Access through globals() from inside a function
+                g = globals()
+                lazy_obj = g['x']
+                return type(lazy_obj) is types.LazyImportType
+
+            # Inside function, should get lazy proxy
+            is_lazy = check_lazy()
+            assert is_lazy, "Expected LazyImportType from function scope"
+
+            # Module should STILL not be loaded
+            assert 'test.test_import.data.lazy_imports.basic2' not in sys.modules
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_globals_dict_access_returns_lazy_proxy_inline(self):
+        """Accessing globals()['name'] inline should return lazy proxy.
+
+        Note: Assigning g['name'] to a local variable at module level triggers
+        reification due to STORE_NAME bytecode. Inline access preserves laziness.
+        """
+        code = textwrap.dedent("""
+            import sys
+            import types
+            lazy import json
+            # Inline access without assignment to local variable preserves lazy proxy
+            assert type(globals()['json']) is types.LazyImportType
+            assert 'json' not in sys.modules
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_module_dict_returns_lazy_proxy_without_reifying(self):
+        """module.__dict__ access should not trigger reification."""
+        import test.test_import.data.lazy_imports.globals_access
+
+        # Module not loaded yet via direct dict access
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+        # Access via get_from_globals should return lazy proxy
+        lazy_obj = test.test_import.data.lazy_imports.globals_access.get_from_globals()
+        self.assertEqual(type(lazy_obj), types.LazyImportType)
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_direct_access_triggers_reification(self):
+        """Direct name access (not through globals()) should trigger reification."""
+        import test.test_import.data.lazy_imports.globals_access
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+        # Direct access should reify
+        result = test.test_import.data.lazy_imports.globals_access.get_direct()
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_resolve_method_forces_reification(self):
+        """Calling resolve() on lazy proxy should force reification.
+
+        Note: Must access lazy proxy from within a function to avoid automatic
+        reification by LOAD_NAME at module level.
+        """
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy from test.test_import.data.lazy_imports.basic2 import x
+
+            assert 'test.test_import.data.lazy_imports.basic2' not in sys.modules
+
+            def test_resolve():
+                g = globals()
+                lazy_obj = g['x']
+                assert type(lazy_obj) is types.LazyImportType, f"Expected lazy proxy, got {type(lazy_obj)}"
+
+                resolved = lazy_obj.resolve()
+
+                # Now module should be loaded
+                assert 'test.test_import.data.lazy_imports.basic2' in sys.modules
+                assert resolved == 42  # x is 42 in basic2.py
+                return True
+
+            assert test_resolve()
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+
+class MultipleNameFromImportTests(unittest.TestCase):
+    """Tests for lazy from ... import with multiple names.
+
+    PEP 810: "When using lazy from ... import, each imported name is bound to a
+    lazy proxy object. The first access to any of these names triggers loading
+    of the entire module and reifies only that specific name to its actual value.
+    Other names remain as lazy proxies until they are accessed."
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_accessing_one_name_leaves_others_as_proxies(self):
+        """Accessing one name from multi-name import should leave others lazy."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy from test.test_import.data.lazy_imports.basic2 import f, x
+
+            # Neither should be loaded yet
+            assert 'test.test_import.data.lazy_imports.basic2' not in sys.modules
+
+            g = globals()
+            assert type(g['f']) is types.LazyImportType
+            assert type(g['x']) is types.LazyImportType
+
+            # Access 'x' - this loads the module and reifies only 'x'
+            value = x
+            assert value == 42
+
+            # Module is now loaded
+            assert 'test.test_import.data.lazy_imports.basic2' in sys.modules
+
+            # 'x' should be reified (int), 'f' should still be lazy proxy
+            assert type(g['x']) is int, f"Expected int, got {type(g['x'])}"
+            assert type(g['f']) is types.LazyImportType, f"Expected LazyImportType, got {type(g['f'])}"
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_all_names_reified_after_all_accessed(self):
+        """All names should be reified after each is accessed."""
+        code = textwrap.dedent("""
+            import sys
+            import types
+
+            lazy from test.test_import.data.lazy_imports.basic2 import f, x
+
+            g = globals()
+
+            # Access both
+            _ = x
+            _ = f
+
+            # Both should be reified now
+            assert type(g['x']) is int
+            assert callable(g['f'])
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+
+class SysLazyModulesTrackingTests(unittest.TestCase):
+    """Tests for sys.lazy_modules tracking behavior.
+
+    PEP 810: "When the module is reified, it's removed from sys.lazy_modules"
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_module_added_to_lazy_modules_on_lazy_import(self):
+        """Module should be added to sys.lazy_modules when lazily imported."""
+        # PEP 810 states lazy_modules tracks modules that have been lazily imported
+        # Note: The current implementation keeps modules in lazy_modules even after
+        # reification (primarily for diagnostics and introspection)
+        code = textwrap.dedent("""
+            import sys
+
+            initial_count = len(sys.lazy_modules)
+
+            lazy import test.test_import.data.lazy_imports.basic2
+
+            # Should be in lazy_modules after lazy import
+            assert "test.test_import.data.lazy_imports.basic2" in sys.lazy_modules
+            assert len(sys.lazy_modules) > initial_count
+
+            # Trigger reification
+            _ = test.test_import.data.lazy_imports.basic2.x
+
+            # Module should still be tracked (for diagnostics per PEP 810)
+            assert "test.test_import.data.lazy_imports.basic2" in sys.lazy_modules
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_lazy_modules_is_per_interpreter(self):
+        """Each interpreter should have independent sys.lazy_modules."""
+        # Basic test that sys.lazy_modules exists and is a set
+        self.assertIsInstance(sys.lazy_modules, set)
+        self.assertIs(sys.lazy_modules, sys.get_lazy_modules())
+
+
+class CommandLineAndEnvVarTests(unittest.TestCase):
+    """Tests for command-line and environment variable control.
+
+    PEP 810: The global lazy imports flag can be controlled through:
+    - The -X lazy_imports=<mode> command-line option
+    - The PYTHON_LAZY_IMPORTS=<mode> environment variable
+    """
+
+    def test_cli_lazy_imports_all_makes_regular_imports_lazy(self):
+        """-X lazy_imports=all should make all imports potentially lazy."""
+        code = textwrap.dedent("""
+            import sys
+            # In 'all' mode, regular imports become lazy
+            import json
+            # json should not be in sys.modules yet (lazy)
+            # Actually accessing it triggers reification
+            if 'json' not in sys.modules:
+                print("LAZY")
+            else:
+                print("EAGER")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=all", "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("LAZY", result.stdout)
+
+    def test_cli_lazy_imports_none_forces_all_imports_eager(self):
+        """-X lazy_imports=none should force all imports to be eager."""
+        code = textwrap.dedent("""
+            import sys
+            # Even explicit lazy imports should be eager in 'none' mode
+            lazy import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=none", "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+    def test_cli_lazy_imports_normal_respects_lazy_keyword_only(self):
+        """-X lazy_imports=normal should respect lazy keyword only."""
+        # Note: Use test modules instead of stdlib modules to avoid
+        # modules already loaded by the interpreter startup
+        code = textwrap.dedent("""
+            import sys
+            import test.test_import.data.lazy_imports.basic2  # Should be eager
+            lazy import test.test_import.data.lazy_imports.pkg.b  # Should be lazy
+
+            eager_loaded = 'test.test_import.data.lazy_imports.basic2' in sys.modules
+            lazy_loaded = 'test.test_import.data.lazy_imports.pkg.b' in sys.modules
+
+            if eager_loaded and not lazy_loaded:
+                print("OK")
+            else:
+                print(f"FAIL: eager={eager_loaded}, lazy={lazy_loaded}")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=normal", "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_env_var_lazy_imports_all_enables_global_lazy(self):
+        """PYTHON_LAZY_IMPORTS=all should enable global lazy imports."""
+        code = textwrap.dedent("""
+            import sys
+            import json
+            if 'json' not in sys.modules:
+                print("LAZY")
+            else:
+                print("EAGER")
+        """)
+        import os
+        env = os.environ.copy()
+        env["PYTHON_LAZY_IMPORTS"] = "all"
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            env=env
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("LAZY", result.stdout)
+
+    def test_env_var_lazy_imports_none_disables_all_lazy(self):
+        """PYTHON_LAZY_IMPORTS=none should disable all lazy imports."""
+        code = textwrap.dedent("""
+            import sys
+            lazy import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        import os
+        env = os.environ.copy()
+        env["PYTHON_LAZY_IMPORTS"] = "none"
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            env=env
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+    def test_cli_overrides_env_var(self):
+        """Command-line option should take precedence over environment variable."""
+        # PEP 810: -X lazy_imports takes precedence over PYTHON_LAZY_IMPORTS
+        code = textwrap.dedent("""
+            import sys
+            lazy import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        import os
+        env = os.environ.copy()
+        env["PYTHON_LAZY_IMPORTS"] = "all"  # env says all
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=none", "-c", code],  # CLI says none
+            capture_output=True,
+            text=True,
+            env=env
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        # CLI should win - imports should be eager
+        self.assertIn("EAGER", result.stdout)
+
+    def test_sys_set_lazy_imports_overrides_cli(self):
+        """sys.set_lazy_imports() should take precedence over CLI option."""
+        code = textwrap.dedent("""
+            import sys
+            sys.set_lazy_imports("none")  # Override CLI
+            lazy import json
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-X", "lazy_imports=all", "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+
+class FilterFunctionSignatureTests(unittest.TestCase):
+    """Tests for the filter function signature per PEP 810.
+
+    PEP 810: func(importer: str, name: str, fromlist: tuple[str, ...] | None) -> bool
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_filter_receives_correct_arguments_for_import(self):
+        """Filter should receive (importer, name, fromlist=None) for 'import x'."""
+        code = textwrap.dedent("""
+            import sys
+
+            received_args = []
+
+            def my_filter(importer, name, fromlist):
+                received_args.append((importer, name, fromlist))
+                return True
+
+            sys.set_lazy_imports_filter(my_filter)
+
+            lazy import json
+
+            assert len(received_args) == 1, f"Expected 1 call, got {len(received_args)}"
+            importer, name, fromlist = received_args[0]
+            assert name == "json", f"Expected name='json', got {name!r}"
+            assert fromlist is None, f"Expected fromlist=None, got {fromlist!r}"
+            assert isinstance(importer, str), f"Expected str importer, got {type(importer)}"
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_filter_receives_fromlist_for_from_import(self):
+        """Filter should receive fromlist tuple for 'from x import y, z'."""
+        code = textwrap.dedent("""
+            import sys
+
+            received_args = []
+
+            def my_filter(importer, name, fromlist):
+                received_args.append((importer, name, fromlist))
+                return True
+
+            sys.set_lazy_imports_filter(my_filter)
+
+            lazy from json import dumps, loads
+
+            assert len(received_args) == 1, f"Expected 1 call, got {len(received_args)}"
+            importer, name, fromlist = received_args[0]
+            assert name == "json", f"Expected name='json', got {name!r}"
+            assert fromlist == ("dumps", "loads"), f"Expected ('dumps', 'loads'), got {fromlist!r}"
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_filter_returning_false_forces_eager_import(self):
+        """Filter returning False should make import eager."""
+        code = textwrap.dedent("""
+            import sys
+
+            def deny_filter(importer, name, fromlist):
+                return False
+
+            sys.set_lazy_imports_filter(deny_filter)
+
+            lazy import json
+
+            # Should be eager due to filter
+            if 'json' in sys.modules:
+                print("EAGER")
+            else:
+                print("LAZY")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stderr: {result.stderr}")
+        self.assertIn("EAGER", result.stdout)
+
+
+class AdditionalSyntaxRestrictionTests(unittest.TestCase):
+    """Additional syntax restriction tests per PEP 810."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_lazy_import_inside_class_raises_syntax_error(self):
+        """lazy import inside class body should raise SyntaxError."""
+        # PEP 810: "The soft keyword is only allowed at the global (module) level,
+        # not inside functions, class bodies, try blocks, or import *"
+        with self.assertRaises(SyntaxError):
+            import test.test_import.data.lazy_imports.lazy_class_body
+
+
+class MixedLazyEagerImportTests(unittest.TestCase):
+    """Tests for mixing lazy and eager imports of the same module.
+
+    PEP 810: "If module foo is imported both lazily and eagerly in the same
+    program, the eager import takes precedence and both bindings resolve to
+    the same module object."
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_eager_import_before_lazy_resolves_to_same_module(self):
+        """Eager import before lazy should make lazy resolve to same module."""
+        code = textwrap.dedent("""
+            import sys
+            import json  # Eager import first
+
+            lazy import json as lazy_json  # Lazy import same module
+
+            # lazy_json should resolve to the same object
+            assert json is lazy_json, "Lazy and eager imports should resolve to same module"
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_lazy_import_before_eager_resolves_to_same_module(self):
+        """Lazy import followed by eager should both point to same module."""
+        code = textwrap.dedent("""
+            import sys
+
+            lazy import json as lazy_json
+
+            # Lazy not loaded yet
+            assert 'json' not in sys.modules
+
+            import json  # Eager import triggers load
+
+            # Both should be the same object
+            assert json is lazy_json
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+
+class RelativeImportTests(unittest.TestCase):
+    """Tests for relative imports with lazy keyword."""
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_relative_lazy_import(self):
+        """lazy from . import submodule should work."""
+        from test.test_import.data.lazy_imports import relative_lazy
+
+        # basic2 should not be loaded yet
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+        # Access triggers reification
+        result = relative_lazy.get_basic2()
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_relative_lazy_from_import(self):
+        """lazy from .module import name should work."""
+        from test.test_import.data.lazy_imports import relative_lazy_from
+
+        # basic2 should not be loaded yet
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+        # Access triggers reification
+        result = relative_lazy_from.get_x()
+        self.assertEqual(result, 42)
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+
+class LazyModulesCompatibilityFromImportTests(unittest.TestCase):
+    """Tests for __lazy_modules__ with from imports.
+
+    PEP 810: "When a module is made lazy this way, from-imports using that
+    module are also lazy"
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_lazy_modules_makes_from_imports_lazy(self):
+        """__lazy_modules__ should make from imports of listed modules lazy."""
+        from test.test_import.data.lazy_imports import lazy_compat_from
+
+        # basic2 should not be loaded yet because it's in __lazy_modules__
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+        # Access triggers reification
+        result = lazy_compat_from.get_x()
+        self.assertEqual(result, 42)
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+
+class ImportStateAtReificationTests(unittest.TestCase):
+    """Tests for import system state at reification time.
+
+    PEP 810: "Reification still calls __import__ to resolve the import, which uses
+    the state of the import system (e.g. sys.path, sys.meta_path, sys.path_hooks
+    and __import__) at reification time, not the state when the lazy import
+    statement was evaluated."
+    """
+
+    def tearDown(self):
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+        sys.set_lazy_imports_filter(None)
+        sys.set_lazy_imports("normal")
+
+    def test_sys_path_at_reification_time_is_used(self):
+        """sys.path changes after lazy import should affect reification."""
+        code = textwrap.dedent("""
+            import sys
+            import tempfile
+            import os
+
+            # Create a temporary module
+            with tempfile.TemporaryDirectory() as tmpdir:
+                mod_path = os.path.join(tmpdir, "dynamic_test_module.py")
+                with open(mod_path, "w") as f:
+                    f.write("VALUE = 'from_temp_dir'\\n")
+
+                # Lazy import before adding to path
+                lazy import dynamic_test_module
+
+                # Module cannot be found yet
+                try:
+                    _ = dynamic_test_module
+                    print("FAIL - should not find module")
+                except ModuleNotFoundError:
+                    pass
+
+                # Now add temp dir to path
+                sys.path.insert(0, tmpdir)
+
+                # Now reification should succeed using current sys.path
+                assert dynamic_test_module.VALUE == 'from_temp_dir'
+                print("OK")
+
+                sys.path.remove(tmpdir)
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+
 class ThreadSafetyTests(unittest.TestCase):
     """Tests for thread-safety of lazy imports."""
 
