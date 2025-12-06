@@ -740,14 +740,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate, owner, is_class, globals,
             getattr(annotate, "__globals__", {}), allow_evaluation=False
         )
-        try:
-            annotate_code = annotate.__code__
-        except AttributeError:
-            raise AttributeError(
-                "annotate function requires __code__ attribute",
-                name="__code__",
-                obj=annotate
-            )
+        annotate_code = annotate.__code__
         func = types.FunctionType(
             annotate_code,
             globals,
@@ -798,14 +791,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         closure, cell_dict = _build_closure(
             annotate, owner, is_class, globals, annotate_globals, allow_evaluation=True
         )
-        try:
-            annotate_code = annotate.__code__
-        except AttributeError:
-            raise AttributeError(
-                "annotate function requires __code__ attribute",
-                name="__code__",
-                obj=annotate
-            )
+        annotate_code = annotate.__code__
         func = types.FunctionType(
             annotate_code,
             globals,
