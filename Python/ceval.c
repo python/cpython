@@ -2344,7 +2344,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *kwnames = NULL;
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
-    _PyStackRef stack_array[8];
+    _PyStackRef stack_array[8] = {0};
     if (has_dict) {
         object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (object_array == NULL) {
@@ -2407,7 +2407,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     if (kwnames) {
         total_args += PyTuple_GET_SIZE(kwnames);
     }
-    _PyStackRef stack_array[8];
+    _PyStackRef stack_array[8] = {0};
     _PyStackRef *arguments;
     if (total_args <= 8) {
         arguments = stack_array;
