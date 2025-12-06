@@ -4976,15 +4976,12 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         g.add_argument('-q', '--quiet', action='store_true')
         g.add_argument('-x', '--extra-long-option-name', nargs='?')
         g.add_argument('-y', '--yet-another-long-option', nargs='?')
-        g.add_argument('positional1', nargs='?')
-        g.add_argument('positional2', nargs='?')
-        g.add_argument('positional3', nargs='?')
-        g.add_argument('positional4', nargs='?')
+        g.add_argument('positional', nargs='?')
 
         usage = textwrap.dedent('''\
         usage: PROG [-h] [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
                     -y [YET_ANOTHER_LONG_OPTION] |
-                    positional1 | positional2 | positional3 | positional4]
+                    positional]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
