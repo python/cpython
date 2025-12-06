@@ -53,12 +53,6 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
 #endif
 
     while (1) {
-        if (PyOS_InputHook != NULL &&
-            // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
-            _Py_IsMainInterpreter(tstate->interp))
-        {
-            (void)(PyOS_InputHook)();
-        }
 
         errno = 0;
         clearerr(fp);
@@ -312,6 +306,13 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
         fprintf(stderr, "%s", prompt);
     }
     fflush(stderr);
+
+    if (PyOS_InputHook != NULL &&
+        // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
+        _Py_IsMainInterpreter(tstate->interp))
+    {
+      (void)(PyOS_InputHook)();
+    }
 
     n = 0;
     p = NULL;
