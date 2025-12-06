@@ -7342,7 +7342,28 @@ class TestColorized(TestCase):
             ),
         )
 
-    def test_argparse_color_usage(self):
+    def test_argparse_color_mutually_exclusive_group_usage(self):
+        parser = argparse.ArgumentParser(color=True, prog="PROG")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', help='BADGER')
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        reset = self.theme.reset
+
+        self.assertEqual(parser.format_usage(),
+            f"{heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] "
+            f"[{long}--foo{reset} | "
+            f"{long}--spam {label}SPAM{reset} | "
+            f"{pos}badger ...{reset}]\n")
+
+    def test_argparse_color_custom_usage(self):
         # Arrange
         parser = argparse.ArgumentParser(
             add_help=False,

@@ -450,16 +450,12 @@ class HelpFormatter(object):
             # produce all arg strings
             elif not action.option_strings:
                 default = self._get_default_metavar_for_positional(action)
-                part = (
-                    t.summary_action
-                    + self._format_args(action, default)
-                    + t.reset
-                )
-
+                part = self._format_args(action, default)
                 # if it's in a group, strip the outer []
                 if action in group_actions:
                     if part[0] == '[' and part[-1] == ']':
                         part = part[1:-1]
+                part = t.summary_action + part + t.reset
 
             # produce the first way to invoke the option in brackets
             else:
