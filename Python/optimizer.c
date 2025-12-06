@@ -293,6 +293,17 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
     interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
 }
 
+static inline int
+can_clear_executor_deletion_list(PyInterpreterState *interp)
+{
+#ifdef Py_GIL_DISABLED
+    if (_PyRuntime.stoptheworld.world_stopped || interp->stoptheworld.world_stopped) {
+        return 0;
+    }
+#endif
+    return 1;
+}
+
 static void
 add_to_pending_deletion_list(_PyExecutorObject *self)
 {
@@ -302,7 +313,7 @@ add_to_pending_deletion_list(_PyExecutorObject *self)
     if (interp->executor_deletion_list_remaining_capacity > 0) {
         interp->executor_deletion_list_remaining_capacity--;
     }
-    else {
+    else if (can_clear_executor_deletion_list(interp)) {
         _Py_ClearExecutorDeletionList(interp);
     }
 }

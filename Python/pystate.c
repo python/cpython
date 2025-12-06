@@ -2358,6 +2358,18 @@ start_the_world(struct _stoptheworld_state *stw)
     _PyRuntimeState *runtime = &_PyRuntime;
     assert(PyMutex_IsLocked(&stw->mutex));
 
+#ifdef _Py_TIER2
+    if (stw->is_global) {
+        _Py_FOR_EACH_STW_INTERP(stw, interp) {
+            _Py_ClearExecutorDeletionList(interp);
+        }
+    }
+    else {
+        PyInterpreterState *interp = _Py_CONTAINER_OF(stw, PyInterpreterState, stoptheworld);
+        _Py_ClearExecutorDeletionList(interp);
+    }
+#endif
+
     HEAD_LOCK(runtime);
     stw->requested = 0;
     stw->world_stopped = 0;
