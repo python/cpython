@@ -1,0 +1,2 @@
+Enable ``-split-all-cold`` during BOLT optmizations which outlines as many
+cold basic blocks as possible.
