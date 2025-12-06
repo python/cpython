@@ -1340,6 +1340,15 @@ class TracebackException:
         if len(error_code) > 1024:
             return
 
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
+
         error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
         tokens_left_to_process = 10
