@@ -1051,6 +1051,10 @@ Watching file descriptors
 See also :ref:`Platform Support <asyncio-platform-support>` section
 for some limitations of these methods.
 
+.. versionchanged:: next
+
+   Added support for these methods to :class:`ProactorEventLoop`.
+
 
 Working with socket objects directly
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
