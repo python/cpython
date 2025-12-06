@@ -6,7 +6,7 @@ try:
 except ImportError:
     SQLITE_KEYWORDS = ()
 
-CLI_COMMANDS = ('.quit', '.help', '.version')
+CLI_COMMANDS = ('.quit', '.help', '.version', '.tables')
 
 _completion_matches = []
 
