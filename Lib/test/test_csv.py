@@ -139,6 +139,18 @@ class Test_Csv(unittest.TestCase):
         self.assertIs(obj.dialect.skipinitialspace, True)
         self.assertIs(obj.dialect.strict, True)
 
+    def test_default_attrs(self):
+        class dialect(csv.Dialect):
+            pass
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.doublequote, True)
+        self.assertEqual(dialect.escapechar, None)
+        self.assertEqual(dialect.lineterminator, '\r\n')
+        self.assertEqual(dialect.quotechar, '"')
+        self.assertEqual(dialect.quoting, csv.QUOTE_MINIMAL)
+        self.assertEqual(dialect.skipinitialspace, False)
+        self.assertEqual(dialect.strict, False)
+
     def test_reader_kw_attrs(self):
         self._test_kw_attrs(csv.reader, [])
 
@@ -621,6 +633,7 @@ class TestDialectRegistry(unittest.TestCase):
     def test_incomplete_dialect(self):
         class myexceltsv(csv.Dialect):
             delimiter = "\t"
+            quoting = None
         self.assertRaises(csv.Error, myexceltsv)
 
     def test_space_dialect(self):
