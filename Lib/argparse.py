@@ -2008,14 +2008,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             self._subparsers = self._positionals
 
         # prog defaults to the usage message of this parser, skipping
-        # optional arguments and with no "usage:" prefix
+        # non-required optional arguments and with no "usage:" prefix
         if kwargs.get('prog') is None:
             # Create formatter without color to avoid storing ANSI codes in prog
             formatter = self.formatter_class(prog=self.prog)
             formatter._set_color(False)
             positionals = self._get_positional_actions()
+            required_optionals = [action for action in self._get_optional_actions()
+                                  if action.required]
             groups = self._mutually_exclusive_groups
-            formatter.add_usage(None, positionals, groups, '')
+            formatter.add_usage(None, required_optionals + positionals, groups, '')
             kwargs['prog'] = formatter.format_help().strip()
 
         # create the parsers action and add it to the positionals list
