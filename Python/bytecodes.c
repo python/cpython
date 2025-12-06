@@ -1757,6 +1757,13 @@ dummy_func(
                         }
                         ERROR_NO_POP();
                     }
+
+                    if (PyLazyImport_CheckExact(v_o)) {
+                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        Py_DECREF(v_o);
+                        v_o = l_v;
+                        ERROR_IF(v_o == NULL);
+                    }
                 }
                 else {
                     /* Slow-path if globals or builtins is not a dict */
@@ -1774,6 +1781,12 @@ dummy_func(
                             ERROR_IF(true);
                         }
                     }
+                    if (PyLazyImport_CheckExact(v_o)) {
+                        PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                        Py_DECREF(v_o);
+                        v_o = l_v;
+                        ERROR_IF(v_o == NULL);
+                    }
                 }
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
@@ -1783,6 +1796,17 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             ERROR_IF(v_o == NULL);
+            if (PyLazyImport_CheckExact(v_o)) {
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                Py_DECREF(v_o);
+                ERROR_IF(l_v == NULL);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                v_o = l_v;
+            }
+
             v = PyStackRef_FromPyObjectSteal(v_o);
         }
 
@@ -1808,7 +1832,21 @@ dummy_func(
         op(_LOAD_GLOBAL, ( -- res[1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
+
             ERROR_IF(PyStackRef_IsNull(*res));
+
+            PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
+            if (PyLazyImport_CheckExact(res_o)) {
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
+                PyStackRef_CLOSE(res[0]);
+                ERROR_IF(l_v == NULL);
+                int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
+                if (err < 0) {
+                    Py_DECREF(l_v);
+                    JUMP_TO_LABEL(error);
+                }
+                *res = PyStackRef_FromPyObjectSteal(l_v);
+            }
         }
 
         op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
@@ -2899,10 +2937,19 @@ dummy_func(
         }
 
          inst(IMPORT_NAME, (level, fromlist -- res)) {
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
-                              PyStackRef_AsPyObjectBorrow(fromlist),
-                              PyStackRef_AsPyObjectBorrow(level));
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            PyObject *res_o;
+            if (!(oparg & 0x02)) {
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                                PyStackRef_AsPyObjectBorrow(fromlist),
+                                PyStackRef_AsPyObjectBorrow(level),
+                                oparg & 0x01);
+
+            } else {
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                                PyStackRef_AsPyObjectBorrow(fromlist),
+                                PyStackRef_AsPyObjectBorrow(level));
+            }
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -2910,7 +2957,13 @@ dummy_func(
 
         inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            PyObject *res_o;
+            if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
+                res_o = _PyEval_LazyImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            } else {
+                res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+            }
+
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }

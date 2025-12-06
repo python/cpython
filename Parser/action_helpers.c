@@ -1943,9 +1943,13 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
 
 stmt_ty
 _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * names, int level,
-                  			   int lineno, int col_offset, int end_lineno, int end_col_offset,
+                               int is_lazy, int lineno, int col_offset, int end_lineno, int end_col_offset,
                       		   PyArena *arena) {
     if (level == 0 && PyUnicode_CompareWithASCIIString(module, "__future__") == 0) {
+        if (is_lazy) {
+            RAISE_SYNTAX_ERROR("lazy from __future__ import is not allowed");
+            return NULL;
+        }
         for (Py_ssize_t i = 0; i < asdl_seq_LEN(names); i++) {
             alias_ty alias = asdl_seq_GET(names, i);
             if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
@@ -1953,7 +1957,7 @@ _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * na
             }
         }
     }
-    return _PyAST_ImportFrom(module, names, level, lineno, col_offset, end_lineno, end_col_offset, arena);
+    return _PyAST_ImportFrom(module, names, level, is_lazy, lineno, col_offset, end_lineno, end_col_offset, arena);
 }
 
 asdl_stmt_seq*

@@ -4694,6 +4694,14 @@ _PyDict_SizeOf_LockHeld(PyDictObject *mp)
     return (Py_ssize_t)res;
 }
 
+void
+_PyDict_ClearKeysVersion(PyObject *mp)
+{
+    ASSERT_DICT_LOCKED(mp);
+
+    FT_ATOMIC_STORE_UINT32_RELAXED(((PyDictObject *)mp)->ma_keys->dk_version, 0);
+}
+
 Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
 {
