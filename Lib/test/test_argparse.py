@@ -2770,6 +2770,16 @@ class TestAddSubparsers(TestCase):
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
+    def test_subparser_help_with_parent_required_optional(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', required=True)
+        parser.add_argument('--bar')
+        subparsers = parser.add_subparsers()
+        parser_sub = subparsers.add_parser('sub')
+        parser_sub.add_argument('arg')
+        self.assertEqual(parser_sub.format_usage(),
+                         'usage: PROG --foo FOO sub [-h] arg\n')
+
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
                          'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
