@@ -68,6 +68,19 @@ class ANSIColors:
 ColorCodes = set()
 NoColors = ANSIColors()
 
+
+class CursesColors:
+    """Curses color constants for terminal UI theming."""
+    BLACK = 0
+    RED = 1
+    GREEN = 2
+    YELLOW = 3
+    BLUE = 4
+    MAGENTA = 5
+    CYAN = 6
+    WHITE = 7
+    DEFAULT = -1
+
 for attr, code in ANSIColors.__dict__.items():
     if not attr.startswith("__"):
         ColorCodes.add(code)
@@ -224,6 +237,119 @@ class Unittest(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class LiveProfiler(ThemeSection):
+    """Theme section for the live profiling TUI (Tachyon profiler).
+
+    Colors use CursesColors constants (BLACK, RED, GREEN, YELLOW,
+    BLUE, MAGENTA, CYAN, WHITE, DEFAULT).
+    """
+    # Header colors
+    title_fg: int = CursesColors.CYAN
+    title_bg: int = CursesColors.DEFAULT
+
+    # Status display colors
+    pid_fg: int = CursesColors.CYAN
+    uptime_fg: int = CursesColors.GREEN
+    time_fg: int = CursesColors.YELLOW
+    interval_fg: int = CursesColors.MAGENTA
+
+    # Thread view colors
+    thread_all_fg: int = CursesColors.GREEN
+    thread_single_fg: int = CursesColors.MAGENTA
+
+    # Progress bar colors
+    bar_good_fg: int = CursesColors.GREEN
+    bar_bad_fg: int = CursesColors.RED
+
+    # Stats colors
+    on_gil_fg: int = CursesColors.GREEN
+    off_gil_fg: int = CursesColors.RED
+    waiting_gil_fg: int = CursesColors.YELLOW
+    gc_fg: int = CursesColors.MAGENTA
+
+    # Function display colors
+    func_total_fg: int = CursesColors.CYAN
+    func_exec_fg: int = CursesColors.GREEN
+    func_stack_fg: int = CursesColors.YELLOW
+    func_shown_fg: int = CursesColors.MAGENTA
+
+    # Table header colors
+    sorted_header_fg: int = CursesColors.BLACK
+    sorted_header_bg: int = CursesColors.YELLOW
+
+    # Data row colors
+    samples_fg: int = CursesColors.CYAN
+    file_fg: int = CursesColors.GREEN
+    func_fg: int = CursesColors.YELLOW
+
+    # Trend indicator colors
+    trend_up_fg: int = CursesColors.GREEN
+    trend_down_fg: int = CursesColors.RED
+
+    # Medal colors for top functions
+    medal_gold_fg: int = CursesColors.RED
+    medal_silver_fg: int = CursesColors.YELLOW
+    medal_bronze_fg: int = CursesColors.GREEN
+
+    # Background style: 'dark' or 'light'
+    background_style: str = "dark"
+
+
+LiveProfilerLight = LiveProfiler(
+    # Header colors
+    title_fg=CursesColors.BLUE,
+    title_bg=CursesColors.DEFAULT,
+
+    # Status display colors
+    pid_fg=CursesColors.BLUE,
+    uptime_fg=CursesColors.GREEN,
+    time_fg=CursesColors.YELLOW,
+    interval_fg=CursesColors.MAGENTA,
+
+    # Thread view colors
+    thread_all_fg=CursesColors.GREEN,
+    thread_single_fg=CursesColors.MAGENTA,
+
+    # Progress bar colors
+    bar_good_fg=CursesColors.GREEN,
+    bar_bad_fg=CursesColors.RED,
+
+    # Stats colors
+    on_gil_fg=CursesColors.GREEN,
+    off_gil_fg=CursesColors.RED,
+    waiting_gil_fg=CursesColors.YELLOW,
+    gc_fg=CursesColors.MAGENTA,
+
+    # Function display colors
+    func_total_fg=CursesColors.BLUE,
+    func_exec_fg=CursesColors.GREEN,
+    func_stack_fg=CursesColors.YELLOW,
+    func_shown_fg=CursesColors.MAGENTA,
+
+    # Table header colors
+    sorted_header_fg=CursesColors.WHITE,
+    sorted_header_bg=CursesColors.BLUE,
+
+    # Data row colors
+    samples_fg=CursesColors.BLUE,
+    file_fg=CursesColors.GREEN,
+    func_fg=CursesColors.MAGENTA,
+
+    # Trend indicator colors
+    trend_up_fg=CursesColors.GREEN,
+    trend_down_fg=CursesColors.RED,
+
+    # Medal colors for top functions
+    medal_gold_fg=CursesColors.RED,
+    medal_silver_fg=CursesColors.BLUE,
+    medal_bronze_fg=CursesColors.GREEN,
+
+    # Background style
+    background_style="light",
+)
+
+
+@dataclass(frozen=True, kw_only=True)
 class Theme:
     """A suite of themes for all sections of Python.
 
@@ -235,6 +361,7 @@ class Theme:
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
+    live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
 
     def copy_with(
         self,
@@ -244,6 +371,7 @@ class Theme:
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
+        live_profiler: LiveProfiler | None = None,
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
@@ -256,6 +384,7 @@ class Theme:
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
+            live_profiler=live_profiler or self.live_profiler,
         )
 
     @classmethod
@@ -272,6 +401,7 @@ class Theme:
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
+            live_profiler=LiveProfiler.no_colors(),
         )
 
 
@@ -337,6 +467,9 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
 
 default_theme = Theme()
 theme_no_color = default_theme.no_colors()
+
+# Convenience theme with light profiler colors (for white/light terminal backgrounds)
+light_profiler_theme = default_theme.copy_with(live_profiler=LiveProfilerLight)
 
 
 def get_theme(
