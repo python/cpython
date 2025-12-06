@@ -220,15 +220,19 @@ The module defines the following user-callable items:
 
 .. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
 
-   Creates a temporary file in the most secure manner possible.  There are
-   no race conditions in the file's creation, assuming that the platform
-   properly implements the :const:`os.O_EXCL` flag for :func:`os.open`.  The
-   file is readable and writable only by the creating user ID.  If the
-   platform uses permission bits to indicate whether a file is executable,
-   the file is executable by no one. On platforms that support the :const:
-   `os.O_CLOEXEC` flag, the file descriptor has the close-on-exec flag set, 
-   which prevents it from being inherited across :func:`os.exec*` calls. 
-   However, the file descriptor will still be inherited by child processes created via :func:`os.fork`.
+  Creates a temporary file in the most secure manner possible.  There are
+  no race conditions in the file's creation, assuming that the platform
+  properly implements the :const:`os.O_EXCL` flag for :func:`os.open`.  The
+  file is readable and writable only by the creating user ID.  If the
+  platform uses permission bits to indicate whether a file is executable,
+  the file is executable by no one.
+
+  On platforms that support the :const:`os.O_CLOEXEC` flag, the file
+  descriptor is created with the close-on-exec flag set.  This prevents it
+  from being inherited across ``exec*``-style calls that replace the current
+  process image.  However, the file descriptor will still be inherited by
+  child processes created via :func:`os.fork`.
+
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
