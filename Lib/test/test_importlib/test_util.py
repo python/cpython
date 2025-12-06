@@ -359,46 +359,11 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    def test_cache_from_source_debug_override(self):
-        # Given the path to a .py file, return the path to its PEP 3147/PEP 488
-        # defined .pyc file (i.e. under __pycache__).
-        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, False),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, True),
-                             self.util.cache_from_source(path, optimization=''))
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, False)
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, True)
-
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
         expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
-
-    def test_cache_from_source_override(self):
-        # When debug_override is not None, it can be any true-ish or false-ish
-        # value.
-        path = os.path.join('foo', 'bar', 'baz.py')
-        # However if the bool-ishness can't be determined, the exception
-        # propagates.
-        class Bearish:
-            def __bool__(self): raise RuntimeError
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, []),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, [17]),
-                             self.util.cache_from_source(path, optimization=''))
-            with self.assertRaises(RuntimeError):
-                self.util.cache_from_source('/foo/bar/baz.py', Bearish())
-
 
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
