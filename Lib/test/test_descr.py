@@ -1320,6 +1320,32 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "'X' object has no attribute 'a'"):
             X().a
 
+    def test_slots_before_items(self):
+        class C(type):
+            __slots__ = ['a']
+        x = C('A', (int,), {})
+        self.assertNotHasAttr(x, "a")
+        x.a = 1
+        x.b = 2
+        self.assertEqual(x.a, 1)
+        self.assertEqual(x.b, 2)
+        self.assertNotIn('a', x.__dict__)
+        self.assertIn('b', x.__dict__)
+        del x.a
+        self.assertNotHasAttr(x, "a")
+
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_slots_before_items2(self):
+        class D(_testcapi.HeapCCollection):
+            __slots__ = ['a']
+        x = D(1, 2, 3)
+        self.assertNotHasAttr(x, "a")
+        x.a = 42
+        self.assertEqual(x.a, 42)
+        del x.a
+        self.assertNotHasAttr(x, "a")
+        self.assertEqual(list(x), [1, 2, 3])
+
     def test_slots_special(self):
         # Testing __dict__ and __weakref__ in __slots__...
         class D(object):
@@ -1383,14 +1409,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(AttributeError):
             a.foo = 42
         self.assertIs(weakref.ref(a)(), a)
-
-        with self.assertRaises(TypeError):
-            class X(_testcapi.HeapCCollection):
-                __slots__ = ['x']
-
-        with self.assertRaises(TypeError):
-            class X(_testcapi.HeapCCollection):
-                __slots__ = ['__dict__', 'x']
 
     @support.subTests(('base', 'arg'), [
         (tuple, (1, 2, 3)),
