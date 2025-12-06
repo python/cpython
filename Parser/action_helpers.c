@@ -947,6 +947,35 @@ _PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
     return 0;
 }
 
+void *
+_PyPegen_raise_error_for_missing_comma(Parser *p, expr_ty a, expr_ty b)
+{
+    // Don't raise for legacy statements like "print x" or "exec x"
+    if (_PyPegen_check_legacy_stmt(p, a)) {
+        return NULL;
+    }
+    // Only raise inside parentheses/brackets (level > 0)
+    if (p->tokens[p->mark - 1]->level == 0) {
+        return NULL;
+    }
+    // For multi-line expressions (like string concatenations), point to the
+    // last line instead of the first for a more helpful error message.
+    // Use a->col_offset as the starting column since all strings in the
+    // concatenation typically share the same indentation.
+    if (a->end_lineno > a->lineno) {
+        return RAISE_ERROR_KNOWN_LOCATION(
+            p, PyExc_SyntaxError, a->end_lineno, a->col_offset,
+            a->end_lineno, a->end_col_offset,
+            "invalid syntax. Perhaps you forgot a comma?"
+        );
+    }
+    return RAISE_ERROR_KNOWN_LOCATION(
+        p, PyExc_SyntaxError, a->lineno, a->col_offset,
+        b->end_lineno, b->end_col_offset,
+        "invalid syntax. Perhaps you forgot a comma?"
+    );
+}
+
 static ResultTokenWithMetadata *
 result_token_with_metadata(Parser *p, void *result, PyObject *metadata)
 {
