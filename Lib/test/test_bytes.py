@@ -1524,6 +1524,32 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
 
+    @support.cpython_only  # tests an implementation detail
+    def test_take_bytes_optimization(self):
+        # Validate optimization around taking lots of little chunks out of a
+        # much bigger buffer. Save work by only copying a little rather than
+        # moving a lot.
+        ba = bytearray(b'abcdef' + b'0' * 1000)
+        start_alloc = ba.__alloc__()
+
+        # Take two bytes at a time, checking alloc doesn't change.
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 4 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'cd')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 2 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'ef')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 0 + 1000)
+        self.assertEqual(ba.__alloc__(), start_alloc)
+
+        # Take over half, alloc shrinks to exact size.
+        self.assertEqual(ba.take_bytes(501), b'0' * 501)
+        self.assertEqual(len(ba), 499)
+        bytes_header_size = sys.getsizeof(b'')
+        self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
             b[i] = val
@@ -2629,6 +2655,10 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
+        def resize(b, a):  # MODIFIES!
+            b.wait()
+            a.resize(10)
+
         def take_bytes(b, a):  # MODIFIES!
             b.wait()
             c = a.take_bytes()
@@ -2701,6 +2731,8 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
+        check([clear] + [resize] * 10)
 
         check([clear] + [take_bytes] * 10)
         check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))

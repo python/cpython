@@ -2573,6 +2573,7 @@ LIBSUBDIRS=	asyncio \
 		profile \
 		profiling profiling/sampling profiling/tracing \
 		profiling/sampling/_assets \
+		profiling/sampling/live_collector \
 		profiling/sampling/_vendor/d3/7.8.5 \
 		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
 		pydoc_data \
@@ -2692,6 +2693,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib/support \
 		test/test_peg_generator \
 		test/test_profiling \
+		test/test_profiling/test_sampling_profiler \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
@@ -3049,6 +3051,9 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
 	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBDIR)
+	$(LN) -fs "../$(LDLIBRARY)" "$(DESTDIR)$(prefix)/lib/libpython$(LDVERSION).dylib"
+	$(LN) -fs "../$(LDLIBRARY)" "$(DESTDIR)$(prefix)/lib/libpython$(VERSION).dylib"
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
 	for file in $(srcdir)/$(RESSRCDIR)/bin/* ; do \
 		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
@@ -3380,6 +3385,7 @@ MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
+MODULE__REMOTE_DEBUGGING_DEPS=$(srcdir)/Modules/_remote_debugging/_remote_debugging.h
 
 # HACL*-based cryptographic primitives
 MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
