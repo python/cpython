@@ -22,6 +22,8 @@ that work tightly with the python syntax (template engines for example).
 """
 from _ast import *
 
+type_None = type(None)
+type_Ellipsis = type(...)
 
 def parse(source, filename='<unknown>', mode='exec', *,
           type_comments=False, feature_version=None, optimize=-1, module=None):
@@ -68,8 +70,12 @@ def _convert_literal(node):
     """
     Used by `literal_eval` to convert an AST node into a value.
     """
-    if isinstance(node, Constant):
-        return node.value
+    if (
+        isinstance(node, Constant)
+        and type(value := node.value) in (int, float, complex, bytes, bool,
+                                          type_None, type_Ellipsis)
+    ):
+        return value
     if isinstance(node, Dict) and len(node.keys) == len(node.values):
         return dict(zip(
             map(_convert_literal, node.keys),
