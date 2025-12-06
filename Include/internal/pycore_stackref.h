@@ -480,13 +480,6 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 #define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
 
 static inline PyObject *
-PyStackRef_NotDeferred_AsPyObject(_PyStackRef stackref)
-{
-    assert(!PyStackRef_IsDeferred(stackref));
-    return (PyObject *)stackref.bits;
-}
-
-static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
