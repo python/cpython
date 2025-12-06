@@ -770,6 +770,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         with self.script(f'#! /usr/bin/env {stem} arg1') as script:
             data = self.run_py([script], expect_returncode=103)
 
+        if not is_installed("3"):
+            self.skipTest("Test assumes that Python is installed")
+
         with self.fake_venv() as (venv_exe, env):
             # Put a "normal" Python on PATH as a distraction.
             # The active VIRTUAL_ENV should be preferred when the name isn't an
