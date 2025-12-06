@@ -1,0 +1,2 @@
+Fix a deadlock where JIT executor drain could run under the rutime lock when
+invalidations overflow the pending list.
