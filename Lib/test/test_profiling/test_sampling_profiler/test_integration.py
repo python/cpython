@@ -780,3 +780,133 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 from profiling.sampling.cli import main
                 main()
             self.assertNotEqual(cm.exception.code, 0)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestAsyncAwareProfilingIntegration(unittest.TestCase):
+    """Integration tests for async-aware profiling mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.async_script = '''
+import asyncio
+
+async def sleeping_leaf():
+    """Leaf task that just sleeps - visible in 'all' mode."""
+    for _ in range(50):
+        await asyncio.sleep(0.02)
+
+async def cpu_leaf():
+    """Leaf task that does CPU work - visible in both modes."""
+    total = 0
+    for _ in range(200):
+        for i in range(10000):
+            total += i * i
+        await asyncio.sleep(0)
+    return total
+
+async def supervisor():
+    """Middle layer that spawns leaf tasks."""
+    tasks = [
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-0"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-1"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-2"),
+        asyncio.create_task(cpu_leaf(), name="Worker"),
+    ]
+    await asyncio.gather(*tasks)
+
+async def main():
+    await supervisor()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+'''
+
+    def test_async_aware_all_sees_sleeping_and_running_tasks(self):
+        """Test that async_aware='all' captures both sleeping and CPU-running tasks.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf)
+                    ├── Sleeper-1 (sleeping_leaf)
+                    ├── Sleeper-2 (sleeping_leaf)
+                    └── Worker (cpu_leaf)
+
+        async_aware='all' should see ALL 4 leaf tasks in the output.
+        """
+        with (
+            test_subprocess(self.async_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=SHORT_TIMEOUT,
+                    async_aware="all",
+                )
+                collector.print_stats(show_summary=False)
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # async_aware="all" should see ALL leaf tasks
+        self.assertIn("sleeping_leaf", output)
+        self.assertIn("cpu_leaf", output)
+        # Should see the tree structure via task markers
+        self.assertIn("<task>", output)
+        # Should see task names in output (leaf tasks)
+        self.assertIn("Sleeper", output)
+        self.assertIn("Worker", output)
+        # Should see the parent task in the tree (supervisor function)
+        self.assertIn("supervisor", output)
+
+    def test_async_aware_running_sees_only_cpu_task(self):
+        """Test that async_aware='running' only captures the actively running task.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-1 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-2 (sleeping_leaf) - NOT visible in 'running'
+                    └── Worker (cpu_leaf) - VISIBLE in 'running'
+
+        async_aware='running' should only see the Worker task doing CPU work.
+        """
+        with (
+            test_subprocess(self.async_script) as subproc,
+            io.StringIO() as captured_output,
+            mock.patch("sys.stdout", captured_output),
+        ):
+            try:
+                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=SHORT_TIMEOUT,
+                    async_aware="running",
+                )
+                collector.print_stats(show_summary=False)
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+            output = captured_output.getvalue()
+
+        # async_aware="running" should see the CPU task prominently
+        self.assertIn("cpu_leaf", output)
+        # Should see Worker task marker
+        self.assertIn("Worker", output)
+        # Should see the tree structure (supervisor in the parent chain)
+        self.assertIn("supervisor", output)
+        # Should see task boundary markers
+        self.assertIn("<task>", output)

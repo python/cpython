@@ -697,79 +697,102 @@ class TestAsyncAwareParameterFlow(unittest.TestCase):
         sig = inspect.signature(SampleProfiler.sample)
         self.assertIn("async_aware", sig.parameters)
 
-    def test_async_aware_all_uses_get_all_awaited_by(self):
-        """Test that async_aware='all' calls get_all_awaited_by on unwinder."""
-        from unittest.mock import Mock, patch
-        from profiling.sampling.sample import SampleProfiler
+    def test_async_aware_all_sees_sleeping_and_running_tasks(self):
+        """Test async_aware='all' captures both sleeping and CPU-running tasks."""
+        # Sleeping task (awaiting)
+        sleeping_task = MockTaskInfo(
+            task_id=1,
+            task_name="SleepingTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="SleepingTask",
+                    call_stack=[MockFrameInfo("sleeper.py", 10, "sleep_work")]
+                )
+            ],
+            awaited_by=[]
+        )
 
-        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
-            mock_unwinder = Mock()
-            mock_unwinder.get_all_awaited_by.return_value = []
-            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+        # CPU-running task (active)
+        running_task = MockTaskInfo(
+            task_id=2,
+            task_name="RunningTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="RunningTask",
+                    call_stack=[MockFrameInfo("runner.py", 20, "cpu_work")]
+                )
+            ],
+            awaited_by=[]
+        )
 
-            profiler = SampleProfiler(
-                pid=12345,
-                sample_interval_usec=1000,
-                all_threads=False
-            )
-            profiler.unwinder = mock_unwinder
+        # Both tasks returned by get_all_awaited_by
+        awaited_info_list = [MockAwaitedInfo(thread_id=100, awaited_by=[sleeping_task, running_task])]
 
-            mock_collector = Mock()
-            mock_collector.running = False  # Stop immediately
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect(awaited_info_list)
+        collector.create_stats()
 
-            # Sample with async_aware="all"
-            profiler.sample(mock_collector, duration_sec=0.001, async_aware="all")
+        # Both tasks should be visible
+        sleeping_key = ("sleeper.py", 10, "sleep_work")
+        running_key = ("runner.py", 20, "cpu_work")
 
-            # Should have called get_all_awaited_by
-            mock_unwinder.get_all_awaited_by.assert_called()
+        self.assertIn(sleeping_key, collector.stats)
+        self.assertIn(running_key, collector.stats)
 
-    def test_async_aware_running_uses_get_async_stack_trace(self):
-        """Test that async_aware='running' calls get_async_stack_trace on unwinder."""
-        from unittest.mock import Mock, patch
-        from profiling.sampling.sample import SampleProfiler
+        # Task markers should also be present
+        task_keys = [k for k in collector.stats if k[0] == "<task>"]
+        self.assertGreater(len(task_keys), 0, "Should have <task> markers in stats")
 
-        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
-            mock_unwinder = Mock()
-            mock_unwinder.get_async_stack_trace.return_value = []
-            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+        # Verify task names are in the markers
+        task_names = [k[2] for k in task_keys]
+        self.assertTrue(
+            any("SleepingTask" in name for name in task_names),
+            "SleepingTask should be in task markers"
+        )
+        self.assertTrue(
+            any("RunningTask" in name for name in task_names),
+            "RunningTask should be in task markers"
+        )
 
-            profiler = SampleProfiler(
-                pid=12345,
-                sample_interval_usec=1000,
-                all_threads=False
-            )
-            profiler.unwinder = mock_unwinder
+    def test_async_aware_running_sees_only_running_task(self):
+        """Test async_aware='running' only shows the currently running task stack."""
+        # Only the running task's stack is returned by get_async_stack_trace
+        running_task = MockTaskInfo(
+            task_id=2,
+            task_name="RunningTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="RunningTask",
+                    call_stack=[MockFrameInfo("runner.py", 20, "cpu_work")]
+                )
+            ],
+            awaited_by=[]
+        )
 
-            mock_collector = Mock()
-            mock_collector.running = False
+        # get_async_stack_trace only returns the running task
+        awaited_info_list = [MockAwaitedInfo(thread_id=100, awaited_by=[running_task])]
 
-            profiler.sample(mock_collector, duration_sec=0.001, async_aware="running")
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect(awaited_info_list)
+        collector.create_stats()
 
-            mock_unwinder.get_async_stack_trace.assert_called()
+        # Only running task should be visible
+        running_key = ("runner.py", 20, "cpu_work")
+        self.assertIn(running_key, collector.stats)
 
-    def test_async_aware_none_uses_get_stack_trace(self):
-        """Test that async_aware=None uses regular get_stack_trace."""
-        from unittest.mock import Mock, patch
-        from profiling.sampling.sample import SampleProfiler
+        # Verify we don't see the sleeping task (it wasn't in the input)
+        sleeping_key = ("sleeper.py", 10, "sleep_work")
+        self.assertNotIn(sleeping_key, collector.stats)
 
-        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
-            mock_unwinder = Mock()
-            mock_unwinder.get_stack_trace.return_value = []
-            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+        # Task marker for running task should be present
+        task_keys = [k for k in collector.stats if k[0] == "<task>"]
+        self.assertGreater(len(task_keys), 0, "Should have <task> markers in stats")
 
-            profiler = SampleProfiler(
-                pid=12345,
-                sample_interval_usec=1000,
-                all_threads=False
-            )
-            profiler.unwinder = mock_unwinder
-
-            mock_collector = Mock()
-            mock_collector.running = False
-
-            profiler.sample(mock_collector, duration_sec=0.001, async_aware=None)
-
-            mock_unwinder.get_stack_trace.assert_called()
+        task_names = [k[2] for k in task_keys]
+        self.assertTrue(
+            any("RunningTask" in name for name in task_names),
+            "RunningTask should be in task markers"
+        )
 
 
 if __name__ == "__main__":

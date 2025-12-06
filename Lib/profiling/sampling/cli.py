@@ -390,6 +390,19 @@ def _validate_args(args, parser):
             "Live mode requires the curses module, which is not available."
         )
 
+    # Async-aware mode is incompatible with --native and --gc/--no-gc
+    if args.async_aware is not None:
+        issues = []
+        if args.native:
+            issues.append("--native")
+        if not args.gc:
+            issues.append("--no-gc")
+        if issues:
+            parser.error(
+                f"Options {', '.join(issues)} are incompatible with --async-aware. "
+                "Async-aware profiling uses task-based stack reconstruction."
+            )
+
     # Live mode is incompatible with format options
     if hasattr(args, 'live') and args.live:
         if args.format != "pstats":
