@@ -703,6 +703,16 @@ The following attributes are defined on instances of :class:`IMAP4`:
    .. versionadded:: 3.5
 
 
+.. property:: IMAP4.file
+
+   Internal :class:`~io.BufferedReader` associated with the underlying socket.
+   This property is documented for legacy purposes but not part of the public
+   interface. The caller is responsible to ensure that the current file is
+   closed before changing it.
+
+   .. deprecated-removed:: next 3.19
+
+
 .. _imap4-example:
 
 IMAP4 Example
