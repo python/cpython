@@ -1,0 +1,2 @@
+Errors and documentation are clearer now relative to interpreters not
+created by the :mod:`~concurrent.interpreters` module.
