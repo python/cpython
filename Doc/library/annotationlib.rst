@@ -569,7 +569,7 @@ represented by ``__code__`` uses any keyword defaults.
 
 This can then be called with:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> from annotationlib import call_annotate_function, Format
    >>> call_annotate_function(Annotate(), format=Format.STRING)
@@ -577,7 +577,7 @@ This can then be called with:
 
 Or used as the annotate function for an object:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> from annotationlib import get_annotations, Format
    >>> class C:
