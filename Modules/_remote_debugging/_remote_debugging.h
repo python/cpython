@@ -405,6 +405,7 @@ extern PyObject* unwind_stack_for_thread(
 
 extern uintptr_t _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle);
 extern int read_async_debug(RemoteUnwinderObject *unwinder);
+extern int ensure_async_debug_offsets(RemoteUnwinderObject *unwinder);
 
 /* Task parsing */
 extern PyObject *parse_task_name(RemoteUnwinderObject *unwinder, uintptr_t task_address);
