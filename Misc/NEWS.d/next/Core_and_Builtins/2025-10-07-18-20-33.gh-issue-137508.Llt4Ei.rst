@@ -1,0 +1,5 @@
+Unify error messages for the :meth:`!index` and :meth:`!remove` methods of
+classes :class:`list`, :class:`tuple`, :class:`range`, :class:`memoryview`,
+:class:`str`, :class:`bytes`, :class:`bytearray`, :class:`array.array`, and
+:class:`collections.deque`, and the :func:`operator.indexOf` function.
+Improve error message for :meth:`xml.etree.ElementTree.Element.remove`.
