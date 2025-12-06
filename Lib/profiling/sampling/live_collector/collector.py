@@ -103,6 +103,7 @@ class LiveStatsCollector(Collector):
         pid=None,
         display=None,
         mode=None,
+        async_aware=None,
     ):
         """
         Initialize the live stats collector.
@@ -115,6 +116,7 @@ class LiveStatsCollector(Collector):
             pid: Process ID being profiled
             display: DisplayInterface implementation (None means curses will be used)
             mode: Profiling mode ('cpu', 'gil', etc.) - affects what stats are shown
+            async_aware: Async tracing mode - None (sync only), "all" or "running"
         """
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
@@ -133,6 +135,9 @@ class LiveStatsCollector(Collector):
         self.running = True
         self.pid = pid
         self.mode = mode  # Profiling mode
+        self.async_aware = async_aware  # Async tracing mode
+        # Pre-select frame iterator method to avoid per-call dispatch overhead
+        self._get_frame_iterator = self._get_async_frame_iterator if async_aware else self._get_sync_frame_iterator
         self._saved_stdout = None
         self._saved_stderr = None
         self._devnull = None
@@ -294,6 +299,15 @@ class LiveStatsCollector(Collector):
         if thread_data:
             thread_data.result[top_location]["direct_calls"] += 1
 
+    def _get_sync_frame_iterator(self, stack_frames):
+        """Iterator for sync frames."""
+        return self._iter_all_frames(stack_frames, skip_idle=self.skip_idle)
+
+    def _get_async_frame_iterator(self, stack_frames):
+        """Iterator for async frames, yielding (frames, thread_id) tuples."""
+        for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
+            yield frames, thread_id
+
     def collect_failed_sample(self):
         self.failed_samples += 1
         self.total_samples += 1
@@ -304,78 +318,40 @@ class LiveStatsCollector(Collector):
             self.start_time = time.perf_counter()
             self._last_display_update = self.start_time
 
-        # Thread status counts for this sample
-        temp_status_counts = {
-            "has_gil": 0,
-            "on_cpu": 0,
-            "gil_requested": 0,
-            "unknown": 0,
-            "total": 0,
-        }
         has_gc_frame = False
 
-        # Always collect data, even when paused
-        # Track thread status flags and GC frames
-        for interpreter_info in stack_frames:
-            threads = getattr(interpreter_info, "threads", [])
-            for thread_info in threads:
-                temp_status_counts["total"] += 1
+        # Collect thread status stats (only available in sync mode)
+        if not self.async_aware:
+            status_counts, sample_has_gc, per_thread_stats = self._collect_thread_status_stats(stack_frames)
+            for key, count in status_counts.items():
+                self.thread_status_counts[key] += count
+            if sample_has_gc:
+                has_gc_frame = True
 
-                # Track thread status using bit flags
-                status_flags = getattr(thread_info, "status", 0)
-                thread_id = getattr(thread_info, "thread_id", None)
+            for thread_id, stats in per_thread_stats.items():
+                thread_data = self._get_or_create_thread_data(thread_id)
+                thread_data.has_gil += stats.get("has_gil", 0)
+                thread_data.on_cpu += stats.get("on_cpu", 0)
+                thread_data.gil_requested += stats.get("gil_requested", 0)
+                thread_data.unknown += stats.get("unknown", 0)
+                thread_data.total += stats.get("total", 0)
+                if stats.get("gc_samples", 0):
+                    thread_data.gc_frame_samples += stats["gc_samples"]
 
-                # Update aggregated counts
-                if status_flags & THREAD_STATUS_HAS_GIL:
-                    temp_status_counts["has_gil"] += 1
-                if status_flags & THREAD_STATUS_ON_CPU:
-                    temp_status_counts["on_cpu"] += 1
-                if status_flags & THREAD_STATUS_GIL_REQUESTED:
-                    temp_status_counts["gil_requested"] += 1
-                if status_flags & THREAD_STATUS_UNKNOWN:
-                    temp_status_counts["unknown"] += 1
+        # Process frames using pre-selected iterator
+        for frames, thread_id in self._get_frame_iterator(stack_frames):
+            if not frames:
+                continue
 
-                # Update per-thread status counts
-                if thread_id is not None:
-                    thread_data = self._get_or_create_thread_data(thread_id)
-                    thread_data.increment_status_flag(status_flags)
+            self.process_frames(frames, thread_id=thread_id)
 
-                # Process frames (respecting skip_idle)
-                if self.skip_idle:
-                    has_gil = bool(status_flags & THREAD_STATUS_HAS_GIL)
-                    on_cpu = bool(status_flags & THREAD_STATUS_ON_CPU)
-                    if not (has_gil or on_cpu):
-                        continue
+            # Track thread IDs
+            if thread_id is not None and thread_id not in self.thread_ids:
+                self.thread_ids.append(thread_id)
 
-                frames = getattr(thread_info, "frame_info", None)
-                if frames:
-                    self.process_frames(frames, thread_id=thread_id)
-
-                    # Track thread IDs only for threads that actually have samples
-                    if (
-                        thread_id is not None
-                        and thread_id not in self.thread_ids
-                    ):
-                        self.thread_ids.append(thread_id)
-
-                    # Increment per-thread sample count and check for GC frames
-                    thread_has_gc_frame = False
-                    for frame in frames:
-                        funcname = getattr(frame, "funcname", "")
-                        if "<GC>" in funcname or "gc_collect" in funcname:
-                            has_gc_frame = True
-                            thread_has_gc_frame = True
-                            break
-
-                    if thread_id is not None:
-                        thread_data = self._get_or_create_thread_data(thread_id)
-                        thread_data.sample_count += 1
-                        if thread_has_gc_frame:
-                            thread_data.gc_frame_samples += 1
-
-        # Update cumulative thread status counts
-        for key, count in temp_status_counts.items():
-            self.thread_status_counts[key] += count
+            if thread_id is not None:
+                thread_data = self._get_or_create_thread_data(thread_id)
+                thread_data.sample_count += 1
 
         if has_gc_frame:
             self.gc_frame_samples += 1
@@ -861,10 +837,12 @@ class LiveStatsCollector(Collector):
         # Handle help toggle keys
         if ch == ord("h") or ch == ord("H") or ch == ord("?"):
             self.show_help = not self.show_help
+            return
 
         # If showing help, any other key closes it
-        elif self.show_help and ch != -1:
+        if self.show_help and ch != -1:
             self.show_help = False
+            return
 
         # Handle regular commands
         if ch == ord("q") or ch == ord("Q"):

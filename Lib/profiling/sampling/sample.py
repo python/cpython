@@ -48,7 +48,7 @@ class SampleProfiler:
         self.total_samples = 0
         self.realtime_stats = False
 
-    def sample(self, collector, duration_sec=10):
+    def sample(self, collector, duration_sec=10, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
         running_time = 0
         num_samples = 0
@@ -68,7 +68,12 @@ class SampleProfiler:
                 current_time = time.perf_counter()
                 if next_time < current_time:
                     try:
-                        stack_frames = self.unwinder.get_stack_trace()
+                        if async_aware == "all":
+                            stack_frames = self.unwinder.get_all_awaited_by()
+                        elif async_aware == "running":
+                            stack_frames = self.unwinder.get_async_stack_trace()
+                        else:
+                            stack_frames = self.unwinder.get_stack_trace()
                         collector.collect(stack_frames)
                     except ProcessLookupError:
                         duration_sec = current_time - start_time
@@ -191,6 +196,7 @@ def sample(
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
+    async_aware=None,
     native=False,
     gc=True,
 ):
@@ -233,7 +239,7 @@ def sample(
     profiler.realtime_stats = realtime_stats
 
     # Run the sampling
-    profiler.sample(collector, duration_sec)
+    profiler.sample(collector, duration_sec, async_aware=async_aware)
 
     return collector
 
@@ -246,6 +252,7 @@ def sample_live(
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
+    async_aware=None,
     native=False,
     gc=True,
 ):
@@ -290,7 +297,7 @@ def sample_live(
     def curses_wrapper_func(stdscr):
         collector.init_curses(stdscr)
         try:
-            profiler.sample(collector, duration_sec)
+            profiler.sample(collector, duration_sec, async_aware=async_aware)
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
