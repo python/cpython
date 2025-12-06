@@ -4267,10 +4267,26 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     }
 
     PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
+    if (res == NULL) {
+        Py_DECREF(abs_name);
+        return NULL;
+    }
     if (register_lazy_on_parent(tstate, abs_name, builtins) < 0) {
         Py_DECREF(res);
-        res = NULL;
+        Py_DECREF(abs_name);
+        return NULL;
     }
+
+    // Add the module name to sys.lazy_modules set (PEP 810)
+    PyObject *lazy_modules_set = interp->imports.lazy_modules_set;
+    if (lazy_modules_set != NULL) {
+        if (PySet_Add(lazy_modules_set, abs_name) < 0) {
+            Py_DECREF(res);
+            Py_DECREF(abs_name);
+            return NULL;
+        }
+    }
+
     Py_DECREF(abs_name);
     return res;
 }
@@ -4482,6 +4498,9 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(IMPORTLIB(interp));
     Py_CLEAR(IMPORT_FUNC(interp));
     Py_CLEAR(LAZY_IMPORT_FUNC(interp));
+    Py_CLEAR(interp->imports.lazy_modules);
+    Py_CLEAR(interp->imports.lazy_modules_set);
+    Py_CLEAR(interp->imports.lazy_importing_modules);
 }
 
 void

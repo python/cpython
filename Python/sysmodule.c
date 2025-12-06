@@ -2821,36 +2821,41 @@ sys_get_lazy_imports_filter_impl(PyObject *module)
 /*[clinic input]
 sys.set_lazy_imports
 
-    enabled: object
+    mode: object
 
-Sets the global lazy imports flag. 
+Sets the global lazy imports mode.
 
-True sets all imports at the top level as potentially lazy.
-False disables lazy imports for any explicitly marked imports.
-None causes only explicitly marked imports as lazy.
+The mode parameter must be one of the following strings:
+- "all": All top-level imports become potentially lazy
+- "none": All lazy imports are suppressed (even explicitly marked ones)
+- "normal": Only explicitly marked imports (with 'lazy' keyword) are lazy
 
-In addition to the mode lazy imports can be controlled via the filter
+In addition to the mode, lazy imports can be controlled via the filter
 provided to sys.set_lazy_imports_filter
 
 [clinic start generated code]*/
 
 static PyObject *
-sys_set_lazy_imports_impl(PyObject *module, PyObject *enabled)
-/*[clinic end generated code: output=d601640d3e2d70fb input=d351054b5884eae5]*/
+sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
+/*[clinic end generated code: output=1ff34ba6c4feaf73 input=f04e70d8bf9fe4f6]*/
 {
-    PyImport_LazyImportsMode mode;
-    if (enabled == Py_None) {
-        mode = PyImport_LAZY_NORMAL;
-    } else if (enabled == Py_False) {
-        mode = PyImport_LAZY_NONE;
-    } else if (enabled == Py_True) {
-        mode = PyImport_LAZY_ALL;
+    PyImport_LazyImportsMode lazy_mode;
+    if (!PyUnicode_Check(mode)) {
+        PyErr_SetString(PyExc_TypeError, "mode must be a string: 'normal', 'all', or 'none'");
+        return NULL;
+    }
+    if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
+        lazy_mode = PyImport_LAZY_NORMAL;
+    } else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
+        lazy_mode = PyImport_LAZY_ALL;
+    } else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
+        lazy_mode = PyImport_LAZY_NONE;
     } else {
-        PyErr_SetString(PyExc_ValueError, "expected None, True or False for enabled mode");
+        PyErr_SetString(PyExc_ValueError, "mode must be 'normal', 'all', or 'none'");
         return NULL;
     }
 
-    if (PyImport_SetLazyImportsMode(mode)) {
+    if (PyImport_SetLazyImportsMode(lazy_mode)) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -2859,29 +2864,52 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *enabled)
 /*[clinic input]
 sys.get_lazy_imports
 
-Gets the global lazy imports flag. 
+Gets the global lazy imports mode.
 
-Returns True if all top level imports are potentially lazy.
-Returns False if all explicilty marked lazy imports are suppressed.
-Returns None if only explicitly marked imports are lazy.
+Returns "all" if all top level imports are potentially lazy.
+Returns "none" if all explicitly marked lazy imports are suppressed.
+Returns "normal" if only explicitly marked imports are lazy.
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_imports_impl(PyObject *module)
-/*[clinic end generated code: output=4147dec48c51ae99 input=d7b25d814165c8ce]*/
+/*[clinic end generated code: output=4147dec48c51ae99 input=8cb574f1e4e3003c]*/
 {
     switch (PyImport_GetLazyImportsMode()) {
         case PyImport_LAZY_NORMAL:
-            Py_RETURN_NONE;
+            return PyUnicode_FromString("normal");
         case PyImport_LAZY_ALL:
-            Py_RETURN_TRUE;
+            return PyUnicode_FromString("all");
         case PyImport_LAZY_NONE:
-            Py_RETURN_FALSE;
+            return PyUnicode_FromString("none");
         default:
             PyErr_SetString(PyExc_RuntimeError, "unknown lazy imports mode");
             return NULL;
     }
+}
+
+/*[clinic input]
+sys.get_lazy_modules
+
+Gets the set of module names that have been lazily imported.
+
+Returns a set of fully-qualified module names that have been lazily imported
+at some point (primarily for diagnostics and introspection). Note that modules
+are removed from this set when they are reified (actually loaded).
+
+[clinic start generated code]*/
+
+static PyObject *
+sys_get_lazy_modules_impl(PyObject *module)
+/*[clinic end generated code: output=4c641f8881ba87c0 input=06c7a1d05bcfa36a]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyObject *lazy_modules_set = interp->imports.lazy_modules_set;
+    if (lazy_modules_set == NULL) {
+        return PySet_New(NULL);
+    }
+    return Py_NewRef(lazy_modules_set);
 }
 
 static PyMethodDef sys_methods[] = {
@@ -2952,6 +2980,7 @@ static PyMethodDef sys_methods[] = {
     SYS_SET_LAZY_IMPORTS_METHODDEF
     SYS_GET_LAZY_IMPORTS_FILTER_METHODDEF
     SYS_SET_LAZY_IMPORTS_FILTER_METHODDEF
+    SYS_GET_LAZY_MODULES_METHODDEF
     SYS__BASEREPL_METHODDEF
 #ifdef Py_STATS
     SYS__STATS_ON_METHODDEF
@@ -4064,6 +4093,14 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("meta_path", PyList_New(0));
     SET_SYS("path_importer_cache", PyDict_New());
     SET_SYS("path_hooks", PyList_New(0));
+
+    /* adding sys.lazy_modules set (PEP 810) */
+    PyObject *lazy_modules_set = PySet_New(NULL);
+    if (lazy_modules_set == NULL) {
+        goto err_occurred;
+    }
+    interp->imports.lazy_modules_set = lazy_modules_set;
+    SET_SYS("lazy_modules", Py_NewRef(lazy_modules_set));
 
     if (_PyErr_Occurred(tstate)) {
         goto err_occurred;

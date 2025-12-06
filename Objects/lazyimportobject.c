@@ -131,20 +131,20 @@ _PyLazyImport_GetName(PyObject *lazy_import)
 }
 
 static PyObject *
-lazy_get(PyObject *self, PyObject *args)
+lazy_resolve(PyObject *self, PyObject *args)
 {
     return _PyImport_LoadLazyImportTstate(PyThreadState_GET(), self);
 }
 
 static PyMethodDef lazy_methods[] = {
-    {"get", lazy_get, METH_NOARGS, PyDoc_STR("gets the value that the lazy function references")},
+    {"resolve", lazy_resolve, METH_NOARGS, PyDoc_STR("resolves the lazy import and returns the actual object")},
     {0}
 };
 
 
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "LazyImport",                               /* tp_name */
+    "lazy_import",                              /* tp_name */
     sizeof(PyLazyImportObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)lazy_import_dealloc,            /* tp_dealloc */

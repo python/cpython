@@ -318,7 +318,7 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
--X lazy_imports=[on|off|default]: control global lazy imports; default is auto;\n\
+-X lazy_imports=[all|none|normal]: control global lazy imports; default is normal;\n\
          also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
@@ -2298,36 +2298,36 @@ config_init_lazy_imports(PyConfig *config)
 
     const char *env = config_get_env(config, "PYTHON_LAZY_IMPORTS");
     if (env) {
-        if (strcmp(env, "on") == 0) {
+        if (strcmp(env, "all") == 0) {
             lazy_imports = 1;
         }
-        else if (strcmp(env, "off") == 0) {
+        else if (strcmp(env, "none") == 0) {
             lazy_imports = 0;
         }
-        else if (strcmp(env, "default") == 0) {
+        else if (strcmp(env, "normal") == 0) {
             lazy_imports = -1;
         }
         else {
             return _PyStatus_ERR("PYTHON_LAZY_IMPORTS: invalid value; "
-                                 "expected 'on', 'off', or 'default'");
+                                 "expected 'all', 'none', or 'normal'");
         }
         config->lazy_imports = lazy_imports;
     }
 
     const wchar_t *x_value = config_get_xoption_value(config, L"lazy_imports");
     if (x_value) {
-        if (wcscmp(x_value, L"on") == 0) {
+        if (wcscmp(x_value, L"all") == 0) {
             lazy_imports = 1;
         }
-        else if (wcscmp(x_value, L"off") == 0) {
+        else if (wcscmp(x_value, L"none") == 0) {
             lazy_imports = 0;
         }
-        else if (wcscmp(x_value, L"default") == 0) {
+        else if (wcscmp(x_value, L"normal") == 0) {
             lazy_imports = -1;
         }
         else {
             return _PyStatus_ERR("-X lazy_imports: invalid value; "
-                                 "expected 'on', 'off', or 'default'");
+                                 "expected 'all', 'none', or 'normal'");
         }
         config->lazy_imports = lazy_imports;
     }
