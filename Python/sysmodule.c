@@ -2908,7 +2908,7 @@ sys_get_lazy_modules_impl(PyObject *module)
 /*[clinic end generated code: output=4c641f8881ba87c0 input=511b3a9682c09282]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *lazy_modules_set = interp->imports.lazy_modules_set;
+    PyObject *lazy_modules_set = FT_ATOMIC_LOAD_PTR_RELAXED(interp->imports.lazy_modules_set);
     if (lazy_modules_set == NULL) {
         return PySet_New(NULL);
     }

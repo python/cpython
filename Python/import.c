@@ -4250,8 +4250,9 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
         }
     }
 
-    // Release the lock - we only needed it for initialization
-    // The dict operations below are thread-safe on their own
+    // Release the lock - we only needed it for initialization.
+    // The dict operations below use PyDict_SetDefaultRef which uses
+    // critical sections for thread-safety in free-threaded builds.
     _PyImport_ReleaseLock(interp);
 
     Py_INCREF(name);
@@ -4283,19 +4284,17 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
             }
 
             // Record the child to be added when the parent is imported.
-            PyObject *lazy_submodules;
-            if (PyDict_GetItemRef(lazy_modules, parent, &lazy_submodules) < 0) {
+            // Use PyDict_SetDefaultRef to atomically get-or-create the set,
+            // avoiding TOCTOU races in free-threaded builds.
+            PyObject *empty_set = PySet_New(NULL);
+            if (empty_set == NULL) {
                 goto done;
             }
-            if (lazy_submodules == NULL) {
-                lazy_submodules = PySet_New(NULL);
-                if (lazy_submodules == NULL) {
-                    goto done;
-                }
-                if (PyDict_SetItem(lazy_modules, parent, lazy_submodules) < 0) {
-                    Py_DECREF(lazy_submodules);
-                    goto done;
-                }
+            PyObject *lazy_submodules;
+            int setdefault_result = PyDict_SetDefaultRef(lazy_modules, parent, empty_set, &lazy_submodules);
+            Py_DECREF(empty_set);
+            if (setdefault_result < 0) {
+                goto done;
             }
             assert(PyAnySet_CheckExact(lazy_submodules));
             if (PySet_Add(lazy_submodules, child) < 0) {
@@ -4357,11 +4356,15 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     _PyInterpreterFrame *frame = _PyEval_GetFrame();
     assert(frame != NULL && frame->f_globals == frame->f_locals); // should only be called in global scope
 
-    // Check if the filter disables the lazy import
+    // Check if the filter disables the lazy import.
+    // We must hold a reference to the filter while calling it to prevent
+    // use-after-free if another thread replaces it via PyImport_SetLazyImportsFilter.
     PyObject *filter = FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp));
+    Py_XINCREF(filter);
     if (filter != NULL) {
         PyObject *modname;
         if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
+            Py_DECREF(filter);
             Py_DECREF(abs_name);
             return NULL;
         } else if (modname == NULL) {
@@ -4376,6 +4379,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         );
 
         Py_DECREF(modname);
+        Py_DECREF(filter);
 
         if (res == NULL) {
             Py_DECREF(abs_name);
@@ -4408,15 +4412,20 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
 
-    // Add the module name to sys.lazy_modules set (PEP 810)
-    PyObject *lazy_modules_set = interp->imports.lazy_modules_set;
+    // Add the module name to sys.lazy_modules set (PEP 810).
+    // We must hold a reference to the set while using it to prevent
+    // use-after-free if another thread clears it during interpreter shutdown.
+    PyObject *lazy_modules_set = FT_ATOMIC_LOAD_PTR_RELAXED(interp->imports.lazy_modules_set);
+    Py_XINCREF(lazy_modules_set);
     if (lazy_modules_set != NULL) {
         assert(PyAnySet_CheckExact(lazy_modules_set));
         if (PySet_Add(lazy_modules_set, abs_name) < 0) {
+            Py_DECREF(lazy_modules_set);
             Py_DECREF(res);
             Py_DECREF(abs_name);
             return NULL;
         }
+        Py_DECREF(lazy_modules_set);
     }
 
     Py_DECREF(abs_name);
@@ -4782,9 +4791,11 @@ PyImport_SetLazyImportsFilter(PyObject *filter)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #ifdef Py_GIL_DISABLED
-    // exchange just in case another thread did same thing at same time
+    // Exchange the filter atomically. Use deferred DECREF to prevent
+    // use-after-free: another thread may have loaded the old filter
+    // and be about to INCREF it.
     PyObject *old = _Py_atomic_exchange_ptr(&LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
-    Py_XDECREF(old);
+    _PyObject_XDecRefDelayed(old);
 #else
     Py_XSETREF(LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
 #endif
