@@ -1607,6 +1607,7 @@ extern "C" {
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
     INIT_ID(c_stack), \
+    INIT_ID(cache_frames), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -2051,6 +2052,7 @@ extern "C" {
     INIT_ID(stacklevel), \
     INIT_ID(start), \
     INIT_ID(statement), \
+    INIT_ID(stats), \
     INIT_ID(status), \
     INIT_ID(stderr), \
     INIT_ID(stdin), \

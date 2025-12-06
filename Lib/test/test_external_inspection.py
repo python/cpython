@@ -1,3 +1,4 @@
+import contextlib
 import unittest
 import os
 import textwrap
@@ -2036,6 +2037,767 @@ class TestDetectionOfThreadStatus(unittest.TestCase):
                 p.wait(timeout=SHORT_TIMEOUT)
                 p.stdout.close()
                 p.stderr.close()
+
+
+class TestFrameCaching(unittest.TestCase):
+    """Test that frame caching produces correct results.
+
+    Uses socket-based synchronization for deterministic testing.
+    All tests verify cache reuse via object identity checks (assertIs).
+    """
+
+    maxDiff = None
+    MAX_TRIES = 10
+
+    @contextlib.contextmanager
+    def _target_process(self, script_body):
+        """Context manager for running a target process with socket sync."""
+        port = find_unused_port()
+        script = f"""\
+import socket
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
+{textwrap.dedent(script_body)}
+"""
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+            p = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+
+                def make_unwinder(cache_frames=True):
+                    return RemoteUnwinder(p.pid, all_threads=True, cache_frames=cache_frames)
+
+                yield p, client_socket, make_unwinder
+
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+            finally:
+                if client_socket:
+                    client_socket.close()
+                if p:
+                    p.kill()
+                    p.terminate()
+                    p.wait(timeout=SHORT_TIMEOUT)
+
+    def _wait_for_signal(self, client_socket, signal):
+        """Block until signal received from target."""
+        response = b""
+        while signal not in response:
+            chunk = client_socket.recv(64)
+            if not chunk:
+                break
+            response += chunk
+        return response
+
+    def _get_frames(self, unwinder, required_funcs):
+        """Sample and return frame_info list for thread containing required_funcs."""
+        traces = unwinder.get_stack_trace()
+        for interp in traces:
+            for thread in interp.threads:
+                funcs = [f.funcname for f in thread.frame_info]
+                if required_funcs.issubset(set(funcs)):
+                    return thread.frame_info
+        return None
+
+    def _sample_frames(self, client_socket, unwinder, wait_signal, send_ack, required_funcs, expected_frames=1):
+        """Wait for signal, sample frames, send ack. Returns frame_info list."""
+        self._wait_for_signal(client_socket, wait_signal)
+        # Give at least MAX_TRIES tries for the process to arrive to a steady state
+        for _ in range(self.MAX_TRIES):
+            frames = self._get_frames(unwinder, required_funcs)
+            if frames and len(frames) >= expected_frames:
+                break
+            time.sleep(0.1)
+        client_socket.sendall(send_ack)
+        return frames
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_hit_same_stack(self):
+        """Test that consecutive samples reuse cached parent frame objects.
+
+        The current frame (index 0) is always re-read from memory to get
+        updated line numbers, so it may be a different object. Parent frames
+        (index 1+) should be identical objects from cache.
+        """
+        script_body = """\
+            def level3():
+                sock.sendall(b"sync1")
+                sock.recv(16)
+                sock.sendall(b"sync2")
+                sock.recv(16)
+                sock.sendall(b"sync3")
+                sock.recv(16)
+
+            def level2():
+                level3()
+
+            def level1():
+                level2()
+
+            level1()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+            expected = {"level1", "level2", "level3"}
+
+            frames1 = self._sample_frames(client_socket, unwinder, b"sync1", b"ack", expected)
+            frames2 = self._sample_frames(client_socket, unwinder, b"sync2", b"ack", expected)
+            frames3 = self._sample_frames(client_socket, unwinder, b"sync3", b"done", expected)
+
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
+        self.assertIsNotNone(frames3)
+        self.assertEqual(len(frames1), len(frames2))
+        self.assertEqual(len(frames2), len(frames3))
+
+        # Current frame (index 0) is always re-read, so check value equality
+        self.assertEqual(frames1[0].funcname, frames2[0].funcname)
+        self.assertEqual(frames2[0].funcname, frames3[0].funcname)
+
+        # Parent frames (index 1+) must be identical objects (cache reuse)
+        for i in range(1, len(frames1)):
+            f1, f2, f3 = frames1[i], frames2[i], frames3[i]
+            self.assertIs(f1, f2, f"Frame {i}: samples 1-2 must be same object")
+            self.assertIs(f2, f3, f"Frame {i}: samples 2-3 must be same object")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_line_number_updates_in_same_frame(self):
+        """Test that line numbers are correctly updated when execution moves within a function.
+
+        When the profiler samples at different points within the same function,
+        it must report the correct line number for each sample, not stale cached values.
+        """
+        script_body = """\
+            def outer():
+                inner()
+
+            def inner():
+                sock.sendall(b"line_a"); sock.recv(16)
+                sock.sendall(b"line_b"); sock.recv(16)
+                sock.sendall(b"line_c"); sock.recv(16)
+                sock.sendall(b"line_d"); sock.recv(16)
+
+            outer()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            frames_a = self._sample_frames(client_socket, unwinder, b"line_a", b"ack", {"inner"})
+            frames_b = self._sample_frames(client_socket, unwinder, b"line_b", b"ack", {"inner"})
+            frames_c = self._sample_frames(client_socket, unwinder, b"line_c", b"ack", {"inner"})
+            frames_d = self._sample_frames(client_socket, unwinder, b"line_d", b"done", {"inner"})
+
+        self.assertIsNotNone(frames_a)
+        self.assertIsNotNone(frames_b)
+        self.assertIsNotNone(frames_c)
+        self.assertIsNotNone(frames_d)
+
+        # Get the 'inner' frame from each sample (should be index 0)
+        inner_a = frames_a[0]
+        inner_b = frames_b[0]
+        inner_c = frames_c[0]
+        inner_d = frames_d[0]
+
+        self.assertEqual(inner_a.funcname, "inner")
+        self.assertEqual(inner_b.funcname, "inner")
+        self.assertEqual(inner_c.funcname, "inner")
+        self.assertEqual(inner_d.funcname, "inner")
+
+        # Line numbers must be different and increasing (execution moves forward)
+        self.assertLess(inner_a.lineno, inner_b.lineno,
+                        "Line B should be after line A")
+        self.assertLess(inner_b.lineno, inner_c.lineno,
+                        "Line C should be after line B")
+        self.assertLess(inner_c.lineno, inner_d.lineno,
+                        "Line D should be after line C")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_invalidation_on_return(self):
+        """Test cache invalidation when stack shrinks (function returns)."""
+        script_body = """\
+            def inner():
+                sock.sendall(b"at_inner")
+                sock.recv(16)
+
+            def outer():
+                inner()
+                sock.sendall(b"at_outer")
+                sock.recv(16)
+
+            outer()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            frames_deep = self._sample_frames(
+                client_socket, unwinder, b"at_inner", b"ack", {"inner", "outer"})
+            frames_shallow = self._sample_frames(
+                client_socket, unwinder, b"at_outer", b"done", {"outer"})
+
+        self.assertIsNotNone(frames_deep)
+        self.assertIsNotNone(frames_shallow)
+
+        funcs_deep = [f.funcname for f in frames_deep]
+        funcs_shallow = [f.funcname for f in frames_shallow]
+
+        self.assertIn("inner", funcs_deep)
+        self.assertIn("outer", funcs_deep)
+        self.assertNotIn("inner", funcs_shallow)
+        self.assertIn("outer", funcs_shallow)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_invalidation_on_call(self):
+        """Test cache invalidation when stack grows (new function called)."""
+        script_body = """\
+            def deeper():
+                sock.sendall(b"at_deeper")
+                sock.recv(16)
+
+            def middle():
+                sock.sendall(b"at_middle")
+                sock.recv(16)
+                deeper()
+
+            def top():
+                middle()
+
+            top()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            frames_before = self._sample_frames(
+                client_socket, unwinder, b"at_middle", b"ack", {"middle", "top"})
+            frames_after = self._sample_frames(
+                client_socket, unwinder, b"at_deeper", b"done", {"deeper", "middle", "top"})
+
+        self.assertIsNotNone(frames_before)
+        self.assertIsNotNone(frames_after)
+
+        funcs_before = [f.funcname for f in frames_before]
+        funcs_after = [f.funcname for f in frames_after]
+
+        self.assertIn("middle", funcs_before)
+        self.assertIn("top", funcs_before)
+        self.assertNotIn("deeper", funcs_before)
+
+        self.assertIn("deeper", funcs_after)
+        self.assertIn("middle", funcs_after)
+        self.assertIn("top", funcs_after)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_partial_stack_reuse(self):
+        """Test that unchanged bottom frames are reused when top changes (A→B→C to A→B→D)."""
+        script_body = """\
+            def func_c():
+                sock.sendall(b"at_c")
+                sock.recv(16)
+
+            def func_d():
+                sock.sendall(b"at_d")
+                sock.recv(16)
+
+            def func_b():
+                func_c()
+                func_d()
+
+            def func_a():
+                func_b()
+
+            func_a()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            # Sample at C: stack is A→B→C
+            frames_c = self._sample_frames(
+                client_socket, unwinder, b"at_c", b"ack", {"func_a", "func_b", "func_c"})
+            # Sample at D: stack is A→B→D (C returned, D called)
+            frames_d = self._sample_frames(
+                client_socket, unwinder, b"at_d", b"done", {"func_a", "func_b", "func_d"})
+
+        self.assertIsNotNone(frames_c)
+        self.assertIsNotNone(frames_d)
+
+        # Find func_a and func_b frames in both samples
+        def find_frame(frames, funcname):
+            for f in frames:
+                if f.funcname == funcname:
+                    return f
+            return None
+
+        frame_a_in_c = find_frame(frames_c, "func_a")
+        frame_b_in_c = find_frame(frames_c, "func_b")
+        frame_a_in_d = find_frame(frames_d, "func_a")
+        frame_b_in_d = find_frame(frames_d, "func_b")
+
+        self.assertIsNotNone(frame_a_in_c)
+        self.assertIsNotNone(frame_b_in_c)
+        self.assertIsNotNone(frame_a_in_d)
+        self.assertIsNotNone(frame_b_in_d)
+
+        # The bottom frames (A, B) should be the SAME objects (cache reuse)
+        self.assertIs(frame_a_in_c, frame_a_in_d, "func_a frame should be reused from cache")
+        self.assertIs(frame_b_in_c, frame_b_in_d, "func_b frame should be reused from cache")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_recursive_frames(self):
+        """Test caching with same function appearing multiple times (recursion)."""
+        script_body = """\
+            def recurse(n):
+                if n <= 0:
+                    sock.sendall(b"sync1")
+                    sock.recv(16)
+                    sock.sendall(b"sync2")
+                    sock.recv(16)
+                else:
+                    recurse(n - 1)
+
+            recurse(5)
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+
+            frames1 = self._sample_frames(
+                client_socket, unwinder, b"sync1", b"ack", {"recurse"})
+            frames2 = self._sample_frames(
+                client_socket, unwinder, b"sync2", b"done", {"recurse"})
+
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
+
+        # Should have multiple "recurse" frames (6 total: recurse(5) down to recurse(0))
+        recurse_count = sum(1 for f in frames1 if f.funcname == "recurse")
+        self.assertEqual(recurse_count, 6, "Should have 6 recursive frames")
+
+        self.assertEqual(len(frames1), len(frames2))
+
+        # Current frame (index 0) is re-read, check value equality
+        self.assertEqual(frames1[0].funcname, frames2[0].funcname)
+
+        # Parent frames (index 1+) should be identical objects (cache reuse)
+        for i in range(1, len(frames1)):
+            self.assertIs(frames1[i], frames2[i],
+                          f"Frame {i}: recursive frames must be same object")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_vs_no_cache_equivalence(self):
+        """Test that cache_frames=True and cache_frames=False produce equivalent results."""
+        script_body = """\
+            def level3():
+                sock.sendall(b"ready"); sock.recv(16)
+
+            def level2():
+                level3()
+
+            def level1():
+                level2()
+
+            level1()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            self._wait_for_signal(client_socket, b"ready")
+
+            # Sample with cache
+            unwinder_cache = make_unwinder(cache_frames=True)
+            frames_cached = self._get_frames(unwinder_cache, {"level1", "level2", "level3"})
+
+            # Sample without cache
+            unwinder_no_cache = make_unwinder(cache_frames=False)
+            frames_no_cache = self._get_frames(unwinder_no_cache, {"level1", "level2", "level3"})
+
+            client_socket.sendall(b"done")
+
+        self.assertIsNotNone(frames_cached)
+        self.assertIsNotNone(frames_no_cache)
+
+        # Same number of frames
+        self.assertEqual(len(frames_cached), len(frames_no_cache))
+
+        # Same function names in same order
+        funcs_cached = [f.funcname for f in frames_cached]
+        funcs_no_cache = [f.funcname for f in frames_no_cache]
+        self.assertEqual(funcs_cached, funcs_no_cache)
+
+        # Same line numbers
+        lines_cached = [f.lineno for f in frames_cached]
+        lines_no_cache = [f.lineno for f in frames_no_cache]
+        self.assertEqual(lines_cached, lines_no_cache)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_per_thread_isolation(self):
+        """Test that frame cache is per-thread and cache invalidation works independently."""
+        script_body = """\
+            import threading
+
+            lock = threading.Lock()
+
+            def sync(msg):
+                with lock:
+                    sock.sendall(msg + b"\\n")
+                    sock.recv(1)
+
+            # Thread 1 functions
+            def baz1():
+                sync(b"t1:baz1")
+
+            def bar1():
+                baz1()
+
+            def blech1():
+                sync(b"t1:blech1")
+
+            def foo1():
+                bar1()  # Goes down to baz1, syncs
+                blech1()  # Returns up, goes down to blech1, syncs
+
+            # Thread 2 functions
+            def baz2():
+                sync(b"t2:baz2")
+
+            def bar2():
+                baz2()
+
+            def blech2():
+                sync(b"t2:blech2")
+
+            def foo2():
+                bar2()  # Goes down to baz2, syncs
+                blech2()  # Returns up, goes down to blech2, syncs
+
+            t1 = threading.Thread(target=foo1)
+            t2 = threading.Thread(target=foo2)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder = make_unwinder(cache_frames=True)
+            buffer = b""
+
+            def recv_msg():
+                """Receive a single message from socket."""
+                nonlocal buffer
+                while b"\n" not in buffer:
+                    chunk = client_socket.recv(256)
+                    if not chunk:
+                        return None
+                    buffer += chunk
+                msg, buffer = buffer.split(b"\n", 1)
+                return msg
+
+            def get_thread_frames(target_funcs):
+                """Get frames for thread matching target functions."""
+                retries = 0
+                for _ in busy_retry(SHORT_TIMEOUT):
+                    if retries >= 5:
+                        break
+                    retries += 1
+                    # On Windows, ReadProcessMemory can fail with OSError
+                    # (WinError 299) when frame pointers are in flux
+                    with contextlib.suppress(RuntimeError, OSError):
+                        traces = unwinder.get_stack_trace()
+                        for interp in traces:
+                            for thread in interp.threads:
+                                funcs = [f.funcname for f in thread.frame_info]
+                                if any(f in funcs for f in target_funcs):
+                                    return funcs
+                return None
+
+            # Track results for each sync point
+            results = {}
+
+            # Process 4 sync points: baz1, baz2, blech1, blech2
+            # With the lock, threads are serialized - handle one at a time
+            for _ in range(4):
+                msg = recv_msg()
+                self.assertIsNotNone(msg, "Expected message from subprocess")
+
+                # Determine which thread/function and take snapshot
+                if msg == b"t1:baz1":
+                    funcs = get_thread_frames(["baz1", "bar1", "foo1"])
+                    self.assertIsNotNone(funcs, "Thread 1 not found at baz1")
+                    results["t1:baz1"] = funcs
+                elif msg == b"t2:baz2":
+                    funcs = get_thread_frames(["baz2", "bar2", "foo2"])
+                    self.assertIsNotNone(funcs, "Thread 2 not found at baz2")
+                    results["t2:baz2"] = funcs
+                elif msg == b"t1:blech1":
+                    funcs = get_thread_frames(["blech1", "foo1"])
+                    self.assertIsNotNone(funcs, "Thread 1 not found at blech1")
+                    results["t1:blech1"] = funcs
+                elif msg == b"t2:blech2":
+                    funcs = get_thread_frames(["blech2", "foo2"])
+                    self.assertIsNotNone(funcs, "Thread 2 not found at blech2")
+                    results["t2:blech2"] = funcs
+
+                # Release thread to continue
+                client_socket.sendall(b"k")
+
+            # Validate Phase 1: baz snapshots
+            t1_baz = results.get("t1:baz1")
+            t2_baz = results.get("t2:baz2")
+            self.assertIsNotNone(t1_baz, "Missing t1:baz1 snapshot")
+            self.assertIsNotNone(t2_baz, "Missing t2:baz2 snapshot")
+
+            # Thread 1 at baz1: should have foo1->bar1->baz1
+            self.assertIn("baz1", t1_baz)
+            self.assertIn("bar1", t1_baz)
+            self.assertIn("foo1", t1_baz)
+            self.assertNotIn("blech1", t1_baz)
+            # No cross-contamination
+            self.assertNotIn("baz2", t1_baz)
+            self.assertNotIn("bar2", t1_baz)
+            self.assertNotIn("foo2", t1_baz)
+
+            # Thread 2 at baz2: should have foo2->bar2->baz2
+            self.assertIn("baz2", t2_baz)
+            self.assertIn("bar2", t2_baz)
+            self.assertIn("foo2", t2_baz)
+            self.assertNotIn("blech2", t2_baz)
+            # No cross-contamination
+            self.assertNotIn("baz1", t2_baz)
+            self.assertNotIn("bar1", t2_baz)
+            self.assertNotIn("foo1", t2_baz)
+
+            # Validate Phase 2: blech snapshots (cache invalidation test)
+            t1_blech = results.get("t1:blech1")
+            t2_blech = results.get("t2:blech2")
+            self.assertIsNotNone(t1_blech, "Missing t1:blech1 snapshot")
+            self.assertIsNotNone(t2_blech, "Missing t2:blech2 snapshot")
+
+            # Thread 1 at blech1: bar1/baz1 should be GONE (cache invalidated)
+            self.assertIn("blech1", t1_blech)
+            self.assertIn("foo1", t1_blech)
+            self.assertNotIn("bar1", t1_blech, "Cache not invalidated: bar1 still present")
+            self.assertNotIn("baz1", t1_blech, "Cache not invalidated: baz1 still present")
+            # No cross-contamination
+            self.assertNotIn("blech2", t1_blech)
+
+            # Thread 2 at blech2: bar2/baz2 should be GONE (cache invalidated)
+            self.assertIn("blech2", t2_blech)
+            self.assertIn("foo2", t2_blech)
+            self.assertNotIn("bar2", t2_blech, "Cache not invalidated: bar2 still present")
+            self.assertNotIn("baz2", t2_blech, "Cache not invalidated: baz2 still present")
+            # No cross-contamination
+            self.assertNotIn("blech1", t2_blech)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_new_unwinder_with_stale_last_profiled_frame(self):
+        """Test that a new unwinder returns complete stack when cache lookup misses."""
+        script_body = """\
+            def level4():
+                sock.sendall(b"sync1")
+                sock.recv(16)
+                sock.sendall(b"sync2")
+                sock.recv(16)
+
+            def level3():
+                level4()
+
+            def level2():
+                level3()
+
+            def level1():
+                level2()
+
+            level1()
+            """
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            expected = {"level1", "level2", "level3", "level4"}
+
+            # First unwinder samples - this sets last_profiled_frame in target
+            unwinder1 = make_unwinder(cache_frames=True)
+            frames1 = self._sample_frames(client_socket, unwinder1, b"sync1", b"ack", expected)
+
+            # Create NEW unwinder (empty cache) and sample
+            # The target still has last_profiled_frame set from unwinder1
+            unwinder2 = make_unwinder(cache_frames=True)
+            frames2 = self._sample_frames(client_socket, unwinder2, b"sync2", b"done", expected)
+
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
+
+        funcs1 = [f.funcname for f in frames1]
+        funcs2 = [f.funcname for f in frames2]
+
+        # Both should have all levels
+        for level in ["level1", "level2", "level3", "level4"]:
+            self.assertIn(level, funcs1, f"{level} missing from first sample")
+            self.assertIn(level, funcs2, f"{level} missing from second sample")
+
+        # Should have same stack depth
+        self.assertEqual(len(frames1), len(frames2),
+                         "New unwinder should return complete stack despite stale last_profiled_frame")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_cache_exhaustion(self):
+        """Test cache works when frame limit (1024) is exceeded.
+
+        FRAME_CACHE_MAX_FRAMES=1024. With 1100 recursive frames,
+        the cache can't store all of them but should still work.
+        """
+        # Use 1100 to exceed FRAME_CACHE_MAX_FRAMES=1024
+        depth = 1100
+        script_body = f"""\
+import sys
+sys.setrecursionlimit(2000)
+
+def recurse(n):
+    if n <= 0:
+        sock.sendall(b"ready")
+        sock.recv(16)  # wait for ack
+        sock.sendall(b"ready2")
+        sock.recv(16)  # wait for done
+        return
+    recurse(n - 1)
+
+recurse({depth})
+"""
+
+        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+            unwinder_cache = make_unwinder(cache_frames=True)
+            unwinder_no_cache = make_unwinder(cache_frames=False)
+
+            frames_cached = self._sample_frames(
+                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}, expected_frames=1102
+            )
+            # Sample again with no cache for comparison
+            frames_no_cache = self._sample_frames(
+                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}, expected_frames=1102
+            )
+
+        self.assertIsNotNone(frames_cached)
+        self.assertIsNotNone(frames_no_cache)
+
+        # Both should have many recurse frames (> 1024 limit)
+        cached_count = [f.funcname for f in frames_cached].count("recurse")
+        no_cache_count = [f.funcname for f in frames_no_cache].count("recurse")
+
+        self.assertGreater(cached_count, 1000, "Should have >1000 recurse frames")
+        self.assertGreater(no_cache_count, 1000, "Should have >1000 recurse frames")
+
+        # Both modes should produce same frame count
+        self.assertEqual(len(frames_cached), len(frames_no_cache),
+                        "Cache exhaustion should not affect stack completeness")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stats(self):
+        """Test that get_stats() returns statistics when stats=True."""
+        script_body = """\
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            unwinder = RemoteUnwinder(p.pid, all_threads=True, stats=True)
+            self._wait_for_signal(client_socket, b"ready")
+
+            # Take a sample
+            unwinder.get_stack_trace()
+
+            stats = unwinder.get_stats()
+            client_socket.sendall(b"done")
+
+        # Verify expected keys exist
+        expected_keys = [
+            'total_samples', 'frame_cache_hits', 'frame_cache_misses',
+            'frame_cache_partial_hits', 'frames_read_from_cache',
+            'frames_read_from_memory', 'frame_cache_hit_rate'
+        ]
+        for key in expected_keys:
+            self.assertIn(key, stats)
+
+        self.assertEqual(stats['total_samples'], 1)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_get_stats_disabled_raises(self):
+        """Test that get_stats() raises RuntimeError when stats=False."""
+        script_body = """\
+            sock.sendall(b"ready")
+            sock.recv(16)
+            """
+
+        with self._target_process(script_body) as (p, client_socket, _):
+            unwinder = RemoteUnwinder(p.pid, all_threads=True)  # stats=False by default
+            self._wait_for_signal(client_socket, b"ready")
+
+            with self.assertRaises(RuntimeError):
+                unwinder.get_stats()
+
+            client_socket.sendall(b"done")
 
 
 if __name__ == "__main__":

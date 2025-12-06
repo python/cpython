@@ -135,6 +135,8 @@ struct _ts {
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
 
+    struct _PyInterpreterFrame *last_profiled_frame;
+
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
     PyObject *c_profileobj;
