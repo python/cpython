@@ -370,8 +370,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaisesRegex(ValueError,
-                                    r'Element\.remove\(.+\): element not found'):
+        with self.assertRaises(ValueError):
             element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
@@ -2758,6 +2757,17 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
                 self.assertEqual(e2.tag, 'group')
                 self.assertEqual(e2[0].tag, 'dogs')
 
+    def test_remove_errors(self):
+        e = ET.Element('tag')
+        with self.assertRaisesRegex(ValueError,
+                r"<Element 'subtag'.*> not in <Element 'tag'.*>"):
+            e.remove(ET.Element('subtag'))
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not type"):
+            e.remove(ET.Element)
+        with self.assertRaisesRegex(TypeError,
+                r".*\bElement, not int"):
+            e.remove(1)
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
 
