@@ -2129,10 +2129,49 @@ if test "$Py_BOLT" = 'true' ; then
   # These flags are required for bolt to work:
   LDFLAGS_NODIST="$LDFLAGS_NODIST -Wl,--emit-relocs"
 
-  # These flags are required to get good performance from bolt:
-  CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
-  # We want to add these no-pie flags to linking executables but not shared libraries:
-  LINKCC="$LINKCC -fno-pie -no-pie"
+  # Detect if PIE is enabled
+  # Compile-time PIE: -fPIE in CFLAGS (defines __PIE__)
+  # Link-time PIE: -pie for link (no __PIE__ defined)
+  # We need to check CFLAGS and LDFLAGS.
+  AC_MSG_CHECKING([whether PIE is enabled by default])
+
+  pie_enabled=no
+
+  # Check for compile-time PIE (-fPIE defines __PIE__/__pie__)
+  # Save original CFLAGS and temporarily add CFLAGS_NODIST to test
+  save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $CFLAGS_NODIST"
+  AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
+    #if !defined(__PIE__) && !defined(__pie__)
+    #error PIE not enabled
+    #endif
+  ]])],
+  [pie_enabled=yes],
+  [])
+  CFLAGS="$save_CFLAGS"
+
+  # Check for link-time PIE (test if linker produces PIE by default)
+  if test "$pie_enabled" = "no"; then
+    save_LDFLAGS="$LDFLAGS"
+    LDFLAGS="$LDFLAGS $LDFLAGS_NODIST"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+      [if file conftest$EXEEXT 2>/dev/null | grep -q -E 'pie executable|shared object'; then
+         pie_enabled=yes
+       fi],
+      [])
+    LDFLAGS="$save_LDFLAGS"
+  fi
+
+  AC_MSG_RESULT([$pie_enabled])
+
+  # Only add -fno-pie flags if PIE is not enabled by default.
+  # If PIE is enabled, these flags would conflict with the build system's PIE enforcement.
+  if test "$pie_enabled" = "no"; then
+    # These flags are required to get good performance from bolt:
+    CFLAGS_NODIST="$CFLAGS_NODIST -fno-pie"
+    # We want to add these no-pie flags to linking executables but not shared libraries:
+    LINKCC="$LINKCC -fno-pie -no-pie"
+  fi
   AC_SUBST([LLVM_BOLT])
   AC_PATH_TOOL([LLVM_BOLT], [llvm-bolt], [''], [${llvm_path}])
   if test -n "${LLVM_BOLT}" -a -x "${LLVM_BOLT}"
@@ -2179,6 +2218,11 @@ then
       [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
     ")]
   )
+
+  # Add --relocs flag if PIE is enabled, as BOLT requires it for PIE binaries
+  if test "${pie_enabled:-no}" = "yes"; then
+    BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} --relocs"
+  fi
 fi
 
 AC_ARG_VAR(
