@@ -433,12 +433,14 @@ class TestCopy(unittest.TestCase):
         self.assertIs(y['foo'], y)
         self.assertEqual(len(y), 1)
 
+    @support.cpython_only
     def test_deepcopy_keepalive(self):
         memo = {}
         x = []
         y = copy.deepcopy(x, memo)
         self.assertIs(memo[id(memo)][0], x)
 
+    @support.cpython_only
     def test_deepcopy_dont_memo_immutable(self):
         memo = {}
         x = [1, 2, 3, 4]
