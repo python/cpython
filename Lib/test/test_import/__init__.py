@@ -1253,6 +1253,20 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+    def test_create_builtin(self):
+        class Spec:
+            name = None
+        spec = Spec()
+
+        with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
+            _imp.create_builtin(spec)
+
+        spec.name = ""
+
+        # gh-142029
+        with self.assertRaisesRegex(ValueError, 'name must not be empty'):
+            _imp.create_builtin(spec)
+
     def test_filter_syntax_warnings_by_module(self):
         module_re = r'test\.test_import\.data\.syntax_warnings\z'
         unload('test.test_import.data.syntax_warnings')
