@@ -1,0 +1,3 @@
+Fix :func:`email.utils.unquote` to properly handle quoted strings with
+trailing garbage by extracting only content between quotes and using
+single-pass unescaping for RFC 2822 compliance. Patched by Shamil Abdulaev.
