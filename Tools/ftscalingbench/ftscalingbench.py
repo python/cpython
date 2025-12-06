@@ -21,6 +21,7 @@
 # > echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
 #
 
+import copy
 import math
 import os
 import queue
@@ -39,10 +40,22 @@ threads = []
 in_queues = []
 out_queues = []
 
-
 def register_benchmark(func):
     ALL_BENCHMARKS[func.__name__] = func
     return func
+
+
+@register_benchmark
+def shallow_copy():
+    x = [1, 2, 3]
+    for i in range(200 * WORK_SCALE):
+        copy.copy(x)
+
+@register_benchmark
+def deepcopy():
+    x = {'list': [1, 2], 'tuple': (1, None)}
+    for i in range(40 * WORK_SCALE):
+        copy.deepcopy(x)
 
 @register_benchmark
 def object_cfunction():
