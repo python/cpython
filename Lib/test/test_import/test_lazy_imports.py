@@ -219,8 +219,11 @@ class SyntaxRestrictionTests(unittest.TestCase):
 
     def test_lazy_future_import(self):
         """lazy from __future__ import should raise SyntaxError."""
-        with self.assertRaises(SyntaxError):
+        with self.assertRaises(SyntaxError) as cm:
             import test.test_import.data.lazy_imports.lazy_future_import
+        # Check we highlight 'lazy' (column offset 0, end offset 4)
+        self.assertEqual(cm.exception.offset, 1)
+        self.assertEqual(cm.exception.end_offset, 5)
 
     def test_lazy_import_func(self):
         """lazy import inside function should raise SyntaxError."""
