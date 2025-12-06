@@ -1,2 +1,2 @@
-Fix: profiling.sampling may cause assertssertion `!(has_gil &&
-gil_requested)'
+Fix: profiling.sampling may cause assertion ``!(has_gil &&
+gil_requested)``
