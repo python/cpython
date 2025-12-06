@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
+#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
@@ -3822,7 +3823,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         }
     }
 
-    int is_loading = PySet_Contains(importing, lazy_import);
+    assert(PyAnySet_CheckExact(importing));
+    int is_loading = _PySet_Contains((PySetObject *)importing, lazy_import);
     if (is_loading < 0) {
         _PyImport_ReleaseLock(interp);
         return NULL;
@@ -4215,7 +4217,7 @@ static PyObject *
 get_mod_dict(PyObject *module)
 {
     if (PyModule_Check(module)) {
-        return Py_XNewRef(PyModule_GetDict(module));
+        return Py_NewRef(_PyModule_GetDict(module));
     }
 
     return PyObject_GetAttr(module, &_Py_ID(__dict__));
@@ -4291,6 +4293,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
                     goto done;
                 }
             }
+            assert(PyAnySet_CheckExact(lazy_submodules));
             if (PySet_Add(lazy_submodules, child) < 0) {
                 Py_DECREF(lazy_submodules);
                 goto done;
@@ -4387,6 +4390,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     // Add the module name to sys.lazy_modules set (PEP 810)
     PyObject *lazy_modules_set = interp->imports.lazy_modules_set;
     if (lazy_modules_set != NULL) {
+        assert(PyAnySet_CheckExact(lazy_modules_set));
         if (PySet_Add(lazy_modules_set, abs_name) < 0) {
             Py_DECREF(res);
             Py_DECREF(abs_name);
@@ -5418,11 +5422,12 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
         if (child_dict == NULL || !PyDict_CheckExact(child_dict)) {
             goto done;
         }
+        assert(PyAnySet_CheckExact(lazy_submodules));
         PyObject *attr_name;
         Py_ssize_t pos = 0;
         Py_hash_t hash;
         while (_PySet_NextEntry(lazy_submodules, &pos, &attr_name, &hash)) {
-            if (PyDict_Contains(child_dict, attr_name)) {
+            if (_PyDict_Contains_KnownHash(child_dict, attr_name, hash)) {
                 continue;
             }
             PyObject *builtins = _PyEval_GetBuiltins(tstate);
