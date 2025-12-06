@@ -57,6 +57,13 @@ extern "C" {
 
 #define Py_TAGGED_SHIFT 2
 
+/* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
+ * as they can (must) have their reclamation deferred */
+
+#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
+#  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
+#endif
+
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
 PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
@@ -502,7 +509,12 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
     assert(obj != NULL);
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
-    return (_PyStackRef){ .bits = (uintptr_t)obj };
+    if (_Py_IsImmortal(obj)) {
+        return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
+    }
+    else {
+        return (_PyStackRef){ .bits = (uintptr_t)obj };
+    }
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
@@ -511,7 +523,7 @@ PyStackRef_IsHeapSafe(_PyStackRef stackref)
 {
     if (PyStackRef_IsDeferred(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        return obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj);
+        return obj == NULL || _PyObject_HasDeferredRefcount(obj);
     }
     return true;
 }
@@ -630,13 +642,6 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 #else // Py_GIL_DISABLED
 
 // With GIL
-
-/* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
- * as they can (must) have their reclamation deferred */
-
-#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
-#  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
-#endif
 
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_REFCNT)))
