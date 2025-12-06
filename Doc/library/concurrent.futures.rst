@@ -41,6 +41,7 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
+
    .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
@@ -152,7 +153,9 @@ And::
 
    executor = ThreadPoolExecutor(max_workers=1)
    executor.submit(wait_on_future)
-
+   # Note: calling future.result() here would cause a deadlock because the single
+   # worker thread is already executing wait_on_future(), which itself is waiting
+   # for a result from the same executor.
 
 .. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='', initializer=None, initargs=())
 
