@@ -92,7 +92,7 @@ process can take seconds, even when most of the imported code is never actually
 used during a particular run.
 
 Developers have worked around this by moving imports inside functions, using
-``importlib`` to load modules on demand, or restructuring code to avoid
+:mod:`importlib` to load modules on demand, or restructuring code to avoid
 unnecessary dependencies. These approaches work but make code harder to read
 and maintain, scatter import statements throughout the codebase, and require
 discipline to apply consistently.
