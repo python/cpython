@@ -26,6 +26,7 @@ function toggleTheme() {
     if (btn) {
         btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
     }
+    applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
@@ -160,13 +161,6 @@ function getSampleCount(line) {
     return parseInt(text) || 0;
 }
 
-function getIntensityClass(ratio) {
-    if (ratio > 0.75) return 'vhot';
-    if (ratio > 0.5) return 'hot';
-    if (ratio > 0.25) return 'warm';
-    return 'cold';
-}
-
 // ============================================================================
 // Scroll Minimap
 // ============================================================================
@@ -194,7 +188,7 @@ function buildScrollMarker() {
 
         const lineTop = Math.floor(line.offsetTop * markerScale);
         const lineNumber = index + 1;
-        const intensityClass = maxSamples > 0 ? getIntensityClass(samples / maxSamples) : 'cold';
+        const intensityClass = maxSamples > 0 ? (intensityToClass(samples / maxSamples) || 'cold') : 'cold';
 
         if (lineNumber === prevLine + 1 && lastMark?.classList.contains(intensityClass)) {
             lastMark.style.height = `${lineTop + lineHeight - lastTop}px`;
@@ -210,6 +204,21 @@ function buildScrollMarker() {
     });
 
     document.body.appendChild(scrollMarker);
+}
+
+function applyLineColors() {
+    const lines = document.querySelectorAll('.code-line');
+    lines.forEach(line => {
+        let intensity;
+        if (colorMode === 'self') {
+            intensity = parseFloat(line.getAttribute('data-self-intensity')) || 0;
+        } else {
+            intensity = parseFloat(line.getAttribute('data-cumulative-intensity')) || 0;
+        }
+
+        const color = intensityToColor(intensity);
+        line.style.background = color;
+    });
 }
 
 // ============================================================================
@@ -264,20 +273,7 @@ function applyHotFilter() {
 
 function toggleColorMode() {
     colorMode = colorMode === 'self' ? 'cumulative' : 'self';
-    const lines = document.querySelectorAll('.code-line');
-
-    lines.forEach(line => {
-        let bgColor;
-        if (colorMode === 'self') {
-            bgColor = line.getAttribute('data-self-color');
-        } else {
-            bgColor = line.getAttribute('data-cumulative-color');
-        }
-
-        if (bgColor) {
-            line.style.background = bgColor;
-        }
-    });
+    applyLineColors();
 
     updateToggleUI('toggle-color-mode', colorMode === 'cumulative');
 
@@ -295,14 +291,7 @@ function toggleColorMode() {
 document.addEventListener('DOMContentLoaded', function() {
     // Restore UI state (theme, etc.)
     restoreUIState();
-
-    // Apply background colors
-    document.querySelectorAll('.code-line[data-bg-color]').forEach(line => {
-        const bgColor = line.getAttribute('data-bg-color');
-        if (bgColor) {
-            line.style.background = bgColor;
-        }
-    });
+    applyLineColors();
 
     // Initialize navigation buttons
     document.querySelectorAll('.nav-btn').forEach(button => {

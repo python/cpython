@@ -2,6 +2,19 @@
 // Index page specific functionality
 
 // ============================================================================
+// Heatmap Bar Coloring
+// ============================================================================
+
+function applyHeatmapBarColors() {
+    const bars = document.querySelectorAll('.heatmap-bar[data-intensity]');
+    bars.forEach(bar => {
+        const intensity = parseFloat(bar.getAttribute('data-intensity')) || 0;
+        const color = intensityToColor(intensity);
+        bar.style.backgroundColor = color;
+    });
+}
+
+// ============================================================================
 // Theme Support
 // ============================================================================
 
@@ -17,6 +30,8 @@ function toggleTheme() {
     if (btn) {
         btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
     }
+
+    applyHeatmapBarColors();
 }
 
 function restoreUIState() {
@@ -108,4 +123,5 @@ function collapseAll() {
 
 document.addEventListener('DOMContentLoaded', function() {
     restoreUIState();
+    applyHeatmapBarColors();
 });
