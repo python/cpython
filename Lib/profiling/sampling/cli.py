@@ -660,6 +660,7 @@ def _handle_live_attach(args, pid):
         limit=20,  # Default limit
         pid=pid,
         mode=mode,
+        async_aware=args.async_aware,
     )
 
     # Sample in live mode
@@ -700,6 +701,7 @@ def _handle_live_run(args):
         limit=20,  # Default limit
         pid=process.pid,
         mode=mode,
+        async_aware=args.async_aware,
     )
 
     # Profile the subprocess in live mode

@@ -547,3 +547,63 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
                 mock_sample.assert_called_once()
                 mock_sample.reset_mock()
+
+    def test_async_aware_argument_all(self):
+        """Test --async-aware all argument is parsed correctly."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+            mock_sample.assert_called_once()
+            # Verify async_aware was passed
+            call_kwargs = mock_sample.call_args[1]
+            self.assertEqual(call_kwargs.get("async_aware"), "all")
+
+    def test_async_aware_argument_running(self):
+        """Test --async-aware running argument is parsed correctly."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "running"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+            mock_sample.assert_called_once()
+            call_kwargs = mock_sample.call_args[1]
+            self.assertEqual(call_kwargs.get("async_aware"), "running")
+
+    def test_async_aware_default_is_none(self):
+        """Test --async-aware defaults to None when not specified."""
+        test_args = ["profiling.sampling.cli", "attach", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+            mock_sample.assert_called_once()
+            call_kwargs = mock_sample.call_args[1]
+            self.assertIsNone(call_kwargs.get("async_aware"))
+
+    def test_async_aware_invalid_choice(self):
+        """Test --async-aware with invalid choice raises error."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "invalid"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error

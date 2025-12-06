@@ -297,7 +297,7 @@ def sample_live(
     def curses_wrapper_func(stdscr):
         collector.init_curses(stdscr)
         try:
-            profiler.sample(collector, duration_sec)
+            profiler.sample(collector, duration_sec, async_aware=async_aware)
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits

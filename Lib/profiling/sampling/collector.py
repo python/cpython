@@ -127,6 +127,7 @@ class Collector(ABC):
             # Yield the complete stack if we collected any frames
             if frames and thread_id is not None:
                 yield frames, thread_id, leaf_id
+
     def _is_gc_frame(self, frame):
         if isinstance(frame, tuple):
             funcname = frame[2] if len(frame) >= 3 else ""

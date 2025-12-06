@@ -556,5 +556,221 @@ class TestAsyncStackReconstruction(unittest.TestCase):
         self.assertEqual(leaf_ids_seen, {4, 5}, "Both LeafX and LeafY should have paths")
 
 
+class TestFlamegraphCollectorAsync(unittest.TestCase):
+    """Test FlamegraphCollector with async frames."""
+
+    def test_flamegraph_with_async_frames(self):
+        """Test FlamegraphCollector correctly processes async task frames."""
+        from profiling.sampling.stack_collector import FlamegraphCollector
+
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        # Build async task tree: Root -> Child
+        child = MockTaskInfo(
+            task_id=2,
+            task_name="ChildTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="ChildTask",
+                    call_stack=[MockFrameInfo("child.py", 10, "child_work")]
+                )
+            ],
+            awaited_by=[MockCoroInfo(task_name=1, call_stack=[])]
+        )
+
+        root = MockTaskInfo(
+            task_id=1,
+            task_name="RootTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="RootTask",
+                    call_stack=[MockFrameInfo("root.py", 20, "root_work")]
+                )
+            ],
+            awaited_by=[]
+        )
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=100, awaited_by=[child, root])]
+
+        # Collect async frames
+        collector.collect(awaited_info_list)
+
+        # Verify samples were collected
+        self.assertGreater(collector._total_samples, 0)
+
+        # Verify the flamegraph tree structure contains our functions
+        root_node = collector._root
+        self.assertGreater(root_node["samples"], 0)
+
+        # Check that thread ID was tracked
+        self.assertIn(100, collector._all_threads)
+
+    def test_flamegraph_with_task_markers(self):
+        """Test FlamegraphCollector includes <task> boundary markers."""
+        from profiling.sampling.stack_collector import FlamegraphCollector
+
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        task = MockTaskInfo(
+            task_id=42,
+            task_name="MyTask",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="MyTask",
+                    call_stack=[MockFrameInfo("work.py", 5, "do_work")]
+                )
+            ],
+            awaited_by=[]
+        )
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=200, awaited_by=[task])]
+        collector.collect(awaited_info_list)
+
+        # Find <task> marker in the tree
+        def find_task_marker(node, depth=0):
+            for func, child in node.get("children", {}).items():
+                if func[0] == "<task>":
+                    return func
+                result = find_task_marker(child, depth + 1)
+                if result:
+                    return result
+            return None
+
+        task_marker = find_task_marker(collector._root)
+        self.assertIsNotNone(task_marker, "Should have <task> marker in tree")
+        self.assertEqual(task_marker[0], "<task>")
+        self.assertIn("MyTask", task_marker[2])
+
+    def test_flamegraph_multiple_async_samples(self):
+        """Test FlamegraphCollector aggregates multiple async samples correctly."""
+        from profiling.sampling.stack_collector import FlamegraphCollector
+
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        task = MockTaskInfo(
+            task_id=1,
+            task_name="Task",
+            coroutine_stack=[
+                MockCoroInfo(
+                    task_name="Task",
+                    call_stack=[MockFrameInfo("work.py", 10, "work")]
+                )
+            ],
+            awaited_by=[]
+        )
+
+        awaited_info_list = [MockAwaitedInfo(thread_id=300, awaited_by=[task])]
+
+        # Collect multiple samples
+        for _ in range(5):
+            collector.collect(awaited_info_list)
+
+        # Verify sample count
+        self.assertEqual(collector._sample_count, 5)
+        self.assertEqual(collector._total_samples, 5)
+
+
+class TestAsyncAwareParameterFlow(unittest.TestCase):
+    """Integration tests for async_aware parameter flow from CLI to unwinder."""
+
+    def test_sample_function_accepts_async_aware(self):
+        """Test that sample() function accepts async_aware parameter."""
+        from profiling.sampling.sample import sample
+        import inspect
+
+        sig = inspect.signature(sample)
+        self.assertIn("async_aware", sig.parameters)
+
+    def test_sample_live_function_accepts_async_aware(self):
+        """Test that sample_live() function accepts async_aware parameter."""
+        from profiling.sampling.sample import sample_live
+        import inspect
+
+        sig = inspect.signature(sample_live)
+        self.assertIn("async_aware", sig.parameters)
+
+    def test_sample_profiler_sample_accepts_async_aware(self):
+        """Test that SampleProfiler.sample() accepts async_aware parameter."""
+        from profiling.sampling.sample import SampleProfiler
+        import inspect
+
+        sig = inspect.signature(SampleProfiler.sample)
+        self.assertIn("async_aware", sig.parameters)
+
+    def test_async_aware_all_uses_get_all_awaited_by(self):
+        """Test that async_aware='all' calls get_all_awaited_by on unwinder."""
+        from unittest.mock import Mock, patch
+        from profiling.sampling.sample import SampleProfiler
+
+        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
+            mock_unwinder = Mock()
+            mock_unwinder.get_all_awaited_by.return_value = []
+            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+
+            profiler = SampleProfiler(
+                pid=12345,
+                sample_interval_usec=1000,
+                all_threads=False
+            )
+            profiler.unwinder = mock_unwinder
+
+            mock_collector = Mock()
+            mock_collector.running = False  # Stop immediately
+
+            # Sample with async_aware="all"
+            profiler.sample(mock_collector, duration_sec=0.001, async_aware="all")
+
+            # Should have called get_all_awaited_by
+            mock_unwinder.get_all_awaited_by.assert_called()
+
+    def test_async_aware_running_uses_get_async_stack_trace(self):
+        """Test that async_aware='running' calls get_async_stack_trace on unwinder."""
+        from unittest.mock import Mock, patch
+        from profiling.sampling.sample import SampleProfiler
+
+        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
+            mock_unwinder = Mock()
+            mock_unwinder.get_async_stack_trace.return_value = []
+            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+
+            profiler = SampleProfiler(
+                pid=12345,
+                sample_interval_usec=1000,
+                all_threads=False
+            )
+            profiler.unwinder = mock_unwinder
+
+            mock_collector = Mock()
+            mock_collector.running = False
+
+            profiler.sample(mock_collector, duration_sec=0.001, async_aware="running")
+
+            mock_unwinder.get_async_stack_trace.assert_called()
+
+    def test_async_aware_none_uses_get_stack_trace(self):
+        """Test that async_aware=None uses regular get_stack_trace."""
+        from unittest.mock import Mock, patch
+        from profiling.sampling.sample import SampleProfiler
+
+        with patch('profiling.sampling.sample._remote_debugging') as mock_rd:
+            mock_unwinder = Mock()
+            mock_unwinder.get_stack_trace.return_value = []
+            mock_rd.RemoteUnwinder.return_value = mock_unwinder
+
+            profiler = SampleProfiler(
+                pid=12345,
+                sample_interval_usec=1000,
+                all_threads=False
+            )
+            profiler.unwinder = mock_unwinder
+
+            mock_collector = Mock()
+            mock_collector.running = False
+
+            profiler.sample(mock_collector, duration_sec=0.001, async_aware=None)
+
+            mock_unwinder.get_stack_trace.assert_called()
+
+
 if __name__ == "__main__":
     unittest.main()
