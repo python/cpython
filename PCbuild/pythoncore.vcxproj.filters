@@ -1247,6 +1247,9 @@
     <ClCompile Include="..\Objects\methodobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\lazyimportobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\moduleobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
