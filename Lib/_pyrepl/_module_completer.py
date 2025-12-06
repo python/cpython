@@ -107,7 +107,23 @@ class ModuleCompleter:
             if path is None:
                 return []
 
-        modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
+        modules: Iterable[pkgutil.ModuleInfo]
+        imported_module = sys.modules.get(path.split('.')[0])
+        if imported_module:
+            # Module already imported: only look in its location,
+            # even if a module with the same name would be higher in path
+            imported_path = (imported_module.__spec__
+                             and imported_module.__spec__.origin)
+            if not imported_path:
+                # Module imported but no spec/origin: propose no suggestions
+                return []
+            if os.path.basename(imported_path) == "__init__.py":  # package
+                imported_path = os.path.dirname(imported_path)
+            import_location = os.path.dirname(imported_path)
+            modules = list(pkgutil.iter_modules([import_location]))
+        else:
+            modules = self.global_cache
+
         is_stdlib_import: bool | None = None
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
@@ -196,7 +212,6 @@ class ModuleCompleter:
         """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
-            # print('getting packages')
             self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
 
