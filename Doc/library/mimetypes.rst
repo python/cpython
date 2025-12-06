@@ -100,22 +100,25 @@ behavior of the module.
 
 .. function:: init(files=None)
 
-   Initialize the internal data structures.  If given, *files* must be a sequence
-   of file names which should be used to augment the default type map.  If omitted,
-   the file names to use are taken from :const:`knownfiles`; on Windows, the
-   current registry settings are loaded.  Each file named in *files* or
-   :const:`knownfiles` takes precedence over those named before it.  Calling
-   :func:`init` repeatedly is allowed.
+   Initialize the internal data structures. If omitted, only :const:`knownfiles` are
+   used to augment the default type map. If given, *files* must be a sequence of file
+   names which are loaded after the :const:`knownfiles`.
 
-   Specifying an empty list for *files* will prevent the system defaults from
-   being applied: only the well-known values will be present from a built-in list.
+   The initial data structure starts with a built-in list of well-known types. On
+   Windows, the current registry settings are loaded. Then, :const:`knownfiles` and
+   *files* are read in order, the latter taking precedence over the former.
 
    If *files* is ``None`` the internal data structure is completely rebuilt to its
    initial default value. This is a stable operation and will produce the same results
-   when called multiple times.
+   when called multiple times. If *files* is specified, each call updates the current
+   mappings with the given files.
 
    .. versionchanged:: 3.2
       Previously, Windows registry settings were ignored.
+
+   .. versionchanged:: 3.8
+      Previously, Windows registry settings and :const:`knownfiles` were not loaded
+      when *files* was given.
 
 
 .. function:: read_mime_types(filename)
