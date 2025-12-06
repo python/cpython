@@ -2051,7 +2051,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are alphanumeric and there is at
    least one character, ``False`` otherwise.  A character ``c`` is alphanumeric if one
    of the following returns ``True``: ``c.isalpha()``, ``c.isdecimal()``,
-   ``c.isdigit()``, or ``c.isnumeric()``.
+   ``c.isdigit()``, or ``c.isnumeric()``. For example::
+
+   .. doctest::
+
+      >>> 'abc123'.isalnum()
+      True
+      >>> 'abc123!@#'.isalnum()
+      False
+      >>> ''.isalnum()
+      False
+      >>> ' '.isalnum()
+      False
 
 
 .. method:: str.isalpha()
