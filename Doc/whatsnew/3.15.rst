@@ -139,15 +139,17 @@ runtime.
 
 For more selective control, :func:`sys.set_lazy_imports_filter` accepts a callable
 that determines whether a specific module should be loaded lazily. The filter
-receives the fully-qualified module name and returns a boolean. This allows
-patterns like making only your own application's modules lazy while keeping
-third-party dependencies eager:
+receives three arguments: the importing module's name (or ``None``), the imported
+module's name, and the fromlist (or ``None`` for regular imports). It should
+return ``True`` to allow the import to be lazy, or ``False`` to force eager loading.
+This allows patterns like making only your own application's modules lazy while
+keeping third-party dependencies eager:
 
 .. code-block:: python
 
    import sys
 
-   sys.set_lazy_imports_filter(lambda name: name.startswith("myapp."))
+   sys.set_lazy_imports_filter(lambda importing, imported, fromlist: imported.startswith("myapp."))
    sys.set_lazy_imports("all")
 
    import myapp.slow_module  # lazy (matches filter)
