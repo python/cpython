@@ -1,0 +1,1 @@
+Fixed trackpad scrolling direction in :mod:`IDLE <idlelib>`
