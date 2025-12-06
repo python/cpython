@@ -1343,7 +1343,7 @@ class TracebackException:
         # If the original code doesn't raise SyntaxError, we can't validate
         # that a keyword replacement actually fixes anything
         try:
-            codeop.compile_command(error_code, symbol="exec")
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
         except SyntaxError:
             pass  # Good - the original code has a syntax error we might fix
         else:
