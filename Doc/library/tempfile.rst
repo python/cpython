@@ -225,8 +225,10 @@ The module defines the following user-callable items:
    properly implements the :const:`os.O_EXCL` flag for :func:`os.open`.  The
    file is readable and writable only by the creating user ID.  If the
    platform uses permission bits to indicate whether a file is executable,
-   the file is executable by no one.  The file descriptor is not inherited
-   by child processes.
+   the file is executable by no one. On platforms that support the :const:
+   `os.O_CLOEXEC` flag, the file descriptor has the close-on-exec flag set, 
+   which prevents it from being inherited across :func:`os.exec*` calls. 
+   However, the file descriptor will still be inherited by child processes created via :func:`os.fork`.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
