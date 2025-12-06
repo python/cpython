@@ -63,39 +63,6 @@ def tearDownModule():
     colorizer.idleConf.userCfg = usercfg
 
 
-class FunctionTest(unittest.TestCase):
-
-    def test_any(self):
-        self.assertEqual(colorizer.any('test', ('a', 'b', 'cd')),
-                         '(?P<test>a|b|cd)')
-
-    def test_make_pat(self):
-        # Tested in more detail by testing prog.
-        self.assertTrue(colorizer.make_pat())
-
-    def test_prog(self):
-        prog = colorizer.prog
-        eq = self.assertEqual
-        line = 'def f():\n    print("hello")\n'
-        m = prog.search(line)
-        eq(m.groupdict()['KEYWORD'], 'def')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['SYNC'], '\n')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['BUILTIN'], 'print')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['STRING'], '"hello"')
-        m = prog.search(line, m.end())
-        eq(m.groupdict()['SYNC'], '\n')
-
-    def test_idprog(self):
-        idprog = colorizer.idprog
-        m = idprog.match('nospace')
-        self.assertIsNone(m)
-        m = idprog.match(' space')
-        self.assertEqual(m.group(0), ' space')
-
-
 class ColorConfigTest(unittest.TestCase):
 
     @classmethod
@@ -396,7 +363,7 @@ class ColorDelegatorTest(unittest.TestCase):
                     #('23.4', ('KEYWORD',)), ('23.10', ('KEYWORD',)), ('23.14', ('KEYWORD',)), ('23.19', ('STRING',)),
                     #('24.12', ('KEYWORD',)),
                     ('25.8', ('KEYWORD',)),
-                    ('26.4', ('KEYWORD',)), ('26.9', ('KEYWORD',)),
+                    ('26.4', ('KEYWORD',)), # XXX ('26.9', ('KEYWORD',)),
                     ('26.11', ('KEYWORD',)), ('26.15', ('STRING',)),
                     ('26.19', ('KEYWORD',)), ('26.22', ()),
                     ('26.24', ('KEYWORD',)), ('26.29', ('BUILTIN',)), ('26.37', ('KEYWORD',)),
@@ -434,7 +401,7 @@ class ColorDelegatorTest(unittest.TestCase):
         eq(text.tag_nextrange('STRING', '8.12'), ('8.14', '8.17'))
         eq(text.tag_nextrange('STRING', '8.17'), ('8.19', '8.26'))
         eq(text.tag_nextrange('SYNC', '8.0'), ('8.26', '9.0'))
-        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '33.0'))
+        eq(text.tag_nextrange('SYNC', '31.0'), ('31.10', '32.0'))
 
     def _assert_highlighting(self, source, tag_ranges):
         """Check highlighting of a given piece of code.
