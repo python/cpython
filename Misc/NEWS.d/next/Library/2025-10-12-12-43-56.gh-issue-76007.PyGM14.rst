@@ -1,0 +1,2 @@
+:mod:`pydoc`: Fix :exc:`DeprecationWarning` being raised when generating doc for
+:term:`stdlib` modules.
