@@ -182,8 +182,6 @@ class SimpleTest(abc.LoaderTests):
                     warnings.simplefilter('ignore', DeprecationWarning)
                     mod = loader.load_module('_temp')
                 self.assertEqual(file_path, mod.__file__)
-                self.assertEqual(self.util.cache_from_source(file_path),
-                                 mod.__cached__)
         finally:
             os.unlink(file_path)
             pycache = os.path.dirname(self.util.cache_from_source(file_path))
@@ -219,8 +217,7 @@ class SimpleTest(abc.LoaderTests):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore', DeprecationWarning)
                 mod = loader.load_module('_temp')
-            # Sanity checks.
-            self.assertEqual(mod.__cached__, compiled)
+            # Safety checks.
             self.assertEqual(mod.x, 5)
             # The pyc file was created.
             self.assertTrue(os.path.exists(compiled))

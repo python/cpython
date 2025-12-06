@@ -6494,13 +6494,12 @@ class TestMain(unittest.TestCase):
         rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         'unittest', '--details')
         output = out.decode()
-        # Just a quick sanity check on the output
+        # Just a quick safety check on the output
         self.assertIn(module.__spec__.name, output)
         self.assertIn(module.__name__, output)
         self.assertIn(module.__spec__.origin, output)
         self.assertIn(module.__file__, output)
         self.assertIn(module.__spec__.cached, output)
-        self.assertIn(module.__cached__, output)
         self.assertEqual(err, b'')
 
 

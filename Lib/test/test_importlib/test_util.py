@@ -124,12 +124,6 @@ class ModuleFromSpecTests:
         module = self.util.module_from_spec(spec)
         self.assertEqual(module.__file__, spec.origin)
 
-    def test___cached__(self):
-        spec = self.machinery.ModuleSpec('test', object())
-        spec.cached = 'some/path'
-        spec.has_location = True
-        module = self.util.module_from_spec(spec)
-        self.assertEqual(module.__cached__, spec.cached)
 
 (Frozen_ModuleFromSpecTests,
  Source_ModuleFromSpecTests
