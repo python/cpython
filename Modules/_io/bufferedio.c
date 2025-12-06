@@ -407,8 +407,8 @@ _enter_buffered_busy(buffered *self)
 
 #define MINUS_LAST_BLOCK(self, size) \
     (self->buffer_mask ? \
-        (size & ~self->buffer_mask) : \
-        (self->buffer_size * (size / self->buffer_size)))
+        ((size) & ~self->buffer_mask) : \
+        (self->buffer_size * ((size) / self->buffer_size)))
 
 
 static int
@@ -1071,6 +1071,7 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
     }
     _bufferedreader_reset_buf(self);
 
+    n = Py_MIN(n, self->buffer_size);
     PyBytesWriter *writer = PyBytesWriter_Create(n);
     if (writer == NULL) {
         return NULL;
@@ -1795,25 +1796,32 @@ _bufferedreader_read_fast(buffered *self, Py_ssize_t n)
  * or until an EOF occurs or until read() would block.
  */
 static PyObject *
-_bufferedreader_read_generic(buffered *self, Py_ssize_t n)
+_bufferedreader_read_generic(buffered *self, Py_ssize_t size)
 {
-    Py_ssize_t current_size, remaining, written;
+    Py_ssize_t current_size, written;
 
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
-    if (n <= current_size)
-        return _bufferedreader_read_fast(self, n);
+    if (size <= current_size)
+        return _bufferedreader_read_fast(self, size);
 
-    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    Py_ssize_t chunksize = self->buffer_size;
+    if (chunksize < MIN_READ_BUF_SIZE) {
+        chunksize = MINUS_LAST_BLOCK(self, MIN_READ_BUF_SIZE);
+    }
+    Py_ssize_t allocated = size, resize_after = size;
+    if (size - current_size > chunksize) {
+        allocated = current_size + chunksize;
+        resize_after = allocated - Py_MAX(self->buffer_size, chunksize/4);
+    }
+    PyBytesWriter *writer = PyBytesWriter_Create(allocated);
     if (writer == NULL) {
         goto error;
     }
     char *out = PyBytesWriter_GetData(writer);
 
-    remaining = n;
     written = 0;
     if (current_size > 0) {
         memcpy(out, self->buffer + self->pos, current_size);
-        remaining -= current_size;
         written += current_size;
         self->pos += current_size;
     }
@@ -1825,12 +1833,28 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         Py_DECREF(r);
     }
     _bufferedreader_reset_buf(self);
-    while (remaining > 0) {
+    while (written < size) {
         /* We want to read a whole block at the end into buffer.
-           If we had readv() we could do this in one pass. */
-        Py_ssize_t r = MINUS_LAST_BLOCK(self, remaining);
-        if (r == 0)
+           If we had readv() we could do this in one pass for the last chunc. */
+        if (written > resize_after) {
+            if (size - allocated > chunksize) {
+                allocated += chunksize;
+                resize_after = allocated - Py_MAX(self->buffer_size, chunksize/4);
+                chunksize += Py_MIN(chunksize, size - allocated - chunksize);
+            }
+            else {
+                resize_after = allocated = size;
+            }
+            if (PyBytesWriter_Resize(writer, allocated) < 0) {
+                PyBytesWriter_Discard(writer);
+                goto error;
+            }
+            out = PyBytesWriter_GetData(writer);
+        }
+        Py_ssize_t r = MINUS_LAST_BLOCK(self, allocated - written);
+        if (r == 0) {
             break;
+        }
         r = _bufferedreader_raw_read(self, out + written, r);
         if (r == -1)
             goto error;
@@ -1842,13 +1866,20 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
             PyBytesWriter_Discard(writer);
             Py_RETURN_NONE;
         }
-        remaining -= r;
         written += r;
     }
+    Py_ssize_t remaining = size - written;
     assert(remaining <= self->buffer_size);
     self->pos = 0;
     self->raw_pos = 0;
     self->read_end = 0;
+    if (allocated < size) {
+        if (PyBytesWriter_Resize(writer, size) < 0) {
+            PyBytesWriter_Discard(writer);
+            goto error;
+        }
+        out = PyBytesWriter_GetData(writer);
+    }
     /* NOTE: when the read is satisfied, we avoid issuing any additional
        reads, which could block indefinitely (e.g. on a socket).
        See issue #9550. */
