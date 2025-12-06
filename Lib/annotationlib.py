@@ -820,7 +820,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             format=format,
         )
         closure, cell_dict = _build_closure(
-            annotate, owner, is_class, globals, annotate_globals, allow_evaluation=False
+            annotate, owner, is_class, globals,
+            annotate_globals, allow_evaluation=False
         )
         func = types.FunctionType(
             annotate_code,
