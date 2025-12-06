@@ -839,20 +839,38 @@ time_strftime1(time_char **outbuf, size_t *bufsize,
             return NULL;
         }
 #endif
-        if (buflen == 0 && *bufsize < 256 * fmtlen) {
-            *bufsize += *bufsize;
-            continue;
-        }
-        /* If the buffer is 256 times as long as the format,
-           it's probably not failing for lack of room!
-           More likely, the format yields an empty result,
-           e.g. an empty format, or %Z when the timezone
-           is unknown. */
+        if ((*outbuf)[buflen] == '\0') {
 #ifdef HAVE_WCSFTIME
-        return PyUnicode_FromWideChar(*outbuf, buflen);
+            return PyUnicode_FromWideChar(*outbuf, buflen);
 #else
-        return PyUnicode_DecodeLocaleAndSize(*outbuf, buflen, "surrogateescape");
+            return PyUnicode_DecodeLocaleAndSize(*outbuf, buflen, "surrogateescape");
 #endif
+        }
+        if (buflen != 0) {
+            // I believe this is unreachable in glibc, musl, and BSD.
+            PyErr_SetString(PyExc_SystemError, "Unexpected behavior from strftime");
+            return NULL;
+        }
+        if (*bufsize >= 256 * fmtlen) {
+            // If the buffer is 256 times as long as the format, it's probably
+            // not failing for lack of room! More likely, `format_time` doesn't
+            // like the format string.
+            // I believe that this is unreachable in glibc, but both musl and
+            // BSD can end up here.
+#ifdef HAVE_WCSFTIME
+            // For backwards compatibility, return empty string instead of
+            // raising a ValueError.
+            return PyUnicode_FromStringAndSize(NULL, 0);
+#else
+            // Previously we raised ValueError("embedded null byte") here, so
+            // this is backwards compatible as long as we are concerned only
+            // about error type.
+            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            return NULL;
+#endif
+
+        }
+        *bufsize += *bufsize;
     }
 }
 
