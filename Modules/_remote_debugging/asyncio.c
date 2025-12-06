@@ -71,6 +71,28 @@ read_async_debug(RemoteUnwinderObject *unwinder)
     return result;
 }
 
+int
+ensure_async_debug_offsets(RemoteUnwinderObject *unwinder)
+{
+    // If already available, nothing to do
+    if (unwinder->async_debug_offsets_available) {
+        return 0;
+    }
+
+    // Try to load async debug offsets (the target process may have
+    // loaded asyncio since we last checked)
+    if (read_async_debug(unwinder) < 0) {
+        PyErr_Clear();
+        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
+        set_exception_cause(unwinder, PyExc_RuntimeError,
+            "AsyncioDebug section unavailable - asyncio module may not be loaded in target process");
+        return -1;
+    }
+
+    unwinder->async_debug_offsets_available = 1;
+    return 0;
+}
+
 /* ============================================================================
  * SET ITERATION FUNCTIONS
  * ============================================================================ */
