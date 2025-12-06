@@ -39,6 +39,7 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
+from test.support import subTests
 from test.support.script_helper import assert_python_failure, assert_python_ok
 
 # Skip tests if _multiprocessing wasn't built.
@@ -1204,7 +1205,7 @@ class _TestQueue(BaseTestCase):
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
         child_can_start.wait()
-        #queue.put(1)
+        queue.put(1)
         queue.put(2)
         queue.put(3)
         queue.put(4)
@@ -1229,15 +1230,16 @@ class _TestQueue(BaseTestCase):
         child_can_start.set()
         parent_can_continue.wait()
 
-        time.sleep(DELTA)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
         self.assertEqual(queue_empty(queue), False)
 
-        # Hangs unexpectedly, remove for now
-        #self.assertEqual(queue.get(), 1)
+        self.assertEqual(queue.get_nowait(), 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
-        self.assertEqual(queue.get_nowait(), 5)
+        self.assertEqual(queue.get(), 5)
 
         self.assertEqual(queue_empty(queue), True)
 
@@ -4382,6 +4384,19 @@ class _TestSharedCTypes(BaseTestCase):
         self.assertEqual(bar.z, 2 ** 33)
 
 
+def resource_tracker_format_subtests(func):
+    """Run given test using both resource tracker communication formats"""
+    def _inner(self, *args, **kwargs):
+        tracker = resource_tracker._resource_tracker
+        for use_simple_format in False, True:
+            with (
+                self.subTest(use_simple_format=use_simple_format),
+                unittest.mock.patch.object(
+                    tracker, '_use_simple_format', use_simple_format)
+            ):
+                func(self, *args, **kwargs)
+    return _inner
+
 @unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
 @hashlib_helper.requires_hashdigest('sha256')
 class _TestSharedMemory(BaseTestCase):
@@ -4661,6 +4676,7 @@ class _TestSharedMemory(BaseTestCase):
         smm.shutdown()
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
         # same resource_tracker process as its parent.
@@ -4912,6 +4928,7 @@ class _TestSharedMemory(BaseTestCase):
                     "shared_memory objects to clean up at shutdown", err)
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_untracking(self):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=False, it must not cause the memory to be deleted
@@ -4939,6 +4956,7 @@ class _TestSharedMemory(BaseTestCase):
             mem.close()
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_tracking(self):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=True, it must cause the memory to be deleted when
@@ -7352,12 +7370,17 @@ class ForkInThreads(unittest.TestCase):
 
 @unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
 class TestSharedMemoryNames(unittest.TestCase):
-    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(self):
+    @subTests('use_simple_format', (True, False))
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(
+            self, use_simple_format):
         # Test script that creates and cleans up shared memory with colon in name
         test_script = textwrap.dedent("""
             import sys
             from multiprocessing import shared_memory
+            from multiprocessing import resource_tracker
             import time
+
+            resource_tracker._resource_tracker._use_simple_format = %s
 
             # Test various patterns of colons in names
             test_names = [
@@ -7386,7 +7409,7 @@ class TestSharedMemoryNames(unittest.TestCase):
                     sys.exit(1)
 
             print("SUCCESS")
-        """)
+        """ % use_simple_format)
 
         rc, out, err = assert_python_ok("-c", test_script)
         self.assertIn(b"SUCCESS", out)

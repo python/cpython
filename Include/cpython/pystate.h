@@ -142,6 +142,8 @@ struct _ts {
        is defined in internal headers that cannot be exposed in the public API. */
     struct _PyInterpreterFrame *base_frame;
 
+    struct _PyInterpreterFrame *last_profiled_frame;
+
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
     PyObject *c_profileobj;

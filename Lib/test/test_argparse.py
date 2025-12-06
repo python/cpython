@@ -2770,6 +2770,16 @@ class TestAddSubparsers(TestCase):
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
+    def test_subparser_help_with_parent_required_optional(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', required=True)
+        parser.add_argument('--bar')
+        subparsers = parser.add_subparsers()
+        parser_sub = subparsers.add_parser('sub')
+        parser_sub.add_argument('arg')
+        self.assertEqual(parser_sub.format_usage(),
+                         'usage: PROG --foo FOO sub [-h] arg\n')
+
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
                          'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
@@ -4963,6 +4973,25 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         usage: PROG [-h] [--op1 [MET] | --op2 [MET1 [MET2 ...]] | --op3 [OP3 ...] |
                     --op4 MET1 [MET2 ...] | --op5 OP5 [OP5 ...] | --op6 OP6 OP6 OP6 |
                     --op7 MET1 MET2 MET3]
+        ''')
+        self.assertEqual(parser.format_usage(), usage)
+
+    def test_mutex_groups_with_mixed_optionals_positionals_wrap(self):
+        # https://github.com/python/cpython/issues/75949
+        # Mutually exclusive groups containing both optionals and positionals
+        # should preserve pipe separators when the usage line wraps.
+        parser = argparse.ArgumentParser(prog='PROG')
+        g = parser.add_mutually_exclusive_group()
+        g.add_argument('-v', '--verbose', action='store_true')
+        g.add_argument('-q', '--quiet', action='store_true')
+        g.add_argument('-x', '--extra-long-option-name', nargs='?')
+        g.add_argument('-y', '--yet-another-long-option', nargs='?')
+        g.add_argument('positional', nargs='?')
+
+        usage = textwrap.dedent('''\
+        usage: PROG [-h] [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] |
+                    positional]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
@@ -7342,7 +7371,28 @@ class TestColorized(TestCase):
             ),
         )
 
-    def test_argparse_color_usage(self):
+    def test_argparse_color_mutually_exclusive_group_usage(self):
+        parser = argparse.ArgumentParser(color=True, prog="PROG")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', help='BADGER')
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        reset = self.theme.reset
+
+        self.assertEqual(parser.format_usage(),
+            f"{heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] "
+            f"[{long}--foo{reset} | "
+            f"{long}--spam {label}SPAM{reset} | "
+            f"{pos}badger ...{reset}]\n")
+
+    def test_argparse_color_custom_usage(self):
         # Arrange
         parser = argparse.ArgumentParser(
             add_help=False,

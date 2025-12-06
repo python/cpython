@@ -780,3 +780,128 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 from profiling.sampling.cli import main
                 main()
             self.assertNotEqual(cm.exception.code, 0)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestAsyncAwareProfilingIntegration(unittest.TestCase):
+    """Integration tests for async-aware profiling mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.async_script = '''
+import asyncio
+
+async def sleeping_leaf():
+    """Leaf task that just sleeps - visible in 'all' mode."""
+    for _ in range(50):
+        await asyncio.sleep(0.02)
+
+async def cpu_leaf():
+    """Leaf task that does CPU work - visible in both modes."""
+    total = 0
+    for _ in range(200):
+        for i in range(10000):
+            total += i * i
+        await asyncio.sleep(0)
+    return total
+
+async def supervisor():
+    """Middle layer that spawns leaf tasks."""
+    tasks = [
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-0"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-1"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-2"),
+        asyncio.create_task(cpu_leaf(), name="Worker"),
+    ]
+    await asyncio.gather(*tasks)
+
+async def main():
+    await supervisor()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+'''
+
+    def _collect_async_samples(self, async_aware_mode):
+        """Helper to collect samples and count function occurrences.
+
+        Returns a dict mapping function names to their sample counts.
+        """
+        with test_subprocess(self.async_script) as subproc:
+            try:
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=SHORT_TIMEOUT,
+                    async_aware=async_aware_mode,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+        # Count samples per function from collapsed stacks
+        # stack_counter keys are (call_tree, thread_id) where call_tree
+        # is a tuple of (file, line, func) tuples
+        func_samples = {}
+        total = 0
+        for (call_tree, _thread_id), count in collector.stack_counter.items():
+            total += count
+            for _file, _line, func in call_tree:
+                func_samples[func] = func_samples.get(func, 0) + count
+
+        func_samples["_total"] = total
+        return func_samples
+
+    def test_async_aware_all_sees_sleeping_and_running_tasks(self):
+        """Test that async_aware='all' captures both sleeping and CPU-running tasks.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf)
+                    ├── Sleeper-1 (sleeping_leaf)
+                    ├── Sleeper-2 (sleeping_leaf)
+                    └── Worker (cpu_leaf)
+
+        async_aware='all' should see ALL 4 leaf tasks in the output.
+        """
+        samples = self._collect_async_samples("all")
+
+        self.assertGreater(samples["_total"], 0, "Should have collected samples")
+        self.assertIn("sleeping_leaf", samples)
+        self.assertIn("cpu_leaf", samples)
+        self.assertIn("supervisor", samples)
+
+    def test_async_aware_running_sees_only_cpu_task(self):
+        """Test that async_aware='running' only captures the actively running task.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-1 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-2 (sleeping_leaf) - NOT visible in 'running'
+                    └── Worker (cpu_leaf) - VISIBLE in 'running'
+
+        async_aware='running' should only see the Worker task doing CPU work.
+        """
+        samples = self._collect_async_samples("running")
+
+        total = samples["_total"]
+        cpu_leaf_samples = samples.get("cpu_leaf", 0)
+
+        self.assertGreater(total, 0, "Should have collected some samples")
+        self.assertGreater(cpu_leaf_samples, 0, "cpu_leaf should appear in samples")
+
+        # cpu_leaf should have at least 90% of samples (typically 99%+)
+        # sleeping_leaf may occasionally appear with very few samples (< 1%)
+        # when tasks briefly wake up to check sleep timers
+        cpu_percentage = (cpu_leaf_samples / total) * 100
+        self.assertGreater(cpu_percentage, 90.0,
+            f"cpu_leaf should dominate samples in 'running' mode, "
+            f"got {cpu_percentage:.1f}% ({cpu_leaf_samples}/{total})")
