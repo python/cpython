@@ -3476,7 +3476,7 @@ _PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func, PyObj
     return res;
 }
 
-int
+static int
 check_lazy_import_comatibility(PyThreadState *tstate, PyObject *globals,
                                PyObject *name, PyObject *level)
 {

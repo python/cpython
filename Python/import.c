@@ -4052,7 +4052,7 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 #undef accumulated
 }
 
-PyObject *
+static PyObject *
 get_abs_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
 {
     if (level > 0) {
