@@ -543,7 +543,7 @@ following attributes:
 
 .. code-block:: python
 
-  class Annotate:
+   class Annotate:
       called_formats = []
 
       def __call__(self, format=None, /, *, _self=None):
