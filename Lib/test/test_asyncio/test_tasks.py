@@ -3681,24 +3681,28 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(context['exception'], exc_context.exception)
 
     def test_run_coroutine_threadsafe_and_cancel(self):
+        task = None
+        thread_future = None
+        # Use a custom task factory to capture the created Task
+        def task_factory(loop, coro):
+            nonlocal task
+            task = asyncio.Task(coro, loop=loop)
+            return task
+
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
+
         async def target():
-            # self.loop.run_in_executor(None, _in_another_thread)
-            thread_future = asyncio.run_coroutine_threadsafe(self.add(1, 2), self.loop)
+            nonlocal thread_future
+            self.loop.set_task_factory(task_factory)
+            thread_future = asyncio.run_coroutine_threadsafe(asyncio.sleep(10), self.loop)
             await asyncio.sleep(0)
 
             thread_future.cancel()
 
-            await asyncio.sleep(0)
-
         self.loop.run_until_complete(target())
-
-        # For windows, it's likely to see asyncio.proactor_events
-        # .BaseProactorEventLoop._loop_self_reading as ready task
-        # We should filter it out.
-        ready_tasks = [
-            i for i in self.loop._ready
-            if i._callback.__name__ != "_loop_self_reading"]
-        self.assertEqual(0, len(ready_tasks))
+        self.assertTrue(task.cancelled())
+        self.assertTrue(thread_future.cancelled())
 
 
 class SleepTests(test_utils.TestCase):
