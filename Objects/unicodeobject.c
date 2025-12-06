@@ -4427,8 +4427,14 @@ unicode_decode_call_errorhandler_writer(
     }
 
     replen = PyUnicode_GET_LENGTH(repunicode);
-    if (replen > 1) {
-        writer->min_length += replen - 1;
+    /* Account for the replacement text itself. The caller set
+       writer->min_length to (remaining_input + writer.pos) before
+       invoking the error handler. Since we are about to write the
+       replacement and then continue decoding from the (possibly
+       updated) input position, ensure min_length includes the full
+       replacement length unconditionally. */
+    if (replen > 0) {
+        writer->min_length += replen;
         need_to_grow = 1;
     }
     new_inptr = *input + newpos;
