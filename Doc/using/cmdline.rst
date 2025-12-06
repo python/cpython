@@ -700,7 +700,7 @@ Miscellaneous options
      (the default) respects the ``lazy`` keyword in source code.
      See also :envvar:`PYTHON_LAZY_IMPORTS`.
 
-     .. versionadded:: 3.15
+     .. versionadded:: next
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1356,7 +1356,7 @@ conflict.
 
    See also the :option:`-X lazy_imports <-X>` command-line option.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
