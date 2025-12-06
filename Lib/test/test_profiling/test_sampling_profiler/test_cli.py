@@ -548,9 +548,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mock_sample.assert_called_once()
                 mock_sample.reset_mock()
 
-    def test_async_aware_argument_all(self):
-        """Test --async-aware all argument is parsed correctly."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all"]
+    def test_async_aware_flag_defaults_to_running(self):
+        """Test --async-aware flag enables async profiling with default 'running' mode."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -560,27 +560,27 @@ class TestSampleProfilerCLI(unittest.TestCase):
             main()
 
             mock_sample.assert_called_once()
-            # Verify async_aware was passed
-            call_kwargs = mock_sample.call_args[1]
-            self.assertEqual(call_kwargs.get("async_aware"), "all")
-
-    def test_async_aware_argument_running(self):
-        """Test --async-aware running argument is parsed correctly."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "running"]
-
-        with (
-            mock.patch("sys.argv", test_args),
-            mock.patch("profiling.sampling.cli.sample") as mock_sample,
-        ):
-            from profiling.sampling.cli import main
-            main()
-
-            mock_sample.assert_called_once()
+            # Verify async_aware was passed with default "running" mode
             call_kwargs = mock_sample.call_args[1]
             self.assertEqual(call_kwargs.get("async_aware"), "running")
 
+    def test_async_aware_with_async_mode_all(self):
+        """Test --async-aware with --async-mode all."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "all"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+            mock_sample.assert_called_once()
+            call_kwargs = mock_sample.call_args[1]
+            self.assertEqual(call_kwargs.get("async_aware"), "all")
+
     def test_async_aware_default_is_none(self):
-        """Test --async-aware defaults to None when not specified."""
+        """Test async_aware defaults to None when --async-aware not specified."""
         test_args = ["profiling.sampling.cli", "attach", "12345"]
 
         with (
@@ -594,9 +594,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
             call_kwargs = mock_sample.call_args[1]
             self.assertIsNone(call_kwargs.get("async_aware"))
 
-    def test_async_aware_invalid_choice(self):
-        """Test --async-aware with invalid choice raises error."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "invalid"]
+    def test_async_mode_invalid_choice(self):
+        """Test --async-mode with invalid choice raises error."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "invalid"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -608,9 +608,25 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
 
+    def test_async_mode_requires_async_aware(self):
+        """Test --async-mode without --async-aware raises error."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-mode", "all"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--async-mode requires --async-aware", error_msg)
+
     def test_async_aware_incompatible_with_native(self):
         """Test --async-aware is incompatible with --native."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all", "--native"]
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--native"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -627,7 +643,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_async_aware_incompatible_with_no_gc(self):
         """Test --async-aware is incompatible with --no-gc."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "running", "--no-gc"]
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--no-gc"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -644,7 +660,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_async_aware_incompatible_with_both_native_and_no_gc(self):
         """Test --async-aware is incompatible with both --native and --no-gc."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all", "--native", "--no-gc"]
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--native", "--no-gc"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -662,7 +678,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_async_aware_incompatible_with_mode(self):
         """Test --async-aware is incompatible with --mode (non-wall)."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all", "--mode", "cpu"]
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--mode", "cpu"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -679,7 +695,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_async_aware_incompatible_with_all_threads(self):
         """Test --async-aware is incompatible with --all-threads."""
-        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "running", "--all-threads"]
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--all-threads"]
 
         with (
             mock.patch("sys.argv", test_args),
