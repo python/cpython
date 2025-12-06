@@ -1027,6 +1027,29 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
         self.type2test = self.queue.SimpleQueue
         super().setUp()
 
+    def test_simplequeue_sizeof_grow(self):
+        q = self.type2test()
+        empty_size = q.__sizeof__()
+        for _ in range(8):
+            q.put(object())
+        size_after_8 = q.__sizeof__()
+        q.put(object())  # 9th item triggers ring buffer growth 8 -> 16
+        size_after_9 = q.__sizeof__()
+        self.assertGreaterEqual(size_after_8, empty_size)
+        self.assertGreater(size_after_9, size_after_8)
+
+    def test_simplequeue_sizeof_shrink(self):
+        q = self.type2test()
+        for _ in range(9):
+            q.put(object())  # grow to capacity 16
+        # Drain until 3 remain (< 16/4), then next get triggers shrink to 8
+        while q.qsize() > 3:
+            q.get()
+        size_before = q.__sizeof__()
+        q.get()
+        size_after = q.__sizeof__()
+        self.assertLess(size_after, size_before)
+
     def test_is_default(self):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
