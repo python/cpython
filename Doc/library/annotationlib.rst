@@ -510,7 +510,6 @@ annotations from the class and puts them in a separate attribute:
          return typ
 
 
-
 Creating a custom callable annotate function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -519,22 +518,33 @@ automatically generated for functions, classes, and modules. Or, they may wish t
 the encapsulation provided by classes, in which case any :term:`callable` can be used as
 an :term:`annotate function`.
 
-However, :term:`methods <method>`, class instances that implement
-:meth:`object.__call__`, and most other callables, do not provide the same attributes as
-true functions, which are needed for the :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`
-machinery to work. :func:`call_annotate_function` and other :mod:`annotationlib`
-functions will attempt to infer those attributes where possible, but some of them must
-always be present for :attr:`~Format.VALUE_WITH_FAKE_GLOBALS` to work.
+To provide the :attr:`~Format.VALUE`, :attr:`~Format.STRING`, or
+:attr:`~Format.FORWARDREF` formats directly, an :ref:`annotate function` must provide
+the following attribute:
+- A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
+raise a :err:`NotImplementedError` when called with a supported format.
 
-Below is an example of a callable class that provides the necessary attributes to be
-used with all formats, and takes advantage of class encapsulation:
+To provide the :attr:`~Format.VALUE_WITH_FAKE_GLOBALS` format, which is used to
+automatically generate :attr:`~Format.STRING` or :attr:`~Format.FORWARDREF` if they are
+not supported directly, :term:`annotate functions <annotate function>` must provide the
+following attributes:
+- A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
+raise a :err:`NotImplementedError` when called with
+:attr:`~Format.VALUE_WITH_FAKE_GLOBALS`.
+- A :ref:`code object <code-objects>` ``__code__`` containing the compiled code for the
+annotate function.
+- Optional: A tuple of the function's positional defaults ``__kwdefaults__``, if the
+function represented by ``__code__`` uses any positional defaults.
+- Optional: A dict of the function's keyword defaults ``__defaults__``, if the function
+represented by ``__code__`` uses any keyword defaults.
+- Optional: All other :ref:`function attributes <inspect-types>`.
 
 .. code-block:: python
 
   class Annotate:
       called_formats = []
 
-      def __call__(self, format=None, *, _self=None):
+      def __call__(self, format=None, /, *, _self=None):
           # When called with fake globals, `_self` will be the
           # actual self value, and `self` will be the format.
           if _self is not None:
