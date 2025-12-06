@@ -1984,6 +1984,396 @@ class RunFuncTestCase(BaseTestCase):
         self.assertStartsWith(lines[1], b"<string>:3: EncodingWarning: ")
 
 
+class PipelineTestCase(BaseTestCase):
+    """Tests for subprocess.run_pipeline()"""
+
+    def test_pipeline_basic(self):
+        """Test basic two-command pipeline"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello world")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), 'HELLO WORLD')
+        self.assertEqual(result.returncodes, [0, 0])
+        self.assertEqual(result.returncode, 0)
+
+    def test_pipeline_three_commands(self):
+        """Test pipeline with three commands"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("one\\ntwo\\nthree")'],
+            [sys.executable, '-c', 'import sys; print("".join(sorted(sys.stdin.readlines())))'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().strip().upper())'],
+            capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), 'ONE\nTHREE\nTWO')
+        self.assertEqual(result.returncodes, [0, 0, 0])
+
+    def test_pipeline_with_input(self):
+        """Test pipeline with input data"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            [sys.executable, '-c', 'import sys; print(len(sys.stdin.read().strip()))'],
+            input='hello', capture_output=True, text=True
+        )
+        self.assertEqual(result.stdout.strip(), '5')
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_memoryview_input(self):
+        """Test pipeline with memoryview input (byte elements)"""
+        test_data = b"Hello, memoryview pipeline!"
+        mv = memoryview(test_data)
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())'],
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read().upper())'],
+            input=mv, capture_output=True
+        )
+        self.assertEqual(result.stdout, test_data.upper())
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_memoryview_input_nonbyte(self):
+        """Test pipeline with non-byte memoryview input (e.g., int32).
+
+        This tests the fix for gh-134453 where non-byte memoryviews
+        had incorrect length tracking on POSIX, causing data truncation.
+        """
+        import array
+        # Create an array of 32-bit integers large enough to trigger
+        # chunked writing behavior (> PIPE_BUF)
+        pipe_buf = getattr(select, 'PIPE_BUF', 512)
+        # Each 'i' element is 4 bytes, need more than pipe_buf bytes total
+        num_elements = (pipe_buf // 4) + 100
+        test_array = array.array('i', [0x41424344 for _ in range(num_elements)])
+        expected_bytes = test_array.tobytes()
+        mv = memoryview(test_array)
+
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())'],
+            [sys.executable, '-c',
+             'import sys; data = sys.stdin.buffer.read(); '
+             'sys.stdout.buffer.write(data)'],
+            input=mv, capture_output=True
+        )
+        self.assertEqual(result.stdout, expected_bytes,
+                         msg=f"{len(result.stdout)=} != {len(expected_bytes)=}")
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_bytes_mode(self):
+        """Test pipeline in binary mode"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; sys.stdout.buffer.write(b"hello")'],
+            [sys.executable, '-c', 'import sys; sys.stdout.buffer.write(sys.stdin.buffer.read().upper())'],
+            capture_output=True
+        )
+        self.assertEqual(result.stdout, b'HELLO')
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_error_check(self):
+        """Test that check=True raises PipelineError on failure"""
+        with self.assertRaises(subprocess.PipelineError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'print("hello")'],
+                [sys.executable, '-c', 'import sys; sys.exit(1)'],
+                capture_output=True, check=True
+            )
+        exc = cm.exception
+        self.assertEqual(len(exc.failed), 1)
+        self.assertEqual(exc.failed[0][0], 1)  # Second command failed
+        self.assertEqual(exc.returncodes, [0, 1])
+
+    def test_pipeline_first_command_fails(self):
+        """Test pipeline where first command fails"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; sys.exit(42)'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            capture_output=True
+        )
+        self.assertEqual(result.returncodes[0], 42)
+
+    def test_pipeline_requires_two_commands(self):
+        """Test that pipeline requires at least 2 commands"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'print("hello")'],
+                capture_output=True
+            )
+        self.assertIn('at least 2 commands', str(cm.exception))
+
+    def test_pipeline_stdin_and_input_conflict(self):
+        """Test that stdin and input cannot both be specified"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                input='data', stdin=subprocess.PIPE
+            )
+        self.assertIn('stdin', str(cm.exception))
+        self.assertIn('input', str(cm.exception))
+
+    def test_pipeline_capture_output_conflict(self):
+        """Test that capture_output conflicts with stdout/stderr"""
+        with self.assertRaises(ValueError) as cm:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'pass'],
+                [sys.executable, '-c', 'pass'],
+                capture_output=True, stdout=subprocess.PIPE
+            )
+        self.assertIn('capture_output', str(cm.exception))
+
+    def test_pipeline_universal_newlines(self):
+        """Test that universal_newlines=True works like text=True"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            capture_output=True, universal_newlines=True
+        )
+        self.assertIsInstance(result.stdout, str)
+        self.assertIn('HELLO', result.stdout)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_result_repr(self):
+        """Test PipelineResult string representation"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("test")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            capture_output=True, text=True
+        )
+        repr_str = repr(result)
+        self.assertIn('PipelineResult', repr_str)
+        self.assertIn('commands=', repr_str)
+        self.assertIn('returncodes=', repr_str)
+
+    def test_pipeline_check_returncodes_method(self):
+        """Test PipelineResult.check_returncodes() method"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; sys.exit(5)'],
+            capture_output=True
+        )
+        with self.assertRaises(subprocess.PipelineError) as cm:
+            result.check_returncodes()
+        self.assertEqual(cm.exception.returncodes[1], 5)
+
+    def test_pipeline_no_capture(self):
+        """Test pipeline without capturing output"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'pass'],
+            [sys.executable, '-c', 'pass'],
+        )
+        self.assertEqual(result.stdout, None)
+        self.assertEqual(result.stderr, None)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_stderr_capture(self):
+        """Test that stderr is captured from all processes"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'import sys; print("err1", file=sys.stderr); print("out1")'],
+            [sys.executable, '-c', 'import sys; print("err2", file=sys.stderr); print(sys.stdin.read())'],
+            capture_output=True, text=True
+        )
+        self.assertIn('err1', result.stderr)
+        self.assertIn('err2', result.stderr)
+
+    @unittest.skipIf(mswindows, "POSIX specific test")
+    def test_pipeline_timeout(self):
+        """Test pipeline with timeout"""
+        with self.assertRaises(subprocess.TimeoutExpired):
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import time; time.sleep(10); print("done")'],
+                [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+                capture_output=True, timeout=0.1
+            )
+
+    def test_pipeline_error_str(self):
+        """Test PipelineError string representation"""
+        try:
+            subprocess.run_pipeline(
+                [sys.executable, '-c', 'import sys; sys.exit(1)'],
+                [sys.executable, '-c', 'import sys; sys.exit(2)'],
+                capture_output=True, check=True
+            )
+        except subprocess.PipelineError as e:
+            error_str = str(e)
+            self.assertIn('Pipeline failed', error_str)
+
+    def test_pipeline_explicit_stdout_pipe(self):
+        """Test pipeline with explicit stdout=PIPE"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+            stdout=subprocess.PIPE
+        )
+        self.assertEqual(result.stdout.strip(), b'HELLO')
+        self.assertIsNone(result.stderr)
+
+    def test_pipeline_stdin_from_file(self):
+        """Test pipeline with stdin from file"""
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write('file content\n')
+            f.flush()
+            fname = f.name
+        try:
+            with open(fname, 'r') as f:
+                result = subprocess.run_pipeline(
+                    [sys.executable, '-c', 'import sys; print(sys.stdin.read().upper())'],
+                    [sys.executable, '-c', 'import sys; print(len(sys.stdin.read().strip()))'],
+                    stdin=f, capture_output=True, text=True
+                )
+            self.assertEqual(result.stdout.strip(), '12')  # "FILE CONTENT"
+        finally:
+            os.unlink(fname)
+
+    def test_pipeline_stdout_to_devnull(self):
+        """Test pipeline with stdout to DEVNULL"""
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', 'print("hello")'],
+            [sys.executable, '-c', 'import sys; print(sys.stdin.read())'],
+            stdout=subprocess.DEVNULL
+        )
+        self.assertIsNone(result.stdout)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_large_data_no_deadlock(self):
+        """Test that large data doesn't cause pipe buffer deadlock.
+
+        This test verifies that the multiplexed I/O implementation properly
+        handles cases where pipe buffers would fill up. Without proper
+        multiplexing, this would deadlock because:
+        1. First process outputs large data filling stdout pipe buffer
+        2. Middle process reads some, processes, writes to its stdout
+        3. If stdout pipe buffer fills, middle process blocks on write
+        4. But first process is blocked waiting for middle to read more
+        5. Classic deadlock
+
+        The test uses data larger than typical pipe buffer size (64KB on Linux)
+        to ensure the multiplexed I/O is working correctly.
+        """
+        # Generate data larger than typical pipe buffer (64KB)
+        # Use 256KB to ensure we exceed buffer on most systems
+        large_data = 'x' * (256 * 1024)
+
+        # Pipeline: input -> double the data -> count chars
+        # The middle process outputs twice as much, increasing buffer pressure
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; data = sys.stdin.read(); print(data + data)'],
+            [sys.executable, '-c',
+             'import sys; print(len(sys.stdin.read().strip()))'],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        # Original data doubled = 512KB = 524288 chars
+        # Second process strips whitespace (removes trailing newline) then counts
+        expected_len = 256 * 1024 * 2  # doubled data, newline stripped
+        self.assertEqual(result.stdout.strip(), str(expected_len))
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_large_data_three_stages(self):
+        """Test large data through a three-stage pipeline.
+
+        This is a more complex deadlock scenario with three processes,
+        where buffer pressure can occur at multiple points.
+        """
+        # Use 128KB of data
+        large_data = 'y' * (128 * 1024)
+
+        # Pipeline: input -> uppercase -> add prefix to each line -> count
+        # We use line-based processing to create more buffer churn
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c',
+             'import sys; print(sys.stdin.read().upper())'],
+            [sys.executable, '-c',
+             'import sys; print("".join("PREFIX:" + line for line in sys.stdin))'],
+            [sys.executable, '-c',
+             'import sys; print(len(sys.stdin.read()))'],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        self.assertEqual(result.returncodes, [0, 0, 0])
+        # Just verify we got a reasonable numeric output without deadlock
+        output_len = int(result.stdout.strip())
+        self.assertGreater(output_len, len(large_data))
+
+    def test_pipeline_large_data_with_stderr(self):
+        """Test large data with large stderr output from multiple processes.
+
+        Ensures stderr collection doesn't interfere with the main data flow
+        and doesn't cause deadlocks when multiple processes write large
+        amounts to stderr concurrently with stdin/stdout data flow.
+        """
+        # 64KB of data through the pipeline
+        data_size = 64 * 1024
+        large_data = 'z' * data_size
+        # Each process writes 64KB to stderr as well
+        stderr_size = 64 * 1024
+
+        result = subprocess.run_pipeline(
+            [sys.executable, '-c', f'''
+import sys
+# Write large stderr output
+sys.stderr.write("E" * {stderr_size})
+sys.stderr.write("\\nstage1 done\\n")
+# Pass through stdin to stdout
+data = sys.stdin.read()
+print(data)
+'''],
+            [sys.executable, '-c', f'''
+import sys
+# Write large stderr output
+sys.stderr.write("F" * {stderr_size})
+sys.stderr.write("\\nstage2 done\\n")
+# Count input size
+data = sys.stdin.read()
+print(len(data.strip()))
+'''],
+            input=large_data, capture_output=True, text=True, timeout=30
+        )
+
+        self.assertEqual(result.stdout.strip(), str(data_size))
+        # Verify both processes wrote to stderr
+        self.assertIn('stage1 done', result.stderr)
+        self.assertIn('stage2 done', result.stderr)
+        # Verify large stderr was captured (at least most of it)
+        self.assertGreater(len(result.stderr), stderr_size)
+        self.assertEqual(result.returncodes, [0, 0])
+
+    def test_pipeline_timeout_large_input(self):
+        """Test that timeout is enforced with large input to a slow pipeline.
+
+        This verifies that run_pipeline() doesn't block indefinitely when
+        writing large input to a pipeline where the first process is slow
+        to consume stdin. The timeout should be enforced promptly.
+
+        This is particularly important on Windows where stdin writing could
+        block without proper threading.
+        """
+        # Input larger than typical pipe buffer (64KB)
+        input_data = 'x' * (128 * 1024)
+
+        start = time.monotonic()
+        with self.assertRaises(subprocess.TimeoutExpired):
+            subprocess.run_pipeline(
+                # First process sleeps before reading - simulates slow consumer
+                [sys.executable, '-c',
+                 'import sys, time; time.sleep(30); print(sys.stdin.read())'],
+                [sys.executable, '-c',
+                 'import sys; print(len(sys.stdin.read()))'],
+                input=input_data, capture_output=True, text=True, timeout=0.5
+            )
+        elapsed = time.monotonic() - start
+
+        # Timeout should occur close to the specified timeout value,
+        # not after waiting for the subprocess to finish sleeping.
+        # Allow generous margin for slow CI, but must be well under
+        # the subprocess sleep time.
+        self.assertLess(elapsed, 5.0,
+            f"TimeoutExpired raised after {elapsed:.2f}s; expected ~0.5s. "
+            "Input writing may have blocked without checking timeout.")
+
+
 def _get_test_grp_name():
     for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
         if grp:
