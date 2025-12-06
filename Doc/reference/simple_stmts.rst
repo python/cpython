@@ -873,6 +873,7 @@ determine dynamically the modules to be loaded.
 
 
 .. _lazy-imports:
+.. _lazy:
 
 Lazy imports
 ------------
@@ -881,16 +882,14 @@ Lazy imports
    pair: lazy; import
    single: lazy import
 
-When an import statement is preceded by the :keyword:`lazy<lazy import>` keyword,
+The :keyword:`lazy` keyword marks an import as lazy. It is a :ref:`soft keyword
+<soft-keywords>` that only has special meaning when it appears immediately
+before an :keyword:`import` or :keyword:`from` statement.
+
+When an import statement is preceded by the :keyword:`lazy` keyword,
 the import becomes *lazy*: the module is not loaded immediately at the import
 statement. Instead, a lazy proxy object is created and bound to the name. The
 actual module is loaded on first use of that name.
-
-.. keyword:: lazy import
-
-   The ``lazy`` keyword marks an import as lazy. It is a :ref:`soft keyword
-   <soft-keywords>` that only has special meaning when it appears immediately
-   before an :keyword:`import` or :keyword:`from` statement.
 
 Lazy imports are only permitted at module scope. Using ``lazy`` inside a
 function, class body, or :keyword:`try`/:keyword:`except`/:keyword:`finally`
