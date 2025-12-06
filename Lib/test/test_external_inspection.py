@@ -28,9 +28,9 @@ PROFILING_MODE_GIL = 2
 PROFILING_MODE_ALL = 3
 
 # Thread status flags
-THREAD_STATUS_HAS_GIL = (1 << 0)
-THREAD_STATUS_ON_CPU = (1 << 1)
-THREAD_STATUS_UNKNOWN = (1 << 2)
+THREAD_STATUS_HAS_GIL = 1 << 0
+THREAD_STATUS_ON_CPU = 1 << 1
+THREAD_STATUS_UNKNOWN = 1 << 2
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
@@ -55,6 +55,7 @@ except ImportError:
 # ============================================================================
 # Module-level helper functions
 # ============================================================================
+
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
@@ -206,8 +207,9 @@ skip_if_not_supported = unittest.skipIf(
 
 def requires_subinterpreters(meth):
     """Decorator to skip a test if subinterpreters are not supported."""
-    return unittest.skipIf(interpreters is None,
-                           'subinterpreters required')(meth)
+    return unittest.skipIf(interpreters is None, "subinterpreters required")(
+        meth
+    )
 
 
 # ============================================================================
@@ -271,6 +273,7 @@ def get_all_awaited_by(pid):
 # ============================================================================
 # Base test class with shared infrastructure
 # ============================================================================
+
 
 class RemoteInspectionTestBase(unittest.TestCase):
     """Base class for remote inspection tests with common helpers."""
@@ -405,8 +408,8 @@ class RemoteInspectionTestBase(unittest.TestCase):
 # Test classes
 # ============================================================================
 
-class TestGetStackTrace(RemoteInspectionTestBase):
 
+class TestGetStackTrace(RemoteInspectionTestBase):
     @skip_if_not_supported
     @unittest.skipIf(
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
@@ -452,7 +455,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     server_socket.close()
                     server_socket = None
 
-                    _wait_for_signal(client_socket, [b"ready:main", b"ready:thread"])
+                    _wait_for_signal(
+                        client_socket, [b"ready:main", b"ready:thread"]
+                    )
 
                     try:
                         stack_trace = get_stack_trace(p.pid)
@@ -466,25 +471,38 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         FrameInfo([script_name, 12, "baz"]),
                         FrameInfo([script_name, 9, "bar"]),
                         FrameInfo([threading.__file__, ANY, "Thread.run"]),
-                        FrameInfo([threading.__file__, ANY, "Thread._bootstrap_inner"]),
-                        FrameInfo([threading.__file__, ANY, "Thread._bootstrap"]),
+                        FrameInfo(
+                            [
+                                threading.__file__,
+                                ANY,
+                                "Thread._bootstrap_inner",
+                            ]
+                        ),
+                        FrameInfo(
+                            [threading.__file__, ANY, "Thread._bootstrap"]
+                        ),
                     ]
 
                     # Find expected thread stack
                     found_thread = self._find_thread_with_frame(
                         stack_trace,
-                        lambda f: f.funcname == "foo" and f.lineno == 15
+                        lambda f: f.funcname == "foo" and f.lineno == 15,
                     )
-                    self.assertIsNotNone(found_thread, "Expected thread stack trace not found")
-                    self.assertEqual(found_thread.frame_info, thread_expected_stack_trace)
+                    self.assertIsNotNone(
+                        found_thread, "Expected thread stack trace not found"
+                    )
+                    self.assertEqual(
+                        found_thread.frame_info, thread_expected_stack_trace
+                    )
 
                     # Check main thread
                     main_frame = FrameInfo([script_name, 19, "<module>"])
                     found_main = self._find_frame_in_trace(
-                        stack_trace,
-                        lambda f: f == main_frame
+                        stack_trace, lambda f: f == main_frame
                     )
-                    self.assertIsNotNone(found_main, "Main thread stack trace not found")
+                    self.assertIsNotNone(
+                        found_main, "Main thread stack trace not found"
+                    )
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
@@ -555,7 +573,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 client_socket = None
 
                 try:
-                    with _managed_subprocess([sys.executable, script_name]) as p:
+                    with _managed_subprocess(
+                        [sys.executable, script_name]
+                    ) as p:
                         client_socket, _ = server_socket.accept()
                         server_socket.close()
                         server_socket = None
@@ -572,17 +592,28 @@ class TestGetStackTrace(RemoteInspectionTestBase):
 
                         # Check all tasks are present
                         tasks_names = [
-                            task.task_name for task in stack_trace[0].awaited_by
+                            task.task_name
+                            for task in stack_trace[0].awaited_by
                         ]
-                        for task_name in ["c2_root", "sub_main_1", "sub_main_2"]:
+                        for task_name in [
+                            "c2_root",
+                            "sub_main_1",
+                            "sub_main_2",
+                        ]:
                             self.assertIn(task_name, tasks_names)
 
                         # Check awaited_by relationships
-                        relationships = self._get_awaited_by_relationships(stack_trace)
+                        relationships = self._get_awaited_by_relationships(
+                            stack_trace
+                        )
                         self.assertEqual(
                             relationships,
                             {
-                                "c2_root": {"Task-1", "sub_main_1", "sub_main_2"},
+                                "c2_root": {
+                                    "Task-1",
+                                    "sub_main_1",
+                                    "sub_main_2",
+                                },
                                 "Task-1": set(),
                                 "sub_main_1": {"Task-1"},
                                 "sub_main_2": {"Task-1"},
@@ -590,14 +621,28 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         )
 
                         # Check coroutine stacks
-                        coroutine_stacks = self._extract_coroutine_stacks(stack_trace)
+                        coroutine_stacks = self._extract_coroutine_stacks(
+                            stack_trace
+                        )
                         self.assertEqual(
                             coroutine_stacks,
                             {
                                 "Task-1": [
                                     (
-                                        tuple([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                        tuple([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
+                                        tuple(
+                                            [
+                                                taskgroups.__file__,
+                                                ANY,
+                                                "TaskGroup._aexit",
+                                            ]
+                                        ),
+                                        tuple(
+                                            [
+                                                taskgroups.__file__,
+                                                ANY,
+                                                "TaskGroup.__aexit__",
+                                            ]
+                                        ),
                                         tuple([script_name, 26, "main"]),
                                     )
                                 ],
@@ -609,8 +654,12 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                         tuple([script_name, 20, "c2"]),
                                     )
                                 ],
-                                "sub_main_1": [(tuple([script_name, 23, "c1"]),)],
-                                "sub_main_2": [(tuple([script_name, 23, "c1"]),)],
+                                "sub_main_1": [
+                                    (tuple([script_name, 23, "c1"]),)
+                                ],
+                                "sub_main_2": [
+                                    (tuple([script_name, 23, "c1"]),)
+                                ],
                             },
                         )
 
@@ -620,7 +669,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             task.task_name: sorted(
                                 (
                                     id_to_task[coro.task_name].task_name,
-                                    tuple(tuple(frame) for frame in coro.call_stack),
+                                    tuple(
+                                        tuple(frame)
+                                        for frame in coro.call_stack
+                                    ),
                                 )
                                 for coro in task.awaited_by
                             )
@@ -634,20 +686,50 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup._aexit",
+                                                ]
+                                            ),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup.__aexit__",
+                                                ]
+                                            ),
                                             tuple([script_name, 26, "main"]),
                                         ),
                                     ),
-                                    ("sub_main_1", (tuple([script_name, 23, "c1"]),)),
-                                    ("sub_main_2", (tuple([script_name, 23, "c1"]),)),
+                                    (
+                                        "sub_main_1",
+                                        (tuple([script_name, 23, "c1"]),),
+                                    ),
+                                    (
+                                        "sub_main_2",
+                                        (tuple([script_name, 23, "c1"]),),
+                                    ),
                                 ],
                                 "sub_main_1": [
                                     (
                                         "Task-1",
                                         (
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup._aexit",
+                                                ]
+                                            ),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup.__aexit__",
+                                                ]
+                                            ),
                                             tuple([script_name, 26, "main"]),
                                         ),
                                     )
@@ -656,8 +738,20 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                            tuple([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup._aexit",
+                                                ]
+                                            ),
+                                            tuple(
+                                                [
+                                                    taskgroups.__file__,
+                                                    ANY,
+                                                    "TaskGroup.__aexit__",
+                                                ]
+                                            ),
                                             tuple([script_name, 26, "main"]),
                                         ),
                                     )
@@ -818,7 +912,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         self.assertIn(task_name, tasks_names)
 
                     # Check awaited_by relationships
-                    relationships = self._get_awaited_by_relationships(stack_trace)
+                    relationships = self._get_awaited_by_relationships(
+                        stack_trace
+                    )
                     self.assertEqual(
                         relationships,
                         {
@@ -828,7 +924,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     )
 
                     # Check coroutine stacks
-                    coroutine_stacks = self._extract_coroutine_stacks(stack_trace)
+                    coroutine_stacks = self._extract_coroutine_stacks(
+                        stack_trace
+                    )
                     self.assertEqual(
                         coroutine_stacks,
                         {
@@ -848,7 +946,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         task.task_name: sorted(
                             (
                                 id_to_task[coro.task_name].task_name,
-                                tuple(tuple(frame) for frame in coro.call_stack),
+                                tuple(
+                                    tuple(frame) for frame in coro.call_stack
+                                ),
                             )
                             for coro in task.awaited_by
                         )
@@ -936,7 +1036,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         self.assertIn(task_name, tasks_names)
 
                     # Check awaited_by relationships
-                    relationships = self._get_awaited_by_relationships(stack_trace)
+                    relationships = self._get_awaited_by_relationships(
+                        stack_trace
+                    )
                     self.assertEqual(
                         relationships,
                         {
@@ -946,13 +1048,21 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     )
 
                     # Check coroutine stacks
-                    coroutine_stacks = self._extract_coroutine_stacks(stack_trace)
+                    coroutine_stacks = self._extract_coroutine_stacks(
+                        stack_trace
+                    )
                     self.assertEqual(
                         coroutine_stacks,
                         {
                             "Task-1": [
                                 (
-                                    tuple([staggered.__file__, ANY, "staggered_race"]),
+                                    tuple(
+                                        [
+                                            staggered.__file__,
+                                            ANY,
+                                            "staggered_race",
+                                        ]
+                                    ),
                                     tuple([script_name, 21, "main"]),
                                 )
                             ],
@@ -960,11 +1070,13 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                 (
                                     tuple([script_name, 11, "deep"]),
                                     tuple([script_name, 15, "c1"]),
-                                    tuple([
-                                        staggered.__file__,
-                                        ANY,
-                                        "staggered_race.<locals>.run_one_coro",
-                                    ]),
+                                    tuple(
+                                        [
+                                            staggered.__file__,
+                                            ANY,
+                                            "staggered_race.<locals>.run_one_coro",
+                                        ]
+                                    ),
                                 )
                             ],
                         },
@@ -976,7 +1088,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         task.task_name: sorted(
                             (
                                 id_to_task[coro.task_name].task_name,
-                                tuple(tuple(frame) for frame in coro.call_stack),
+                                tuple(
+                                    tuple(frame) for frame in coro.call_stack
+                                ),
                             )
                             for coro in task.awaited_by
                         )
@@ -990,7 +1104,13 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                 (
                                     "Task-1",
                                     (
-                                        tuple([staggered.__file__, ANY, "staggered_race"]),
+                                        tuple(
+                                            [
+                                                staggered.__file__,
+                                                ANY,
+                                                "staggered_race",
+                                            ]
+                                        ),
                                         tuple([script_name, 21, "main"]),
                                     ),
                                 )
@@ -1112,65 +1232,159 @@ class TestGetStackTrace(RemoteInspectionTestBase):
 
                     # Check the main task structure
                     main_stack = [
-                        FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                        FrameInfo([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
+                        FrameInfo(
+                            [taskgroups.__file__, ANY, "TaskGroup._aexit"]
+                        ),
+                        FrameInfo(
+                            [taskgroups.__file__, ANY, "TaskGroup.__aexit__"]
+                        ),
                         FrameInfo([script_name, 52, "main"]),
                     ]
                     self.assertIn(
-                        TaskInfo([ANY, "Task-1", [CoroInfo([main_stack, ANY])], []]),
+                        TaskInfo(
+                            [ANY, "Task-1", [CoroInfo([main_stack, ANY])], []]
+                        ),
                         entries,
                     )
                     self.assertIn(
-                        TaskInfo([
-                            ANY,
-                            "server task",
-                            [CoroInfo([
-                                [FrameInfo([base_events.__file__, ANY, "Server.serve_forever"])],
+                        TaskInfo(
+                            [
                                 ANY,
-                            ])],
-                            [CoroInfo([
+                                "server task",
                                 [
-                                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
-                                    FrameInfo([script_name, ANY, "main"]),
+                                    CoroInfo(
+                                        [
+                                            [
+                                                FrameInfo(
+                                                    [
+                                                        base_events.__file__,
+                                                        ANY,
+                                                        "Server.serve_forever",
+                                                    ]
+                                                )
+                                            ],
+                                            ANY,
+                                        ]
+                                    )
                                 ],
-                                ANY,
-                            ])],
-                        ]),
+                                [
+                                    CoroInfo(
+                                        [
+                                            [
+                                                FrameInfo(
+                                                    [
+                                                        taskgroups.__file__,
+                                                        ANY,
+                                                        "TaskGroup._aexit",
+                                                    ]
+                                                ),
+                                                FrameInfo(
+                                                    [
+                                                        taskgroups.__file__,
+                                                        ANY,
+                                                        "TaskGroup.__aexit__",
+                                                    ]
+                                                ),
+                                                FrameInfo(
+                                                    [script_name, ANY, "main"]
+                                                ),
+                                            ],
+                                            ANY,
+                                        ]
+                                    )
+                                ],
+                            ]
+                        ),
                         entries,
                     )
                     self.assertIn(
-                        TaskInfo([
-                            ANY,
-                            "Task-4",
-                            [CoroInfo([
-                                [
-                                    FrameInfo([tasks.__file__, ANY, "sleep"]),
-                                    FrameInfo([script_name, 36, "echo_client"]),
-                                ],
+                        TaskInfo(
+                            [
                                 ANY,
-                            ])],
-                            [CoroInfo([
+                                "Task-4",
                                 [
-                                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                    FrameInfo([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
-                                    FrameInfo([script_name, 39, "echo_client_spam"]),
+                                    CoroInfo(
+                                        [
+                                            [
+                                                FrameInfo(
+                                                    [
+                                                        tasks.__file__,
+                                                        ANY,
+                                                        "sleep",
+                                                    ]
+                                                ),
+                                                FrameInfo(
+                                                    [
+                                                        script_name,
+                                                        36,
+                                                        "echo_client",
+                                                    ]
+                                                ),
+                                            ],
+                                            ANY,
+                                        ]
+                                    )
                                 ],
-                                ANY,
-                            ])],
-                        ]),
+                                [
+                                    CoroInfo(
+                                        [
+                                            [
+                                                FrameInfo(
+                                                    [
+                                                        taskgroups.__file__,
+                                                        ANY,
+                                                        "TaskGroup._aexit",
+                                                    ]
+                                                ),
+                                                FrameInfo(
+                                                    [
+                                                        taskgroups.__file__,
+                                                        ANY,
+                                                        "TaskGroup.__aexit__",
+                                                    ]
+                                                ),
+                                                FrameInfo(
+                                                    [
+                                                        script_name,
+                                                        39,
+                                                        "echo_client_spam",
+                                                    ]
+                                                ),
+                                            ],
+                                            ANY,
+                                        ]
+                                    )
+                                ],
+                            ]
+                        ),
                         entries,
                     )
 
                     expected_awaited_by = [
-                        CoroInfo([
+                        CoroInfo(
                             [
-                                FrameInfo([taskgroups.__file__, ANY, "TaskGroup._aexit"]),
-                                FrameInfo([taskgroups.__file__, ANY, "TaskGroup.__aexit__"]),
-                                FrameInfo([script_name, 39, "echo_client_spam"]),
-                            ],
-                            ANY,
-                        ])
+                                [
+                                    FrameInfo(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup._aexit",
+                                        ]
+                                    ),
+                                    FrameInfo(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup.__aexit__",
+                                        ]
+                                    ),
+                                    FrameInfo(
+                                        [script_name, 39, "echo_client_spam"]
+                                    ),
+                                ],
+                                ANY,
+                            ]
+                        )
                     ]
                     tasks_with_awaited = [
                         task
@@ -1209,16 +1423,20 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         self.assertEqual(
             this_thread_stack[:2],
             [
-                FrameInfo([
-                    __file__,
-                    get_stack_trace.__code__.co_firstlineno + 4,
-                    "get_stack_trace",
-                ]),
-                FrameInfo([
-                    __file__,
-                    self.test_self_trace.__code__.co_firstlineno + 6,
-                    "TestGetStackTrace.test_self_trace",
-                ]),
+                FrameInfo(
+                    [
+                        __file__,
+                        get_stack_trace.__code__.co_firstlineno + 4,
+                        "get_stack_trace",
+                    ]
+                ),
+                FrameInfo(
+                    [
+                        __file__,
+                        self.test_self_trace.__code__.co_firstlineno + 6,
+                        "TestGetStackTrace.test_self_trace",
+                    ]
+                ),
             ],
         )
 
@@ -1232,7 +1450,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         port = find_unused_port()
 
         import pickle
-        subinterp_code = textwrap.dedent(f'''
+
+        subinterp_code = textwrap.dedent(f"""
             import socket
             import time
 
@@ -1245,7 +1464,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 nested_func()
 
             sub_worker()
-        ''').strip()
+        """).strip()
 
         pickled_code = pickle.dumps(subinterp_code)
 
@@ -1328,24 +1547,29 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         elif interpreter_info.interpreter_id > 0:
                             sub_interp = interpreter_info
 
-                    self.assertIsNotNone(main_interp, "Main interpreter should be present")
+                    self.assertIsNotNone(
+                        main_interp, "Main interpreter should be present"
+                    )
 
                     # Check main interpreter has expected stack trace
                     main_found = self._find_frame_in_trace(
-                        [main_interp],
-                        lambda f: f.funcname == "main_worker"
+                        [main_interp], lambda f: f.funcname == "main_worker"
                     )
-                    self.assertIsNotNone(main_found, "Main interpreter should have main_worker in stack")
+                    self.assertIsNotNone(
+                        main_found,
+                        "Main interpreter should have main_worker in stack",
+                    )
 
                     # If subinterpreter is present, check its stack trace
                     if sub_interp:
                         sub_found = self._find_frame_in_trace(
                             [sub_interp],
-                            lambda f: f.funcname in ("sub_worker", "nested_func")
+                            lambda f: f.funcname
+                            in ("sub_worker", "nested_func"),
                         )
                         self.assertIsNotNone(
                             sub_found,
-                            "Subinterpreter should have sub_worker or nested_func in stack"
+                            "Subinterpreter should have sub_worker or nested_func in stack",
                         )
             finally:
                 _cleanup_sockets(*client_sockets, server_socket)
@@ -1361,7 +1585,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
 
         import pickle
 
-        subinterp1_code = textwrap.dedent(f'''
+        subinterp1_code = textwrap.dedent(f"""
             import socket
             import time
             import threading
@@ -1388,9 +1612,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
             t2.start()
             t1.join()
             t2.join()
-        ''').strip()
+        """).strip()
 
-        subinterp2_code = textwrap.dedent(f'''
+        subinterp2_code = textwrap.dedent(f"""
             import socket
             import time
             import threading
@@ -1417,7 +1641,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
             t2.start()
             t1.join()
             t2.join()
-        ''').strip()
+        """).strip()
 
         pickled_code1 = pickle.dumps(subinterp1_code)
         pickled_code2 = pickle.dumps(subinterp2_code)
@@ -1477,8 +1701,11 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 with _managed_subprocess([sys.executable, script_name]) as p:
                     # Accept connections from main and all subinterpreter threads
                     expected_responses = {
-                        "ready:main", "ready:sub1-t1", "ready:sub1-t2",
-                        "ready:sub2-t1", "ready:sub2-t2"
+                        "ready:main",
+                        "ready:sub1-t1",
+                        "ready:sub1-t2",
+                        "ready:sub2-t1",
+                        "ready:sub2-t2",
                     }
                     responses = set()
 
@@ -1507,12 +1734,20 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     self.assertGreaterEqual(len(stack_trace), 2)
 
                     # Count interpreters by ID
-                    interpreter_ids = {interp.interpreter_id for interp in stack_trace}
-                    self.assertIn(0, interpreter_ids, "Main interpreter should be present")
+                    interpreter_ids = {
+                        interp.interpreter_id for interp in stack_trace
+                    }
+                    self.assertIn(
+                        0,
+                        interpreter_ids,
+                        "Main interpreter should be present",
+                    )
                     self.assertGreaterEqual(len(interpreter_ids), 3)
 
                     # Count total threads
-                    total_threads = sum(len(interp.threads) for interp in stack_trace)
+                    total_threads = sum(
+                        len(interp.threads) for interp in stack_trace
+                    )
                     self.assertGreaterEqual(total_threads, 5)
 
                     # Look for expected function names
@@ -1522,7 +1757,12 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             for frame in thread_info.frame_info:
                                 all_funcnames.add(frame.funcname)
 
-                    expected_funcs = {"main_worker", "worker1", "worker2", "nested_func"}
+                    expected_funcs = {
+                        "main_worker",
+                        "worker1",
+                        "worker2",
+                        "nested_func",
+                    }
                     found_funcs = expected_funcs.intersection(all_funcnames)
                     self.assertGreater(len(found_funcs), 0)
             finally:
@@ -1598,16 +1838,21 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             all_traces = unwinder_all.get_stack_trace()
                             found = self._find_frame_in_trace(
                                 all_traces,
-                                lambda f: f.funcname == "main_work" and f.lineno > 12
+                                lambda f: f.funcname == "main_work"
+                                and f.lineno > 12,
                             )
                             if found:
                                 break
                             time.sleep(0.1)
                         else:
-                            self.fail("Main thread did not start its busy work on time")
+                            self.fail(
+                                "Main thread did not start its busy work on time"
+                            )
 
                         # Get stack trace with only GIL holder
-                        unwinder_gil = RemoteUnwinder(p.pid, only_active_thread=True)
+                        unwinder_gil = RemoteUnwinder(
+                            p.pid, only_active_thread=True
+                        )
                         gil_traces = unwinder_gil.get_stack_trace()
                     except PermissionError:
                         self.skipTest(
@@ -1629,7 +1874,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     gil_thread_id = None
                     for interpreter_info in gil_traces:
                         if interpreter_info.threads:
-                            gil_thread_id = interpreter_info.threads[0].thread_id
+                            gil_thread_id = interpreter_info.threads[
+                                0
+                            ].thread_id
                             break
 
                     # Get all thread IDs
@@ -1648,19 +1895,20 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
         sys.platform in ("linux", "darwin", "win32"),
         "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
     )
-    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
     def test_unsupported_platform_error(self):
         with self.assertRaises(RuntimeError) as cm:
             RemoteUnwinder(os.getpid())
 
         self.assertIn(
             "Reading the PyRuntime section is not supported on this platform",
-            str(cm.exception)
+            str(cm.exception),
         )
 
 
 class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
-
     def _run_thread_status_test(self, mode, check_condition):
         """
         Common pattern for thread status detection tests.
@@ -1707,7 +1955,9 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
             os.mkdir(script_dir)
 
             server_socket = _create_server_socket(port)
-            script_name = _make_test_script(script_dir, "thread_status_script", script)
+            script_name = _make_test_script(
+                script_dir, "thread_status_script", script
+            )
             client_socket = None
 
             try:
@@ -1719,7 +1969,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                     # Wait for all ready signals and parse TIDs
                     response = _wait_for_signal(
                         client_socket,
-                        [b"ready:main", b"ready:sleeper", b"ready:busy"]
+                        [b"ready:main", b"ready:sleeper", b"ready:busy"],
                     )
 
                     sleeper_tid = None
@@ -1736,8 +1986,12 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                             except (ValueError, IndexError):
                                 pass
 
-                    self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
-                    self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                    self.assertIsNotNone(
+                        sleeper_tid, "Sleeper thread id not received"
+                    )
+                    self.assertIsNotNone(
+                        busy_tid, "Busy thread id not received"
+                    )
 
                     # Sample until we see expected thread states
                     statuses = {}
@@ -1746,13 +2000,15 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                             p.pid,
                             all_threads=True,
                             mode=mode,
-                            skip_non_matching_threads=False
+                            skip_non_matching_threads=False,
                         )
                         for _ in range(MAX_TRIES):
                             traces = unwinder.get_stack_trace()
                             statuses = self._get_thread_statuses(traces)
 
-                            if check_condition(statuses, sleeper_tid, busy_tid):
+                            if check_condition(
+                                statuses, sleeper_tid, busy_tid
+                            ):
                                 break
                             time.sleep(0.5)
                     except PermissionError:
@@ -1768,14 +2024,16 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
         sys.platform not in ("linux", "darwin", "win32"),
         "Test only runs on supported platforms (Linux, macOS, or Windows)",
     )
-    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
     def test_thread_status_detection(self):
         def check_cpu_status(statuses, sleeper_tid, busy_tid):
             return (
-                sleeper_tid in statuses and
-                busy_tid in statuses and
-                not (statuses[sleeper_tid] & THREAD_STATUS_ON_CPU) and
-                (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
+                sleeper_tid in statuses
+                and busy_tid in statuses
+                and not (statuses[sleeper_tid] & THREAD_STATUS_ON_CPU)
+                and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
             )
 
         statuses, sleeper_tid, busy_tid = self._run_thread_status_test(
@@ -1786,25 +2044,27 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
         self.assertIn(busy_tid, statuses)
         self.assertFalse(
             statuses[sleeper_tid] & THREAD_STATUS_ON_CPU,
-            "Sleeper thread should be off CPU"
+            "Sleeper thread should be off CPU",
         )
         self.assertTrue(
             statuses[busy_tid] & THREAD_STATUS_ON_CPU,
-            "Busy thread should be on CPU"
+            "Busy thread should be on CPU",
         )
 
     @unittest.skipIf(
         sys.platform not in ("linux", "darwin", "win32"),
         "Test only runs on supported platforms (Linux, macOS, or Windows)",
     )
-    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
     def test_thread_status_gil_detection(self):
         def check_gil_status(statuses, sleeper_tid, busy_tid):
             return (
-                sleeper_tid in statuses and
-                busy_tid in statuses and
-                not (statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL) and
-                (statuses[busy_tid] & THREAD_STATUS_HAS_GIL)
+                sleeper_tid in statuses
+                and busy_tid in statuses
+                and not (statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL)
+                and (statuses[busy_tid] & THREAD_STATUS_HAS_GIL)
             )
 
         statuses, sleeper_tid, busy_tid = self._run_thread_status_test(
@@ -1815,18 +2075,20 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
         self.assertIn(busy_tid, statuses)
         self.assertFalse(
             statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL,
-            "Sleeper thread should not have GIL"
+            "Sleeper thread should not have GIL",
         )
         self.assertTrue(
             statuses[busy_tid] & THREAD_STATUS_HAS_GIL,
-            "Busy thread should have GIL"
+            "Busy thread should have GIL",
         )
 
     @unittest.skipIf(
         sys.platform not in ("linux", "darwin", "win32"),
         "Test only runs on supported platforms (Linux, macOS, or Windows)",
     )
-    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
     def test_thread_status_all_mode_detection(self):
         port = find_unused_port()
         script = textwrap.dedent(
@@ -1895,7 +2157,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                             p.pid,
                             all_threads=True,
                             mode=PROFILING_MODE_ALL,
-                            skip_non_matching_threads=False
+                            skip_non_matching_threads=False,
                         )
                         for _ in range(MAX_TRIES):
                             traces = unwinder.get_stack_trace()
@@ -1903,12 +2165,20 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
 
                             # Check ALL mode provides both GIL and CPU info
                             if (
-                                sleeper_tid in statuses and
-                                busy_tid in statuses and
-                                not (statuses[sleeper_tid] & THREAD_STATUS_ON_CPU) and
-                                not (statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL) and
-                                (statuses[busy_tid] & THREAD_STATUS_ON_CPU) and
-                                (statuses[busy_tid] & THREAD_STATUS_HAS_GIL)
+                                sleeper_tid in statuses
+                                and busy_tid in statuses
+                                and not (
+                                    statuses[sleeper_tid]
+                                    & THREAD_STATUS_ON_CPU
+                                )
+                                and not (
+                                    statuses[sleeper_tid]
+                                    & THREAD_STATUS_HAS_GIL
+                                )
+                                and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
+                                and (
+                                    statuses[busy_tid] & THREAD_STATUS_HAS_GIL
+                                )
                             ):
                                 break
                             time.sleep(0.5)
@@ -1917,29 +2187,33 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                             "Insufficient permissions to read the stack trace"
                         )
 
-                    self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
-                    self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                    self.assertIsNotNone(
+                        sleeper_tid, "Sleeper thread id not received"
+                    )
+                    self.assertIsNotNone(
+                        busy_tid, "Busy thread id not received"
+                    )
                     self.assertIn(sleeper_tid, statuses)
                     self.assertIn(busy_tid, statuses)
 
                     # Sleeper: off CPU, no GIL
                     self.assertFalse(
                         statuses[sleeper_tid] & THREAD_STATUS_ON_CPU,
-                        "Sleeper should be off CPU"
+                        "Sleeper should be off CPU",
                     )
                     self.assertFalse(
                         statuses[sleeper_tid] & THREAD_STATUS_HAS_GIL,
-                        "Sleeper should not have GIL"
+                        "Sleeper should not have GIL",
                     )
 
                     # Busy: on CPU, has GIL
                     self.assertTrue(
                         statuses[busy_tid] & THREAD_STATUS_ON_CPU,
-                        "Busy should be on CPU"
+                        "Busy should be on CPU",
                     )
                     self.assertTrue(
                         statuses[busy_tid] & THREAD_STATUS_HAS_GIL,
-                        "Busy should have GIL"
+                        "Busy should have GIL",
                     )
             finally:
                 _cleanup_sockets(*client_sockets, server_socket)
@@ -1978,12 +2252,16 @@ sock.connect(('localhost', {port}))
                     server_socket = None
 
                     def make_unwinder(cache_frames=True):
-                        return RemoteUnwinder(p.pid, all_threads=True, cache_frames=cache_frames)
+                        return RemoteUnwinder(
+                            p.pid, all_threads=True, cache_frames=cache_frames
+                        )
 
                     yield p, client_socket, make_unwinder
 
             except PermissionError:
-                self.skipTest("Insufficient permissions to read the stack trace")
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
@@ -2005,7 +2283,15 @@ sock.connect(('localhost', {port}))
             time.sleep(0.1)
         return None
 
-    def _sample_frames(self, client_socket, unwinder, wait_signal, send_ack, required_funcs, expected_frames=1):
+    def _sample_frames(
+        self,
+        client_socket,
+        unwinder,
+        wait_signal,
+        send_ack,
+        required_funcs,
+        expected_frames=1,
+    ):
         """Wait for signal, sample frames with retry until required funcs present, send ack."""
         _wait_for_signal(client_socket, wait_signal)
         frames = None
@@ -2047,13 +2333,23 @@ sock.connect(('localhost', {port}))
             level1()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
             expected = {"level1", "level2", "level3"}
 
-            frames1 = self._sample_frames(client_socket, unwinder, b"sync1", b"ack", expected)
-            frames2 = self._sample_frames(client_socket, unwinder, b"sync2", b"ack", expected)
-            frames3 = self._sample_frames(client_socket, unwinder, b"sync3", b"done", expected)
+            frames1 = self._sample_frames(
+                client_socket, unwinder, b"sync1", b"ack", expected
+            )
+            frames2 = self._sample_frames(
+                client_socket, unwinder, b"sync2", b"ack", expected
+            )
+            frames3 = self._sample_frames(
+                client_socket, unwinder, b"sync3", b"done", expected
+            )
 
         self.assertIsNotNone(frames1)
         self.assertIsNotNone(frames2)
@@ -2068,8 +2364,12 @@ sock.connect(('localhost', {port}))
         # Parent frames (index 1+) must be identical objects (cache reuse)
         for i in range(1, len(frames1)):
             f1, f2, f3 = frames1[i], frames2[i], frames3[i]
-            self.assertIs(f1, f2, f"Frame {i}: samples 1-2 must be same object")
-            self.assertIs(f2, f3, f"Frame {i}: samples 2-3 must be same object")
+            self.assertIs(
+                f1, f2, f"Frame {i}: samples 1-2 must be same object"
+            )
+            self.assertIs(
+                f2, f3, f"Frame {i}: samples 2-3 must be same object"
+            )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2095,13 +2395,25 @@ sock.connect(('localhost', {port}))
             outer()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
 
-            frames_a = self._sample_frames(client_socket, unwinder, b"line_a", b"ack", {"inner"})
-            frames_b = self._sample_frames(client_socket, unwinder, b"line_b", b"ack", {"inner"})
-            frames_c = self._sample_frames(client_socket, unwinder, b"line_c", b"ack", {"inner"})
-            frames_d = self._sample_frames(client_socket, unwinder, b"line_d", b"done", {"inner"})
+            frames_a = self._sample_frames(
+                client_socket, unwinder, b"line_a", b"ack", {"inner"}
+            )
+            frames_b = self._sample_frames(
+                client_socket, unwinder, b"line_b", b"ack", {"inner"}
+            )
+            frames_c = self._sample_frames(
+                client_socket, unwinder, b"line_c", b"ack", {"inner"}
+            )
+            frames_d = self._sample_frames(
+                client_socket, unwinder, b"line_d", b"done", {"inner"}
+            )
 
         self.assertIsNotNone(frames_a)
         self.assertIsNotNone(frames_b)
@@ -2120,12 +2432,15 @@ sock.connect(('localhost', {port}))
         self.assertEqual(inner_d.funcname, "inner")
 
         # Line numbers must be different and increasing (execution moves forward)
-        self.assertLess(inner_a.lineno, inner_b.lineno,
-                        "Line B should be after line A")
-        self.assertLess(inner_b.lineno, inner_c.lineno,
-                        "Line C should be after line B")
-        self.assertLess(inner_c.lineno, inner_d.lineno,
-                        "Line D should be after line C")
+        self.assertLess(
+            inner_a.lineno, inner_b.lineno, "Line B should be after line A"
+        )
+        self.assertLess(
+            inner_b.lineno, inner_c.lineno, "Line C should be after line B"
+        )
+        self.assertLess(
+            inner_c.lineno, inner_d.lineno, "Line D should be after line C"
+        )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2147,13 +2462,23 @@ sock.connect(('localhost', {port}))
             outer()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
 
             frames_deep = self._sample_frames(
-                client_socket, unwinder, b"at_inner", b"ack", {"inner", "outer"})
+                client_socket,
+                unwinder,
+                b"at_inner",
+                b"ack",
+                {"inner", "outer"},
+            )
             frames_shallow = self._sample_frames(
-                client_socket, unwinder, b"at_outer", b"done", {"outer"})
+                client_socket, unwinder, b"at_outer", b"done", {"outer"}
+            )
 
         self.assertIsNotNone(frames_deep)
         self.assertIsNotNone(frames_shallow)
@@ -2189,13 +2514,27 @@ sock.connect(('localhost', {port}))
             top()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
 
             frames_before = self._sample_frames(
-                client_socket, unwinder, b"at_middle", b"ack", {"middle", "top"})
+                client_socket,
+                unwinder,
+                b"at_middle",
+                b"ack",
+                {"middle", "top"},
+            )
             frames_after = self._sample_frames(
-                client_socket, unwinder, b"at_deeper", b"done", {"deeper", "middle", "top"})
+                client_socket,
+                unwinder,
+                b"at_deeper",
+                b"done",
+                {"deeper", "middle", "top"},
+            )
 
         self.assertIsNotNone(frames_before)
         self.assertIsNotNone(frames_after)
@@ -2237,15 +2576,29 @@ sock.connect(('localhost', {port}))
             func_a()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
 
             # Sample at C: stack is A→B→C
             frames_c = self._sample_frames(
-                client_socket, unwinder, b"at_c", b"ack", {"func_a", "func_b", "func_c"})
+                client_socket,
+                unwinder,
+                b"at_c",
+                b"ack",
+                {"func_a", "func_b", "func_c"},
+            )
             # Sample at D: stack is A→B→D (C returned, D called)
             frames_d = self._sample_frames(
-                client_socket, unwinder, b"at_d", b"done", {"func_a", "func_b", "func_d"})
+                client_socket,
+                unwinder,
+                b"at_d",
+                b"done",
+                {"func_a", "func_b", "func_d"},
+            )
 
         self.assertIsNotNone(frames_c)
         self.assertIsNotNone(frames_d)
@@ -2268,8 +2621,16 @@ sock.connect(('localhost', {port}))
         self.assertIsNotNone(frame_b_in_d)
 
         # The bottom frames (A, B) should be the SAME objects (cache reuse)
-        self.assertIs(frame_a_in_c, frame_a_in_d, "func_a frame should be reused from cache")
-        self.assertIs(frame_b_in_c, frame_b_in_d, "func_b frame should be reused from cache")
+        self.assertIs(
+            frame_a_in_c,
+            frame_a_in_d,
+            "func_a frame should be reused from cache",
+        )
+        self.assertIs(
+            frame_b_in_c,
+            frame_b_in_d,
+            "func_b frame should be reused from cache",
+        )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2291,13 +2652,19 @@ sock.connect(('localhost', {port}))
             recurse(5)
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
 
             frames1 = self._sample_frames(
-                client_socket, unwinder, b"sync1", b"ack", {"recurse"})
+                client_socket, unwinder, b"sync1", b"ack", {"recurse"}
+            )
             frames2 = self._sample_frames(
-                client_socket, unwinder, b"sync2", b"done", {"recurse"})
+                client_socket, unwinder, b"sync2", b"done", {"recurse"}
+            )
 
         self.assertIsNotNone(frames1)
         self.assertIsNotNone(frames2)
@@ -2313,8 +2680,11 @@ sock.connect(('localhost', {port}))
 
         # Parent frames (index 1+) should be identical objects (cache reuse)
         for i in range(1, len(frames1)):
-            self.assertIs(frames1[i], frames2[i],
-                          f"Frame {i}: recursive frames must be same object")
+            self.assertIs(
+                frames1[i],
+                frames2[i],
+                f"Frame {i}: recursive frames must be same object",
+            )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2336,16 +2706,24 @@ sock.connect(('localhost', {port}))
             level1()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             _wait_for_signal(client_socket, b"ready")
 
             # Sample with cache
             unwinder_cache = make_unwinder(cache_frames=True)
-            frames_cached = self._get_frames_with_retry(unwinder_cache, {"level1", "level2", "level3"})
+            frames_cached = self._get_frames_with_retry(
+                unwinder_cache, {"level1", "level2", "level3"}
+            )
 
             # Sample without cache
             unwinder_no_cache = make_unwinder(cache_frames=False)
-            frames_no_cache = self._get_frames_with_retry(unwinder_no_cache, {"level1", "level2", "level3"})
+            frames_no_cache = self._get_frames_with_retry(
+                unwinder_no_cache, {"level1", "level2", "level3"}
+            )
 
             client_socket.sendall(b"done")
 
@@ -2418,7 +2796,11 @@ sock.connect(('localhost', {port}))
             t2.join()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder = make_unwinder(cache_frames=True)
             buffer = b""
 
@@ -2516,16 +2898,24 @@ sock.connect(('localhost', {port}))
             # Thread 1 at blech1: bar1/baz1 should be GONE (cache invalidated)
             self.assertIn("blech1", t1_blech)
             self.assertIn("foo1", t1_blech)
-            self.assertNotIn("bar1", t1_blech, "Cache not invalidated: bar1 still present")
-            self.assertNotIn("baz1", t1_blech, "Cache not invalidated: baz1 still present")
+            self.assertNotIn(
+                "bar1", t1_blech, "Cache not invalidated: bar1 still present"
+            )
+            self.assertNotIn(
+                "baz1", t1_blech, "Cache not invalidated: baz1 still present"
+            )
             # No cross-contamination
             self.assertNotIn("blech2", t1_blech)
 
             # Thread 2 at blech2: bar2/baz2 should be GONE (cache invalidated)
             self.assertIn("blech2", t2_blech)
             self.assertIn("foo2", t2_blech)
-            self.assertNotIn("bar2", t2_blech, "Cache not invalidated: bar2 still present")
-            self.assertNotIn("baz2", t2_blech, "Cache not invalidated: baz2 still present")
+            self.assertNotIn(
+                "bar2", t2_blech, "Cache not invalidated: bar2 still present"
+            )
+            self.assertNotIn(
+                "baz2", t2_blech, "Cache not invalidated: baz2 still present"
+            )
             # No cross-contamination
             self.assertNotIn("blech1", t2_blech)
 
@@ -2555,17 +2945,25 @@ sock.connect(('localhost', {port}))
             level1()
             """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             expected = {"level1", "level2", "level3", "level4"}
 
             # First unwinder samples - this sets last_profiled_frame in target
             unwinder1 = make_unwinder(cache_frames=True)
-            frames1 = self._sample_frames(client_socket, unwinder1, b"sync1", b"ack", expected)
+            frames1 = self._sample_frames(
+                client_socket, unwinder1, b"sync1", b"ack", expected
+            )
 
             # Create NEW unwinder (empty cache) and sample
             # The target still has last_profiled_frame set from unwinder1
             unwinder2 = make_unwinder(cache_frames=True)
-            frames2 = self._sample_frames(client_socket, unwinder2, b"sync2", b"done", expected)
+            frames2 = self._sample_frames(
+                client_socket, unwinder2, b"sync2", b"done", expected
+            )
 
         self.assertIsNotNone(frames1)
         self.assertIsNotNone(frames2)
@@ -2579,8 +2977,11 @@ sock.connect(('localhost', {port}))
             self.assertIn(level, funcs2, f"{level} missing from second sample")
 
         # Should have same stack depth
-        self.assertEqual(len(frames1), len(frames2),
-                         "New unwinder should return complete stack despite stale last_profiled_frame")
+        self.assertEqual(
+            len(frames1),
+            len(frames2),
+            "New unwinder should return complete stack despite stale last_profiled_frame",
+        )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2611,16 +3012,30 @@ def recurse(n):
 recurse({depth})
 """
 
-        with self._target_process(script_body) as (p, client_socket, make_unwinder):
+        with self._target_process(script_body) as (
+            p,
+            client_socket,
+            make_unwinder,
+        ):
             unwinder_cache = make_unwinder(cache_frames=True)
             unwinder_no_cache = make_unwinder(cache_frames=False)
 
             frames_cached = self._sample_frames(
-                client_socket, unwinder_cache, b"ready", b"ack", {"recurse"}, expected_frames=1102
+                client_socket,
+                unwinder_cache,
+                b"ready",
+                b"ack",
+                {"recurse"},
+                expected_frames=1102,
             )
             # Sample again with no cache for comparison
             frames_no_cache = self._sample_frames(
-                client_socket, unwinder_no_cache, b"ready2", b"done", {"recurse"}, expected_frames=1102
+                client_socket,
+                unwinder_no_cache,
+                b"ready2",
+                b"done",
+                {"recurse"},
+                expected_frames=1102,
             )
 
         self.assertIsNotNone(frames_cached)
@@ -2630,12 +3045,19 @@ recurse({depth})
         cached_count = [f.funcname for f in frames_cached].count("recurse")
         no_cache_count = [f.funcname for f in frames_no_cache].count("recurse")
 
-        self.assertGreater(cached_count, 1000, "Should have >1000 recurse frames")
-        self.assertGreater(no_cache_count, 1000, "Should have >1000 recurse frames")
+        self.assertGreater(
+            cached_count, 1000, "Should have >1000 recurse frames"
+        )
+        self.assertGreater(
+            no_cache_count, 1000, "Should have >1000 recurse frames"
+        )
 
         # Both modes should produce same frame count
-        self.assertEqual(len(frames_cached), len(frames_no_cache),
-                        "Cache exhaustion should not affect stack completeness")
+        self.assertEqual(
+            len(frames_cached),
+            len(frames_no_cache),
+            "Cache exhaustion should not affect stack completeness",
+        )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2661,14 +3083,18 @@ recurse({depth})
 
         # Verify expected keys exist
         expected_keys = [
-            'total_samples', 'frame_cache_hits', 'frame_cache_misses',
-            'frame_cache_partial_hits', 'frames_read_from_cache',
-            'frames_read_from_memory', 'frame_cache_hit_rate'
+            "total_samples",
+            "frame_cache_hits",
+            "frame_cache_misses",
+            "frame_cache_partial_hits",
+            "frames_read_from_cache",
+            "frames_read_from_memory",
+            "frame_cache_hit_rate",
         ]
         for key in expected_keys:
             self.assertIn(key, stats)
 
-        self.assertEqual(stats['total_samples'], 1)
+        self.assertEqual(stats["total_samples"], 1)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -2683,7 +3109,9 @@ recurse({depth})
             """
 
         with self._target_process(script_body) as (p, client_socket, _):
-            unwinder = RemoteUnwinder(p.pid, all_threads=True)  # stats=False by default
+            unwinder = RemoteUnwinder(
+                p.pid, all_threads=True
+            )  # stats=False by default
             _wait_for_signal(client_socket, b"ready")
 
             with self.assertRaises(RuntimeError):
