@@ -121,7 +121,7 @@ simple_stmts[asdl_stmt_seq*]:
 simple_stmt[stmt_ty] (memo):
     | assignment
     | &"type" type_alias
-    | &('import' | 'from' | "lazy" ) import_stmt
+    | &('import' | 'from' | "lazy") import_stmt
     | e=star_expressions { _PyAST_Expr(e, EXTRA) }
     | &'return' return_stmt
     | &'raise' raise_stmt

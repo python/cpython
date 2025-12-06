@@ -307,7 +307,7 @@ static PyObject *
 builtin___lazy_import___impl(PyObject *module, PyObject *name,
                              PyObject *globals, PyObject *locals,
                              PyObject *fromlist, int level)
-/*[clinic end generated code: output=300f1771094b9e8c input=57123e246d6c36ee]*/
+/*[clinic end generated code: output=300f1771094b9e8c input=9394874f340b2948]*/
 {
     PyObject *builtins;
     PyThreadState *tstate = PyThreadState_GET();
@@ -318,11 +318,14 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         locals = globals;
     }
 
-    builtins = PyMapping_GetItemString(globals, "__builtins__");
+    if (PyDict_GetItemRef(globals, &_Py_ID(__builtins__), &builtins) < 0) {
+        return NULL;
+    }
     if (builtins == NULL) {
         PyErr_SetString(PyExc_ValueError, "unable to get builtins for lazy import");
         return NULL;
-    } else if (PyModule_Check(builtins)) {
+    }
+    if (PyModule_Check(builtins)) {
         PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
         if (builtins_dict == NULL) {
             PyErr_SetString(PyExc_AttributeError, "builtins module has no dict");

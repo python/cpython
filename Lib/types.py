@@ -76,6 +76,10 @@ except ImportError:
     # CapsuleType cannot be accessed from pure Python,
     # so there is no fallback definition.
 
+    exec("lazy import sys as _lazy_sys", _lz := {})
+    LazyImportType = type(_lz['_lazy_sys'])
+    del _lz
+
     del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 

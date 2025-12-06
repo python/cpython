@@ -23,12 +23,9 @@ _PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr)
     if (m == NULL) {
         return NULL;
     }
-    Py_XINCREF(builtins);
-    m->lz_builtins = builtins;
-    Py_INCREF(from);
-    m->lz_from = from;
-    Py_XINCREF(attr);
-    m->lz_attr = attr;
+    m->lz_builtins = Py_XNewRef(builtins);
+    m->lz_from = Py_NewRef(from);
+    m->lz_attr = Py_XNewRef(attr);
 
     /* Capture frame information for the original import location */
     m->lz_code = NULL;
@@ -44,18 +41,35 @@ _PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr)
         }
     }
 
-    PyObject_GC_Track(m);
+    _PyObject_GC_TRACK(m);
     return (PyObject *)m;
+}
+
+static int
+lazy_import_traverse(PyLazyImportObject *m, visitproc visit, void *arg)
+{
+    Py_VISIT(m->lz_builtins);
+    Py_VISIT(m->lz_from);
+    Py_VISIT(m->lz_attr);
+    Py_VISIT(m->lz_code);
+    return 0;
+}
+
+static int
+lazy_import_clear(PyLazyImportObject *m)
+{
+    Py_CLEAR(m->lz_builtins);
+    Py_CLEAR(m->lz_from);
+    Py_CLEAR(m->lz_attr);
+    Py_CLEAR(m->lz_code);
+    return 0;
 }
 
 static void
 lazy_import_dealloc(PyLazyImportObject *m)
 {
-    PyObject_GC_UnTrack(m);
-    Py_XDECREF(m->lz_builtins);
-    Py_XDECREF(m->lz_from);
-    Py_XDECREF(m->lz_attr);
-    Py_XDECREF(m->lz_code);
+    _PyObject_GC_UNTRACK(m);
+    lazy_import_clear(m);
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
@@ -83,26 +97,6 @@ lazy_import_repr(PyLazyImportObject *m)
     PyObject *res = PyUnicode_FromFormat("<lazy_import '%U'>", name);
     Py_DECREF(name);
     return res;
-}
-
-static int
-lazy_import_traverse(PyLazyImportObject *m, visitproc visit, void *arg)
-{
-    Py_VISIT(m->lz_builtins);
-    Py_VISIT(m->lz_from);
-    Py_VISIT(m->lz_attr);
-    Py_VISIT(m->lz_code);
-    return 0;
-}
-
-static int
-lazy_import_clear(PyLazyImportObject *m)
-{
-    Py_CLEAR(m->lz_builtins);
-    Py_CLEAR(m->lz_from);
-    Py_CLEAR(m->lz_attr);
-    Py_CLEAR(m->lz_code);
-    return 0;
 }
 
 static PyObject *

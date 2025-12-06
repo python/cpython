@@ -51,7 +51,6 @@ assert_def_missing_or_redundant(PyModuleObject *m)
 }
 
 
-
 PyTypeObject PyModuleDef_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "moduledef",                                /* tp_name */

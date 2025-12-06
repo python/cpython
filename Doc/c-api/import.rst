@@ -349,7 +349,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetLazyImportsFilter()
 
-   Gets the current lazy imports filter. Returns a new reference.
+   Gets the current lazy imports filter. Returns a :term:`strong reference`.
 
    .. versionadded:: next
 
@@ -364,17 +364,18 @@ Importing Modules
 
    Sets the current lazy imports filter. The function should be a callable that
    will receive (importing_module_name, imported_module_name, [fromlist]) when
-   an import can potentially be lazy. Returns True if the import should be lazy
-   or False otherwise.
+   an import can potentially be lazy. Returns ``True`` if the import should be lazy
+   or ``False`` otherwise.
 
    .. versionadded:: next
 
 .. c:type:: PyImport_LazyImportsMode
 
    Enumeration of possible lazy import modes:
-   - ``PyImport_LAZY_NORMAL``
-   - ``PyImport_LAZY_ALL``
-   - ``PyImport_LAZY_NONE``
+
+   - :c:enumerator:`PyImport_LAZY_NORMAL`
+   - :c:enumerator:`PyImport_LAZY_ALL`
+   - :c:enumerator:`PyImport_LAZY_NONE`
 
    .. versionadded:: next
 
