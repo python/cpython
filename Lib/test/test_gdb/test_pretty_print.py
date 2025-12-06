@@ -14,7 +14,8 @@ def setUpModule():
 class PrettyPrintTests(DebuggerTests):
     def get_gdb_repr(self, source,
                      cmds_after_breakpoint=None,
-                     import_site=False):
+                     import_site=False,
+                     verbose_output=False):
         # Given an input python source representation of data,
         # run "python -c'id(DATA)'" under gdb with a breakpoint on
         # builtin_id and scrape out gdb's representation of the "op"
@@ -31,7 +32,8 @@ class PrettyPrintTests(DebuggerTests):
         cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
         gdb_output = self.get_stack_trace(source, breakpoint=BREAKPOINT_FN,
                                           cmds_after_breakpoint=cmds_after_breakpoint,
-                                          import_site=import_site)
+                                          import_site=import_site,
+                                          verbose_output=verbose_output)
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
@@ -52,10 +54,10 @@ class PrettyPrintTests(DebuggerTests):
         gdb_output = self.get_stack_trace('id(42)')
         self.assertTrue(BREAKPOINT_FN in gdb_output)
 
-    def assertGdbRepr(self, val, exp_repr=None):
+    def assertGdbRepr(self, val, exp_repr=None, verbose_output=False):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
-        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')')
+        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')', verbose_output=verbose_output)
         if not exp_repr:
             exp_repr = repr(val)
         self.assertEqual(gdb_repr, exp_repr,
@@ -413,6 +415,11 @@ id(a)''')
                          "224, 225, 226...(truncated)")
         self.assertEqual(len(gdb_repr),
                          1024 + len('...(truncated)'))
+
+    def test_verbose_not_truncated(self):
+        'Verify that very long output is not truncated when verbose output is requested'
+        long_list = [42] * 500
+        self.assertGdbRepr(long_list, verbose_output=True)
 
     def test_builtin_method(self):
         gdb_repr, gdb_output = self.get_gdb_repr('import sys; id(sys.stdout.readlines)')

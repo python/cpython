@@ -1,0 +1,1 @@
+Allow switching to pretty-printer when using gdb via ``set py-verbose-print on``
