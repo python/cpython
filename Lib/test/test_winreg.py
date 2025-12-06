@@ -318,6 +318,46 @@ class LocalWinregTests(BaseWinregTests):
             DeleteKey(HKEY_CURRENT_USER, test_key_name+'\\changing_value')
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_queryvalueex_race_condition(self):
+        # gh-142282: QueryValueEx could read garbage buffer under race
+        # condition when another thread changes the value size
+        done = False
+        error_found = None
+        values = [b'ham', b'spam']
+
+        class WriterThread(threading.Thread):
+            def run(self):
+                with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                    use_first = True
+                    while not done:
+                        val = values[0] if use_first else values[1]
+                        use_first = not use_first
+                        SetValueEx(key, 'test_value', 0, REG_BINARY, val)
+
+        thread = WriterThread()
+        thread.start()
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                for _ in range(1000):
+                    try:
+                        result, typ = QueryValueEx(key, 'test_value')
+                    except FileNotFoundError:
+                        # Value not yet created
+                        continue
+                    # The result must be one of the written values,
+                    # not garbage data from uninitialized buffer
+                    if result not in values:
+                        error_found = result
+                        break
+        finally:
+            done = True
+            thread.join()
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+        if error_found is not None:
+            self.fail(f"QueryValueEx returned unexpected value: {error_found!r}, "
+                      f"expected one of {values}")
+
     def test_long_key(self):
         # Issue2810, in 2.6 and 3.1 when the key name was exactly 256
         # characters, EnumKey raised "WindowsError: More data is
