@@ -24,6 +24,7 @@ try:
         MOVE_UP,
         MOVE_DOWN,
         ERASE_IN_LINE,
+        HOME,
     )
     import _pyrepl.windows_console as wc
 except ImportError:
@@ -103,7 +104,7 @@ class WindowsConsoleTests(TestCase):
 
         console.height = 20
         console.width = 80
-        console.getheightwidth = MagicMock(lambda _: (20, 80))
+        console.getheightwidth = MagicMock(return_value=(20, 80))
 
         def same_reader(_):
             return reader
@@ -118,9 +119,8 @@ class WindowsConsoleTests(TestCase):
             prepare_console=same_console,
         )
 
-        con.out.write.assert_any_call(self.move_right(2))
-        con.out.write.assert_any_call(self.move_up(2))
-        con.out.write.assert_any_call(b"567890")
+        con.out.write.assert_any_call(self.home())
+        con.out.write.assert_any_call(b"1234567890")
 
         con.restore()
 
@@ -131,7 +131,7 @@ class WindowsConsoleTests(TestCase):
 
         console.height = 20
         console.width = 4
-        console.getheightwidth = MagicMock(lambda _: (20, 4))
+        console.getheightwidth = MagicMock(return_value=(20, 4))
 
         def same_reader(_):
             return reader
@@ -265,7 +265,7 @@ class WindowsConsoleTests(TestCase):
         reader, console = self.handle_events_short(events)
 
         console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(return_value=(2, 80))
 
         def same_reader(_):
             return reader
@@ -281,8 +281,9 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
+                call(self.home()),
                 call(self.move_up()),
+                call(self.erase_in_line()),
                 call(b"def f():"),
                 call(self.move_left(3)),
                 call(self.move_down()),
@@ -303,7 +304,7 @@ class WindowsConsoleTests(TestCase):
         reader, console = self.handle_events_height_3(events)
 
         console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(return_value=(1, 80))
 
         def same_reader(_):
             return reader
@@ -319,8 +320,7 @@ class WindowsConsoleTests(TestCase):
         )
         con.out.write.assert_has_calls(
             [
-                call(self.move_left(5)),
-                call(self.move_up()),
+                call(self.home()),
                 call(self.erase_in_line()),
                 call(b"  foo"),
             ]
@@ -342,6 +342,9 @@ class WindowsConsoleTests(TestCase):
 
     def erase_in_line(self):
         return ERASE_IN_LINE.encode("utf8")
+
+    def home(self):
+        return HOME.encode("utf8")
 
     def test_multiline_ctrl_z(self):
         # see gh-126332
