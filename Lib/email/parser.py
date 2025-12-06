@@ -100,7 +100,8 @@ class BytesParser:
         parsing after reading the headers or not.  The default is False,
         meaning it parses the entire contents of the file.
         """
-        fp = TextIOWrapper(fp, encoding='ascii', errors='surrogateescape')
+        encoding = "utf-8" if getattr(self.parser.policy, "utf8", False) else "ascii"
+        fp = TextIOWrapper(fp, encoding=encoding, errors='surrogateescape')
         try:
             return self.parser.parse(fp, headersonly)
         finally:
