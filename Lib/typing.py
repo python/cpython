@@ -2811,7 +2811,7 @@ OrderedDict = _alias(collections.OrderedDict, 2)
 Counter = _alias(collections.Counter, 1)
 ChainMap = _alias(collections.ChainMap, 2)
 Generator = _alias(collections.abc.Generator, 3, defaults=(types.NoneType, types.NoneType))
-AsyncGenerator = _alias(collections.abc.AsyncGenerator, 2, defaults=(types.NoneType,))
+AsyncGenerator = _alias(collections.abc.AsyncGenerator, 3, defaults=(types.NoneType, types.NoneType))
 Type = _alias(type, 1, inst=False, name='Type')
 Type.__doc__ = \
     """Deprecated alias to builtins.type.
