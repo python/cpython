@@ -328,6 +328,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
     if (PyModule_Check(builtins)) {
         PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
         if (builtins_dict == NULL) {
+            Py_DECREF(builtins);
             PyErr_SetString(PyExc_AttributeError, "builtins module has no dict");
             return NULL;
         }

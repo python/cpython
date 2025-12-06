@@ -88,7 +88,7 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
     PyObject* (*initfunc)(void)
     );
 
-typedef enum  {
+typedef enum {
     PyImport_LAZY_NORMAL,
     PyImport_LAZY_ALL,
     PyImport_LAZY_NONE,
