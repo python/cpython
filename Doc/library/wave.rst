@@ -1,5 +1,5 @@
-:mod:`wave` --- Read and write WAV files
-========================================
+:mod:`!wave` --- Read and write WAV files
+=========================================
 
 .. module:: wave
    :synopsis: Provide an interface to the WAV sound format.
@@ -25,8 +25,9 @@ The :mod:`wave` module defines the following function and exception:
 
 .. function:: open(file, mode=None)
 
-   If *file* is a string, open the file by that name, otherwise treat it as a
-   file-like object.  *mode* can be:
+   If *file* is a string, a :term:`path-like object` or a
+   :term:`bytes-like object` open the file by that name, otherwise treat it as
+   a file-like object.  *mode* can be:
 
    ``'rb'``
       Read only mode.
@@ -46,11 +47,15 @@ The :mod:`wave` module defines the following function and exception:
    the file object.
 
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
-   the :keyword:`!with` block completes, the :meth:`Wave_read.close()` or
-   :meth:`Wave_write.close()` method is called.
+   the :keyword:`!with` block completes, the :meth:`Wave_read.close` or
+   :meth:`Wave_write.close` method is called.
 
    .. versionchanged:: 3.4
       Added support for unseekable files.
+
+   .. versionchanged:: 3.15
+      Added support for :term:`path-like objects <path-like object>`
+      and :term:`bytes-like objects <bytes-like object>`.
 
 .. exception:: Error
 
@@ -123,26 +128,6 @@ Wave_read Objects
 
       Rewind the file pointer to the beginning of the audio stream.
 
-   The following two methods are defined for compatibility with the old :mod:`!aifc`
-   module, and don't do anything interesting.
-
-
-   .. method:: getmarkers()
-
-      Returns ``None``.
-
-      .. deprecated-removed:: 3.13 3.15
-         The method only existed for compatibility with the :mod:`!aifc` module
-         which has been removed in Python 3.13.
-
-
-   .. method:: getmark(id)
-
-      Raise an error.
-
-      .. deprecated-removed:: 3.13 3.15
-         The method only existed for compatibility with the :mod:`!aifc` module
-         which has been removed in Python 3.13.
 
    The following two methods define a term "position" which is compatible between
    them, and is otherwise implementation dependent.

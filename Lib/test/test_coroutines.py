@@ -11,6 +11,10 @@ from test import support
 from test.support import import_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 
 class AsyncYieldFrom:
@@ -523,7 +527,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_gen_1(self):
         def gen(): yield
-        self.assertFalse(hasattr(gen, '__await__'))
+        self.assertNotHasAttr(gen, '__await__')
 
     def test_func_1(self):
         async def foo():
@@ -731,7 +735,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_func_12(self):
         async def g():
-            i = me.send(None)
+            me.send(None)
             await foo
         me = g()
         with self.assertRaisesRegex(ValueError,
@@ -953,11 +957,12 @@ class CoroutineTest(unittest.TestCase):
 
     def test_corotype_1(self):
         ct = types.CoroutineType
-        self.assertIn('into coroutine', ct.send.__doc__)
-        self.assertIn('inside coroutine', ct.close.__doc__)
-        self.assertIn('in coroutine', ct.throw.__doc__)
-        self.assertIn('of the coroutine', ct.__dict__['__name__'].__doc__)
-        self.assertIn('of the coroutine', ct.__dict__['__qualname__'].__doc__)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('into coroutine', ct.send.__doc__)
+            self.assertIn('inside coroutine', ct.close.__doc__)
+            self.assertIn('in coroutine', ct.throw.__doc__)
+            self.assertIn('of the coroutine', ct.__dict__['__name__'].__doc__)
+            self.assertIn('of the coroutine', ct.__dict__['__qualname__'].__doc__)
         self.assertEqual(ct.__name__, 'coroutine')
 
         async def f(): pass
@@ -969,13 +974,13 @@ class CoroutineTest(unittest.TestCase):
 
         async def foo():
             await 1
-        with self.assertRaisesRegex(TypeError, "object int can.t.*await"):
+        with self.assertRaisesRegex(TypeError, "'int' object can.t be awaited"):
             run_async(foo())
 
     def test_await_2(self):
         async def foo():
             await []
-        with self.assertRaisesRegex(TypeError, "object list can.t.*await"):
+        with self.assertRaisesRegex(TypeError, "'list' object can.t be awaited"):
             run_async(foo())
 
     def test_await_3(self):
@@ -1003,7 +1008,7 @@ class CoroutineTest(unittest.TestCase):
             return (await Awaitable())
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1035,7 +1040,7 @@ class CoroutineTest(unittest.TestCase):
         async def foo(): return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "object Awaitable can't be used in 'await' expression"):
+            TypeError, "'Awaitable' object can't be awaited"):
 
             run_async(foo())
 
@@ -1101,7 +1106,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-                TypeError, r"__await__\(\) returned a coroutine"):
+                TypeError, r"__await__\(\) must return an iterator, not coroutine"):
             run_async(foo())
 
         c.close()
@@ -1115,7 +1120,7 @@ class CoroutineTest(unittest.TestCase):
             return await Awaitable()
 
         with self.assertRaisesRegex(
-            TypeError, "__await__.*returned non-iterator of type"):
+            TypeError, "__await__.*must return an iterator, not"):
 
             run_async(foo())
 
@@ -1180,11 +1185,22 @@ class CoroutineTest(unittest.TestCase):
         async def g():
             try:
                 raise KeyError
-            except:
+            except KeyError:
                 return await f()
 
         _, result = run_async(g())
         self.assertIsNone(result.__context__)
+
+    def test_await_17(self):
+        # See https://github.com/python/cpython/issues/131666 for details.
+        class A:
+            async def __anext__(self):
+                raise StopAsyncIteration
+            def __aiter__(self):
+                return self
+
+        with contextlib.closing(anext(A(), "a").__await__()) as anext_awaitable:
+            self.assertRaises(TypeError, anext_awaitable.close, 1)
 
     def test_with_1(self):
         class Manager:
@@ -2131,8 +2147,10 @@ class CoroutineTest(unittest.TestCase):
             coro = None
             support.gc_collect()
 
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while finalizing "
+                             f"coroutine {coro_repr}")
             self.assertIn("was never awaited", str(cm.unraisable.exc_value))
-            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2216,6 +2234,14 @@ class CoroutineTest(unittest.TestCase):
             gen.cr_frame.clear()
         gen.close()
 
+    def test_cr_frame_after_close(self):
+        async def f():
+            pass
+        gen = f()
+        self.assertIsNotNone(gen.cr_frame)
+        gen.close()
+        self.assertIsNone(gen.cr_frame)
+
     def test_stack_in_coroutine_throw(self):
         # Regression test for https://github.com/python/cpython/issues/93592
         async def a():
@@ -2268,7 +2294,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
                 buffer.append(exc_type.__name__)
 
         async def f():
-            async with CM() as c:
+            async with CM():
                 await asyncio.sleep(0.01)
                 raise MyException
             buffer.append('unreachable')
@@ -2281,7 +2307,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
             pass
         finally:
             loop.close()
-            asyncio.set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
@@ -2360,7 +2386,7 @@ class OriginTrackingTest(unittest.TestCase):
 
         orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
-            msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
+            check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
             check(1, "".join([
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
@@ -2401,7 +2427,9 @@ class OriginTrackingTest(unittest.TestCase):
                 del coro
                 support.gc_collect()
 
-                self.assertEqual(repr(cm.unraisable.object), coro_repr)
+                self.assertEqual(cm.unraisable.err_msg,
+                                 f"Exception ignored while finalizing "
+                                 f"coroutine {coro_repr}")
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine
@@ -2436,6 +2464,7 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
 
 
 @support.cpython_only
+@unittest.skipIf(_testcapi is None, "requires _testcapi")
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):
@@ -2461,7 +2490,7 @@ class CAPITest(unittest.TestCase):
             return (await future)
 
         with self.assertRaisesRegex(
-                TypeError, "__await__.*returned non-iterator of type 'int'"):
+                TypeError, "__await__.*must return an iterator, not int"):
             self.assertEqual(foo().send(None), 1)
 
 

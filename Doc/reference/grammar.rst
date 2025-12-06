@@ -1,3 +1,5 @@
+.. _full-grammar-specification:
+
 Full Grammar specification
 ==========================
 
@@ -6,15 +8,12 @@ used to generate the CPython parser (see :source:`Grammar/python.gram`).
 The version here omits details related to code generation and
 error recovery.
 
-The notation is a mixture of `EBNF
-<https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form>`_
-and `PEG <https://en.wikipedia.org/wiki/Parsing_expression_grammar>`_.
-In particular, ``&`` followed by a symbol, token or parenthesized
-group indicates a positive lookahead (i.e., is required to match but
-not consumed), while ``!`` indicates a negative lookahead (i.e., is
-required *not* to match).  We use the ``|`` separator to mean PEG's
-"ordered choice" (written as ``/`` in traditional PEG grammars). See
-:pep:`617` for more details on the grammar's syntax.
+The notation used here is the same as in the preceding docs,
+and is described in the :ref:`notation <notation>` section,
+except for an extra complication:
+
+* ``~`` ("cut"): commit to the current alternative and fail the rule
+  even if this fails to parse
 
 .. literalinclude:: ../../Grammar/python.gram
   :language: peg

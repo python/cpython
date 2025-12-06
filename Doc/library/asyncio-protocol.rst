@@ -362,6 +362,11 @@ Datagram Transports
    This method does not block; it buffers the data and arranges
    for it to be sent out asynchronously.
 
+   .. versionchanged:: 3.13
+      This method can be called with an empty bytes object to send a
+      zero-length datagram. The buffer size calculation used for flow
+      control is also updated to account for the datagram header.
+
 .. method:: DatagramTransport.abort()
 
    Close the transport immediately, without waiting for pending
@@ -385,11 +390,11 @@ Subprocess Transports
    Return the transport for the communication pipe corresponding to the
    integer file descriptor *fd*:
 
-   * ``0``: readable streaming transport of the standard input (*stdin*),
+   * ``0``: writable streaming transport of the standard input (*stdin*),
      or :const:`None` if the subprocess was not created with ``stdin=PIPE``
-   * ``1``: writable streaming transport of the standard output (*stdout*),
+   * ``1``: readable streaming transport of the standard output (*stdout*),
      or :const:`None` if the subprocess was not created with ``stdout=PIPE``
-   * ``2``: writable streaming transport of the standard error (*stderr*),
+   * ``2``: readable streaming transport of the standard error (*stderr*),
      or :const:`None` if the subprocess was not created with ``stderr=PIPE``
    * other *fd*: :const:`None`
 
@@ -417,8 +422,8 @@ Subprocess Transports
 
    Stop the subprocess.
 
-   On POSIX systems, this method sends SIGTERM to the subprocess.
-   On Windows, the Windows API function TerminateProcess() is called to
+   On POSIX systems, this method sends :py:const:`~signal.SIGTERM` to the subprocess.
+   On Windows, the Windows API function :c:func:`!TerminateProcess` is called to
    stop the subprocess.
 
    See also :meth:`subprocess.Popen.terminate`.

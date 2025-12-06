@@ -226,8 +226,19 @@ class POP3:
         retval = self._shortcmd('STAT')
         rets = retval.split()
         if self._debugging: print('*stat*', repr(rets))
-        numMessages = int(rets[1])
-        sizeMessages = int(rets[2])
+
+        # Check if the response has enough elements
+        # RFC 1939 requires at least 3 elements (+OK, message count, mailbox size)
+        # but allows additional data after the required fields
+        if len(rets) < 3:
+            raise error_proto("Invalid STAT response format")
+
+        try:
+            numMessages = int(rets[1])
+            sizeMessages = int(rets[2])
+        except ValueError:
+            raise error_proto("Invalid STAT response data: non-numeric values")
+
         return (numMessages, sizeMessages)
 
 
@@ -309,7 +320,7 @@ class POP3:
     # optional commands:
 
     def rpop(self, user):
-        """Not sure what this does."""
+        """Send RPOP command to access the mailbox with an alternate user."""
         return self._shortcmd('RPOP %s' % user)
 
 

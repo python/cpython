@@ -45,9 +45,6 @@ def cfmakeraw(mode):
 
 def cfmakecbreak(mode):
     """Make termios mode cbreak."""
-    # Do not map CR to NL on input.
-    mode[IFLAG] &= ~(ICRNL)
-
     # Do not echo characters; disable canonical input.
     mode[LFLAG] &= ~(ECHO | ICANON)
 

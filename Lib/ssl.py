@@ -13,6 +13,9 @@ Exceptions:
 
 Functions:
 
+  get_sigalgs          -- return a list of all available TLS signature
+                          algorithms (requires OpenSSL 3.4 or later)
+
   cert_time_to_seconds -- convert time string used for certificate
                           notBefore and notAfter functions to integer
                           seconds past the Epoch (the time values
@@ -107,16 +110,12 @@ from _ssl import (
     )
 from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_add, RAND_bytes
-try:
-    from _ssl import RAND_egd
-except ImportError:
-    # LibreSSL does not provide RAND_egd
-    pass
+from _ssl import get_sigalgs
 
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -186,7 +185,7 @@ class _TLSContentType:
 class _TLSAlertType:
     """Alert types for TLSContentType.ALERT messages
 
-    See RFC 8466, section B.2
+    See RFC 8446, section B.2
     """
     CLOSE_NOTIFY = 0
     UNEXPECTED_MESSAGE = 10
@@ -513,18 +512,17 @@ class SSLContext(_SSLContext):
         self._set_alpn_protocols(protos)
 
     def _load_windows_store_certs(self, storename, purpose):
-        certs = bytearray()
         try:
             for cert, encoding, trust in enum_certificates(storename):
                 # CA certs are never PKCS#7 encoded
                 if encoding == "x509_asn":
                     if trust is True or purpose.oid in trust:
-                        certs.extend(cert)
+                        try:
+                            self.load_verify_locations(cadata=cert)
+                        except SSLError as exc:
+                            warnings.warn(f"Bad certificate in Windows certificate store: {exc!s}")
         except PermissionError:
             warnings.warn("unable to enumerate Windows certificate store")
-        if certs:
-            self.load_verify_locations(cadata=certs)
-        return certs
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
         if not isinstance(purpose, _ASN1Object):
@@ -703,6 +701,16 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
         context = SSLContext(PROTOCOL_TLS_SERVER)
     else:
         raise ValueError(purpose)
+
+    # `VERIFY_X509_PARTIAL_CHAIN` makes OpenSSL's chain building behave more
+    # like RFC 3280 and 5280, which specify that chain building stops with the
+    # first trust anchor, even if that anchor is not self-signed.
+    #
+    # `VERIFY_X509_STRICT` makes OpenSSL more conservative about the
+    # certificates it accepts, including "disabling workarounds for
+    # some broken certificates."
+    context.verify_flags |= (_ssl.VERIFY_X509_PARTIAL_CHAIN |
+                             _ssl.VERIFY_X509_STRICT)
 
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
@@ -922,6 +930,18 @@ class SSLObject:
         ssl_version, secret_bits)``."""
         return self._sslobj.cipher()
 
+    def group(self):
+        """Return the currently selected key agreement group name."""
+        return self._sslobj.group()
+
+    def client_sigalg(self):
+        """Return the selected client authentication signature algorithm."""
+        return self._sslobj.client_sigalg()
+
+    def server_sigalg(self):
+        """Return the selected server handshake signature algorithm."""
+        return self._sslobj.server_sigalg()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -966,6 +986,10 @@ def _sslcopydoc(func):
     return func
 
 
+class _GiveupOnSSLSendfile(Exception):
+    pass
+
+
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -994,71 +1018,67 @@ class SSLSocket(socket):
         if context.check_hostname and not server_hostname:
             raise ValueError("check_hostname requires server_hostname")
 
+        sock_timeout = sock.gettimeout()
         kwargs = dict(
             family=sock.family, type=sock.type, proto=sock.proto,
             fileno=sock.fileno()
         )
         self = cls.__new__(cls, **kwargs)
         super(SSLSocket, self).__init__(**kwargs)
-        sock_timeout = sock.gettimeout()
         sock.detach()
-
-        self._context = context
-        self._session = session
-        self._closed = False
-        self._sslobj = None
-        self.server_side = server_side
-        self.server_hostname = context._encode_hostname(server_hostname)
-        self.do_handshake_on_connect = do_handshake_on_connect
-        self.suppress_ragged_eofs = suppress_ragged_eofs
-
-        # See if we are connected
+        # Now SSLSocket is responsible for closing the file descriptor.
         try:
-            self.getpeername()
-        except OSError as e:
-            if e.errno != errno.ENOTCONN:
-                raise
-            connected = False
-            blocking = self.getblocking()
-            self.setblocking(False)
-            try:
-                # We are not connected so this is not supposed to block, but
-                # testing revealed otherwise on macOS and Windows so we do
-                # the non-blocking dance regardless. Our raise when any data
-                # is found means consuming the data is harmless.
-                notconn_pre_handshake_data = self.recv(1)
-            except OSError as e:
-                # EINVAL occurs for recv(1) on non-connected on unix sockets.
-                if e.errno not in (errno.ENOTCONN, errno.EINVAL):
-                    raise
-                notconn_pre_handshake_data = b''
-            self.setblocking(blocking)
-            if notconn_pre_handshake_data:
-                # This prevents pending data sent to the socket before it was
-                # closed from escaping to the caller who could otherwise
-                # presume it came through a successful TLS connection.
-                reason = "Closed before TLS handshake with data in recv buffer."
-                notconn_pre_handshake_data_error = SSLError(e.errno, reason)
-                # Add the SSLError attributes that _ssl.c always adds.
-                notconn_pre_handshake_data_error.reason = reason
-                notconn_pre_handshake_data_error.library = None
-                try:
-                    self.close()
-                except OSError:
-                    pass
-                try:
-                    raise notconn_pre_handshake_data_error
-                finally:
-                    # Explicitly break the reference cycle.
-                    notconn_pre_handshake_data_error = None
-        else:
-            connected = True
+            self._context = context
+            self._session = session
+            self._closed = False
+            self._sslobj = None
+            self.server_side = server_side
+            self.server_hostname = context._encode_hostname(server_hostname)
+            self.do_handshake_on_connect = do_handshake_on_connect
+            self.suppress_ragged_eofs = suppress_ragged_eofs
 
-        self.settimeout(sock_timeout)  # Must come after setblocking() calls.
-        self._connected = connected
-        if connected:
-            # create the SSL object
+            # See if we are connected
             try:
+                self.getpeername()
+            except OSError as e:
+                if e.errno != errno.ENOTCONN:
+                    raise
+                connected = False
+                blocking = self.getblocking()
+                self.setblocking(False)
+                try:
+                    # We are not connected so this is not supposed to block, but
+                    # testing revealed otherwise on macOS and Windows so we do
+                    # the non-blocking dance regardless. Our raise when any data
+                    # is found means consuming the data is harmless.
+                    notconn_pre_handshake_data = self.recv(1)
+                except OSError as e:
+                    # EINVAL occurs for recv(1) on non-connected on unix sockets.
+                    if e.errno not in (errno.ENOTCONN, errno.EINVAL):
+                        raise
+                    notconn_pre_handshake_data = b''
+                self.setblocking(blocking)
+                if notconn_pre_handshake_data:
+                    # This prevents pending data sent to the socket before it was
+                    # closed from escaping to the caller who could otherwise
+                    # presume it came through a successful TLS connection.
+                    reason = "Closed before TLS handshake with data in recv buffer."
+                    notconn_pre_handshake_data_error = SSLError(e.errno, reason)
+                    # Add the SSLError attributes that _ssl.c always adds.
+                    notconn_pre_handshake_data_error.reason = reason
+                    notconn_pre_handshake_data_error.library = None
+                    try:
+                        raise notconn_pre_handshake_data_error
+                    finally:
+                        # Explicitly break the reference cycle.
+                        notconn_pre_handshake_data_error = None
+            else:
+                connected = True
+
+            self.settimeout(sock_timeout)  # Must come after setblocking() calls.
+            self._connected = connected
+            if connected:
+                # create the SSL object
                 self._sslobj = self._context._wrap_socket(
                     self, server_side, self.server_hostname,
                     owner=self, session=self._session,
@@ -1069,9 +1089,12 @@ class SSLSocket(socket):
                         # non-blocking
                         raise ValueError("do_handshake_on_connect should not be specified for non-blocking sockets")
                     self.do_handshake()
-            except (OSError, ValueError):
+        except:
+            try:
                 self.close()
-                raise
+            except OSError:
+                pass
+            raise
         return self
 
     @property
@@ -1156,11 +1179,21 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
-        return self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def get_unverified_chain(self):
-        return self._sslobj.get_unverified_chain()
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def selected_npn_protocol(self):
@@ -1187,6 +1220,30 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.cipher()
+
+    @_sslcopydoc
+    def group(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.group()
+
+    @_sslcopydoc
+    def client_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.client_sigalg()
+
+    @_sslcopydoc
+    def server_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.server_sigalg()
 
     @_sslcopydoc
     def shared_ciphers(self):
@@ -1248,14 +1305,25 @@ class SSLSocket(socket):
             return super().sendall(data, flags)
 
     def sendfile(self, file, offset=0, count=None):
-        """Send a file, possibly by using os.sendfile() if this is a
-        clear-text socket.  Return the total number of bytes sent.
+        """Send a file, possibly by using an efficient sendfile() call if
+        the system supports it.  Return the total number of bytes sent.
         """
-        if self._sslobj is not None:
-            return self._sendfile_use_send(file, offset, count)
-        else:
-            # os.sendfile() works with plain sockets only
+        if self._sslobj is None:
             return super().sendfile(file, offset, count)
+
+        if not self._sslobj.uses_ktls_for_send():
+            return self._sendfile_use_send(file, offset, count)
+
+        sendfile = getattr(self._sslobj, "sendfile", None)
+        if sendfile is None:
+            return self._sendfile_use_send(file, offset, count)
+
+        try:
+            return self._sendfile_zerocopy(
+                sendfile, _GiveupOnSSLSendfile, file, offset, count,
+            )
+        except _GiveupOnSSLSendfile:
+            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()

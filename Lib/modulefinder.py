@@ -72,7 +72,12 @@ def _find_module(name, path=None):
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
 
-    elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
+    elif isinstance(
+        spec.loader, (
+            importlib.machinery.ExtensionFileLoader,
+            importlib.machinery.AppleFrameworkLoader,
+        )
+    ):
         kind = _C_EXTENSION
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
@@ -329,7 +334,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read(), pathname, 'exec')
+            co = compile(fp.read(), pathname, 'exec', module=fqname)
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()

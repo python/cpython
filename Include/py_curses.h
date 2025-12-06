@@ -23,23 +23,40 @@
 # endif
 #endif
 
-#if !defined(HAVE_CURSES_IS_PAD) && defined(WINDOW_HAS_FLAGS)
-/* The following definition is necessary for ncurses 5.7; without it,
-   some of [n]curses.h set NCURSES_OPAQUE to 1, and then Python
-   can't get at the WINDOW flags field. */
+#if defined(WINDOW_HAS_FLAGS) && defined(__APPLE__)
+/* gh-109617, gh-115383: we can rely on the default value for NCURSES_OPAQUE on
+   most platforms, but not on macOS. This is because, starting with Xcode 15,
+   Apple-provided ncurses.h comes from ncurses 6 (which defaults to opaque
+   structs) but can still be linked to older versions of ncurses dynamic
+   libraries which don't provide functions such as is_pad() to deal with opaque
+   structs. Setting NCURSES_OPAQUE to 0 is harmless in all ncurses releases to
+   this date (provided that a thread-safe implementation is not required), but
+   this might change in the future. This fix might become irrelevant once
+   support for macOS 13 or earlier is dropped. */
 #define NCURSES_OPAQUE 0
 #endif
 
-#ifdef HAVE_NCURSES_H
-#include <ncurses.h>
-#else
-#include <curses.h>
+#if defined(HAVE_NCURSESW_NCURSES_H)
+#  include <ncursesw/ncurses.h>
+#elif defined(HAVE_NCURSESW_CURSES_H)
+#  include <ncursesw/curses.h>
+#elif defined(HAVE_NCURSES_NCURSES_H)
+#  include <ncurses/ncurses.h>
+#elif defined(HAVE_NCURSES_CURSES_H)
+#  include <ncurses/curses.h>
+#elif defined(HAVE_NCURSES_H)
+#  include <ncurses.h>
+#elif defined(HAVE_CURSES_H)
+#  include <curses.h>
 #endif
 
-#ifdef HAVE_NCURSES_H
+#ifdef NCURSES_VERSION
 /* configure was checking <curses.h>, but we will
    use <ncurses.h>, which has some or all these features. */
-#if !defined(WINDOW_HAS_FLAGS) && !(NCURSES_OPAQUE+0)
+#if !defined(WINDOW_HAS_FLAGS) && \
+    (NCURSES_VERSION_PATCH+0 < 20070303 || !(NCURSES_OPAQUE+0))
+/* the WINDOW flags field was always accessible in ncurses prior to 20070303;
+   after that, it depends on the value of NCURSES_OPAQUE. */
 #define WINDOW_HAS_FLAGS 1
 #endif
 #if !defined(HAVE_CURSES_IS_PAD) && NCURSES_VERSION_PATCH+0 >= 20090906
@@ -58,13 +75,12 @@ extern "C" {
 
 /* Type declarations */
 
-typedef struct {
+typedef struct PyCursesWindowObject {
     PyObject_HEAD
     WINDOW *win;
     char *encoding;
+    struct PyCursesWindowObject *orig;
 } PyCursesWindowObject;
-
-#define PyCursesWindow_Check(v) Py_IS_TYPE((v), &PyCursesWindow_Type)
 
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 
@@ -82,6 +98,8 @@ static void **PyCurses_API;
 #define PyCursesInitialised      {if (! ((int (*)(void))PyCurses_API[2]) () ) return NULL;}
 #define PyCursesInitialisedColor {if (! ((int (*)(void))PyCurses_API[3]) () ) return NULL;}
 
+#define PyCursesWindow_Check(v)     Py_IS_TYPE((v), &PyCursesWindow_Type)
+
 #define import_curses() \
     PyCurses_API = (void **)PyCapsule_Import(PyCurses_CAPSULE_NAME, 1);
 
@@ -90,6 +108,13 @@ static void **PyCurses_API;
 /* general error messages */
 static const char catchall_ERR[]  = "curses function returned ERR";
 static const char catchall_NULL[] = "curses function returned NULL";
+
+#if defined(CURSES_MODULE) || defined(CURSES_PANEL_MODULE)
+/* Error messages shared by the curses package */
+#  define CURSES_ERROR_FORMAT           "%s() returned %s"
+#  define CURSES_ERROR_VERBOSE_FORMAT   "%s() (called by %s()) returned %s"
+#  define CURSES_ERROR_MUST_CALL_FORMAT "must call %s() first"
+#endif
 
 #ifdef __cplusplus
 }

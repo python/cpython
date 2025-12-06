@@ -1,0 +1,4 @@
+:mod:`xml.sax.handler`: Make Documentation of
+:data:`xml.sax.handler.feature_external_ges` warn of opening up to `external
+entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_.
+Patch by Sebastian Pipping.

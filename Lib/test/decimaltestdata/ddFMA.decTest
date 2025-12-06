@@ -1663,7 +1663,7 @@ ddfma375087 fma  1  12345678 1E-33                   -> 12345678.00000001 Inexac
 ddfma375088 fma  1  12345678 1E-34                   -> 12345678.00000001 Inexact Rounded
 ddfma375089 fma  1  12345678 1E-35                   -> 12345678.00000001 Inexact Rounded
 
--- desctructive subtraction (from remainder tests)
+-- destructive subtraction (from remainder tests)
 
 -- +++ some of these will be off-by-one remainder vs remainderNear
 

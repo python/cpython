@@ -15,13 +15,98 @@
 // MSVC makes static_assert a keyword in C11-17, contrary to the standards.
 //
 // In C++11 and C2x, static_assert is a keyword, redefining is undefined
-// behaviour. So only define if building as C (if __STDC_VERSION__ is defined),
-// not C++, and only for C11-17.
+// behaviour. So only define if building as C, not C++ (if __cplusplus is
+// not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
-     && __STDC_VERSION__ <= 201710L
+     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
+     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
 #  define static_assert _Static_assert
 #endif
+
+
+// _Py_ALIGNED_DEF(N, T): Define a variable/member with increased alignment
+//
+// `N`: the desired minimum alignment, an integer literal, number of bytes
+// `T`: the type of the defined variable
+//      (or a type with at least the defined variable's alignment)
+//
+// May not be used on a struct definition.
+//
+// Standards/compiler support for `alignas` alternatives:
+// - `alignas` is a keyword in C23 and C++11.
+// - `_Alignas` is a keyword in C11
+// - GCC & clang has __attribute__((aligned))
+//   (use that for older standards in pedantic mode)
+// - MSVC has __declspec(align)
+// - `_Alignas` is common C compiler extension
+// Older compilers may name `alignas` differently; to allow compilation on such
+// unsupported platforms, we don't redefine _Py_ALIGNED_DEF if it's already
+// defined. Note that defining it wrong (including defining it to nothing) will
+// cause ABI incompatibilities.
+//
+// Behavior of `alignas` alternatives:
+// - `alignas` & `_Alignas`:
+//   - Can be used multiple times; the greatest alignment applies.
+//   - It is an *error* if the combined effect of all `alignas` modifiers would
+//     decrease the alignment.
+//   - Takes types or numbers.
+//   - May not be used on a struct definition, unless also defining a variable.
+// - `__declspec(align)`:
+//   - Has no effect if it would decrease alignment.
+//   - Only takes an integer literal.
+//   - May be used on struct or variable definitions.
+//     However, when defining both the struct and the variable at once,
+//     `declspec(aligned)` causes compiler warning 5274 and possible ABI
+//     incompatibility.
+// - ` __attribute__((aligned))`:
+//   - Has no effect if it would decrease alignment.
+//   - Takes types or numbers
+//   - May be used on struct or variable definitions.
+#ifndef _Py_ALIGNED_DEF
+#    ifdef __cplusplus
+#        if __cplusplus >= 201103L
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#        elif defined(__GNUC__) || defined(__clang__)
+#            define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
+#        elif defined(_MSC_VER)
+#            define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
+#        else
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#        endif
+#    elif defined(_MSC_VER)
+#        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
+#    elif (defined(__GNUC__) || defined(__clang__))
+#        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
+#    else
+#        define _Py_ALIGNED_DEF(N, T) _Alignas(N) _Alignas(T) T
+#    endif
+#endif
+
+
+// _Py_ANONYMOUS: modifier for declaring an anonymous union.
+// Usage: _Py_ANONYMOUS union { ... };
+// Standards/compiler support:
+// - C++ allows anonymous unions, but not structs
+// - C11 and above allows anonymous unions and structs
+// - MSVC has warning(disable: 4201) "nonstandard extension used : nameless
+//   struct/union". This is specific enough that we disable it for all of
+//   Python.h.
+// - GCC & clang needs __extension__ before C11
+// To allow unsupported platforms which need other spellings, we use a
+// predefined value of _Py_ANONYMOUS if it exists.
+#ifndef _Py_ANONYMOUS
+#   if (defined(__GNUC__) || defined(__clang__)) \
+          && !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L)
+#       define _Py_ANONYMOUS __extension__
+#   else
+#       define _Py_ANONYMOUS
+#   endif
+#endif
+
 
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
@@ -31,6 +116,12 @@
 
 /* Absolute value of the number x */
 #define Py_ABS(x) ((x) < 0 ? -(x) : (x))
+/* Safer implementation that avoids an undefined behavior for the minimal
+   value of the signed integer type if its absolute value is larger than
+   the maximal value of the signed integer type (in the two's complement
+   representations, which is common).
+ */
+#define _Py_ABS_CAST(T, x) ((x) >= 0 ? ((T) (x)) : ((T) (((T) -((x) + 1)) + 1u)))
 
 #define _Py_XSTRINGIFY(x) #x
 
@@ -46,24 +137,42 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-/* Assert a build-time dependency, as an expression.
-
-   Your compile will fail if the condition isn't true, or can't be evaluated
-   by the compiler. This can be used in an expression: its value is 0.
-
-   Example:
-
-   #define foo_to_char(foo)  \
-       ((char *)(foo)        \
-        + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
-
-   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
-#define Py_BUILD_ASSERT_EXPR(cond) \
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && !defined(__cplusplus) && !defined(_MSC_VER))
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+    ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
+     0)
+#else
+   /* Assert a build-time dependency, as an expression.
+    *
+    * Your compile will fail if the condition isn't true, or can't be evaluated
+    * by the compiler. This can be used in an expression: its value is 0.
+    *
+    * Example:
+    *
+    * #define foo_to_char(foo)  \
+    *     ((char *)(foo)        \
+    *      + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+    *
+    * Written by Rusty Russell, public domain, http://ccodearchive.net/
+    */
+#  define Py_BUILD_ASSERT_EXPR(cond) \
     (sizeof(char [1 - 2*!(cond)]) - 1)
+#endif
 
-#define Py_BUILD_ASSERT(cond)  do {         \
-        (void)Py_BUILD_ASSERT_EXPR(cond);   \
-    } while(0)
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+     || (defined(__cplusplus) && __cplusplus >= 201103L))
+   // Use static_assert() on C11 and newer
+#  define Py_BUILD_ASSERT(cond) \
+        do { \
+            static_assert((cond), #cond); \
+        } while (0)
+#else
+#  define Py_BUILD_ASSERT(cond)  \
+        do { \
+            (void)Py_BUILD_ASSERT_EXPR(cond); \
+        } while(0)
+#endif
 
 /* Get the number of elements in a visible array
 
@@ -160,6 +269,9 @@
     Py_FatalError("Unreachable C code path reached")
 #endif
 
+#define _Py_CONTAINER_OF(ptr, type, member) \
+    (type*)((char*)ptr - offsetof(type, member))
+
 // Prevent using an expression as a l-value.
 // For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
 #define _Py_RVALUE(EXPR) ((void)0, (EXPR))
@@ -168,5 +280,15 @@
 // Use "<= 0" rather than "< 0" to prevent the compiler warning:
 // "comparison of unsigned expression in '< 0' is always false".
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
+
+// Version helpers. These are primarily macros, but have exported equivalents.
+#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
+PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
+PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);
+#define Py_PACK_FULL_VERSION _Py_PACK_FULL_VERSION
+#define Py_PACK_VERSION _Py_PACK_VERSION
+#endif // Py_LIMITED_API < 3.14
+
 
 #endif /* Py_PYMACRO_H */

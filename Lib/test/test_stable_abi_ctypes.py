@@ -6,9 +6,19 @@
 import sys
 import unittest
 from test.support.import_helper import import_module
-from _testcapi import get_feature_macros
+try:
+    from _testcapi import get_feature_macros
+except ImportError:
+    raise unittest.SkipTest("requires _testcapi")
 
 feature_macros = get_feature_macros()
+
+# Stable ABI is incompatible with Py_TRACE_REFS builds due to PyObject
+# layout differences.
+# See https://github.com/python/cpython/issues/88299#issuecomment-1113366226
+if feature_macros['Py_TRACE_REFS']:
+    raise unittest.SkipTest("incompatible with Py_TRACE_REFS.")
+
 ctypes_test = import_module('ctypes')
 
 class TestStableABIAvailability(unittest.TestCase):
@@ -35,6 +45,7 @@ class TestStableABIAvailability(unittest.TestCase):
 
 SYMBOL_NAMES = (
 
+    "PyABIInfo_Check",
     "PyAIter_Check",
     "PyArg_Parse",
     "PyArg_ParseTuple",
@@ -154,6 +165,7 @@ SYMBOL_NAMES = (
     "PyDict_MergeFromSeq2",
     "PyDict_New",
     "PyDict_Next",
+    "PyDict_SetDefaultRef",
     "PyDict_SetItem",
     "PyDict_SetItemString",
     "PyDict_Size",
@@ -217,6 +229,9 @@ SYMBOL_NAMES = (
     "PyEval_EvalFrameEx",
     "PyEval_GetBuiltins",
     "PyEval_GetFrame",
+    "PyEval_GetFrameBuiltins",
+    "PyEval_GetFrameGlobals",
+    "PyEval_GetFrameLocals",
     "PyEval_GetFuncDesc",
     "PyEval_GetFuncName",
     "PyEval_GetGlobals",
@@ -358,12 +373,14 @@ SYMBOL_NAMES = (
     "PyInterpreterState_New",
     "PyIter_Check",
     "PyIter_Next",
+    "PyIter_NextItem",
     "PyIter_Send",
     "PyListIter_Type",
     "PyListRevIter_Type",
     "PyList_Append",
     "PyList_AsTuple",
     "PyList_GetItem",
+    "PyList_GetItemRef",
     "PyList_GetSlice",
     "PyList_Insert",
     "PyList_New",
@@ -376,25 +393,36 @@ SYMBOL_NAMES = (
     "PyLongRangeIter_Type",
     "PyLong_AsDouble",
     "PyLong_AsInt",
+    "PyLong_AsInt32",
+    "PyLong_AsInt64",
     "PyLong_AsLong",
     "PyLong_AsLongAndOverflow",
     "PyLong_AsLongLong",
     "PyLong_AsLongLongAndOverflow",
+    "PyLong_AsNativeBytes",
     "PyLong_AsSize_t",
     "PyLong_AsSsize_t",
+    "PyLong_AsUInt32",
+    "PyLong_AsUInt64",
     "PyLong_AsUnsignedLong",
     "PyLong_AsUnsignedLongLong",
     "PyLong_AsUnsignedLongLongMask",
     "PyLong_AsUnsignedLongMask",
     "PyLong_AsVoidPtr",
     "PyLong_FromDouble",
+    "PyLong_FromInt32",
+    "PyLong_FromInt64",
     "PyLong_FromLong",
     "PyLong_FromLongLong",
+    "PyLong_FromNativeBytes",
     "PyLong_FromSize_t",
     "PyLong_FromSsize_t",
     "PyLong_FromString",
+    "PyLong_FromUInt32",
+    "PyLong_FromUInt64",
     "PyLong_FromUnsignedLong",
     "PyLong_FromUnsignedLongLong",
+    "PyLong_FromUnsignedNativeBytes",
     "PyLong_FromVoidPtr",
     "PyLong_GetInfo",
     "PyLong_Type",
@@ -441,7 +469,11 @@ SYMBOL_NAMES = (
     "PyModule_AddObjectRef",
     "PyModule_AddStringConstant",
     "PyModule_AddType",
+    "PyModule_Create2",
+    "PyModule_Exec",
     "PyModule_ExecDef",
+    "PyModule_FromDefAndSpec2",
+    "PyModule_FromSlotsAndSpec",
     "PyModule_GetDef",
     "PyModule_GetDict",
     "PyModule_GetFilename",
@@ -449,6 +481,8 @@ SYMBOL_NAMES = (
     "PyModule_GetName",
     "PyModule_GetNameObject",
     "PyModule_GetState",
+    "PyModule_GetStateSize",
+    "PyModule_GetToken",
     "PyModule_New",
     "PyModule_NewObject",
     "PyModule_SetDocString",
@@ -630,7 +664,11 @@ SYMBOL_NAMES = (
     "PySys_AuditTuple",
     "PySys_FormatStderr",
     "PySys_FormatStdout",
+    "PySys_GetAttr",
+    "PySys_GetAttrString",
     "PySys_GetObject",
+    "PySys_GetOptionalAttr",
+    "PySys_GetOptionalAttrString",
     "PySys_GetXOptions",
     "PySys_HasWarnOptions",
     "PySys_ResetWarnOptions",
@@ -688,14 +726,20 @@ SYMBOL_NAMES = (
     "PyTuple_Size",
     "PyTuple_Type",
     "PyType_ClearCache",
+    "PyType_Freeze",
     "PyType_FromMetaclass",
     "PyType_FromModuleAndSpec",
     "PyType_FromSpec",
     "PyType_FromSpecWithBases",
     "PyType_GenericAlloc",
     "PyType_GenericNew",
+    "PyType_GetBaseByToken",
     "PyType_GetFlags",
+    "PyType_GetFullyQualifiedName",
     "PyType_GetModule",
+    "PyType_GetModuleByDef",
+    "PyType_GetModuleByToken",
+    "PyType_GetModuleName",
     "PyType_GetModuleState",
     "PyType_GetName",
     "PyType_GetQualName",
@@ -776,6 +820,7 @@ SYMBOL_NAMES = (
     "PyUnicode_DecodeUnicodeEscape",
     "PyUnicode_EncodeFSDefault",
     "PyUnicode_EncodeLocale",
+    "PyUnicode_Equal",
     "PyUnicode_EqualToUTF8",
     "PyUnicode_EqualToUTF8AndSize",
     "PyUnicode_FSConverter",
@@ -843,6 +888,8 @@ SYMBOL_NAMES = (
     "Py_GetArgcArgv",
     "Py_GetBuildInfo",
     "Py_GetCompiler",
+    "Py_GetConstant",
+    "Py_GetConstantBorrowed",
     "Py_GetCopyright",
     "Py_GetExecPrefix",
     "Py_GetPath",
@@ -854,6 +901,7 @@ SYMBOL_NAMES = (
     "Py_GetRecursionLimit",
     "Py_GetVersion",
     "Py_HasFileSystemDefaultEncoding",
+    "Py_IS_TYPE",
     "Py_IncRef",
     "Py_Initialize",
     "Py_InitializeEx",
@@ -868,12 +916,18 @@ SYMBOL_NAMES = (
     "Py_MakePendingCalls",
     "Py_NewInterpreter",
     "Py_NewRef",
+    "Py_PACK_FULL_VERSION",
+    "Py_PACK_VERSION",
+    "Py_REFCNT",
     "Py_ReprEnter",
     "Py_ReprLeave",
+    "Py_SET_SIZE",
+    "Py_SIZE",
     "Py_SetPath",
     "Py_SetProgramName",
     "Py_SetPythonHome",
     "Py_SetRecursionLimit",
+    "Py_TYPE",
     "Py_UTF8Mode",
     "Py_VaBuildValue",
     "Py_Version",
@@ -911,6 +965,13 @@ SYMBOL_NAMES = (
     "_Py_TrueStruct",
     "_Py_VaBuildValue_SizeT",
 )
+if feature_macros['HAVE_FORK']:
+    SYMBOL_NAMES += (
+        'PyOS_AfterFork',
+        'PyOS_AfterFork_Child',
+        'PyOS_AfterFork_Parent',
+        'PyOS_BeforeFork',
+    )
 if feature_macros['MS_WINDOWS']:
     SYMBOL_NAMES += (
         'PyErr_SetExcFromWindowsErr',
@@ -926,17 +987,6 @@ if feature_macros['MS_WINDOWS']:
         'PyUnicode_DecodeMBCSStateful',
         'PyUnicode_EncodeCodePage',
     )
-if feature_macros['HAVE_FORK']:
-    SYMBOL_NAMES += (
-        'PyOS_AfterFork',
-        'PyOS_AfterFork_Child',
-        'PyOS_AfterFork_Parent',
-        'PyOS_BeforeFork',
-    )
-if feature_macros['USE_STACKCHECK']:
-    SYMBOL_NAMES += (
-        'PyOS_CheckStack',
-    )
 if feature_macros['PY_HAVE_THREAD_NATIVE_ID']:
     SYMBOL_NAMES += (
         'PyThread_get_thread_native_id',
@@ -946,14 +996,23 @@ if feature_macros['Py_REF_DEBUG']:
         '_Py_NegativeRefcount',
         '_Py_RefTotal',
     )
+if feature_macros['Py_TRACE_REFS']:
+    SYMBOL_NAMES += (
+    )
+if feature_macros['USE_STACKCHECK']:
+    SYMBOL_NAMES += (
+        'PyOS_CheckStack',
+    )
 
 EXPECTED_FEATURE_MACROS = set(['HAVE_FORK',
  'MS_WINDOWS',
  'PY_HAVE_THREAD_NATIVE_ID',
  'Py_REF_DEBUG',
+ 'Py_TRACE_REFS',
  'USE_STACKCHECK'])
 WINDOWS_FEATURE_MACROS = {'HAVE_FORK': False,
  'MS_WINDOWS': True,
  'PY_HAVE_THREAD_NATIVE_ID': True,
  'Py_REF_DEBUG': 'maybe',
+ 'Py_TRACE_REFS': 'maybe',
  'USE_STACKCHECK': 'maybe'}

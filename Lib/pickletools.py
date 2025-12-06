@@ -312,7 +312,7 @@ uint8 = ArgumentDescriptor(
             doc="Eight-byte unsigned integer, little-endian.")
 
 
-def read_stringnl(f, decode=True, stripquotes=True):
+def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
     r"""
     >>> import io
     >>> read_stringnl(io.BytesIO(b"'abcd'\nefg\n"))
@@ -348,7 +348,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
         for q in (b'"', b"'"):
             if data.startswith(q):
                 if not data.endswith(q):
-                    raise ValueError("strinq quote %r not found at both "
+                    raise ValueError("string quote %r not found at both "
                                      "ends of %r" % (q, data))
                 data = data[1:-1]
                 break
@@ -356,7 +356,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = codecs.escape_decode(data)[0].decode("ascii")
+        data = codecs.escape_decode(data)[0].decode(encoding)
     return data
 
 stringnl = ArgumentDescriptor(
@@ -370,7 +370,7 @@ stringnl = ArgumentDescriptor(
                    """)
 
 def read_stringnl_noescape(f):
-    return read_stringnl(f, stripquotes=False)
+    return read_stringnl(f, stripquotes=False, encoding='utf-8')
 
 stringnl_noescape = ArgumentDescriptor(
                         name='stringnl_noescape',
@@ -1253,7 +1253,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pyint],
       proto=2,
-      doc="""Long integer using found-byte length.
+      doc="""Long integer using four-byte length.
 
       A more efficient encoding of a Python long; the long4 encoding
       says it all."""),
@@ -2429,8 +2429,6 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     + A memo entry isn't referenced before it's defined.
 
     + The markobject isn't stored in the memo.
-
-    + A memo entry isn't redefined.
     """
 
     # Most of the hair here is for sanity checks, but most of it is needed
@@ -2484,7 +2482,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
                     assert opcode.name == "POP"
                     numtopop = 0
             else:
-                errormsg = markmsg = "no MARK exists on stack"
+                errormsg = "no MARK exists on stack"
 
         # Check for correct memo usage.
         if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT", "MEMOIZE"):
@@ -2494,9 +2492,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             else:
                 assert arg is not None
                 memo_idx = arg
-            if memo_idx in memo:
-                errormsg = "memo key %r already defined" % arg
-            elif not stack:
+            if not stack:
                 errormsg = "stack is empty -- can't store into memo"
             elif stack[-1] is markobject:
                 errormsg = "can't store markobject in the memo"
@@ -2513,7 +2509,10 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             # make a mild effort to align arguments
             line += ' ' * (10 - len(opcode.name))
             if arg is not None:
-                line += ' ' + repr(arg)
+                if opcode.name in ("STRING", "BINSTRING", "SHORT_BINSTRING"):
+                    line += ' ' + ascii(arg)
+                else:
+                    line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
         if annotate:
@@ -2839,19 +2838,18 @@ __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
            }
 
-def _test():
-    import doctest
-    return doctest.testmod()
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
     parser = argparse.ArgumentParser(
-        description='disassemble one or more pickle files')
+        description='disassemble one or more pickle files',
+        color=True,
+    )
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
-        nargs='*', help='the pickle file')
+        'pickle_file',
+        nargs='+', help='the pickle file')
     parser.add_argument(
-        '-o', '--output', default=sys.stdout, type=argparse.FileType('w'),
+        '-o', '--output',
         help='the file where the output should be written')
     parser.add_argument(
         '-m', '--memo', action='store_true',
@@ -2866,25 +2864,28 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
-    args = parser.parse_args()
-    if args.test:
-        _test()
+    args = parser.parse_args(args)
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        annotate = 30 if args.annotate else 0
-        if not args.pickle_file:
-            parser.print_help()
-        elif len(args.pickle_file) == 1:
-            dis(args.pickle_file[0], args.output, None,
-                args.indentlevel, annotate)
-        else:
-            memo = {} if args.memo else None
-            for f in args.pickle_file:
-                preamble = args.preamble.format(name=f.name)
-                args.output.write(preamble + '\n')
-                dis(f, args.output, memo, args.indentlevel, annotate)
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
+            else:
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()
+
+
+if __name__ == "__main__":
+    _main()

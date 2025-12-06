@@ -2,12 +2,14 @@
 Tests common to genericpath, ntpath and posixpath
 """
 
+import copy
 import genericpath
 import os
+import pickle
 import sys
 import unittest
 import warnings
-from test.support import is_emscripten
+from test import support
 from test.support import os_helper
 from test.support import warnings_helper
 from test.support.script_helper import assert_python_ok
@@ -92,8 +94,8 @@ class GenericTest:
         for s1 in testlist:
             for s2 in testlist:
                 p = commonprefix([s1, s2])
-                self.assertTrue(s1.startswith(p))
-                self.assertTrue(s2.startswith(p))
+                self.assertStartsWith(s1, p)
+                self.assertStartsWith(s2, p)
                 if s1 != s2:
                     n = len(p)
                     self.assertNotEqual(s1[n:n+1], s2[n:n+1])
@@ -135,6 +137,9 @@ class GenericTest:
         self.assertIs(self.pathmodule.exists(filename), False)
         self.assertIs(self.pathmodule.exists(bfilename), False)
 
+        self.assertIs(self.pathmodule.lexists(filename), False)
+        self.assertIs(self.pathmodule.lexists(bfilename), False)
+
         create_file(filename)
 
         self.assertIs(self.pathmodule.exists(filename), True)
@@ -145,17 +150,19 @@ class GenericTest:
         self.assertIs(self.pathmodule.exists(filename + '\x00'), False)
         self.assertIs(self.pathmodule.exists(bfilename + b'\x00'), False)
 
-        if self.pathmodule is not genericpath:
-            self.assertIs(self.pathmodule.lexists(filename), True)
-            self.assertIs(self.pathmodule.lexists(bfilename), True)
+        self.assertIs(self.pathmodule.lexists(filename), True)
+        self.assertIs(self.pathmodule.lexists(bfilename), True)
 
-            self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
-            self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
-            self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
-            self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
+        self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
+
+        # Keyword arguments are accepted
+        self.assertIs(self.pathmodule.exists(path=filename), True)
+        self.assertIs(self.pathmodule.lexists(path=filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
     def test_exists_fd(self):
         r, w = os.pipe()
         try:
@@ -164,6 +171,12 @@ class GenericTest:
             os.close(r)
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
+
+    def test_exists_bool(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor'):
+                self.pathmodule.exists(fd)
 
     def test_isdir(self):
         filename = os_helper.TESTFN
@@ -309,6 +322,21 @@ class GenericTest:
                 fd2 = fp2.fileno()
                 self.assertTrue(self.pathmodule.sameopenfile(fd1, fd2))
 
+    def test_realpath_mode_values(self):
+        for name in 'ALL_BUT_LAST', 'ALLOW_MISSING':
+            with self.subTest(name):
+                mode = getattr(self.pathmodule, name)
+                self.assertEqual(repr(mode), 'os.path.' + name)
+                self.assertEqual(str(mode), 'os.path.' + name)
+                self.assertTrue(mode)
+                self.assertIs(copy.copy(mode), mode)
+                self.assertIs(copy.deepcopy(mode), mode)
+                for proto in range(pickle.HIGHEST_PROTOCOL+1):
+                    with self.subTest(protocol=proto):
+                        pickled = pickle.dumps(mode, proto)
+                        unpickled = pickle.loads(pickled)
+                        self.assertIs(unpickled, mode)
+
 
 class TestGenericTest(GenericTest, unittest.TestCase):
     # Issue 16852: GenericTest can't inherit from unittest.TestCase
@@ -434,6 +462,19 @@ class CommonTest(GenericTest):
                   os.fsencode('$bar%s bar' % nonascii))
             check(b'$spam}bar', os.fsencode('%s}bar' % nonascii))
 
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = self.pathmodule.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('$A'*n), 'B'*n)
+            self.assertEqual(expandvars('${A}'*n), 'B'*n)
+            self.assertEqual(expandvars('$A!'*n), 'B!'*n)
+            self.assertEqual(expandvars('${A}A'*n), 'BA'*n)
+            self.assertEqual(expandvars('${'*10*n), '${'*10*n)
+
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))
         with warnings.catch_warnings():
@@ -483,12 +524,16 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), str)
 
     def test_nonascii_abspath(self):
-        if (os_helper.TESTFN_UNDECODABLE
-        # macOS and Emscripten deny the creation of a directory with an
-        # invalid UTF-8 name. Windows allows creating a directory with an
-        # arbitrary bytes name, but fails to enter this directory
-        # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            # Apple platforms and Emscripten/WASI deny the creation of a
+            # directory with an invalid UTF-8 name. Windows allows creating a
+            # directory with an arbitrary bytes name, but fails to enter this
+            # directory (when the bytes name is used).
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            } and not support.is_apple
+        ):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
