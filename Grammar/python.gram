@@ -230,7 +230,7 @@ import_name[stmt_ty]:
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
     | lazy="lazy"? 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
+        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), lazy, EXTRA) }
     | lazy="lazy"? 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), lazy ? 1 : 0, EXTRA) }
 import_from_targets[asdl_alias_seq*]:
