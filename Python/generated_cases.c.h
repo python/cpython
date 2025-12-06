@@ -9080,6 +9080,9 @@
                 int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_DECREF(l_v);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     JUMP_TO_LABEL(error);
                 }
                 v_o = l_v;

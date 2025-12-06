@@ -1802,7 +1802,8 @@ dummy_func(
                 ERROR_IF(l_v == NULL);
                 int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
                 if (err < 0) {
-                    JUMP_TO_LABEL(error);
+                    Py_DECREF(l_v);
+                    ERROR_IF(true);
                 }
                 v_o = l_v;
             }
@@ -1843,7 +1844,7 @@ dummy_func(
                 int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
                 if (err < 0) {
                     Py_DECREF(l_v);
-                    JUMP_TO_LABEL(error);
+                    ERROR_IF(true);
                 }
                 *res = PyStackRef_FromPyObjectSteal(l_v);
             }

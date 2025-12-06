@@ -2470,7 +2470,10 @@
                 int err = _PyModule_ReplaceLazyValue(GLOBALS(), name, l_v);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
-                    JUMP_TO_LABEL(error);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    Py_DECREF(l_v);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_ERROR();
                 }
                 v_o = l_v;
             }
@@ -2508,7 +2511,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     Py_DECREF(l_v);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    JUMP_TO_LABEL(error);
+                    JUMP_TO_ERROR();
                 }
                 *res = PyStackRef_FromPyObjectSteal(l_v);
             }
