@@ -519,6 +519,160 @@ class ThreadSafetyTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
 
+    def test_concurrent_lazy_modules_set_updates(self):
+        """Multiple threads creating lazy imports should safely update sys.lazy_modules."""
+        code = textwrap.dedent("""
+            import sys
+            import threading
+
+            num_threads = 16
+            iterations = 50
+            errors = []
+            barrier = threading.Barrier(num_threads)
+
+            def create_lazy_imports(idx):
+                try:
+                    barrier.wait()
+                    for i in range(iterations):
+                        exec(f"lazy import json as json_{idx}_{i}", globals())
+                        exec(f"lazy import os as os_{idx}_{i}", globals())
+                except Exception as e:
+                    errors.append((idx, e))
+
+            threads = [
+                threading.Thread(target=create_lazy_imports, args=(i,))
+                for i in range(num_threads)
+            ]
+
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            assert not errors, f"Errors: {errors}"
+            assert isinstance(sys.lazy_modules, set), "sys.lazy_modules is not a set"
+            print("OK")
+        """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_concurrent_reification_same_module_high_contention(self):
+        """High contention: many threads reifying the exact same lazy import."""
+        code = textwrap.dedent("""
+            import sys
+            import threading
+            import types
+
+            sys.set_lazy_imports("all")
+
+            lazy import json
+
+            num_threads = 20
+            results = [None] * num_threads
+            errors = []
+            barrier = threading.Barrier(num_threads)
+
+            def access_json(idx):
+                try:
+                    barrier.wait()
+                    for _ in range(100):
+                        _ = json.dumps
+                        _ = json.loads
+                    results[idx] = json
+                except Exception as e:
+                    errors.append((idx, e))
+
+            threads = [
+                threading.Thread(target=access_json, args=(i,))
+                for i in range(num_threads)
+            ]
+
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            assert not errors, f"Errors: {errors}"
+            assert all(r is not None for r in results), "Some threads got None"
+            first = results[0]
+            assert all(r is first for r in results), "Inconsistent module objects"
+            assert not isinstance(first, types.LazyImportType), "Got lazy import instead of module"
+            print("OK")
+        """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
+    def test_concurrent_reification_with_module_attribute_access(self):
+        """Threads racing to reify and immediately access module attributes."""
+        code = textwrap.dedent("""
+            import sys
+            import threading
+
+            sys.set_lazy_imports("all")
+
+            lazy import collections
+            lazy import functools
+            lazy import itertools
+
+            num_threads = 12
+            results = {}
+            errors = []
+            barrier = threading.Barrier(num_threads)
+
+            def stress_lazy_imports(idx):
+                try:
+                    barrier.wait()
+                    for _ in range(50):
+                        _ = collections.OrderedDict
+                        _ = functools.partial
+                        _ = itertools.chain
+                        _ = collections.defaultdict
+                        _ = functools.lru_cache
+                        _ = itertools.islice
+                    results[idx] = (
+                        type(collections).__name__,
+                        type(functools).__name__,
+                        type(itertools).__name__,
+                    )
+                except Exception as e:
+                    errors.append((idx, e))
+
+            threads = [
+                threading.Thread(target=stress_lazy_imports, args=(i,))
+                for i in range(num_threads)
+            ]
+
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+            assert not errors, f"Errors: {errors}"
+            for idx, types_tuple in results.items():
+                assert all(t == 'module' for t in types_tuple), f"Thread {idx}: {types_tuple}"
+            print("OK")
+        """)
+
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
+
 
 if __name__ == '__main__':
     unittest.main()
