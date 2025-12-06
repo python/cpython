@@ -2288,6 +2288,16 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    // Update last_profiled_frame for remote profiler frame caching.
+    // By this point, tstate->current_frame is already set to the parent frame.
+    // Only update if we're popping the exact frame that was last profiled.
+    // This avoids corrupting the cache when transient frames (called and returned
+    // between profiler samples) update last_profiled_frame to addresses the
+    // profiler never saw.
+    if (tstate->last_profiled_frame != NULL && tstate->last_profiled_frame == frame) {
+        tstate->last_profiled_frame = tstate->current_frame;
+    }
+
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);
     }
