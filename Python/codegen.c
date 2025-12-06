@@ -2960,7 +2960,7 @@ codegen_from_import(compiler *c, stmt_ty s)
             ADDOP_NAME_CUSTOM(c, LOC(s), IMPORT_NAME, from, names, 2, 0);
         }
     }
-    
+
     for (Py_ssize_t i = 0; i < n; i++) {
         alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
         identifier store_name;

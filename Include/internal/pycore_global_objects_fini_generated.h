@@ -1706,7 +1706,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(effective_ids));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(element_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(emptyerror));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(enabled));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(encode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(encoding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(end));

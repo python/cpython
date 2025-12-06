@@ -1380,4 +1380,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=65b2a6dfb50b64bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c3327da8885bb8e input=a9049054013a1b77]*/

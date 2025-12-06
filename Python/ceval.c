@@ -3512,7 +3512,7 @@ error:
 
 PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
-                       PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level, 
+                       PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
                        int lazy)
 {
     PyObject *res = NULL;

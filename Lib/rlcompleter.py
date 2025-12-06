@@ -191,7 +191,7 @@ class Completer:
                         continue
 
                     if (isinstance(thisobject, types.ModuleType)
-                        and 
+                        and
                         isinstance(thisobject.__dict__.get(word),types.LazyImportType)
                     ):
                         value = thisobject.__dict__.get(word)

@@ -297,7 +297,7 @@ __lazy_import__ as builtin___lazy_import__
     fromlist: object(c_default="NULL") = ()
     level: int = 0
 
-Lazily imports a module. 
+Lazily imports a module.
 
 Returns either the module to be imported or a imp.lazy_module object which
 indicates the module to be lazily imported.

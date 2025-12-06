@@ -1,3 +1,2 @@
 def foo():
     return 'foo'
-

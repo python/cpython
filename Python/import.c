@@ -3793,7 +3793,7 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
 PyObject *
 _PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
 {
-  return resolve_name(tstate, name, globals, level);  
+  return resolve_name(tstate, name, globals, level);
 }
 
 PyObject *
@@ -4767,7 +4767,7 @@ PyImport_SetLazyImportsFilter(PyObject *filter)
 
 /* Gets the lazy imports filter. Returns a new reference. */
 PyObject *
-PyImport_GetLazyImportsFilter()
+PyImport_GetLazyImportsFilter(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return Py_XNewRef(FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp)));
@@ -4784,7 +4784,7 @@ PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
 /* Checks if lazy imports is globally enabled or disabled. Return 1 when globally
  * forced on, 0 when globally forced off, or -1 when */
 PyImport_LazyImportsMode
-PyImport_GetLazyImportsMode()
+PyImport_GetLazyImportsMode(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return FT_ATOMIC_LOAD_INT_RELAXED(LAZY_IMPORTS_MODE(interp));

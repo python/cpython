@@ -2896,15 +2896,16 @@ sys.get_lazy_modules
 
 Gets the set of module names that have been lazily imported.
 
-Returns a set of fully-qualified module names that have been lazily imported
-at some point (primarily for diagnostics and introspection). Note that modules
-are removed from this set when they are reified (actually loaded).
+Returns a set of fully-qualified module names that have been lazily
+imported at some point (primarily for diagnostics and introspection).
+Note that modules are removed from this set when they are reified
+(actually loaded).
 
 [clinic start generated code]*/
 
 static PyObject *
 sys_get_lazy_modules_impl(PyObject *module)
-/*[clinic end generated code: output=4c641f8881ba87c0 input=06c7a1d05bcfa36a]*/
+/*[clinic end generated code: output=4c641f8881ba87c0 input=511b3a9682c09282]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *lazy_modules_set = interp->imports.lazy_modules_set;

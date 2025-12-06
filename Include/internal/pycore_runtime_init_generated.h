@@ -1704,7 +1704,6 @@ extern "C" {
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
     INIT_ID(emptyerror), \
-    INIT_ID(enabled), \
     INIT_ID(encode), \
     INIT_ID(encoding), \
     INIT_ID(end), \

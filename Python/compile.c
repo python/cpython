@@ -816,7 +816,7 @@ _PyCompile_InExceptionHandler(compiler *c)
             default:
                 break;
         }
-    }    
+    }
     return false;
 }
 
