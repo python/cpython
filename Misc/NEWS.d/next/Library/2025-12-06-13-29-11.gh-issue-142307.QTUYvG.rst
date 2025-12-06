@@ -1,0 +1,2 @@
+:mod:`imaplib`: restore legacy support for altering ``IMAP4.file``. Patch by
+Bénédikt Tran.
