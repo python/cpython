@@ -96,6 +96,7 @@ class TestUtils(TestCase):
             ("list", [("list", "builtin")]),
             ("    \n dict", [("dict", "builtin")]),
             ("    lazy import", [("lazy", "soft_keyword"), ("import", "keyword")]),
+            ("lazy from cool_people import pablo", [('lazy', 'soft_keyword'), ('from', 'keyword'), ('import', 'keyword')])
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
