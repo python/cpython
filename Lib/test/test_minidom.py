@@ -1759,5 +1759,38 @@ class MinidomTest(unittest.TestCase):
         dom2 = parseString(dom1.toprettyxml())
         self.checkWholeText(dom2.getElementsByTagName('node')[0].firstChild, '</data>')
 
+    def testElementConstructor(self):
+        dom = parse(tstfile)
+        child1 = dom.createComment("Hello 1")
+        child2 = dom.createComment("Hello 2")
+
+        attributes = {
+            "first": "1",
+            "second": "2",
+            }
+
+        attributesNS = {
+            ("http://www.w3.org", "xmlns:python"): "http://www.python.org",
+            }
+        
+        element = xml.dom.minidom.Element(
+            "some_tag",
+            childNodes=[child1, child2],
+            attributes=attributes,
+            attributesNS=attributesNS
+            )
+        
+        self.assertEqual(child1.data, element.childNodes[0].data)
+        self.assertEqual(child2.data, element.childNodes[1].data)
+
+        for name, value in attributes.items():
+            self.assertEqual(value, element.getAttribute(name))
+
+        self.assertEqual(
+            element.getAttributeNS(
+                "http://www.w3.org", "python"),
+                "http://www.python.org"
+                )
+
 if __name__ == "__main__":
     unittest.main()
