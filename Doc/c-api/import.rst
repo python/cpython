@@ -371,11 +371,20 @@ Importing Modules
 
 .. c:type:: PyImport_LazyImportsMode
 
-   Enumeration of possible lazy import modes:
+   Enumeration of possible lazy import modes.
 
-   - :c:enumerator:`PyImport_LAZY_NORMAL`
-   - :c:enumerator:`PyImport_LAZY_ALL`
-   - :c:enumerator:`PyImport_LAZY_NONE`
+   .. c:enumerator:: PyImport_LAZY_NORMAL
+
+      Respect the ``lazy`` keyword in source code. This is the default mode.
+
+   .. c:enumerator:: PyImport_LAZY_ALL
+
+      Make all imports lazy by default.
+
+   .. c:enumerator:: PyImport_LAZY_NONE
+
+      Disable lazy imports entirely. Even explicit ``lazy`` statements become
+      eager imports.
 
    .. versionadded:: next
 
