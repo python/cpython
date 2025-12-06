@@ -5441,7 +5441,10 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *child_dict = NULL;
     PyObject *ret = NULL;
-    PyObject *lazy_modules = tstate->interp->imports.lazy_modules;
+    // Use atomic load and hold a reference to prevent use-after-free
+    // if another thread clears lazy_modules during interpreter shutdown.
+    PyObject *lazy_modules = FT_ATOMIC_LOAD_PTR_RELAXED(tstate->interp->imports.lazy_modules);
+    Py_XINCREF(lazy_modules);
     if (lazy_modules != NULL) {
         PyObject *lazy_submodules = PyDict_GetItemWithError(lazy_modules, name);
         if (lazy_submodules == NULL) {
@@ -5483,6 +5486,7 @@ done:
     ret = Py_NewRef(Py_None);
 
   error:
+    Py_XDECREF(lazy_modules);
     Py_XDECREF(child_dict);
     return ret;
 }
