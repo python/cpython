@@ -353,19 +353,23 @@ Importing Modules
 
    .. versionadded:: next
 
-.. c:function:: PyObject* PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
+.. c:function:: int PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode)
 
    Similar to :c:func:`PyImport_ImportModuleAttr`, but names are UTF-8 encoded
    strings instead of Python :class:`str` objects.
 
+   This function always returns ``0``.
+
    .. versionadded:: next
 
-.. c:function:: PyObject* PyImport_SetLazyImportsFilter(PyObject *filter)
+.. c:function:: int PyImport_SetLazyImportsFilter(PyObject *filter)
 
-   Sets the current lazy imports filter. The function should be a callable that
-   will receive (importing_module_name, imported_module_name, [fromlist]) when
-   an import can potentially be lazy. Returns ``True`` if the import should be lazy
-   or ``False`` otherwise.
+   Sets the current lazy imports filter. The *filter* should be a callable that
+   will receive ``(importing_module_name, imported_module_name, [fromlist])``
+   when an import can potentially be lazy and that must return ``True`` if
+   the import should be lazy and ``False`` otherwise.
+
+   Return ``0`` on success and ``-1`` with an exception set otherwise.
 
    .. versionadded:: next
 
