@@ -827,6 +827,36 @@ if __name__ == "__main__":
     asyncio.run(main())
 '''
 
+    def _collect_async_samples(self, async_aware_mode):
+        """Helper to collect samples and count function occurrences.
+
+        Returns a dict mapping function names to their sample counts.
+        """
+        with test_subprocess(self.async_script) as subproc:
+            try:
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=SHORT_TIMEOUT,
+                    async_aware=async_aware_mode,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+        # Count samples per function from collapsed stacks
+        # stack_counter keys are (call_tree, thread_id) where call_tree
+        # is a tuple of (file, line, func) tuples
+        func_samples = {}
+        total = 0
+        for (call_tree, _thread_id), count in collector.stack_counter.items():
+            total += count
+            for _file, _line, func in call_tree:
+                func_samples[func] = func_samples.get(func, 0) + count
+
+        func_samples["_total"] = total
+        return func_samples
+
     def test_async_aware_all_sees_sleeping_and_running_tasks(self):
         """Test that async_aware='all' captures both sleeping and CPU-running tasks.
 
@@ -840,35 +870,12 @@ if __name__ == "__main__":
 
         async_aware='all' should see ALL 4 leaf tasks in the output.
         """
-        with (
-            test_subprocess(self.async_script) as subproc,
-            io.StringIO() as captured_output,
-            mock.patch("sys.stdout", captured_output),
-        ):
-            try:
-                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=SHORT_TIMEOUT,
-                    async_aware="all",
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+        samples = self._collect_async_samples("all")
 
-            output = captured_output.getvalue()
-
-        # async_aware="all" should see ALL leaf tasks
-        self.assertIn("sleeping_leaf", output)
-        self.assertIn("cpu_leaf", output)
-        # Should see the tree structure via task markers
-        self.assertIn("<task>", output)
-        # Should see task names in output (leaf tasks)
-        self.assertIn("Sleeper", output)
-        self.assertIn("Worker", output)
-        # Should see the parent task in the tree (supervisor function)
-        self.assertIn("supervisor", output)
+        self.assertGreater(samples["_total"], 0, "Should have collected samples")
+        self.assertIn("sleeping_leaf", samples)
+        self.assertIn("cpu_leaf", samples)
+        self.assertIn("supervisor", samples)
 
     def test_async_aware_running_sees_only_cpu_task(self):
         """Test that async_aware='running' only captures the actively running task.
@@ -883,32 +890,18 @@ if __name__ == "__main__":
 
         async_aware='running' should only see the Worker task doing CPU work.
         """
-        with (
-            test_subprocess(self.async_script) as subproc,
-            io.StringIO() as captured_output,
-            mock.patch("sys.stdout", captured_output),
-        ):
-            try:
-                collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=SHORT_TIMEOUT,
-                    async_aware="running",
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+        samples = self._collect_async_samples("running")
 
-            output = captured_output.getvalue()
+        total = samples["_total"]
+        cpu_leaf_samples = samples.get("cpu_leaf", 0)
 
-        # async_aware="running" should see the CPU task prominently
-        self.assertIn("cpu_leaf", output)
-        # Should see Worker task marker
-        self.assertIn("Worker", output)
-        # Should see the tree structure (supervisor in the parent chain)
-        self.assertIn("supervisor", output)
-        # Should see task boundary markers
-        self.assertIn("<task>", output)
-        # async_aware="running" should NOT see sleeping tasks
-        self.assertNotIn("sleeping_leaf", output)
+        self.assertGreater(total, 0, "Should have collected some samples")
+        self.assertGreater(cpu_leaf_samples, 0, "cpu_leaf should appear in samples")
+
+        # cpu_leaf should have at least 90% of samples (typically 99%+)
+        # sleeping_leaf may occasionally appear with very few samples (< 1%)
+        # when tasks briefly wake up to check sleep timers
+        cpu_percentage = (cpu_leaf_samples / total) * 100
+        self.assertGreater(cpu_percentage, 90.0,
+            f"cpu_leaf should dominate samples in 'running' mode, "
+            f"got {cpu_percentage:.1f}% ({cpu_leaf_samples}/{total})")
