@@ -3255,5 +3255,15 @@ class TestFolding(TestEmailBase):
             " filename*1*=_TEST_TES.txt\n",
             )
 
+    def test_fold_unfoldable_element_stealing_whitespace(self):
+        # gh-142006: When an element is too long to fit on the current line
+        # the previous line's trailing whitespace should not trigger a double newline.
+        policy = self.policy.clone(max_line_length=10)
+        # The non-whitespace text needs to exactly fill the max_line_length (10).
+        text = ("a" * 9) + ", " + ("b" * 20)
+        expected = ("a" * 9) + ",\n " + ("b" * 20) + "\n"
+        token = parser.get_address_list(text)[0]
+        self._test(token, expected, policy=policy)
+
 if __name__ == '__main__':
     unittest.main()
