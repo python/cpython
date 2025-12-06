@@ -121,7 +121,7 @@ Significant improvements in the standard library:
   :ref:`better and significantly faster way <whatsnew-pep-471>`
   of directory traversal.
 
-* :func:`functools.lru_cache` has been mostly
+* :deco:`functools.lru_cache` has been mostly
   :ref:`reimplemented in C <whatsnew-lrucache>`, yielding much better
   performance.
 
@@ -1148,7 +1148,7 @@ functools
 
 .. _whatsnew-lrucache:
 
-Most of the :func:`~functools.lru_cache` machinery is now implemented in C, making
+Most of the :deco:`~functools.lru_cache` machinery is now implemented in C, making
 it significantly faster.  (Contributed by Matt Joiner, Alexey Kachayev, and
 Serhiy Storchaka in :issue:`14373`.)
 
@@ -2158,7 +2158,7 @@ improvement in some benchmarks.
 Objects from the :mod:`random` module now use 50% less memory on 64-bit
 builds.  (Contributed by Serhiy Storchaka in :issue:`23488`.)
 
-The :func:`property` getter calls are up to 25% faster.
+The :deco:`property` getter calls are up to 25% faster.
 (Contributed by Joe Jevnik in :issue:`23910`.)
 
 Instantiation of :class:`fractions.Fraction` is now up to 30% faster.
