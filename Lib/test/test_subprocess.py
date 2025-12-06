@@ -2016,6 +2016,7 @@ class POSIXProcessTestCase(BaseTestCase):
                       self._nonexistent_dir)
         return desired_exception
 
+    @mock.patch("subprocess._HAVE_POSIX_SPAWN_CHDIR", new=False)
     def test_exception_cwd(self):
         """Test error in the child raised in the parent for a bad cwd."""
         desired_exception = self._get_chdir_exception()
