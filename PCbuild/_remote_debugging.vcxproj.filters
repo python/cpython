@@ -24,6 +24,9 @@
     <ClCompile Include="..\Modules\_remote_debugging\frames.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_remote_debugging\frame_cache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_remote_debugging\threads.c">
       <Filter>Source Files</Filter>
     </ClCompile>
