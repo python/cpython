@@ -3337,7 +3337,9 @@ static int stdin_ready = 0;
 static void
 MyFileProc(void *clientData, int mask)
 {
+    int *tfile = clientData;
     stdin_ready = 1;
+    Tcl_DeleteFileHandler(*tfile);
 }
 #endif
 
@@ -3354,7 +3356,7 @@ EventHook(void)
     errorInCmd = 0;
 #ifndef MS_WINDOWS
     tfile = fileno(stdin);
-    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
+    Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, &tfile);
 #endif
     while (!errorInCmd && !stdin_ready) {
         int result;
@@ -3379,14 +3381,14 @@ EventHook(void)
         if (result < 0)
             break;
     }
-#ifndef MS_WINDOWS
-    Tcl_DeleteFileHandler(tfile);
-#endif
     if (errorInCmd) {
         errorInCmd = 0;
         PyErr_SetRaisedException(excInCmd);
         excInCmd = NULL;
         PyErr_Print();
+#ifndef MS_WINDOWS
+        if (!stdin_ready) Tcl_DeleteFileHandler(tfile);
+#endif
     }
     PyEval_SaveThread();
     return 0;
