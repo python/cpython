@@ -3768,6 +3768,9 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (d->lz_attr != NULL) {
         if (PyUnicode_Check(d->lz_attr)) {
             PyObject *from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);
+            if (from == NULL) {
+                return NULL;
+            }
             ret = _PyLazyImport_New(d->lz_builtins, from, name);
             Py_DECREF(from);
             return ret;
@@ -3776,6 +3779,9 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         Py_ssize_t dot = PyUnicode_FindChar(d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1);
         if (dot >= 0) {
             PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
+            if (from == NULL) {
+                return NULL;
+            }
             ret = _PyLazyImport_New(d->lz_builtins, from, name);
             Py_DECREF(from);
             return ret;

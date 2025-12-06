@@ -4351,9 +4351,10 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     if (filter != NULL) {
         PyObject *modname;
         if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
+            Py_DECREF(abs_name);
             return NULL;
         } else if (modname == NULL) {
-            modname = Py_None;
+            modname = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, name, fromlist};
         PyObject *res = PyObject_Vectorcall(
@@ -4363,12 +4364,17 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             NULL
         );
 
+        Py_DECREF(modname);
+
         if (res == NULL) {
             Py_DECREF(abs_name);
             return NULL;
         }
 
-        if (!PyObject_IsTrue(res)) {
+        int is_true = PyObject_IsTrue(res);
+        Py_DECREF(res);
+
+        if (!is_true) {
             Py_DECREF(abs_name);
             return PyImport_ImportModuleLevelObject(
                 name, globals, locals, fromlist, level
@@ -4612,6 +4618,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(interp->imports.lazy_modules);
     Py_CLEAR(interp->imports.lazy_modules_set);
     Py_CLEAR(interp->imports.lazy_importing_modules);
+    Py_CLEAR(interp->imports.lazy_imports_filter);
 }
 
 void
