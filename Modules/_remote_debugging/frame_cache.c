@@ -221,8 +221,10 @@ frame_cache_store(
     // Clear old frame_list if replacing
     Py_CLEAR(entry->frame_list);
 
-    // Store data - truncate frame_list to match num_addrs
-    entry->frame_list = PyList_GetSlice(frame_list, 0, num_addrs);
+    // Store full frame list (don't truncate to num_addrs - frames beyond the
+    // address array limit are still valid and needed for full cache hits)
+    Py_ssize_t num_frames = PyList_GET_SIZE(frame_list);
+    entry->frame_list = PyList_GetSlice(frame_list, 0, num_frames);
     if (!entry->frame_list) {
         return -1;
     }
