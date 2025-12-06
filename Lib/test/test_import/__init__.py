@@ -1253,6 +1253,21 @@ os.does_not_exist
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
 
+    def test_create_builtin(self):
+        class Spec:
+            name = "sys"
+
+        spec = Spec()
+        self.assertIs(_imp.create_builtin(spec), sys)
+
+        spec.name = "builtins"
+        self.assertIs(_imp.create_builtin(spec), builtins)
+
+        # gh-142029
+        spec.name = "nonexistent_lib"
+        with self.assertRaises(ModuleNotFoundError):
+            _imp.create_builtin(spec)
+
     def test_filter_syntax_warnings_by_module(self):
         module_re = r'test\.test_import\.data\.syntax_warnings\z'
         unload('test.test_import.data.syntax_warnings')
