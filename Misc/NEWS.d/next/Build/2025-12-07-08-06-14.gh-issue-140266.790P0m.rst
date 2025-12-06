@@ -1,0 +1,5 @@
+Fix incorrect platform value in build-details.json when
+_PYTHON_HOST_PLATFORM was set to an empty string during non-cross builds.
+sysconfig.get_platform() now treats the empty case the same as unset,
+restoring the expected platform value.
+###########################################################################

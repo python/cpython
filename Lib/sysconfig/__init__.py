@@ -678,8 +678,9 @@ def get_platform():
         return sys.platform
 
     # Set for cross builds explicitly
-    if "_PYTHON_HOST_PLATFORM" in os.environ:
-        osname, _, machine = os.environ["_PYTHON_HOST_PLATFORM"].partition('-')
+    host_platform = os.environ.get('_PYTHON_HOST_PLATFORM')
+    if host_platform:
+        osname, _, machine = host_platform.partition('-')
         release = None
     else:
         # Try to distinguish various flavours of Unix
