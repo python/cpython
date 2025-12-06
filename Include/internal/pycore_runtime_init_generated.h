@@ -1965,6 +1965,7 @@ extern "C" {
     INIT_ID(pos1), \
     INIT_ID(pos2), \
     INIT_ID(posix), \
+    INIT_ID(posmode), \
     INIT_ID(prec), \
     INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \

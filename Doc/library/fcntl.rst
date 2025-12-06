@@ -83,6 +83,13 @@ descriptor.
    On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
    to query a file descriptor pointing to the same file.
 
+.. versionchanged:: next
+   On macOS, the :mod:`!fcntl` module exposes the ``F_PREALLOCATE`` constant
+   and related constants (``F_ALLOCATECONTIG``, ``F_ALLOCATEALL``,
+   ``F_ALLOCATEPERSIST``, ``F_PEOFPOSMODE``, ``F_VOLPOSMODE``) for file
+   preallocation operations. The module also provides the :class:`fstore` type
+   for use with the ``F_PREALLOCATE`` command.
+
 The module defines the following functions:
 
 
@@ -247,6 +254,53 @@ The module defines the following functions:
    default for *whence* is also 0.
 
    .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
+
+
+.. class:: fstore(flags=0, posmode=0, offset=0, length=0)
+
+   A Python type that wraps the ``struct fstore`` C structure used with the
+   ``F_PREALLOCATE`` command on macOS. This type implements the buffer protocol,
+   allowing it to be used directly with :func:`fcntl`.
+
+   .. attribute:: flags
+
+      Allocation flags. Can be one of:
+
+      * :const:`!F_ALLOCATECONTIG` - Allocate contiguous space
+      * :const:`!F_ALLOCATEALL` - Allocate all requested space
+      * :const:`!F_ALLOCATEPERSIST` - Make the allocation persistent
+
+   .. attribute:: posmode
+
+      Position mode. Can be one of:
+
+      * :const:`!F_PEOFPOSMODE` - Allocate relative to the physical end of file
+      * :const:`!F_VOLPOSMODE` - Allocate relative to volume position
+
+   .. attribute:: offset
+
+      File offset for the allocation.
+
+   .. attribute:: length
+
+      Length of space to allocate.
+
+   .. attribute:: bytesalloc
+
+      Number of bytes actually allocated (read-only). This field is populated
+      by the system after the F_PREALLOCATE operation.
+
+   .. staticmethod:: from_buffer(data)
+
+      Create an :class:`fstore` instance from bytes data.
+
+      This is useful for creating an fstore instance from the result of
+      :func:`fcntl.fcntl` when using the F_PREALLOCATE command.
+
+   .. availability:: macOS
+
+   .. versionadded:: next
+
 
 Examples (all on a SVR4 compliant system)::
 
