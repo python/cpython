@@ -1825,6 +1825,12 @@ class ZipFile:
         if self._seekable:
             self.fp.seek(self.start_dir)
         zinfo.header_offset = self.fp.tell()
+        # exceptions raised in _writecheck if _allowZip64 is False
+        zip64 = (
+            zip64
+            or zinfo.header_offset > ZIP64_LIMIT
+            or len(self.filelist) >= ZIP_FILECOUNT_LIMIT
+        )
 
         self._writecheck(zinfo)
         self._didModify = True
