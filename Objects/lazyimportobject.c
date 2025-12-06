@@ -136,6 +136,15 @@ static PyMethodDef lazy_methods[] = {
 };
 
 
+PyDoc_STRVAR(lazy_import_doc,
+"lazy_import(builtins, name, fromlist=None, /)\n"
+"--\n"
+"\n"
+"Represents a deferred import that will be resolved on first use.\n"
+"\n"
+"This type is used internally by the 'lazy import' statement.\n"
+"Users should not typically create instances directly.");
+
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "lazy_import",                              /* tp_name */
@@ -158,7 +167,7 @@ PyTypeObject PyLazyImport_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
-    0,                                          /* tp_doc */
+    lazy_import_doc,                            /* tp_doc */
     (traverseproc)lazy_import_traverse,         /* tp_traverse */
     (inquiry)lazy_import_clear,                 /* tp_clear */
     0,                                          /* tp_richcompare */

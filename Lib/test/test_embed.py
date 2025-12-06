@@ -635,6 +635,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 0,
         'perf_profiling': 0,
         'import_time': 0,
+        'lazy_imports': -1,
         'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
         'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
