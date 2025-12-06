@@ -216,11 +216,12 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self) -> None:
+    def __init__(self, check_stack_bounds: bool = False) -> None:
         self.base_offset = PointerOffset.zero()
         self.physical_sp = PointerOffset.zero()
         self.logical_sp = PointerOffset.zero()
         self.variables: list[Local] = []
+        self.check_stack_bounds = check_stack_bounds
 
     def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.logical_sp = self.logical_sp.pop(var)
@@ -296,7 +297,7 @@ class Stack:
             diff = self.logical_sp - self.physical_sp
             out.start_line()
             out.emit(f"stack_pointer += {diff.to_c()};\n")
-            out.emit(f"assert(WITHIN_STACK_BOUNDS());\n")
+            out.emit(f"ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);\n")
             self.physical_sp = self.logical_sp
             self._print(out)
 
@@ -316,8 +317,17 @@ class Stack:
                 self._print(out)
             var_offset = var_offset.push(var.item)
 
+    def stack_bound_check(self, out: CWriter) -> None:
+        if not self.check_stack_bounds:
+            return
+        if self.physical_sp != self.logical_sp:
+            diff = self.logical_sp - self.physical_sp
+            out.start_line()
+            out.emit(f"CHECK_STACK_BOUNDS({diff});\n")
+
     def flush(self, out: CWriter) -> None:
         self._print(out)
+        self.stack_bound_check(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
@@ -347,6 +357,7 @@ class Stack:
         other.physical_sp = self.physical_sp
         other.logical_sp = self.logical_sp
         other.variables = [var.copy() for var in self.variables]
+        other.check_stack_bounds = self.check_stack_bounds
         return other
 
     def __eq__(self, other: object) -> bool:

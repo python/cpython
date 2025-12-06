@@ -8,9 +8,9 @@
 --------------
 
 For applications that require data compression, the functions in this module
-allow compression and decompression, using the zlib library. The zlib library
-has its own home page at https://www.zlib.net.  zlib 1.2.2.1 is the minium
-supported version.
+allow compression and decompression, using the `zlib library <https://www.zlib.net>`_.
+
+.. include:: ../includes/optional-module.rst
 
 zlib's functions have many options and often need to be used in a particular
 order.  This documentation doesn't attempt to cover all of the permutations;

@@ -1,0 +1,4 @@
+Add heatmap visualization mode to the Tachyon sampling profiler. The new
+``--heatmap`` output format provides a line-by-line view showing execution
+intensity with color-coded samples, inline statistics, and interactive call
+graph navigation between callers and callees.

@@ -798,10 +798,10 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
-        # The unlike libc, the musl version is a triple.
+        # The musl version is either triple or just a major version number.
         if linked:
             self.assertIsInstance(linked, tuple)
-            self.assertEqual(3, len(linked))
+            self.assertIn(len(linked), (1, 3))
             for v in linked:
                 self.assertIsInstance(v, int)
 

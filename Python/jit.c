@@ -60,6 +60,10 @@ jit_error(const char *message)
 static unsigned char *
 jit_alloc(size_t size)
 {
+    if (size > PY_MAX_JIT_CODE_SIZE) {
+        jit_error("code too big; refactor bytecodes.c to keep uop size down, or reduce maximum trace length.");
+        return NULL;
+    }
     assert(size);
     assert(size % get_page_size() == 0);
 #ifdef MS_WINDOWS
@@ -604,7 +608,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
-    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
+    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT || trace[0].opcode == _COLD_DYNAMIC_EXIT);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];

@@ -53,6 +53,7 @@ PyDoc_STRVAR(module_doc,
 "DeleteKey() - Deletes the specified key.\n"
 "DeleteKeyEx() - Deletes the specified key.\n"
 "DeleteValue() - Removes a named value from the specified registry key.\n"
+"DeleteTree() - Deletes the specified key and all its subkeys and values recursively.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
 "ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
@@ -107,7 +108,9 @@ PyDoc_STRVAR(PyHKEY_doc,
 "Operations:\n"
 "__bool__ - Handles with an open object return true, otherwise false.\n"
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
-"rich comparison - Handle objects are compared using the handle value.");
+"__enter__, __exit__ - Context manager support for 'with' statement,\n"
+"automatically closes handle.\n"
+"__eq__, __ne__ - Equality comparison based on Windows handle value.");
 
 
 
@@ -425,19 +428,6 @@ static PyType_Spec pyhkey_type_spec = {
 /************************************************************************
    The public PyHKEY API (well, not public yet :-)
 ************************************************************************/
-PyObject *
-PyHKEY_New(PyObject *m, HKEY hInit)
-{
-    winreg_state *st = _PyModule_GetState(m);
-    PyHKEYObject *key = PyObject_GC_New(PyHKEYObject, st->PyHKEY_Type);
-    if (key == NULL) {
-        return NULL;
-    }
-    key->hkey = hInit;
-    PyObject_GC_Track(key);
-    return (PyObject *)key;
-}
-
 BOOL
 PyHKEY_Close(winreg_state *st, PyObject *ob_handle)
 {
@@ -510,48 +500,6 @@ PyHKEY_FromHKEY(winreg_state *st, HKEY h)
     op->hkey = h;
     PyObject_GC_Track(op);
     return (PyObject *)op;
-}
-
-
-/************************************************************************
-  The module methods
-************************************************************************/
-BOOL
-PyWinObject_CloseHKEY(winreg_state *st, PyObject *obHandle)
-{
-    BOOL ok;
-    if (PyHKEY_Check(st, obHandle)) {
-        ok = PyHKEY_Close(st, obHandle);
-    }
-#if SIZEOF_LONG >= SIZEOF_HKEY
-    else if (PyLong_Check(obHandle)) {
-        long rc;
-        Py_BEGIN_ALLOW_THREADS
-        rc = RegCloseKey((HKEY)PyLong_AsLong(obHandle));
-        Py_END_ALLOW_THREADS
-        ok = (rc == ERROR_SUCCESS);
-        if (!ok)
-            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-    }
-#else
-    else if (PyLong_Check(obHandle)) {
-        long rc;
-        HKEY hkey = (HKEY)PyLong_AsVoidPtr(obHandle);
-        Py_BEGIN_ALLOW_THREADS
-        rc = RegCloseKey(hkey);
-        Py_END_ALLOW_THREADS
-        ok = (rc == ERROR_SUCCESS);
-        if (!ok)
-            PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
-    }
-#endif
-    else {
-        PyErr_SetString(
-            PyExc_TypeError,
-            "A handle must be a HKEY object or an integer");
-        return FALSE;
-    }
-    return ok;
 }
 
 
