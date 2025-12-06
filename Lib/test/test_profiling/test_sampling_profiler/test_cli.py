@@ -659,3 +659,37 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("--native", error_msg)
         self.assertIn("--no-gc", error_msg)
         self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_mode(self):
+        """Test --async-aware is incompatible with --mode (non-wall)."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "all", "--mode", "cpu"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--mode=cpu", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_all_threads(self):
+        """Test --async-aware is incompatible with --all-threads."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "running", "--all-threads"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            from profiling.sampling.cli import main
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--all-threads", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)

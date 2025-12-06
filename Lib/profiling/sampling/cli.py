@@ -390,13 +390,17 @@ def _validate_args(args, parser):
             "Live mode requires the curses module, which is not available."
         )
 
-    # Async-aware mode is incompatible with --native and --gc/--no-gc
+    # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
     if args.async_aware is not None:
         issues = []
         if args.native:
             issues.append("--native")
         if not args.gc:
             issues.append("--no-gc")
+        if hasattr(args, 'mode') and args.mode != "wall":
+            issues.append(f"--mode={args.mode}")
+        if hasattr(args, 'all_threads') and args.all_threads:
+            issues.append("--all-threads")
         if issues:
             parser.error(
                 f"Options {', '.join(issues)} are incompatible with --async-aware. "

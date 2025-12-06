@@ -910,3 +910,5 @@ if __name__ == "__main__":
         self.assertIn("supervisor", output)
         # Should see task boundary markers
         self.assertIn("<task>", output)
+        # async_aware="running" should NOT see sleeping tasks
+        self.assertNotIn("sleeping_leaf", output)
