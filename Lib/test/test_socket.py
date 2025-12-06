@@ -7055,6 +7055,15 @@ class SendfileUsingSendfileTest(SendfileUsingSendTest):
         return getattr(sock, "_sendfile_use_sendfile")
 
 
+@unittest.skipUnless(sys.platform == "win32", "Windows only test.")
+class SendfileUsingTransmitfileTest(SendfileUsingSendTest):
+    """
+    Test the TransmitFile() implementation of socket.sendfile().
+    """
+    def meth_from_sock(self, sock):
+        return getattr(sock, "_sendfile_use_transmitfile")
+
+
 @unittest.skipUnless(HAVE_SOCKET_ALG, 'AF_ALG required')
 class LinuxKernelCryptoAPI(unittest.TestCase):
     # tests for AF_ALG
