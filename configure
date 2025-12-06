@@ -1134,6 +1134,7 @@ enable_big_digits
 with_platlibdir
 with_wheel_pkg_dir
 with_readline
+enable_curses
 with_computed_gotos
 with_tail_call_interp
 with_remote_debug
@@ -1854,6 +1855,7 @@ Optional Features:
   --enable-big-digits[=15|30]
                           use big digits (30 or 15 bits) for Python longs
                           (default is 30)]
+  --disable-curses        disable building curses module (default is no)
   --disable-test-modules  don't build nor install test modules
 
 Optional Packages:
@@ -28330,9 +28332,32 @@ fi
 have_curses=no
 have_panel=no
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-curses" >&5
+printf %s "checking for --disable-curses... " >&6; }
+# Check whether --enable-curses was given.
+if test ${enable_curses+y}
+then :
+  enableval=$enable_curses;
+  if test "x$enable_curses" = xyes
+then :
+  Py_CHECK_NCURSES=yes
+else case e in #(
+  e) Py_CHECK_NCURSES=no ;;
+esac
+fi
+
+else case e in #(
+  e) Py_CHECK_NCURSES=yes ;;
+esac
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $Py_CHECK_NCURSES" >&5
+printf "%s\n" "$Py_CHECK_NCURSES" >&6; }
+
+if test "$Py_CHECK_NCURSES" == 'yes' ; then
 
 
-# Check for ncursesw/panelw first. If that fails, try ncurses/panel.
+  # Check for ncursesw/panelw first. If that fails, try ncurses/panel.
 
 
 
@@ -28407,7 +28432,7 @@ printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
 
-   have_curses=yes
+     have_curses=yes
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
@@ -28480,12 +28505,12 @@ printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_PANELW 1" >>confdefs.h
 
-     have_panel=yes
+       have_panel=yes
 fi
 fi
 
 
-if test "x$have_curses" = xno
+  if test "x$have_curses" = xno
 then :
 
 
@@ -28561,7 +28586,7 @@ printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_NCURSES 1" >>confdefs.h
 
-   have_curses=yes
+     have_curses=yes
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panel" >&5
@@ -28634,22 +28659,22 @@ printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HAVE_PANEL 1" >>confdefs.h
 
-     have_panel=yes
+       have_panel=yes
 fi
 fi
 
 
 fi
 
-save_CFLAGS=$CFLAGS
+  save_CFLAGS=$CFLAGS
 save_CPPFLAGS=$CPPFLAGS
 save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-  # Make sure we've got the header defines.
-  as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
-  ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
+    # Make sure we've got the header defines.
+    as_fn_append CPPFLAGS " $CURSES_CFLAGS $PANEL_CFLAGS"
+    ac_fn_c_check_header_compile "$LINENO" "ncursesw/curses.h" "ac_cv_header_ncursesw_curses_h" "$ac_includes_default"
 if test "x$ac_cv_header_ncursesw_curses_h" = xyes
 then :
   printf "%s\n" "#define HAVE_NCURSESW_CURSES_H 1" >>confdefs.h
@@ -28705,10 +28730,10 @@ then :
 fi
 
 
-  # Check that we're able to link with crucial curses/panel functions. This
-  # also serves as a fallback in case pkg-config failed.
-  as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
+    # Check that we're able to link with crucial curses/panel functions. This
+    # also serves as a fallback in case pkg-config failed.
+    as_fn_append LIBS " $CURSES_LIBS $PANEL_LIBS"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing initscr" >&5
 printf %s "checking for library containing initscr... " >&6; }
 if test ${ac_cv_search_initscr+y}
 then :
@@ -28775,14 +28800,14 @@ then :
   if test "x$have_curses" = xno
 then :
   have_curses=yes
-       CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
+         CURSES_LIBS=${CURSES_LIBS-"$ac_cv_search_initscr"}
 fi
 else case e in #(
   e) have_curses=no ;;
 esac
 fi
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing update_panels" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing update_panels" >&5
 printf %s "checking for library containing update_panels... " >&6; }
 if test ${ac_cv_search_update_panels+y}
 then :
@@ -28849,7 +28874,7 @@ then :
   if test "x$have_panel" = xno
 then :
   have_panel=yes
-       PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
+         PANEL_LIBS=${PANEL_LIBS-"$ac_cv_search_update_panels"}
 fi
 else case e in #(
   e) have_panel=no ;;
@@ -28859,37 +28884,37 @@ fi
 
 
 
-if test "have_curses" != "no"
+  if test "have_curses" != "no"
 then :
 
-CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+      CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "x$ac_sys_system" = xDarwin
+  if test "x$ac_sys_system" = xDarwin
 then :
 
 
-  as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
+    as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
 
 fi
 
-PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
+    PANEL_CFLAGS=$(echo $PANEL_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-# On Solaris, term.h requires curses.h
-ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  # On Solaris, term.h requires curses.h
+  ac_fn_c_check_header_compile "$LINENO" "term.h" "ac_cv_header_term_h" "
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 "
 if test "x$ac_cv_header_term_h" = xyes
@@ -28899,8 +28924,8 @@ then :
 fi
 
 
-# On HP/UX 11.0, mvwdelch is a block with a return statement
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether mvwdelch is an expression" >&5
+  # On HP/UX 11.0, mvwdelch is a block with a return statement
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether mvwdelch is an expression" >&5
 printf %s "checking whether mvwdelch is an expression... " >&6; }
 if test ${ac_cv_mvwdelch_is_expression+y}
 then :
@@ -28909,27 +28934,27 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-  int rtn;
-  rtn = mvwdelch(0,0,0);
+    int rtn;
+    rtn = mvwdelch(0,0,0);
 
   ;
   return 0;
@@ -28948,14 +28973,14 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_mvwdelch_is_expression" >&5
 printf "%s\n" "$ac_cv_mvwdelch_is_expression" >&6; }
 
-if test "$ac_cv_mvwdelch_is_expression" = yes
-then
+  if test "$ac_cv_mvwdelch_is_expression" = yes
+  then
 
 printf "%s\n" "#define MVWDELCH_IS_EXPRESSION 1" >>confdefs.h
 
-fi
+  fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether WINDOW has _flags" >&5
 printf %s "checking whether WINDOW has _flags... " >&6; }
 if test ${ac_cv_window_has_flags+y}
 then :
@@ -28964,27 +28989,27 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-  WINDOW *w;
-  w->_flags = 0;
+    WINDOW *w;
+    w->_flags = 0;
 
   ;
   return 0;
@@ -29004,18 +29029,18 @@ fi
 printf "%s\n" "$ac_cv_window_has_flags" >&6; }
 
 
-if test "$ac_cv_window_has_flags" = yes
-then
+  if test "$ac_cv_window_has_flags" = yes
+  then
 
 printf "%s\n" "#define WINDOW_HAS_FLAGS 1" >>confdefs.h
 
-fi
+  fi
 
 
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_pad" >&5
 printf %s "checking for curses function is_pad... " >&6; }
 if test ${ac_cv_lib_curses_is_pad+y}
 then :
@@ -29024,28 +29049,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef is_pad
-        void *x=is_pad
-        #endif
+          #ifndef is_pad
+          void *x=is_pad
+          #endif
 
   ;
   return 0;
@@ -29059,12 +29084,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_pad" >&5
 printf "%s\n" "$ac_cv_lib_curses_is_pad" >&6; }
-  if test "x$ac_cv_lib_curses_is_pad" = xyes
+    if test "x$ac_cv_lib_curses_is_pad" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_IS_PAD 1" >>confdefs.h
@@ -29075,7 +29100,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_term_resized" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function is_term_resized" >&5
 printf %s "checking for curses function is_term_resized... " >&6; }
 if test ${ac_cv_lib_curses_is_term_resized+y}
 then :
@@ -29084,28 +29109,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef is_term_resized
-        void *x=is_term_resized
-        #endif
+          #ifndef is_term_resized
+          void *x=is_term_resized
+          #endif
 
   ;
   return 0;
@@ -29119,12 +29144,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_is_term_resized" >&5
 printf "%s\n" "$ac_cv_lib_curses_is_term_resized" >&6; }
-  if test "x$ac_cv_lib_curses_is_term_resized" = xyes
+    if test "x$ac_cv_lib_curses_is_term_resized" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_IS_TERM_RESIZED 1" >>confdefs.h
@@ -29135,7 +29160,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function resize_term" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function resize_term" >&5
 printf %s "checking for curses function resize_term... " >&6; }
 if test ${ac_cv_lib_curses_resize_term+y}
 then :
@@ -29144,28 +29169,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef resize_term
-        void *x=resize_term
-        #endif
+          #ifndef resize_term
+          void *x=resize_term
+          #endif
 
   ;
   return 0;
@@ -29179,12 +29204,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_resize_term" >&5
 printf "%s\n" "$ac_cv_lib_curses_resize_term" >&6; }
-  if test "x$ac_cv_lib_curses_resize_term" = xyes
+    if test "x$ac_cv_lib_curses_resize_term" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_RESIZE_TERM 1" >>confdefs.h
@@ -29195,7 +29220,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function resizeterm" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function resizeterm" >&5
 printf %s "checking for curses function resizeterm... " >&6; }
 if test ${ac_cv_lib_curses_resizeterm+y}
 then :
@@ -29204,28 +29229,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef resizeterm
-        void *x=resizeterm
-        #endif
+          #ifndef resizeterm
+          void *x=resizeterm
+          #endif
 
   ;
   return 0;
@@ -29239,12 +29264,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_resizeterm" >&5
 printf "%s\n" "$ac_cv_lib_curses_resizeterm" >&6; }
-  if test "x$ac_cv_lib_curses_resizeterm" = xyes
+    if test "x$ac_cv_lib_curses_resizeterm" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_RESIZETERM 1" >>confdefs.h
@@ -29255,7 +29280,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function immedok" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function immedok" >&5
 printf %s "checking for curses function immedok... " >&6; }
 if test ${ac_cv_lib_curses_immedok+y}
 then :
@@ -29264,28 +29289,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef immedok
-        void *x=immedok
-        #endif
+          #ifndef immedok
+          void *x=immedok
+          #endif
 
   ;
   return 0;
@@ -29299,12 +29324,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_immedok" >&5
 printf "%s\n" "$ac_cv_lib_curses_immedok" >&6; }
-  if test "x$ac_cv_lib_curses_immedok" = xyes
+    if test "x$ac_cv_lib_curses_immedok" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_IMMEDOK 1" >>confdefs.h
@@ -29315,7 +29340,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function syncok" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function syncok" >&5
 printf %s "checking for curses function syncok... " >&6; }
 if test ${ac_cv_lib_curses_syncok+y}
 then :
@@ -29324,28 +29349,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef syncok
-        void *x=syncok
-        #endif
+          #ifndef syncok
+          void *x=syncok
+          #endif
 
   ;
   return 0;
@@ -29359,12 +29384,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_syncok" >&5
 printf "%s\n" "$ac_cv_lib_curses_syncok" >&6; }
-  if test "x$ac_cv_lib_curses_syncok" = xyes
+    if test "x$ac_cv_lib_curses_syncok" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_SYNCOK 1" >>confdefs.h
@@ -29375,7 +29400,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wchgat" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function wchgat" >&5
 printf %s "checking for curses function wchgat... " >&6; }
 if test ${ac_cv_lib_curses_wchgat+y}
 then :
@@ -29384,28 +29409,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef wchgat
-        void *x=wchgat
-        #endif
+          #ifndef wchgat
+          void *x=wchgat
+          #endif
 
   ;
   return 0;
@@ -29419,12 +29444,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_wchgat" >&5
 printf "%s\n" "$ac_cv_lib_curses_wchgat" >&6; }
-  if test "x$ac_cv_lib_curses_wchgat" = xyes
+    if test "x$ac_cv_lib_curses_wchgat" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_WCHGAT 1" >>confdefs.h
@@ -29435,7 +29460,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function filter" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function filter" >&5
 printf %s "checking for curses function filter... " >&6; }
 if test ${ac_cv_lib_curses_filter+y}
 then :
@@ -29444,28 +29469,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef filter
-        void *x=filter
-        #endif
+          #ifndef filter
+          void *x=filter
+          #endif
 
   ;
   return 0;
@@ -29479,12 +29504,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_filter" >&5
 printf "%s\n" "$ac_cv_lib_curses_filter" >&6; }
-  if test "x$ac_cv_lib_curses_filter" = xyes
+    if test "x$ac_cv_lib_curses_filter" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_FILTER 1" >>confdefs.h
@@ -29495,7 +29520,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function has_key" >&5
 printf %s "checking for curses function has_key... " >&6; }
 if test ${ac_cv_lib_curses_has_key+y}
 then :
@@ -29504,28 +29529,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef has_key
-        void *x=has_key
-        #endif
+          #ifndef has_key
+          void *x=has_key
+          #endif
 
   ;
   return 0;
@@ -29539,12 +29564,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_has_key" >&5
 printf "%s\n" "$ac_cv_lib_curses_has_key" >&6; }
-  if test "x$ac_cv_lib_curses_has_key" = xyes
+    if test "x$ac_cv_lib_curses_has_key" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_HAS_KEY 1" >>confdefs.h
@@ -29555,7 +29580,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function typeahead" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function typeahead" >&5
 printf %s "checking for curses function typeahead... " >&6; }
 if test ${ac_cv_lib_curses_typeahead+y}
 then :
@@ -29564,28 +29589,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef typeahead
-        void *x=typeahead
-        #endif
+          #ifndef typeahead
+          void *x=typeahead
+          #endif
 
   ;
   return 0;
@@ -29599,12 +29624,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_typeahead" >&5
 printf "%s\n" "$ac_cv_lib_curses_typeahead" >&6; }
-  if test "x$ac_cv_lib_curses_typeahead" = xyes
+    if test "x$ac_cv_lib_curses_typeahead" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_TYPEAHEAD 1" >>confdefs.h
@@ -29615,7 +29640,7 @@ fi
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_env" >&5
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for curses function use_env" >&5
 printf %s "checking for curses function use_env... " >&6; }
 if test ${ac_cv_lib_curses_use_env+y}
 then :
@@ -29624,28 +29649,28 @@ else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#define NCURSES_OPAQUE 0
-#if defined(HAVE_NCURSESW_NCURSES_H)
-#  include <ncursesw/ncurses.h>
-#elif defined(HAVE_NCURSESW_CURSES_H)
-#  include <ncursesw/curses.h>
-#elif defined(HAVE_NCURSES_NCURSES_H)
-#  include <ncurses/ncurses.h>
-#elif defined(HAVE_NCURSES_CURSES_H)
-#  include <ncurses/curses.h>
-#elif defined(HAVE_NCURSES_H)
-#  include <ncurses.h>
-#elif defined(HAVE_CURSES_H)
-#  include <curses.h>
-#endif
+  #define NCURSES_OPAQUE 0
+  #if defined(HAVE_NCURSESW_NCURSES_H)
+  #  include <ncursesw/ncurses.h>
+  #elif defined(HAVE_NCURSESW_CURSES_H)
+  #  include <ncursesw/curses.h>
+  #elif defined(HAVE_NCURSES_NCURSES_H)
+  #  include <ncurses/ncurses.h>
+  #elif defined(HAVE_NCURSES_CURSES_H)
+  #  include <ncurses/curses.h>
+  #elif defined(HAVE_NCURSES_H)
+  #  include <ncurses.h>
+  #elif defined(HAVE_CURSES_H)
+  #  include <curses.h>
+  #endif
 
 int
 main (void)
 {
 
-        #ifndef use_env
-        void *x=use_env
-        #endif
+          #ifndef use_env
+          void *x=use_env
+          #endif
 
   ;
   return 0;
@@ -29659,12 +29684,12 @@ else case e in #(
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   ;;
+     ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_curses_use_env" >&5
 printf "%s\n" "$ac_cv_lib_curses_use_env" >&6; }
-  if test "x$ac_cv_lib_curses_use_env" = xyes
+    if test "x$ac_cv_lib_curses_use_env" = xyes
 then :
 
 printf "%s\n" "#define HAVE_CURSES_USE_ENV 1" >>confdefs.h
@@ -29673,7 +29698,7 @@ fi
 
 
 
-CPPFLAGS=$ac_save_cppflags
+  CPPFLAGS=$ac_save_cppflags
 
 fi
 CFLAGS=$save_CFLAGS
@@ -29681,6 +29706,7 @@ CPPFLAGS=$save_CPPFLAGS
 LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
