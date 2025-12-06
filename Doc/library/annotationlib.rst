@@ -521,22 +521,24 @@ an :term:`annotate function`.
 To provide the :attr:`~Format.VALUE`, :attr:`~Format.STRING`, or
 :attr:`~Format.FORWARDREF` formats directly, an :term:`annotate function` must provide
 the following attribute:
+
 * A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
-raise a :err:`NotImplementedError` when called with a supported format.
+  raise a :exc:`NotImplementedError` when called with a supported format.
 
 To provide the :attr:`~Format.VALUE_WITH_FAKE_GLOBALS` format, which is used to
 automatically generate :attr:`~Format.STRING` or :attr:`~Format.FORWARDREF` if they are
 not supported directly, :term:`annotate functions <annotate function>` must provide the
 following attributes:
+
 * A callable ``__call__`` with signature ``__call__(format, /) -> dict``, that does not
-raise a :err:`NotImplementedError` when called with
-:attr:`~Format.VALUE_WITH_FAKE_GLOBALS`.
+  raise a :exc:`NotImplementedError` when called with
+  :attr:`~Format.VALUE_WITH_FAKE_GLOBALS`.
 * A :ref:`code object <code-objects>` ``__code__`` containing the compiled code for the
-annotate function.
+  annotate function.
 * Optional: A tuple of the function's positional defaults ``__kwdefaults__``, if the
-function represented by ``__code__`` uses any positional defaults.
+  function represented by ``__code__`` uses any positional defaults.
 * Optional: A dict of the function's keyword defaults ``__defaults__``, if the function
-represented by ``__code__`` uses any keyword defaults.
+  represented by ``__code__`` uses any keyword defaults.
 * Optional: All other :ref:`function attributes <inspect-types>`.
 
 .. code-block:: python
