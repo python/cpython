@@ -1,0 +1,3 @@
+Fix :mod:`imaplib` to handle mailboxes with ACL rights like ``lrs`` correctly
+by setting ``is_readonly`` flag instead of raising exception. Patched by Shamil
+Abdulaev.
