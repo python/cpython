@@ -2,12 +2,14 @@
 
 import sys
 import unittest
+import subprocess
 
 # rip off all interesting stuff from test_profile
 import profiling.tracing as cProfile
 import tempfile
 import textwrap
 from test.test_profile import ProfileTest, regenerate_expected_output
+from test.support import script_helper, os_helper, SHORT_TIMEOUT
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test import support
 
@@ -169,6 +171,41 @@ class TestCommandLine(unittest.TestCase):
                 """))
             f.close()
             assert_python_ok('-m', "cProfile", f.name)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Profiler with multiprocessing can not run on win32')
+    def test_profile_multiprocessing(self):
+        test_script = '''
+import multiprocessing
+
+def worker_proc(x):
+    return x * 42
+
+def main_proc():
+    p = multiprocessing.Process(target=worker_proc, args=(10,))
+    p.start()
+    p.join()
+    print("SUCCESS")
+
+if __name__ == "__main__":
+    main_proc()
+'''
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                temp_dir, 'test_cprofile_multiprocessing', test_script
+            )
+            with script_helper.spawn_python(
+                "-m", "cProfile",
+                script,
+                stderr=subprocess.PIPE,
+                text=True
+            ) as proc:
+                proc.wait(timeout=SHORT_TIMEOUT)
+                stdout = proc.stdout.read()
+                stderr = proc.stderr.read()
+
+        self.assertIn("SUCCESS", stdout)
+        self.assertNotIn("has no attribute \'worker_proc\'", stderr)
 
 
 def main():
