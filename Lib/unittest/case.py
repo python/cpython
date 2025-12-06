@@ -3,6 +3,7 @@
 import sys
 import functools
 import difflib
+import enum
 import pprint
 import re
 import warnings
@@ -42,24 +43,35 @@ class _UnexpectedSuccess(Exception):
     """
 
 
+class TestStatus(enum.StrEnum):
+    SUCCESS = "success"
+    UNEXPECTED_SUCCESS = "unexpected_success"
+    FAILED = "failed"
+    EXPECTED_FAILURE = "expected_failure"
+    SKIPPED = "skipped"
+
+
 class _Outcome(object):
     def __init__(self, result=None):
         self.expecting_failure = False
         self.result = result
         self.result_supports_subtests = hasattr(result, "addSubTest")
         self.success = True
+        self.status = None
         self.expectedFailure = None
 
     @contextlib.contextmanager
     def testPartExecutor(self, test_case, subTest=False):
         old_success = self.success
         self.success = True
+        status = TestStatus.SUCCESS
         try:
             yield
         except KeyboardInterrupt:
             raise
         except SkipTest as e:
             self.success = False
+            status = TestStatus.SKIPPED
             _addSkip(self.result, test_case, str(e))
         except _ShouldStop:
             pass
@@ -67,8 +79,10 @@ class _Outcome(object):
             exc_info = sys.exc_info()
             if self.expecting_failure:
                 self.expectedFailure = exc_info
+                status = TestStatus.EXPECTED_FAILURE
             else:
                 self.success = False
+                status = TestStatus.FAILED
                 if subTest:
                     self.result.addSubTest(test_case.test_case, test_case, exc_info)
                 else:
@@ -77,10 +91,15 @@ class _Outcome(object):
             # exc_info -> frame -> exc_info
             exc_info = None
         else:
+            if self.expecting_failure:
+                status = TestStatus.UNEXPECTED_SUCCESS
             if subTest and self.success:
                 self.result.addSubTest(test_case.test_case, test_case, None)
         finally:
             self.success = self.success and old_success
+            # If any of the previous subTests failed, keep the failed status
+            if self.status not in (TestStatus.FAILED, TestStatus.EXPECTED_FAILURE):
+                self.status = status
 
 
 def _addSkip(result, test_case, reason):
@@ -435,6 +454,7 @@ class TestCase(object):
             self._testMethodDoc = testMethod.__doc__
         self._cleanups = []
         self._subtest = None
+        self.status = None
 
         # Map types to custom assertEqual functions that will compare
         # instances of said type in more detail to generate a more useful
@@ -647,6 +667,7 @@ class TestCase(object):
                 # If the class or method was skipped.
                 skip_why = (getattr(self.__class__, '__unittest_skip_why__', '')
                             or getattr(testMethod, '__unittest_skip_why__', ''))
+                self.status = TestStatus.SKIPPED
                 _addSkip(result, self, skip_why)
                 return result
 
@@ -665,6 +686,7 @@ class TestCase(object):
                     outcome.expecting_failure = expecting_failure
                     with outcome.testPartExecutor(self):
                         self._callTestMethod(testMethod)
+                    self.status = outcome.status
                     outcome.expecting_failure = False
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
