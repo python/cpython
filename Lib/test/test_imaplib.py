@@ -1,5 +1,3 @@
-import io
-
 from test import support
 from test.support import socket_helper
 
