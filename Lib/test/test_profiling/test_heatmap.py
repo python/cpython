@@ -147,12 +147,6 @@ class TestHeatmapCollectorInit(unittest.TestCase):
         collector = HeatmapCollector(sample_interval_usec=100)
         self.assertEqual(collector._total_samples, 0)
 
-    def test_init_creates_color_cache(self):
-        """Test that color cache is initialized."""
-        collector = HeatmapCollector(sample_interval_usec=100)
-        self.assertIsInstance(collector._color_cache, dict)
-        self.assertEqual(len(collector._color_cache), 0)
-
     def test_init_gets_path_info(self):
         """Test that path info is retrieved during init."""
         collector = HeatmapCollector(sample_interval_usec=100)
