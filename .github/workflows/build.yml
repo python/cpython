@@ -691,6 +691,8 @@ jobs:
     - build-ubuntu
     - build-ubuntu-ssltests-awslc
     - build-ubuntu-ssltests-openssl
+    - build-android
+    - build-ios
     - build-wasi
     - test-hypothesis
     - build-asan
