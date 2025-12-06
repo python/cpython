@@ -711,6 +711,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         return annotate(format)
     except NotImplementedError:
         pass
+
+    annotate_defaults = getattr(annotate, "__defaults__", None)
+    annotate_kwdefaults = getattr(annotate, "__kwdefaults__", None)
     if format == Format.STRING:
         # STRING is implemented by calling the annotate function in a special
         # environment where every name lookup results in an instance of _Stringifier.
@@ -734,14 +737,23 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         globals = _StringifierDict({}, format=format)
         is_class = isinstance(owner, type)
         closure, _ = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=False
+            annotate, owner, is_class, globals,
+            getattr(annotate, "__globals__", {}), allow_evaluation=False
         )
+        try:
+            annotate_code = annotate.__code__
+        except AttributeError:
+            raise AttributeError(
+                "annotate function requires __code__ attribute",
+                name="__code__",
+                obj=annotate
+            )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
         annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
@@ -768,24 +780,38 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # reconstruct the source. But in the dictionary that we eventually return, we
         # want to return objects with more user-friendly behavior, such as an __eq__
         # that returns a bool and an defined set of attributes.
-        namespace = {**annotate.__builtins__, **annotate.__globals__}
+        annotate_globals = getattr(annotate, "__globals__", {})
+        if annotate_builtins := getattr(annotate, "__builtins__", None):
+            namespace = {**annotate_builtins, **annotate_globals}
+        elif annotate_builtins := annotate_globals.get("__builtins__"):
+            namespace = {**annotate_builtins, **annotate_globals}
+        else:
+            namespace = {**builtins.__dict__, **annotate_globals}
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
             namespace,
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
         )
         closure, cell_dict = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=True
+            annotate, owner, is_class, globals, annotate_globals, allow_evaluation=True
         )
+        try:
+            annotate_code = annotate.__code__
+        except AttributeError:
+            raise AttributeError(
+                "annotate function requires __code__ attribute",
+                name="__code__",
+                obj=annotate
+            )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
         try:
             result = func(Format.VALUE_WITH_FAKE_GLOBALS)
@@ -802,20 +828,20 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # a value in certain cases where an exception gets raised during evaluation.
         globals = _StringifierDict(
             {},
-            globals=annotate.__globals__,
+            globals=annotate_globals,
             owner=owner,
             is_class=is_class,
             format=format,
         )
         closure, cell_dict = _build_closure(
-            annotate, owner, is_class, globals, allow_evaluation=False
+            annotate, owner, is_class, globals, annotate_globals, allow_evaluation=False
         )
         func = types.FunctionType(
-            annotate.__code__,
+            annotate_code,
             globals,
             closure=closure,
-            argdefs=annotate.__defaults__,
-            kwdefaults=annotate.__kwdefaults__,
+            argdefs=annotate_defaults,
+            kwdefaults=annotate_kwdefaults,
         )
         result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         globals.transmogrify(cell_dict)
@@ -841,12 +867,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
-    if not annotate.__closure__:
+def _build_closure(annotate, owner, is_class, stringifier_dict,
+                   annotate_globals, *, allow_evaluation):
+    if not (annotate_closure := getattr(annotate, "__closure__", None)):
         return None, None
     new_closure = []
     cell_dict = {}
-    for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__, strict=True):
+    for name, cell in zip(annotate.__code__.co_freevars, annotate_closure, strict=True):
         cell_dict[name] = cell
         new_cell = None
         if allow_evaluation:
@@ -861,7 +888,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluat
                 name,
                 cell=cell,
                 owner=owner,
-                globals=annotate.__globals__,
+                globals=annotate_globals,
                 is_class=is_class,
                 stringifier_dict=stringifier_dict,
             )
