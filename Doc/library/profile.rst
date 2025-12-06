@@ -648,37 +648,41 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
 
       The following are the valid string and SortKey:
 
-      +------------------+---------------------+----------------------+
-      | Valid String Arg | Valid enum Arg      | Meaning              |
-      +==================+=====================+======================+
-      | ``'calls'``      | SortKey.CALLS       | call count           |
-      +------------------+---------------------+----------------------+
-      | ``'cumulative'`` | SortKey.CUMULATIVE  | cumulative time      |
-      +------------------+---------------------+----------------------+
-      | ``'cumtime'``    | N/A                 | cumulative time      |
-      +------------------+---------------------+----------------------+
-      | ``'file'``       | N/A                 | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'filename'``   | SortKey.FILENAME    | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'module'``     | N/A                 | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'ncalls'``     | N/A                 | call count           |
-      +------------------+---------------------+----------------------+
-      | ``'pcalls'``     | SortKey.PCALLS      | primitive call count |
-      +------------------+---------------------+----------------------+
-      | ``'line'``       | SortKey.LINE        | line number          |
-      +------------------+---------------------+----------------------+
-      | ``'name'``       | SortKey.NAME        | function name        |
-      +------------------+---------------------+----------------------+
-      | ``'nfl'``        | SortKey.NFL         | name/file/line       |
-      +------------------+---------------------+----------------------+
-      | ``'stdname'``    | SortKey.STDNAME     | standard name        |
-      +------------------+---------------------+----------------------+
-      | ``'time'``       | SortKey.TIME        | internal time        |
-      +------------------+---------------------+----------------------+
-      | ``'tottime'``    | N/A                 | internal time        |
-      +------------------+---------------------+----------------------+
+      +--------------------+---------------------+--------------------------+
+      | Valid String Arg   | Valid enum Arg      | Meaning                  |
+      +====================+=====================+==========================+
+      | ``'calls'``        | SortKey.CALLS       | call count               |
+      +--------------------+---------------------+--------------------------+
+      | ``'cumulative'``   | SortKey.CUMULATIVE  | cumulative time          |
+      +--------------------+---------------------+--------------------------+
+      | ``'cumtime'``      | N/A                 | cumulative time          |
+      +--------------------+---------------------+--------------------------+
+      | ``'file'``         | N/A                 | file name                |
+      +--------------------+---------------------+--------------------------+
+      | ``'filename'``     | SortKey.FILENAME    | file name                |
+      +--------------------+---------------------+--------------------------+
+      | ``'module'``       | N/A                 | file name                |
+      +--------------------+---------------------+--------------------------+
+      | ``'ncalls'``       | N/A                 | call count               |
+      +--------------------+---------------------+--------------------------+
+      | ``'pcalls'``       | SortKey.PCALLS      | primitive call count     |
+      +--------------------+---------------------+--------------------------+
+      | ``'line'``         | SortKey.LINE        | line number              |
+      +--------------------+---------------------+--------------------------+
+      | ``'name'``         | SortKey.NAME        | function name            |
+      +--------------------+---------------------+--------------------------+
+      | ``'nfl'``          | SortKey.NFL         | name/file/line           |
+      +--------------------+---------------------+--------------------------+
+      | ``'stdname'``      | SortKey.STDNAME     | standard name            |
+      +--------------------+---------------------+--------------------------+
+      | ``'time'``         | SortKey.TIME        | internal time            |
+      +--------------------+---------------------+--------------------------+
+      | ``'tottime'``      | N/A                 | internal time            |
+      +--------------------+---------------------+--------------------------+
+      | ``'cumpercall'``   | N/A                 | cumulative time per call |
+      +--------------------+---------------------+--------------------------+
+      | ``'totalpercall'`` | N/A                 | total time per call      |
+      +--------------------+---------------------+--------------------------+
 
       Note that all sorts on statistics are in descending order (placing most
       time consuming items first), where as name, file, and line number searches
@@ -701,6 +705,9 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
 
       .. versionadded:: 3.7
          Added the SortKey enum.
+
+      .. versionadded:: 3.11
+         Added the ``cumpercall`` and ``totalpercall`` keys.
 
    .. method:: reverse_order()
 
