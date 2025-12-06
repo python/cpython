@@ -1784,6 +1784,23 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                 stderr_text = stderr.decode('utf-8')
                 self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
 
+    def test_no_keyword_suggestion_for_comma_errors(self):
+        # When the parser identifies a missing comma, don't suggest
+        # bogus keyword replacements like 'print' -> 'not'
+        code = '''\
+import sys
+print(
+    "line1"
+    "line2"
+    file=sys.stderr
+)
+'''
+        source = textwrap.dedent(code).strip()
+        rc, stdout, stderr = assert_python_failure('-c', source)
+        stderr_text = stderr.decode('utf-8')
+        self.assertIn("Perhaps you forgot a comma", stderr_text)
+        self.assertNotIn("Did you mean", stderr_text)
+
 @requires_debug_ranges()
 @force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
