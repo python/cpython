@@ -432,6 +432,10 @@ w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
 
+    if (p->error != WFERR_OK) {
+        return;
+    }
+
     p->depth++;
 
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
