@@ -434,25 +434,50 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(len(y), 1)
 
     def test_deepcopy_keepalive(self):
-        memo = {}
-        x = []
-        y = copy.deepcopy(x, memo)
-        self.assertIs(memo[id(memo)][0], x)
+        class Target:
+            pass
+        class Dropper:
+            def __init__(self, to_clear):
+                self.to_clear = to_clear
+            def __deepcopy__(self, memo):
+                self.to_clear.clear()
+                return self
+        class Checker:
+            def __init__(self, ref):
+                self.ref = ref
+                self.was_alive = None
+            def __deepcopy__(self, memo):
+                support.gc_collect()  # For PyPy or other GCs.
+                self.was_alive = self.ref() is not None
+                return self
+        weak_ref = weakref.ref(target := Target())
+        holder = [target]
+        del target  # holder[0] is now only strong ref
+        large_tuple = ((1,) * 1000)
+        checker = Checker(weak_ref)
+        container = [holder, Dropper(holder), *large_tuple, checker]
+        copy.deepcopy(container)
+        self.assertTrue(checker.was_alive)
+        support.gc_collect()  # For PyPy or other GCs.
+        self.assertIsNone(weak_ref())
 
     def test_deepcopy_dont_memo_immutable(self):
-        memo = {}
-        x = [1, 2, 3, 4]
-        y = copy.deepcopy(x, memo)
-        self.assertEqual(y, x)
-        # There's the entry for the new list, and the keep alive.
-        self.assertEqual(len(memo), 2)
-
-        memo = {}
-        x = [(1, 2)]
-        y = copy.deepcopy(x, memo)
+        class ByRef:
+            def __init__(self):
+                self.copied = 0
+            def __deepcopy__(self, memo):
+                self.copied += 1
+                return self
+        br = ByRef()
+        y = copy.deepcopy(x := [br, br])
+        self.assertEqual(br.copied, 2)
         self.assertEqual(y, x)
         # Tuples with immutable contents are immutable for deepcopy.
-        self.assertEqual(len(memo), 2)
+        t = (ByRef(),)
+        x = [t, t]
+        y = copy.deepcopy(x)
+        self.assertEqual(br.copied, 2)
+        self.assertEqual(y, x)
 
     def test_deepcopy_inst_vanilla(self):
         class C:
