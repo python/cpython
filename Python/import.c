@@ -4283,8 +4283,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
         }
 
         /* Add the lazy import for the child to the parent */
-        Py_XDECREF(parent_module);
-        parent_module = PyImport_GetModule(parent);
+        Py_XSETREF(parent_module, PyImport_GetModule(parent));
         if (parent_module == NULL) {
             if (PyErr_Occurred()) {
                 goto done;
@@ -4310,8 +4309,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
             }
             Py_DECREF(lazy_submodules);
         } else {
-            Py_XDECREF(parent_dict);
-            parent_dict = get_mod_dict(parent_module);
+            Py_XSETREF(parent_dict, get_mod_dict(parent_module));
             if (parent_dict == NULL) {
                 goto done;
             }
@@ -4334,8 +4332,7 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
             }
         }
 
-        Py_DECREF(name);
-        name = parent;
+        Py_SETREF(name, parent);
         parent = NULL;
     }
 
