@@ -168,8 +168,8 @@ Key features include:
   (``--async-aware``). See which coroutines are consuming time, with options to show only
   running tasks or all tasks including those waiting.
 
-See :mod:`profiling.sampling` for full documentation, including all available
-output formats, profiling modes, and configuration options.
+See :mod:`profiling.sampling` for the complete documentation, including all
+available output formats, profiling modes, and configuration options.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 

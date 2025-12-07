@@ -369,4 +369,4 @@ precise measurements of process or wall-clock time. For example, see
       Recommended replacement for this module.
 
    :mod:`pstats`
-      Statistics analysis and formatting for profile data.
+      Statistical analysis and formatting for profile data.

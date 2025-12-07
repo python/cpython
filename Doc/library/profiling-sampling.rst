@@ -51,7 +51,7 @@ collect data, and detach without the application ever knowing it was observed.
 The trade-off is that very short-lived functions may be missed if they happen
 to complete between samples.
 
-Statistical profiling excels at answering the question "where is my program
+Statistical profiling excels at answering the question, "Where is my program
 spending time?" It reveals hotspots and bottlenecks in production code where
 deterministic profiling overhead would be unacceptable. For exact call counts
 and complete call graphs, use :mod:`profiling.tracing` instead.
@@ -530,7 +530,7 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling attach --live 12345
 
 The display updates continuously as new samples arrive, showing the current
-hottest functions. This mode requires the ``curses`` module, which is
+hottest functions. This mode requires the :mod:`curses` module, which is
 available on Unix-like systems. The terminal must be at least 80 columns wide
 and 24 lines tall.
 
@@ -573,14 +573,14 @@ Within live mode, keyboard commands control the display:
    Show the help screen with all available commands.
 
 Live mode is incompatible with output format options (``--collapsed``,
-``--flamegraph``, etc.) because it uses an interactive terminal interface
-rather than producing file output.
+``--flamegraph``, and so on) because it uses an interactive terminal
+interface rather than producing file output.
 
 
 Async-Aware Profiling
 =====================
 
-For programs using ``asyncio``, the profiler offers async-aware mode
+For programs using :mod:`asyncio`, the profiler offers async-aware mode
 (``--async-aware``) that reconstructs call stacks based on the task structure
 rather than the raw Python frames::
 
