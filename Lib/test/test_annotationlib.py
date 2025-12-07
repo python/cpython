@@ -1610,10 +1610,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
         annotations = annotationlib.call_annotate_function(Annotate(), Format.STRING)
         self.assertEqual(annotations, {"x": "float"})
 
-        with self.assertRaisesRegex(
-            AttributeError,
-            "annotate function requires __code__ attribute"
-        ):
+        with self.assertRaises(AttributeError) as cm:
             annotations = annotationlib.call_annotate_function(
                 Annotate(), Format.FORWARDREF
             )
