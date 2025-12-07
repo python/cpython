@@ -1,0 +1,1 @@
+Improve syntax warning messages for missing commas in sequences. The messages now say "did you miss a comma to separate sequence elements?" instead of "perhaps you missed a comma?".
