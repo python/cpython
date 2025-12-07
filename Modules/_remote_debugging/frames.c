@@ -154,14 +154,13 @@ is_frame_valid(
 
     void* frame = (void*)frame_addr;
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) == FRAME_OWNED_BY_INTERPRETER) {
-        return 0;  // C frame
+    char owner = GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner);
+    if (owner == FRAME_OWNED_BY_INTERPRETER) {
+        return 0;  // C frame or sentinel base frame
     }
 
-    if (GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_GENERATOR
-        && GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner) != FRAME_OWNED_BY_THREAD) {
-        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n",
-                    GET_MEMBER(char, frame, unwinder->debug_offsets.interpreter_frame.owner));
+    if (owner != FRAME_OWNED_BY_GENERATOR && owner != FRAME_OWNED_BY_THREAD) {
+        PyErr_Format(PyExc_RuntimeError, "Unhandled frame owner %d.\n", owner);
         set_exception_cause(unwinder, PyExc_RuntimeError, "Unhandled frame owner type in async frame");
         return -1;
     }
@@ -260,6 +259,7 @@ process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
+    uintptr_t base_frame_addr,
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     int *stopped_at_cached_frame,
@@ -269,6 +269,7 @@ process_frame_chain(
 {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
+    uintptr_t last_frame_addr = 0;  // Track last frame visited for validation
     const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
 
@@ -296,6 +297,7 @@ process_frame_chain(
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
+        last_frame_addr = frame_addr;  // Remember this frame address
 
         if (++frame_count > MAX_FRAMES) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
@@ -303,7 +305,6 @@ process_frame_chain(
             return -1;
         }
 
-        // Try chunks first, fallback to direct memory read
         if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, chunks) < 0) {
             PyErr_Clear();
             uintptr_t address_of_code_object = 0;
@@ -375,6 +376,17 @@ process_frame_chain(
 
         prev_frame_addr = next_frame_addr;
         frame_addr = next_frame_addr;
+    }
+
+    // Validate we reached the base frame (sentinel at bottom of stack)
+    // Only validate if we walked the full chain (didn't stop at cached frame)
+    // and base_frame_addr is provided (non-zero)
+    int stopped_early = stopped_at_cached_frame && *stopped_at_cached_frame;
+    if (!stopped_early && base_frame_addr != 0 && last_frame_addr != base_frame_addr) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
+            base_frame_addr, last_frame_addr);
+        return -1;
     }
 
     return 0;
@@ -540,7 +552,7 @@ collect_frames_with_cache(
     Py_ssize_t frames_before = PyList_GET_SIZE(frame_info);
 
     int stopped_at_cached = 0;
-    if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, gc_frame,
+    if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, 0, gc_frame,
                             last_profiled_frame, &stopped_at_cached,
                             addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
         return -1;
@@ -562,7 +574,7 @@ collect_frames_with_cache(
             // Cache miss - continue walking from last_profiled_frame to get the rest
             STATS_INC(unwinder, frame_cache_misses);
             Py_ssize_t frames_before_walk = PyList_GET_SIZE(frame_info);
-            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, gc_frame,
+            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, 0, gc_frame,
                                     0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
                 return -1;
             }
