@@ -943,13 +943,6 @@ BaseExceptionGroup_repr(PyBaseExceptionGroupObject *self)
     return repr;
 }
 
-/*[clinic input]
-@critical_section
-BaseExceptionGroup.derive
-    excs: object
-    /
-[clinic start generated code]*/
-
 static PyObject *
 BaseExceptionGroup_derive(PyObject *self_, PyObject *excs)
 {
