@@ -1560,6 +1560,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
 #endif
 
+
 #ifdef Py_STATS
     // The PyStats structure is quite large and is allocated separated from tstate.
     if (!_PyStats_ThreadInit(interp, tstate)) {
@@ -3186,7 +3187,7 @@ _Py_GetMainConfig(void)
 }
 
 Py_ssize_t
-_PyInterpreterState_LockCountdown(PyInterpreterState *interp)
+_PyInterpreterState_GuardCountdown(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     return _Py_atomic_load_ssize_relaxed(&interp->finalization_guards.countdown);

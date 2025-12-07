@@ -322,7 +322,7 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
 
-/* Interpreter locks */
+/* Interpreter guards */
 
 typedef uintptr_t PyInterpreterGuard;
 typedef uintptr_t PyInterpreterView;

@@ -2562,6 +2562,7 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
 typedef struct {
     PyObject_HEAD
 } ManagedWeakrefNoGCObject;
