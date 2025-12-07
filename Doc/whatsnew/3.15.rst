@@ -102,7 +102,7 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
-.. image:: tachyon-logo.png
+.. image:: ../library/tachyon-logo.png
    :alt: Tachyon profiler logo
    :align: center
    :width: 200px
