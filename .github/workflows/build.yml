@@ -712,13 +712,7 @@ jobs:
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
-          ${{
-            !fromJSON(needs.build-context.outputs.run-docs)
-            && '
-            check-docs,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
@@ -727,27 +721,9 @@ jobs:
             '
             || ''
           }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-windows-tests)
-            && '
-            build-windows,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-            && '
-            cifuzz,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-macos)
-            && '
-            build-macos,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
           ${{
             !fromJSON(needs.build-context.outputs.run-ubuntu)
             && '
@@ -761,25 +737,7 @@ jobs:
             '
             || ''
           }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-android)
-            && '
-            build-android,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ios)
-            && '
-            build-ios,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-wasi)
-            && '
-            build-wasi,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}
