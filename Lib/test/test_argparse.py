@@ -2770,6 +2770,16 @@ class TestAddSubparsers(TestCase):
         ret = parser.parse_args(())
         self.assertIsNone(ret.command)
 
+    def test_subparser_help_with_parent_required_optional(self):
+        parser = ErrorRaisingArgumentParser(prog='PROG')
+        parser.add_argument('--foo', required=True)
+        parser.add_argument('--bar')
+        subparsers = parser.add_subparsers()
+        parser_sub = subparsers.add_parser('sub')
+        parser_sub.add_argument('arg')
+        self.assertEqual(parser_sub.format_usage(),
+                         'usage: PROG --foo FOO sub [-h] arg\n')
+
     def test_help(self):
         self.assertEqual(self.parser.format_usage(),
                          'usage: PROG [-h] [--foo] bar {1,2,3} ...\n')
@@ -3388,12 +3398,11 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
-    def test_empty_group(self):
+    def test_usage_empty_group(self):
         # See issue 26952
-        parser = argparse.ArgumentParser()
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group()
-        with self.assertRaises(ValueError):
-            parser.parse_args(['-h'])
+        self.assertEqual(parser.format_usage(), 'usage: PROG [-h]\n')
 
     def test_nested_mutex_groups(self):
         parser = argparse.ArgumentParser(prog='PROG')
@@ -3661,25 +3670,29 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
         group.add_argument('-b', action='store_true', help='b help')
         parser.add_argument('-y', action='store_true', help='y help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['-a -b', '-b -c', '-a -c', '-a -b -c']
     successes = [
-        ('-a', NS(a=True, b=False, c=False, x=False, y=False)),
-        ('-b', NS(a=False, b=True, c=False, x=False, y=False)),
-        ('-c', NS(a=False, b=False, c=True, x=False, y=False)),
-        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False)),
-        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True)),
-        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True)),
+        ('-a', NS(a=True, b=False, c=False, x=False, y=False, z=False)),
+        ('-b', NS(a=False, b=True, c=False, x=False, y=False, z=False)),
+        ('-c', NS(a=False, b=False, c=True, x=False, y=False, z=False)),
+        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False, z=False)),
+        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True, z=False)),
+        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('', NS(a=False, b=False, c=False, x=False, y=False)),
-        ('-x', NS(a=False, b=False, c=False, x=True, y=False)),
-        ('-y', NS(a=False, b=False, c=False, x=False, y=True)),
+        ('', NS(a=False, b=False, c=False, x=False, y=False, z=False)),
+        ('-x', NS(a=False, b=False, c=False, x=True, y=False, z=False)),
+        ('-y', NS(a=False, b=False, c=False, x=False, y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-x] [-a] [-b] [-y] [-c]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-x] [-a | -b | -c] [-y] [-z]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-x] (-a | -b | -c) [-y] [-z]
         '''
     help = '''\
 
@@ -3690,6 +3703,7 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
           -b          b help
           -y          y help
           -c          c help
+          -z          z help
         '''
 
 
@@ -3743,23 +3757,27 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         group.add_argument('a', nargs='?', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['X A -b', '-b -c', '-c X A']
     successes = [
-        ('X A', NS(a='A', b=False, c=False, x='X', y=False)),
-        ('X -b', NS(a=None, b=True, c=False, x='X', y=False)),
-        ('X -c', NS(a=None, b=False, c=True, x='X', y=False)),
-        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True)),
-        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True)),
+        ('X A', NS(a='A', b=False, c=False, x='X', y=False, z=False)),
+        ('X -b', NS(a=None, b=True, c=False, x='X', y=False, z=False)),
+        ('X -c', NS(a=None, b=False, c=True, x='X', y=False, z=False)),
+        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True, z=False)),
+        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('X', NS(a=None, b=False, c=False, x='X', y=False)),
-        ('X -y', NS(a=None, b=False, c=False, x='X', y=True)),
+        ('X', NS(a=None, b=False, c=False, x='X', y=False, z=False)),
+        ('X -y', NS(a=None, b=False, c=False, x='X', y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-y] [-b] [-c] x [a]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-y] [-z] x [-b | -c | a]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-y] [-z] x (-b | -c | a)
         '''
     help = '''\
 
@@ -3772,6 +3790,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -y          y help
           -b          b help
           -c          c help
+          -z          z help
         '''
 
 
@@ -4979,9 +4998,9 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         g.add_argument('positional', nargs='?')
 
         usage = textwrap.dedent('''\
-        usage: PROG [-h] [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
-                    -y [YET_ANOTHER_LONG_OPTION] |
-                    positional]
+        usage: PROG [-h]
+                    [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] | positional]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
@@ -5675,6 +5694,11 @@ class TestHelpCustomHelpFormatter(TestCase):
                 a-very-long-command  command that does something
         '''))
 
+    def test_direct_formatter_instantiation(self):
+        formatter = argparse.HelpFormatter(prog="program")
+        formatter.add_usage(usage=None, actions=[], groups=[])
+        help_text = formatter.format_help()
+        self.assertEqual(help_text, "usage: program\n")
 
 # =====================================
 # Optional/Positional constructor tests
@@ -7361,7 +7385,28 @@ class TestColorized(TestCase):
             ),
         )
 
-    def test_argparse_color_usage(self):
+    def test_argparse_color_mutually_exclusive_group_usage(self):
+        parser = argparse.ArgumentParser(color=True, prog="PROG")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--foo', action='store_true', help='FOO')
+        group.add_argument('--spam', help='SPAM')
+        group.add_argument('badger', nargs='*', help='BADGER')
+
+        prog = self.theme.prog
+        heading = self.theme.heading
+        long = self.theme.summary_long_option
+        short = self.theme.summary_short_option
+        label = self.theme.summary_label
+        pos = self.theme.summary_action
+        reset = self.theme.reset
+
+        self.assertEqual(parser.format_usage(),
+            f"{heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] "
+            f"[{long}--foo{reset} | "
+            f"{long}--spam {label}SPAM{reset} | "
+            f"{pos}badger ...{reset}]\n")
+
+    def test_argparse_color_custom_usage(self):
         # Arrange
         parser = argparse.ArgumentParser(
             add_help=False,

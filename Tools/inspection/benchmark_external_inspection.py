@@ -434,7 +434,7 @@ def main():
                     elif args.threads == "only_active":
                         kwargs["only_active_thread"] = True
                     unwinder = _remote_debugging.RemoteUnwinder(
-                        process.pid, **kwargs
+                        process.pid, cache_frames=True, **kwargs
                     )
                     results = benchmark(unwinder, duration_seconds=args.duration)
                 finally:
