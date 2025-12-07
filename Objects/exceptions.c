@@ -897,9 +897,8 @@ BaseExceptionGroup_str(PyBaseExceptionGroupObject *self)
 }
 
 static PyObject *
-BaseExceptionGroup_repr(PyObject *op)
+BaseExceptionGroup_repr(PyBaseExceptionGroupObject *self)
 {
-    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     assert(self->msg);
 
     PyObject *exceptions_str = NULL;
@@ -1736,7 +1735,7 @@ static PyMethodDef ImportError_methods[] = {
 ComplexExtendsException(PyExc_Exception, ImportError,
                         ImportError, 0 /* new */,
                         ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
+                        0 /* getset */, ImportError_str, 0,
                         "Import can't find module, or can't find name in "
                         "module.");
 
