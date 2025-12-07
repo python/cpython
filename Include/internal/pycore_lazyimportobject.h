@@ -2,10 +2,15 @@
 
 /* Lazy object interface */
 
-#ifndef Py_LAZYIMPORTOBJECT_H
-#define Py_LAZYIMPORTOBJECT_H
+#ifndef Py_INTERNAL_LAZYIMPORTOBJECT_H
+#define Py_INTERNAL_LAZYIMPORTOBJECT_H
+
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
@@ -28,4 +33,4 @@ PyAPI_FUNC(PyObject *) _PyLazyImport_New(PyObject *import_func, PyObject *from, 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_LAZYIMPORTOBJECT_H */
+#endif /* !Py_INTERNAL_LAZYIMPORTOBJECT_H */

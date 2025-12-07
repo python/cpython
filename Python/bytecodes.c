@@ -11,12 +11,15 @@
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_ceval.h"         // _PyEval_LazyImportName(), _PyEval_LazyImportFrom()
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
+#include "pycore_import.h"        // _PyImport_LoadLazyImportTstate()
 #include "pycore_instruments.h"
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
+#include "pycore_lazyimportobject.h"  // PyLazyImport_CheckExact()
 #include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -2939,7 +2942,7 @@ dummy_func(
             b = res ? PyStackRef_True : PyStackRef_False;
         }
 
-         inst(IMPORT_NAME, (level, fromlist -- res)) {
+        inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyObject *res_o;
             if (!(oparg & 0x02)) {
