@@ -1,4 +1,4 @@
-.. _profiling:
+.. _profiling-module:
 
 ***************************************
 :mod:`profiling` --- Python Profilers
@@ -80,22 +80,22 @@ function calls.
 
 The following table summarizes the key differences:
 
-+-------------------+--------------------------+----------------------+
-| Feature           | Statistical Sampling     | Deterministic        |
-|                   | (:mod:`profiling.sampling`) | (:mod:`profiling.tracing`) |
-+===================+==========================+======================+
-| **Target**        | Running process          | Code you run         |
-+-------------------+--------------------------+----------------------+
-| **Overhead**      | Virtually none           | Moderate             |
-+-------------------+--------------------------+----------------------+
-| **Accuracy**      | Statistical estimate     | Exact call counts    |
-+-------------------+--------------------------+----------------------+
-| **Setup**         | Attach to any PID        | Instrument code      |
-+-------------------+--------------------------+----------------------+
-| **Use Case**      | Production debugging     | Development/testing  |
-+-------------------+--------------------------+----------------------+
-| **Implementation**| C extension              | C extension          |
-+-------------------+--------------------------+----------------------+
++--------------------+------------------------------+------------------------------+
+| Feature            | Statistical Sampling         | Deterministic                |
+|                    | (:mod:`profiling.sampling`)  | (:mod:`profiling.tracing`)   |
++====================+==============================+==============================+
+| **Target**         | Running process              | Code you run                 |
++--------------------+------------------------------+------------------------------+
+| **Overhead**       | Virtually none               | Moderate                     |
++--------------------+------------------------------+------------------------------+
+| **Accuracy**       | Statistical estimate         | Exact call counts            |
++--------------------+------------------------------+------------------------------+
+| **Setup**          | Attach to any PID            | Instrument code              |
++--------------------+------------------------------+------------------------------+
+| **Use Case**       | Production debugging         | Development/testing          |
++--------------------+------------------------------+------------------------------+
+| **Implementation** | C extension                  | C extension                  |
++--------------------+------------------------------+------------------------------+
 
 
 When to Use Statistical Sampling
@@ -227,14 +227,14 @@ filename:lineno(function)
 Legacy Compatibility
 ====================
 
-For backward compatibility, the :mod:`cProfile` module remains available as an
+For backward compatibility, the ``cProfile`` module remains available as an
 alias to :mod:`profiling.tracing`. Existing code using ``import cProfile`` will
 continue to work without modification in all future Python versions.
 
 .. deprecated:: 3.15
 
    The pure Python :mod:`profile` module is deprecated and will be removed in
-   Python 3.17. Use :mod:`profiling.tracing` (or its alias :mod:`cProfile`)
+   Python 3.17. Use :mod:`profiling.tracing` (or its alias ``cProfile``)
    instead. See :mod:`profile` for migration guidance.
 
 

@@ -49,7 +49,7 @@ a straightforward migration path.
 
 .. note::
 
-   The :mod:`cProfile` module remains available as a backward-compatible alias
+   The ``cProfile`` module remains available as a backward-compatible alias
    to :mod:`profiling.tracing`. Existing code using ``import cProfile`` will
    continue to work without modification.
 

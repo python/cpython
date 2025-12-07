@@ -21,8 +21,8 @@ Reading and Displaying Profile Data
 ===================================
 
 The :class:`Stats` class is the primary interface for working with profile
-data. It can read statistics from files or directly from a :class:`Profile`
-object.
+data. It can read statistics from files or directly from a
+:class:`~profiling.tracing.Profile` object.
 
 Load statistics from a file and print a basic report::
 
@@ -269,7 +269,7 @@ The :class:`Stats` Class
       For each function in the filtered results, shows which functions called
       it and how often.
 
-      With :mod:`profiling.tracing` (or :mod:`cProfile`), each caller line
+      With :mod:`profiling.tracing` (or ``cProfile``), each caller line
       shows three numbers: the number of calls from that caller, and the
       total and cumulative times for those specific calls.
 
@@ -286,10 +286,10 @@ The :class:`Stats` Class
 
    .. method:: get_stats_profile()
 
-      Return a :class:`StatsProfile` object containing the statistics.
+      Return a ``StatsProfile`` object containing the statistics.
 
       The returned object provides programmatic access to the profile data,
-      with function names mapped to :class:`FunctionProfile` objects
+      with function names mapped to ``FunctionProfile`` objects
       containing timing and call count information.
 
       .. versionadded:: 3.9

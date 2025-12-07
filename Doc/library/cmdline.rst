@@ -12,7 +12,7 @@ The following modules have a command-line interface.
 * :ref:`calendar <calendar-cli>`
 * :mod:`code`
 * :ref:`compileall <compileall-cli>`
-* :mod:`cProfile`: see :ref:`profiling.tracing <profiling-tracing-cli>`
+* ``cProfile``: see :ref:`profiling.tracing <profiling-tracing-cli>`
 * :ref:`dis <dis-cli>`
 * :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`

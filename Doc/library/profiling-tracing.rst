@@ -21,8 +21,8 @@ testing scenarios.
 
 .. note::
 
-   This module is also available as :mod:`cProfile` for backward compatibility.
-   The :mod:`cProfile` name will continue to work in all future Python versions.
+   This module is also available as ``cProfile`` for backward compatibility.
+   The ``cProfile`` name will continue to work in all future Python versions.
    Use whichever import style suits your codebase::
 
       # Preferred (new style)
@@ -101,7 +101,7 @@ results to standard output (or saves them to a file).
    standard import mechanism.
 
    .. versionadded:: 3.7
-      The ``-m`` option for :mod:`cProfile`.
+      The ``-m`` option for ``cProfile``.
 
    .. versionadded:: 3.8
       The ``-m`` option for :mod:`profile`.
@@ -305,7 +305,7 @@ this latency, which can make them appear slower than they actually are. This
 error is typically less than one clock tick per call but can become
 significant for functions called many times.
 
-The :mod:`profiling.tracing` module (and its :mod:`cProfile` alias) is
+The :mod:`profiling.tracing` module (and its ``cProfile`` alias) is
 implemented as a C extension with low overhead, so these timing issues are
 less pronounced than with the deprecated pure Python :mod:`profile` module.
 

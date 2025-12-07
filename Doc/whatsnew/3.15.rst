@@ -86,10 +86,10 @@ A new :mod:`profiling` module has been added to organize Python's built-in
 profiling tools under a single, coherent namespace. This module contains:
 
 * :mod:`profiling.tracing`: deterministic function-call tracing (relocated from
-  :mod:`cProfile`).
+  ``cProfile``).
 * :mod:`profiling.sampling`: a new statistical sampling profiler (named Tachyon).
 
-The :mod:`cProfile` module remains as an alias for backwards compatibility.
+The ``cProfile`` module remains as an alias for backwards compatibility.
 The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 
 .. seealso:: :pep:`799` for further details.
