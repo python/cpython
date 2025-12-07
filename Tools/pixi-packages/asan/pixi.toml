@@ -1,6 +1,6 @@
 [workspace]
 channels = ["https://prefix.dev/conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [package.build.backend]

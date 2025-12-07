@@ -29,5 +29,8 @@ touch configure-done
 
 make -j"${CPU_COUNT}" install
 ln -sf "${PREFIX}/bin/python${MINOR_VERSION}" "${PREFIX}/bin/python"
+
 # https://github.com/prefix-dev/rattler-build/issues/2012
-cp "${BUILD_PREFIX}/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" "${PREFIX}/lib/libclang_rt.asan_osx_dynamic.dylib"
+if [[ ${OSTYPE} == "darwin"* ]]; then
+    cp "${BUILD_PREFIX}/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib" "${PREFIX}/lib/libclang_rt.asan_osx_dynamic.dylib"
+fi

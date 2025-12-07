@@ -29,14 +29,22 @@ requirements:
     - libtool
     - pkg-config
     # configure script looks for llvm-ar for lto
-    - clang-18
-    - llvm-tools-18
+    - if: osx
+      then:
+        - llvm-tools
+    - if: linux
+      then:
+        - ld_impl_${{ target_platform }}
+        - binutils_impl_${{ target_platform }}
+    - clang-19
+    - llvm-tools-19
 
   host:
     - bzip2
     - sqlite
     - liblzma-devel
     - zlib
+    - zstd
     - openssl
     - readline
     - tk
@@ -45,6 +53,10 @@ requirements:
     - xorg-xorgproto
     - ncurses
     - libffi
+    - if: linux
+      then:
+        - ld_impl_${{ target_platform }}
+        - libuuid
     - libmpdec-devel
     - expat
 
