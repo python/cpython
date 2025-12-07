@@ -550,7 +550,12 @@ def _make_annotate_function(__class__, method_name, annotation_fields, return_ty
 
                 new_annotations = {}
                 for k in annotation_fields:
-                    new_annotations[k] = cls_annotations[k]
+                    # gh-142214: The annotation may be missing in unusual dynamic cases.
+                    # If so, just skip it.
+                    try:
+                        new_annotations[k] = cls_annotations[k]
+                    except KeyError:
+                        pass
 
                 if return_type is not MISSING:
                     if format == Format.STRING:
@@ -1399,9 +1404,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
             f.type = ann
 
     # Fix the class reference in the __annotate__ method
-    init_annotate = newcls.__init__.__annotate__
-    if getattr(init_annotate, "__generated_by_dataclasses__", False):
-        _update_func_cell_for__class__(init_annotate, cls, newcls)
+    init = newcls.__init__
+    if init_annotate := getattr(init, "__annotate__", None):
+        if getattr(init_annotate, "__generated_by_dataclasses__", False):
+            _update_func_cell_for__class__(init_annotate, cls, newcls)
 
     return newcls
 

@@ -1,0 +1,3 @@
+Allow ``--enable-wasm-dynamic-linking`` for WASI. While CPython doesn't
+directly support it so external/downstream users do not have to patch in
+support for the flag.
