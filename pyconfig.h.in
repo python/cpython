@@ -1524,8 +1524,20 @@
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
 
+/* Defined if TCGETA is usable */
+#undef HAVE_TCGETA
+
 /* Define to 1 if you have the 'tcgetpgrp' function. */
 #undef HAVE_TCGETPGRP
+
+/* Defined if TCSETA is usable */
+#undef HAVE_TCSETA
+
+/* Defined if TCSETAF is usable */
+#undef HAVE_TCSETAF
+
+/* Defined if TCSETAW is usable */
+#undef HAVE_TCSETAW
 
 /* Define to 1 if you have the 'tcsetpgrp' function. */
 #undef HAVE_TCSETPGRP

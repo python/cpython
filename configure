@@ -3574,6 +3574,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
     # resources get picked up before their $srcdir counterparts.
@@ -34368,6 +34370,120 @@ fi
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 
+
+# gh-142379: ioctls used by Modules/termios.c but not usable on all platforms
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for TCGETA" >&5
+printf %s "checking for TCGETA... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/ioctl.h>
+int
+main (void)
+{
+long val = TCGETA;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_TCGETA 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for TCSETA" >&5
+printf %s "checking for TCSETA... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/ioctl.h>
+int
+main (void)
+{
+long val = TCSETA;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_TCSETA 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for TCSETAF" >&5
+printf %s "checking for TCSETAF... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/ioctl.h>
+int
+main (void)
+{
+long val = TCSETAF;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_TCSETAF 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for TCSETAW" >&5
+printf %s "checking for TCSETAW... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/ioctl.h>
+int
+main (void)
+{
+long val = TCSETAW;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+printf "%s\n" "#define HAVE_TCSETAW 1" >>confdefs.h
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+ ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Misc/python.pc Misc/python-embed.pc Misc/python-config.sh"

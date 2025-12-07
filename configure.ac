@@ -95,6 +95,18 @@ AC_DEFUN([PY_CHECK_EMSCRIPTEN_PORT], [
   AS_VAR_POPDEF([py_libs])
 ])
 
+dnl PY_CHECK_CONSTANT(TYPE, CONSTANT, [INCLUDES])
+dnl Checks whether the constant exists and is actually usable (unlike
+dnl AC_CHECK_DECL that only checks if the constant exists)
+AC_DEFUN([PY_CHECK_CONSTANT], [
+  AC_MSG_CHECKING([for $2])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([$3], [[$1 val = $2;]])],
+    [AC_MSG_RESULT([yes])
+     AC_DEFINE([HAVE_$2], [1],
+               [Defined if $2 is usable])],
+    [AC_MSG_RESULT([no])]
+)])
+
 AC_SUBST([BASECPPFLAGS])
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
     # If we're building out-of-tree, we need to make sure the following
@@ -8244,6 +8256,12 @@ AC_SUBST([JIT_STENCILS_H])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
+
+# gh-142379: ioctls used by Modules/termios.c but not usable on all platforms
+PY_CHECK_CONSTANT([long], [TCGETA], [#include <sys/ioctl.h>])
+PY_CHECK_CONSTANT([long], [TCSETA], [#include <sys/ioctl.h>])
+PY_CHECK_CONSTANT([long], [TCSETAF], [#include <sys/ioctl.h>])
+PY_CHECK_CONSTANT([long], [TCSETAW], [#include <sys/ioctl.h>])
 
 # generate output files
 AC_CONFIG_FILES(m4_normalize([
