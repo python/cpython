@@ -3830,12 +3830,21 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         return NULL;
     } else if (is_loading == 1) {
         PyObject *name = _PyLazyImport_GetName(lazy_import);
-        PyObject *errmsg = PyUnicode_FromFormat("cannot import name %R "
-                                                "(most likely due to a circular import)",
-                                                name);
+        if (name == NULL) {
+            _PyImport_ReleaseLock(interp);
+            return NULL;
+        }
+        PyObject *errmsg = PyUnicode_FromFormat(
+            "cannot import name %R (most likely due to a circular import)",
+            name);
+        if (errmsg == NULL) {
+            Py_DECREF(name);
+            _PyImport_ReleaseLock(interp);
+            return NULL;
+        }
         PyErr_SetImportErrorSubclass(PyExc_ImportCycleError, errmsg, lz->lz_from, NULL);
-        Py_XDECREF(errmsg);
-        Py_XDECREF(name);
+        Py_DECREF(errmsg);
+        Py_DECREF(name);
         _PyImport_ReleaseLock(interp);
         return NULL;
     } else if (PySet_Add(importing, lazy_import) < 0) {
@@ -3918,8 +3927,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     goto ok;
 
 error:
-    Py_XDECREF(obj);
-    obj = NULL;
+    Py_CLEAR(obj);
 
     /* If an error occurred and we have frame information, add it to the exception */
     if (PyErr_Occurred() && lz->lz_code != NULL && lz->lz_instr_offset >= 0) {
@@ -3992,8 +4000,7 @@ error:
 
 ok:
     if (PySet_Discard(importing, lazy_import) < 0) {
-        Py_DECREF(obj);
-        obj = NULL;
+        Py_CLEAR(obj);
     }
 
     // Release the global import lock
