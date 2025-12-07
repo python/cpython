@@ -5464,12 +5464,15 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
         }
 
         child_dict = get_mod_dict(child_module);
-        if (child_dict == NULL || !PyDict_CheckExact(child_dict)) {
+        if (child_dict == NULL) {
+            goto error;
+        }
+        else if (!PyDict_CheckExact(child_dict)) {
             goto done;
         }
         assert(PyAnySet_CheckExact(lazy_submodules));
-        PyObject *attr_name;
         Py_ssize_t pos = 0;
+        PyObject *attr_name;
         Py_hash_t hash;
         while (_PySet_NextEntry(lazy_submodules, &pos, &attr_name, &hash)) {
             if (_PyDict_Contains_KnownHash(child_dict, attr_name, hash)) {
@@ -5491,10 +5494,11 @@ _imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
             goto error;
         }
     }
+
 done:
     ret = Py_NewRef(Py_None);
 
-  error:
+error:
     Py_XDECREF(lazy_modules);
     Py_XDECREF(child_dict);
     return ret;
