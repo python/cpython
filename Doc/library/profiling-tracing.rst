@@ -7,11 +7,15 @@
 .. module:: profiling.tracing
    :synopsis: Deterministic tracing profiler for Python programs.
 
+.. module:: cProfile
+   :synopsis: Alias for profiling.tracing (backward compatibility).
+   :noindex:
+
+.. versionadded:: 3.15
+
 **Source code:** :source:`Lib/profiling/tracing/`
 
 --------------
-
-.. versionadded:: 3.15
 
 The :mod:`profiling.tracing` module provides deterministic profiling of Python
 programs. It monitors every function call, function return, and exception event,

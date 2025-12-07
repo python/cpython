@@ -7,11 +7,11 @@
 .. module:: profiling.sampling
    :synopsis: Statistical sampling profiler for Python processes.
 
+.. versionadded:: 3.15
+
 **Source code:** :source:`Lib/profiling/sampling/`
 
 --------------
-
-.. versionadded:: 3.15
 
 The :mod:`profiling.sampling` module provides statistical profiling of Python
 programs through periodic stack sampling. The profiler can attach to any

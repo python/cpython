@@ -7,11 +7,11 @@
 .. module:: profiling
    :synopsis: Python profiling tools for performance analysis.
 
+.. versionadded:: 3.15
+
 **Source code:** :source:`Lib/profiling/`
 
 --------------
-
-.. versionadded:: 3.15
 
 .. index::
    single: statistical profiling
@@ -34,16 +34,15 @@ a single namespace. It contains two submodules, each implementing a different
 profiling methodology:
 
 :mod:`profiling.sampling`
-   A statistical profiler that periodically samples the call stack of running
-   processes. It can attach to any Python process without requiring code
-   modification, making it ideal for production debugging. The sampling
-   approach introduces virtually no overhead to the profiled program.
+   A statistical profiler that periodically samples the call stack. Run scripts
+   directly or attach to running processes by PID. Provides multiple output
+   formats (flamegraphs, heatmaps, Firefox Profiler), GIL analysis, GC tracking,
+   and multiple profiling modes (wall-clock, CPU, GIL) with virtually no overhead.
 
 :mod:`profiling.tracing`
    A deterministic profiler that traces every function call, return, and
-   exception event. It provides exact call counts and timing information,
-   making it suitable for development and testing where precision matters
-   more than minimal overhead.
+   exception event. Provides exact call counts and precise timing information,
+   capturing every invocation including very fast functions.
 
 .. note::
 
@@ -60,23 +59,15 @@ profiling methodology:
 Choosing a Profiler
 ===================
 
-The choice between statistical sampling and deterministic tracing depends on
-your specific use case. Each approach offers distinct advantages that make it
-better suited to certain scenarios.
+For most performance analysis, use the statistical profiler
+(:mod:`profiling.sampling`). It has minimal overhead, works for both development
+and production, and provides rich visualization options including flamegraphs,
+heatmaps, GIL analysis, and more.
 
-Statistical profiling excels when you need to understand performance
-characteristics without affecting the program's behavior. Because the sampling
-profiler reads process memory externally rather than instrumenting code, it
-introduces virtually no overhead. This makes it the right choice for profiling
-production systems, investigating intermittent performance issues, and
-analyzing programs where timing accuracy is critical.
-
-Deterministic profiling provides complete visibility into program execution.
-Every function call is recorded with precise timing, giving you exact call
-counts and the ability to trace the full call graph. This level of detail is
-valuable during development when you need to understand exactly how code
-executes, verify that optimizations reduce call counts, or identify unexpected
-function calls.
+Use the deterministic profiler (:mod:`profiling.tracing`) when you need **exact
+call counts** and cannot afford to miss any function calls. Since it instruments
+every function call and return, it will capture even very fast functions that
+complete between sampling intervals. The tradeoff is higher overhead.
 
 The following table summarizes the key differences:
 
@@ -84,62 +75,66 @@ The following table summarizes the key differences:
 | Feature            | Statistical Sampling         | Deterministic                |
 |                    | (:mod:`profiling.sampling`)  | (:mod:`profiling.tracing`)   |
 +====================+==============================+==============================+
-| **Target**         | Running process              | Code you run                 |
-+--------------------+------------------------------+------------------------------+
 | **Overhead**       | Virtually none               | Moderate                     |
 +--------------------+------------------------------+------------------------------+
 | **Accuracy**       | Statistical estimate         | Exact call counts            |
 +--------------------+------------------------------+------------------------------+
-| **Setup**          | Attach to any PID            | Instrument code              |
+| **Output formats** | pstats, flamegraph, heatmap, | pstats                       |
+|                    | gecko, collapsed             |                              |
 +--------------------+------------------------------+------------------------------+
-| **Use Case**       | Production debugging         | Development/testing          |
+| **Profiling modes**| Wall-clock, CPU, GIL         | Wall-clock                   |
 +--------------------+------------------------------+------------------------------+
-| **Implementation** | C extension                  | C extension                  |
+| **Special frames** | GC, native (C extensions)    | N/A                          |
++--------------------+------------------------------+------------------------------+
+| **Attach to PID**  | Yes                          | No                           |
 +--------------------+------------------------------+------------------------------+
 
 
 When to Use Statistical Sampling
 --------------------------------
 
-The statistical profiler (:mod:`profiling.sampling`) is recommended when:
+The statistical profiler (:mod:`profiling.sampling`) is recommended for most
+performance analysis tasks. Use it the same way you would use ``cProfile``::
 
-You need to profile a production system where any performance impact is
-unacceptable. The sampling profiler runs in a separate process and reads the
-target process memory without interrupting its execution.
+   python -m profiling.sampling run script.py
 
-You want to profile an already-running process without restarting it or
-modifying its code. Simply provide the process ID and the profiler will attach
-and begin collecting data.
+One of the main strengths of the sampling profiler is its variety of output
+formats. Beyond traditional pstats tables, it can generate interactive
+flamegraphs that visualize call hierarchies, line-level source heatmaps that
+show exactly where time is spent in your code, and Firefox Profiler output for
+timeline-based analysis.
 
-You are investigating performance issues that might be affected by profiler
-overhead. Since statistical profiling does not instrument the code, it captures
-the program's natural behavior.
+The profiler also provides insight into Python interpreter behavior that
+deterministic profiling cannot capture. Use ``--mode gil`` to identify GIL
+contention in multi-threaded code, ``--mode cpu`` to measure actual CPU time
+excluding I/O waits, or inspect ``<GC>`` frames to understand garbage collection
+overhead. The ``--native`` option reveals time spent in C extensions, helping
+distinguish Python overhead from library performance.
 
-Your application uses multiple threads and you want to understand how work is
-distributed across them. The sampling profiler can collect stack traces from
-all threads simultaneously.
+For multi-threaded applications, the ``-a`` option samples all threads
+simultaneously, showing how work is distributed. And for production debugging,
+the ``attach`` command connects to any running Python process by PID without
+requiring a restart or code changes.
 
 
 When to Use Deterministic Tracing
 ---------------------------------
 
-The deterministic profiler (:mod:`profiling.tracing`) is recommended when:
+The deterministic profiler (:mod:`profiling.tracing`) instruments every function
+call and return. This approach has higher overhead than sampling, but guarantees
+complete coverage of program execution.
 
-You need exact call counts for every function. Statistical profiling provides
-estimates based on sampling frequency, which may miss or undercount
-short-lived function calls.
+The primary reason to choose deterministic tracing is when you need exact call
+counts. Statistical profiling estimates frequency based on sampling, which may
+undercount short-lived functions that complete between samples. If you need to
+verify that an optimization actually reduced the number of function calls, or
+if you want to trace the complete call graph to understand caller-callee
+relationships, deterministic tracing is the right choice.
 
-You want to trace the complete call graph and understand caller-callee
-relationships. Deterministic profiling records every call, enabling detailed
-analysis of how functions interact.
-
-You are developing or testing code and can tolerate moderate overhead in
-exchange for precise measurements. The overhead is acceptable for most
-development workflows.
-
-You need to measure time spent in specific functions accurately, including
-functions that execute quickly. Deterministic profiling captures every
-invocation rather than relying on statistical sampling.
+Deterministic tracing also excels at capturing functions that execute in
+microseconds. Such functions may not appear frequently enough in statistical
+samples, but deterministic tracing records every invocation regardless of
+duration.
 
 
 Quick Start
@@ -152,33 +147,42 @@ documentation, see the dedicated pages for each profiler.
 Statistical Profiling
 ---------------------
 
-To profile a running Python process, use the :mod:`profiling.sampling` module
-with the process ID::
+To profile a script, use the :mod:`profiling.sampling` module with the ``run``
+command::
 
-   python -m profiling.sampling 1234
+   python -m profiling.sampling run script.py
+   python -m profiling.sampling run -m mypackage.module
 
-This attaches to process 1234, samples its call stack for the default duration,
-and prints a summary of where time was spent. No changes to the target process
-are required.
+This runs the script under the profiler and prints a summary of where time was
+spent. For an interactive flamegraph::
+
+   python -m profiling.sampling run --flamegraph script.py
+
+To profile an already-running process, use the ``attach`` command with the
+process ID::
+
+   python -m profiling.sampling attach 1234
 
 For custom settings, specify the sampling interval (in microseconds) and
 duration (in seconds)::
 
-   python -m profiling.sampling -i 50 -d 30 1234
+   python -m profiling.sampling run -i 50 -d 30 script.py
 
 
 Deterministic Profiling
 -----------------------
 
-To profile a piece of code, use the :mod:`profiling.tracing` module::
+To profile a script from the command line::
+
+   python -m profiling.tracing myscript.py
+
+To profile a piece of code programmatically::
 
    import profiling.tracing
    profiling.tracing.run('my_function()')
 
 This executes the given code under the profiler and prints a summary showing
-function call counts and timing. For profiling a script from the command line::
-
-   python -m profiling.tracing myscript.py
+exact function call counts and timing.
 
 
 .. _profile-output:
@@ -186,42 +190,40 @@ function call counts and timing. For profiling a script from the command line::
 Understanding Profile Output
 ============================
 
-Both profilers produce output showing function-level statistics. The
-deterministic profiler output looks like this::
+Both profilers collect function-level statistics, though they present them in
+different formats. The sampling profiler offers multiple visualizations
+(flamegraphs, heatmaps, Firefox Profiler, pstats tables), while the
+deterministic profiler produces pstats-compatible output. Regardless of format,
+the underlying concepts are the same.
 
-         214 function calls (207 primitive calls) in 0.002 seconds
+Key profiling concepts:
 
-   Ordered by: cumulative time
+**Direct time** (also called *self time* or *tottime*)
+   Time spent executing code in the function itself, excluding time spent in
+   functions it called. High direct time indicates the function contains
+   expensive operations.
 
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.000    0.000    0.002    0.002 {built-in method builtins.exec}
-        1    0.000    0.000    0.001    0.001 <string>:1(<module>)
-        1    0.000    0.000    0.001    0.001 __init__.py:250(compile)
+**Cumulative time** (also called *total time* or *cumtime*)
+   Time spent in the function and all functions it called. This measures the
+   total cost of calling a function, including its entire call subtree.
 
-The first line indicates that 214 calls were monitored, of which 207 were
-:dfn:`primitive` (not induced via recursion). The column headings are:
+**Call count** (also called *ncalls* or *samples*)
+   How many times the function was called (deterministic) or sampled
+   (statistical). In deterministic profiling, this is exact. In statistical
+   profiling, it represents the number of times the function appeared in a
+   stack sample.
 
-ncalls
-   The number of calls to this function. When two numbers appear separated by
-   a slash (for example, ``3/1``), the function recursed: the first number is
-   the total calls and the second is the primitive (non-recursive) calls.
+**Primitive calls**
+   Calls that are not induced by recursion. When a function recurses, the total
+   call count includes recursive invocations, but primitive calls counts only
+   the initial entry. Displayed as ``total/primitive`` (for example, ``3/1``
+   means 3 total calls, 1 primitive).
 
-tottime
-   The total time spent in this function alone, excluding time spent in
-   functions it called.
-
-percall
-   The quotient of ``tottime`` divided by ``ncalls``.
-
-cumtime
-   The cumulative time spent in this function and all functions it called.
-   This figure is accurate even for recursive functions.
-
-percall
-   The quotient of ``cumtime`` divided by primitive calls.
-
-filename:lineno(function)
-   The location and name of the function.
+**Caller/Callee relationships**
+   Which functions called a given function (callers) and which functions it
+   called (callees). Flamegraphs visualize this as nested rectangles; pstats
+   can display it via the :meth:`~pstats.Stats.print_callers` and
+   :meth:`~pstats.Stats.print_callees` methods.
 
 
 Legacy Compatibility
@@ -240,11 +242,12 @@ continue to work without modification in all future Python versions.
 
 .. seealso::
 
-   :mod:`profiling.tracing`
-      Deterministic tracing profiler for development and testing.
-
    :mod:`profiling.sampling`
-      Statistical sampling profiler for production debugging.
+      Statistical sampling profiler with flamegraphs, heatmaps, and GIL analysis.
+      Recommended for most users.
+
+   :mod:`profiling.tracing`
+      Deterministic tracing profiler for exact call counts.
 
    :mod:`pstats`
       Statistics analysis and formatting for profile data.

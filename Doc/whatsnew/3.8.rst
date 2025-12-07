@@ -1727,7 +1727,7 @@ Deprecated
 * Deprecated passing the following arguments as keyword arguments:
 
   - *func* in :func:`functools.partialmethod`, :func:`weakref.finalize`,
-    :meth:`profile.Profile.runcall`, :meth:`!cProfile.Profile.runcall`,
+    :meth:`profile.Profile.runcall`, :meth:`cProfile.Profile.runcall`,
     :meth:`bdb.Bdb.runcall`, :meth:`trace.Trace.runfunc` and
     :func:`curses.wrapper`.
   - *function* in :meth:`unittest.TestCase.addCleanup`.
