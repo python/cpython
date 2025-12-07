@@ -4371,7 +4371,9 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             Py_DECREF(filter);
             Py_DECREF(abs_name);
             return NULL;
-        } else if (modname == NULL) {
+        }
+        if (modname == NULL) {
+            assert(!PyErr_Occurred());
             modname = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, name, fromlist};
@@ -4405,6 +4407,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         }
     }
 
+    // here, 'filter' is either NULL or is equivalent to a borrowed reference
     PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
     if (res == NULL) {
         Py_DECREF(abs_name);
