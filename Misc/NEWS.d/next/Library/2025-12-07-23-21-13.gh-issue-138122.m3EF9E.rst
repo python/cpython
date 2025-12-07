@@ -1,0 +1,5 @@
+Add bytecode-level instruction profiling to the sampling profiler via the
+new ``--opcodes`` flag. When enabled, the profiler captures which bytecode
+opcode is executing at each sample, including Python 3.11+ adaptive
+specializations, and visualizes this data in the heatmap, flamegraph, gecko,
+and live output formats. Patch by Pablo Galindo

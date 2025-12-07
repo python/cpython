@@ -34,7 +34,7 @@ from .helpers import (
     skip_if_not_supported,
     PROCESS_VM_READV_SUPPORTED,
 )
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo
+from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
 
 # Duration for profiling tests - long enough for process to complete naturally
 PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))

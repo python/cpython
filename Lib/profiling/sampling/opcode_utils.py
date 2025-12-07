@@ -11,7 +11,7 @@ import opcode
 # Build opcode name mapping: opcode number -> opcode name
 # This includes both standard opcodes and specialized variants (Python 3.11+)
 _OPCODE_NAMES = dict(enumerate(opcode.opname))
-if hasattr(opcode, '_specialized_opmap'):
+if hasattr(opcode, "_specialized_opmap"):
     for name, op in opcode._specialized_opmap.items():
         _OPCODE_NAMES[op] = name
 
@@ -20,7 +20,9 @@ if hasattr(opcode, '_specialized_opmap'):
 # LOAD_ATTR can be replaced at runtime with specialized variants like
 # LOAD_ATTR_INSTANCE_VALUE. This mapping lets us show both forms.
 _DEOPT_MAP = {}
-if hasattr(opcode, '_specializations') and hasattr(opcode, '_specialized_opmap'):
+if hasattr(opcode, "_specializations") and hasattr(
+    opcode, "_specialized_opmap"
+):
     for base_name, variant_names in opcode._specializations.items():
         base_opcode = opcode.opmap.get(base_name)
         if base_opcode is not None:
@@ -45,24 +47,24 @@ def get_opcode_info(opcode_num):
     opname = _OPCODE_NAMES.get(opcode_num)
     if opname is None:
         return {
-            'opname': f'<{opcode_num}>',
-            'base_opname': f'<{opcode_num}>',
-            'is_specialized': False,
+            "opname": f"<{opcode_num}>",
+            "base_opname": f"<{opcode_num}>",
+            "is_specialized": False,
         }
 
     base_opcode = _DEOPT_MAP.get(opcode_num)
     if base_opcode is not None:
-        base_opname = _OPCODE_NAMES.get(base_opcode, f'<{base_opcode}>')
+        base_opname = _OPCODE_NAMES.get(base_opcode, f"<{base_opcode}>")
         return {
-            'opname': opname,
-            'base_opname': base_opname,
-            'is_specialized': True,
+            "opname": opname,
+            "base_opname": base_opname,
+            "is_specialized": True,
         }
 
     return {
-        'opname': opname,
-        'base_opname': opname,
-        'is_specialized': False,
+        "opname": opname,
+        "base_opname": opname,
+        "is_specialized": False,
     }
 
 
@@ -76,9 +78,9 @@ def format_opcode(opcode_num):
         A formatted string like 'LOAD_ATTR' or 'LOAD_ATTR_INSTANCE_VALUE (LOAD_ATTR)'
     """
     info = get_opcode_info(opcode_num)
-    if info['is_specialized']:
+    if info["is_specialized"]:
         return f"{info['opname']} ({info['base_opname']})"
-    return info['opname']
+    return info["opname"]
 
 
 def get_opcode_mapping():

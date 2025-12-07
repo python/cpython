@@ -5,7 +5,6 @@ from profiling.sampling.constants import (
     THREAD_STATUS_ON_CPU,
 )
 
-from .mocks import LocationInfo, MockFrameInfo
 
 
 class MockThreadInfo:
