@@ -1,0 +1,3 @@
+Fix usage formatting for mutually exclusive groups in :mod:`argparse`
+when they are preceded by positional arguments or followed or intermixed
+with other optional arguments.
