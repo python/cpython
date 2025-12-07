@@ -1,0 +1,1 @@
+Pdb can run scripts from pseudofiles. Patch by Bartosz Sławecki.

@@ -183,14 +183,16 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = os.path.realpath(target)
-
-        if not os.path.exists(self._target):
+        if not os.path.exists(target):
             print(f'Error: {target} does not exist')
             sys.exit(1)
-        if os.path.isdir(self._target):
+        if os.path.isdir(target):
             print(f'Error: {target} is a directory')
             sys.exit(1)
+
+        # Be careful with realpath to support pseudofilesystems (GH-142315).
+        realpath = os.path.realpath(target)
+        self._target = realpath if os.path.exists(realpath) else target
 
         # If safe_path(-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
