@@ -3652,6 +3652,11 @@ def bœr():
         self.assertIn('None', stdout)
 
     def test_script_target_anonymous_pipe(self):
+        """
+        _ScriptTarget doesn't fail on an anonymous pipe.
+
+        GH-142315
+        """
         fd_dir = self._fd_dir_for_pipe_targets()
         if fd_dir is None:
             self.skipTest('anonymous pipe targets require /proc/self/fd or /dev/fd')
