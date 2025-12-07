@@ -5,13 +5,14 @@ import collections
 import html
 import importlib.resources
 import json
+import math
 import os
 import platform
 import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple
 
 from ._css_utils import get_combined_css
 from .stack_collector import StackTraceCollector
@@ -42,31 +43,6 @@ class TreeNode:
     samples: int = 0
     count: int = 0
     children: Dict[str, 'TreeNode'] = field(default_factory=dict)
-
-
-@dataclass
-class ColorGradient:
-    """Configuration for heatmap color gradient calculations."""
-    # Color stops thresholds
-    stop_1: float = 0.2  # Blue to cyan transition
-    stop_2: float = 0.4  # Cyan to green transition
-    stop_3: float = 0.6  # Green to yellow transition
-    stop_4: float = 0.8  # Yellow to orange transition
-    stop_5: float = 1.0  # Orange to red transition
-
-    # Alpha (opacity) values
-    alpha_very_cold: float = 0.3
-    alpha_cold: float = 0.4
-    alpha_medium: float = 0.5
-    alpha_warm: float = 0.6
-    alpha_hot_base: float = 0.7
-    alpha_hot_range: float = 0.15
-
-    # Gradient multiplier
-    multiplier: int = 5
-
-    # Cache for calculated colors
-    cache: Dict[float, Tuple[int, int, int, float]] = field(default_factory=dict)
 
 
 # ============================================================================
@@ -224,8 +200,9 @@ class _TemplateLoader:
             self.file_css = css_content
 
             # Load JS
-            self.index_js = (assets_dir / "heatmap_index.js").read_text(encoding="utf-8")
-            self.file_js = (assets_dir / "heatmap.js").read_text(encoding="utf-8")
+            shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
+            self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
             # Load Python logo
             logo_dir = template_dir / "_assets"
@@ -321,18 +298,13 @@ class _TreeBuilder:
 class _HtmlRenderer:
     """Renders hierarchical tree structures as HTML."""
 
-    def __init__(self, file_index: Dict[str, str], color_gradient: ColorGradient,
-                 calculate_intensity_color_func):
-        """Initialize renderer with file index and color calculation function.
+    def __init__(self, file_index: Dict[str, str]):
+        """Initialize renderer with file index.
 
         Args:
             file_index: Mapping from filenames to HTML file names
-            color_gradient: ColorGradient configuration
-            calculate_intensity_color_func: Function to calculate colors
         """
         self.file_index = file_index
-        self.color_gradient = color_gradient
-        self.calculate_intensity_color = calculate_intensity_color_func
         self.heatmap_bar_height = 16
 
     def render_hierarchical_html(self, trees: Dict[str, TreeNode]) -> str:
@@ -450,8 +422,6 @@ class _HtmlRenderer:
         module_name = html.escape(stat.module_name)
 
         intensity = stat.percentage / 100.0
-        r, g, b, alpha = self.calculate_intensity_color(intensity)
-        bg_color = f"rgba({r}, {g}, {b}, {alpha})"
         bar_width = min(stat.percentage, 100)
 
         html_file = self.file_index[stat.filename]
@@ -459,7 +429,7 @@ class _HtmlRenderer:
         return (f'{indent}<div class="file-item">\n'
                 f'{indent}  <a href="{html_file}" class="file-link" title="{full_path}">📄 {module_name}</a>\n'
                 f'{indent}  <span class="file-samples">{stat.total_samples:,} samples</span>\n'
-                f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; background-color: {bg_color}; height: {self.heatmap_bar_height}px;"></div></div>\n'
+                f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; height: {self.heatmap_bar_height}px;" data-intensity="{intensity:.3f}"></div></div>\n'
                 f'{indent}</div>\n')
 
 
@@ -501,19 +471,11 @@ class HeatmapCollector(StackTraceCollector):
         self._path_info = get_python_path_info()
         self.stats = {}
 
-        # Color gradient configuration
-        self._color_gradient = ColorGradient()
-
         # Template loader (loads all templates once)
         self._template_loader = _TemplateLoader()
 
         # File index (populated during export)
         self.file_index = {}
-
-    @property
-    def _color_cache(self):
-        """Compatibility property for accessing color cache."""
-        return self._color_gradient.cache
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, missed_samples=None, **kwargs):
         """Set profiling statistics to include in heatmap output.
@@ -746,8 +708,7 @@ class HeatmapCollector(StackTraceCollector):
         tree = _TreeBuilder.build_file_tree(file_stats)
 
         # Render tree as HTML
-        renderer = _HtmlRenderer(self.file_index, self._color_gradient,
-                                self._calculate_intensity_color)
+        renderer = _HtmlRenderer(self.file_index)
         sections_html = renderer.render_hierarchical_html(tree)
 
         # Format error rate and missed samples with bar classes
@@ -809,56 +770,6 @@ class HeatmapCollector(StackTraceCollector):
         except (IOError, OSError) as e:
             raise RuntimeError(f"Failed to write index file {index_path}: {e}") from e
 
-    def _calculate_intensity_color(self, intensity: float) -> Tuple[int, int, int, float]:
-        """Calculate RGB color and alpha for given intensity (0-1 range).
-
-        Returns (r, g, b, alpha) tuple representing the heatmap color gradient:
-        blue -> green -> yellow -> orange -> red
-
-        Results are cached to improve performance.
-        """
-        # Round to 3 decimal places for cache key
-        cache_key = round(intensity, 3)
-        if cache_key in self._color_gradient.cache:
-            return self._color_gradient.cache[cache_key]
-
-        gradient = self._color_gradient
-        m = gradient.multiplier
-
-        # Color stops with (threshold, rgb_func, alpha_func)
-        stops = [
-            (gradient.stop_1,
-             lambda i: (0, int(150 * i * m), 255),
-             lambda i: gradient.alpha_very_cold),
-            (gradient.stop_2,
-             lambda i: (0, 255, int(255 * (1 - (i - gradient.stop_1) * m))),
-             lambda i: gradient.alpha_cold),
-            (gradient.stop_3,
-             lambda i: (int(255 * (i - gradient.stop_2) * m), 255, 0),
-             lambda i: gradient.alpha_medium),
-            (gradient.stop_4,
-             lambda i: (255, int(200 - 100 * (i - gradient.stop_3) * m), 0),
-             lambda i: gradient.alpha_warm),
-            (gradient.stop_5,
-             lambda i: (255, int(100 * (1 - (i - gradient.stop_4) * m)), 0),
-             lambda i: gradient.alpha_hot_base + gradient.alpha_hot_range * (i - gradient.stop_4) * m),
-        ]
-
-        result = None
-        for threshold, rgb_func, alpha_func in stops:
-            if intensity < threshold or threshold == gradient.stop_5:
-                r, g, b = rgb_func(intensity)
-                result = (r, g, b, alpha_func(intensity))
-                break
-
-        # Fallback
-        if result is None:
-            result = (255, 0, 0, 0.75)
-
-        # Cache the result
-        self._color_gradient.cache[cache_key] = result
-        return result
-
     def _generate_file_html(self, output_path: Path, filename: str,
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
@@ -913,25 +824,23 @@ class HeatmapCollector(StackTraceCollector):
 
         # Calculate colors for both self and cumulative modes
         if cumulative_samples > 0:
-            cumulative_intensity = cumulative_samples / max_samples if max_samples > 0 else 0
-            self_intensity = self_samples / max_self_samples if max_self_samples > 0 and self_samples > 0 else 0
+            log_cumulative = math.log(cumulative_samples + 1)
+            log_max = math.log(max_samples + 1)
+            cumulative_intensity = log_cumulative / log_max if log_max > 0 else 0
 
-            # Default to self-based coloring
-            intensity = self_intensity if self_samples > 0 else cumulative_intensity
-            r, g, b, alpha = self._calculate_intensity_color(intensity)
-            bg_color = f"rgba({r}, {g}, {b}, {alpha})"
-
-            # Pre-calculate colors for both modes (for JS toggle)
-            self_bg_color = self._format_color_for_intensity(self_intensity) if self_samples > 0 else "transparent"
-            cumulative_bg_color = self._format_color_for_intensity(cumulative_intensity)
+            if self_samples > 0 and max_self_samples > 0:
+                log_self = math.log(self_samples + 1)
+                log_max_self = math.log(max_self_samples + 1)
+                self_intensity = log_self / log_max_self if log_max_self > 0 else 0
+            else:
+                self_intensity = 0
 
             self_display = f"{self_samples:,}" if self_samples > 0 else ""
             cumulative_display = f"{cumulative_samples:,}"
             tooltip = f"Self: {self_samples:,}, Total: {cumulative_samples:,}"
         else:
-            bg_color = "transparent"
-            self_bg_color = "transparent"
-            cumulative_bg_color = "transparent"
+            cumulative_intensity = 0
+            self_intensity = 0
             self_display = ""
             cumulative_display = ""
             tooltip = ""
@@ -939,13 +848,14 @@ class HeatmapCollector(StackTraceCollector):
         # Get navigation buttons
         nav_buttons_html = self._build_navigation_buttons(filename, line_num)
 
-        # Build line HTML
+        # Build line HTML with intensity data attributes
         line_html = html.escape(line_content.rstrip('\n'))
         title_attr = f' title="{html.escape(tooltip)}"' if tooltip else ""
 
         return (
-            f'        <div class="code-line" data-bg-color="{bg_color}" '
-            f'data-self-color="{self_bg_color}" data-cumulative-color="{cumulative_bg_color}" '
+            f'        <div class="code-line" '
+            f'data-self-intensity="{self_intensity:.3f}" '
+            f'data-cumulative-intensity="{cumulative_intensity:.3f}" '
             f'id="line-{line_num}"{title_attr}>\n'
             f'            <div class="line-number">{line_num}</div>\n'
             f'            <div class="line-samples-self">{self_display}</div>\n'
@@ -954,11 +864,6 @@ class HeatmapCollector(StackTraceCollector):
             f'            {nav_buttons_html}\n'
             f'        </div>\n'
         )
-
-    def _format_color_for_intensity(self, intensity: float) -> str:
-        """Format color as rgba() string for given intensity."""
-        r, g, b, alpha = self._calculate_intensity_color(intensity)
-        return f"rgba({r}, {g}, {b}, {alpha})"
 
     def _build_navigation_buttons(self, filename: str, line_num: int) -> str:
         """Build navigation buttons for callers/callees."""

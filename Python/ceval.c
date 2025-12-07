@@ -2288,6 +2288,16 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    // Update last_profiled_frame for remote profiler frame caching.
+    // By this point, tstate->current_frame is already set to the parent frame.
+    // Only update if we're popping the exact frame that was last profiled.
+    // This avoids corrupting the cache when transient frames (called and returned
+    // between profiler samples) update last_profiled_frame to addresses the
+    // profiler never saw.
+    if (tstate->last_profiled_frame != NULL && tstate->last_profiled_frame == frame) {
+        tstate->last_profiled_frame = tstate->current_frame;
+    }
+
     if (frame->owner == FRAME_OWNED_BY_THREAD) {
         clear_thread_frame(tstate, frame);
     }
@@ -2344,7 +2354,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, _PyStackRef func,
     PyObject *kwnames = NULL;
     _PyStackRef *newargs;
     PyObject *const *object_array = NULL;
-    _PyStackRef stack_array[8];
+    _PyStackRef stack_array[8] = {0};
     if (has_dict) {
         object_array = _PyStack_UnpackDict(tstate, _PyTuple_ITEMS(callargs), nargs, kwargs, &kwnames);
         if (object_array == NULL) {
@@ -2407,7 +2417,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
     if (kwnames) {
         total_args += PyTuple_GET_SIZE(kwnames);
     }
-    _PyStackRef stack_array[8];
+    _PyStackRef stack_array[8] = {0};
     _PyStackRef *arguments;
     if (total_args <= 8) {
         arguments = stack_array;
@@ -3342,6 +3352,9 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *current_frame = tstate->current_frame;
+    if (current_frame == tstate->base_frame) {
+        current_frame = NULL;
+    }
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
