@@ -544,30 +544,24 @@ following attributes:
 .. code-block:: python
 
    class Annotate:
-      called_formats = []
+       called_formats = []
 
-      def __call__(self, format=None, /, *, _self=None):
-          # When called with fake globals, `_self` will be the
-          # actual self value, and `self` will be the format.
-          if _self is not None:
-              self, format = _self, self
+       def __call__(self, format=None, /, *, _self=None):
+           # When called with fake globals, `_self` will be the
+           # actual self value, and `self` will be the format.
+           if _self is not None:
+               self, format = _self, self
 
-          self.called_formats.append(format)
-          if format <= 2:  # VALUE or VALUE_WITH_FAKE_GLOBALS
-              return {"x": MyType}
-          raise NotImplementedError
+           self.called_formats.append(format)
+           if format <= 2:  # VALUE or VALUE_WITH_FAKE_GLOBALS
+               return {"x": MyType}
+           raise NotImplementedError
 
-      @property
-      def __defaults__(self):
-          return (None,)
+       __defaults__ = (None,)
 
-      @property
-      def __kwdefaults__(self):
-          return {"_self": self}
+       __kwdefaults__ = property(lambda self: dict(_self=self))
 
-      @property
-      def __code__(self):
-          return self.__call__.__code__
+       __code__ = property(lambda self: self.__call__.__code__)
 
 This can then be called with:
 
@@ -587,6 +581,7 @@ Or used as the annotate function for an object:
    >>> C.__annotate__ = Annotate()
    >>> get_annotations(Annotate(), format=Format.STRING)
    {'x': 'MyType'}
+
 
 Limitations of the ``STRING`` format
 ------------------------------------
