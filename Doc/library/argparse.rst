@@ -661,9 +661,8 @@ disabled, the tags are stripped and the content is displayed as plain text.
 
 .. note::
 
-   The ``[cmd]`` markup only applies to description and epilog text processed
-   by :meth:`HelpFormatter._format_text`. It does not apply to individual
-   argument ``help`` strings.
+   The ``[cmd]`` markup only applies to description and epilog text. It does
+   not apply to individual argument ``help`` strings.
 
 .. versionadded:: 3.15
 
