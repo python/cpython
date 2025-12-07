@@ -3471,25 +3471,28 @@ _PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func, PyObj
                         ilevel);
     }
 
-    PyObject* args[5] = {name, globals, locals, fromlist, level};
+    PyObject *args[5] = {name, globals, locals, fromlist, level};
     PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     return res;
 }
 
 static int
-check_lazy_import_comatibility(PyThreadState *tstate, PyObject *globals,
+check_lazy_import_compatibility(PyThreadState *tstate, PyObject *globals,
                                PyObject *name, PyObject *level)
 {
-     // Check if this module should be imported lazily due to the compatbility mode support via
-    // __lazy_modules__.
+     // Check if this module should be imported lazily due to
+     // the compatibility mode support via __lazy_modules__.
     PyObject *lazy_modules = NULL;
     PyObject *abs_name = NULL;
     int res = -1;
 
     if (globals != NULL &&
-        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
+        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0)
+    {
         return -1;
-    } else if (lazy_modules == NULL) {
+    }
+    if (lazy_modules == NULL) {
+        assert(!PyErr_Occurred());
         return 0;
     }
 
@@ -3530,7 +3533,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
 
     if (!lazy) {
         // see if __lazy_imports__ forces this to be lazy
-        lazy = check_lazy_import_comatibility(tstate, globals, name, level);
+        lazy = check_lazy_import_compatibility(tstate, globals, name, level);
         if (lazy < 0) {
             return NULL;
         }
@@ -3544,7 +3547,9 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
     PyObject *lazy_import_func;
     if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &lazy_import_func) < 0) {
         goto error;
-    } else if (lazy_import_func == NULL) {
+    }
+    if (lazy_import_func == NULL) {
+        assert(!PyErr_Occurred());
         _PyErr_SetString(tstate, PyExc_ImportError, "__lazy_import__ not found");
         goto error;
     }
@@ -3565,7 +3570,7 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
         goto error;
     }
 
-    PyObject* args[6] = {name, globals, locals, fromlist, level, builtins};
+    PyObject *args[6] = {name, globals, locals, fromlist, level, builtins};
     res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
 error:
     Py_XDECREF(lazy_import_func);
@@ -3744,7 +3749,8 @@ PyObject *
 _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     assert(PyLazyImport_CheckExact(v));
-    assert(name && PyUnicode_Check(name));
+    assert(name);
+    assert(PyUnicode_Check(name));
     PyObject *ret;
     PyLazyImportObject *d = (PyLazyImportObject *)v;
     PyObject *mod = PyImport_GetModule(d->lz_from);
@@ -3756,7 +3762,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
                 if (PyDict_GetItemRef(mod_dict, name, &ret) < 0) {
                     Py_DECREF(mod);
                     return NULL;
-                } else if (ret != NULL) {
+                }
+                if (ret != NULL) {
                     Py_DECREF(mod);
                     return ret;
                 }
@@ -3775,8 +3782,11 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
             Py_DECREF(from);
             return ret;
         }
-    } else {
-        Py_ssize_t dot = PyUnicode_FindChar(d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1);
+    }
+    else {
+        Py_ssize_t dot = PyUnicode_FindChar(
+            d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1
+        );
         if (dot >= 0) {
             PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
             if (from == NULL) {

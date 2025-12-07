@@ -332,8 +332,7 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
             PyErr_SetString(PyExc_AttributeError, "builtins module has no dict");
             return NULL;
         }
-        Py_DECREF(builtins);
-        builtins = builtins_dict;
+        Py_SETREF(builtins, builtins_dict);
     }
 
     PyObject *res = _PyImport_LazyImportModuleLevelObject(tstate, name, builtins,
