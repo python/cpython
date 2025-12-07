@@ -1615,46 +1615,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 Annotate(), Format.FORWARDREF
             )
 
-    def test_non_function_annotate(self):
-        class Annotate:
-            called_formats = []
-
-            def __call__(self, format=None, *, _self=None):
-                if _self is not None:
-                    self, format = _self, self
-
-                self.called_formats.append(format)
-                if format <= 2:  # VALUE or VALUE_WITH_FAKE_GLOBALS
-                    return {"x": MyType}
-                raise NotImplementedError
-
-            @property
-            def __defaults__(self):
-                return (None,)
-
-            @property
-            def __kwdefaults__(self):
-                return {"_self": self}
-
-            @property
-            def __code__(self):
-                return self.__call__.__code__
-
-        annotate = Annotate()
-
-        with self.assertRaises(NameError):
-            annotationlib.call_annotate_function(annotate, Format.VALUE)
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE)
-
-        annotations = annotationlib.call_annotate_function(annotate, Format.STRING)
-        self.assertEqual(annotations["x"], "MyType")
-        self.assertIn(Format.STRING, annotate.called_formats)
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
-
-        annotations = annotationlib.call_annotate_function(annotate, Format.FORWARDREF)
-        self.assertEqual(annotations["x"], support.EqualToForwardRef("MyType"))
-        self.assertIn(Format.FORWARDREF, annotate.called_formats)
-        self.assertEqual(annotate.called_formats[-1], Format.VALUE_WITH_FAKE_GLOBALS)
+        self.assertEqual(cm.exception.name, "__code__")
+        self.assertIsInstance(cm.exception.obj, Annotate)
 
     def test_full_non_function_annotate(self):
         def outer():
