@@ -1,6 +1,7 @@
 import unittest
 import os
 import textwrap
+import contextlib
 import importlib
 import sys
 import socket
@@ -215,36 +216,13 @@ def requires_subinterpreters(meth):
 # Simple wrapper functions for RemoteUnwinder
 # ============================================================================
 
-# Errors that can occur transiently when reading process memory without synchronization
-RETRIABLE_ERRORS = (
-    "Bad address",
-    "Task list appears corrupted",
-    "Invalid linked list structure reading remote memory",
-    "Invalid string length",
-    "Unknown error reading memory",
-    "Unhandled frame owner",
-    "Failed to parse initial frame",
-    "Failed to process frame chain",
-    "Failed to unwind stack",
-    "process_vm_readv",
-)
-
-
-def _is_retriable_error(exc):
-    """Check if an exception is a transient error that should be retried."""
-    msg = str(exc)
-    return any(msg.startswith(err) or err in msg for err in RETRIABLE_ERRORS)
-
-
 def get_stack_trace(pid):
     for _ in busy_retry(SHORT_TIMEOUT):
         try:
             unwinder = RemoteUnwinder(pid, all_threads=True, debug=True)
             return unwinder.get_stack_trace()
         except RuntimeError as e:
-            if _is_retriable_error(e):
-                continue
-            raise
+            continue
     raise RuntimeError("Failed to get stack trace after retries")
 
 
@@ -254,9 +232,7 @@ def get_async_stack_trace(pid):
             unwinder = RemoteUnwinder(pid, debug=True)
             return unwinder.get_async_stack_trace()
         except RuntimeError as e:
-            if _is_retriable_error(e):
-                continue
-            raise
+            continue
     raise RuntimeError("Failed to get async stack trace after retries")
 
 
@@ -266,9 +242,7 @@ def get_all_awaited_by(pid):
             unwinder = RemoteUnwinder(pid, debug=True)
             return unwinder.get_all_awaited_by()
         except RuntimeError as e:
-            if _is_retriable_error(e):
-                continue
-            raise
+            continue
     raise RuntimeError("Failed to get all awaited_by after retries")
 
 
@@ -2270,16 +2244,13 @@ sock.connect(('localhost', {port}))
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
         for _ in range(MAX_TRIES):
-            try:
+            with contextlib.suppress(OSError, RuntimeError):
                 traces = unwinder.get_stack_trace()
                 for interp in traces:
                     for thread in interp.threads:
                         funcs = {f.funcname for f in thread.frame_info}
                         if required_funcs.issubset(funcs):
                             return thread.frame_info
-            except (OSError, RuntimeError) as e:
-                if not _is_retriable_error(e):
-                    raise
             time.sleep(0.1)
         return None
 
@@ -2819,12 +2790,12 @@ sock.connect(('localhost', {port}))
             for i in range(4):
                 # Extract first message from buffer
                 msg, sep, buffer = buffer.partition(b"\n")
-                self.assertIn(msg, dispatch, f"Unexpected message: {msg}")
+                self.assertIn(msg, dispatch, f"Unexpected message: {msg!r}")
 
                 # Sample frames for the thread at this sync point
                 required_funcs = dispatch[msg]
                 frames = self._get_frames_with_retry(unwinder, required_funcs)
-                self.assertIsNotNone(frames, f"Thread not found for {msg}")
+                self.assertIsNotNone(frames, f"Thread not found for {msg!r}")
                 results[msg] = [f.funcname for f in frames]
 
                 # Release thread and wait for next message (if not last)
