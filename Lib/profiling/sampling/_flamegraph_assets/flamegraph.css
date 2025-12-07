@@ -241,8 +241,8 @@ body.resizing-sidebar {
 }
 
 .sidebar-logo-img {
-  width: 90px;
-  height: 90px;
+  width: 220px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;

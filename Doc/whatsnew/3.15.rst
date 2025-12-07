@@ -102,6 +102,11 @@ The :mod:`profile` module is deprecated and will be removed in Python 3.17.
 Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
+.. image:: tachyon-logo.png
+   :alt: Tachyon profiler logo
+   :align: center
+   :width: 200px
+
 A new statistical sampling profiler (Tachyon) has been added as
 :mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
