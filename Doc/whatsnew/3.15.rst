@@ -409,7 +409,7 @@ argparse
 
 * Added ``[cmd]...[/cmd]`` markup support in description and epilog text to
   highlight command examples when color output is enabled.
-  (Contributed by Savannah Ostrowski in :gh:`XXXXX`.)
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
 calendar
 --------
