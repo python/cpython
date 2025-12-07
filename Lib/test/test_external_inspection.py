@@ -1878,66 +1878,33 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         """Test that opcodes are collected when the opcodes flag is set."""
         script = textwrap.dedent(
             """\
-            import time
-            import sys
-            import socket
+            import time, sys, socket
 
-            def compute():
-                # Do some work that involves bytecode execution
-                total = 0
-                for i in range(1000):
-                    total += i
-                return total
-
-            def bar():
-                compute()
-
-            def foo():
-                bar()
-
-            # Signal that we're ready
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(('localhost', {port}))
-            sock.sendall(b"ready")
-            sock.close()
 
-            # Keep computing in a loop
-            while True:
-                foo()
+            def foo():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            foo()
             """
         )
 
         def get_trace_with_opcodes(pid):
-            unwinder = RemoteUnwinder(pid, opcodes=True)
-            return unwinder.get_stack_trace()
+            return RemoteUnwinder(pid, opcodes=True).get_stack_trace()
 
         stack_trace, _ = self._run_script_and_get_trace(
-            script,
-            get_trace_with_opcodes,
-            wait_for_signals=b"ready",
+            script, get_trace_with_opcodes, wait_for_signals=b"ready"
         )
 
-        # Find the thread with our compute/bar/foo stack
-        found_opcodes = False
-        for interpreter_info in stack_trace:
-            for thread_info in interpreter_info.threads:
-                for frame in thread_info.frame_info:
-                    # Check that frames have opcodes (not None)
-                    # when opcodes=True is set
-                    if frame.funcname in ("compute", "bar", "foo"):
-                        # Opcode should be an integer, not None
-                        self.assertIsInstance(
-                            frame.opcode,
-                            int,
-                            f"Expected opcode to be int for {frame.funcname}, got {type(frame.opcode)}"
-                        )
-                        self.assertGreaterEqual(frame.opcode, 0)
-                        found_opcodes = True
-
-        self.assertTrue(
-            found_opcodes,
-            "Did not find any frames with opcodes from compute/bar/foo"
+        # Find our foo frame and verify it has an opcode
+        foo_frame = self._find_frame_in_trace(
+            stack_trace, lambda f: f.funcname == "foo"
         )
+        self.assertIsNotNone(foo_frame, "Could not find foo frame")
+        self.assertIsInstance(foo_frame.opcode, int)
+        self.assertGreaterEqual(foo_frame.opcode, 0)
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1950,10 +1917,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
             """\
             import time, sys, socket
 
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
             def foo():
-                x = 1 + 2
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(('localhost', {port}))
                 sock.sendall(b"ready")
                 time.sleep(10_000)
 
@@ -1962,13 +1929,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         )
 
         def get_trace_with_opcodes(pid):
-            unwinder = RemoteUnwinder(pid, opcodes=True)
-            return unwinder.get_stack_trace()
+            return RemoteUnwinder(pid, opcodes=True).get_stack_trace()
 
-        stack_trace, script_name = self._run_script_and_get_trace(
-            script,
-            get_trace_with_opcodes,
-            wait_for_signals=b"ready",
+        stack_trace, _ = self._run_script_and_get_trace(
+            script, get_trace_with_opcodes, wait_for_signals=b"ready"
         )
 
         # Find our foo frame
@@ -1977,25 +1941,15 @@ class TestGetStackTrace(RemoteInspectionTestBase):
         )
         self.assertIsNotNone(foo_frame, "Could not find foo frame")
 
-        # Check location is a tuple with 4 elements
+        # Check location is a 4-tuple with valid values
         location = foo_frame.location
-        self.assertIsInstance(location, tuple, "Location should be a tuple")
-        self.assertEqual(
-            len(location), 4,
-            f"Location should have 4 elements (lineno, end_lineno, col_offset, end_col_offset), got {len(location)}"
-        )
-
+        self.assertIsInstance(location, tuple)
+        self.assertEqual(len(location), 4)
         lineno, end_lineno, col_offset, end_col_offset = location
-
-        # Lineno should be positive
         self.assertIsInstance(lineno, int)
-        self.assertGreater(lineno, 0, "lineno should be positive")
-
-        # end_lineno should be >= lineno
+        self.assertGreater(lineno, 0)
         self.assertIsInstance(end_lineno, int)
         self.assertGreaterEqual(end_lineno, lineno)
-
-        # col_offset and end_col_offset should be non-negative
         self.assertIsInstance(col_offset, int)
         self.assertGreaterEqual(col_offset, 0)
         self.assertIsInstance(end_col_offset, int)
