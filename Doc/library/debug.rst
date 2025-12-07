@@ -16,8 +16,6 @@ intrusive debugging or patching.
    faulthandler.rst
    pdb.rst
    profiling.rst
-   profiling-tracing.rst
-   profiling-sampling.rst
    pstats.rst
    profile.rst
    timeit.rst
