@@ -1637,29 +1637,13 @@ class TestCallAnnotateFunction(unittest.TestCase):
                         return {"w": unknown, "x": MyClass, "y": int, "z": local}
                     raise NotImplementedError
 
-                @property
-                def __globals__(self):
-                    return {"MyClass": MyClass}
+                __globals__ = {"MyClass": MyClass}
+                __builtins__ = {"int": int}
+                __closure__ = (types.CellType(str),)
+                __defaults__ = (None,)
 
-                @property
-                def __builtins__(self):
-                    return {"int": int}
-
-                @property
-                def __closure__(self):
-                    return (types.CellType(str),)
-
-                @property
-                def __defaults__(self):
-                    return (None,)
-
-                @property
-                def __kwdefaults__(self):
-                    return {"_self": self}
-
-                @property
-                def __code__(self):
-                    return self.__call__.__code__
+                __kwdefaults__ = property(lambda self: dict(_self=self))
+                __code__ = property(lambda self: self.__call__.__code__)
 
             return Annotate()
 
