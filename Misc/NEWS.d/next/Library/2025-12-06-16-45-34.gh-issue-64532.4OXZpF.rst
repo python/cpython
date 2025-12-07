@@ -1,0 +1,1 @@
+Subparser help now includes required optional arguments from the parent parser in the usage, making it clearer what arguments are needed to run a subcommand. Patch by Savannah Ostrowski.

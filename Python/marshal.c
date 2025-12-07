@@ -11,6 +11,7 @@
 #include "pycore_code.h"             // _PyCode_New()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
 #include "pycore_long.h"             // _PyLong_IsZero()
+#include "pycore_object.h"           // _PyObject_IsUniquelyReferenced
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
 #include "pycore_setobject.h"        // _PySet_NextEntryRef()
 #include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
@@ -309,7 +310,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     }
     if (!long_export.digits) {
         int8_t sign = long_export.value < 0 ? -1 : 1;
-        uint64_t abs_value = Py_ABS(long_export.value);
+        uint64_t abs_value = _Py_ABS_CAST(uint64_t, long_export.value);
         uint64_t d = abs_value;
         long l = 0;
 
@@ -388,7 +389,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
      * But we use TYPE_REF always for interned string, to PYC file stable
      * as possible.
      */
-    if (Py_REFCNT(v) == 1 &&
+    if (_PyObject_IsUniquelyReferenced(v) &&
             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }
