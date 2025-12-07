@@ -1615,7 +1615,7 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 Annotate(), Format.FORWARDREF
             )
 
-        self.assertEqual(cm.exception.name, "__code__")
+        self.assertEqual(cm.exception.name, "__builtins__")
         self.assertIsInstance(cm.exception.obj, Annotate)
 
     def test_full_non_function_annotate(self):
