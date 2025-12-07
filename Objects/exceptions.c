@@ -694,12 +694,12 @@ PyTypeObject _PyExc_ ## EXCNAME = { \
 
 #define ComplexExtendsException(EXCBASE, EXCNAME, EXCSTORE, EXCNEW, \
                                 EXCMETHODS, EXCMEMBERS, EXCGETSET, \
-                                EXCSTR, EXCDOC) \
+                                EXCSTR, EXCREPR, EXCDOC) \
 static PyTypeObject _PyExc_ ## EXCNAME = { \
     PyVarObject_HEAD_INIT(NULL, 0) \
     # EXCNAME, \
     sizeof(Py ## EXCSTORE ## Object), 0, \
-    EXCSTORE ## _dealloc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
+    EXCSTORE ## _dealloc, 0, 0, 0, 0, EXCREPR, 0, 0, 0, 0, 0, \
     EXCSTR, 0, 0, 0, \
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, \
     PyDoc_STR(EXCDOC), EXCSTORE ## _traverse, \
@@ -792,7 +792,7 @@ StopIteration_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 ComplexExtendsException(PyExc_Exception, StopIteration, StopIteration,
-                        0, 0, StopIteration_members, 0, 0,
+                        0, 0, StopIteration_members, 0, 0, 0,
                         "Signal the end from iterator.__next__().");
 
 
@@ -865,7 +865,7 @@ static PyMemberDef SystemExit_members[] = {
 };
 
 ComplexExtendsException(PyExc_BaseException, SystemExit, SystemExit,
-                        0, 0, SystemExit_members, 0, 0,
+                        0, 0, SystemExit_members, 0, 0, 0,
                         "Request to exit from the interpreter.");
 
 /*
@@ -890,6 +890,7 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyObject *message = NULL;
     PyObject *exceptions = NULL;
+    PyObject *exceptions_str = NULL;
 
     if (!PyArg_ParseTuple(args,
                           "UO:BaseExceptionGroup.__new__",
@@ -903,6 +904,18 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyExc_TypeError,
             "second argument (exceptions) must be a sequence");
         return NULL;
+    }
+
+    /* Save initial exceptions sequence as a string in case sequence is mutated */
+    if (!PyList_Check(exceptions) && !PyTuple_Check(exceptions)) {
+        exceptions_str = PyObject_Repr(exceptions);
+        if (exceptions_str == NULL) {
+            /* We don't hold a reference to exceptions, so clear it before
+             * attempting a decref in the cleanup.
+             */
+            exceptions = NULL;
+            goto error;
+        }
     }
 
     exceptions = PySequence_Tuple(exceptions);
@@ -988,9 +1001,11 @@ BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self->msg = Py_NewRef(message);
     self->excs = exceptions;
+    self->excs_str = exceptions_str;
     return (PyObject*)self;
 error:
-    Py_DECREF(exceptions);
+    Py_XDECREF(exceptions);
+    Py_XDECREF(exceptions_str);
     return NULL;
 }
 
@@ -1029,6 +1044,7 @@ BaseExceptionGroup_clear(PyObject *op)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_CLEAR(self->msg);
     Py_CLEAR(self->excs);
+    Py_CLEAR(self->excs_str);
     return BaseException_clear(op);
 }
 
@@ -1046,6 +1062,7 @@ BaseExceptionGroup_traverse(PyObject *op, visitproc visit, void *arg)
     PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
     Py_VISIT(self->msg);
     Py_VISIT(self->excs);
+    Py_VISIT(self->excs_str);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -1061,6 +1078,54 @@ BaseExceptionGroup_str(PyObject *op)
     return PyUnicode_FromFormat(
         "%S (%zd sub-exception%s)",
         self->msg, num_excs, num_excs > 1 ? "s" : "");
+}
+
+static PyObject *
+BaseExceptionGroup_repr(PyObject *op)
+{
+    PyBaseExceptionGroupObject *self = PyBaseExceptionGroupObject_CAST(op);
+    assert(self->msg);
+
+    PyObject *exceptions_str = NULL;
+
+    /* Use the saved exceptions string for custom sequences. */
+    if (self->excs_str) {
+        exceptions_str = Py_NewRef(self->excs_str);
+    }
+    else {
+        assert(self->excs);
+
+        /* Older versions delegated to BaseException, inserting the current
+         * value of self.args[1]; but this can be mutable and go out-of-sync
+         * with self.exceptions. Instead, use self.exceptions for accuracy,
+         * making it look like self.args[1] for backwards compatibility. */
+        if (PyList_Check(PyTuple_GET_ITEM(self->args, 1))) {
+            PyObject *exceptions_list = PySequence_List(self->excs);
+            if (!exceptions_list) {
+                return NULL;
+            }
+
+            exceptions_str = PyObject_Repr(exceptions_list);
+            Py_DECREF(exceptions_list);
+        }
+        else {
+            exceptions_str = PyObject_Repr(self->excs);
+        }
+
+        if (!exceptions_str) {
+            return NULL;
+        }
+    }
+
+    assert(exceptions_str != NULL);
+
+    const char *name = _PyType_Name(Py_TYPE(self));
+    PyObject *repr = PyUnicode_FromFormat(
+        "%s(%R, %U)", name,
+        self->msg, exceptions_str);
+
+    Py_DECREF(exceptions_str);
+    return repr;
 }
 
 /*[clinic input]
@@ -1697,7 +1762,7 @@ static PyMethodDef BaseExceptionGroup_methods[] = {
 ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
     BaseExceptionGroup, BaseExceptionGroup_new /* new */,
     BaseExceptionGroup_methods, BaseExceptionGroup_members,
-    0 /* getset */, BaseExceptionGroup_str,
+    0 /* getset */, BaseExceptionGroup_str, BaseExceptionGroup_repr,
     "A combination of multiple unrelated exceptions.");
 
 /*
@@ -2425,7 +2490,7 @@ static PyGetSetDef OSError_getset[] = {
 ComplexExtendsException(PyExc_Exception, OSError,
                         OSError, OSError_new,
                         OSError_methods, OSError_members, OSError_getset,
-                        OSError_str,
+                        OSError_str, 0,
                         "Base class for I/O related errors.");
 
 
@@ -2566,7 +2631,7 @@ static PyMethodDef NameError_methods[] = {
 ComplexExtendsException(PyExc_Exception, NameError,
                         NameError, 0,
                         NameError_methods, NameError_members,
-                        0, BaseException_str, "Name not found globally.");
+                        0, BaseException_str, 0, "Name not found globally.");
 
 /*
  *    UnboundLocalError extends NameError
@@ -2700,7 +2765,7 @@ static PyMethodDef AttributeError_methods[] = {
 ComplexExtendsException(PyExc_Exception, AttributeError,
                         AttributeError, 0,
                         AttributeError_methods, AttributeError_members,
-                        0, BaseException_str, "Attribute not found.");
+                        0, BaseException_str, 0, "Attribute not found.");
 
 /*
  *    SyntaxError extends Exception
@@ -2899,7 +2964,7 @@ static PyMemberDef SyntaxError_members[] = {
 
 ComplexExtendsException(PyExc_Exception, SyntaxError, SyntaxError,
                         0, 0, SyntaxError_members, 0,
-                        SyntaxError_str, "Invalid syntax.");
+                        SyntaxError_str, 0, "Invalid syntax.");
 
 
 /*
@@ -2959,7 +3024,7 @@ KeyError_str(PyObject *op)
 }
 
 ComplexExtendsException(PyExc_LookupError, KeyError, BaseException,
-                        0, 0, 0, 0, KeyError_str, "Mapping key not found.");
+                        0, 0, 0, 0, KeyError_str, 0, "Mapping key not found.");
 
 
 /*
