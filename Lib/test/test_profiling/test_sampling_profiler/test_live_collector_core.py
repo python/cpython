@@ -157,6 +157,70 @@ class TestLiveStatsCollectorFrameProcessing(unittest.TestCase):
         )
         self.assertNotIn(loc1, collector.per_thread_data[456].result)
 
+    def test_process_recursive_frames_counted_once(self):
+        """Test that recursive functions are counted once per sample."""
+        collector = LiveStatsCollector(1000)
+        # Simulate recursive function appearing 5 times in stack
+        frames = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+        collector.process_frames(frames)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 1 cumulative (present in 1 sample), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[location]["direct_calls"], 1)
+
+    def test_process_recursive_frames_multiple_samples(self):
+        """Test cumulative counting across multiple samples with recursion."""
+        collector = LiveStatsCollector(1000)
+
+        # Sample 1: depth 3
+        frames1 = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+        # Sample 2: depth 2
+        frames2 = [
+            MockFrameInfo("test.py", 10, "recursive_func"),
+            MockFrameInfo("test.py", 10, "recursive_func"),
+        ]
+
+        collector.process_frames(frames1)
+        collector.process_frames(frames2)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 2 (present in 2 samples), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 2)
+        self.assertEqual(collector.result[location]["direct_calls"], 2)
+
+    def test_process_mixed_recursive_nonrecursive(self):
+        """Test stack with both recursive and non-recursive functions."""
+        collector = LiveStatsCollector(1000)
+
+        # Stack: main -> foo (recursive x3) -> bar
+        frames = [
+            MockFrameInfo("test.py", 50, "bar"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 20, "foo"),
+            MockFrameInfo("test.py", 10, "main"),
+        ]
+        collector.process_frames(frames)
+
+        # foo: 1 cumulative despite 3 occurrences
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["direct_calls"], 0)
+
+        # bar and main: 1 cumulative each
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "main")]["cumulative_calls"], 1)
+
 
 class TestLiveStatsCollectorCollect(unittest.TestCase):
     """Tests for the collect method."""

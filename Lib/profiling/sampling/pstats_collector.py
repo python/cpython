@@ -16,16 +16,21 @@ class PstatsCollector(Collector):
             lambda: collections.defaultdict(int)
         )
         self.skip_idle = skip_idle
+        self._seen_locations = set()
 
     def _process_frames(self, frames):
         """Process a single thread's frame stack."""
         if not frames:
             return
 
+        self._seen_locations.clear()
+
         # Process each frame in the stack to track cumulative calls
         for frame in frames:
             location = (frame.filename, frame.lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
+            if location not in self._seen_locations:
+                self._seen_locations.add(location)
+                self.result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
         top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)

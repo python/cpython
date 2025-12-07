@@ -190,6 +190,8 @@ class LiveStatsCollector(Collector):
         # Trend tracking (initialized after colors are set up)
         self._trend_tracker = None
 
+        self._seen_locations = set()
+
     @property
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
@@ -285,13 +287,16 @@ class LiveStatsCollector(Collector):
 
         # Get per-thread data if tracking per-thread
         thread_data = self._get_or_create_thread_data(thread_id) if thread_id is not None else None
+        self._seen_locations.clear()
 
         # Process each frame in the stack to track cumulative calls
         for frame in frames:
             location = (frame.filename, frame.lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
-            if thread_data:
-                thread_data.result[location]["cumulative_calls"] += 1
+            if location not in self._seen_locations:
+                self._seen_locations.add(location)
+                self.result[location]["cumulative_calls"] += 1
+                if thread_data:
+                    thread_data.result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
         top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
