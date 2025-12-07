@@ -4802,7 +4802,9 @@ PyImport_SetLazyImportsFilter(PyObject *filter)
     return 0;
 }
 
-/* Gets the lazy imports filter. Returns a new reference. */
+/* Return a strong reference to the current lazy imports filter
+ * or NULL if none exists. This function always succeeds.
+ */
 PyObject *
 PyImport_GetLazyImportsFilter(void)
 {

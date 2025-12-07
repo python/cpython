@@ -2815,6 +2815,7 @@ sys_get_lazy_imports_filter_impl(PyObject *module)
 {
     PyObject *filter = PyImport_GetLazyImportsFilter();
     if (filter == NULL) {
+        assert(!PyErr_Occurred());
         Py_RETURN_NONE;
     }
     return filter;

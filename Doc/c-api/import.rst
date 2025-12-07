@@ -349,7 +349,8 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_GetLazyImportsFilter()
 
-   Gets the current lazy imports filter. Returns a :term:`strong reference`.
+   Return a :term:`strong reference` to the current lazy imports filter,
+   or ``NULL`` if none exists. This function always succeeds.
 
    .. versionadded:: next
 
