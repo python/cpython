@@ -26,6 +26,8 @@ Readline library in general.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
   The underlying Readline library API may be implemented by
@@ -242,6 +244,15 @@ Startup hooks
    with no arguments after the first prompt has been printed and just before
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
+
+
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: next
 
 
 .. _readline-completion:

@@ -4,6 +4,8 @@
 
 .. _Microsoft Store app: https://apps.microsoft.com/detail/9NQ7512CXL7T
 
+.. _legacy launcher: https://www.python.org/ftp/python/3.14.0/win32/launcher.msi
+
 .. _using-on-windows:
 
 *************************
@@ -457,6 +459,25 @@ customization.
      - Specify the default format used by the ``py list`` command.
        By default, ``table``.
 
+   * - ``install_dir``
+     - (none)
+     - Specify the root directory that runtimes will be installed into.
+       If you change this setting, previously installed runtimes will not be
+       usable unless you move them to the new location.
+
+   * - ``global_dir``
+     - (none)
+     - Specify the directory where global commands (such as ``python3.14.exe``)
+       are stored.
+       This directory should be added to your :envvar:`PATH` to make the
+       commands available from your terminal.
+
+   * - ``download_dir``
+     - (none)
+     - Specify the directory where downloaded files are stored.
+       This directory is a temporary cache, and can be cleaned up from time to
+       time.
+
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
 
@@ -524,12 +545,9 @@ configuration option.
    The behaviour of shebangs in the Python install manager is subtly different
    from the previous ``py.exe`` launcher, and the old configuration options no
    longer apply. If you are specifically reliant on the old behaviour or
-   configuration, we recommend keeping the legacy launcher. It may be
-   `downloaded independently <https://www.python.org/ftp/python/3.13.1/win32/launcher.msi>`_
-   and installed on its own. The legacy launcher's ``py`` command will override
-   PyManager's one, and you will need to use ``pymanager`` commands for
-   installing and uninstalling.
-
+   configuration, we recommend installing the `legacy launcher`_. The legacy
+   launcher's ``py`` command will override PyManager's one by default, and you
+   will need to use ``pymanager`` commands for installing and uninstalling.
 
 .. _Add-AppxPackage: https://learn.microsoft.com/powershell/module/appx/add-appxpackage
 
@@ -839,6 +857,17 @@ default).
        add to :envvar:`PATH`.
        These scripts are separated for each runtime, and so you may need to
        add multiple paths.
+
+   * - Typing ``script-name.py`` in the terminal opens in a new window.
+     - This is a known limitation of the operating system. Either specify ``py``
+       before the script name, create a batch file containing ``@py "%~dpn0.py" %*``
+       with the same name as the script, or install the `legacy launcher`_
+       and select it as the association for scripts.
+
+   * - Drag-dropping files onto a script doesn't work
+     - This is a known limitation of the operating system. It is supported with
+       the `legacy launcher`_, or with the Python install manager when installed
+       from the MSI.
 
 
 .. _windows-embeddable:

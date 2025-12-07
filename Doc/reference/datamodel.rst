@@ -449,7 +449,7 @@ Sets
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
-   :meth:`add <frozenset.add>`.
+   :meth:`~set.add`.
 
 
 Frozen sets
@@ -2630,8 +2630,8 @@ Notes on using *__slots__*:
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
-  class derived from a
+* :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
+  *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
   :class:`int`, :class:`bytes`, and :class:`tuple`.
 
@@ -2655,6 +2655,10 @@ Notes on using *__slots__*:
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
+
+.. versionchanged:: next
+   Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+
 
 .. _class-customization:
 

@@ -2562,6 +2562,37 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+typedef struct {
+    PyObject_HEAD
+} ManagedWeakrefNoGCObject;
+
+static void
+ManagedWeakrefNoGC_dealloc(PyObject *self)
+{
+    PyObject_ClearWeakRefs(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ManagedWeakrefNoGC_slots[] = {
+    {Py_tp_dealloc, ManagedWeakrefNoGC_dealloc},
+    {0, 0}
+};
+
+static PyType_Spec ManagedWeakrefNoGC_spec = {
+    .name = "_testcapi.ManagedWeakrefNoGCType",
+    .basicsize = sizeof(ManagedWeakrefNoGCObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_MANAGED_WEAKREF),
+    .slots = ManagedWeakrefNoGC_slots,
+};
+
+static PyObject *
+create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
+}
+
 static void
 test_interp_guards_common(void)
 {
@@ -2580,7 +2611,7 @@ test_interp_guards_common(void)
 }
 
 static PyObject *
-test_interpreter_locks(PyObject *self, PyObject *unused)
+test_interpreter_guards(PyObject *self, PyObject *unused)
 {
     // Test the main interpreter
     test_interp_guards_common();
@@ -2749,6 +2780,7 @@ test_interp_view_after_shutdown(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2843,7 +2875,9 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
-    {"test_interpreter_lock", test_interpreter_locks, METH_NOARGS},
+    {"create_managed_weakref_nogc_type",
+        create_managed_weakref_nogc_type, METH_NOARGS},
+    {"test_interpreter_lock", test_interpreter_guards, METH_NOARGS},
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {"test_interp_view_after_shutdown", test_interp_view_after_shutdown, METH_NOARGS},
@@ -3515,6 +3549,10 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return -1;
     }
@@ -3666,6 +3704,9 @@ _testcapi_exec(PyObject *m)
         return -1;
     }
     if (_PyTestCapi_Init_Function(m) < 0) {
+        return -1;
+    }
+    if (_PyTestCapi_Init_Module(m) < 0) {
         return -1;
     }
 

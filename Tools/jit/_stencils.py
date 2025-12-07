@@ -253,6 +253,23 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
+            # x86_64 Darwin trampolines for external symbols
+            elif (
+                hole.kind == "X86_64_RELOC_BRANCH"
+                and hole.value is HoleValue.ZERO
+                and hole.symbol not in self.symbols
+            ):
+                hole.func = "patch_x86_64_trampoline"
+                hole.need_state = True
+                assert hole.symbol is not None
+                if hole.symbol in known_symbols:
+                    ordinal = known_symbols[hole.symbol]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[hole.symbol] = ordinal
+                self._trampolines.add(ordinal)
+                hole.addend = ordinal
+                hole.symbol = None
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
