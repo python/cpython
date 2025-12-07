@@ -3352,6 +3352,9 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *current_frame = tstate->current_frame;
+    if (current_frame == tstate->base_frame) {
+        current_frame = NULL;
+    }
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {
