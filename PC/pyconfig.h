@@ -317,17 +317,13 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /*  All windows compilers that use this header support __declspec */
 #define HAVE_DECLSPEC_DLL
 
-/* For an MSVC DLL, we can nominate the .lib files used by extensions */
-#ifdef MS_COREDLL
+/* Automatic linking of extension python3x.lib files for MSVC DLLs.
+   This lets MSVC users build extensions without manually specifying .lib files.
+   Define Py_NO_LINK_LIB to disable this behavior. */
+#if !defined(Py_NO_LINK_LIB)
 #       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
                 /* not building the core - must be an ext */
-#               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
-                        /* So MSVC users need not specify the .lib
-                        file in their Makefile */
-                        /* Define Py_NO_LINK_LIB to build extension disabling pragma
-                        based auto-linking.
-                        This is relevant when using build-system generator (e.g CMake) where
-                        the linking is explicitly handled */
+#               if defined(MS_COREDLL) && defined(_MSC_VER)
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python316t_d.lib")
@@ -347,9 +343,9 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                               pragma comment(lib,"python316.lib")
 #                       endif /* Py_DEBUG */
 #                       endif /* Py_GIL_DISABLED */
-#               endif /* _MSC_VER && !Py_NO_LINK_LIB */
+#               endif /* MS_COREDLL && _MSC_VER */
 #       endif /* Py_BUILD_CORE */
-#endif /* MS_COREDLL */
+#endif /* Py_NO_LINK_LIB */
 
 #ifdef MS_WIN64
 /* maintain "win32" sys.platform for backward compatibility of Python code,
