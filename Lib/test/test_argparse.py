@@ -5694,6 +5694,11 @@ class TestHelpCustomHelpFormatter(TestCase):
                 a-very-long-command  command that does something
         '''))
 
+    def test_direct_formatter_instantiation(self):
+        formatter = argparse.HelpFormatter(prog="program")
+        formatter.add_usage(usage=None, actions=[], groups=[])
+        help_text = formatter.format_help()
+        self.assertEqual(help_text, "usage: program\n")
 
 # =====================================
 # Optional/Positional constructor tests

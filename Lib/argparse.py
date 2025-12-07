@@ -189,6 +189,8 @@ class HelpFormatter(object):
         self._whitespace_matcher = _re.compile(r'\s+', _re.ASCII)
         self._long_break_matcher = _re.compile(r'\n\n\n+')
 
+        self._set_color(False)
+
     def _set_color(self, color):
         from _colorize import can_colorize, decolor, get_theme
 
