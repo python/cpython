@@ -82,12 +82,12 @@ New features
 :pep:`799`: A dedicated profiling package
 -----------------------------------------
 
-A new :mod:`!profiling` module has been added to organize Python's built-in
+A new :mod:`profiling` module has been added to organize Python's built-in
 profiling tools under a single, coherent namespace. This module contains:
 
-* :mod:`!profiling.tracing`: deterministic function-call tracing (relocated from
+* :mod:`profiling.tracing`: deterministic function-call tracing (relocated from
   :mod:`cProfile`).
-* :mod:`!profiling.sampling`: a new statistical sampling profiler (named Tachyon).
+* :mod:`profiling.sampling`: a new statistical sampling profiler (named Tachyon).
 
 The :mod:`cProfile` module remains as an alias for backwards compatibility.
 The :mod:`profile` module is deprecated and will be removed in Python 3.17.
@@ -103,10 +103,10 @@ Tachyon: High frequency statistical sampling profiler
 -----------------------------------------------------
 
 A new statistical sampling profiler (Tachyon) has been added as
-:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
+:mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
-Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
+Unlike deterministic profilers (such as :mod:`profiling.tracing`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
 sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
@@ -167,6 +167,9 @@ Key features include:
 * **Async-aware profiling**: Profile async/await code with task-based stack reconstruction
   (``--async-aware``). See which coroutines are consuming time, with options to show only
   running tasks or all tasks including those waiting.
+
+See :mod:`profiling.sampling` for full documentation, including all available
+output formats, profiling modes, and configuration options.
 
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
