@@ -645,6 +645,28 @@ are set.
 
 .. versionadded:: 3.14
 
+To highlight command examples in your description or epilog text, you can use
+``[cmd]...[/cmd]`` markup::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   [cmd]python -m myapp --verbose[/cmd]
+   ...   [cmd]python -m myapp --config settings.json[/cmd]
+   ... ''')
+
+When colors are enabled, the text inside ``[cmd]...[/cmd]`` tags will be
+displayed in a distinct color to help examples stand out. When colors are
+disabled, the tags are stripped and the content is displayed as plain text.
+
+.. note::
+
+   The ``[cmd]`` markup only applies to description and epilog text processed
+   by :meth:`HelpFormatter._format_text`. It does not apply to individual
+   argument ``help`` strings.
+
+.. versionadded:: 3.15
+
 
 The add_argument() method
 -------------------------

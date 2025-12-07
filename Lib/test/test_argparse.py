@@ -7558,6 +7558,155 @@ class TestColorized(TestCase):
         self.assertNotIn('\x1b[', warn)
         self.assertIn('warning:', warn)
 
+    def test_cmd_markup_in_epilog(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Example: [cmd]python -m myapp --verbose[/cmd]',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Example: {prog_extra}python -m myapp --verbose{reset}',
+                      help_text)
+        self.assertNotIn('[cmd]', help_text)
+        self.assertNotIn('[/cmd]', help_text)
+
+    def test_cmd_markup_in_description(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            description='Run [cmd]python -m myapp[/cmd] to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Run {prog_extra}python -m myapp{reset} to start.',
+                      help_text)
+
+    def test_cmd_markup_multiline(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog='Example:\n[cmd]python -m myapp \\\n  --verbose[/cmd]',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}python -m myapp \\\n  --verbose{reset}',
+                      help_text)
+
+    def test_cmd_markup_multiple_tags(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Try [cmd]app run[/cmd] or [cmd]app test[/cmd].',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}app run{reset}', help_text)
+        self.assertIn(f'{prog_extra}app test{reset}', help_text)
+
+    def test_cmd_markup_not_applied_when_color_disabled(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=False,
+            epilog='Example: [cmd]python -m myapp[/cmd]',
+        )
+
+        help_text = parser.format_help()
+        self.assertNotIn('[cmd]', help_text)
+        self.assertNotIn('[/cmd]', help_text)
+        self.assertIn('python -m myapp', help_text)
+        self.assertNotIn('\x1b[', help_text)
+
+    def test_cmd_markup_unclosed_tag_unchanged(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Example: [cmd]python -m myapp without closing tag',
+        )
+
+        help_text = parser.format_help()
+        self.assertIn('[cmd]', help_text)
+
+    def test_cmd_markup_empty_tag(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='Before [cmd][/cmd] after',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'Before {prog_extra}{reset} after', help_text)
+
+    def test_cmd_markup_with_format_string(self):
+        parser = argparse.ArgumentParser(
+            prog='myapp',
+            color=True,
+            epilog='Run [cmd]%(prog)s --help[/cmd] for more info.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}myapp --help{reset}', help_text)
+
+    def test_cmd_markup_case_sensitive(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='[CMD]uppercase[/CMD] vs [cmd]lowercase[/cmd]',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn('[CMD]uppercase[/CMD]', help_text)
+        self.assertIn(f'{prog_extra}lowercase{reset}', help_text)
+
+    def test_cmd_markup_in_subparser(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        subparsers = parser.add_subparsers()
+        sub = subparsers.add_parser(
+            'sub',
+            description='Run [cmd]PROG sub --foo[/cmd] to start.',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = sub.format_help()
+        self.assertIn(f'{prog_extra}PROG sub --foo{reset}', help_text)
+
+    def test_cmd_markup_special_regex_chars(self):
+        parser = argparse.ArgumentParser(
+            prog='PROG',
+            color=True,
+            epilog='[cmd]grep "foo.*bar" | sort[/cmd]',
+        )
+
+        prog_extra = self.theme.prog_extra
+        reset = self.theme.reset
+
+        help_text = parser.format_help()
+        self.assertIn(f'{prog_extra}grep "foo.*bar" | sort{reset}', help_text)
+
 
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
