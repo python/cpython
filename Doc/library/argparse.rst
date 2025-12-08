@@ -1835,7 +1835,7 @@ Sub-commands
    .. versionadded:: 3.13
 
    One particularly effective way of handling subcommands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
+   of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
@@ -1871,12 +1871,12 @@ Sub-commands
      >>> args.func(args)
      ((XYZYX))
 
-   This way, you can let :meth:`parse_args` do the job of calling the
+   This way, you can let :meth:`~ArgumentParser.parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
    functions with actions like this is typically the easiest way to handle the
    different actions for each of your subparsers.  However, if it is necessary
    to check the name of the subparser that was invoked, the ``dest`` keyword
-   argument to the :meth:`add_subparsers` call will work::
+   argument to the :meth:`~ArgumentParser.add_subparsers` call will work::
 
      >>> parser = argparse.ArgumentParser()
      >>> subparsers = parser.add_subparsers(dest='subparser_name')
