@@ -172,8 +172,8 @@ await createEmscriptenModule({
   e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
-  option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
-  supports. It's currently known to crash in combination with threading.
+  option ``--enable-wasm-dynamic-linking`` enables dynamic extension
+  support. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [gh-90548](https://github.com/python/cpython/issues/90548).
