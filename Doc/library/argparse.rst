@@ -1679,18 +1679,14 @@ Sub-commands
       Creates and returns a new :class:`!ArgumentParser` object for the
       subcommand *name*.
 
-      :param name: The name of the sub-command.
-      :param help: A short description for this sub-command. If provided,
-                  it will be listed next to the command in the main
-                  parser's help message (e.g., ``PROG --help``).
-      :param aliases: A list or sequence of strings that can be used as
-                     alternative names for this sub-command (e.g., ``aliases=['r']``
-                     for a ``'run'`` command).
-      :param deprecated: If :const:`True`, marks the sub-command as deprecated,
-                     which typically issues a warning when used.
-      :param kwargs: All other keyword arguments are passed directly to the
-                     :class:`!ArgumentParser` constructor.
+      The *name* argument is the name of the sub-command.
+      The *help* argument provides a short description for this sub-command. If provided, it will be listed next to the command in the main parser's help message (e.g., ``PROG --help``).
 
+      The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this sub-command (e.g., ``aliases=['r']`` for a ``'run'`` command).
+
+      The *deprecated* argument, if :const:`True`, marks the sub-command as deprecated, which typically issues a warning when used.
+      All other keyword arguments are passed directly to the
+      :class:`!ArgumentParser` constructor.
       This returned :class:`!ArgumentParser` object can be modified as usual.
 
    Description of parameters:
