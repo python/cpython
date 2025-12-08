@@ -2695,7 +2695,7 @@ class TestUopsOptimization(unittest.TestCase):
                     pass
         """))
 
-    def test_missing_parent_executor_does_not_crash(self):
+    def test_executor_invalidation_does_not_crash(self):
         script_helper.assert_python_ok("-c", textwrap.dedent("""
         import random
 
