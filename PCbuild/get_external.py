@@ -62,7 +62,7 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
         return output_path
     except OSError:
         if verbose:
-            print(f'{arch_filename} not found, trying generic build...')
+            print(f'{arch_filename} not found, trying generic binary...')
 
     generic_filename = f'{tag}.tar.xz'
     generic_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{generic_filename}'
