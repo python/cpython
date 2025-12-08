@@ -1,0 +1,2 @@
+Fix crash in the free threading build when clearing frames that hold tagged
+integers.
