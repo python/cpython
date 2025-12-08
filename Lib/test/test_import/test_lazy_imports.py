@@ -190,6 +190,38 @@ class LazyImportTypeTests(unittest.TestCase):
         self.assertTrue(hasattr(types, 'LazyImportType'))
         self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
 
+    def test_lazy_import_type_invalid_fromlist_type(self):
+        """LazyImportType should reject invalid fromlist types."""
+        # fromlist must be None, a string, or a tuple - not an int
+        with self.assertRaises(TypeError) as cm:
+            types.LazyImportType({}, "module", 0)
+        self.assertIn("fromlist must be None, a string, or a tuple", str(cm.exception))
+
+        # Also test with other invalid types
+        with self.assertRaises(TypeError):
+            types.LazyImportType({}, "module", [])  # list not allowed
+
+        with self.assertRaises(TypeError):
+            types.LazyImportType({}, "module", {"x": 1})  # dict not allowed
+
+    def test_lazy_import_type_valid_fromlist(self):
+        """LazyImportType should accept valid fromlist types."""
+        # None is valid (implicit)
+        lazy1 = types.LazyImportType({}, "module")
+        self.assertIsNotNone(lazy1)
+
+        # Explicit None is valid
+        lazy2 = types.LazyImportType({}, "module", None)
+        self.assertIsNotNone(lazy2)
+
+        # String is valid
+        lazy3 = types.LazyImportType({}, "module", "attr")
+        self.assertIsNotNone(lazy3)
+
+        # Tuple is valid
+        lazy4 = types.LazyImportType({}, "module", ("attr1", "attr2"))
+        self.assertIsNotNone(lazy4)
+
 
 class SyntaxRestrictionTests(unittest.TestCase):
     """Tests for syntax restrictions on lazy imports."""
@@ -229,6 +261,35 @@ class SyntaxRestrictionTests(unittest.TestCase):
         """lazy import inside function should raise SyntaxError."""
         with self.assertRaises(SyntaxError):
             import test.test_import.data.lazy_imports.lazy_import_func
+
+    def test_lazy_import_exec_in_function(self):
+        """lazy import via exec() inside a function should raise SyntaxError."""
+        # exec() inside a function creates a non-module-level context
+        # where lazy imports are not allowed
+        def f():
+            exec("lazy import json")
+
+        with self.assertRaises(SyntaxError) as cm:
+            f()
+        self.assertIn("only allowed at module level", str(cm.exception))
+
+    def test_lazy_import_exec_at_module_level(self):
+        """lazy import via exec() at module level should work."""
+        # exec() at module level (globals == locals) should allow lazy imports
+        code = textwrap.dedent("""
+            import sys
+            exec("lazy import json")
+            # Should be lazy - not loaded yet
+            assert 'json' not in sys.modules
+            print("OK")
+        """)
+        result = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True
+        )
+        self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
+        self.assertIn("OK", result.stdout)
 
 
 class EagerImportInLazyModeTests(unittest.TestCase):

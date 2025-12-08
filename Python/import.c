@@ -4358,7 +4358,12 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
 
     PyInterpreterState *interp = tstate->interp;
     _PyInterpreterFrame *frame = _PyEval_GetFrame();
-    assert(frame != NULL && frame->f_globals == frame->f_locals); // should only be called in global scope
+    if (frame == NULL || frame->f_globals != frame->f_locals) {
+        Py_DECREF(abs_name);
+        PyErr_SetString(PyExc_SyntaxError,
+                        "'lazy import' is only allowed at module level");
+        return NULL;
+    }
 
     // Check if the filter disables the lazy import.
     // We must hold a reference to the filter while calling it to prevent

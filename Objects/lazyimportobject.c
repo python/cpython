@@ -18,10 +18,14 @@ _PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr)
         PyErr_BadArgument();
         return NULL;
     }
-    if (attr == Py_None) {
+    if (attr == Py_None || attr == NULL) {
         attr = NULL;
     }
-    assert(!attr || PyObject_IsTrue(attr));
+    else if (!PyUnicode_Check(attr) && !PyTuple_Check(attr)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "lazy_import: fromlist must be None, a string, or a tuple");
+        return NULL;
+    }
     m = PyObject_GC_New(PyLazyImportObject, &PyLazyImport_Type);
     if (m == NULL) {
         return NULL;
