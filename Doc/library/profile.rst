@@ -1,7 +1,7 @@
 .. _profile:
 
 ****************************************
-:mod:`!profile` --- Pure Python Profiler
+:mod:`!profile` --- Pure Python profiler
 ****************************************
 
 .. module:: profile
@@ -199,7 +199,7 @@ extend for custom profiling behavior.
 
 .. _deterministic-profiling:
 
-What Is Deterministic Profiling?
+What is deterministic profiling?
 ================================
 
 :dfn:`Deterministic profiling` is meant to reflect the fact that all *function

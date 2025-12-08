@@ -1,7 +1,7 @@
 .. _pstats-module:
 
 ********************************************
-:mod:`pstats` --- Statistics for Profilers
+:mod:`pstats` --- Statistics for profilers
 ********************************************
 
 .. module:: pstats
@@ -17,7 +17,7 @@ output from both :mod:`profiling.tracing` (deterministic profiler) and
 :mod:`profiling.sampling` (statistical profiler).
 
 
-Reading and Displaying Profile Data
+Reading and displaying profile data
 ===================================
 
 The :class:`Stats` class is the primary interface for working with profile
@@ -41,7 +41,7 @@ cumulative time::
    p.sort_stats(SortKey.CUMULATIVE).print_stats(10)
 
 
-Working with Statistics
+Working with statistics
 -----------------------
 
 The :class:`Stats` class supports method chaining, making it convenient to
@@ -68,7 +68,7 @@ Different sort keys highlight different aspects of performance::
    p.sort_stats(SortKey.NAME).print_stats()
 
 
-Filtering Output
+Filtering output
 ----------------
 
 The :meth:`~Stats.print_stats` method accepts restrictions that filter
@@ -93,7 +93,7 @@ Combine restrictions (they apply sequentially)::
    p.sort_stats(SortKey.FILENAME).print_stats('foo:', .5)
 
 
-Analyzing Call Relationships
+Analyzing call relationships
 ----------------------------
 
 The :meth:`~Stats.print_callers` method shows which functions called each
@@ -109,7 +109,7 @@ listing which functions each displayed function called::
 Both methods accept the same restriction arguments as :meth:`~Stats.print_stats`.
 
 
-Combining Multiple Profiles
+Combining multiple profiles
 ---------------------------
 
 Statistics from multiple profiling runs can be combined into a single
@@ -336,7 +336,7 @@ The :class:`Stats` Class
       Sort by internal time (time in function excluding subcalls).
 
 
-Command Line Interface
+Command-line interface
 ======================
 
 The :mod:`pstats` module can be invoked as a script to interactively browse

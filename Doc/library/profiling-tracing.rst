@@ -1,7 +1,7 @@
 .. _profiling-tracing:
 
 ****************************************************
-:mod:`profiling.tracing` --- Deterministic Profiler
+:mod:`profiling.tracing` --- Deterministic profiler
 ****************************************************
 
 .. module:: profiling.tracing
@@ -38,7 +38,7 @@ testing scenarios.
       cProfile.run('my_function()')
 
 
-What Is Deterministic Profiling?
+What is deterministic profiling?
 ================================
 
 :dfn:`Deterministic profiling` captures every function call, function return,
@@ -74,7 +74,7 @@ allows direct comparison of recursive and iterative implementations.
 
 .. _profiling-tracing-cli:
 
-Command Line Interface
+Command-line interface
 ======================
 
 .. program:: profiling.tracing
@@ -111,14 +111,14 @@ results to standard output (or saves them to a file).
       The ``-m`` option for :mod:`profile`.
 
 
-Programmatic Usage Examples
+Programmatic usage examples
 ===========================
 
 For more control over profiling, use the module's functions and classes
 directly.
 
 
-Basic Profiling
+Basic profiling
 ---------------
 
 The simplest approach uses the :func:`run` function::
@@ -162,7 +162,7 @@ The :class:`Profile` class also works as a context manager::
    pr.print_stats()
 
 
-Module Reference
+Module reference
 ================
 
 .. currentmodule:: profiling.tracing
@@ -264,7 +264,7 @@ Module Reference
    profiling, no results will be available.
 
 
-Using a Custom Timer
+Using a custom timer
 ====================
 
 The :class:`Profile` class accepts a custom timing function, allowing you to
