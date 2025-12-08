@@ -261,7 +261,8 @@ profiling::
 
 This shows the actual achieved sampling rate, which may be lower than requested
 if the profiler cannot keep up. The statistics help verify that profiling is
-working correctly and that sufficient samples are being collected.
+working correctly and that sufficient samples are being collected. See
+:ref:`sampling-efficiency` for details on interpreting these metrics.
 
 
 .. _sampling-efficiency:
