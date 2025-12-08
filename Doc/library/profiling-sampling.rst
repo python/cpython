@@ -545,40 +545,40 @@ and 24 lines tall.
 
 Within live mode, keyboard commands control the display:
 
-``q``
+:kbd:`q`
    Quit the profiler and return to the shell.
 
-``s`` / ``S``
+:kbd:`s` / :kbd:`S`
    Cycle through sort orders forward/backward (sample count, percentage,
    total time, cumulative percentage, cumulative time).
 
-``p``
+:kbd:`p`
    Pause or resume display updates. Sampling continues while paused.
 
-``r``
+:kbd:`r`
    Reset all statistics and start fresh.
 
-``/``
+:kbd:`/`
    Enter filter mode to search for functions by name. Type a pattern and
    press Enter to filter, or Escape to cancel.
 
-``c``
+:kbd:`c`
    Clear the current filter.
 
-``t``
+:kbd:`t`
    Toggle between viewing all threads combined or per-thread statistics.
 
-``←`` ``→`` or ``↑`` ``↓``
+:kbd:`←` :kbd:`→` or :kbd:`↑` :kbd:`↓`
    In per-thread view, navigate between threads.
 
-``+`` / ``-``
+:kbd:`+` / :kbd:`-`
    Increase or decrease the display refresh rate (range: 0.05s to 1.0s).
 
-``x``
+:kbd:`x`
    Toggle trend indicators that show whether functions are becoming hotter
    or cooler over time.
 
-``h`` or ``?``
+:kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
 
 Live mode is incompatible with output format options (``--collapsed``,
