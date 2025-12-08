@@ -215,6 +215,12 @@ typedef struct PyConfig {
     wchar_t *run_module;
     wchar_t *run_filename;
 
+    /* --- Initialization callback ------------------- */
+
+    // See PyInitConfig_SetInitCallback() function.
+    PyStatus (*init_callback)(void *arg);
+    void *init_callback_arg;
+
     /* --- Set by Py_Main() -------------------------- */
     wchar_t *sys_path_0;
 
@@ -322,6 +328,10 @@ PyAPI_FUNC(int) PyInitConfig_SetStrList(PyInitConfig *config,
 PyAPI_FUNC(int) PyInitConfig_AddModule(PyInitConfig *config,
     const char *name,
     PyObject* (*initfunc)(void));
+
+PyAPI_FUNC(int) PyInitConfig_SetInitCallback(PyInitConfig *config,
+    PyStatus (*callback)(void *arg),
+    void *arg);
 
 PyAPI_FUNC(int) Py_InitializeFromInitConfig(PyInitConfig *config);
 
