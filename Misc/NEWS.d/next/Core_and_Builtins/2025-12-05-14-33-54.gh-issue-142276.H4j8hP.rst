@@ -1,0 +1,1 @@
+Fix missing type watcher when promoting attribute loads to constants in the JIT. Patch by Ken Jin. Reproducer by Yuancheng Jiang.
