@@ -16,9 +16,8 @@ Objects, values and types
    single: data
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
-is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer", code is also
-represented by objects.)
+is represented by objects or by relations between objects. Even code is
+represented by objects.
 
 .. index::
    pair: built-in function; id
@@ -28,9 +27,6 @@ represented by objects.)
    single: type of an object
    single: mutable object
    single: immutable object
-
-.. XXX it *is* now possible in some cases to change an object's
-   type, under certain controlled conditions
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
@@ -1185,6 +1181,7 @@ Special attributes
    single: __module__ (class attribute)
    single: __dict__ (class attribute)
    single: __bases__ (class attribute)
+   single: __base__ (class attribute)
    single: __doc__ (class attribute)
    single: __annotations__ (class attribute)
    single: __annotate__ (class attribute)
@@ -1218,6 +1215,13 @@ Special attributes
      - A :class:`tuple` containing the class's bases.
        In most cases, for a class defined as ``class X(A, B, C)``,
        ``X.__bases__`` will be exactly equal to ``(A, B, C)``.
+
+   * - .. attribute:: type.__base__
+     - .. impl-detail::
+
+          The single base class in the inheritance chain that is responsible
+          for the memory layout of instances. This attribute corresponds to
+          :c:member:`~PyTypeObject.tp_base` at the C level.
 
    * - .. attribute:: type.__doc__
      - The class's documentation string, or ``None`` if undefined.
@@ -1272,7 +1276,7 @@ Special attributes
    * - .. attribute:: type.__firstlineno__
      - The line number of the first line of the class definition,
        including decorators.
-       Setting the :attr:`__module__` attribute removes the
+       Setting the :attr:`~type.__module__` attribute removes the
        :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
@@ -1638,6 +1642,7 @@ and are also passed to registered trace functions.
    single: f_locals (frame attribute)
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
+   single: f_generator (frame attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1674,6 +1679,12 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+
+   * - .. attribute:: frame.f_generator
+     - The :term:`generator` or :term:`coroutine` object that owns this frame,
+       or ``None`` if the frame is a normal function.
+
+       .. versionadded:: 3.14
 
 .. index::
    single: f_trace (frame attribute)
@@ -1896,9 +1907,9 @@ falling back to :meth:`~object.__getitem__`). [#]_
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
-of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
-Object Model.)
+of individual elements, but extracting a slice may not make sense.
+(One example of this is the :ref:`NodeList <dom-nodelist-objects>` interface
+in the W3C's Document Object Model.)
 
 
 .. _customization:
@@ -2351,6 +2362,9 @@ Customizing module attribute access
    single: __dir__ (module attribute)
    single: __class__ (module attribute)
 
+.. method:: module.__getattr__
+            module.__dir__
+
 Special names ``__getattr__`` and ``__dir__`` can be also used to customize
 access to module attributes. The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
@@ -2363,6 +2377,8 @@ it is called with the attribute name and the result is returned.
 The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
+
+.. attribute:: module.__class__
 
 For a more fine grained customization of the module behavior (setting
 attributes, properties, etc.), one can set the ``__class__`` attribute of
@@ -2546,7 +2562,7 @@ instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
 Python methods (including those decorated with
-:func:`@staticmethod <staticmethod>` and :func:`@classmethod <classmethod>`) are
+:deco:`staticmethod` and :deco:`classmethod`) are
 implemented as non-data descriptors.  Accordingly, instances can redefine and
 override methods.  This allows individual instances to acquire behaviors that
 differ from other instances of the same class.
@@ -2614,8 +2630,8 @@ Notes on using *__slots__*:
   descriptor directly from the base class). This renders the meaning of the
   program undefined.  In the future, a check may be added to prevent this.
 
-* :exc:`TypeError` will be raised if nonempty *__slots__* are defined for a
-  class derived from a
+* :exc:`TypeError` will be raised if *__slots__* other than *__dict__* and
+  *__weakref__* are defined for a class derived from a
   :c:member:`"variable-length" built-in type <PyTypeObject.tp_itemsize>` such as
   :class:`int`, :class:`bytes`, and :class:`tuple`.
 
@@ -2639,6 +2655,10 @@ Notes on using *__slots__*:
   created for each
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
+
+.. versionchanged:: next
+   Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
+
 
 .. _class-customization:
 
@@ -2685,7 +2705,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, :meth:`type.__new__` scans the class variables
+When a class is created, :meth:`!type.__new__` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)
@@ -2981,7 +3001,7 @@ class method ``__class_getitem__()``.
 
    When defined on a class, ``__class_getitem__()`` is automatically a class
    method. As such, there is no need for it to be decorated with
-   :func:`@classmethod<classmethod>` when it is defined.
+   :deco:`classmethod` when it is defined.
 
 
 The purpose of *__class_getitem__*
@@ -3130,16 +3150,20 @@ objects.  The :mod:`collections.abc` module provides a
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
 :meth:`~object.__delitem__`, and :meth:`!keys`.
-Mutable sequences should provide methods :meth:`!append`, :meth:`!count`,
-:meth:`!index`, :meth:`!extend`, :meth:`!insert`, :meth:`!pop`, :meth:`!remove`,
-:meth:`!reverse` and :meth:`!sort`, like Python standard :class:`list`
-objects. Finally,
-sequence types should implement addition (meaning concatenation) and
+
+Mutable sequences should provide methods
+:meth:`~sequence.append`, :meth:`~sequence.clear`, :meth:`~sequence.count`,
+:meth:`~sequence.extend`, :meth:`~sequence.index`, :meth:`~sequence.insert`,
+:meth:`~sequence.pop`, :meth:`~sequence.remove`, and :meth:`~sequence.reverse`,
+like Python standard :class:`list` objects.
+Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
-operators.  It is recommended that both mappings and sequences implement the
+operators.
+
+It is recommended that both mappings and sequences implement the
 :meth:`~object.__contains__` method to allow efficient use of the ``in``
 operator; for
 mappings, ``in`` should search the mapping's keys; for sequences, it should

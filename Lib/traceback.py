@@ -14,6 +14,11 @@ import _colorize
 
 from contextlib import suppress
 
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
+
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
@@ -206,9 +211,9 @@ def _safe_string(value, what, func=str):
 
 # --
 
-def print_exc(limit=None, file=None, chain=True):
+def print_exc(limit=None, file=None, chain=True, **kwargs):
     """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain, **kwargs)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
@@ -1107,11 +1112,18 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
-                sys.flags.no_site and \
-                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
-            self._str += (". Site initialization is disabled, did you forget to "
-                + "add the site-packages directory to sys.path?")
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError):
+            module_name = getattr(exc_value, "name", None)
+            if module_name in sys.stdlib_module_names:
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
+            elif sys.flags.no_site:
+                self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path "
+                    + "or to enable your virtual environment?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1327,6 +1339,15 @@ class TracebackException:
         # Do not continue if the source is too large
         if len(error_code) > 1024:
             return
+
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
 
         error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
@@ -1601,6 +1622,34 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    """
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr(type(obj), attr_name, None)
+            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            # Check if the nested attribute exists and is not a descriptor
+            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+
+            if hasattr(attr_obj, wrong_name):
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
@@ -1666,7 +1715,9 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     except ImportError:
         pass
     else:
-        return _suggestions._generate_suggestions(d, wrong_name)
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1691,6 +1742,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 

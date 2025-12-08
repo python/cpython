@@ -71,16 +71,15 @@ Lib/test/data/*
 /Makefile
 /Makefile.pre
 /iOSTestbed.*
-iOS/Frameworks/
-iOS/Resources/Info.plist
-iOS/testbed/build
-iOS/testbed/Python.xcframework/ios-*/bin
-iOS/testbed/Python.xcframework/ios-*/include
-iOS/testbed/Python.xcframework/ios-*/lib
-iOS/testbed/Python.xcframework/ios-*/Python.framework
-iOS/testbed/iOSTestbed.xcodeproj/project.xcworkspace
-iOS/testbed/iOSTestbed.xcodeproj/xcuserdata
-iOS/testbed/iOSTestbed.xcodeproj/xcshareddata
+Apple/iOS/Frameworks/
+Apple/iOS/Resources/Info.plist
+Apple/testbed/build
+Apple/testbed/Python.xcframework/*/bin
+Apple/testbed/Python.xcframework/*/include
+Apple/testbed/Python.xcframework/*/lib
+Apple/testbed/Python.xcframework/*/Python.framework
+Apple/testbed/*Testbed.xcodeproj/project.xcworkspace
+Apple/testbed/*Testbed.xcodeproj/xcuserdata
 Mac/Makefile
 Mac/PythonLauncher/Info.plist
 Mac/PythonLauncher/Makefile
@@ -136,7 +135,6 @@ Tools/unicode/data/
 /config.log
 /config.status
 /config.status.lineno
-# hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
 /jit_stencils*.h

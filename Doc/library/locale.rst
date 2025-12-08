@@ -42,7 +42,7 @@ The :mod:`locale` module defines the following exception and functions:
    If *locale* is a pair, it is converted to a locale name using
    the locale aliasing engine.
    The language code has the same format as a :ref:`locale name <locale_name>`,
-   but without encoding and ``@``-modifier.
+   but without encoding.
    The language code and encoding can be ``None``.
 
    If *locale* is omitted or ``None``, the current setting for *category* is
@@ -57,6 +57,9 @@ The :mod:`locale` module defines the following exception and functions:
    This sets the locale for all categories to the user's default setting (typically
    specified in the :envvar:`LANG` environment variable).  If the locale is not
    changed thereafter, using multithreading should not cause problems.
+
+   .. versionchanged:: 3.15
+      Support language codes with ``@``-modifiers.
 
 
 .. function:: localeconv()
@@ -366,10 +369,14 @@ The :mod:`locale` module defines the following exception and functions:
    values except :const:`LC_ALL`.  It defaults to :const:`LC_CTYPE`.
 
    The language code has the same format as a :ref:`locale name <locale_name>`,
-   but without encoding and ``@``-modifier.
+   but without encoding.
    The language code and encoding may be ``None`` if their values cannot be
    determined.
    The "C" locale is represented as ``(None, None)``.
+
+   .. versionchanged:: 3.15
+      ``@``-modifier are no longer silently removed, but included in
+      the language code.
 
 
 .. function:: getpreferredencoding(do_setlocale=True)
@@ -517,8 +524,8 @@ The :mod:`locale` module defines the following exception and functions:
    SSH connections.
 
    Python doesn't internally use locale-dependent character transformation functions
-   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
-   equivalents like :c:macro:`!Py_TOLOWER`.
+   from ``ctype.h``. Instead, ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE

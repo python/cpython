@@ -12,6 +12,10 @@ try:
     import _testlimitedcapi
 except ImportError:
     _testlimitedcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 import struct
 import collections
 import itertools
@@ -1037,6 +1041,23 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
 @cpython_only
 class TestRecursion(unittest.TestCase):
 
+    def test_margin_is_sufficient(self):
+
+        def get_sp():
+            return _testinternalcapi.get_stack_pointer()
+
+        this_sp = _testinternalcapi.get_stack_pointer()
+        lower_sp = _testcapi.pyobject_vectorcall(get_sp, (), ())
+        if _testcapi._Py_STACK_GROWS_DOWN:
+            self.assertLess(lower_sp, this_sp)
+            safe_margin = this_sp - lower_sp
+        else:
+            self.assertGreater(lower_sp, this_sp)
+            safe_margin = lower_sp - this_sp
+        # Add an (arbitrary) extra 25% for safety
+        safe_margin = safe_margin * 5 / 4
+        self.assertLess(safe_margin, _testinternalcapi.get_stack_margin())
+
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
     @skip_if_sanitizer("requires deep stack", thread=True)
@@ -1073,6 +1094,14 @@ class TestRecursion(unittest.TestCase):
             c_py_recurse(50)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
+
+    def test_recursion_with_kwargs(self):
+        # GH-137883: The interpreter forgot to check the recursion limit when
+        # calling with keywords.
+        def recurse_kw(a=0):
+            recurse_kw(a=0)
+        with self.assertRaises(RecursionError):
+            recurse_kw()
 
 
 class TestFunctionWithManyArgs(unittest.TestCase):
