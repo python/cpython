@@ -302,7 +302,6 @@ body.resizing-sidebar {
 }
 
 .section-content {
-  overflow: hidden;
   transition: max-height var(--transition-normal), opacity var(--transition-normal);
   max-height: 1000px;
   opacity: 1;
