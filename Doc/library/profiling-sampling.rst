@@ -617,7 +617,7 @@ profiling uses a different stack reconstruction mechanism that tracks task
 relationships rather than raw Python frames.
 
 
-Command Line Reference
+Command-line interface
 ======================
 
 .. program:: profiling.sampling
