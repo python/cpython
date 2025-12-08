@@ -16,6 +16,7 @@
 #include "pycore_intrinsics.h"
 #include "pycore_list.h"
 #include "pycore_long.h"
+#include "pycore_mmap.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
@@ -75,6 +76,9 @@ jit_alloc(size_t size)
     int prot = PROT_READ | PROT_WRITE;
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
+    if (!failed) {
+        _PyAnnotateMemoryMap(memory, size, "cpython:jit");
+    }
 #endif
     if (failed) {
         jit_error("unable to allocate memory");

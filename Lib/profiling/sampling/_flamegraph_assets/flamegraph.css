@@ -789,7 +789,7 @@ body.resizing-sidebar {
 .tooltip-location {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   background: var(--bg-tertiary);
   padding: 4px 8px;
   border-radius: 4px;
