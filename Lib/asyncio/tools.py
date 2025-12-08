@@ -244,7 +244,7 @@ def _get_awaited_by_tasks(pid: int) -> list:
             e = e.__context__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
-    except PermissionError as e:
+    except PermissionError:
         exit_with_permission_help_text()
 
 

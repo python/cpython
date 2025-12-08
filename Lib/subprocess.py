@@ -1235,7 +1235,7 @@ class Popen:
             finally:
                 self._communication_started = True
             try:
-                sts = self.wait(timeout=self._remaining_time(endtime))
+                self.wait(timeout=self._remaining_time(endtime))
             except TimeoutExpired as exc:
                 exc.timeout = timeout
                 raise

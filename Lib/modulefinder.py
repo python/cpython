@@ -400,7 +400,6 @@ class ModuleFinder:
                 yield "relative_import", (level, fromlist, name)
 
     def scan_code(self, co, m):
-        code = co.co_code
         scanner = self.scan_opcodes
         for what, args in scanner(co):
             if what == "store":

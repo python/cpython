@@ -1169,7 +1169,6 @@ class _Pickler:
 
     def save_global(self, obj, name=None):
         write = self.write
-        memo = self.memo
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
@@ -1756,7 +1755,7 @@ class _Unpickler:
         i = self.read(1)[0]
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
@@ -1765,7 +1764,7 @@ class _Unpickler:
         i, = unpack('<I', self.read(4))
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget
