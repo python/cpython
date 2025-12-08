@@ -299,7 +299,7 @@ Limitations
 
 Deterministic profiling has inherent limitations related to timing accuracy.
 
-The underlying timer typically has a resolution of about 1 millisecond.
+The underlying timer typically has a resolution of about one millisecond.
 Measurements cannot be more accurate than this resolution. With enough
 measurements, timing errors tend to average out, but individual measurements
 may be imprecise.

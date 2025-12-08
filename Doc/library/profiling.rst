@@ -38,7 +38,7 @@ profiling methodology:
 :mod:`profiling.sampling`
    A statistical profiler that periodically samples the call stack. Run scripts
    directly or attach to running processes by PID. Provides multiple output
-   formats (flamegraphs, heatmaps, Firefox Profiler), GIL analysis, GC tracking,
+   formats (flame graphs, heatmaps, Firefox Profiler), GIL analysis, GC tracking,
    and multiple profiling modes (wall-clock, CPU, GIL) with virtually no overhead.
 
 :mod:`profiling.tracing`
@@ -176,7 +176,7 @@ Deterministic profiling
 
 To profile a script from the command line::
 
-   python -m profiling.tracing myscript.py
+   python -m profiling.tracing script.py
 
 To profile a piece of code programmatically:
 
@@ -221,7 +221,7 @@ Key profiling concepts:
    Calls that are not induced by recursion. When a function recurses, the total
    call count includes recursive invocations, but primitive calls counts only
    the initial entry. Displayed as ``total/primitive`` (for example, ``3/1``
-   means 3 total calls, 1 primitive).
+   means three total calls, one primitive).
 
 **Caller/Callee relationships**
    Which functions called a given function (callers) and which functions it
