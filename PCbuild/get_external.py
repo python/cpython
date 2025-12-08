@@ -46,7 +46,9 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
     arch = platform.machine()
-    reporthook = print if verbose else None
+    reporthook = None
+    if verbose:
+        reporthook = print
     tarball_dir.mkdir(parents=True, exist_ok=True)
 
     arch_filename = f'{tag}-{arch}.tar.xz'
