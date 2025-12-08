@@ -226,7 +226,7 @@ class StencilGroup:
         for name, hole_plus in self.symbols.items():
             if isinstance(name, str) and "_JIT_RELOCATION_" in name:
                 _, offset = hole_plus
-                reloc, target = name.split("_JIT_RELOCATION_")
+                reloc, target, _ = name.split("_JIT_RELOCATION_")
                 value, symbol = symbol_to_value(target)
                 hole = Hole(
                     int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
