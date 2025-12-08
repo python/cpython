@@ -323,6 +323,7 @@ unwind_stack_for_thread(
 #ifdef Py_GIL_DISABLED
     int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
     has_gil = active;
+    (void)gil_requested;  // unused
 #else
     // Read holds_gil directly from thread state
     has_gil = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.holds_gil);
