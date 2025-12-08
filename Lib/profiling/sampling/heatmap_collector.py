@@ -549,7 +549,7 @@ class HeatmapCollector(StackTraceCollector):
         return True
 
     def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
-                             count_cumulative=True):
+                            count_cumulative=True):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
         if count_cumulative:
