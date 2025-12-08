@@ -170,6 +170,7 @@ imports cannot be lazy either (``lazy from __future__ import ...`` raises
 .. seealso:: :pep:`810` for the full specification and rationale.
 
 (Contributed by Pablo Galindo Salgado and Dino Viehland in :gh:`142349`.)
+
 .. _whatsnew315-profiling-package:
 
 :pep:`799`: A dedicated profiling package
