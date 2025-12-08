@@ -56,12 +56,16 @@ entries in the cache, and empty the cache (d.sync() also synchronizes
 the persistent dictionary on disk, if feasible).
 """
 
-from pickle import DEFAULT_PROTOCOL, Pickler, Unpickler
-from io import BytesIO
+from pickle import DEFAULT_PROTOCOL, dumps, loads
 
 import collections.abc
 
-__all__ = ["Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
+__all__ = ["ShelveError", "Shelf", "BsdDbShelf", "DbfilenameShelf", "open"]
+
+
+class ShelveError(Exception):
+    pass
+
 
 class _ClosedDict(collections.abc.MutableMapping):
     'Marker for a closed dict.  Access attempts raise a ValueError.'
@@ -82,7 +86,7 @@ class Shelf(collections.abc.MutableMapping):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8"):
+                 keyencoding="utf-8", *, serializer=None, deserializer=None):
         self.dict = dict
         if protocol is None:
             protocol = DEFAULT_PROTOCOL
@@ -90,6 +94,16 @@ class Shelf(collections.abc.MutableMapping):
         self.writeback = writeback
         self.cache = {}
         self.keyencoding = keyencoding
+
+        if serializer is None and deserializer is None:
+            self.serializer = dumps
+            self.deserializer = loads
+        elif (serializer is None) ^ (deserializer is None):
+            raise ShelveError("serializer and deserializer must be "
+                              "defined together")
+        else:
+            self.serializer = serializer
+            self.deserializer = deserializer
 
     def __iter__(self):
         for k in self.dict.keys():
@@ -110,8 +124,8 @@ class Shelf(collections.abc.MutableMapping):
         try:
             value = self.cache[key]
         except KeyError:
-            f = BytesIO(self.dict[key.encode(self.keyencoding)])
-            value = Unpickler(f).load()
+            f = self.dict[key.encode(self.keyencoding)]
+            value = self.deserializer(f)
             if self.writeback:
                 self.cache[key] = value
         return value
@@ -119,10 +133,8 @@ class Shelf(collections.abc.MutableMapping):
     def __setitem__(self, key, value):
         if self.writeback:
             self.cache[key] = value
-        f = BytesIO()
-        p = Pickler(f, self._protocol)
-        p.dump(value)
-        self.dict[key.encode(self.keyencoding)] = f.getvalue()
+        serialized_value = self.serializer(value, self._protocol)
+        self.dict[key.encode(self.keyencoding)] = serialized_value
 
     def __delitem__(self, key):
         del self.dict[key.encode(self.keyencoding)]
@@ -171,6 +183,11 @@ class Shelf(collections.abc.MutableMapping):
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
+    def reorganize(self):
+        self.sync()
+        if hasattr(self.dict, 'reorganize'):
+            self.dict.reorganize()
+
 
 class BsdDbShelf(Shelf):
     """Shelf implementation using the "BSD" db interface.
@@ -186,33 +203,29 @@ class BsdDbShelf(Shelf):
     """
 
     def __init__(self, dict, protocol=None, writeback=False,
-                 keyencoding="utf-8"):
-        Shelf.__init__(self, dict, protocol, writeback, keyencoding)
+                 keyencoding="utf-8", *, serializer=None, deserializer=None):
+        Shelf.__init__(self, dict, protocol, writeback, keyencoding,
+                       serializer=serializer, deserializer=deserializer)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def next(self):
         (key, value) = next(self.dict)
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def previous(self):
         (key, value) = self.dict.previous()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def first(self):
         (key, value) = self.dict.first()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
     def last(self):
         (key, value) = self.dict.last()
-        f = BytesIO(value)
-        return (key.decode(self.keyencoding), Unpickler(f).load())
+        return (key.decode(self.keyencoding), self.deserializer(value))
 
 
 class DbfilenameShelf(Shelf):
@@ -222,12 +235,21 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
+                 serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback)
+        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
+                       serializer=serializer, deserializer=deserializer)
 
+    def clear(self):
+        """Remove all items from the shelf."""
+        # Call through to the clear method on dbm-backed shelves.
+        # see https://github.com/python/cpython/issues/107089
+        self.cache.clear()
+        self.dict.clear()
 
-def open(filename, flag='c', protocol=None, writeback=False):
+def open(filename, flag='c', protocol=None, writeback=False, *,
+         serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
     The filename parameter is the base filename for the underlying
@@ -240,4 +262,5 @@ def open(filename, flag='c', protocol=None, writeback=False):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback)
+    return DbfilenameShelf(filename, flag, protocol, writeback,
+                           serializer=serializer, deserializer=deserializer)

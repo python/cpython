@@ -1,2 +1,0 @@
-Notify users running test_decimal regression tests on macOS of potential
-harmless "malloc can't allocate region" messages spewed by test_decimal.

@@ -1,7 +1,9 @@
+import sys
+
 from cpython.__main__ import main, configure_logger
 
 
-def parse_args():
+def parse_args(argv=sys.argv[1:]):
     import argparse
     from c_common.scriptutil import (
         add_verbosity_cli,
@@ -13,7 +15,8 @@ def parse_args():
     processors = [
         add_verbosity_cli(parser),
         add_traceback_cli(parser),
-        _cli_check(parser, checks='<globals>'),
+        #_cli_check(parser, checks='<globals>'),
+        _cli_check(parser),
     ]
 
     args = parser.parse_args()

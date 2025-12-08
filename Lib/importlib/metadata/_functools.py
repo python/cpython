@@ -1,5 +1,5 @@
-import types
 import functools
+import types
 
 
 # from jaraco.functools 3.3
@@ -81,5 +81,24 @@ def method_cache(method, cache_wrapper=None):
 
     # Support cache clear even before cache has been created.
     wrapper.cache_clear = lambda: None
+
+    return wrapper
+
+
+# From jaraco.functools 3.3
+def pass_none(func):
+    """
+    Wrap func so it's not called if its first param is None
+
+    >>> print_text = pass_none(print)
+    >>> print_text('text')
+    text
+    >>> print_text(None)
+    """
+
+    @functools.wraps(func)
+    def wrapper(param, *args, **kwargs):
+        if param is not None:
+            return func(param, *args, **kwargs)
 
     return wrapper

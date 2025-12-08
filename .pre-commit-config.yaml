@@ -1,0 +1,128 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.2
+    hooks:
+      - id: ruff-check
+        name: Run Ruff (lint) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple/
+      - id: ruff-check
+        name: Run Ruff (lint) on Doc/
+        args: [--exit-non-zero-on-fix]
+        files: ^Doc/
+      - id: ruff-check
+        name: Run Ruff (lint) on Lib/test/
+        args: [--exit-non-zero-on-fix]
+        files: ^Lib/test/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/build/
+        args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/i18n/
+        args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
+        files: ^Tools/i18n/
+      - id: ruff-check
+        name: Run Ruff (lint) on Argument Clinic
+        args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
+        files: ^Tools/clinic/|Lib/test/test_clinic.py
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/peg_generator/
+        args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
+        files: ^Tools/peg_generator/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/wasm/
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
+      - id: ruff-format
+        name: Run Ruff (format) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple
+      - id: ruff-format
+        name: Run Ruff (format) on Doc/
+        args: [--check]
+        files: ^Doc/
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/build/check_warnings.py
+        args: [--check, --config=Tools/build/.ruff.toml]
+        files: ^Tools/build/check_warnings.py
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/
+        args: [--check, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 25.9.0
+    hooks:
+      - id: black
+        name: Run Black on Tools/jit/
+        files: ^Tools/jit/
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.5
+    hooks:
+      - id: remove-tabs
+        types: [python]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-toml
+        exclude: ^Lib/test/test_tomllib/
+      - id: check-yaml
+      - id: end-of-file-fixer
+        types_or: [python, yaml]
+        exclude: Lib/test/tokenizedata/coding20731.py
+      - id: end-of-file-fixer
+        files: '^\.github/CODEOWNERS$'
+      - id: trailing-whitespace
+        types_or: [c, inc, python, rst, yaml]
+      - id: trailing-whitespace
+        files: '^\.github/CODEOWNERS|\.(gram)$'
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.34.0
+    hooks:
+      - id: check-dependabot
+      - id: check-github-workflows
+      - id: check-readthedocs
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/woodruffw/zizmor-pre-commit
+    rev: v1.14.1
+    hooks:
+      - id: zizmor
+
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v1.0.0
+    hooks:
+      - id: sphinx-lint
+        args: [--enable=default-role]
+        files: ^Doc/|^Misc/NEWS.d/
+
+  - repo: local
+    hooks:
+      - id: blurb-no-space-c-api
+        name: Check C API news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/C_API/
+        files: Misc/NEWS.d/next/C API/20.*.rst
+
+  - repo: local
+    hooks:
+      - id: blurb-no-space-core-and-builtins
+        name: Check Core and Builtins news entries
+        language: fail
+        entry: Space found in path, move to Misc/NEWS.d/next/Core_and_Builtins/
+        files: Misc/NEWS.d/next/Core and Builtins/20.*.rst
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes

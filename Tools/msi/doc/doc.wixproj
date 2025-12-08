@@ -10,21 +10,28 @@
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <PropertyGroup>
-        <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
-        <IncludeDocFile>false</IncludeDocFile>
-        <IncludeDocFile Condition="$(BuildForRelease) or Exists('$(PySourcePath)Doc\build\htmlhelp\$(DocFilename)')">true</IncludeDocFile>
-    </PropertyGroup>
-    <PropertyGroup Condition="$(IncludeDocFile)">
-        <DefineConstants>$(DefineConstants);DocFilename=$(DocFilename);</DefineConstants>
+        <DocHtmlPath>$(PySourcePath)Doc\build\html\</DocHtmlPath>
+        <DocHtmlPath Condition="!HasTrailingSlash($(DocHtmlPath))">$(DocHtmlPath)\</DocHtmlPath>
     </PropertyGroup>
     <ItemGroup>
+        <LinkerBindInputPaths Include="$(DocHtmlPath)">
+            <BindName>doc_html</BindName>
+        </LinkerBindInputPaths>
         <Compile Include="doc.wxs" />
-        <Compile Include="doc_files.wxs" Condition="$(IncludeDocFile)" />
-        <Compile Include="doc_no_files.wxs" Condition="!$(IncludeDocFile)" />
     </ItemGroup>
     <ItemGroup>
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
-    
+    <ItemGroup>
+        <InstallFiles Include="$(DocHtmlPath)**\*"
+                      Exclude="$(DocHtmlPath)_sources\**\*">
+            <SourceBase>$(DocHtmlPath)</SourceBase>
+            <Source>!(bindpath.doc_html)</Source>
+            <TargetBase>$(DocHtmlPath)..\</TargetBase>
+            <Target_>Doc_</Target_>
+            <Group>doc_html</Group>
+        </InstallFiles>
+    </ItemGroup>
+
     <Import Project="..\msi.targets" />
 </Project>

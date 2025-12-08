@@ -15,6 +15,7 @@ with test_tools.imports_under_tool("peg_generator"):
     from pegen.grammar import GrammarVisitor, GrammarError, Grammar
     from pegen.grammar_visualizer import ASTGrammarPrinter
     from pegen.parser import Parser
+    from pegen.parser_generator import compute_nullables, compute_left_recursives
     from pegen.python_generator import PythonParserGenerator
 
 
@@ -40,6 +41,15 @@ class TestPegen(unittest.TestCase):
             "Rule('term', None, Rhs([Alt([NamedItem(None, NameLeaf('NUMBER'))])]))"
         )
         self.assertEqual(repr(rules["term"]), expected_repr)
+
+    def test_repeated_rules(self) -> None:
+        grammar_source = """
+        start: the_rule NEWLINE
+        the_rule: 'b' NEWLINE
+        the_rule: 'a' NEWLINE
+        """
+        with self.assertRaisesRegex(GrammarError, "Repeated rule 'the_rule'"):
+            parse_string(grammar_source, GrammarParser)
 
     def test_long_rule_str(self) -> None:
         grammar_source = """
@@ -81,10 +91,8 @@ class TestPegen(unittest.TestCase):
         """
         rules = parse_string(grammar, GrammarParser).rules
         self.assertEqual(str(rules["start"]), "start: ','.thing+ NEWLINE")
-        self.assertTrue(
-            repr(rules["start"]).startswith(
-                "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
-            )
+        self.assertStartsWith(repr(rules["start"]),
+            "Rule('start', None, Rhs([Alt([NamedItem(None, Gather(StringLeaf(\"','\"), NameLeaf('thing'"
         )
         self.assertEqual(str(rules["thing"]), "thing: NUMBER")
         parser_class = make_parser(grammar)
@@ -474,7 +482,7 @@ class TestPegen(unittest.TestCase):
 
     def test_python_expr(self) -> None:
         grammar = """
-        start: expr NEWLINE? $ { ast.Expression(expr, lineno=1, col_offset=0) }
+        start: expr NEWLINE? $ { ast.Expression(expr) }
         expr: ( expr '+' term { ast.BinOp(expr, ast.Add(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | expr '-' term { ast.BinOp(expr, ast.Sub(), term, lineno=expr.lineno, col_offset=expr.col_offset, end_lineno=term.end_lineno, end_col_offset=term.end_col_offset) }
             | term { term }
@@ -496,17 +504,24 @@ class TestPegen(unittest.TestCase):
         val = eval(code)
         self.assertEqual(val, 3.0)
 
+    def test_f_string_in_action(self) -> None:
+        grammar = """
+        start: n=NAME NEWLINE? $ { f"name -> {n.string}" }
+        """
+        parser_class = make_parser(grammar)
+        node = parse_string("a", parser_class)
+        self.assertEqual(node.strip(), "name ->  a")
+
     def test_nullable(self) -> None:
         grammar_source = """
         start: sign NUMBER
         sign: ['-' | '+']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
 
     def test_advanced_left_recursive(self) -> None:
         grammar_source = """
@@ -514,11 +529,11 @@ class TestPegen(unittest.TestCase):
         sign: ['-']
         """
         grammar: Grammar = parse_string(grammar_source, GrammarParser)
-        out = io.StringIO()
-        genr = PythonParserGenerator(grammar, out)
         rules = grammar.rules
-        self.assertFalse(rules["start"].nullable)  # Not None!
-        self.assertTrue(rules["sign"].nullable)
+        nullables = compute_nullables(rules)
+        compute_left_recursives(rules)
+        self.assertNotIn(rules["start"], nullables)  # Not None!
+        self.assertIn(rules["sign"], nullables)
         self.assertTrue(rules["start"].left_recursive)
         self.assertFalse(rules["sign"].left_recursive)
 
@@ -650,6 +665,7 @@ class TestPegen(unittest.TestCase):
         """
         parser_class = make_parser(grammar)
         node = parse_string("foo = 12 + 12 .", parser_class)
+        self.maxDiff = None
         self.assertEqual(
             node,
             [
@@ -794,28 +810,28 @@ class TestPegen(unittest.TestCase):
         start:
             | "number" n=NUMBER { eval(n.string) }
             | "string" n=STRING { n.string }
-            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { f"{l.string} = {n.string}"}
+            | SOFT_KEYWORD l=NAME n=(NUMBER | NAME | STRING) { l.string + " = " + n.string }
         """
         parser_class = make_parser(grammar)
-        self.assertEqual(parse_string("number 1", parser_class, verbose=True), 1)
-        self.assertEqual(parse_string("string 'b'", parser_class, verbose=True), "'b'")
+        self.assertEqual(parse_string("number 1", parser_class), 1)
+        self.assertEqual(parse_string("string 'b'", parser_class), "'b'")
         self.assertEqual(
-            parse_string("number test 1", parser_class, verbose=True), "test = 1"
+            parse_string("number test 1", parser_class), "test = 1"
         )
         assert (
-            parse_string("string test 'b'", parser_class, verbose=True) == "test = 'b'"
+            parse_string("string test 'b'", parser_class) == "test = 'b'"
         )
         with self.assertRaises(SyntaxError):
-            parse_string("test 1", parser_class, verbose=True)
+            parse_string("test 1", parser_class)
 
     def test_forced(self) -> None:
         grammar = """
         start: NAME &&':' | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
 
         self.assertIn("expected ':'", str(e.exception))
 
@@ -824,10 +840,10 @@ class TestPegen(unittest.TestCase):
         start: NAME &&(':' | ';') | NAME
         """
         parser_class = make_parser(grammar)
-        self.assertTrue(parse_string("number :", parser_class, verbose=True))
-        self.assertTrue(parse_string("number ;", parser_class, verbose=True))
+        self.assertTrue(parse_string("number :", parser_class))
+        self.assertTrue(parse_string("number ;", parser_class))
         with self.assertRaises(SyntaxError) as e:
-            parse_string("a", parser_class, verbose=True)
+            parse_string("a", parser_class)
         self.assertIn("expected (':' | ';')", e.exception.args[0])
 
     def test_unreachable_explicit(self) -> None:
@@ -883,7 +899,7 @@ class TestPegen(unittest.TestCase):
 
     def test_locations_in_alt_action_and_group(self) -> None:
         grammar = """
-        start: t=term NEWLINE? $ { ast.Expression(t, LOCATIONS) }
+        start: t=term NEWLINE? $ { ast.Expression(t) }
         term:
             | l=term '*' r=factor { ast.BinOp(l, ast.Mult(), r, LOCATIONS) }
             | l=term '/' r=factor { ast.BinOp(l, ast.Div(), r, LOCATIONS) }
@@ -1090,3 +1106,53 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
+
+    def test_rule_flags(self) -> None:
+        """Test the new rule flags syntax that accepts arbitrary lists of flags."""
+        # Test grammar with various flag combinations
+        grammar_source = """
+        start: simple_rule
+
+        simple_rule (memo):
+            | "hello"
+
+        multi_flag_rule (memo, custom, test):
+            | "world"
+
+        single_custom_flag (custom):
+            | "test"
+
+        no_flags_rule:
+            | "plain"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        # Test memo-only rule
+        simple_rule = rules['simple_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "simple_rule should have memo")
+        self.assertEqual(simple_rule.flags, frozenset(['memo']),
+                        f"simple_rule flags should be {'memo'}, got {simple_rule.flags}")
+
+        # Test multi-flag rule
+        multi_flag_rule = rules['multi_flag_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "multi_flag_rule should have memo")
+        self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
+                        f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
+
+        # Test single custom flag rule
+        single_custom_rule = rules['single_custom_flag']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "single_custom_flag should not have memo")
+        self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
+                        f"single_custom_flag flags should be {'custom'}, got {single_custom_rule.flags}")
+
+        # Test no flags rule
+        no_flags_rule = rules['no_flags_rule']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "no_flags_rule should not have memo")
+        self.assertEqual(no_flags_rule.flags, frozenset(),
+                        f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")

@@ -1,2 +1,0 @@
-Add SQLite error code and name to :mod:`sqlite3` exceptions.
-Patch by Aviv Palivoda, Daniel Shahaf, and Erlend E. Aasland.

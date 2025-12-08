@@ -1,0 +1,50 @@
+name: Reusable Windows
+
+on:
+  workflow_call:
+    inputs:
+      arch:
+        description: CPU architecture
+        required: true
+        type: string
+      free-threading:
+        description: Whether to compile CPython in free-threading mode
+        required: false
+        type: boolean
+        default: false
+
+env:
+  FORCE_COLOR: 1
+  IncludeUwp: >-
+    true
+
+jobs:
+  build:
+    name: Build and test (${{ inputs.arch }})
+    runs-on: ${{ inputs.arch == 'arm64' && 'windows-11-arm' || 'windows-2022' }}
+    timeout-minutes: 60
+    env:
+      ARCH: ${{ inputs.arch }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Register MSVC problem matcher
+      if: inputs.arch != 'Win32'
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: >-
+        .\\PCbuild\\build.bat
+        -e -d -v
+        -p "${ARCH}"
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+      shell: bash
+    - name: Display build info
+      run: .\\python.bat -m test.pythoninfo
+    - name: Tests
+      run: >-
+        .\\PCbuild\\rt.bat
+        -p "${ARCH}"
+        -d -q --fast-ci
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+      shell: bash

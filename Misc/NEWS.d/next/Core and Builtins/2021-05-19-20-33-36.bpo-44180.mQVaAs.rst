@@ -1,3 +1,0 @@
-The parser doesn't report generic syntax errors that happen in a position
-further away that the one it reached in the first pass. Patch by Pablo
-Galindo

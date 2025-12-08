@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(Struct___init____doc__,
 "Struct(format)\n"
 "--\n"
@@ -20,14 +27,40 @@ static int
 Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(format), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"format", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "Struct", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Struct",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *format;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -56,7 +89,7 @@ static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer);
 
 static PyObject *
-Struct_unpack(PyStructObject *self, PyObject *arg)
+Struct_unpack(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
@@ -64,11 +97,7 @@ Struct_unpack(PyStructObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
-    return_value = Struct_unpack_impl(self, &buffer);
+    return_value = Struct_unpack_impl((PyStructObject *)self, &buffer);
 
 exit:
     /* Cleanup for buffer */
@@ -93,32 +122,54 @@ PyDoc_STRVAR(Struct_unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))Struct_unpack_from, METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(Struct_unpack_from), METH_FASTCALL|METH_KEYWORDS, Struct_unpack_from__doc__},
 
 static PyObject *
 Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
                         Py_ssize_t offset);
 
 static PyObject *
-Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Struct_unpack_from(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -137,7 +188,7 @@ Struct_unpack_from(PyStructObject *self, PyObject *const *args, Py_ssize_t nargs
         offset = ival;
     }
 skip_optional_pos:
-    return_value = Struct_unpack_from_impl(self, &buffer, offset);
+    return_value = Struct_unpack_from_impl((PyStructObject *)self, &buffer, offset);
 
 exit:
     /* Cleanup for buffer */
@@ -161,6 +212,19 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
+
+static PyObject *
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer);
+
+static PyObject *
+Struct_iter_unpack(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = Struct_iter_unpack_impl((PyStructObject *)self, buffer);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_clearcache__doc__,
 "_clearcache($module, /)\n"
@@ -226,7 +290,7 @@ PyDoc_STRVAR(unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_METHODDEF    \
-    {"unpack", (PyCFunction)(void(*)(void))unpack, METH_FASTCALL, unpack__doc__},
+    {"unpack", _PyCFunction_CAST(unpack), METH_FASTCALL, unpack__doc__},
 
 static PyObject *
 unpack_impl(PyObject *module, PyStructObject *s_object, Py_buffer *buffer);
@@ -245,10 +309,6 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = unpack_impl(module, s_object, &buffer);
@@ -275,7 +335,7 @@ PyDoc_STRVAR(unpack_from__doc__,
 "See help(struct) for more on format strings.");
 
 #define UNPACK_FROM_METHODDEF    \
-    {"unpack_from", (PyCFunction)(void(*)(void))unpack_from, METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
+    {"unpack_from", _PyCFunction_CAST(unpack_from), METH_FASTCALL|METH_KEYWORDS, unpack_from__doc__},
 
 static PyObject *
 unpack_from_impl(PyObject *module, PyStructObject *s_object,
@@ -285,15 +345,41 @@ static PyObject *
 unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(buffer), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "buffer", "offset", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "unpack_from", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "unpack_from",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
     Py_ssize_t offset = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -301,10 +387,6 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("unpack_from", "argument 'buffer'", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!noptargs) {
@@ -348,7 +430,7 @@ PyDoc_STRVAR(iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the format struct size.");
 
 #define ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", (PyCFunction)(void(*)(void))iter_unpack, METH_FASTCALL, iter_unpack__doc__},
+    {"iter_unpack", _PyCFunction_CAST(iter_unpack), METH_FASTCALL, iter_unpack__doc__},
 
 static PyObject *
 iter_unpack_impl(PyObject *module, PyStructObject *s_object,
@@ -376,4 +458,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=a3d3cd900091cb1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=caa7f36443e91cb9 input=a9049054013a1b77]*/

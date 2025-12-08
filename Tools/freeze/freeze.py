@@ -136,6 +136,11 @@ def main():
     makefile = 'Makefile'
     subsystem = 'console'
 
+    if sys.platform == "darwin" and sysconfig.get_config_var("PYTHONFRAMEWORK"):
+        print(f"{sys.argv[0]} cannot be used with framework builds of Python", file=sys.stderr)
+        sys.exit(1)
+
+
     # parse command line by first replacing any "-i" options with the
     # file contents.
     pos = 1
@@ -366,12 +371,6 @@ def main():
                 mf.import_hook(mod)
         else:
             mf.load_file(mod)
-
-    # Alias "importlib._bootstrap" to "_frozen_importlib" so that the
-    # import machinery can bootstrap.  Do the same for
-    # importlib._bootstrap_external.
-    mf.modules["_frozen_importlib"] = mf.modules["importlib._bootstrap"]
-    mf.modules["_frozen_importlib_external"] = mf.modules["importlib._bootstrap_external"]
 
     # Add the main script as either __main__, or the actual module name.
     if python_entry_is_main:

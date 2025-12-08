@@ -292,20 +292,29 @@ def _append_child(self, node):
     childNodes.append(node)
     node.parentNode = self
 
-def _in_document(node):
-    # return True iff node is part of a document tree
-    while node is not None:
-        if node.nodeType == Node.DOCUMENT_NODE:
-            return True
-        node = node.parentNode
-    return False
 
-def _write_data(writer, data):
+def _write_data(writer, text, attr):
     "Writes datachars to writer."
-    if data:
-        data = data.replace("&", "&amp;").replace("<", "&lt;"). \
-                    replace("\"", "&quot;").replace(">", "&gt;")
-        writer.write(data)
+    if not text:
+        return
+    # See the comments in ElementTree.py for behavior and
+    # implementation details.
+    if "&" in text:
+        text = text.replace("&", "&amp;")
+    if "<" in text:
+        text = text.replace("<", "&lt;")
+    if ">" in text:
+        text = text.replace(">", "&gt;")
+    if attr:
+        if '"' in text:
+            text = text.replace('"', "&quot;")
+        if "\r" in text:
+            text = text.replace("\r", "&#13;")
+        if "\n" in text:
+            text = text.replace("\n", "&#10;")
+        if "\t" in text:
+            text = text.replace("\t", "&#9;")
+    writer.write(text)
 
 def _get_elements_by_tagName_helper(parent, name, rc):
     for node in parent.childNodes:
@@ -358,6 +367,8 @@ class Attr(Node):
         self._name = qName
         self.namespaceURI = namespaceURI
         self._prefix = prefix
+        if localName is not None:
+            self._localName = localName
         self.childNodes = NodeList()
 
         # Add the single child node that represents the value of the attr
@@ -881,7 +892,7 @@ class Element(Node):
 
         for a_name in attrs.keys():
             writer.write(" %s=\"" % a_name)
-            _write_data(writer, attrs[a_name].value)
+            _write_data(writer, attrs[a_name].value, True)
             writer.write("\"")
         if self.childNodes:
             writer.write(">")
@@ -1110,7 +1121,7 @@ class Text(CharacterData):
         return newText
 
     def writexml(self, writer, indent="", addindent="", newl=""):
-        _write_data(writer, "%s%s%s" % (indent, self.data, newl))
+        _write_data(writer, "%s%s%s" % (indent, self.data, newl), False)
 
     # DOM Level 3 (WD 9 April 2002)
 
@@ -1537,7 +1548,7 @@ def _clear_id_cache(node):
     if node.nodeType == Node.DOCUMENT_NODE:
         node._id_cache.clear()
         node._id_search_stack = None
-    elif _in_document(node):
+    elif node.ownerDocument:
         node.ownerDocument._id_cache.clear()
         node.ownerDocument._id_search_stack= None
 

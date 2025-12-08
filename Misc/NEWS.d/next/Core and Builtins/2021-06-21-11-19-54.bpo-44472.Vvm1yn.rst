@@ -1,1 +1,0 @@
-Fix ltrace functionality when exceptions are raised. Patch by Pablo Galindo

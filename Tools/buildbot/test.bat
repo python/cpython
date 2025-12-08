@@ -5,25 +5,18 @@ setlocal
 set PATH=%PATH%;%SystemRoot%\SysNative\OpenSSH;%SystemRoot%\System32\OpenSSH
 set here=%~dp0
 set rt_opts=-q -d
-set regrtest_args=-j1
+set regrtest_args=
 set arm32_ssh=
+set cmdline_args=%*
+set cmdline_args=%cmdline_args:,=#COMMA#%
 
-:CheckOpts
-if "%1"=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-arm64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
-if "%1"=="-d" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="-q" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
-if "%1"=="+d" (set rt_opts=%rt_opts:-d=%) & shift & goto CheckOpts
-if "%1"=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
-if NOT "%1"=="" (set regrtest_args=%regrtest_args% %1) & shift & goto CheckOpts
+call:CheckOpts %cmdline_args%
 
 if "%PROCESSOR_ARCHITECTURE%"=="ARM" if "%arm32_ssh%"=="true" goto NativeExecution
 if "%arm32_ssh%"=="true" goto :Arm32Ssh
 
 :NativeExecution
-call "%here%..\..\PCbuild\rt.bat" %rt_opts% -uall -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args%
+call "%here%..\..\PCbuild\rt.bat" %rt_opts% --slow-ci %regrtest_args%
 exit /b %ERRORLEVEL%
 
 :Arm32Ssh
@@ -35,7 +28,7 @@ if NOT "%REMOTE_PYTHON_DIR:~-1,1%"=="\" (set REMOTE_PYTHON_DIR=%REMOTE_PYTHON_DI
 
 set TEMP_ARGS=--temp %REMOTE_PYTHON_DIR%temp
 
-set rt_args=%rt_opts% %dashU% -rwW --slowest --timeout=1200 --fail-env-changed %regrtest_args% %TEMP_ARGS%
+set rt_args=%rt_opts% --slow-ci %dashU% %regrtest_args% %TEMP_ARGS%
 ssh %SSH_SERVER% "set TEMP=%REMOTE_PYTHON_DIR%temp& cd %REMOTE_PYTHON_DIR% & %REMOTE_PYTHON_DIR%PCbuild\rt.bat" %rt_args%
 set ERR=%ERRORLEVEL%
 scp %SSH_SERVER%:"%REMOTE_PYTHON_DIR%test-results.xml" "%PYTHON_SOURCE%\test-results.xml"
@@ -49,3 +42,16 @@ echo The test worker should have the SSH agent running.
 echo Also a key must be created with ssh-keygen and added to both the buildbot worker machine
 echo and the ARM32 worker device: see https://docs.microsoft.com/en-us/windows/iot-core/connect-your-device/ssh
 exit /b 127
+
+:CheckOpts
+set arg="%~1"
+if %arg%=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-arm64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-arm32" (set rt_opts=%rt_opts% %1) & (set arm32_ssh=true) & shift & goto CheckOpts
+if %arg%=="-d" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-O" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="-q" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
+if %arg%=="+d" (set rt_opts=%rt_opts:-d=%) & shift & goto CheckOpts
+if %arg%=="+q" (set rt_opts=%rt_opts:-q=%) & shift & goto CheckOpts
+if NOT %arg%=="" (set regrtest_args=%regrtest_args% %arg:#COMMA#=,%) & shift & goto CheckOpts
+goto:eof

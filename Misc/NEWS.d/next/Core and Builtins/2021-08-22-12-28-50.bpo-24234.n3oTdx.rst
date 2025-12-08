@@ -1,3 +1,0 @@
-Implement the :meth:`__complex__` special method on the :class:`complex` type,
-so a complex number ``z`` passes an ``isinstance(z, typing.SupportsComplex)``
-check.

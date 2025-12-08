@@ -6,7 +6,7 @@ import os
 import random
 import select
 import unittest
-from test.support import run_unittest, cpython_only
+from test.support import cpython_only
 
 if not hasattr(select, 'devpoll') :
     raise unittest.SkipTest('test works only on Solaris OS family')
@@ -138,8 +138,5 @@ class DevPollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.modify, 1, USHRT_MAX + 1)
 
 
-def test_main():
-    run_unittest(DevPollTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

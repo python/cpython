@@ -29,10 +29,6 @@
 #include <wchar.h>
 #include "pycore_getopt.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int _PyOS_opterr = 1;                 /* generate error messages */
 Py_ssize_t _PyOS_optind = 1;          /* index into argv array   */
 const wchar_t *_PyOS_optarg = NULL;   /* optional argument       */
@@ -41,11 +37,15 @@ static const wchar_t *opt_ptr = L"";
 
 /* Python command line short and long options */
 
-#define SHORT_OPTS L"bBc:dEhiIJm:OqRsStuvVW:xX:?"
+#define SHORT_OPTS L"bBc:dEhiIm:OPqRsStuvVW:xX:?"
 
 static const _PyOS_LongOption longopts[] = {
+    /* name, has_arg, val (used in switch in initconfig.c) */
     {L"check-hash-based-pycs", 1, 0},
-    {NULL, 0, 0},
+    {L"help-all", 0, 1},
+    {L"help-env", 0, 2},
+    {L"help-xoptions", 0, 3},
+    {NULL, 0, -1},                     /* sentinel */
 };
 
 
@@ -102,7 +102,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         // Parse long option.
         if (*opt_ptr == L'\0') {
             if (_PyOS_opterr) {
-                fprintf(stderr, "expected long option\n");
+                fprintf(stderr, "Expected long option\n");
             }
             return -1;
         }
@@ -114,7 +114,7 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         }
         if (!opt->name) {
             if (_PyOS_opterr) {
-                fprintf(stderr, "unknown option %ls\n", argv[_PyOS_optind - 1]);
+                fprintf(stderr, "Unknown option: %ls\n", argv[_PyOS_optind - 1]);
             }
             return '_';
         }
@@ -131,13 +131,6 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
         }
         _PyOS_optarg = argv[_PyOS_optind++];
         return opt->val;
-    }
-
-    if (option == 'J') {
-        if (_PyOS_opterr) {
-            fprintf(stderr, "-J is reserved for Jython\n");
-        }
-        return '_';
     }
 
     if ((ptr = wcschr(SHORT_OPTS, option)) == NULL) {
@@ -168,8 +161,3 @@ int _PyOS_GetOpt(Py_ssize_t argc, wchar_t * const *argv, int *longindex)
 
     return option;
 }
-
-#ifdef __cplusplus
-}
-#endif
-

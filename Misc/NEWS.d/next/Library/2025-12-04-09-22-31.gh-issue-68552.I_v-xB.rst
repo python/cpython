@@ -1,0 +1,1 @@
+``MisplacedEnvelopeHeaderDefect`` and ``Missing header name`` defects are now correctly passed to the ``handle_defect`` method of ``policy`` in :class:`~email.parser.FeedParser`.

@@ -1,2 +1,0 @@
-Improve error message for ``try`` blocks without ``except`` or ``finally``
-blocks. Patch by Pablo Galindo.

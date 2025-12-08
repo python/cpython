@@ -31,7 +31,7 @@ class CommonTests:
         self.assertEqual(self.module.foo(1, 2), 3)
 
     def test_str(self):
-        self.assertTrue(issubclass(self.module.Str, str))
+        self.assertIsSubclass(self.module.Str, str)
         self.assertIsNot(self.module.Str, str)
 
         custom_string = self.module.Str("abcd")
@@ -57,6 +57,17 @@ class TestXXLimited(CommonTests, unittest.TestCase):
     def test_error(self):
         with self.assertRaises(self.module.Error):
             raise self.module.Error
+
+    def test_buffer(self):
+        xxo = self.module.Xxo()
+        self.assertEqual(xxo.x_exports, 0)
+        b1 = memoryview(xxo)
+        self.assertEqual(xxo.x_exports, 1)
+        b2 = memoryview(xxo)
+        self.assertEqual(xxo.x_exports, 2)
+        b1[0] = 1
+        self.assertEqual(b1[0], 1)
+        self.assertEqual(b2[0], 1)
 
 
 class TestXXLimited35(CommonTests, unittest.TestCase):

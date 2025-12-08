@@ -1,0 +1,98 @@
+name: Reusable build context
+
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    outputs:
+      # Every referenced step MUST always set its output variable,
+      # either via ``Tools/build/compute-changes.py`` or in this workflow file.
+      # Boolean outputs (generally prefixed ``run-``) can then later be used
+      # safely through the following idiom in job conditionals and other
+      # expressions. Here's some examples:
+      #
+      #   if: fromJSON(needs.build-context.outputs.run-tests)
+      #
+      #   ${{
+      #        fromJSON(needs.build-context.outputs.run-tests)
+      #        && 'truthy-branch'
+      #        || 'falsy-branch'
+      #   }}
+      #
+      run-docs:
+        description: Whether to build the docs
+        value: ${{ jobs.compute-changes.outputs.run-docs }}  # bool
+      run-tests:
+        description: Whether to run the regular tests
+        value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
+      run-windows-tests:
+        description: Whether to run the Windows tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
+      run-windows-msi:
+        description: Whether to run the MSI installer smoke tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
+      run-ci-fuzz:
+        description: Whether to run the CIFuzz job
+        value: ${{ jobs.compute-changes.outputs.run-ci-fuzz }}  # bool
+
+jobs:
+  compute-changes:
+    name: Create context from changed files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      run-ci-fuzz: ${{ steps.changes.outputs.run-ci-fuzz }}
+      run-docs: ${{ steps.changes.outputs.run-docs }}
+      run-tests: ${{ steps.changes.outputs.run-tests }}
+      run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
+      run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3"
+
+    - run: >-
+        echo '${{ github.event_name }}'
+
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+        ref: >-
+          ${{
+            github.event_name == 'pull_request'
+            && github.event.pull_request.head.sha
+            || ''
+          }}
+
+    # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
+    - name: Fetch commits to get branch diff
+      if: github.event_name == 'pull_request'
+      run: |
+        set -eux
+
+        # Fetch enough history to find a common ancestor commit (aka merge-base):
+        git fetch origin "${refspec_pr}" --depth=$(( commits + 1 )) \
+          --no-tags --prune --no-recurse-submodules
+
+        # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):
+        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 "${branch_pr}" )
+        DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
+
+        # Get all commits since that commit date from the base branch (eg: main):
+        git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
+          --no-tags --prune --no-recurse-submodules
+      env:
+        branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
+        commits: ${{ github.event.pull_request.commits }}
+        refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
+        refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
+
+    # We only want to run tests on PRs when related files are changed,
+    # or when someone triggers a manual workflow run.
+    - name: Compute changed files
+      id: changes
+      run: python Tools/build/compute-changes.py
+      env:
+        GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
+        CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}

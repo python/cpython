@@ -1,4 +1,4 @@
-import re
+#import re
 
 from ..info import KIND, ParsedItem, FileInfo
 
@@ -123,10 +123,16 @@ class SourceInfo:
     def done(self):
         self._set_ready()
 
+    def too_much_text(self, maxtext):
+        return maxtext and len(self.text) > maxtext
+
+    def too_many_lines(self, maxlines):
+        return maxlines and self.end - self.start > maxlines
+
     def too_much(self, maxtext, maxlines):
-        if maxtext and len(self.text) > maxtext:
+        if self.too_much_text(maxtext):
             pass
-        elif maxlines and self.end - self.start > maxlines:
+        elif self.too_many_lines(maxlines):
             pass
         else:
             return False

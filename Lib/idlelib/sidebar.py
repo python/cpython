@@ -25,10 +25,9 @@ def get_end_linenumber(text):
 
 def get_displaylines(text, index):
     """Display height, in lines, of a logical line in a Tk text widget."""
-    res = text.count(f"{index} linestart",
-                     f"{index} lineend",
-                     "displaylines")
-    return res[0] if res else 0
+    return text.count(f"{index} linestart",
+                      f"{index} lineend",
+                      "displaylines", return_ints=True)
 
 def get_widget_padding(widget):
     """Get the total padding of a Tk widget, including its border."""
@@ -471,10 +470,7 @@ class ShellSidebar(BaseSideBar):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f'{index}+1line linestart')
-        while True:
-            lineinfo = text.dlineinfo(index)
-            if lineinfo is None:
-                break
+        while (lineinfo := text.dlineinfo(index)) is not None:
             y = lineinfo[1]
             prev_newline_tagnames = text_tagnames(f"{index} linestart -1c")
             prompt = (
@@ -517,16 +513,16 @@ class ShellSidebar(BaseSideBar):
         self.change_callback()
 
 
-def _linenumbers_drag_scrolling(parent):  # htest #
+def _sidebar_number_scrolling(parent):  # htest #
     from idlelib.idle_test.test_sidebar import Dummy_editwin
 
-    toplevel = tk.Toplevel(parent)
-    text_frame = tk.Frame(toplevel)
+    top = tk.Toplevel(parent)
+    text_frame = tk.Frame(top)
     text_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     text_frame.rowconfigure(1, weight=1)
     text_frame.columnconfigure(1, weight=1)
 
-    font = idleConf.GetFont(toplevel, 'main', 'EditorWindow')
+    font = idleConf.GetFont(top, 'main', 'EditorWindow')
     text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE, font=font)
     text.grid(row=1, column=1, sticky=tk.NSEW)
 
@@ -544,4 +540,4 @@ if __name__ == '__main__':
     main('idlelib.idle_test.test_sidebar', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
-    run(_linenumbers_drag_scrolling)
+    run(_sidebar_number_scrolling)

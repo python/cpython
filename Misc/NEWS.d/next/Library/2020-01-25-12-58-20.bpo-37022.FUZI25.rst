@@ -1,1 +1,0 @@
-:mod:`pdb` now displays exceptions from ``repr()`` with its ``p`` and ``pp`` commands.

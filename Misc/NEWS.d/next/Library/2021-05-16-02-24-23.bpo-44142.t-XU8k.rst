@@ -1,2 +1,0 @@
-:func:`ast.unparse` will now drop the redundant parentheses when tuples used
-as assignment targets (e.g in for loops).

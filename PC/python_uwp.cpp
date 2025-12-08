@@ -10,22 +10,56 @@
 
 #include <string>
 
+#if defined(__clang__)
+#define _SILENCE_CLANG_COROUTINE_MESSAGE
+#endif
+
+#include <appmodel.h>
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
 
 #ifdef PYTHONW
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"pythonw_d.exe";
 #else
 const wchar_t *PROGNAME = L"pythonw.exe";
 #endif
 #else
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"python_d.exe";
 #else
 const wchar_t *PROGNAME = L"python.exe";
 #endif
 #endif
+
+static std::wstring
+get_package_family()
+{
+    try {
+        UINT32 nameLength = MAX_PATH;
+        std::wstring name;
+        name.resize(nameLength);
+        DWORD rc = GetCurrentPackageFamilyName(&nameLength, name.data());
+        if (rc == ERROR_SUCCESS) {
+            name.resize(nameLength - 1);
+            return name;
+        }
+        else if (rc != ERROR_INSUFFICIENT_BUFFER) {
+            throw rc;
+        }
+        name.resize(nameLength);
+        rc = GetCurrentPackageFamilyName(&nameLength, name.data());
+        if (rc != ERROR_SUCCESS) {
+            throw rc;
+        }
+        name.resize(nameLength - 1);
+        return name;
+    }
+    catch (...) {
+    }
+
+    return std::wstring();
+}
 
 static std::wstring
 get_user_base()
@@ -35,30 +69,13 @@ get_user_base()
         if (appData) {
             const auto localCache = appData.LocalCacheFolder();
             if (localCache) {
-                auto path = localCache.Path();
+                std::wstring path { localCache.Path().c_str() };
                 if (!path.empty()) {
-                    return std::wstring(path) + L"\\local-packages";
+                    return path + L"\\local-packages";
                 }
             }
         }
     } catch (...) {
-    }
-    return std::wstring();
-}
-
-static std::wstring
-get_package_family()
-{
-    try {
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        if (package) {
-            const auto id = package.Id();
-            if (id) {
-                return std::wstring(id.FamilyName());
-            }
-        }
-    }
-    catch (...) {
     }
 
     return std::wstring();
@@ -68,13 +85,24 @@ static std::wstring
 get_package_home()
 {
     try {
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        if (package) {
-            const auto path = package.InstalledLocation();
-            if (path) {
-                return std::wstring(path.Path());
-            }
+        UINT32 pathLength = MAX_PATH;
+        std::wstring path;
+        path.resize(pathLength);
+        DWORD rc = GetCurrentPackagePath(&pathLength, path.data());
+        if (rc == ERROR_SUCCESS) {
+            path.resize(pathLength - 1);
+            return path;
         }
+        else if (rc != ERROR_INSUFFICIENT_BUFFER) {
+            throw rc;
+        }
+        path.resize(pathLength);
+        rc = GetCurrentPackagePath(&pathLength, path.data());
+        if (rc != ERROR_SUCCESS) {
+            throw rc;
+        }
+        path.resize(pathLength - 1);
+        return path;
     }
     catch (...) {
     }
