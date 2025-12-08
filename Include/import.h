@@ -94,11 +94,13 @@ typedef enum {
     PyImport_LAZY_NONE,
 } PyImport_LazyImportsMode;
 
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyImport_SetLazyImportsMode(PyImport_LazyImportsMode mode);
 PyAPI_FUNC(int) PyImport_SetLazyImportsFilter(PyObject *filter);
 
 PyAPI_FUNC(PyImport_LazyImportsMode) PyImport_GetLazyImportsMode(void);
 PyAPI_FUNC(PyObject *) PyImport_GetLazyImportsFilter(void);
+#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_IMPORT_H
