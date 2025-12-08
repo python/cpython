@@ -1,3 +1,5 @@
+.. highlight:: shell-session
+
 .. _profiling-sampling:
 
 ***************************************************

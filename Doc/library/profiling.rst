@@ -1,3 +1,5 @@
+.. highlight:: shell-session
+
 .. _profiling-module:
 
 ***************************************
@@ -176,7 +178,9 @@ To profile a script from the command line::
 
    python -m profiling.tracing myscript.py
 
-To profile a piece of code programmatically::
+To profile a piece of code programmatically:
+
+.. code-block:: python
 
    import profiling.tracing
    profiling.tracing.run('my_function()')
