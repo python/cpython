@@ -267,7 +267,7 @@ Profiling modes
 
 The sampling profiler supports three modes that control which samples are
 recorded. The mode determines what the profile measures: total elapsed time,
-CPU execution time, or time spent holding the Global Interpreter Lock.
+CPU execution time, or time spent holding the global interpreter lock.
 
 
 Wall-clock mode
@@ -312,7 +312,7 @@ GIL mode
 --------
 
 GIL mode (``--mode=gil``) records samples only when the thread holds Python's
-Global Interpreter Lock::
+global interpreter lock::
 
    python -m profiling.sampling run --mode=gil script.py
 
@@ -477,7 +477,7 @@ CPU activity, enabling analysis features specific to Python's threading model.
 The profiler emits interval markers that appear as colored bands in the
 Firefox Profiler timeline:
 
-- **GIL markers**: Show when threads hold or release the Global Interpreter Lock
+- **GIL markers**: Show when threads hold or release the global interpreter lock
 - **CPU markers**: Show when threads are executing on CPU versus idle
 - **Code type markers**: Distinguish Python code from native (C extension) code
 - **GC markers**: Indicate garbage collection activity
