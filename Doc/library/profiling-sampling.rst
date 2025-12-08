@@ -21,10 +21,10 @@
    :width: 300px
 
 The :mod:`profiling.sampling` module, named **Tachyon**, provides statistical
-profiling of Python programs through periodic stack sampling. The profiler can
+profiling of Python programs through periodic stack sampling. Tachyon can
 run scripts directly or attach to any running Python process without requiring
 code changes or restarts. Because sampling occurs externally to the target
-process, overhead is virtually zero, making this profiler suitable for both
+process, overhead is virtually zero, making Tachyon suitable for both
 development and production environments.
 
 
@@ -33,14 +33,63 @@ What is statistical profiling?
 
 Statistical profiling builds a picture of program behavior by periodically
 capturing snapshots of the call stack. Rather than instrumenting every function
-call and return as deterministic profilers do, the sampling profiler reads the
-call stack at regular intervals to record what code is currently running.
+call and return as deterministic profilers do, Tachyon reads the call stack at
+regular intervals to record what code is currently running.
 
 This approach rests on a simple principle: functions that consume significant
 CPU time will appear frequently in the collected samples. By gathering thousands
-of samples over a profiling session, the profiler constructs an accurate
-statistical estimate of where time is spent. The more samples collected, the
+of samples over a profiling session, Tachyon constructs an accurate statistical
+estimate of where time is spent. The more samples collected, the
 more precise this estimate becomes.
+
+
+How time is estimated
+---------------------
+
+The time values shown in Tachyon's output are **estimates derived from sample
+counts**, not direct measurements. Tachyon counts how many times each function
+appears in the collected samples, then multiplies by the sampling interval to
+estimate time.
+
+For example, with a 100 microsecond sampling interval over a 10-second profile,
+Tachyon collects approximately 100,000 samples. If a function appears in 5,000
+samples (5% of total), Tachyon estimates it consumed 5% of the 10-second
+duration, or about 500 milliseconds. This is a statistical estimate, not a
+precise measurement.
+
+The accuracy of these estimates depends on sample count. With 100,000 samples,
+a function showing 5% has a margin of error of roughly ±0.5%. With only 1,000
+samples, the same 5% measurement could actually represent anywhere from 3% to
+7% of real time.
+
+This is why longer profiling durations and shorter sampling intervals produce
+more reliable results---they collect more samples. For most performance
+analysis, the default settings provide sufficient accuracy to identify
+bottlenecks and guide optimization efforts.
+
+Because sampling is statistical, results will vary slightly between runs. A
+function showing 12% in one run might show 11% or 13% in the next. This is
+normal and expected. Focus on the overall pattern rather than exact percentages,
+and don't worry about small variations between runs.
+
+
+When to use a different approach
+--------------------------------
+
+Statistical sampling is not ideal for every situation.
+
+For very short scripts that complete in under one second, the profiler may not
+collect enough samples for reliable results. Use :mod:`profiling.tracing`
+instead, or run the script in a loop to extend profiling time.
+
+When you need exact call counts, sampling cannot provide them. Sampling
+estimates frequency from snapshots, so if you need to know precisely how many
+times a function was called, use :mod:`profiling.tracing`.
+
+When comparing two implementations where the difference might be only 1-2%,
+sampling noise can obscure real differences. Use :mod:`timeit` for
+micro-benchmarks or :mod:`profiling.tracing` for precise measurements.
+
 
 The key difference from :mod:`profiling.tracing` is how measurement happens.
 A tracing profiler instruments your code, recording every function call and
@@ -54,7 +103,7 @@ and inferring your path from those snapshots.
 This external observation model is what makes sampling profiling practical for
 production use. The profiled program runs at full speed because there is no
 instrumentation code running inside it, and the target process is never stopped
-or paused during sampling---the profiler reads the call stack directly from the
+or paused during sampling---Tachyon reads the call stack directly from the
 process's memory while it continues to run. You can attach to a live server,
 collect data, and detach without the application ever knowing it was observed.
 The trade-off is that very short-lived functions may be missed if they happen
@@ -101,8 +150,8 @@ Generate a line-by-line heatmap::
 Commands
 ========
 
-The profiler operates through two subcommands that determine how to obtain
-the target process.
+Tachyon operates through two subcommands that determine how to obtain the
+target process.
 
 
 The ``run`` command
@@ -114,8 +163,8 @@ startup::
    python -m profiling.sampling run script.py
    python -m profiling.sampling run -m mypackage.module
 
-When profiling a script, the profiler starts the target in a subprocess,
-waits for it to initialize, then begins collecting samples. The ``-m`` flag
+When profiling a script, the profiler starts the target in a subprocess, waits
+for it to initialize, then begins collecting samples. The ``-m`` flag
 indicates that the target should be run as a module (equivalent to
 ``python -m``). Arguments after the target are passed through to the
 profiled program::
@@ -137,7 +186,86 @@ be restarted. The profiler attaches, collects samples for the specified
 duration, then detaches and produces output.
 
 On most systems, attaching to another process requires appropriate permissions.
-On Linux, you may need to run as root or adjust the ``ptrace_scope`` setting.
+See :ref:`profiling-permissions` for platform-specific requirements.
+
+
+Profiling in production
+-----------------------
+
+The sampling profiler is designed for production use. It imposes no measurable
+overhead on the target process because it reads memory externally rather than
+instrumenting code. The target application continues running at full speed and
+is unaware it is being profiled.
+
+When profiling production systems, keep these guidelines in mind:
+
+Start with shorter durations (10-30 seconds) to get quick results, then extend
+if you need more statistical accuracy. The default 10-second duration is usually
+sufficient to identify major hotspots.
+
+If possible, profile during representative load rather than peak traffic.
+Profiles collected during normal operation are easier to interpret than those
+collected during unusual spikes.
+
+The profiler itself consumes some CPU on the machine where it runs (not on the
+target process). On the same machine, this is typically negligible. When
+profiling remote processes, network latency does not affect the target.
+
+Results from production may differ from development due to different data
+sizes, concurrent load, or caching effects. This is expected and is often
+exactly what you want to capture.
+
+
+.. _profiling-permissions:
+
+Platform requirements
+---------------------
+
+The profiler reads the target process's memory to capture stack traces. This
+requires elevated permissions on most operating systems.
+
+**Linux**
+
+On Linux, the profiler uses ``ptrace`` or ``process_vm_readv`` to read the
+target process's memory. This typically requires one of:
+
+- Running as root
+- Having the ``CAP_SYS_PTRACE`` capability
+- Adjusting the Yama ptrace scope: ``/proc/sys/kernel/yama/ptrace_scope``
+
+The default ptrace_scope of 1 restricts ptrace to parent processes only. To
+allow attaching to any process owned by the same user, set it to 0::
+
+   echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+**macOS**
+
+On macOS, the profiler uses ``task_for_pid()`` to access the target process.
+This requires one of:
+
+- Running as root
+- The profiler binary having the ``com.apple.security.cs.debugger`` entitlement
+- System Integrity Protection (SIP) being disabled (not recommended)
+
+**Windows**
+
+On Windows, the profiler requires administrative privileges or the
+``SeDebugPrivilege`` privilege to read another process's memory.
+
+
+Version compatibility
+---------------------
+
+The profiler and target process must run the same Python minor version (for
+example, both Python 3.15). Attaching from Python 3.14 to a Python 3.15 process
+is not supported.
+
+Additional restrictions apply to pre-release Python versions: if either the
+profiler or target is running a pre-release (alpha, beta, or release candidate),
+both must run the exact same version.
+
+On free-threaded Python builds, the profiler cannot attach from a free-threaded
+build to a standard build, or vice versa.
 
 
 Sampling configuration
@@ -341,6 +469,22 @@ and network calls, CPU mode reveals which computational sections are most
 expensive.
 
 
+Comparing wall-clock and CPU profiles
+-------------------------------------
+
+Running both wall-clock and CPU mode profiles can reveal whether a function's
+time is spent computing or waiting.
+
+If a function appears prominently in both profiles, it is a true computational
+hotspot---actively using the CPU. Optimization should focus on algorithmic
+improvements or more efficient code.
+
+If a function is high in wall-clock mode but low or absent in CPU mode, it is
+I/O-bound or waiting. The function spends most of its time waiting for network,
+disk, locks, or sleep. CPU optimization won't help here; consider async I/O,
+connection pooling, or reducing wait time instead.
+
+
 GIL mode
 --------
 
@@ -349,15 +493,20 @@ global interpreter lock::
 
    python -m profiling.sampling run --mode=gil script.py
 
-This mode is specifically designed for analyzing GIL contention in
-multi-threaded Python programs. Since only one thread can hold the GIL at a
-time, a profile showing GIL-holding time reveals which code is preventing
-other threads from running Python bytecode.
+The GIL is held only while executing Python bytecode. When Python calls into
+C extensions, performs I/O operations, or executes native code, the GIL is
+typically released. This means GIL mode effectively measures time spent
+running Python code specifically, filtering out time in native libraries.
+
+In multi-threaded programs, GIL mode reveals which code is preventing other
+threads from running Python bytecode. Since only one thread can hold the GIL
+at a time, functions that appear frequently in GIL mode profiles are
+monopolizing the interpreter.
 
 GIL mode helps answer questions like "which functions are monopolizing the
-GIL?" and "why are my other threads starving?" It is less useful for
-single-threaded programs or for code that releases the GIL (such as many
-NumPy operations or I/O calls).
+GIL?" and "why are my other threads starving?" It can also be useful in
+single-threaded programs to distinguish Python execution time from time spent
+in C extensions or I/O.
 
 
 Output formats
@@ -385,22 +534,38 @@ Output appears on stdout by default::
           156/156     7.8%       156.00      7.8%       156.00    <built-in>:0(socket.recv)
            98/421     4.9%        98.00     21.1%       421.00    parser.py:67(parse_message)
 
-The columns show sampling counts and estimated times. The ``nsamples`` column
-displays two numbers: direct samples (when the function was at the top of the
-stack, actively executing) and cumulative samples (when the function appeared
-anywhere on the stack). The percentages and times derive from these counts
-and the total profiling duration. Time units are selected automatically based
-on the data: seconds, milliseconds, or microseconds.
+The columns show sampling counts and estimated times:
+
+- **nsamples**: Displayed as ``direct/cumulative`` (for example, ``10/50``).
+  Direct samples are when the function was at the top of the stack, actively
+  executing. Cumulative samples are when the function appeared anywhere on the
+  stack, including when it was waiting for functions it called. If a function
+  shows ``10/50``, it was directly executing in 10 samples and was on the call
+  stack in 50 samples total.
+
+- **sample%** and **cumul%**: Percentages of total samples for direct and
+  cumulative counts respectively.
+
+- **tottime** and **cumtime**: Estimated wall-clock time based on sample counts
+  and the profiling duration. Time units are selected automatically based on
+  the magnitude: seconds for large values, milliseconds for moderate values,
+  or microseconds for small values.
 
 The output includes a legend explaining each column and a summary of
 interesting functions that highlights:
 
-- **Hot spots**: functions with high direct/cumulative sample ratio (time spent
-  directly executing rather than waiting for callees)
-- **Indirect calls**: functions appearing frequently on the stack via other
-  callers
-- **Call magnification**: functions where cumulative samples far exceed direct
-  samples, indicating significant time in nested calls
+- **Hot spots**: Functions with high direct/cumulative sample ratio (ratio
+  close to 1.0). These functions spend most of their time executing their own
+  code rather than waiting for callees. High ratios indicate where CPU time
+  is actually consumed.
+
+- **Indirect calls**: Functions with large differences between cumulative and
+  direct samples. These are orchestration functions that delegate work to
+  other functions. They appear frequently on the stack but rarely at the top.
+
+- **Call magnification**: Functions where cumulative samples far exceed direct
+  samples (high cumulative/direct multiplier). These are frequently-nested
+  functions that appear deep in many call chains.
 
 Use ``--no-summary`` to suppress both the legend and summary sections.
 
@@ -481,6 +646,18 @@ The flame graph interface includes:
 - Dark/light theme toggle (preference saved across sessions)
 - SVG export for saving the current view
 
+The thread statistics section shows runtime behavior metrics:
+
+- **GIL Held**: percentage of samples where a thread held the global interpreter
+  lock (actively running Python code)
+- **GIL Released**: percentage of samples where no thread held the GIL
+- **Waiting GIL**: percentage of samples where a thread was waiting to acquire
+  the GIL
+- **GC**: percentage of samples during garbage collection
+
+These statistics help identify GIL contention and understand how time is
+distributed between Python execution, native code, and waiting.
+
 Flame graphs are particularly effective for identifying deep call stacks and
 understanding the hierarchical structure of time consumption. Wide rectangles
 at the top indicate functions that consume significant time either directly
@@ -545,8 +722,10 @@ The heatmap interface provides several interactive features:
 - **Coloring modes**: toggle between "Self Time" (direct execution) and
   "Total Time" (cumulative, including time in called functions)
 - **Cold code filtering**: show all lines or only lines with samples
-- **Call graph navigation**: each line has buttons to navigate to callers
-  (functions that called this line) and callees (functions called from here)
+- **Call graph navigation**: each line shows navigation buttons (▲ for callers,
+  ▼ for callees) that let you trace execution paths through your code. When
+  multiple functions called or were called from a line, a menu appears showing
+  all options with their sample counts.
 - **Scroll minimap**: a vertical overview showing the heat distribution across
   the entire file
 - **Hierarchical index**: files organized by type (stdlib, site-packages,
@@ -573,8 +752,17 @@ data, similar to the ``top`` command for system processes::
 
 The display updates continuously as new samples arrive, showing the current
 hottest functions. This mode requires the :mod:`curses` module, which is
-available on Unix-like systems. The terminal must be at least 80 columns wide
-and 24 lines tall.
+available on Unix-like systems but not on Windows. The terminal must be at
+least 60 columns wide and 12 lines tall; larger terminals display more columns.
+
+The header displays the top 3 hottest functions, sampling efficiency metrics,
+and thread status statistics (GIL held percentage, CPU usage, GC time). The
+main table shows function statistics with the currently sorted column indicated
+by an arrow (▼).
+
+
+Keyboard commands
+-----------------
 
 Within live mode, keyboard commands control the display:
 
@@ -586,33 +774,48 @@ Within live mode, keyboard commands control the display:
    total time, cumulative percentage, cumulative time).
 
 :kbd:`p`
-   Pause or resume display updates. Sampling continues while paused.
+   Pause or resume display updates. Sampling continues in the background
+   while the display is paused, so you can freeze the view to examine results
+   without stopping data collection.
 
 :kbd:`r`
-   Reset all statistics and start fresh.
+   Reset all statistics and start fresh. This is disabled after profiling
+   finishes to prevent accidental data loss.
 
 :kbd:`/`
-   Enter filter mode to search for functions by name. Type a pattern and
-   press Enter to filter, or Escape to cancel.
+   Enter filter mode to search for functions by name. The filter uses
+   case-insensitive substring matching against the filename and function name.
+   Type a pattern and press Enter to apply, or Escape to cancel. Glob patterns
+   and regular expressions are not supported.
 
 :kbd:`c`
-   Clear the current filter.
+   Clear the current filter and show all functions again.
 
 :kbd:`t`
    Toggle between viewing all threads combined or per-thread statistics.
+   In per-thread mode, a thread counter (for example, ``1/4``) appears showing
+   your position among the available threads.
 
 :kbd:`←` :kbd:`→` or :kbd:`↑` :kbd:`↓`
-   In per-thread view, navigate between threads.
+   In per-thread view, navigate between threads. Navigation wraps around
+   from the last thread to the first and vice versa.
 
 :kbd:`+` / :kbd:`-`
-   Increase or decrease the display refresh rate (range: 0.05s to 1.0s).
+   Increase or decrease the display refresh rate. The range is 0.05 seconds
+   (20 Hz, very responsive) to 1.0 second (1 Hz, lower overhead). Faster refresh
+   rates use more CPU. The default is 0.1 seconds (10 Hz).
 
 :kbd:`x`
    Toggle trend indicators that show whether functions are becoming hotter
-   or cooler over time.
+   or cooler over time. When enabled, increasing metrics appear in green and
+   decreasing metrics appear in red, comparing each update to the previous one.
 
 :kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
+
+When profiling finishes (duration expires or target process exits), the display
+shows a "PROFILING COMPLETE" banner and freezes the final results. You can
+still navigate, sort, and filter the results before pressing :kbd:`q` to exit.
 
 Live mode is incompatible with output format options (``--collapsed``,
 ``--flamegraph``, and so on) because it uses an interactive terminal
@@ -633,21 +836,56 @@ stack often shows event loop internals rather than the logical flow of your
 coroutines. Async-aware mode addresses this by tracking which task is running
 and presenting stacks that reflect the ``await`` chain.
 
+.. note::
+
+   Async-aware profiling requires the target process to have the :mod:`asyncio`
+   module loaded. If you profile a script before it imports asyncio, async-aware
+   mode will not be able to capture task information.
+
+
+Async modes
+-----------
+
 The ``--async-mode`` option controls which tasks appear in the profile::
 
    python -m profiling.sampling run --async-aware --async-mode=running async_script.py
    python -m profiling.sampling run --async-aware --async-mode=all async_script.py
 
-With ``--async-mode=running`` (the default), only the currently executing task
-is profiled. With ``--async-mode=all``, tasks that are suspended (awaiting
-something) are also included, giving visibility into what your program is
-waiting for.
+With ``--async-mode=running`` (the default), only the task currently executing
+on the CPU is profiled. This shows where your program is actively spending time
+and is the typical choice for performance analysis.
 
-Async-aware mode requires wall-clock mode and is incompatible with several
-other options: ``--native``, ``--no-gc``, ``--all-threads``, and
-``--mode=cpu`` or ``--mode=gil``. These restrictions exist because async-aware
-profiling uses a different stack reconstruction mechanism that tracks task
-relationships rather than raw Python frames.
+With ``--async-mode=all``, tasks that are suspended (awaiting I/O, locks, or
+other tasks) are also included. This mode is useful for understanding what your
+program is waiting on, but produces larger profiles since every suspended task
+appears in each sample.
+
+
+Task markers and stack reconstruction
+-------------------------------------
+
+In async-aware profiles, you will see ``<task>`` frames that mark boundaries
+between asyncio tasks. These are synthetic frames inserted by the profiler to
+show the task structure. The task name appears as the function name in these
+frames.
+
+When a task awaits another task, the profiler reconstructs the logical call
+chain by following the ``await`` relationships. Only "leaf" tasks (tasks that
+no other task is currently awaiting) generate their own stack entries. Tasks
+being awaited by other tasks appear as part of their awaiter's stack instead.
+
+If a task has multiple awaiters (a diamond pattern in the task graph), the
+profiler deterministically selects one parent and annotates the task marker
+with the number of parents, for example ``MyTask (2 parents)``. This indicates
+that alternate execution paths exist but are not shown in this particular stack.
+
+
+Option restrictions
+-------------------
+
+Async-aware mode uses a different stack reconstruction mechanism and is
+incompatible with: ``--native``, ``--no-gc``, ``--all-threads``, and
+``--mode=cpu`` or ``--mode=gil``.
 
 
 Command-line interface
