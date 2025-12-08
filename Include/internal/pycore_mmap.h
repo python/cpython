@@ -27,7 +27,7 @@ _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
 #endif
     assert(strlen(name) < 80);
     int old_errno = errno;
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)(addr), size, name);
+    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
     /* Ignore errno from prctl */
     /* See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746 */
     errno = old_errno;
