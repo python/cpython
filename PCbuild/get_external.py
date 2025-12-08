@@ -74,7 +74,7 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
 def extract_tarball(externals_dir, tarball_path, tag):
     output_path = externals_dir / tag
     with tarfile.open(tarball_path) as tf:
-        tf.extractall(os.fspath(externals_dir))
+        tf.extractall(os.fspath(externals_dir), filter='data')
     return output_path
 
 
