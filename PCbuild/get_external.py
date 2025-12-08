@@ -3,6 +3,7 @@
 import argparse
 import os
 import pathlib
+import platform
 import sys
 import tarfile
 import time
@@ -44,13 +45,24 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
 
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
-    url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{tag}.tar.xz'
-    reporthook = None
-    if verbose:
-        reporthook = print
+    arch = platform.machine()
+    reporthook = print if verbose else None
     tarball_dir.mkdir(parents=True, exist_ok=True)
-    output_path = tarball_dir / f'{tag}.tar.xz'
-    retrieve_with_retries(url, output_path, reporthook)
+
+    arch_filename = f'{tag}-{arch}.tar.xz'
+    arch_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{arch_filename}'
+    try:
+        output_path = tarball_dir / arch_filename
+        retrieve_with_retries(arch_url, output_path, reporthook)
+        return output_path
+    except OSError:
+        if verbose:
+            print(f'{arch_filename} not found, trying generic build...')
+
+    generic_filename = f'{tag}.tar.xz'
+    generic_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{generic_filename}'
+    output_path = tarball_dir / generic_filename
+    retrieve_with_retries(generic_url, output_path, reporthook)
     return output_path
 
 
