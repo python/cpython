@@ -1686,7 +1686,7 @@ Sub-commands
       :param aliases: A list or sequence of strings that can be used as
                      alternative names for this sub-command (e.g., ``aliases=['r']``
                      for a ``'run'`` command).
-      :param deprecated:If :const:`True`, marks the sub-command as deprecated, 
+      :param deprecated: If :const:`True`, marks the sub-command as deprecated, 
                      which typically issues a warning when used.               
       :param kwargs: All other keyword arguments are passed directly to the
                      :class:`!ArgumentParser` constructor.
