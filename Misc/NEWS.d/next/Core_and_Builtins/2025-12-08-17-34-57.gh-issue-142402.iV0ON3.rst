@@ -1,0 +1,1 @@
+Move deref of laststring to below the error checking so the deref is applied after the object in strings is replaced.
