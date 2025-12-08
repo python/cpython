@@ -1674,7 +1674,7 @@ Sub-commands
    called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~_SubParsersAction.add_parser`:
 
-   .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, **kwargs)
+   .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
       Creates and returns a new :class:`!ArgumentParser` object for the
       subcommand *name*.
@@ -1686,6 +1686,8 @@ Sub-commands
       :param aliases: A list or sequence of strings that can be used as
                      alternative names for this sub-command (e.g., ``aliases=['r']``
                      for a ``'run'`` command).
+      :param deprecated:If :const:`True`, marks the sub-command as deprecated, 
+                     which typically issues a warning when used.               
       :param kwargs: All other keyword arguments are passed directly to the
                      :class:`!ArgumentParser` constructor.
 
