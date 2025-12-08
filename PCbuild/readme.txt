@@ -6,7 +6,7 @@ Quick Start Guide
 1a. Optionally install Python 3.10 or later.  If not installed,
     get_externals.bat (via build.bat) will download and use Python via
     NuGet.
-2.  Run "build.bat" to build Python in 32-bit Release configuration.
+2.  Run "build.bat" to build Python in 64-bit Release configuration.
 3.  (Optional, but recommended) Run the test suite with "rt.bat -q".
 
 
