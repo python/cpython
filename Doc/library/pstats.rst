@@ -336,6 +336,8 @@ The :class:`!Stats` class
       Sort by internal time (time in function excluding subcalls).
 
 
+.. _pstats-cli:
+
 Command-line interface
 ======================
 
