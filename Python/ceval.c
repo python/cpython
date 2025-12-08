@@ -1408,7 +1408,7 @@ stop_tracing_and_jit(PyThreadState *tstate, _PyInterpreterFrame *frame)
         // Likewise, we hold a strong reference to the executor containing this exit, so the exit is guaranteed
         // to be valid to access.
         if (err <= 0) {
-            if (exit->executor->vm_data.linked || exit->executor->vm_data.valid) {
+            if (exit->executor->vm_data.linked && exit->executor->vm_data.valid) {
                 exit->temperature = restart_backoff_counter(exit->temperature);
             }
         }
