@@ -80,7 +80,9 @@ Command-line interface
 .. program:: profiling.tracing
 
 The :mod:`profiling.tracing` module can be invoked as a script to profile
-another script or module::
+another script or module:
+
+.. code-block:: shell-session
 
    python -m profiling.tracing [-o output_file] [-s sort_order] (-m module | myscript.py)
 
