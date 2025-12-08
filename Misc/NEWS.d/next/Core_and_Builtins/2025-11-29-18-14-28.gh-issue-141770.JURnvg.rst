@@ -1,0 +1,2 @@
+Annotate anonymous mmap usage only when supported by the
+Linux kernel and if ``-X dev`` is used or Python is built in debug mode. Patch by Donghee Na.
