@@ -1,7 +1,9 @@
+.. highlight:: shell-session
+
 .. _profiling-module:
 
 ***************************************
-:mod:`profiling` --- Python Profilers
+:mod:`profiling` --- Python profilers
 ***************************************
 
 .. module:: profiling
@@ -20,7 +22,7 @@
    single: profiling, deterministic
 
 
-Introduction to Profiling
+Introduction to profiling
 =========================
 
 A :dfn:`profile` is a set of statistics that describes how often and for how
@@ -36,7 +38,7 @@ profiling methodology:
 :mod:`profiling.sampling`
    A statistical profiler that periodically samples the call stack. Run scripts
    directly or attach to running processes by PID. Provides multiple output
-   formats (flamegraphs, heatmaps, Firefox Profiler), GIL analysis, GC tracking,
+   formats (flame graphs, heatmaps, Firefox Profiler), GIL analysis, GC tracking,
    and multiple profiling modes (wall-clock, CPU, GIL) with virtually no overhead.
 
 :mod:`profiling.tracing`
@@ -56,7 +58,7 @@ profiling methodology:
 
 .. _choosing-a-profiler:
 
-Choosing a Profiler
+Choosing a profiler
 ===================
 
 For most performance analysis, use the statistical profiler
@@ -72,7 +74,7 @@ complete between sampling intervals. The tradeoff is higher overhead.
 The following table summarizes the key differences:
 
 +--------------------+------------------------------+------------------------------+
-| Feature            | Statistical Sampling         | Deterministic                |
+| Feature            | Statistical sampling         | Deterministic                |
 |                    | (:mod:`profiling.sampling`)  | (:mod:`profiling.tracing`)   |
 +====================+==============================+==============================+
 | **Overhead**       | Virtually none               | Moderate                     |
@@ -90,7 +92,7 @@ The following table summarizes the key differences:
 +--------------------+------------------------------+------------------------------+
 
 
-When to Use Statistical Sampling
+When to use statistical sampling
 --------------------------------
 
 The statistical profiler (:mod:`profiling.sampling`) is recommended for most
@@ -117,7 +119,7 @@ the ``attach`` command connects to any running Python process by PID without
 requiring a restart or code changes.
 
 
-When to Use Deterministic Tracing
+When to use deterministic tracing
 ---------------------------------
 
 The deterministic profiler (:mod:`profiling.tracing`) instruments every function
@@ -137,14 +139,14 @@ samples, but deterministic tracing records every invocation regardless of
 duration.
 
 
-Quick Start
+Quick start
 ===========
 
 This section provides the minimal steps needed to start profiling. For complete
 documentation, see the dedicated pages for each profiler.
 
 
-Statistical Profiling
+Statistical profiling
 ---------------------
 
 To profile a script, use the :mod:`profiling.sampling` module with the ``run``
@@ -169,14 +171,16 @@ duration (in seconds)::
    python -m profiling.sampling run -i 50 -d 30 script.py
 
 
-Deterministic Profiling
+Deterministic profiling
 -----------------------
 
 To profile a script from the command line::
 
-   python -m profiling.tracing myscript.py
+   python -m profiling.tracing script.py
 
-To profile a piece of code programmatically::
+To profile a piece of code programmatically:
+
+.. code-block:: python
 
    import profiling.tracing
    profiling.tracing.run('my_function()')
@@ -187,7 +191,7 @@ exact function call counts and timing.
 
 .. _profile-output:
 
-Understanding Profile Output
+Understanding profile output
 ============================
 
 Both profilers collect function-level statistics, though they present them in
@@ -217,7 +221,7 @@ Key profiling concepts:
    Calls that are not induced by recursion. When a function recurses, the total
    call count includes recursive invocations, but primitive calls counts only
    the initial entry. Displayed as ``total/primitive`` (for example, ``3/1``
-   means 3 total calls, 1 primitive).
+   means three total calls, one primitive).
 
 **Caller/Callee relationships**
    Which functions called a given function (callers) and which functions it
@@ -226,7 +230,7 @@ Key profiling concepts:
    :meth:`~pstats.Stats.print_callees` methods.
 
 
-Legacy Compatibility
+Legacy compatibility
 ====================
 
 For backward compatibility, the ``cProfile`` module remains available as an

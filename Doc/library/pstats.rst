@@ -1,7 +1,7 @@
 .. _pstats-module:
 
 ********************************************
-:mod:`pstats` --- Statistics for Profilers
+:mod:`pstats` --- Statistics for profilers
 ********************************************
 
 .. module:: pstats
@@ -17,7 +17,7 @@ output from both :mod:`profiling.tracing` (deterministic profiler) and
 :mod:`profiling.sampling` (statistical profiler).
 
 
-Reading and Displaying Profile Data
+Reading and displaying profile data
 ===================================
 
 The :class:`Stats` class is the primary interface for working with profile
@@ -41,7 +41,7 @@ cumulative time::
    p.sort_stats(SortKey.CUMULATIVE).print_stats(10)
 
 
-Working with Statistics
+Working with statistics
 -----------------------
 
 The :class:`Stats` class supports method chaining, making it convenient to
@@ -68,7 +68,7 @@ Different sort keys highlight different aspects of performance::
    p.sort_stats(SortKey.NAME).print_stats()
 
 
-Filtering Output
+Filtering output
 ----------------
 
 The :meth:`~Stats.print_stats` method accepts restrictions that filter
@@ -93,7 +93,7 @@ Combine restrictions (they apply sequentially)::
    p.sort_stats(SortKey.FILENAME).print_stats('foo:', .5)
 
 
-Analyzing Call Relationships
+Analyzing call relationships
 ----------------------------
 
 The :meth:`~Stats.print_callers` method shows which functions called each
@@ -109,7 +109,7 @@ listing which functions each displayed function called::
 Both methods accept the same restriction arguments as :meth:`~Stats.print_stats`.
 
 
-Combining Multiple Profiles
+Combining multiple profiles
 ---------------------------
 
 Statistics from multiple profiling runs can be combined into a single
@@ -127,8 +127,8 @@ When files are combined, statistics for identical functions (same file, line,
 and name) are accumulated, giving an aggregate view across all profiling runs.
 
 
-The :class:`Stats` Class
-========================
+The :class:`!Stats` class
+=========================
 
 .. class:: Stats(*filenames_or_profile, stream=sys.stdout)
 
@@ -186,37 +186,37 @@ The :class:`Stats` Class
 
       Valid sort keys:
 
-      +------------------+---------------------+----------------------+
-      | String           | Enum                | Meaning              |
-      +==================+=====================+======================+
-      | ``'calls'``      | SortKey.CALLS       | call count           |
-      +------------------+---------------------+----------------------+
-      | ``'cumulative'`` | SortKey.CUMULATIVE  | cumulative time      |
-      +------------------+---------------------+----------------------+
-      | ``'cumtime'``    | N/A                 | cumulative time      |
-      +------------------+---------------------+----------------------+
-      | ``'file'``       | N/A                 | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'filename'``   | SortKey.FILENAME    | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'module'``     | N/A                 | file name            |
-      +------------------+---------------------+----------------------+
-      | ``'ncalls'``     | N/A                 | call count           |
-      +------------------+---------------------+----------------------+
-      | ``'pcalls'``     | SortKey.PCALLS      | primitive call count |
-      +------------------+---------------------+----------------------+
-      | ``'line'``       | SortKey.LINE        | line number          |
-      +------------------+---------------------+----------------------+
-      | ``'name'``       | SortKey.NAME        | function name        |
-      +------------------+---------------------+----------------------+
-      | ``'nfl'``        | SortKey.NFL         | name/file/line       |
-      +------------------+---------------------+----------------------+
-      | ``'stdname'``    | SortKey.STDNAME     | standard name        |
-      +------------------+---------------------+----------------------+
-      | ``'time'``       | SortKey.TIME        | internal time        |
-      +------------------+---------------------+----------------------+
-      | ``'tottime'``    | N/A                 | internal time        |
-      +------------------+---------------------+----------------------+
+      +------------------+------------------------+----------------------+
+      | String           | Enum                   | Meaning              |
+      +==================+========================+======================+
+      | ``'calls'``      | ``SortKey.CALLS``      | call count           |
+      +------------------+------------------------+----------------------+
+      | ``'cumulative'`` | ``SortKey.CUMULATIVE`` | cumulative time      |
+      +------------------+------------------------+----------------------+
+      | ``'cumtime'``    | N/A                    | cumulative time      |
+      +------------------+------------------------+----------------------+
+      | ``'file'``       | N/A                    | file name            |
+      +------------------+------------------------+----------------------+
+      | ``'filename'``   | ``SortKey.FILENAME``   | file name            |
+      +------------------+------------------------+----------------------+
+      | ``'module'``     | N/A                    | file name            |
+      +------------------+------------------------+----------------------+
+      | ``'ncalls'``     | N/A                    | call count           |
+      +------------------+------------------------+----------------------+
+      | ``'pcalls'``     | ``SortKey.PCALLS``     | primitive call count |
+      +------------------+------------------------+----------------------+
+      | ``'line'``       | ``SortKey.LINE``       | line number          |
+      +------------------+------------------------+----------------------+
+      | ``'name'``       | ``SortKey.NAME``       | function name        |
+      +------------------+------------------------+----------------------+
+      | ``'nfl'``        | ``SortKey.NFL``        | name/file/line       |
+      +------------------+------------------------+----------------------+
+      | ``'stdname'``    | ``SortKey.STDNAME``    | standard name        |
+      +------------------+------------------------+----------------------+
+      | ``'time'``       | ``SortKey.TIME``       | internal time        |
+      +------------------+------------------------+----------------------+
+      | ``'tottime'``    | N/A                    | internal time        |
+      +------------------+------------------------+----------------------+
 
       All sorts on statistics are in descending order (most time consuming
       first), while name, file, and line number sorts are ascending
@@ -336,7 +336,9 @@ The :class:`Stats` Class
       Sort by internal time (time in function excluding subcalls).
 
 
-Command Line Interface
+.. _pstats-cli:
+
+Command-line interface
 ======================
 
 The :mod:`pstats` module can be invoked as a script to interactively browse

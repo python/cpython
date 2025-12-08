@@ -1,7 +1,7 @@
 .. _profiling-tracing:
 
 ****************************************************
-:mod:`profiling.tracing` --- Deterministic Profiler
+:mod:`profiling.tracing` --- Deterministic profiler
 ****************************************************
 
 .. module:: profiling.tracing
@@ -38,7 +38,7 @@ testing scenarios.
       cProfile.run('my_function()')
 
 
-What Is Deterministic Profiling?
+What is deterministic profiling?
 ================================
 
 :dfn:`Deterministic profiling` captures every function call, function return,
@@ -74,13 +74,15 @@ allows direct comparison of recursive and iterative implementations.
 
 .. _profiling-tracing-cli:
 
-Command Line Interface
+Command-line interface
 ======================
 
 .. program:: profiling.tracing
 
 The :mod:`profiling.tracing` module can be invoked as a script to profile
-another script or module::
+another script or module:
+
+.. code-block:: shell-session
 
    python -m profiling.tracing [-o output_file] [-s sort_order] (-m module | myscript.py)
 
@@ -111,17 +113,17 @@ results to standard output (or saves them to a file).
       The ``-m`` option for :mod:`profile`.
 
 
-Programmatic Usage Examples
+Programmatic usage examples
 ===========================
 
 For more control over profiling, use the module's functions and classes
 directly.
 
 
-Basic Profiling
+Basic profiling
 ---------------
 
-The simplest approach uses the :func:`run` function::
+The simplest approach uses the :func:`!run` function::
 
    import profiling.tracing
    profiling.tracing.run('my_function()')
@@ -132,10 +134,10 @@ To save results for later analysis::
    profiling.tracing.run('my_function()', 'output.prof')
 
 
-Using the Profile Class
------------------------
+Using the :class:`!Profile` class
+---------------------------------
 
-The :class:`Profile` class provides fine-grained control::
+The :class:`!Profile` class provides fine-grained control::
 
    import profiling.tracing
    import pstats
@@ -152,7 +154,7 @@ The :class:`Profile` class provides fine-grained control::
    ps.print_stats()
    print(s.getvalue())
 
-The :class:`Profile` class also works as a context manager::
+The :class:`!Profile` class also works as a context manager::
 
    import profiling.tracing
 
@@ -162,7 +164,7 @@ The :class:`Profile` class also works as a context manager::
    pr.print_stats()
 
 
-Module Reference
+Module reference
 ================
 
 .. currentmodule:: profiling.tracing
@@ -264,7 +266,7 @@ Module Reference
    profiling, no results will be available.
 
 
-Using a Custom Timer
+Using a custom timer
 ====================
 
 The :class:`Profile` class accepts a custom timing function, allowing you to
@@ -297,7 +299,7 @@ Limitations
 
 Deterministic profiling has inherent limitations related to timing accuracy.
 
-The underlying timer typically has a resolution of about 1 millisecond.
+The underlying timer typically has a resolution of about one millisecond.
 Measurements cannot be more accurate than this resolution. With enough
 measurements, timing errors tend to average out, but individual measurements
 may be imprecise.

@@ -1,7 +1,9 @@
+.. highlight:: shell-session
+
 .. _profiling-sampling:
 
 ***************************************************
-:mod:`profiling.sampling` --- Statistical Profiler
+:mod:`profiling.sampling` --- Statistical profiler
 ***************************************************
 
 .. module:: profiling.sampling
@@ -26,7 +28,7 @@ process, overhead is virtually zero, making this profiler suitable for both
 development and production environments.
 
 
-What Is Statistical Profiling?
+What is statistical profiling?
 ==============================
 
 Statistical profiling builds a picture of program behavior by periodically
@@ -62,7 +64,7 @@ deterministic profiling overhead would be unacceptable. For exact call counts
 and complete call graphs, use :mod:`profiling.tracing` instead.
 
 
-Quick Examples
+Quick examples
 ==============
 
 Profile a script and see the results immediately::
@@ -101,7 +103,7 @@ The profiler operates through two subcommands that determine how to obtain
 the target process.
 
 
-The ``run`` Command
+The ``run`` command
 -------------------
 
 The ``run`` command launches a Python script or module and profiles it from
@@ -119,7 +121,7 @@ profiled program::
    python -m profiling.sampling run script.py --config settings.yaml
 
 
-The ``attach`` Command
+The ``attach`` command
 ----------------------
 
 The ``attach`` command connects to an already-running Python process by its
@@ -136,7 +138,7 @@ On most systems, attaching to another process requires appropriate permissions.
 On Linux, you may need to run as root or adjust the ``ptrace_scope`` setting.
 
 
-Sampling Configuration
+Sampling configuration
 ======================
 
 Before exploring the various output formats and visualization options, it is
@@ -169,7 +171,7 @@ The default configuration works well for most use cases:
      - No live statistics display during profiling
 
 
-Sampling Interval and Duration
+Sampling interval and duration
 ------------------------------
 
 The two most fundamental parameters are the sampling interval and duration.
@@ -198,7 +200,7 @@ a program that runs for a fixed time, you may want to set the duration to
 match or exceed the expected runtime.
 
 
-Thread Selection
+Thread selection
 ----------------
 
 Python programs often use multiple threads, whether explicitly through the
@@ -217,7 +219,7 @@ This option is particularly useful when investigating concurrency issues or
 when work is distributed across a thread pool.
 
 
-Special Frames
+Special frames
 --------------
 
 The profiler can inject artificial frames into the captured stacks to provide
@@ -247,7 +249,7 @@ see substantial time in ``<GC>`` frames, consider investigating object
 allocation rates or using object pooling.
 
 
-Real-Time Statistics
+Real-time statistics
 --------------------
 
 The ``--realtime-stats`` option displays sampling rate statistics during
@@ -260,15 +262,15 @@ if the profiler cannot keep up. The statistics help verify that profiling is
 working correctly and that sufficient samples are being collected.
 
 
-Profiling Modes
+Profiling modes
 ===============
 
 The sampling profiler supports three modes that control which samples are
 recorded. The mode determines what the profile measures: total elapsed time,
-CPU execution time, or time spent holding the Global Interpreter Lock.
+CPU execution time, or time spent holding the global interpreter lock.
 
 
-Wall-Clock Mode
+Wall-clock mode
 ---------------
 
 Wall-clock mode (``--mode=wall``) captures all samples regardless of what the
@@ -288,7 +290,7 @@ function. This is often exactly what you want when optimizing end-to-end
 latency.
 
 
-CPU Mode
+CPU mode
 --------
 
 CPU mode (``--mode=cpu``) records samples only when the thread is actually
@@ -306,11 +308,11 @@ and network calls, CPU mode reveals which computational sections are most
 expensive.
 
 
-GIL Mode
+GIL mode
 --------
 
 GIL mode (``--mode=gil``) records samples only when the thread holds Python's
-Global Interpreter Lock::
+global interpreter lock::
 
    python -m profiling.sampling run --mode=gil script.py
 
@@ -325,7 +327,7 @@ single-threaded programs or for code that releases the GIL (such as many
 NumPy operations or I/O calls).
 
 
-Output Formats
+Output formats
 ==============
 
 The profiler produces output in several formats, each suited to different
@@ -333,7 +335,7 @@ analysis workflows. The format is selected with a command-line flag, and
 output goes to stdout, a file, or a directory depending on the format.
 
 
-pstats Format
+pstats format
 -------------
 
 The pstats format (``--pstats``) produces a text table similar to what
@@ -357,17 +359,17 @@ anywhere on the stack). The percentages and times derive from these counts
 and the total profiling duration. Time units are selected automatically based
 on the data: seconds, milliseconds, or microseconds.
 
-The output includes a Legend explaining each column and a Summary of
-Interesting Functions section that highlights:
+The output includes a legend explaining each column and a summary of
+interesting functions that highlights:
 
-- **Hot Spots**: Functions with high direct/cumulative sample ratio (time spent
+- **Hot spots**: functions with high direct/cumulative sample ratio (time spent
   directly executing rather than waiting for callees)
-- **Indirect Calls**: Functions appearing frequently on the stack via other
+- **Indirect calls**: functions appearing frequently on the stack via other
   callers
-- **Call Magnification**: Functions where cumulative samples far exceed direct
+- **Call magnification**: functions where cumulative samples far exceed direct
   samples, indicating significant time in nested calls
 
-Use ``--no-summary`` to suppress both the Legend and Summary sections.
+Use ``--no-summary`` to suppress both the legend and summary sections.
 
 To save pstats output to a file instead of stdout::
 
@@ -388,7 +390,7 @@ The ``--no-summary`` option suppresses the header summary that precedes the
 statistics table.
 
 
-Collapsed Stacks Format
+Collapsed stacks format
 -----------------------
 
 Collapsed stacks format (``--collapsed``) produces one line per unique call
@@ -396,7 +398,9 @@ stack, with a count of how many times that stack was sampled::
 
    python -m profiling.sampling run --collapsed script.py
 
-The output looks like::
+The output looks like:
+
+.. code-block:: text
 
    main;process_data;parse_json;decode_utf8 42
    main;process_data;parse_json 156
@@ -416,7 +420,7 @@ The resulting SVG can be viewed in any web browser and provides an interactive
 visualization where you can click to zoom into specific call paths.
 
 
-Flame Graph Format
+Flame graph format
 ------------------
 
 Flame graph format (``--flamegraph``) produces a self-contained HTML file with
@@ -450,7 +454,7 @@ at the top indicate functions that consume significant time either directly
 or through their callees.
 
 
-Gecko Format
+Gecko format
 ------------
 
 Gecko format (``--gecko``) produces JSON output compatible with the Firefox
@@ -459,11 +463,11 @@ Profiler::
    python -m profiling.sampling run --gecko script.py
    python -m profiling.sampling run --gecko -o profile.json script.py
 
-The `Firefox Profiler <https://profiler.firefox.com>`_ is a sophisticated
+The `Firefox Profiler <https://profiler.firefox.com>`__ is a sophisticated
 web-based tool originally built for profiling Firefox itself. It provides
 features beyond basic flame graphs, including a timeline view, call tree
 exploration, and marker visualization. See the
-`Firefox Profiler documentation <https://profiler.firefox.com/docs/#/>`_ for
+`Firefox Profiler documentation <https://profiler.firefox.com/docs/#/>`__ for
 detailed usage instructions.
 
 To use the output, open the Firefox Profiler in your browser and load the
@@ -475,16 +479,16 @@ CPU activity, enabling analysis features specific to Python's threading model.
 The profiler emits interval markers that appear as colored bands in the
 Firefox Profiler timeline:
 
-- **GIL markers**: Show when threads hold or release the Global Interpreter Lock
-- **CPU markers**: Show when threads are executing on CPU versus idle
-- **Code type markers**: Distinguish Python code from native (C extension) code
-- **GC markers**: Indicate garbage collection activity
+- **GIL markers**: show when threads hold or release the global interpreter lock
+- **CPU markers**: show when threads are executing on CPU versus idle
+- **Code type markers**: distinguish Python code from native (C extension) code
+- **GC markers**: indicate garbage collection activity
 
 For this reason, the ``--mode`` option is not available with Gecko format;
 all relevant data is captured automatically.
 
 
-Heatmap Format
+Heatmap format
 --------------
 
 Heatmap format (``--heatmap``) generates an interactive HTML visualization
@@ -505,17 +509,17 @@ responsible for time consumption.
 
 The heatmap interface provides several interactive features:
 
-- **Coloring modes**: Toggle between "Self Time" (direct execution) and
+- **Coloring modes**: toggle between "Self Time" (direct execution) and
   "Total Time" (cumulative, including time in called functions)
-- **Cold code filtering**: Show all lines or only lines with samples
-- **Call graph navigation**: Each line has buttons to navigate to callers
+- **Cold code filtering**: show all lines or only lines with samples
+- **Call graph navigation**: each line has buttons to navigate to callers
   (functions that called this line) and callees (functions called from here)
-- **Scroll minimap**: A vertical overview showing the heat distribution across
+- **Scroll minimap**: a vertical overview showing the heat distribution across
   the entire file
-- **Hierarchical index**: Files organized by type (stdlib, site-packages,
+- **Hierarchical index**: files organized by type (stdlib, site-packages,
   project) with aggregate sample counts per folder
-- **Dark/light theme**: Toggle with preference saved across sessions
-- **Line linking**: Click line numbers to create shareable URLs
+- **Dark/light theme**: toggle with preference saved across sessions
+- **Line linking**: click line numbers to create shareable URLs
 
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
@@ -525,7 +529,7 @@ intuitive view that shows exactly where time is spent without requiring
 interpretation of hierarchical visualizations.
 
 
-Live Mode
+Live mode
 =========
 
 Live mode (``--live``) provides a terminal-based real-time view of profiling
@@ -541,40 +545,40 @@ and 24 lines tall.
 
 Within live mode, keyboard commands control the display:
 
-``q``
+:kbd:`q`
    Quit the profiler and return to the shell.
 
-``s`` / ``S``
+:kbd:`s` / :kbd:`S`
    Cycle through sort orders forward/backward (sample count, percentage,
    total time, cumulative percentage, cumulative time).
 
-``p``
+:kbd:`p`
    Pause or resume display updates. Sampling continues while paused.
 
-``r``
+:kbd:`r`
    Reset all statistics and start fresh.
 
-``/``
+:kbd:`/`
    Enter filter mode to search for functions by name. Type a pattern and
    press Enter to filter, or Escape to cancel.
 
-``c``
+:kbd:`c`
    Clear the current filter.
 
-``t``
+:kbd:`t`
    Toggle between viewing all threads combined or per-thread statistics.
 
-``←`` ``→`` or ``↑`` ``↓``
+:kbd:`←` :kbd:`→` or :kbd:`↑` :kbd:`↓`
    In per-thread view, navigate between threads.
 
-``+`` / ``-``
+:kbd:`+` / :kbd:`-`
    Increase or decrease the display refresh rate (range: 0.05s to 1.0s).
 
-``x``
+:kbd:`x`
    Toggle trend indicators that show whether functions are becoming hotter
    or cooler over time.
 
-``h`` or ``?``
+:kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
 
 Live mode is incompatible with output format options (``--collapsed``,
@@ -582,7 +586,7 @@ Live mode is incompatible with output format options (``--collapsed``,
 interface rather than producing file output.
 
 
-Async-Aware Profiling
+Async-aware profiling
 =====================
 
 For programs using :mod:`asyncio`, the profiler offers async-aware mode
@@ -613,7 +617,7 @@ profiling uses a different stack reconstruction mechanism that tracks task
 relationships rather than raw Python frames.
 
 
-Command Line Reference
+Command-line interface
 ======================
 
 .. program:: profiling.sampling
@@ -621,7 +625,7 @@ Command Line Reference
 The complete command-line interface for reference.
 
 
-Global Options
+Global options
 --------------
 
 .. option:: run
@@ -633,7 +637,7 @@ Global Options
    Attach to and profile a running process by PID.
 
 
-Sampling Options
+Sampling options
 ----------------
 
 .. option:: -i <microseconds>, --interval <microseconds>
@@ -665,7 +669,7 @@ Sampling Options
    Enable async-aware profiling for asyncio programs.
 
 
-Mode Options
+Mode options
 ------------
 
 .. option:: --mode <mode>
@@ -679,7 +683,7 @@ Mode Options
    Requires ``--async-aware``.
 
 
-Output Options
+Output options
 --------------
 
 .. option:: --pstats
@@ -710,7 +714,7 @@ Output Options
    named ``heatmap_PID``.
 
 
-pstats Display Options
+pstats display options
 ----------------------
 
 These options apply only to pstats format output.
@@ -729,7 +733,7 @@ These options apply only to pstats format output.
    Omit the Legend and Summary of Interesting Functions sections from output.
 
 
-Run Command Options
+Run command options
 -------------------
 
 .. option:: -m, --module
@@ -752,9 +756,9 @@ Run Command Options
    :mod:`pstats`
       Statistics analysis for profile data.
 
-   `Firefox Profiler <https://profiler.firefox.com>`_
+   `Firefox Profiler <https://profiler.firefox.com>`__
       Web-based profiler that accepts Gecko format output. See the
-      `documentation <https://profiler.firefox.com/docs/#/>`_ for usage details.
+      `documentation <https://profiler.firefox.com/docs/#/>`__ for usage details.
 
-   `FlameGraph <https://github.com/brendangregg/FlameGraph>`_
+   `FlameGraph <https://github.com/brendangregg/FlameGraph>`__
       Tools for generating flame graphs from collapsed stack format.

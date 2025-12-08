@@ -33,7 +33,7 @@ The following modules have a command-line interface.
 * :mod:`poplib`
 * :ref:`profiling.sampling <profiling-sampling>`
 * :ref:`profiling.tracing <profiling-tracing-cli>`
-* :mod:`pstats`
+* :ref:`pstats <pstats-cli>`
 * :ref:`py_compile <py_compile-cli>`
 * :mod:`pyclbr`
 * :mod:`pydoc`
