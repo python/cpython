@@ -31,5 +31,5 @@ To update the LLVM release artifact for Windows builds, follow these steps:
 
 ### Other notes
 - You must make sure that the name of the artifact matches exactly what is expected in `Tools/jit/_llvm.py` and `PCbuild/get_externals.py`.
-- The artifact filename must include the architecture suffix (e.g. `llvm-21.1.4.0-AMD64.tar.xz`, `llvm-21.1.4.0-ARM64.tar.xz`). For backwards compatibility with older CPython branches, you can also upload a copy without the suffix (`llvm-21.1.4.0.tar.xz`).
+- The artifact filename must include the architecture suffix (e.g. `llvm-21.1.4.0-AMD64.tar.xz`, `llvm-21.1.4.0-ARM64.tar.xz`).
 - You must have permissions to create releases in the `cpython-bin-deps` repository. If you don't have permissions, you should contact one of the organization admins.
