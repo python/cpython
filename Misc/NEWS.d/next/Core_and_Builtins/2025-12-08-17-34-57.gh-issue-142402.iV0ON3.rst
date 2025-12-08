@@ -1,1 +1,3 @@
-Move deref of laststring to below the error checking so the deref is applied after the object in strings is replaced.
+Fix reference counting when adjacent literal parts are merged while constructing
+:class:`string.templatelib.Template`, preventing the displaced string object
+from leaking.
