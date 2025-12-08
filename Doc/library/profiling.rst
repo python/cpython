@@ -96,7 +96,8 @@ When to use statistical sampling
 --------------------------------
 
 The statistical profiler (:mod:`profiling.sampling`) is recommended for most
-performance analysis tasks. Use it the same way you would use ``cProfile``::
+performance analysis tasks. Use it the same way you would use
+:mod:`profiling.tracing`::
 
    python -m profiling.sampling run script.py
 
