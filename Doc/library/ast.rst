@@ -289,9 +289,9 @@ Literals
    * ``conversion`` is an integer:
 
      * -1: no formatting
-     * 115: ``!s`` string formatting
-     * 114: ``!r`` repr formatting
-     * 97: ``!a`` ascii formatting
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` formatting
+     * 114 (``ord('r')``): ``!r`` :func:`repr` formatting
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` formatting
 
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
@@ -323,6 +323,63 @@ Literals
                         format_spec=JoinedStr(
                             values=[
                                 Constant(value='.3')]))]))
+
+
+.. class:: TemplateStr(values, /)
+
+   .. versionadded:: 3.14
+
+   Node representing a template string literal, comprising a series of
+   :class:`Interpolation` and :class:`Constant` nodes.
+   These nodes may be any order, and do not need to be interleaved.
+
+   .. doctest::
+
+        >>> expr = ast.parse('t"{name} finished {place:ordinal}"', mode='eval')
+        >>> print(ast.dump(expr, indent=4))
+        Expression(
+            body=TemplateStr(
+                values=[
+                    Interpolation(
+                        value=Name(id='name'),
+                        str='name',
+                        conversion=-1),
+                    Constant(value=' finished '),
+                    Interpolation(
+                        value=Name(id='place'),
+                        str='place',
+                        conversion=-1,
+                        format_spec=JoinedStr(
+                            values=[
+                                Constant(value='ordinal')]))]))
+
+.. class:: Interpolation(value, str, conversion, format_spec=None)
+
+   .. versionadded:: 3.14
+
+   Node representing a single interpolation field in a template string literal.
+
+   * ``value`` is any expression node (such as a literal, a variable, or a
+     function call).
+     This has the same meaning as ``FormattedValue.value``.
+   * ``str`` is a constant containing the text of the interpolation expression.
+
+     If ``str`` is set to ``None``, then ``value`` is used to generate code
+     when calling :func:`ast.unparse`. This no longer guarantees that the
+     generated code is identical to the original and is intended for code
+     generation.
+   * ``conversion`` is an integer:
+
+     * -1: no conversion
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` conversion
+     * 114 (``ord('r')``): ``!r`` :func:`repr` conversion
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` conversion
+
+     This has the same meaning as ``FormattedValue.conversion``.
+   * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
+     of the value, or ``None`` if no format was specified. Both
+     ``conversion`` and ``format_spec`` can be set at the same time.
+     This has the same meaning as ``FormattedValue.format_spec``.
 
 
 .. class:: List(elts, ctx)
@@ -2148,10 +2205,10 @@ Async and await
 Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
-.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1)
+.. function:: parse(source, filename='<unknown>', mode='exec', *, type_comments=False, feature_version=None, optimize=-1, module=None)
 
    Parse the source into an AST node.  Equivalent to ``compile(source,
-   filename, mode, flags=FLAGS_VALUE, optimize=optimize)``,
+   filename, mode, flags=FLAGS_VALUE, optimize=optimize, module=module)``,
    where ``FLAGS_VALUE`` is ``ast.PyCF_ONLY_AST`` if ``optimize <= 0``
    and ``ast.PyCF_OPTIMIZED_AST`` otherwise.
 
@@ -2203,6 +2260,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. function:: unparse(ast_obj)
@@ -2455,7 +2515,7 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.13
       Added the *show_empty* option.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Omit optional ``Load()`` values by default.
 
 

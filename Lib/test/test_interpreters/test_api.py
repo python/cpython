@@ -1,6 +1,7 @@
 import contextlib
 import os
 import pickle
+import signal
 import sys
 from textwrap import dedent
 import threading
@@ -11,6 +12,7 @@ from test import support
 from test.support import os_helper
 from test.support import script_helper
 from test.support import import_helper
+from test.support.script_helper import assert_python_ok, spawn_python
 # Raise SkipTest if subinterpreters not supported.
 _interpreters = import_helper.import_module('_interpreters')
 from concurrent import interpreters
@@ -412,9 +414,57 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        data = pickle.dumps(interp)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, interp)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(interp, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, interp)
+
+    @support.requires_subprocess()
+    @force_not_colorized
+    def test_cleanup_in_repl(self):
+        # GH-135729: Using a subinterpreter in the REPL would lead to an unraisable
+        # exception during finalization
+        repl = script_helper.spawn_python("-i")
+        script = b"""if True:
+        from concurrent import interpreters
+        interpreters.create()
+        exit()"""
+        stdout, stderr = repl.communicate(script)
+        self.assertIsNone(stderr)
+        self.assertIn(b"Interpreter.close()", stdout)
+        self.assertNotIn(b"Traceback", stdout)
+
+    @support.requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
+    def test_keyboard_interrupt_in_thread_running_interp(self):
+        import subprocess
+        source = f"""if True:
+        from concurrent import interpreters
+        from threading import Thread
+
+        def test():
+            import time
+            print('a', flush=True, end='')
+            time.sleep(10)
+
+        interp = interpreters.create()
+        interp.call_in_thread(test)
+        """
+
+        with spawn_python("-c", source, stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(1), b'a')
+            proc.send_signal(signal.SIGINT)
+            proc.stderr.flush()
+            error = proc.stderr.read()
+            self.assertIn(b"KeyboardInterrupt", error)
+            retcode = proc.wait()
+            # Sometimes we send the SIGINT after the subthread yields the GIL to
+            # the main thread, which results in the main thread getting the
+            # KeyboardInterrupt before finalization is reached. There's not
+            # any great way to protect against that, so we just allow a -2
+            # return code as well.
+            self.assertIn(retcode, (0, -signal.SIGINT))
 
 
 class TestInterpreterIsRunning(TestBase):
@@ -705,6 +755,68 @@ class TestInterpreterClose(TestBase):
                     self.interp_exists(interpid))
 
 
+    def test_remaining_threads(self):
+        r_interp, w_interp = self.pipe()
+
+        FINISHED = b'F'
+
+        # It's unlikely, but technically speaking, it's possible
+        # that the thread could've finished before interp.close() is
+        # reached, so this test might not properly exercise the case.
+        # However, it's quite unlikely and probably not worth bothering about.
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            import os
+            import threading
+            import time
+
+            def task():
+                time.sleep(1)
+                os.write({w_interp}, {FINISHED!r})
+
+            threads = (threading.Thread(target=task) for _ in range(3))
+            for t in threads:
+                t.start()
+            """)
+        interp.close()
+
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
+    def test_remaining_daemon_threads(self):
+        # Daemon threads leak reference by nature, because they hang threads
+        # without allowing them to do cleanup (i.e., release refs).
+        # To prevent that from messing up the refleak hunter and whatnot, we
+        # run this in a subprocess.
+        code = '''if True:
+        import _interpreters
+        import types
+        interp = _interpreters.create(
+            types.SimpleNamespace(
+                use_main_obmalloc=False,
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=True,
+                allow_daemon_threads=True,
+                check_multi_interp_extensions=True,
+                gil='own',
+            )
+        )
+        _interpreters.exec(interp, f"""if True:
+            import threading
+            import time
+
+            def task():
+                time.sleep(3)
+
+            threads = (threading.Thread(target=task, daemon=True) for _ in range(3))
+            for t in threads:
+                t.start()
+            """)
+        _interpreters.destroy(interp)
+        '''
+        assert_python_ok('-c', code)
+
+
 class TestInterpreterPrepareMain(TestBase):
 
     def test_empty(self):
@@ -813,7 +925,10 @@ class TestInterpreterExec(TestBase):
                 spam.eggs()
 
             interp = interpreters.create()
-            interp.exec(script)
+            try:
+                interp.exec(script)
+            finally:
+                interp.close()
             """)
 
         stdout, stderr = self.assert_python_failure(scriptfile)
@@ -822,7 +937,7 @@ class TestInterpreterExec(TestBase):
         #      File "{interpreters.__file__}", line 179, in exec
         self.assertEqual(stderr, dedent(f"""\
             Traceback (most recent call last):
-              File "{scriptfile}", line 9, in <module>
+              File "{scriptfile}", line 10, in <module>
                 interp.exec(script)
                 ~~~~~~~~~~~^^^^^^^^
               {interpmod_line.strip()}
@@ -2201,6 +2316,16 @@ class LowLevelTests(TestBase):
                 config=False)
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
+
+    def test_contextvars_missing(self):
+        script = f"""
+            import contextvars
+            print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
+            """
+
+        orig = _interpreters.create()
+        text = self.run_and_capture(orig, script)
+        self.assertEqual(text.strip(), "<Token.MISSING>")
 
     def test_is_running(self):
         def check(interpid, expected):

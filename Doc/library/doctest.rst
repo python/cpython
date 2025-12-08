@@ -311,8 +311,12 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
+.. currentmodule:: None
+
 .. attribute:: module.__test__
    :no-typesetting:
+
+.. currentmodule:: doctest
 
 In addition, there are cases when you want tests to be part of a module but not part
 of the help text, which requires that the tests not be included in the docstring.
@@ -346,6 +350,13 @@ searches them recursively for docstrings, which are then scanned for tests.
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
+.. note::
+
+   ``doctest`` can only automatically discover classes and functions that are
+   defined at the module level or inside other classes.
+
+   Since nested classes and functions only exist when an outer function
+   is called, they cannot be discovered. Define them outside to make them visible.
 
 .. _doctest-finding-examples:
 
@@ -1112,7 +1123,7 @@ from text files and modules with doctests:
    The global ``__file__`` is added to the globals provided to doctests loaded
    from a text file using :func:`DocFileSuite`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
 
@@ -1153,7 +1164,7 @@ from text files and modules with doctests:
       :func:`DocTestSuite` returns an empty :class:`unittest.TestSuite` if *module*
       contains no docstrings instead of raising :exc:`ValueError`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Run each example as a :ref:`subtest <subtests>`.
 
 Under the covers, :func:`DocTestSuite` creates a :class:`unittest.TestSuite` out
@@ -1553,7 +1564,7 @@ DocTestRunner objects
       containing *example*.  *out* is the output function that was passed to
       :meth:`DocTestRunner.run`.
 
-      .. versionadded:: next
+      .. versionadded:: 3.15
 
 
    .. method:: report_start(out, test, example)

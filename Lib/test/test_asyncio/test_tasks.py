@@ -24,7 +24,7 @@ from test.support.warnings_helper import ignore_warnings
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 async def coroutine_function():
@@ -3679,6 +3679,30 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(len(callback.call_args_list), 1)
         (loop, context), kwargs = callback.call_args
         self.assertEqual(context['exception'], exc_context.exception)
+
+    def test_run_coroutine_threadsafe_and_cancel(self):
+        task = None
+        thread_future = None
+        # Use a custom task factory to capture the created Task
+        def task_factory(loop, coro):
+            nonlocal task
+            task = asyncio.Task(coro, loop=loop)
+            return task
+
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
+
+        async def target():
+            nonlocal thread_future
+            self.loop.set_task_factory(task_factory)
+            thread_future = asyncio.run_coroutine_threadsafe(asyncio.sleep(10), self.loop)
+            await asyncio.sleep(0)
+
+            thread_future.cancel()
+
+        self.loop.run_until_complete(target())
+        self.assertTrue(task.cancelled())
+        self.assertTrue(thread_future.cancelled())
 
 
 class SleepTests(test_utils.TestCase):

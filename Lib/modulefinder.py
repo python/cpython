@@ -334,7 +334,7 @@ class ModuleFinder:
             self.msgout(2, "load_module ->", m)
             return m
         if type == _PY_SOURCE:
-            co = compile(fp.read(), pathname, 'exec')
+            co = compile(fp.read(), pathname, 'exec', module=fqname)
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
@@ -400,7 +400,6 @@ class ModuleFinder:
                 yield "relative_import", (level, fromlist, name)
 
     def scan_code(self, co, m):
-        code = co.co_code
         scanner = self.scan_opcodes
         for what, args in scanner(co):
             if what == "store":

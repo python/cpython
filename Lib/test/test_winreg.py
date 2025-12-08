@@ -209,6 +209,33 @@ class BaseWinregTests(unittest.TestCase):
                        access=KEY_ALL_ACCESS) as okey:
             self.assertTrue(okey.handle != 0)
 
+    def test_hkey_comparison(self):
+        """Test HKEY comparison by handle value rather than object identity."""
+        key1 = OpenKey(HKEY_CURRENT_USER, None)
+        key2 = OpenKey(HKEY_CURRENT_USER, None)
+        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
+
+        self.addCleanup(CloseKey, key1)
+        self.addCleanup(CloseKey, key2)
+        self.addCleanup(CloseKey, key3)
+
+        self.assertEqual(key1.handle, key2.handle)
+        self.assertTrue(key1 == key2)
+        self.assertFalse(key1 != key2)
+
+        self.assertTrue(key1 != key3)
+        self.assertFalse(key1 == key3)
+
+        # Closed keys should be equal (all have handle=0)
+        CloseKey(key1)
+        CloseKey(key2)
+        CloseKey(key3)
+
+        self.assertEqual(key1.handle, 0)
+        self.assertEqual(key2.handle, 0)
+        self.assertEqual(key3.handle, 0)
+        self.assertEqual(key2, key3)
+
 
 class LocalWinregTests(BaseWinregTests):
 
@@ -516,6 +543,21 @@ class Win64WinregTests(BaseWinregTests):
     def test_exception_numbers(self):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
+
+    def test_delete_tree(self):
+        with CreateKey(HKEY_CURRENT_USER, test_key_name) as main_key:
+            with CreateKey(main_key, "subkey1") as subkey1:
+                SetValueEx(subkey1, "value1", 0, REG_SZ, "test_value1")
+                with CreateKey(subkey1, "subsubkey1") as subsubkey1:
+                    SetValueEx(subsubkey1, "value2", 0, REG_DWORD, 42)
+
+            with CreateKey(main_key, "subkey2") as subkey2:
+                SetValueEx(subkey2, "value3", 0, REG_SZ, "test_value3")
+
+        DeleteTree(HKEY_CURRENT_USER, test_key_name)
+
+        with self.assertRaises(OSError):
+            OpenKey(HKEY_CURRENT_USER, test_key_name)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Tools to analyze tasks running in asyncio programs."""
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from itertools import count
 from enum import Enum
 import sys
@@ -222,6 +222,20 @@ def _print_cycle_exception(exception: CycleFoundException):
         print(f"cycle: {inames}", file=sys.stderr)
 
 
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+    )
+    sys.exit(1)
+
+
 def _get_awaited_by_tasks(pid: int) -> list:
     try:
         return get_all_awaited_by(pid)
@@ -230,6 +244,8 @@ def _get_awaited_by_tasks(pid: int) -> list:
             e = e.__context__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
+    except PermissionError:
+        exit_with_permission_help_text()
 
 
 def display_awaited_by_tasks_table(pid: int) -> None:

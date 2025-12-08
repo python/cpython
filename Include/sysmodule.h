@@ -23,8 +23,6 @@ PyAPI_FUNC(void) PySys_WriteStderr(const char *format, ...)
 PyAPI_FUNC(void) PySys_FormatStdout(const char *format, ...);
 PyAPI_FUNC(void) PySys_FormatStderr(const char *format, ...);
 
-Py_DEPRECATED(3.13) PyAPI_FUNC(void) PySys_ResetWarnOptions(void);
-
 PyAPI_FUNC(PyObject *) PySys_GetXOptions(void);
 
 #ifdef __cplusplus

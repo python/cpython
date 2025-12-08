@@ -411,7 +411,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> import uuid
 
    >>> # make a UUID based on the host ID and current time
-   >>> uuid.uuid1()
+   >>> uuid.uuid1()  # doctest: +SKIP
    UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
 
    >>> # make a UUID using an MD5 hash of a namespace UUID and a name
@@ -449,14 +449,23 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
+   >>> # same as UUIDv1 but with fields reordered to improve DB locality
+   >>> uuid.uuid6()  # doctest: +SKIP
+   UUID('1f0799c0-98b9-62db-92c6-a0d365b91053')
+
    >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
    >>> u = uuid.uuid7()
    >>> u.time  # doctest: +SKIP
    1743936859822
+
    >>> # get UUIDv7 creation (local) time as a datetime object
    >>> import datetime as dt
    >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
    datetime.datetime(...)
+
+   >>> # make a UUID with custom blocks
+   >>> uuid.uuid8(0x12345678, 0x9abcdef0, 0x11223344)
+   UUID('00001234-5678-8ef0-8000-000011223344')
 
 
 .. _uuid-cli-example:

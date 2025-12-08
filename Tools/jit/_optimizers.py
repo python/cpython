@@ -9,7 +9,7 @@ import typing
 _RE_NEVER_MATCH = re.compile(r"(?!)")
 # Dictionary mapping branch instructions to their inverted branch instructions.
 # If a branch cannot be inverted, the value is None:
-_X86_BRANCHES = {
+_X86_BRANCH_NAMES = {
     # https://www.felixcloutier.com/x86/jcc
     "ja": "jna",
     "jae": "jnae",
@@ -37,7 +37,42 @@ _X86_BRANCHES = {
     "loopz": None,
 }
 # Update with all of the inverted branches, too:
-_X86_BRANCHES |= {v: k for k, v in _X86_BRANCHES.items() if v}
+_X86_BRANCH_NAMES |= {v: k for k, v in _X86_BRANCH_NAMES.items() if v}
+# No custom relocations needed
+_X86_BRANCHES: dict[str, tuple[str | None, str | None]] = {
+    k: (v, None) for k, v in _X86_BRANCH_NAMES.items()
+}
+
+_AARCH64_COND_CODES = {
+    # https://developer.arm.com/documentation/dui0801/b/CJAJIHAD?lang=en
+    "eq": "ne",
+    "ne": "eq",
+    "lt": "ge",
+    "ge": "lt",
+    "gt": "le",
+    "le": "gt",
+    "vs": "vc",
+    "vc": "vs",
+    "mi": "pl",
+    "pl": "mi",
+    "cs": "cc",
+    "cc": "cs",
+    "hs": "lo",
+    "lo": "hs",
+    "hi": "ls",
+    "ls": "hi",
+}
+# MyPy doesn't understand that a invariant variable can be initialized by a covariant value
+CUSTOM_AARCH64_BRANCH19: str | None = "CUSTOM_AARCH64_BRANCH19"
+
+# Branches are either b.{cond} or bc.{cond}
+_AARCH64_BRANCHES: dict[str, tuple[str | None, str | None]] = {
+    "b." + cond: (("b." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+} | {
+    "bc." + cond: (("bc." + inverse if inverse else None), CUSTOM_AARCH64_BRANCH19)
+    for (cond, inverse) in _AARCH64_COND_CODES.items()
+}
 
 
 @dataclasses.dataclass
@@ -70,22 +105,23 @@ class Optimizer:
 
     path: pathlib.Path
     _: dataclasses.KW_ONLY
-    # prefix used to mangle symbols on some platforms:
-    prefix: str = ""
+    # Prefixes used to mangle local labels and symbols:
+    label_prefix: str
+    symbol_prefix: str
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
     # No groups:
     _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:\.|#|//|$)"
+        r"\s*(?:\.|#|//|;|$)"
     )
     # One group (label):
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
         r'\s*(?P<label>[\w."$?@]+):'
     )
     # Override everything that follows in subclasses:
-    _alignment: typing.ClassVar[int] = 1
-    _branches: typing.ClassVar[dict[str, str | None]] = {}
+    _supports_external_relocations = True
+    _branches: typing.ClassVar[dict[str, tuple[str | None, str | None]]] = {}
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     # One group (target):
@@ -131,14 +167,21 @@ class Optimizer:
                 block.fallthrough = False
 
     def _preprocess(self, text: str) -> str:
-        # Override this method to do preprocessing of the textual assembly:
-        return text
+        # Override this method to do preprocessing of the textual assembly.
+        # In all cases, replace references to the _JIT_CONTINUE symbol with
+        # references to a local _JIT_CONTINUE label (which we will add later):
+        continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
+        continue_label = f"{self.label_prefix}_JIT_CONTINUE"
+        return re.sub(continue_symbol, continue_label, text)
 
     @classmethod
     def _invert_branch(cls, line: str, target: str) -> str | None:
         match = cls._re_branch.match(line)
         assert match
-        inverted = cls._branches.get(match["instruction"])
+        inverted_reloc = cls._branches.get(match["instruction"])
+        if inverted_reloc is None:
+            return None
+        inverted = inverted_reloc[0]
         if not inverted:
             return None
         (a, b), (c, d) = match.span("instruction"), match.span("target")
@@ -197,15 +240,12 @@ class Optimizer:
         #    jmp FOO
         # After:
         #    jmp FOO
-        #    .balign 8
         #    _JIT_CONTINUE:
         # This lets the assembler encode _JIT_CONTINUE jumps at build time!
-        align = _Block()
-        align.noninstructions.append(f"\t.balign\t{self._alignment}")
-        continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
+        continuation = self._lookup_label(f"{self.label_prefix}_JIT_CONTINUE")
         assert continuation.label
         continuation.noninstructions.append(f"{continuation.label}:")
-        end.link, align.link, continuation.link = align, continuation, end.link
+        end.link, continuation.link = continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
         # Start with the last block, and perform a DFS to find all blocks that
@@ -273,22 +313,53 @@ class Optimizer:
                 block.fallthrough = True
                 block.instructions.pop()
 
+    def _fixup_external_labels(self) -> None:
+        if self._supports_external_relocations:
+            # Nothing to fix up
+            return
+        for block in self._blocks():
+            if block.target and block.fallthrough:
+                branch = block.instructions[-1]
+                match = self._re_branch.match(branch)
+                assert match is not None
+                target = match["target"]
+                reloc = self._branches[match["instruction"]][1]
+                if reloc is not None and not target.startswith(self.label_prefix):
+                    name = target[len(self.symbol_prefix) :]
+                    block.instructions[-1] = (
+                        f"// target='{target}' prefix='{self.label_prefix}'"
+                    )
+                    block.instructions.append(
+                        f"{self.symbol_prefix}{reloc}_JIT_RELOCATION_{name}:"
+                    )
+                    a, b = match.span("target")
+                    branch = "".join([branch[:a], "0", branch[b:]])
+                    block.instructions.append(branch)
+
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
         self._mark_hot_blocks()
         self._invert_hot_branches()
         self._remove_redundant_jumps()
+        self._fixup_external_labels()
         self.path.write_text(self._body())
 
 
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
-    """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
+    """aarch64-pc-windows-msvc/aarch64-apple-darwin/aarch64-unknown-linux-gnu"""
 
-    # TODO: @diegorusso
-    _alignment = 8
+    _branches = _AARCH64_BRANCHES
+    # Mach-O does not support the 19 bit branch locations needed for branch reordering
+    _supports_external_relocations = False
+    _re_branch = re.compile(
+        rf"\s*(?P<instruction>{'|'.join(_AARCH64_BRANCHES)})\s+(.+,\s+)*(?P<target>[\w.]+)"
+    )
+
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
+    # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
+    _re_return = re.compile(r"\s*ret\b")
 
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
@@ -302,18 +373,3 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*ret\b")
-
-
-class OptimizerX8664Windows(OptimizerX86):  # pylint: disable = too-few-public-methods
-    """x86_64-pc-windows-msvc"""
-
-    def _preprocess(self, text: str) -> str:
-        text = super()._preprocess(text)
-        # Before:
-        #     rex64 jmpq *__imp__JIT_CONTINUE(%rip)
-        # After:
-        #     jmp _JIT_CONTINUE
-        far_indirect_jump = (
-            rf"rex64\s+jmpq\s+\*__imp_(?P<target>{self.prefix}_JIT_\w+)\(%rip\)"
-        )
-        return re.sub(far_indirect_jump, r"jmp\t\g<target>", text)

@@ -30,14 +30,11 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
 // Export for '_asyncio' shared extension
 PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
                                           Py_hash_t hash);
-extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
-// "Id" variants
-extern PyObject* _PyDict_GetItemIdWithError(PyObject *dp,
-                                            _Py_Identifier *key);
-extern int _PyDict_ContainsId(PyObject *, _Py_Identifier *);
-extern int _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
-extern int _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
+extern int _PyDict_DelItem_KnownHash_LockHeld(PyObject *mp, PyObject *key,
+                                              Py_hash_t hash);
+
+extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 
 extern int _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
@@ -46,6 +43,8 @@ extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
+
+extern Py_ssize_t _PyDict_SizeOf_LockHeld(PyDictObject *);
 
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
@@ -113,6 +112,8 @@ extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t has
 extern Py_ssize_t _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr);
 extern Py_ssize_t _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t hash, _PyStackRef *value_addr);
 
+extern int _PyDict_GetMethodStackRef(PyDictObject *dict, PyObject *name, _PyStackRef *method);
+
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
 
@@ -142,7 +143,7 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *k
 PyAPI_FUNC(int) _PyDict_GetItemRef_KnownHash_LockHeld(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_KnownHash(PyDictObject *op, PyObject *key, Py_hash_t hash, PyObject **result);
 extern int _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **result);
-extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
+PyAPI_FUNC(int) _PyObjectDict_SetItem(PyTypeObject *tp, PyObject *obj, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
     PyDictObject *dict,

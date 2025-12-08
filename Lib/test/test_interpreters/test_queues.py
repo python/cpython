@@ -11,7 +11,7 @@ from concurrent import interpreters
 from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
-
+HUGE_TIMEOUT = 3600
 REPLACE = _crossinterp._UNBOUND_CONSTANT_TO_FLAG[_crossinterp.UNBOUND]
 
 
@@ -188,9 +188,11 @@ class QueueTests(TestBase):
 
     def test_pickle(self):
         queue = queues.create()
-        data = pickle.dumps(queue)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, queue)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(queue, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, queue)
 
 
 class TestQueueOps(TestBase):
@@ -304,6 +306,8 @@ class TestQueueOps(TestBase):
         queue.put(None)
         with self.assertRaises(queues.QueueFull):
             queue.put(None, timeout=0.1)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, HUGE_TIMEOUT, 0.1)
         queue.get()
         queue.put(None)
 
@@ -313,6 +317,10 @@ class TestQueueOps(TestBase):
         queue.put_nowait(None)
         with self.assertRaises(queues.QueueFull):
             queue.put_nowait(None)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, False)
+        with self.assertRaises(queues.QueueFull):
+            queue.put(None, False, timeout=HUGE_TIMEOUT)
         queue.get()
         queue.put_nowait(None)
 
@@ -343,11 +351,17 @@ class TestQueueOps(TestBase):
         queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get(timeout=0.1)
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(HUGE_TIMEOUT, 0.1)
 
     def test_get_nowait(self):
         queue = queues.create()
         with self.assertRaises(queues.QueueEmpty):
             queue.get_nowait()
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(False)
+        with self.assertRaises(queues.QueueEmpty):
+            queue.get(False, timeout=HUGE_TIMEOUT)
 
     def test_put_get_full_fallback(self):
         expected = list(range(20))
