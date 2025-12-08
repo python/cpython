@@ -961,6 +961,12 @@ their subgroups based on the types of the contained exceptions.
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
 
+   .. impl-detail::
+
+      The ``excs`` parameter may be any sequence, but lists and tuples are
+      specifically processed more efficiently here. For optimal performance,
+      pass a tuple as ``excs``.
+
    .. attribute:: message
 
        The ``msg`` argument to the constructor. This is a read-only attribute.
