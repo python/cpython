@@ -183,9 +183,13 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = target
         self._check(target)
-        self._replace_sys_path(target)
+        self._target = os.path.realpath(target)
+
+        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
+            sys.path[0] = os.path.dirname(self._target)
 
     @staticmethod
     def _check(target):
@@ -198,13 +202,6 @@ class _ScriptTarget(_ExecutableTarget):
         if os.path.isdir(target):
             print(f'Error: {target} is a directory')
             sys.exit(1)
-
-    @staticmethod
-    def _replace_sys_path(target):
-        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
-        # of pdb, so replace it with the directory of the script
-        if not sys.flags.safe_path:
-            sys.path[0] = os.path.dirname(os.path.realpath(target))
 
     def __repr__(self):
         return self._target
