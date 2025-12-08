@@ -1,0 +1,3 @@
+Fix faulthandler’s fallback to ``sys.stderr`` so it owns the reference it
+returns, preventing an accidental decref of ``sys.stderr`` (or ``None``) when no
+file is provided.

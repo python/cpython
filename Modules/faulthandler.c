@@ -112,9 +112,9 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
         if (file == Py_None) {
             PyErr_SetString(PyExc_RuntimeError, "sys.stderr is None");
-            Py_DECREF(file);
             return -1;
         }
+        Py_INCREF(file);
     }
     else if (PyLong_Check(file)) {
         if (PyBool_Check(file)) {
