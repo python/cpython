@@ -557,11 +557,13 @@ following attributes:
                return {"x": MyType}
            raise NotImplementedError
 
+       __code__ = __call__.__code__
        __defaults__ = (None,)
-
        __kwdefaults__ = property(lambda self: dict(_self=self))
 
-       __code__ = property(lambda self: self.__call__.__code__)
+       __globals__ = {}
+       __builtins__ = {}
+       __closure__ = None
 
 This can then be called with:
 

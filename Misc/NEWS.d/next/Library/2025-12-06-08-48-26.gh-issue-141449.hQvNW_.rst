@@ -1,2 +1,2 @@
-Improve support, error messages, and documentation for non-function callables as
+Improve tests and documentation for non-function callables as
 :term:`annotate functions <annotate function>`.
