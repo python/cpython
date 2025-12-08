@@ -398,7 +398,9 @@ stack, with a count of how many times that stack was sampled::
 
    python -m profiling.sampling run --collapsed script.py
 
-The output looks like::
+The output looks like:
+
+.. code-block:: text
 
    main;process_data;parse_json;decode_utf8 42
    main;process_data;parse_json 156
