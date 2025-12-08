@@ -17,7 +17,6 @@ intrusive debugging or patching.
    pdb.rst
    profiling.rst
    pstats.rst
-   profile.rst
    timeit.rst
    trace.rst
    tracemalloc.rst

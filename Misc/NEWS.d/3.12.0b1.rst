@@ -1257,7 +1257,7 @@ defined by any build system or documented for manual use.
 .. nonce: n_AfcS
 .. section: Library
 
-Update :mod:`cProfile` to use PEP 669 API
+Update :mod:`!cProfile` to use PEP 669 API
 
 ..
 

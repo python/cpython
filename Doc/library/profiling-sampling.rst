@@ -33,8 +33,8 @@ What is statistical profiling?
 
 Statistical profiling builds a picture of program behavior by periodically
 capturing snapshots of the call stack. Rather than instrumenting every function
-call and return as deterministic profilers do, the sampling profiler interrupts
-execution at regular intervals to record what code is currently running.
+call and return as deterministic profilers do, the sampling profiler reads the
+call stack at regular intervals to record what code is currently running.
 
 This approach rests on a simple principle: functions that consume significant
 CPU time will appear frequently in the collected samples. By gathering thousands
@@ -53,7 +53,9 @@ and inferring your path from those snapshots.
 
 This external observation model is what makes sampling profiling practical for
 production use. The profiled program runs at full speed because there is no
-instrumentation code running inside it. You can attach to a live server,
+instrumentation code running inside it, and the target process is never stopped
+or paused during sampling---the profiler reads the call stack directly from the
+process's memory while it continues to run. You can attach to a live server,
 collect data, and detach without the application ever knowing it was observed.
 The trade-off is that very short-lived functions may be missed if they happen
 to complete between samples.
@@ -262,6 +264,36 @@ if the profiler cannot keep up. The statistics help verify that profiling is
 working correctly and that sufficient samples are being collected.
 
 
+.. _sampling-efficiency:
+
+Sampling efficiency
+-------------------
+
+Sampling efficiency metrics help assess the quality of the collected data.
+These metrics appear in the profiler's terminal output and in the flame graph
+sidebar.
+
+**Sampling efficiency** is the percentage of sample attempts that succeeded.
+Each sample attempt reads the target process's call stack from memory. An
+attempt can fail if the process is in an inconsistent state at the moment of
+reading, such as during a context switch or while the interpreter is updating
+its internal structures. A low efficiency may indicate that the profiler could
+not keep up with the requested sampling rate, often due to system load or an
+overly aggressive interval setting.
+
+**Missed samples** is the percentage of expected samples that were not
+collected. Based on the configured interval and duration, the profiler expects
+to collect a certain number of samples. Some samples may be missed if the
+profiler falls behind schedule, for example when the system is under heavy
+load. A small percentage of missed samples is normal and does not significantly
+affect the statistical accuracy of the profile.
+
+Both metrics are informational. Even with some failed attempts or missed
+samples, the profile remains statistically valid as long as enough samples
+were collected. The profiler reports the actual number of samples captured,
+which you can use to judge whether the data is sufficient for your analysis.
+
+
 Profiling modes
 ===============
 
@@ -441,7 +473,7 @@ zooms into that portion of the call tree.
 The flame graph interface includes:
 
 - A sidebar showing profile summary, thread statistics, sampling efficiency
-  metrics (error rate, missed samples), and top hotspot functions
+  metrics (see :ref:`sampling-efficiency`), and top hotspot functions
 - Search functionality supporting both function name matching and
   ``file.py:42`` line patterns
 - Per-thread filtering via dropdown

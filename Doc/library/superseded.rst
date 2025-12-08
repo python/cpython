@@ -24,3 +24,4 @@ currently no modules in this latter category.
    :maxdepth: 1
 
    getopt.rst
+   profile.rst
