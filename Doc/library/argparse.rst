@@ -1686,8 +1686,8 @@ Sub-commands
       :param aliases: A list or sequence of strings that can be used as
                      alternative names for this sub-command (e.g., ``aliases=['r']``
                      for a ``'run'`` command).
-      :param deprecated: If :const:`True`, marks the sub-command as deprecated,
-                     which typically issues a warning when used.
+      :param deprecated: If :const:`True`, marks the sub-command as deprecated, 
+                     which typically issues a warning when used.               
       :param kwargs: All other keyword arguments are passed directly to the
                      :class:`!ArgumentParser` constructor.
 
@@ -1744,7 +1744,7 @@ Sub-commands
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
      Namespace(baz='Z', foo=True)
 
-   Note that the object returned by :meth:`parse_args` will only contain
+   Note that the object returned by :meth:`~ArgumentParser.parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
@@ -1755,7 +1755,7 @@ Sub-commands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`~_SubParsersAction.add_parser` as above.)
+   to ``add_parser()`` as above.)
 
    ::
 
@@ -1787,7 +1787,7 @@ Sub-commands
        -h, --help     show this help message and exit
        --baz {X,Y,Z}  baz help
 
-   The :meth:`add_subparsers` method also supports ``title`` and ``description``
+   The :meth:`~ArgumentParser.add_subparsers` method also supports ``title`` and ``description``
    keyword arguments.  When either is present, the subparser's commands will
    appear in their own group in the help output.  For example::
 
