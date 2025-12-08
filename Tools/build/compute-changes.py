@@ -208,22 +208,22 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     # Check which platform specific tests to run
     if run_tests:
         if not has_platform_specific_change or not platforms_changed:
-            run_macos = True
-            run_ubuntu = True
             run_android = True
             run_ios = True
+            run_macos = True
+            run_ubuntu = True
             run_wasi = True
         else:
-            run_macos = "macos" in platforms_changed
-            run_ubuntu = False
             run_android = "android" in platforms_changed
             run_ios = "ios" in platforms_changed
+            run_macos = "macos" in platforms_changed
+            run_ubuntu = False
             run_wasi = "wasi" in platforms_changed
     else:
-        run_macos = False
-        run_ubuntu = False
         run_android = False
         run_ios = False
+        run_macos = False
+        run_ubuntu = False
         run_wasi = False
 
     return Outputs(
