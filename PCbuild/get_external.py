@@ -46,6 +46,9 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
     arch = platform.machine()
+    # i686 (32-bit) builds can use x64 LLVM for cross-compilation
+    if arch == 'x86':
+        arch = 'AMD64'
     reporthook = None
     if verbose:
         reporthook = print
