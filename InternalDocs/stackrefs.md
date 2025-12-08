@@ -30,7 +30,8 @@ The `obj` argument must not be `NULL`.
 Going back to `PyObject*` mirrors this:
 
 - `PyStackRef_AsPyObjectBorrow(ref)` - borrow the underlying pointer
-- `PyStackRef_AsPyObjectSteal(ref)` - transfer ownership from the stackref
+- `PyStackRef_AsPyObjectSteal(ref)` - transfer ownership from the stackref; if ref is borrowed or
+   deferred, this creates a new owning `PyObject*` reference.
 - `PyStackRef_AsPyObjectNew(ref)` - create a new owning reference
 
 Only `PyStackRef_AsPyObjectBorrow` allows ref to be `PyStackRef_NULL`.
