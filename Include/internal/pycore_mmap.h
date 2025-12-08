@@ -34,11 +34,8 @@ _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
 }
 #else
 static inline void
-_PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
+_PyAnnotateMemoryMap(void *Py_UNUSED(addr), size_t Py_UNUSED(size), const char *Py_UNUSED(name))
 {
-    (void)addr;
-    (void)size;
-    (void)name;
 }
 #endif
 
