@@ -221,10 +221,35 @@ make_location_info(RemoteUnwinderObject *unwinder, int lineno, int end_lineno,
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create LocationInfo");
         return NULL;
     }
-    PyStructSequence_SetItem(info, 0, PyLong_FromLong(lineno));
-    PyStructSequence_SetItem(info, 1, PyLong_FromLong(end_lineno));
-    PyStructSequence_SetItem(info, 2, PyLong_FromLong(col_offset));
-    PyStructSequence_SetItem(info, 3, PyLong_FromLong(end_col_offset));
+
+    PyObject *py_lineno = PyLong_FromLong(lineno);
+    if (py_lineno == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 0, py_lineno);  // steals reference
+
+    PyObject *py_end_lineno = PyLong_FromLong(end_lineno);
+    if (py_end_lineno == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 1, py_end_lineno);  // steals reference
+
+    PyObject *py_col_offset = PyLong_FromLong(col_offset);
+    if (py_col_offset == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 2, py_col_offset);  // steals reference
+
+    PyObject *py_end_col_offset = PyLong_FromLong(end_col_offset);
+    if (py_end_col_offset == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 3, py_end_col_offset);  // steals reference
+
     return info;
 }
 
