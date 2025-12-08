@@ -184,7 +184,7 @@ class _ExecutableTarget:
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
         self._check(target)
-        self._target = os.path.realpath(target)
+        self._target = self._safe_realpath(target)
 
         # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
@@ -202,6 +202,18 @@ class _ScriptTarget(_ExecutableTarget):
         if os.path.isdir(target):
             print(f'Error: {target} is a directory')
             sys.exit(1)
+
+    @staticmethod
+    def _safe_realpath(path):
+        """
+        Return the canonical path (realpath) if it is accessible from the userspace.
+        Otherwise (for example, if the path is a symlink to an anonymous pipe),
+        return the original path.
+
+        See GH-142315.
+        """
+        realpath = os.path.realpath(path)
+        return realpath if os.path.exists(realpath) else path
 
     def __repr__(self):
         return self._target
