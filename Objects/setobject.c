@@ -2005,9 +2005,9 @@ set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
             return NULL;
         }
 
-        Py_BEGIN_CRITICAL_SECTION(so);
+        Py_BEGIN_CRITICAL_SECTION2(so, otherset);
         rv = set_symmetric_difference_update_set(so, otherset);
-        Py_END_CRITICAL_SECTION();
+        Py_END_CRITICAL_SECTION2();
 
         Py_DECREF(otherset);
     }
