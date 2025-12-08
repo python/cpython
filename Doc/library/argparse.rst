@@ -657,7 +657,7 @@ To highlight command examples in your description or epilog text, you can use
 
 When colors are enabled, the text inside ``[cmd]...[/cmd]`` tags will be
 displayed in a distinct color to help examples stand out. When colors are
-disabled, the tags are stripped and the content is displayed as plain text.
+disabled, no transformation is applied and the tags remain as-is.
 
 .. note::
 

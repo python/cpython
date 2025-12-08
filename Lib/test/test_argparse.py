@@ -7618,6 +7618,7 @@ class TestColorized(TestCase):
         self.assertIn(f'{prog_extra}app test{reset}', help_text)
 
     def test_cmd_markup_not_applied_when_color_disabled(self):
+        # When color is disabled, markup is not transformed (tags remain as-is)
         parser = argparse.ArgumentParser(
             prog='PROG',
             color=False,
@@ -7625,9 +7626,7 @@ class TestColorized(TestCase):
         )
 
         help_text = parser.format_help()
-        self.assertNotIn('[cmd]', help_text)
-        self.assertNotIn('[/cmd]', help_text)
-        self.assertIn('python -m myapp', help_text)
+        self.assertIn('[cmd]python -m myapp[/cmd]', help_text)
         self.assertNotIn('\x1b[', help_text)
 
     def test_cmd_markup_unclosed_tag_unchanged(self):

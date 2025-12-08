@@ -526,8 +526,12 @@ class HelpFormatter(object):
 
         Supported markup:
           [cmd]...[/cmd] - command/shell example (single color)
+
+        When colors are disabled, no transformation is applied.
         """
         t = self._theme
+        if not t.reset:
+            return text
         text = _re.sub(
             r'\[cmd\](.*?)\[/cmd\]',
             rf'{t.prog_extra}\1{t.reset}',
