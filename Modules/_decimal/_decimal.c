@@ -6990,7 +6990,7 @@ _decimal_Context_apply_impl(PyObject *context, PyTypeObject *cls,
                             PyObject *x)
 /*[clinic end generated code: output=f8a7142d47ad4ff3 input=388e66ca82733516]*/
 {
-    return _decimal_Context__apply(context, v);
+    return _decimal_Context__apply(context, x);
 }
 #endif
 
