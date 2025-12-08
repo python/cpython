@@ -54,8 +54,8 @@ a straightforward migration path.
    continue to work without modification.
 
 
-:mod:`!profile` and :mod:`profiling.tracing` Module Reference
-=============================================================
+:mod:`!profile` and :mod:`!profiling.tracing` module reference
+==============================================================
 
 Both the :mod:`profile` and :mod:`profiling.tracing` modules provide the
 following functions:
@@ -175,8 +175,8 @@ during the called command/function execution) no profiling results will be
 printed.
 
 
-Differences from :mod:`profiling.tracing`
-=========================================
+Differences from :mod:`!profiling.tracing`
+==========================================
 
 The :mod:`profile` module differs from :mod:`profiling.tracing` in several
 ways:

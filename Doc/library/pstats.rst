@@ -127,8 +127,8 @@ When files are combined, statistics for identical functions (same file, line,
 and name) are accumulated, giving an aggregate view across all profiling runs.
 
 
-The :class:`Stats` Class
-========================
+The :class:`!Stats` class
+=========================
 
 .. class:: Stats(*filenames_or_profile, stream=sys.stdout)
 
