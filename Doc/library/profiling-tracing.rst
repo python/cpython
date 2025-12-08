@@ -123,7 +123,7 @@ directly.
 Basic profiling
 ---------------
 
-The simplest approach uses the :func:`run` function::
+The simplest approach uses the :func:`!run` function::
 
    import profiling.tracing
    profiling.tracing.run('my_function()')
@@ -134,10 +134,10 @@ To save results for later analysis::
    profiling.tracing.run('my_function()', 'output.prof')
 
 
-Using the Profile Class
------------------------
+Using the :class:`!Profile` class
+---------------------------------
 
-The :class:`Profile` class provides fine-grained control::
+The :class:`!Profile` class provides fine-grained control::
 
    import profiling.tracing
    import pstats
@@ -154,7 +154,7 @@ The :class:`Profile` class provides fine-grained control::
    ps.print_stats()
    print(s.getvalue())
 
-The :class:`Profile` class also works as a context manager::
+The :class:`!Profile` class also works as a context manager::
 
    import profiling.tracing
 
