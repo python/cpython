@@ -99,6 +99,7 @@ jobs:
         with:
           python-version: '3.11'
 
+      # test comment to trigger JIT CI
       # PCbuild downloads LLVM automatically:
       - name: Windows
         if: runner.os == 'Windows'
