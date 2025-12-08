@@ -7,14 +7,14 @@ They carry metadata to track ownership and support optimizations such as tagged 
 
 - A `_PyStackRef` is a tagged pointer-sized value (see `Include/internal/pycore_stackref.h`).
 - Tag bits distinguish three cases:
-  - `Py_TAG_REFCNT` clear - reference count lives on the pointed-to object.
+  - `Py_TAG_REFCNT` unset - reference count lives on the pointed-to object.
   - `Py_TAG_REFCNT` set - ownership is "borrowed" (no refcount to drop on close) or the object is immortal.
-  - `Py_INT_TAG` - tagged small integer stored directly in the stackref (no heap allocation).
+  - `Py_INT_TAG` set - tagged small integer stored directly in the stackref (no heap allocation).
 - Special constants: `PyStackRef_NULL`, `PyStackRef_ERROR`, and embedded `None`/`True`/`False`.
 
 In GIL builds, most objects carry their refcount; tagged borrowed refs skip decref on close. In free
 threading builds, the tag is also used to mark deferred refcounted objects so the GC can see them and
-to avoid refcount contention for short-lived stack values.
+to avoid refcount contention on commonly shared objects.
 
 ## Converting to and from PyObject*
 
@@ -67,7 +67,7 @@ With `Py_GIL_DISABLED`, `Py_TAG_DEFERRED` is an alias for `Py_TAG_REFCNT`.
 Objects that support deferred reference counting can be pushed to the evaluation
 stack and stored in local variables without directly incrementing the reference
 count because they are only freed during cyclic garbage collection. This avoids
-reference count contention on short-lived values such as methods and types. The GC
+reference count contention on commonly shared objects such as methods and types. The GC
 scans each thread's locals and evaluation stack to keep objects that use
 deferred reference counting alive.
 
