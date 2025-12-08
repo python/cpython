@@ -1047,14 +1047,20 @@ Here is an example of a multi-line docstring::
    >>> def my_function():
    ...     """Do nothing, but document it.
    ...
-   ...     No, really, it doesn't do anything.
+   ...     No, really, it doesn't do anything:
+   ...
+   ...         >>> my_function()
+   ...         >>>
    ...     """
    ...     pass
    ...
    >>> print(my_function.__doc__)
    Do nothing, but document it.
 
-   No, really, it doesn't do anything.
+   No, really, it doesn't do anything:
+
+       >>> my_function()
+       >>>
 
 
 .. _tut-annotations:
