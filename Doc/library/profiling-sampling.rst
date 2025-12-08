@@ -359,17 +359,17 @@ anywhere on the stack). The percentages and times derive from these counts
 and the total profiling duration. Time units are selected automatically based
 on the data: seconds, milliseconds, or microseconds.
 
-The output includes a Legend explaining each column and a Summary of
-Interesting Functions section that highlights:
+The output includes a legend explaining each column and a summary of
+interesting functions that highlights:
 
-- **Hot Spots**: Functions with high direct/cumulative sample ratio (time spent
+- **Hot spots**: functions with high direct/cumulative sample ratio (time spent
   directly executing rather than waiting for callees)
-- **Indirect Calls**: Functions appearing frequently on the stack via other
+- **Indirect calls**: functions appearing frequently on the stack via other
   callers
-- **Call Magnification**: Functions where cumulative samples far exceed direct
+- **Call magnification**: functions where cumulative samples far exceed direct
   samples, indicating significant time in nested calls
 
-Use ``--no-summary`` to suppress both the Legend and Summary sections.
+Use ``--no-summary`` to suppress both the legend and summary sections.
 
 To save pstats output to a file instead of stdout::
 
@@ -477,10 +477,10 @@ CPU activity, enabling analysis features specific to Python's threading model.
 The profiler emits interval markers that appear as colored bands in the
 Firefox Profiler timeline:
 
-- **GIL markers**: Show when threads hold or release the global interpreter lock
-- **CPU markers**: Show when threads are executing on CPU versus idle
-- **Code type markers**: Distinguish Python code from native (C extension) code
-- **GC markers**: Indicate garbage collection activity
+- **GIL markers**: show when threads hold or release the global interpreter lock
+- **CPU markers**: show when threads are executing on CPU versus idle
+- **Code type markers**: distinguish Python code from native (C extension) code
+- **GC markers**: indicate garbage collection activity
 
 For this reason, the ``--mode`` option is not available with Gecko format;
 all relevant data is captured automatically.
@@ -507,17 +507,17 @@ responsible for time consumption.
 
 The heatmap interface provides several interactive features:
 
-- **Coloring modes**: Toggle between "Self Time" (direct execution) and
+- **Coloring modes**: toggle between "Self Time" (direct execution) and
   "Total Time" (cumulative, including time in called functions)
-- **Cold code filtering**: Show all lines or only lines with samples
-- **Call graph navigation**: Each line has buttons to navigate to callers
+- **Cold code filtering**: show all lines or only lines with samples
+- **Call graph navigation**: each line has buttons to navigate to callers
   (functions that called this line) and callees (functions called from here)
-- **Scroll minimap**: A vertical overview showing the heat distribution across
+- **Scroll minimap**: a vertical overview showing the heat distribution across
   the entire file
-- **Hierarchical index**: Files organized by type (stdlib, site-packages,
+- **Hierarchical index**: files organized by type (stdlib, site-packages,
   project) with aggregate sample counts per folder
-- **Dark/light theme**: Toggle with preference saved across sessions
-- **Line linking**: Click line numbers to create shareable URLs
+- **Dark/light theme**: toggle with preference saved across sessions
+- **Line linking**: click line numbers to create shareable URLs
 
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
