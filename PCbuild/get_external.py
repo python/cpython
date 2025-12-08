@@ -57,7 +57,6 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
     arch_filename = f'{tag}-{arch}.tar.xz'
     arch_url = f'https://github.com/{org}/cpython-bin-deps/releases/download/{tag}/{arch_filename}'
     try:
-        print(f'Downloading {arch_url}')
         output_path = tarball_dir / arch_filename
         retrieve_with_retries(arch_url, output_path, reporthook)
         return output_path

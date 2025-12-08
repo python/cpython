@@ -50,7 +50,7 @@ jobs:
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-    # needs: interpreter
+    needs: interpreter
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
@@ -60,10 +60,10 @@ jobs:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
           - aarch64-pc-windows-msvc/msvc
-          # - x86_64-apple-darwin/clang
-          # - aarch64-apple-darwin/clang
-          # - x86_64-unknown-linux-gnu/gcc
-          # - aarch64-unknown-linux-gnu/gcc
+          - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
+          - x86_64-unknown-linux-gnu/gcc
+          - aarch64-unknown-linux-gnu/gcc
         debug:
           - true
           - false
@@ -79,18 +79,18 @@ jobs:
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
             runner: windows-11-arm
-          # - target: x86_64-apple-darwin/clang
-          #   architecture: x86_64
-          #   runner: macos-15-intel
-          # - target: aarch64-apple-darwin/clang
-          #   architecture: aarch64
-          #   runner: macos-14
-          # - target: x86_64-unknown-linux-gnu/gcc
-          #   architecture: x86_64
-          #   runner: ubuntu-24.04
-          # - target: aarch64-unknown-linux-gnu/gcc
-          #   architecture: aarch64
-          #   runner: ubuntu-24.04-arm
+          - target: x86_64-apple-darwin/clang
+            architecture: x86_64
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin/clang
+            architecture: aarch64
+            runner: macos-14
+          - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - target: aarch64-unknown-linux-gnu/gcc
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
