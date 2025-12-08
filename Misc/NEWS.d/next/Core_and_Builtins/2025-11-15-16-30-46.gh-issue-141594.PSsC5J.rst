@@ -1,0 +1,3 @@
+Add free-threading support to the JIT. The JIT is only enabled on
+single-threaded code in free-threading, and is disabled when multiple
+threads are spawned. Patch by Ken Jin.

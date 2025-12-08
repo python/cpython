@@ -941,7 +941,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
-    bool jit;
+    uint8_t jit;
     bool compiling;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
