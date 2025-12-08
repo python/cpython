@@ -463,11 +463,11 @@ Profiler::
    python -m profiling.sampling run --gecko script.py
    python -m profiling.sampling run --gecko -o profile.json script.py
 
-The `Firefox Profiler <https://profiler.firefox.com>`_ is a sophisticated
+The `Firefox Profiler <https://profiler.firefox.com>`__ is a sophisticated
 web-based tool originally built for profiling Firefox itself. It provides
 features beyond basic flame graphs, including a timeline view, call tree
 exploration, and marker visualization. See the
-`Firefox Profiler documentation <https://profiler.firefox.com/docs/#/>`_ for
+`Firefox Profiler documentation <https://profiler.firefox.com/docs/#/>`__ for
 detailed usage instructions.
 
 To use the output, open the Firefox Profiler in your browser and load the
@@ -756,9 +756,9 @@ Run command options
    :mod:`pstats`
       Statistics analysis for profile data.
 
-   `Firefox Profiler <https://profiler.firefox.com>`_
+   `Firefox Profiler <https://profiler.firefox.com>`__
       Web-based profiler that accepts Gecko format output. See the
-      `documentation <https://profiler.firefox.com/docs/#/>`_ for usage details.
+      `documentation <https://profiler.firefox.com/docs/#/>`__ for usage details.
 
-   `FlameGraph <https://github.com/brendangregg/FlameGraph>`_
+   `FlameGraph <https://github.com/brendangregg/FlameGraph>`__
       Tools for generating flame graphs from collapsed stack format.
