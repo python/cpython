@@ -46,6 +46,7 @@ class _Target(typing.Generic[_S, _R]):
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     label_prefix: typing.ClassVar[str]
     symbol_prefix: typing.ClassVar[str]
+    re_global: typing.ClassVar[re.Pattern[str]]
     stable: bool = False
     debug: bool = False
     verbose: bool = False
@@ -180,7 +181,10 @@ class _Target(typing.Generic[_S, _R]):
             "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
         )
         self.optimizer(
-            s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
+            s,
+            label_prefix=self.label_prefix,
+            symbol_prefix=self.symbol_prefix,
+            re_global=self.re_global,
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
@@ -267,6 +271,10 @@ class _COFF(
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
+        name = section["Name"]["Value"]
+        if name == ".debug$S":
+            # skip debug sections
+            return
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
@@ -351,12 +359,14 @@ class _COFF32(_COFF):
     # These mangle like Mach-O and other "older" formats:
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _COFF64(_COFF):
     # These mangle like ELF and other "newer" formats:
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _ELF(
@@ -364,6 +374,7 @@ class _ELF(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -454,6 +465,7 @@ class _MachO(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup

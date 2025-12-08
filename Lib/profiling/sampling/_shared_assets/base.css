@@ -44,7 +44,7 @@
 
   --text-primary: #2e3338;
   --text-secondary: #5a6c7d;
-  --text-muted: #8b949e;
+  --text-muted: #6f767e;
 
   --accent: #3776ab;
   --accent-hover: #2d5aa0;
@@ -57,9 +57,9 @@
   --header-gradient: linear-gradient(135deg, #3776ab 0%, #4584bb 100%);
 
   /* Light mode heat palette - blue to yellow to orange to red (cold to hot) */
-  --heat-1: #d6e9f8;
+  --heat-1: #7ba3d1;
   --heat-2: #a8d0ef;
-  --heat-3: #7ba3d1;
+  --heat-3: #d6e9f8;
   --heat-4: #ffe6a8;
   --heat-5: #ffd43b;
   --heat-6: #ffb84d;
@@ -91,7 +91,7 @@
 
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-muted: #6e7681;
+  --text-muted: #757e8a;
 
   --accent: #58a6ff;
   --accent-hover: #79b8ff;
@@ -104,11 +104,11 @@
   --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
 
   /* Dark mode heat palette - dark blue to teal to yellow to orange (cold to hot) */
-  --heat-1: #1e3a5f;
-  --heat-2: #2d5580;
-  --heat-3: #4a7ba7;
-  --heat-4: #5a9fa8;
-  --heat-5: #7ec488;
+  --heat-1: #4a7ba7;
+  --heat-2: #5a9fa8;
+  --heat-3: #6ab5b5;
+  --heat-4: #7ec488;
+  --heat-5: #a0d878;
   --heat-6: #c4de6a;
   --heat-7: #f4d44d;
   --heat-8: #ff6b35;

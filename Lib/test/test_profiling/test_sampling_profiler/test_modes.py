@@ -143,27 +143,16 @@ def cpu_active_worker():
     while True:
         x += 1
 
-def main():
-    # Start both threads
-    idle_thread = threading.Thread(target=idle_worker)
-    cpu_thread = threading.Thread(target=cpu_active_worker)
-    idle_thread.start()
-    cpu_thread.start()
-
-    # Wait for CPU thread to be running, then signal test
-    cpu_ready.wait()
-    _test_sock.sendall(b"threads_ready")
-
-    idle_thread.join()
-    cpu_thread.join()
-
-main()
-
+idle_thread = threading.Thread(target=idle_worker)
+cpu_thread = threading.Thread(target=cpu_active_worker)
+idle_thread.start()
+cpu_thread.start()
+cpu_ready.wait()
+_test_sock.sendall(b"working")
+idle_thread.join()
+cpu_thread.join()
 """
-        with test_subprocess(cpu_vs_idle_script) as subproc:
-            # Wait for signal that threads are running
-            response = subproc.socket.recv(1024)
-            self.assertEqual(response, b"threads_ready")
+        with test_subprocess(cpu_vs_idle_script, wait_for_working=True) as subproc:
 
             with (
                 io.StringIO() as captured_output,
@@ -365,26 +354,16 @@ def gil_holding_work():
     while True:
         x += 1
 
-def main():
-    # Start both threads
-    idle_thread = threading.Thread(target=gil_releasing_work)
-    cpu_thread = threading.Thread(target=gil_holding_work)
-    idle_thread.start()
-    cpu_thread.start()
-
-    # Wait for GIL-holding thread to be running, then signal test
-    gil_ready.wait()
-    _test_sock.sendall(b"threads_ready")
-
-    idle_thread.join()
-    cpu_thread.join()
-
-main()
+idle_thread = threading.Thread(target=gil_releasing_work)
+cpu_thread = threading.Thread(target=gil_holding_work)
+idle_thread.start()
+cpu_thread.start()
+gil_ready.wait()
+_test_sock.sendall(b"working")
+idle_thread.join()
+cpu_thread.join()
 """
-        with test_subprocess(gil_test_script) as subproc:
-            # Wait for signal that threads are running
-            response = subproc.socket.recv(1024)
-            self.assertEqual(response, b"threads_ready")
+        with test_subprocess(gil_test_script, wait_for_working=True) as subproc:
 
             with (
                 io.StringIO() as captured_output,
