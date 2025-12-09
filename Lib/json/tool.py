@@ -88,7 +88,8 @@ def main():
             infile = open(options.infile, encoding='utf-8')
         try:
             if options.json_lines:
-                objs = tuple(json.loads(line) for line in infile)
+                lines = infile.readlines()
+                objs = (json.loads(line) for line in lines)
             else:
                 objs = (json.load(infile),)
         finally:
