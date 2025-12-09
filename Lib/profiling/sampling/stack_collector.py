@@ -17,10 +17,18 @@ class StackTraceCollector(Collector):
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
-            if not frames:
-                continue
-            self.process_frames(frames, thread_id)
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            # Async-aware mode: process async task frames
+            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
+                if not frames:
+                    continue
+                self.process_frames(frames, thread_id)
+        else:
+            # Sync-only mode
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if not frames:
+                    continue
+                self.process_frames(frames, thread_id)
 
     def process_frames(self, frames, thread_id):
         pass
@@ -344,11 +352,11 @@ class FlamegraphCollector(StackTraceCollector):
             "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
         )
 
-        png_path = assets_dir / "python-logo-only.png"
+        png_path = assets_dir / "tachyon-logo.png"
         b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
 
         # Let CSS control size; keep markup simple
-        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo"/>'
+        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo"/>'
         html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
 
         d3_js = d3_path.read_text(encoding="utf-8")

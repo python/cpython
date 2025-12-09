@@ -241,8 +241,8 @@ body.resizing-sidebar {
 }
 
 .sidebar-logo-img {
-  width: 90px;
-  height: 90px;
+  width: 220px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -316,7 +316,6 @@ body.resizing-sidebar {
 }
 
 .section-content {
-  overflow: hidden;
   transition: max-height var(--transition-normal), opacity var(--transition-normal);
   max-height: 1000px;
   opacity: 1;
@@ -803,7 +802,7 @@ body.resizing-sidebar {
 .tooltip-location {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   background: var(--bg-tertiary);
   padding: 4px 8px;
   border-radius: 4px;
