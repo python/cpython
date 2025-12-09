@@ -1131,14 +1131,29 @@ static PyObject *
 mmap_mmap_set_name_impl(mmap_object *self, const char *name)
 /*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
 {
-    char buf[80] = {0, };
     const char* prefix = "cpython:mmap:";
     if (strlen(name) + strlen(prefix) > 80) {
-        PyErr_SetString(PyExc_ValueError, "name too long");
+        PyErr_SetString(PyExc_ValueError, "name is too long");
         return NULL;
     }
-    sprintf(buf, "%s%s", prefix, name);
-    _PyAnnotateMemoryMap(self->data, self->size, buf);
+#ifdef MAP_ANONYMOUS
+    if (self->flags & MAP_ANONYMOUS) {
+        char buf[80] = {0, };
+        sprintf(buf, "%s%s", prefix, name);
+        _PyAnnotateMemoryMap(self->data, self->size, buf);
+    }
+    else {
+        /* cannot name non-anonymous mappings */
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set annotation on non-anonymous mappings");
+        return NULL;
+    }
+#else
+    /* naming not supported on this platform */
+    PyErr_SetString(PyExc_ValueError,
+                    "Annotation of mmap is not supported on this platform");
+    return NULL;
+#endif
     Py_RETURN_NONE;
 }
 
@@ -1978,7 +1993,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+#ifdef MAP_ANONYMOUS
+    if (m_obj->flags & MAP_ANONYMOUS) {
+        _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+    }
+#endif
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }
