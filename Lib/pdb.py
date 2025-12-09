@@ -1337,7 +1337,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_commands = _complete_bpnumber
 
     def do_break(self, arg, temporary=False):
-        """b(reak) [ ([filename:]lineno | function) [, condition] ]
+        """b(reak) [ [filename:](lineno | function) [, condition] ]
 
         Without argument, list all breaks.
 
@@ -1347,9 +1347,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         present, it is a string specifying an expression which must
         evaluate to true before the breakpoint is honored.
 
-        The line number may be prefixed with a filename and a colon,
-        to specify a breakpoint in another file (probably one that
-        hasn't been loaded yet).  The file is searched for on
+        The line number and function may be prefixed with a filename and
+        a colon, to specify a breakpoint in another file (probably one
+        that hasn't been loaded yet).  The file is searched for on
         sys.path; the .py suffix may be omitted.
         """
         if not arg:
@@ -1388,8 +1388,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 lineno = int(arg)
             except ValueError:
-                self.error('Bad lineno: %s' % arg)
-                return
+                func = arg
+                ok, filename, ln = find_function(func, self.canonic(filename))
+                if not ok:
+                    self.error('Bad lineno or function name: %s' % arg)
+                    return
+                funcname = ok
+                lineno = int(ln)
         else:
             # no colon; can be lineno or function
             try:
