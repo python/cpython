@@ -1116,6 +1116,24 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
     return NULL;
 }
 
+/*clinic*/
+
+/*[clinic input]
+mmap.mmap.set_name
+
+    name: str
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_set_name_impl(mmap_object *self, const char *name)
+/*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
+{
+    _PyAnnotateMemoryMap(self->data, self->size, name);
+    Py_RETURN_NONE;
+}
+
 /*[clinic input]
 mmap.mmap.seekable
 
