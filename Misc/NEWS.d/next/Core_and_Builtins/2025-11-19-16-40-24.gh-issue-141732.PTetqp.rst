@@ -1,0 +1,2 @@
+Ensure the :meth:`~object.__repr__` for :exc:`ExceptionGroup` and :exc:`BaseExceptionGroup` does
+not change when the exception sequence that was original passed in to its constructor is subsequently mutated.

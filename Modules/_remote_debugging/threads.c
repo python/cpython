@@ -323,6 +323,7 @@ unwind_stack_for_thread(
 #ifdef Py_GIL_DISABLED
     int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
     has_gil = active;
+    (void)gil_requested;  // unused
 #else
     // Read holds_gil directly from thread state
     has_gil = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.holds_gil);
@@ -339,11 +340,9 @@ unwind_stack_for_thread(
 #endif
     if (has_gil) {
         status_flags |= THREAD_STATUS_HAS_GIL;
+        // gh-142207 for remote debugging.
+        gil_requested = 0;
     }
-
-    // Assert that we never have both HAS_GIL and GIL_REQUESTED set at the same time
-    // This would indicate a race condition in the GIL state tracking
-    assert(!(has_gil && gil_requested));
 
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
@@ -380,6 +379,7 @@ unwind_stack_for_thread(
     }
 
     uintptr_t frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.current_frame);
+    uintptr_t base_frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.base_frame);
 
     frame_info = PyList_New(0);
     if (!frame_info) {
@@ -405,15 +405,16 @@ unwind_stack_for_thread(
             goto error;
         }
         // Update last_profiled_frame for next sample
-        uintptr_t lpf_addr = *current_tstate + unwinder->debug_offsets.thread_state.last_profiled_frame;
+        uintptr_t lpf_addr =
+            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
         if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
                                               sizeof(uintptr_t), &frame_addr) < 0) {
             PyErr_Clear();  // Non-fatal
         }
     } else {
-        // No caching - process entire frame chain
+        // No caching - process entire frame chain with base_frame validation
         if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
-                                gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
+                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
             goto error;
         }
