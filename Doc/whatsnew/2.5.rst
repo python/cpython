@@ -1277,12 +1277,12 @@ complete list of changes, or look through the SVN logs for all the details.
   with the new ':keyword:`with`' statement.  See section :ref:`contextlibmod`
   for more about this module.
 
-* New module: The :mod:`cProfile` module is a C implementation of  the existing
-  :mod:`profile` module that has much lower overhead. The module's interface is
-  the same as :mod:`profile`: you run ``cProfile.run('main()')`` to profile a
+* New module: The :mod:`!cProfile` module is a C implementation of  the existing
+  :mod:`!profile` module that has much lower overhead. The module's interface is
+  the same as :mod:`!profile`: you run ``cProfile.run('main()')`` to profile a
   function, can save profile data to a file, etc.  It's not yet known if the
   Hotshot profiler, which is also written in C but doesn't match the
-  :mod:`profile` module's interface, will continue to be maintained in future
+  :mod:`!profile` module's interface, will continue to be maintained in future
   versions of Python.  (Contributed by Armin Rigo.)
 
   Also, the :mod:`pstats` module for analyzing the data measured by the profiler

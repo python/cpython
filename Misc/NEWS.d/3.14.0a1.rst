@@ -2623,7 +2623,7 @@ Fix :func:`unittest.mock.patch` to not read attributes of the target when
 .. nonce: s4HXR0
 .. section: Library
 
-Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+Fixed the use-after-free issue in :mod:`!cProfile` by disallowing
 ``disable()`` and ``clear()`` in external timers.
 
 ..

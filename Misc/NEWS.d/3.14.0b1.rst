@@ -747,7 +747,7 @@ caches.
 .. nonce: APBFCw
 .. section: Library
 
-Fixed the :exc:`SystemError` in :mod:`cProfile` when locating the actual C
+Fixed the :exc:`SystemError` in :mod:`!cProfile` when locating the actual C
 function of a method raises an exception.
 
 ..
