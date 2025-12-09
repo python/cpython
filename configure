@@ -1824,7 +1824,8 @@ Optional Features:
                           no)
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
-                          (default is no)
+                          (default is no); WASI requires an external dynamic
+                          loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
   --enable-shared         enable building a shared Python library (default is
@@ -7415,7 +7416,7 @@ then :
   Emscripten) :
      ;; #(
   WASI) :
-    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+     ;; #(
   *) :
     as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
    ;;
@@ -23942,6 +23943,25 @@ if test $ac_have_decl = 1
 then :
 
 printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
+
+fi
+
+
+ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 

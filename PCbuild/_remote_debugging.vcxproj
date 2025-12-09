@@ -102,6 +102,7 @@
     <ClCompile Include="..\Modules\_remote_debugging\object_reading.c" />
     <ClCompile Include="..\Modules\_remote_debugging\code_objects.c" />
     <ClCompile Include="..\Modules\_remote_debugging\frames.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\frame_cache.c" />
     <ClCompile Include="..\Modules\_remote_debugging\threads.c" />
     <ClCompile Include="..\Modules\_remote_debugging\asyncio.c" />
   </ItemGroup>
