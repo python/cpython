@@ -102,6 +102,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t next;
         uint64_t interp;
         uint64_t current_frame;
+        uint64_t base_frame;
         uint64_t last_profiled_frame;
         uint64_t thread_id;
         uint64_t native_thread_id;
@@ -273,6 +274,7 @@ typedef struct _Py_DebugOffsets {
         .next = offsetof(PyThreadState, next), \
         .interp = offsetof(PyThreadState, interp), \
         .current_frame = offsetof(PyThreadState, current_frame), \
+        .base_frame = offsetof(PyThreadState, base_frame), \
         .last_profiled_frame = offsetof(PyThreadState, last_profiled_frame), \
         .thread_id = offsetof(PyThreadState, thread_id), \
         .native_thread_id = offsetof(PyThreadState, native_thread_id), \
