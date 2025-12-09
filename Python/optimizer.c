@@ -185,12 +185,14 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
+    executor->vm_data.chain_depth = chain_depth;
+    assert(executor->vm_data.valid);
     _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
     if (exit != NULL) {
         exit->executor = executor;
+    } else {
+        Py_DECREF(executor);
     }
-    executor->vm_data.chain_depth = chain_depth;
-    assert(executor->vm_data.valid);
     interp->compiling = false;
     return 1;
 #else
