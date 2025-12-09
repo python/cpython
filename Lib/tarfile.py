@@ -1213,11 +1213,7 @@ class TarInfo(object):
         """
         name = name.encode(encoding, errors) + NUL
 
-        info = {}
-        info["name"] = "././@LongLink"
-        info["type"] = type
-        info["size"] = len(name)
-        info["magic"] = GNU_MAGIC
+        info = {"name": "././@LongLink", "type": type, "size": len(name), "magic": GNU_MAGIC}
 
         # create extended header + name blocks.
         return cls._create_header(info, USTAR_FORMAT, encoding, errors) + \
@@ -1264,11 +1260,7 @@ class TarInfo(object):
 
         # We use a hardcoded "././@PaxHeader" name like star does
         # instead of the one that POSIX recommends.
-        info = {}
-        info["name"] = "././@PaxHeader"
-        info["type"] = type
-        info["size"] = len(records)
-        info["magic"] = POSIX_MAGIC
+        info = {"name": "././@PaxHeader", "type": type, "size": len(records), "magic": POSIX_MAGIC}
 
         # Create pax header + record blocks.
         return cls._create_header(info, USTAR_FORMAT, "ascii", "replace") + \
