@@ -1,0 +1,1 @@
+:mod:`pdb` now supports setting breakpoints using the ``filename:function`` syntax
