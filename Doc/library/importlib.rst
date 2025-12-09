@@ -447,8 +447,6 @@ ABC hierarchy::
            Added the *fullname* parameter.
 
 
-
-
     .. method:: exec_module(module)
 
        Implementation of :meth:`Loader.exec_module`.
