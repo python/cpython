@@ -1520,7 +1520,6 @@ _PyExecutor_GetColdExecutor(void)
         Py_FatalError("Cannot allocate core JIT code");
     }
     ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
-    _PyObject_GC_TRACK(cold);
 #ifdef _Py_JIT
     cold->jit_code = NULL;
     cold->jit_size = 0;
