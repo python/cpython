@@ -368,10 +368,10 @@ class Theme:
         *,
         argparse: Argparse | None = None,
         difflib: Difflib | None = None,
+        live_profiler: LiveProfiler | None = None,
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
-        live_profiler: LiveProfiler | None = None,
     ) -> Self:
         """Return a new Theme based on this instance with some sections replaced.
 
