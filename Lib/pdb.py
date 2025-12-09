@@ -1393,8 +1393,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if not find_res:
                     self.error('Bad lineno or function name: %s' % arg)
                     return
-                funcname, filename, ln = find_res
-                lineno = int(ln)
+                funcname, filename, lineno = find_res
         else:
             # no colon; can be lineno or function
             try:
