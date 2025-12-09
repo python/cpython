@@ -890,7 +890,7 @@ default).
 
    * - I have installed the Python install manager multiple times.
      - It is possible to install from the Store or WinGet, from the MSIX on
-       the Python web site, and from the MSI, all at once.
+       the Python website, and from the MSI, all at once.
        They are all compatible and will share configuration and runtimes.
 
    * -
