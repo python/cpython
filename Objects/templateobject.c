@@ -153,6 +153,7 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                     Py_DECREF(interpolations);
                     return NULL;
                 }
+                /* Replace laststring with concat */
                 PyTuple_SET_ITEM(strings, stringsidx - 1, concat);
                 Py_DECREF(laststring);
             }
