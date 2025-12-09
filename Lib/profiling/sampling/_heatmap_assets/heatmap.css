@@ -1196,10 +1196,6 @@
   color: var(--accent);
 }
 
-.bytecode-toggle.expanded {
-  transform: rotate(90deg);
-}
-
 .bytecode-spacer {
   flex-shrink: 0;
   width: 20px;
