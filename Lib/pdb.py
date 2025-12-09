@@ -1389,7 +1389,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 lineno = int(arg)
             except ValueError:
                 func = arg
-                ok, filename, ln = find_function(func, self.canonic(filename))
+                find_res = find_function(func, self.canonic(filename))
+                ok, filename, ln = find_res or (None, None, None)
                 if not ok:
                     self.error('Bad lineno or function name: %s' % arg)
                     return
