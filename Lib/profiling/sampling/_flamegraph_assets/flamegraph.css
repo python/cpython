@@ -241,8 +241,8 @@ body.resizing-sidebar {
 }
 
 .sidebar-logo-img {
-  width: 90px;
-  height: 90px;
+  width: 220px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,7 +302,6 @@ body.resizing-sidebar {
 }
 
 .section-content {
-  overflow: hidden;
   transition: max-height var(--transition-normal), opacity var(--transition-normal);
   max-height: 1000px;
   opacity: 1;
