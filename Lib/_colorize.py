@@ -398,10 +398,10 @@ class Theme:
         return cls(
             argparse=Argparse.no_colors(),
             difflib=Difflib.no_colors(),
+            live_profiler=LiveProfiler.no_colors(),
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
-            live_profiler=LiveProfiler.no_colors(),
         )
 
 
