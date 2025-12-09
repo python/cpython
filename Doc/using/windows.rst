@@ -4,6 +4,8 @@
 
 .. _Microsoft Store app: https://apps.microsoft.com/detail/9NQ7512CXL7T
 
+.. _legacy launcher: https://www.python.org/ftp/python/3.14.0/win32/launcher.msi
+
 .. _using-on-windows:
 
 *************************
@@ -60,7 +62,7 @@ packages.
 .. _windows-path-mod:
 .. _launcher:
 
-Python Install Manager
+Python install manager
 ======================
 
 Installation
@@ -103,7 +105,7 @@ Windows Server 2019, please see :ref:`pymanager-advancedinstall` below for more
 information.
 
 
-Basic Use
+Basic use
 ---------
 
 The recommended command for launching Python is ``python``, which will either
@@ -193,7 +195,7 @@ installed if automatic installation is configured (most likely by setting
 ``pymanager exec`` forms of the command were used.
 
 
-Command Help
+Command help
 ------------
 
 The ``py help`` command will display the full list of supported commands, along
@@ -218,7 +220,7 @@ override multiple settings at once. See :ref:`pymanager-config` below for more
 information about these files.
 
 
-Listing Runtimes
+Listing runtimes
 ----------------
 
 .. code::
@@ -259,7 +261,7 @@ For compatibility with the old launcher, the ``--list``, ``--list-paths``,
 additional options, and will produce legacy formatted output.
 
 
-Installing Runtimes
+Installing runtimes
 -------------------
 
 .. code::
@@ -298,7 +300,7 @@ useful for embedding runtimes into larger applications.
 
 .. _pymanager-offline:
 
-Offline Installs
+Offline installs
 ----------------
 
 To perform offline installs of Python, you will need to first create an offline
@@ -330,7 +332,7 @@ In this way, Python runtimes can be installed and managed on a machine without
 access to the internet.
 
 
-Uninstalling Runtimes
+Uninstalling runtimes
 ---------------------
 
 .. code::
@@ -457,6 +459,25 @@ customization.
      - Specify the default format used by the ``py list`` command.
        By default, ``table``.
 
+   * - ``install_dir``
+     - (none)
+     - Specify the root directory that runtimes will be installed into.
+       If you change this setting, previously installed runtimes will not be
+       usable unless you move them to the new location.
+
+   * - ``global_dir``
+     - (none)
+     - Specify the directory where global commands (such as ``python3.14.exe``)
+       are stored.
+       This directory should be added to your :envvar:`PATH` to make the
+       commands available from your terminal.
+
+   * - ``download_dir``
+     - (none)
+     - Specify the directory where downloaded files are stored.
+       This directory is a temporary cache, and can be cleaned up from time to
+       time.
+
 Dotted names should be nested inside JSON objects, for example, ``list.format``
 would be specified as ``{"list": {"format": "table"}}``.
 
@@ -524,12 +545,9 @@ configuration option.
    The behaviour of shebangs in the Python install manager is subtly different
    from the previous ``py.exe`` launcher, and the old configuration options no
    longer apply. If you are specifically reliant on the old behaviour or
-   configuration, we recommend keeping the legacy launcher. It may be
-   `downloaded independently <https://www.python.org/ftp/python/3.13.1/win32/launcher.msi>`_
-   and installed on its own. The legacy launcher's ``py`` command will override
-   PyManager's one, and you will need to use ``pymanager`` commands for
-   installing and uninstalling.
-
+   configuration, we recommend installing the `legacy launcher`_. The legacy
+   launcher's ``py`` command will override PyManager's one by default, and you
+   will need to use ``pymanager`` commands for installing and uninstalling.
 
 .. _Add-AppxPackage: https://learn.microsoft.com/powershell/module/appx/add-appxpackage
 
@@ -541,7 +559,7 @@ configuration option.
 
 .. _pymanager-advancedinstall:
 
-Advanced Installation
+Advanced installation
 ---------------------
 
 For situations where an MSIX cannot be installed, such as some older
@@ -635,7 +653,7 @@ the Store package in this way.
 
 .. _pymanager-admin-config:
 
-Administrative Configuration
+Administrative configuration
 ----------------------------
 
 There are a number of options that may be useful for administrators to override
@@ -726,17 +744,12 @@ directory containing the configuration file that specified them.
 
 .. _install-freethreaded-windows:
 
-Installing Free-threaded Binaries
+Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
+.. versionadded:: 3.13
 
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
-
-Pre-built distributions of the experimental free-threaded build are available
+Pre-built distributions of the free-threaded build are available
 by installing tags with the ``t`` suffix.
 
 .. code::
@@ -845,6 +858,17 @@ default).
        These scripts are separated for each runtime, and so you may need to
        add multiple paths.
 
+   * - Typing ``script-name.py`` in the terminal opens in a new window.
+     - This is a known limitation of the operating system. Either specify ``py``
+       before the script name, create a batch file containing ``@py "%~dpn0.py" %*``
+       with the same name as the script, or install the `legacy launcher`_
+       and select it as the association for scripts.
+
+   * - Drag-dropping files onto a script doesn't work
+     - This is a known limitation of the operating system. It is supported with
+       the `legacy launcher`_, or with the Python install manager when installed
+       from the MSI.
+
 
 .. _windows-embeddable:
 
@@ -885,7 +909,7 @@ versions before providing updates to users.
 
 The two recommended use cases for this distribution are described below.
 
-Python Application
+Python application
 ------------------
 
 An application written in Python does not necessarily require users to be aware
@@ -989,12 +1013,7 @@ for the 64-bit version, `www.nuget.org/packages/pythonx86
 Free-threaded packages
 ----------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 Packages containing free-threaded binaries are named
 `python-freethreaded <https://www.nuget.org/packages/python-freethreaded>`_
@@ -1046,7 +1065,7 @@ please install Python 3.12.
 
 .. _max-path:
 
-Removing the MAX_PATH Limitation
+Removing the MAX_PATH limitation
 ================================
 
 Windows historically has limited path lengths to 260 characters. This meant that
@@ -1070,7 +1089,7 @@ UTF-8 mode
 ==========
 
 .. versionadded:: 3.7
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Python UTF-8 mode is now enabled by default (:pep:`686`).
 
@@ -1332,7 +1351,7 @@ installation". In this case:
 * Shortcuts are available for all users
 
 
-Removing the MAX_PATH Limitation
+Removing the MAX_PATH limitation
 --------------------------------
 
 Windows historically has limited path lengths to 260 characters. This meant that
@@ -1355,7 +1374,7 @@ After changing the above option, no further configuration is required.
 
 .. _install-quiet-option:
 
-Installing Without UI
+Installing without UI
 ---------------------
 
 All of the options available in the installer UI can also be specified from the
@@ -1504,7 +1523,7 @@ example file sets the same options as the previous example:
 
 .. _install-layout-option:
 
-Installing Without Downloading
+Installing without downloading
 ------------------------------
 
 As some features of Python are not included in the initial installer download,
@@ -1545,15 +1564,10 @@ settings and replace any that have been removed or modified.
 :ref:`launcher`, which has its own entry in Programs and Features.
 
 
-Installing Free-threaded Binaries
+Installing free-threaded binaries
 ---------------------------------
 
-.. versionadded:: 3.13 (Experimental)
-
-.. note::
-
-   Everything described in this section is considered experimental,
-   and should be expected to change in future releases.
+.. versionadded:: 3.13
 
 To install pre-built binaries with free-threading enabled (see :pep:`703`), you
 should select "Customize installation". The second page of options includes the
@@ -1585,7 +1599,7 @@ builds.
 Free-threaded binaries are also available :ref:`on nuget.org <windows-nuget>`.
 
 
-Python Launcher for Windows (Deprecated)
+Python launcher for Windows (deprecated)
 ========================================
 
 .. deprecated:: 3.14
@@ -1737,7 +1751,7 @@ have the script specify the version which should be used.
 The key benefit of this is that a single launcher can support multiple Python
 versions at the same time depending on the contents of the first line.
 
-Shebang Lines
+Shebang lines
 -------------
 
 If the first line of a script file starts with ``#!``, it is known as a
@@ -1949,7 +1963,7 @@ should allow you to see what versions of Python were located, why a
 particular version was chosen and the exact command-line used to execute the
 target Python. It is primarily intended for testing and debugging.
 
-Dry Run
+Dry run
 -------
 
 If an environment variable :envvar:`!PYLAUNCHER_DRYRUN` is set (to any value),

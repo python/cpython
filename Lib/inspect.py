@@ -706,8 +706,8 @@ def _findclass(func):
         return None
     return cls
 
-def _finddoc(obj):
-    if isclass(obj):
+def _finddoc(obj, *, search_in_class=True):
+    if search_in_class and isclass(obj):
         for base in obj.__mro__:
             if base is not object:
                 try:
@@ -747,6 +747,12 @@ def _finddoc(obj):
         cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
+    # Should be tested before ismethoddescriptor()
+    elif isinstance(obj, functools.cached_property):
+        name = obj.attrname
+        cls = _findclass(obj.func)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
         name = obj.__name__
         cls = obj.__objclass__
@@ -767,19 +773,37 @@ def _finddoc(obj):
             return doc
     return None
 
-def getdoc(object):
+def _getowndoc(obj):
+    """Get the documentation string for an object if it is not
+    inherited from its class."""
+    try:
+        doc = object.__getattribute__(obj, '__doc__')
+        if doc is None:
+            return None
+        if obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return None
+        return doc
+    except AttributeError:
+        return None
+
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    try:
-        doc = object.__doc__
-    except AttributeError:
-        return None
+    if fallback_to_class_doc:
+        try:
+            doc = object.__doc__
+        except AttributeError:
+            return None
+    else:
+        doc = _getowndoc(object)
     if doc is None:
         try:
-            doc = _finddoc(object)
+            doc = _finddoc(object, search_in_class=inherit_class_doc)
         except (AttributeError, TypeError):
             return None
     if not isinstance(doc, str):
@@ -1065,7 +1089,9 @@ class BlockFinder:
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
-            if type == tokenize.INDENT or token == "async":
+            if type in (tokenize.INDENT, tokenize.COMMENT, tokenize.NL):
+                pass
+            elif token == "async":
                 pass
             # skip any decorators
             elif token == "@":
@@ -2114,7 +2140,6 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)

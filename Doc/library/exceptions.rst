@@ -450,7 +450,7 @@ The following exceptions are the exceptions that are usually raised.
 
       :meth:`threading.Thread.join` can now raise this exception.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       This exception may be raised when acquiring :meth:`threading.Lock`
       or :meth:`threading.RLock`.
@@ -977,6 +977,12 @@ their subgroups based on the types of the contained exceptions.
    automatic. The :exc:`ExceptionGroup` constructor, on the other hand,
    raises a :exc:`TypeError` if any contained exception is not an
    :exc:`Exception` subclass.
+
+   .. impl-detail::
+
+      The ``excs`` parameter may be any sequence, but lists and tuples are
+      specifically processed more efficiently here. For optimal performance,
+      pass a tuple as ``excs``.
 
    .. attribute:: message
 

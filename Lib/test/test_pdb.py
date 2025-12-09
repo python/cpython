@@ -3232,6 +3232,37 @@ def test_pdb_issue_gh_127321():
     """
 
 
+def test_pdb_issue_gh_136057():
+    """See GH-136057
+    "step" and "next" commands should be able to get over list comprehensions
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     lst = [i for i in range(10)]
+    ...     for i in lst: pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'next',
+    ...     'next',
+    ...     'step',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(3)test_function()
+    -> lst = [i for i in range(10)]
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()
+    -> for i in lst: pass
+    (Pdb) step
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_136057[0]>(4)test_function()->None
+    -> for i in lst: pass
+    (Pdb) continue
+    """
+
+
 def test_pdb_issue_gh_80731():
     """See GH-80731
 
@@ -3548,6 +3579,20 @@ def quux():
             'bœr',
             ('bœr', 5),
         )
+
+    def test_print_stack_entry_uses_dynamic_line_prefix(self):
+        """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
+        stdout = io.StringIO()
+        p = pdb.Pdb(stdout=stdout)
+
+        # Get the current frame to use for printing
+        frame = sys._getframe()
+
+        with support.swap_attr(pdb, 'line_prefix', 'CUSTOM_PREFIX> '):
+            p.print_stack_entry((frame, frame.f_lineno))
+
+        # Check if the custom prefix appeared in the output
+        self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
 
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
@@ -3974,7 +4019,10 @@ def bœr():
         commands = """
             continue
         """
-        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=1)
+
+        _, stderr = self._run_pdb(["-m", "calendar", "-p", "1"], commands)
+        self.assertIn("unrecognized arguments: -p", stderr)
 
         stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
         self.assertIn("December", stdout)
@@ -4539,6 +4587,41 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                pass
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
+        self.assertIn("pass", stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
@@ -4708,6 +4791,19 @@ class PdbTestInline(unittest.TestCase):
         commands = ""
         stdout, stderr = self._run_script(script, commands)
         self.assertNotIn("readline imported", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_alternate_stdin(self):
+        script = textwrap.dedent("""
+            import pdb
+            import io
+
+            input_data = io.StringIO("p 40 + 2\\nc\\n")
+            pdb.Pdb(stdin=input_data).set_trace()
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("42", stdout)
         self.assertEqual(stderr, "")
 
 

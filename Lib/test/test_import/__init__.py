@@ -15,6 +15,7 @@ import marshal
 import os
 import py_compile
 import random
+import re
 import shutil
 import stat
 import subprocess
@@ -23,6 +24,7 @@ import textwrap
 import threading
 import time
 import types
+import warnings
 import unittest
 from unittest import mock
 import _imp
@@ -51,7 +53,7 @@ from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
-from test.test_importlib.util import uncache
+from test.test_importlib.util import uncache, temporary_pycache_prefix
 from types import ModuleType
 try:
     import _testsinglephase
@@ -63,8 +65,10 @@ except ImportError:
     _testmultiphase = None
 try:
     import _interpreters
+    import concurrent.interpreters
 except ModuleNotFoundError:
     _interpreters = None
+    concurrent = None
 try:
     import _testinternalcapi
 except ImportError:
@@ -412,7 +416,6 @@ class ImportTests(unittest.TestCase):
         self.assertIsNotNone(cm.exception)
 
     def test_from_import_star_invalid_type(self):
-        import re
         with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
@@ -1249,6 +1252,22 @@ os.does_not_exist
                 name = "abc"
                 origin = "a\x00b"
             _imp.create_dynamic(Spec2())
+
+    def test_filter_syntax_warnings_by_module(self):
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        unload('test.test_import.data.syntax_warnings')
+        with (os_helper.temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            warnings.filterwarnings('error', module='syntax_warnings')
+            import test.test_import.data.syntax_warnings
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = test.test_import.data.syntax_warnings.__file__
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
 
 @skip_if_dont_write_bytecode
@@ -2467,6 +2486,21 @@ class SubinterpImportTests(unittest.TestCase):
                         self.check_compatible_here(
                             modname, filename, strict=False, isolated=False)
 
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_testmultiphase_exec_multiple(self):
+        modname = '_testmultiphase_exec_multiple'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        # All three exec's were called.
+        self.assertEqual(module.a, 1)
+        self.assertEqual(module.b, 2)
+        self.assertEqual(module.c, 3)
+        # They were called in order.
+        keys = list(module.__dict__)
+        self.assertLess(keys.index('a'), keys.index('b'))
+        self.assertLess(keys.index('b'), keys.index('c'))
+
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):
         module = 'threading'
@@ -3160,6 +3194,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # Also, we test with a single-phase module that has global state,
     # which is shared by all interpreters.
 
+    @no_rerun(reason="module state is not cleared (see gh-140657)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_main_no_reset(self):
         # without resetting; already loaded in main interpreter
@@ -3228,6 +3263,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
+    @unittest.skip("gh-131229: This is suddenly very flaky")
     @no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_deleted_no_reset(self):
@@ -3362,6 +3398,150 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was initialized, not reset
 
+
+@unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+class ModexportTests(unittest.TestCase):
+    def test_from_modexport(self):
+        modname = '_test_from_modexport'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+
+    @requires_subinterpreters
+    def test_from_modexport_gil_used(self):
+        # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
+        # Do this in a new interpreter to avoid interfering with global state.
+        modname = '_test_from_modexport_gil_used'
+        filename = _testmultiphase.__file__
+        interp = concurrent.interpreters.create()
+        self.addCleanup(interp.close)
+        queue = concurrent.interpreters.create_queue()
+        interp.prepare_main(
+            modname=modname,
+            filename=filename,
+            queue=queue,
+        )
+        enabled_before = sys._is_gil_enabled()
+        interp.exec(f"""if True:
+            import sys
+            from test.support.warnings_helper import check_warnings
+            from {__name__} import import_extension_from_file
+            with check_warnings((".*GIL..has been enabled.*", RuntimeWarning),
+                                quiet=True):
+                module = import_extension_from_file(modname, filename,
+                                                    put_in_sys_modules=False)
+            queue.put(module.__name__)
+            queue.put(sys._is_gil_enabled())
+        """)
+
+        self.assertEqual(queue.get(), modname)
+        self.assertEqual(queue.get(), True)
+        self.assertTrue(queue.empty())
+
+        self.assertEqual(enabled_before, sys._is_gil_enabled())
+
+    def test_from_modexport_null(self):
+        modname = '_test_from_modexport_null'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(SystemError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_exception(self):
+        modname = '_test_from_modexport_exception'
+        filename = _testmultiphase.__file__
+        with self.assertRaises(ValueError):
+            import_extension_from_file(modname, filename,
+                                       put_in_sys_modules=False)
+
+    def test_from_modexport_create_nonmodule(self):
+        modname = '_test_from_modexport_create_nonmodule'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertIsInstance(module, str)
+
+    @requires_subinterpreters
+    def test_from_modexport_create_nonmodule_gil_used(self):
+        # Test that a module with Py_MOD_GIL_USED (re-)enables the GIL.
+        # Do this in a new interpreter to avoid interfering with global state.
+        modname = '_test_from_modexport_create_nonmodule_gil_used'
+        filename = _testmultiphase.__file__
+        interp = concurrent.interpreters.create()
+        self.addCleanup(interp.close)
+        queue = concurrent.interpreters.create_queue()
+        interp.prepare_main(
+            modname=modname,
+            filename=filename,
+            queue=queue,
+        )
+        enabled_before = sys._is_gil_enabled()
+        interp.exec(f"""if True:
+            import sys
+            from test.support.warnings_helper import check_warnings
+            from {__name__} import import_extension_from_file
+            with check_warnings((".*GIL..has been enabled.*", RuntimeWarning),
+                                quiet=True):
+                module = import_extension_from_file(modname, filename,
+                                                    put_in_sys_modules=False)
+            queue.put(module)
+            queue.put(sys._is_gil_enabled())
+        """)
+
+        self.assertIsInstance(queue.get(), str)
+        self.assertEqual(queue.get(), True)
+        self.assertTrue(queue.empty())
+
+        self.assertEqual(enabled_before, sys._is_gil_enabled())
+
+    def test_from_modexport_smoke(self):
+        # General positive test for sundry features
+        # (PyModule_FromSlotsAndSpec tests exercise these more carefully)
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        self.assertEqual(module.__doc__, "the expected docstring")
+        self.assertEqual(module.number, 147)
+        self.assertEqual(module.get_state_int(), 258)
+        self.assertGreater(module.get_test_token(), 0)
+
+    def test_from_modexport_smoke_token(self):
+        _testcapi = import_module("_testcapi")
+
+        modname = '_test_from_modexport_smoke'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(modname, filename,
+                                            put_in_sys_modules=False)
+        token = module.get_test_token()
+        self.assertEqual(_testcapi.pymodule_get_token(module), token)
+
+        tp = module.Example
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(tp, token), module)
+        class Sub(tp):
+            pass
+        self.assertEqual(_testcapi.pytype_getmodulebytoken(Sub, token), module)
+
+    @requires_gil_enabled("empty slots re-enable GIL")
+    def test_from_modexport_empty_slots(self):
+        # Module to test that:
+        # - no slots are mandatory for PyModExport
+        # - the slots array is used as the default token
+        modname = '_test_from_modexport_empty_slots'
+        filename = _testmultiphase.__file__
+        module = import_extension_from_file(
+            modname, filename, put_in_sys_modules=False)
+
+        self.assertEqual(module.__name__, modname)
+        self.assertEqual(module.__doc__, None)
+
+        _testcapi = import_module("_testcapi")
+        smoke_mod = import_extension_from_file(
+            '_test_from_modexport_smoke', filename, put_in_sys_modules=False)
+        self.assertEqual(_testcapi.pymodule_get_token(module),
+                         smoke_mod.get_modexport_empty_slots())
 
 @cpython_only
 class TestMagicNumber(unittest.TestCase):

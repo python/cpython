@@ -863,8 +863,7 @@ static inline Py_hash_t
 _PyObject_HashFast(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
-        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
-                             _PyASCIIObject_CAST(op)->hash);
+        Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);
         if (hash != -1) {
             return hash;
         }
@@ -1031,7 +1030,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
 
-int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 
 #ifndef Py_GIL_DISABLED
 static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)

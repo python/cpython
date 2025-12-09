@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><!-- FILENAME --> - Heatmap</title>
+    <!-- INLINE_CSS -->
+</head>
+<body class="code-view">
+    <div class="app-layout">
+        <!-- Top Bar (Code Header) -->
+        <header class="top-bar">
+            <div class="brand">
+                <div class="brand-logo"><!-- PYTHON_LOGO --></div>
+                <span class="brand-text">Tachyon</span>
+                <span class="brand-divider"></span>
+                <span class="brand-subtitle" style="font-family: var(--font-mono); font-size: 13px;"><!-- FILENAME --></span>
+            </div>
+            <div class="toolbar">
+                <a href="index.html" class="back-link">Back to Index</a>
+                <button
+                    class="toolbar-btn theme-toggle"
+                    onclick="toggleTheme()"
+                    title="Toggle theme"
+                    id="theme-btn"
+                >&#9790;</button>
+            </div>
+        </header>
+
+        <!-- File Stats Bar -->
+        <div class="file-stats">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value"><!-- TOTAL_SELF_SAMPLES --></div>
+                    <div class="stat-label">Self Samples</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><!-- TOTAL_SAMPLES --></div>
+                    <div class="stat-label">Cumulative</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><!-- NUM_LINES --></div>
+                    <div class="stat-label">Lines Hit</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><!-- PERCENTAGE -->%</div>
+                    <div class="stat-label">% of Total</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><!-- MAX_SELF_SAMPLES --></div>
+                    <div class="stat-label">Max Self</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value"><!-- MAX_SAMPLES --></div>
+                    <div class="stat-label">Max Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-content">
+                <span class="legend-title">Intensity:</span>
+                <div class="legend-gradient"></div>
+                <div class="legend-labels">
+                    <span>Cold</span>
+                    <span>→</span>
+                    <span>Hot</span>
+                </div>
+                <div class="toggle-switch" id="toggle-color-mode" title="Toggle between self time and total time coloring">
+                    <span class="toggle-label active">Self Time</span>
+                    <div class="toggle-track"></div>
+                    <span class="toggle-label">Total Time</span>
+                </div>
+                <div class="toggle-switch" id="toggle-cold" title="Toggle visibility of lines with zero samples">
+                    <span class="toggle-label active">Show All</span>
+                    <div class="toggle-track"></div>
+                    <span class="toggle-label">Hot Only</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Container -->
+        <div class="code-container">
+            <div class="code-header-row">
+                <div class="header-line-number">Line</div>
+                <div class="header-samples-self">Self</div>
+                <div class="header-samples-cumulative">Total</div>
+                <div class="header-content">Code</div>
+            </div>
+<!-- CODE_LINES -->
+        </div>
+    </div>
+
+    <!-- INLINE_JS -->
+</body>
+</html>
