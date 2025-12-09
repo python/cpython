@@ -1200,6 +1200,13 @@
   transform: rotate(90deg);
 }
 
+.bytecode-spacer {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0 4px;
+}
+
 .bytecode-panel {
   margin-left: 90px;
   padding: 8px 15px;

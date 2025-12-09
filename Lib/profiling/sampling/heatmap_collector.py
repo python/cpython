@@ -477,6 +477,9 @@ class HeatmapCollector(StackTraceCollector):
         self._path_info = get_python_path_info()
         self.stats = {}
 
+        # Opcode collection flag
+        self.opcodes_enabled = False
+
         # Template loader (loads all templates once)
         self._template_loader = _TemplateLoader()
 
@@ -528,6 +531,8 @@ class HeatmapCollector(StackTraceCollector):
             self._record_line_sample(filename, lineno, funcname, is_leaf=(i == 0))
 
             if opcode is not None:
+                # Set opcodes_enabled flag when we first encounter opcode data
+                self.opcodes_enabled = True
                 self._record_bytecode_sample(filename, lineno, opcode,
                                              end_lineno, col_offset, end_col_offset)
 
@@ -953,6 +958,9 @@ class HeatmapCollector(StackTraceCollector):
                 f'onclick="toggleBytecode(this)" title="Show bytecode">&#9654;</button>'
             )
             bytecode_panel_html = f'        <div class="bytecode-panel" id="bytecode-{line_num}" style="display:none;"></div>\n'
+        elif self.opcodes_enabled:
+            # Add invisible spacer to maintain consistent indentation when opcodes are enabled
+            bytecode_btn_html = '<div class="bytecode-spacer"></div>'
 
         # Get navigation buttons
         nav_buttons_html = self._build_navigation_buttons(filename, line_num)
