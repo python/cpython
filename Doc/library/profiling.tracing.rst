@@ -84,7 +84,7 @@ another script or module:
 
 .. code-block:: shell-session
 
-   python -m profiling.tracing [-o output_file] [-s sort_order] (-m module | myscript.py)
+   python -m profiling.tracing [-o output_file] [-s sort_order] (-m module | script.py)
 
 This runs the specified script or module under the profiler and prints the
 results to standard output (or saves them to a file).
