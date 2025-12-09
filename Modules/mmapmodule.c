@@ -1131,7 +1131,14 @@ static PyObject *
 mmap_mmap_set_name_impl(mmap_object *self, const char *name)
 /*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
 {
-    _PyAnnotateMemoryMap(self->data, self->size, name);
+    char buf[80] = {0, };
+    const char* prefix = "cpython:mmap:";
+    if (strlen(name) + strlen(prefix) > 80) {
+        PyErr_SetString(PyExc_ValueError, "name too long");
+        return NULL;
+    }
+    sprintf(buf, "%s%s", prefix, name);
+    _PyAnnotateMemoryMap(self->data, self->size, buf);
     Py_RETURN_NONE;
 }
 
@@ -1415,6 +1422,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     MMAP_MMAP_RESIZE_METHODDEF
     MMAP_MMAP_SEEK_METHODDEF
     MMAP_MMAP_SEEKABLE_METHODDEF
+    MMAP_MMAP_SET_NAME_METHODDEF
     MMAP_MMAP_SIZE_METHODDEF
     MMAP_MMAP_TELL_METHODDEF
     MMAP_MMAP_WRITE_METHODDEF
