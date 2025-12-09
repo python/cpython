@@ -323,6 +323,7 @@ unwind_stack_for_thread(
 #ifdef Py_GIL_DISABLED
     int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
     has_gil = active;
+    (void)gil_requested;  // unused
 #else
     // Read holds_gil directly from thread state
     has_gil = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.holds_gil);
@@ -404,7 +405,8 @@ unwind_stack_for_thread(
             goto error;
         }
         // Update last_profiled_frame for next sample
-        uintptr_t lpf_addr = *current_tstate + unwinder->debug_offsets.thread_state.last_profiled_frame;
+        uintptr_t lpf_addr =
+            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
         if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
                                               sizeof(uintptr_t), &frame_addr) < 0) {
             PyErr_Clear();  // Non-fatal

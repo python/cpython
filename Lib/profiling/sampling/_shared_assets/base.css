@@ -191,16 +191,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 40px;
   flex-shrink: 0;
 }
 
 /* Style the inlined SVG/img inside brand-logo */
 .brand-logo svg,
 .brand-logo img {
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 40px;
   display: block;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
@@ -213,10 +213,13 @@ body {
 }
 
 .brand-text {
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 16px;
   letter-spacing: -0.3px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  color: inherit;
+  text-decoration: none;
 }
 
 .brand-subtitle {
