@@ -1,2 +1,0 @@
-- see comments for which fields should be maintained and kept up-to-date
-- combining directories blocked on https://github.com/prefix-dev/pixi/issues/4599
