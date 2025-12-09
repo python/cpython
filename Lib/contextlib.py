@@ -87,8 +87,8 @@ class ContextDecorator(object):
                 return func(*args, **kwds)
 
         def gen_inner(*args, **kwds):
-            with self._recreate_cm():
-                yield from func(*args, **kwds)
+            with self._recreate_cm(), func(*args, **kwds) as gen:
+                yield from gen
 
         async def async_inner(*args, **kwds):
             with self._recreate_cm():
@@ -96,8 +96,9 @@ class ContextDecorator(object):
 
         async def asyncgen_inner(*args, **kwds):
             with self._recreate_cm():
-                async for value in func(*args, **kwds):
-                    yield value
+                async with func(*args, **kwds) as gen:
+                    async for value in gen:
+                        yield value
 
         wrapper = wraps(func)
         if isasyncgenfunction(func):
@@ -125,16 +126,17 @@ class AsyncContextDecorator(object):
 
         async def gen_inner(*args, **kwds):
             async with self._recreate_cm():
-                for value in func(*args, **kwds):
-                    yield value
+                with func(*args, **kwds) as gen:
+                    for value in func(*args, **kwds):
+                        yield value
 
         async def async_inner(*args, **kwds):
             async with self._recreate_cm():
                 return await func(*args, **kwds)
 
         async def asyncgen_inner(*args, **kwds):
-            async with self._recreate_cm():
-                async for value in func(*args, **kwds):
+            async with self._recreate_cm(), func(*args, **kwds) as gen:
+                async for value in gen:
                     yield value
 
         wrapper = wraps(func)
