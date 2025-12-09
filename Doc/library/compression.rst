@@ -1,6 +1,8 @@
 The :mod:`!compression` package
 ===============================
 
+.. module:: compression
+
 .. versionadded:: 3.14
 
 The :mod:`!compression` package contains the canonical compression modules

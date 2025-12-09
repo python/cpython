@@ -4,7 +4,7 @@
   Functional Programming HOWTO
 ********************************
 
-:Author: A. M. Kuchling
+:Author: \A. M. Kuchling
 :Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for
@@ -1217,7 +1217,7 @@ flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
 Python code.
 
-https://www.defmacro.org/ramblings/fp.html: A general introduction to functional
+https://defmacro.org/2006/06/19/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
 https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry

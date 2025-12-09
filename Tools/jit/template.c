@@ -46,23 +46,19 @@
 #undef CURRENT_TARGET
 #define CURRENT_TARGET() (_target)
 
-#undef GOTO_TIER_TWO
-#define GOTO_TIER_TWO(EXECUTOR)                                            \
+#undef TIER2_TO_TIER2
+#define TIER2_TO_TIER2(EXECUTOR)                                           \
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
-    tstate->current_executor = (PyObject *)_executor;                      \
-    jit_func_preserve_none jitted = _executor->jit_side_entry;             \
+    jit_func_preserve_none jitted = _executor->jit_code;                   \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
-#undef GOTO_TIER_ONE
-#define GOTO_TIER_ONE(TARGET)                       \
-do {                                                \
-    tstate->current_executor = NULL;                \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    return TARGET;                                  \
-} while (0)
+#undef GOTO_TIER_ONE_SETUP
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) \
@@ -70,14 +66,16 @@ do {                                                \
     } while (0)
 
 #undef LLTRACE_RESUME_FRAME
-#define LLTRACE_RESUME_FRAME() \
-    do {                       \
-    } while (0)
+#ifdef Py_DEBUG
+#define LLTRACE_RESUME_FRAME() (frame->lltrace = 0)
+#else
+#define LLTRACE_RESUME_FRAME() do {} while (0)
+#endif
 
-#define PATCH_JUMP(ALIAS)                                                \
-do {                                                                     \
-    PATCH_VALUE(jit_func_preserve_none, jump, ALIAS);                    \
-    __attribute__((musttail)) return jump(frame, stack_pointer, tstate); \
+#define PATCH_JUMP(ALIAS)                                                 \
+do {                                                                      \
+    DECLARE_TARGET(ALIAS);                                                \
+    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -87,6 +85,12 @@ do {                                                                     \
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
 #define TIER_TWO 2
+
+#ifdef Py_DEBUG
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) _Py_assert_within_stack_bounds(frame, stack_pointer, (F), (L))
+#else
+#define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
+#endif
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)

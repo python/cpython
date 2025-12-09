@@ -211,6 +211,9 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: 3.14
+      The URL query and fragment components are discarded if present.
+
+   .. versionchanged:: 3.14
       The *require_scheme* and *resolve_host* parameters were added.
 
 
@@ -829,10 +832,13 @@ The following attribute and methods should only be used by classes derived from
    errors.  It will be called automatically by the  :class:`OpenerDirector` getting
    the error, and should not normally be called in other circumstances.
 
-   *req* will be a :class:`Request` object, *fp* will be a file-like object with
-   the HTTP error body, *code* will be the three-digit code of the error, *msg*
-   will be the user-visible explanation of the code and *hdrs* will be a mapping
-   object with the headers of the error.
+   :class:`OpenerDirector` will call this method with five positional arguments:
+
+   1. a :class:`Request` object,
+   #. a file-like object with the HTTP error body,
+   #. the three-digit code of the error, as a string,
+   #. the user-visible explanation of the code, as a string, and
+   #. the headers of the error, as a mapping object.
 
    Return values and exceptions raised should be the same as those of
    :func:`urlopen`.

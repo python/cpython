@@ -7,11 +7,11 @@
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
 # Keep this version in sync with ``Doc/conf.py``.
-sphinx~=8.2.0
+sphinx~=9.0.0
 
 blurb
 
-sphinxext-opengraph~=0.10.0
+sphinxext-opengraph~=0.13.0
 sphinx-notfound-page~=1.0.0
 
 # The theme used by the documentation is stored separately, so we need

@@ -11,7 +11,7 @@ import textwrap
 import unittest
 import unittest.mock
 from contextlib import closing, contextmanager, redirect_stdout, redirect_stderr, ExitStack
-from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT
+from test.support import is_wasi, cpython_only, force_color, requires_subprocess, SHORT_TIMEOUT, subTests
 from test.support.os_helper import TESTFN, unlink
 from typing import List
 
@@ -279,37 +279,50 @@ class PdbClientTestCase(unittest.TestCase):
             expected_stdout="Some message.\n",
         )
 
-    def test_handling_help_for_command(self):
-        """Test handling a request to display help for a command."""
+    @unittest.skipIf(sys.flags.optimize >= 2, "Help not available for -OO")
+    @subTests(
+        "help_request,expected_substring",
+        [
+            # a request to display help for a command
+            ({"help": "ll"}, "Usage: ll | longlist"),
+            # a request to display a help overview
+            ({"help": ""}, "type help <topic>"),
+            # a request to display the full PDB manual
+            ({"help": "pdb"}, ">>> import pdb"),
+        ],
+    )
+    def test_handling_help_when_available(self, help_request, expected_substring):
+        """Test handling help requests when help is available."""
         incoming = [
-            ("server", {"help": "ll"}),
+            ("server", help_request),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[],
-            expected_stdout_substring="Usage: ll | longlist",
+            expected_stdout_substring=expected_substring,
         )
 
-    def test_handling_help_without_a_specific_topic(self):
-        """Test handling a request to display a help overview."""
+    @unittest.skipIf(sys.flags.optimize < 2, "Needs -OO")
+    @subTests(
+        "help_request,expected_substring",
+        [
+            # a request to display help for a command
+            ({"help": "ll"}, "No help for 'll'"),
+            # a request to display a help overview
+            ({"help": ""}, "Undocumented commands"),
+            # a request to display the full PDB manual
+            ({"help": "pdb"}, "No help for 'pdb'"),
+        ],
+    )
+    def test_handling_help_when_not_available(self, help_request, expected_substring):
+        """Test handling help requests when help is not available."""
         incoming = [
-            ("server", {"help": ""}),
+            ("server", help_request),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[],
-            expected_stdout_substring="type help <topic>",
-        )
-
-    def test_handling_help_pdb(self):
-        """Test handling a request to display the full PDB manual."""
-        incoming = [
-            ("server", {"help": "pdb"}),
-        ]
-        self.do_test(
-            incoming=incoming,
-            expected_outgoing=[],
-            expected_stdout_substring=">>> import pdb",
+            expected_stdout_substring=expected_substring,
         )
 
     def test_handling_pdb_prompts(self):
@@ -1526,6 +1539,9 @@ class PdbAttachTestCase(unittest.TestCase):
             redirect_stdout(client_stdout),
             redirect_stderr(client_stderr),
             unittest.mock.patch("sys.argv", ["pdb", "-p", str(process.pid)]),
+            unittest.mock.patch(
+                "pdb.exit_with_permission_help_text", side_effect=PermissionError
+            ),
         ):
             try:
                 pdb.main()
@@ -1573,6 +1589,18 @@ class PdbAttachTestCase(unittest.TestCase):
         self.assertIn("\x1b", output["client"]["stdout"])
         self.assertNotIn("while x == 1", output["client"]["stdout"])
         self.assertIn("while x == 1", re.sub("\x1b[^m]*m", "", output["client"]["stdout"]))
+
+    def test_attach_to_non_existent_process(self):
+        with force_color(False):
+            result = subprocess.run([sys.executable, "-m", "pdb", "-p", "999999"], text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        if sys.platform == "darwin":
+            # On MacOS, attaching to a non-existent process gives PermissionError
+            error = "The specified process cannot be attached to due to insufficient permissions"
+        else:
+            error = "Cannot attach to pid 999999, please make sure that the process exists"
+        self.assertIn(error, result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

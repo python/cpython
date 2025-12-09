@@ -1322,6 +1322,8 @@ class FractionTest(unittest.TestCase):
             # Thousands separators
             (F('1234567.123456'), ',.5e', '1.23457e+06'),
             (F('123.123456'), '012_.2e', '0_001.23e+02'),
+            # Thousands separators for fractional part (or for integral too)
+            (F('1234567.123456'), '.5_e', '1.234_57e+06'),
             # z flag is legal, but never makes a difference to the output
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
         ]
@@ -1447,6 +1449,12 @@ class FractionTest(unittest.TestCase):
             (F('1234567'), ',.2f', '1,234,567.00'),
             (F('12345678'), ',.2f', '12,345,678.00'),
             (F('12345678'), ',f', '12,345,678.000000'),
+            # Thousands separators for fractional part (or for integral too)
+            (F('123456.789123123'), '._f', '123456.789_123'),
+            (F('123456.789123123'), '.7_f', '123456.789_123_1'),
+            (F('123456.789123123'), '.9_f', '123456.789_123_123'),
+            (F('123456.789123123'), '.,f', '123456.789,123'),
+            (F('123456.789123123'), '_.,f', '123_456.789,123'),
             # Underscore as thousands separator
             (F(2, 3), '_.2f', '0.67'),
             (F(2, 3), '_.7f', '0.6666667'),
@@ -1480,11 +1488,8 @@ class FractionTest(unittest.TestCase):
             (F('-1234.5678'), '08,.0f', '-001,235'),
             (F('-1234.5678'), '09,.0f', '-0,001,235'),
             # Corner-case - zero-padding specified through fill and align
-            # instead of the zero-pad character - in this case, treat '0' as a
-            # regular fill character and don't attempt to insert commas into
-            # the filled portion. This differs from the int and float
-            # behaviour.
-            (F('1234.5678'), '0=12,.2f', '00001,234.57'),
+            # instead of the zero-pad character.
+            (F('1234.5678'), '0=12,.2f', '0,001,234.57'),
             # Corner case where it's not clear whether the '0' indicates zero
             # padding or gives the minimum width, but there's still an obvious
             # answer to give. We want this to work in case the minimum width
@@ -1623,6 +1628,11 @@ class FractionTest(unittest.TestCase):
             '.f',
             '.g',
             '.%',
+            # Thousands separators before precision
+            '._6e',
+            '._6f',
+            '._6g',
+            '._6%',
             # Z instead of z for negative zero suppression
             'Z.2f'
             # z flag not supported for general formatting
