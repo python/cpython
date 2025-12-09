@@ -527,6 +527,7 @@ PyStackRef_Borrow(_PyStackRef ref)
 {
     return (_PyStackRef){ .bits = ref.bits | Py_TAG_REFCNT };
 }
+#endif
 
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef ref)
@@ -540,7 +541,6 @@ PyStackRef_AsPyObjectSteal(_PyStackRef ref)
         return Py_NewRef(BITS_TO_PTR_MASKED(ref));
     }
 }
-#endif
 
 static inline _PyStackRef
 PyStackRef_FromPyObjectSteal(PyObject *obj)
