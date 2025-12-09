@@ -230,9 +230,8 @@ The module defines the following user-callable items:
    The file descriptor is not inherited by child processes across
    :func:`exec <os.execl>` calls, but will be inherited by child
    processes created via :func:`os.fork`. See 
-   `File Descriptor Inheritance <https://docs.python.org/dev/library/os.html#fd-inheritance>`_
-   for more information.
-   
+   :ref:`fd_inheritance` for more information.
+
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
 
