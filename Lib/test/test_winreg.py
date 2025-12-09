@@ -344,7 +344,7 @@ class LocalWinregTests(BaseWinregTests):
                     result, typ = QueryValueEx(key, 'test_value')
                     # The result must be one of the written values,
                     # not garbage data from uninitialized buffer
-                    self.assertIn(result, values, f"QueryValueEx returned unexpected value: {result!r}")
+                    self.assertIn(result, values)
         finally:
             done = True
             thread.join()
