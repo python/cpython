@@ -506,17 +506,14 @@ function toggleSpecView() {
     specViewEnabled = !specViewEnabled;
     const lines = document.querySelectorAll('.code-line');
 
-    lines.forEach(line => {
-        if (specViewEnabled) {
+    if (specViewEnabled) {
+        lines.forEach(line => {
             const specColor = line.getAttribute('data-spec-color');
             line.style.background = specColor || 'transparent';
-        } else {
-            const bgColor = colorMode === 'self'
-                ? line.getAttribute('data-self-color') || line.getAttribute('data-bg-color')
-                : line.getAttribute('data-cumulative-color') || line.getAttribute('data-bg-color');
-            line.style.background = bgColor || 'transparent';
-        }
-    });
+        });
+    } else {
+        applyLineColors();
+    }
 
     applySpanHeatColors(specViewEnabled);
     updateToggleUI('toggle-spec-view', specViewEnabled);
