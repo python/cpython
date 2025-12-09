@@ -381,10 +381,10 @@ class Theme:
         return type(self)(
             argparse=argparse or self.argparse,
             difflib=difflib or self.difflib,
+            live_profiler=live_profiler or self.live_profiler,
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
-            live_profiler=live_profiler or self.live_profiler,
         )
 
     @classmethod
