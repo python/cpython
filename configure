@@ -23947,6 +23947,25 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 fi
 
 
+ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
+
+fi
+
+
 # check for openpty, login_tty, and forkpty
 
 
@@ -26120,8 +26139,8 @@ main (void)
 {
 
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 
   ;
   return 0;
