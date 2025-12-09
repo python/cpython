@@ -2140,7 +2140,6 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)
