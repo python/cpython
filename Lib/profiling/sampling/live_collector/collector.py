@@ -751,6 +751,88 @@ class LiveStatsCollector(Collector):
         if self.finished and had_input and self.display is not None:
             self._update_display()
 
+    def _get_visible_rows_info(self):
+        """Calculate visible rows and stats list for opcode navigation."""
+        stats_list = self.build_stats_list()
+        if self.display:
+            height, _ = self.display.get_dimensions()
+            extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
+            max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
+            stats_list = stats_list[:max_stats]
+            visible_rows = max(1, height - 8 - 2 - 12)
+        else:
+            visible_rows = self.limit
+        total_rows = len(stats_list)
+        return stats_list, visible_rows, total_rows
+
+    def _move_selection_down(self):
+        """Move selection down in opcode mode with scrolling."""
+        if not self.show_opcodes:
+            return
+
+        stats_list, visible_rows, total_rows = self._get_visible_rows_info()
+        if total_rows == 0:
+            return
+
+        # Max scroll is when last item is at bottom
+        max_scroll = max(0, total_rows - visible_rows)
+        # Current absolute position
+        abs_pos = self.scroll_offset + self.selected_row
+
+        # Only move if not at the last item
+        if abs_pos < total_rows - 1:
+            # Try to move selection within visible area first
+            if self.selected_row < visible_rows - 1:
+                self.selected_row += 1
+            elif self.scroll_offset < max_scroll:
+                # Scroll down
+                self.scroll_offset += 1
+
+        # Clamp to valid range
+        self.scroll_offset = min(self.scroll_offset, max_scroll)
+        max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
+        self.selected_row = min(self.selected_row, max(0, max_selected))
+
+    def _move_selection_up(self):
+        """Move selection up in opcode mode with scrolling."""
+        if not self.show_opcodes:
+            return
+
+        if self.selected_row > 0:
+            self.selected_row -= 1
+        elif self.scroll_offset > 0:
+            self.scroll_offset -= 1
+
+        # Clamp to valid range based on actual stats_list
+        stats_list, visible_rows, total_rows = self._get_visible_rows_info()
+        if total_rows > 0:
+            max_scroll = max(0, total_rows - visible_rows)
+            self.scroll_offset = min(self.scroll_offset, max_scroll)
+            max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
+            self.selected_row = min(self.selected_row, max(0, max_selected))
+
+    def _navigate_to_previous_thread(self):
+        """Navigate to previous thread in PER_THREAD mode, or switch from ALL to PER_THREAD."""
+        if len(self.thread_ids) > 0:
+            if self.view_mode == "ALL":
+                self.view_mode = "PER_THREAD"
+                self.current_thread_index = len(self.thread_ids) - 1
+            else:
+                self.current_thread_index = (
+                    self.current_thread_index - 1
+                ) % len(self.thread_ids)
+
+    def _navigate_to_next_thread(self):
+        """Navigate to next thread in PER_THREAD mode, or switch from ALL to PER_THREAD."""
+        if len(self.thread_ids) > 0:
+            if self.view_mode == "ALL":
+                self.view_mode = "PER_THREAD"
+                self.current_thread_index = 0
+            else:
+                self.current_thread_index = (
+                    self.current_thread_index + 1
+                ) % len(self.thread_ids)
+
     def _show_terminal_too_small(self, height, width):
         """Display a message when terminal is too small."""
         A_BOLD = self.display.get_attr("A_BOLD")
@@ -930,154 +1012,35 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("j") or ch == ord("J"):
             # Move selection down in opcode mode (with scrolling)
-            if self.show_opcodes:
-                # Use the actual displayed stats_list count, not raw result_source
-                # This matches what _prepare_display_data() produces
-                stats_list = self.build_stats_list()
-                if self.display:
-                    height, _ = self.display.get_dimensions()
-                    # Same calculation as _prepare_display_data
-                    extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
-                    max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
-                    stats_list = stats_list[:max_stats]
-                    visible_rows = max(1, height - 8 - 2 - 12)
-                else:
-                    visible_rows = self.limit
-                total_rows = len(stats_list)
-                if total_rows == 0:
-                    return
-                # Max scroll is when last item is at bottom
-                max_scroll = max(0, total_rows - visible_rows)
-                # Current absolute position
-                abs_pos = self.scroll_offset + self.selected_row
-                # Only move if not at the last item
-                if abs_pos < total_rows - 1:
-                    # Try to move selection within visible area first
-                    if self.selected_row < visible_rows - 1:
-                        self.selected_row += 1
-                    elif self.scroll_offset < max_scroll:
-                        # Scroll down
-                        self.scroll_offset += 1
-                # Clamp to valid range
-                self.scroll_offset = min(self.scroll_offset, max_scroll)
-                max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
-                self.selected_row = min(self.selected_row, max(0, max_selected))
+            self._move_selection_down()
 
         elif ch == ord("k") or ch == ord("K"):
             # Move selection up in opcode mode (with scrolling)
-            if self.show_opcodes:
-                if self.selected_row > 0:
-                    self.selected_row -= 1
-                elif self.scroll_offset > 0:
-                    self.scroll_offset -= 1
-                # Clamp to valid range based on actual stats_list
-                stats_list = self.build_stats_list()
-                if self.display:
-                    height, _ = self.display.get_dimensions()
-                    extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
-                    max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
-                    stats_list = stats_list[:max_stats]
-                    visible_rows = max(1, height - 8 - 2 - 12)
-                else:
-                    visible_rows = self.limit
-                total_rows = len(stats_list)
-                if total_rows > 0:
-                    max_scroll = max(0, total_rows - visible_rows)
-                    self.scroll_offset = min(self.scroll_offset, max_scroll)
-                    max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
-                    self.selected_row = min(self.selected_row, max(0, max_selected))
+            self._move_selection_up()
 
         elif ch == curses.KEY_UP:
             # Move selection up (same as 'k') when in opcode mode
             if self.show_opcodes:
-                if self.selected_row > 0:
-                    self.selected_row -= 1
-                elif self.scroll_offset > 0:
-                    self.scroll_offset -= 1
-                # Clamp to valid range based on actual stats_list
-                stats_list = self.build_stats_list()
-                if self.display:
-                    height, _ = self.display.get_dimensions()
-                    extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
-                    max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
-                    stats_list = stats_list[:max_stats]
-                    visible_rows = max(1, height - 8 - 2 - 12)
-                else:
-                    visible_rows = self.limit
-                total_rows = len(stats_list)
-                if total_rows > 0:
-                    max_scroll = max(0, total_rows - visible_rows)
-                    self.scroll_offset = min(self.scroll_offset, max_scroll)
-                    max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
-                    self.selected_row = min(self.selected_row, max(0, max_selected))
+                self._move_selection_up()
             else:
                 # Navigate to previous thread (same as KEY_LEFT)
-                if len(self.thread_ids) > 0:
-                    if self.view_mode == "ALL":
-                        self.view_mode = "PER_THREAD"
-                        self.current_thread_index = len(self.thread_ids) - 1
-                    else:
-                        self.current_thread_index = (
-                            self.current_thread_index - 1
-                        ) % len(self.thread_ids)
+                self._navigate_to_previous_thread()
 
         elif ch == curses.KEY_DOWN:
             # Move selection down (same as 'j') when in opcode mode
             if self.show_opcodes:
-                stats_list = self.build_stats_list()
-                if self.display:
-                    height, _ = self.display.get_dimensions()
-                    extra_header = FINISHED_BANNER_EXTRA_LINES if self.finished else 0
-                    max_stats = max(0, height - HEADER_LINES - extra_header - FOOTER_LINES - SAFETY_MARGIN)
-                    stats_list = stats_list[:max_stats]
-                    visible_rows = max(1, height - 8 - 2 - 12)
-                else:
-                    visible_rows = self.limit
-                total_rows = len(stats_list)
-                if total_rows == 0:
-                    return
-                max_scroll = max(0, total_rows - visible_rows)
-                abs_pos = self.scroll_offset + self.selected_row
-                if abs_pos < total_rows - 1:
-                    if self.selected_row < visible_rows - 1:
-                        self.selected_row += 1
-                    elif self.scroll_offset < max_scroll:
-                        self.scroll_offset += 1
-                self.scroll_offset = min(self.scroll_offset, max_scroll)
-                max_selected = min(visible_rows - 1, total_rows - self.scroll_offset - 1)
-                self.selected_row = min(self.selected_row, max(0, max_selected))
+                self._move_selection_down()
             else:
                 # Navigate to next thread (same as KEY_RIGHT)
-                if len(self.thread_ids) > 0:
-                    if self.view_mode == "ALL":
-                        self.view_mode = "PER_THREAD"
-                        self.current_thread_index = 0
-                    else:
-                        self.current_thread_index = (
-                            self.current_thread_index + 1
-                        ) % len(self.thread_ids)
+                self._navigate_to_next_thread()
 
         elif ch == curses.KEY_LEFT:
             # Navigate to previous thread
-            if len(self.thread_ids) > 0:
-                if self.view_mode == "ALL":
-                    self.view_mode = "PER_THREAD"
-                    self.current_thread_index = len(self.thread_ids) - 1
-                else:
-                    self.current_thread_index = (
-                        self.current_thread_index - 1
-                    ) % len(self.thread_ids)
+            self._navigate_to_previous_thread()
 
         elif ch == curses.KEY_RIGHT:
             # Navigate to next thread
-            if len(self.thread_ids) > 0:
-                if self.view_mode == "ALL":
-                    self.view_mode = "PER_THREAD"
-                    self.current_thread_index = 0
-                else:
-                    self.current_thread_index = (
-                        self.current_thread_index + 1
-                    ) % len(self.thread_ids)
+            self._navigate_to_next_thread()
 
         # Update display if input was processed while finished
         self._handle_finished_input_update(ch != -1)

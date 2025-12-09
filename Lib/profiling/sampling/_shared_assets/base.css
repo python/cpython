@@ -95,6 +95,10 @@
   --spec-low: #9e9e9e;
   --spec-low-text: #616161;
   --spec-low-bg: rgba(158, 158, 158, 0.15);
+
+  /* Heatmap span highlighting colors */
+  --span-hot-base: 255, 100, 50;
+  --span-cold-base: 150, 150, 150;
 }
 
 /* Dark theme */
@@ -153,6 +157,10 @@
   --spec-low: #bdbdbd;
   --spec-low-text: #9e9e9e;
   --spec-low-bg: rgba(189, 189, 189, 0.15);
+
+  /* Heatmap span highlighting colors - dark theme */
+  --span-hot-base: 255, 107, 53;
+  --span-cold-base: 189, 189, 189;
 }
 
 /* --------------------------------------------------------------------------

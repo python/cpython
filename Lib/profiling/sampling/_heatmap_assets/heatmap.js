@@ -368,10 +368,12 @@ function calculateHeatColor(intensity) {
         const normalizedIntensity = (intensity - 0.3) / 0.7;
         // Warm orange-red with increasing opacity for hotter spans
         const alpha = 0.25 + normalizedIntensity * 0.35;  // 0.25 to 0.6
-        return `rgba(255, 100, 50, ${alpha})`;
+        const hotColor = getComputedStyle(document.documentElement).getPropertyValue('--span-hot-base').trim();
+        return `rgba(${hotColor}, ${alpha})`;
     } else if (intensity > 0) {
         // Cold spans: very subtle gray, almost invisible
-        return `rgba(150, 150, 150, 0.1)`;
+        const coldColor = getComputedStyle(document.documentElement).getPropertyValue('--span-cold-base').trim();
+        return `rgba(${coldColor}, 0.1)`;
     }
     return 'transparent';
 }

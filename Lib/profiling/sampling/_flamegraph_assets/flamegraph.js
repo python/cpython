@@ -306,7 +306,7 @@ function createPythonTooltip(data) {
             <div class="${nameClass}">
               ${opcodeInfo.opname}${baseOpHint}${specializedBadge}
             </div>
-            <div class="tooltip-opcode-count">${count.toLocaleString()}</div>
+            <div class="tooltip-opcode-count">${count.toLocaleString()} (${pct}%)</div>
             <div class="tooltip-opcode-bar">
               <div class="tooltip-opcode-bar-fill" style="width: ${barWidth}%;"></div>
             </div>
