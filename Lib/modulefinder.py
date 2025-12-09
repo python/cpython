@@ -66,7 +66,12 @@ def _find_module(name, path=None):
 
     file_path = spec.origin
 
-    if spec.loader.is_package(name):
+    # On namespace packages, spec.loader might be None, but
+    # spec.submodule_search_locations should always be set — check it instead.
+    if isinstance(spec.submodule_search_locations, importlib.machinery.NamespacePath):
+        return None, spec.submodule_search_locations, ("", "", _PKG_DIRECTORY)
+
+    if spec.loader.is_package(name):  # non-namespace package
         return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
@@ -453,6 +458,11 @@ class ModuleFinder:
         if newname:
             fqname = newname
         m = self.add_module(fqname)
+
+        if isinstance(pathname, importlib.machinery.NamespacePath):
+            m.__path__ = pathname
+            return m
+
         m.__file__ = pathname
         m.__path__ = [pathname]
 
