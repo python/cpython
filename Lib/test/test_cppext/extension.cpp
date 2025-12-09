@@ -14,6 +14,7 @@
 
 #ifdef TEST_INTERNAL_C_API
    // gh-135906: Check for compiler warnings in the internal C API
+#  include "internal/pycore_backoff.h"
 #  include "internal/pycore_frame.h"
 #endif
 

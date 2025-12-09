@@ -40,7 +40,7 @@ extern "C" {
 #define MAX_VALUE 0x1FFF
 
 #define MAKE_VALUE_AND_BACKOFF(value, backoff) \
-    ((value << BACKOFF_BITS) | backoff)
+    ((uint16_t)(((value) << BACKOFF_BITS) | (backoff)))
 
 // For previous backoff b we use value x such that
 // x + 1 is near to 2**(2*b+1) and x + 1 is prime.
