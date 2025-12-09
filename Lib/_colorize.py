@@ -358,10 +358,10 @@ class Theme:
     """
     argparse: Argparse = field(default_factory=Argparse)
     difflib: Difflib = field(default_factory=Difflib)
+    live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
-    live_profiler: LiveProfiler = field(default_factory=LiveProfiler)
 
     def copy_with(
         self,
