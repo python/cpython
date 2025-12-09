@@ -747,7 +747,7 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
             and action.default is not SUPPRESS
             and not action.required
         ):
-            defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
+            defaulting_nargs = (OPTIONAL, ZERO_OR_MORE)
             if action.option_strings or action.nargs in defaulting_nargs:
                 t = self._theme
                 default_str = _(" (default: %(default)s)")
