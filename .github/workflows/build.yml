@@ -373,7 +373,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     timeout-minutes: 60
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
         with:
@@ -386,10 +386,10 @@ jobs:
       # https://github.com/actions/runner-images/issues/12751.
       - name: Select Xcode version
         run: |
-          sudo xcode-select --switch /Applications/Xcode_16.4.app
+          sudo xcode-select --switch /Applications/Xcode_15.4.app
 
       - name: Build and test
-        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone 16e,OS=18.5'
+        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
 
   build-wasi:
     name: 'WASI'
