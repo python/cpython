@@ -1,7 +1,7 @@
 .. _superseded:
 
 ******************
-Superseded Modules
+Superseded modules
 ******************
 
 The modules described in this chapter have been superseded by other modules

@@ -266,5 +266,5 @@ continue to work without modification in all future Python versions.
 .. toctree::
    :maxdepth: 1
 
-   profiling-tracing.rst
-   profiling-sampling.rst
+   profiling.tracing.rst
+   profiling.sampling.rst

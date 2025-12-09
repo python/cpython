@@ -1,5 +1,5 @@
 ***********************
-Debugging and Profiling
+Debugging and profiling
 ***********************
 
 These libraries help you with Python development: the debugger enables you to
