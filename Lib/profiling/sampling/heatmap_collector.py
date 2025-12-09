@@ -205,15 +205,15 @@ class _TemplateLoader:
             self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
             self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
-            # Load Python logo
+            # Load Tachyon logo
             logo_dir = template_dir / "_assets"
             try:
-                png_path = logo_dir / "python-logo-only.png"
+                png_path = logo_dir / "tachyon-logo.png"
                 b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
-                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo" class="python-logo"/>'
+                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo" class="python-logo"/>'
             except (FileNotFoundError, IOError) as e:
                 self.logo_html = '<div class="python-logo-placeholder"></div>'
-                print(f"Warning: Could not load Python logo: {e}")
+                print(f"Warning: Could not load Tachyon logo: {e}")
 
         except (FileNotFoundError, IOError) as e:
             raise RuntimeError(f"Failed to load heatmap template files: {e}") from e
@@ -890,6 +890,7 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- CODE_LINES -->": ''.join(code_lines_html),
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
+            "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
         }
 
         html_content = self._template_loader.file_template

@@ -49,7 +49,7 @@
 
   --text-primary: #2e3338;
   --text-secondary: #5a6c7d;
-  --text-muted: #8b949e;
+  --text-muted: #6f767e;
 
   --accent: #3776ab;
   --accent-hover: #2d5aa0;
@@ -111,7 +111,7 @@
 
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-muted: #6e7681;
+  --text-muted: #757e8a;
 
   --accent: #58a6ff;
   --accent-hover: #79b8ff;
@@ -226,16 +226,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 40px;
   flex-shrink: 0;
 }
 
 /* Style the inlined SVG/img inside brand-logo */
 .brand-logo svg,
 .brand-logo img {
-  width: 28px;
-  height: 28px;
+  width: 48px;
+  height: 40px;
   display: block;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
