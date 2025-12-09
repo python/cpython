@@ -1,0 +1,3 @@
+When adding adding arguments to an ArgumentParser, the help text is no
+longer extended with " (default: None)" if the argument is required and
+therefore has no default.
