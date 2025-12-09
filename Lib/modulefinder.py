@@ -70,8 +70,7 @@ def _find_module(name, path=None):
     # spec.submodule_search_locations should always be set — check it instead.
     #
     # TODO: Update the type check once GH-119669 is merged.
-    # if isinstance(spec.submodule_search_locations, importlib.machinery.NamespacePath):
-    if 'NamespacePath' in type(spec.submodule_search_locations).__name__:
+    if isinstance(spec.submodule_search_locations, importlib.machinery.NamespacePath):
         return None, spec.submodule_search_locations, ("", "", _PKG_DIRECTORY)
 
     if spec.loader.is_package(name):  # non-namespace package
