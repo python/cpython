@@ -45,8 +45,12 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
 
 
 def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
-    arch = platform.machine()
-    arch = {'AMD64': 'x64', 'x86': 'x64'}.get(arch, arch)
+    arch = os.environ.get('PreferredToolArchitecture')
+    if not arch:
+        machine = platform.machine()
+        arch = 'ARM64' if machine == 'ARM64' else 'AMD64'
+    elif arch in ('x86', 'x64'):
+        arch = 'AMD64'
     reporthook = None
     if verbose:
         reporthook = print
