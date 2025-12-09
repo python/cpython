@@ -1,4 +1,4 @@
-The Tachyon profiler's live TUI now integrates with the :mod:`!_colorize`
-theming system, allowing users to customize colors via
+The Tachyon profiler's live TUI now integrates with the experimental
+:mod:`!_colorize` theming system, allowing users to customize colors via
 :func:`!_colorize.set_theme`. A :class:`!LiveProfilerLight` theme is provided
 for light terminal backgrounds. Patch by Pablo Galindo.
