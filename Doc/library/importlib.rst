@@ -348,7 +348,6 @@ ABC hierarchy::
           :meth:`create_module` must also be defined.
 
 
-
 .. class:: ResourceLoader
 
    *Superseded by TraversableResources*
