@@ -644,6 +644,13 @@ variables and terminal capabilities.  However, if ``color=False``, colored
 output is always disabled, even if environment variables like ``FORCE_COLOR``
 are set.
 
+.. note::
+
+   Error messages will include color codes when redirecting stderr to a
+   file. To avoid this, set the |NO_COLOR|_ or :envvar:`PYTHON_COLORS`
+   environment variable (for example,
+   ``NO_COLOR=1 python script.py 2> errors.txt``).
+
 .. versionadded:: 3.14
 
 
