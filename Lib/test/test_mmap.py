@@ -1165,6 +1165,35 @@ class MmapTests(unittest.TestCase):
             m.flush(PAGESIZE)
             m.flush(PAGESIZE, PAGESIZE)
 
+    @unittest.skipUnless(hasattr(mmap, 'MAP_ANONYMOUS'), 'requires MAP_ANONYMOUS')
+    def test_set_name(self):
+        # Test setting name on anonymous mmap
+        m = mmap.mmap(-1, PAGESIZE)
+        self.addCleanup(m.close)
+        result = m.set_name('test_mapping')
+        self.assertIsNone(result)
+
+        # Test name length limit (80 chars including prefix "cpython:mmap:")
+        # Prefix is 13 chars, so max name is 67 chars
+        long_name = 'x' * 30
+        result = m.set_name(long_name)
+        self.assertIsNone(result)
+
+        # Test name too long
+        too_long_name = 'x' * 80
+        with self.assertRaises(ValueError):
+            m.set_name(too_long_name)
+
+        # Test that file-backed mmap raises error
+        with open(TESTFN, 'wb+') as f:
+            f.write(b'x' * PAGESIZE)
+            f.flush()
+            m2 = mmap.mmap(f.fileno(), PAGESIZE)
+            self.addCleanup(m2.close)
+
+            with self.assertRaises(ValueError):
+                m2.set_name('should_fail')
+
 
 class LargeMmapTests(unittest.TestCase):
 
