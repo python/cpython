@@ -2656,6 +2656,8 @@ expression support in the :mod:`re` module).
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
 
+.. _stdtypes-fstrings:
+
 Formatted String Literals (f-strings)
 -------------------------------------
 
@@ -2664,123 +2666,147 @@ Formatted String Literals (f-strings)
    The :keyword:`await` and :keyword:`async for` can be used in expressions
    within f-strings.
 .. versionchanged:: 3.8
-   Added the debugging operator (``=``)
+   Added the debug specifier (``=``)
 .. versionchanged:: 3.12
    Many restrictions on expressions within f-strings have been removed.
    Notably, nested strings, comments, and backslashes are now permitted.
 
 An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
 a string literal that is prefixed with ``f`` or ``F``.
-This type of string literal allows embedding arbitrary Python expressions
-within *replacement fields*, which are delimited by curly brackets (``{}``).
-These expressions are evaluated at runtime, similarly to :meth:`str.format`,
-and are converted into regular :class:`str` objects.
-For example:
+This type of string literal allows embedding the results of arbitrary Python
+expressions within *replacement fields*, which are delimited by curly
+brackets (``{}``).
+Each replacement field must contain an expression, optionally followed by:
 
-.. doctest::
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
 
-   >>> who = 'nobody'
-   >>> nationality = 'Spanish'
-   >>> f'{who.title()} expects the {nationality} Inquisition!'
-   'Nobody expects the Spanish Inquisition!'
+See the :ref:`Lexical Analysis section on f-strings <f-strings>` for details
+on the syntax of these fields.
 
-It is also possible to use a multi line f-string:
+Debug specifier
+^^^^^^^^^^^^^^^
 
-.. doctest::
+.. versionadded:: 3.8
 
-   >>> f'''This is a string
-   ... on two lines'''
-   'This is a string\non two lines'
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
 
-A single opening curly bracket, ``'{'``, marks a *replacement field* that
-can contain any Python expression:
+   >>> number = 14.3
+   >>> f'{number=}'
+   'number=14.3'
 
-.. doctest::
+Whitespace before, inside and after the expression, as well as whitespace
+after the equal sign, is significant --- it is retained in the result::
 
-   >>> nationality = 'Spanish'
-   >>> f'The {nationality} Inquisition!'
-   'The Spanish Inquisition!'
+   >>> f'{ number  -  4  = }'
+   ' number  -  4  = 10.3'
 
-To include a literal ``{`` or ``}``, use a double bracket:
 
-.. doctest::
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
 
-   >>> x = 42
-   >>> f'{{x}} is {x}'
-   '{x} is 42'
-
-Functions can also be used, and :ref:`format specifiers <formatstrings>`:
-
-.. doctest::
-
-   >>> from math import sqrt
-   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
-   '√2 ≈ 1.41421'
-
-Any non-string expression is converted using :func:`str`, by default:
-
-.. doctest::
+By default, the value of a replacement field expression is converted to
+a string using :func:`str`::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)}'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
    '1/3'
 
-To use an explicit conversion, use the ``!`` (exclamation mark) operator,
-followed by any of the valid formats, which are:
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
 
-========== ==============
-Conversion  Meaning
-========== ==============
-``!a``      :func:`ascii`
-``!r``      :func:`repr`
-``!s``      :func:`str`
-========== ==============
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
 
-For example:
+The conversion can be specified explicitly using one of these specifiers:
 
-.. doctest::
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
 
-   >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)!s}'
+For example::
+
+   >>> str(one_third)
    '1/3'
-   >>> f'{Fraction(1, 3)!r}'
+   >>> repr(one_third)
    'Fraction(1, 3)'
-   >>> question = '¿Dónde está el Presidente?'
-   >>> print(f'{question!a}')
-   '\xbfD\xf3nde est\xe1 el Presidente?'
 
-While debugging it may be helpful to see both the expression and its value,
-by using the equals sign (``=``) after the expression.
-This preserves spaces within the brackets, and can be used with a converter.
-By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
-For example:
+   >>> f'{one_third!s} is {one_third!r}'
+   '1/3 is Fraction(1, 3)'
 
-.. doctest::
+   >>> string = "¡kočka 😸!"
+   >>> ascii(string)
+   "'\\xa1ko\\u010dka \\U0001f638!'"
 
-   >>> from fractions import Fraction
-   >>> calculation = Fraction(1, 3)
-   >>> f'{calculation=}'
-   'calculation=Fraction(1, 3)'
-   >>> f'{calculation = }'
-   'calculation = Fraction(1, 3)'
-   >>> f'{calculation = !s}'
-   'calculation = 1/3'
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
 
-Once the output has been evaluated, it can be formatted using a
-:ref:`format specifier <formatstrings>` following a colon (``':'``).
-After the expression has been evaluated, and possibly converted to a string,
-the :meth:`!__format__` method of the result is called with the format specifier,
-or the empty string if no format specifier is given.
-The formatted result is then used as the final value for the replacement field.
-For example:
 
-.. doctest::
+Format specifier
+^^^^^^^^^^^^^^^^
+
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier* introduced by a colon
+(``:``), the specifier is passed to :func:`!format` as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 7):.6f}'
-   '0.142857'
-   >>> f'{Fraction(1, 7):_^+10}'
-   '___+1/7___'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
+
+.. _stdtypes-tstrings:
+
+Template String Literals (t-strings)
+------------------------------------
+
+An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+a string literal that is prefixed with ``t`` or ``T``.
+
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <stdtypes-fstrings>`,
+with for the following differences:
+
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
+
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
+
+* Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
+
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
 
 
 .. _old-string-formatting:
@@ -3240,7 +3266,7 @@ objects.
 
          See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
          common code patterns which can be optimized with
-         :func:`bytearray.take_bytes`.
+         :meth:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4800,7 +4826,7 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`add <frozenset.add>` and :meth:`remove <frozenset.add>`.
+like :meth:`~set.add` and :meth:`~set.remove`.
 Since it is mutable, it has no hash value and cannot be used as
 either a dictionary key or as an element of another set.
 The :class:`frozenset` type is immutable and :term:`hashable` ---
@@ -4822,164 +4848,172 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets can be created by several means:
+Sets can be created by several means:
 
-   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
-   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
-   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+* Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+* Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+* Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
-   Instances of :class:`set` and :class:`frozenset` provide the following
-   operations:
+Instances of :class:`set` and :class:`frozenset` provide the following
+operations:
 
-   .. describe:: len(s)
+.. describe:: len(s)
 
-      Return the number of elements in set *s* (cardinality of *s*).
+   Return the number of elements in set *s* (cardinality of *s*).
 
-   .. describe:: x in s
+.. describe:: x in s
 
-      Test *x* for membership in *s*.
+   Test *x* for membership in *s*.
 
-   .. describe:: x not in s
+.. describe:: x not in s
 
-      Test *x* for non-membership in *s*.
+   Test *x* for non-membership in *s*.
 
-   .. method:: isdisjoint(other, /)
+.. method:: frozenset.isdisjoint(other, /)
+            set.isdisjoint(other, /)
 
-      Return ``True`` if the set has no elements in common with *other*.  Sets are
-      disjoint if and only if their intersection is the empty set.
+   Return ``True`` if the set has no elements in common with *other*.  Sets are
+   disjoint if and only if their intersection is the empty set.
 
-   .. method:: issubset(other, /)
-               set <= other
+.. method:: frozenset.issubset(other, /)
+            set.issubset(other, /)
+.. describe:: set <= other
 
-      Test whether every element in the set is in *other*.
+   Test whether every element in the set is in *other*.
 
-   .. method:: set < other
+.. describe:: set < other
 
-      Test whether the set is a proper subset of *other*, that is,
-      ``set <= other and set != other``.
+   Test whether the set is a proper subset of *other*, that is,
+   ``set <= other and set != other``.
 
-   .. method:: issuperset(other, /)
-               set >= other
+.. method:: frozenset.issuperset(other, /)
+            set.issuperset(other, /)
+.. describe:: set >= other
 
-      Test whether every element in *other* is in the set.
+   Test whether every element in *other* is in the set.
 
-   .. method:: set > other
+.. describe:: set > other
 
-      Test whether the set is a proper superset of *other*, that is, ``set >=
-      other and set != other``.
+   Test whether the set is a proper superset of *other*, that is, ``set >=
+   other and set != other``.
 
-   .. method:: union(*others)
-               set | other | ...
+.. method:: frozenset.union(*others)
+            set.union(*others)
+.. describe:: set | other | ...
 
-      Return a new set with elements from the set and all others.
+   Return a new set with elements from the set and all others.
 
-   .. method:: intersection(*others)
-               set & other & ...
+.. method:: frozenset.intersection(*others)
+            set.intersection(*others)
+.. describe:: set & other & ...
 
-      Return a new set with elements common to the set and all others.
+   Return a new set with elements common to the set and all others.
 
-   .. method:: difference(*others)
-               set - other - ...
+.. method:: frozenset.difference(*others)
+            set.difference(*others)
+.. describe:: set - other - ...
 
-      Return a new set with elements in the set that are not in the others.
+   Return a new set with elements in the set that are not in the others.
 
-   .. method:: symmetric_difference(other, /)
-               set ^ other
+.. method:: frozenset.symmetric_difference(other, /)
+            set.symmetric_difference(other, /)
+.. describe:: set ^ other
 
-      Return a new set with elements in either the set or *other* but not both.
+   Return a new set with elements in either the set or *other* but not both.
 
-   .. method:: copy()
+.. method:: frozenset.copy()
+            set.copy()
 
-      Return a shallow copy of the set.
-
-
-   Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
-   :meth:`issuperset` methods will accept any iterable as an argument.  In
-   contrast, their operator based counterparts require their arguments to be
-   sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
-   in favor of the more readable ``set('abc').intersection('cbs')``.
-
-   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
-   sets are equal if and only if every element of each set is contained in the
-   other (each is a subset of the other). A set is less than another set if and
-   only if the first set is a proper subset of the second set (is a subset, but
-   is not equal). A set is greater than another set if and only if the first set
-   is a proper superset of the second set (is a superset, but is not equal).
-
-   Instances of :class:`set` are compared to instances of :class:`frozenset`
-   based on their members.  For example, ``set('abc') == frozenset('abc')``
-   returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
-
-   The subset and equality comparisons do not generalize to a total ordering
-   function.  For example, any two nonempty disjoint sets are not equal and are not
-   subsets of each other, so *all* of the following return ``False``: ``a<b``,
-   ``a==b``, or ``a>b``.
-
-   Since sets only define partial ordering (subset relationships), the output of
-   the :meth:`list.sort` method is undefined for lists of sets.
-
-   Set elements, like dictionary keys, must be :term:`hashable`.
-
-   Binary operations that mix :class:`set` instances with :class:`frozenset`
-   return the type of the first operand.  For example: ``frozenset('ab') |
-   set('bc')`` returns an instance of :class:`frozenset`.
-
-   The following table lists operations available for :class:`set` that do not
-   apply to immutable instances of :class:`frozenset`:
-
-   .. method:: update(*others)
-               set |= other | ...
-
-      Update the set, adding elements from all others.
-
-   .. method:: intersection_update(*others)
-               set &= other & ...
-
-      Update the set, keeping only elements found in it and all others.
-
-   .. method:: difference_update(*others)
-               set -= other | ...
-
-      Update the set, removing elements found in others.
-
-   .. method:: symmetric_difference_update(other, /)
-               set ^= other
-
-      Update the set, keeping only elements found in either set, but not in both.
-
-   .. method:: add(elem, /)
-
-      Add element *elem* to the set.
-
-   .. method:: remove(elem, /)
-
-      Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
-      not contained in the set.
-
-   .. method:: discard(elem, /)
-
-      Remove element *elem* from the set if it is present.
-
-   .. method:: pop()
-
-      Remove and return an arbitrary element from the set.  Raises
-      :exc:`KeyError` if the set is empty.
-
-   .. method:: clear()
-
-      Remove all elements from the set.
+   Return a shallow copy of the set.
 
 
-   Note, the non-operator versions of the :meth:`update`,
-   :meth:`intersection_update`, :meth:`difference_update`, and
-   :meth:`symmetric_difference_update` methods will accept any iterable as an
-   argument.
+Note, the non-operator versions of :meth:`~frozenset.union`,
+:meth:`~frozenset.intersection`, :meth:`~frozenset.difference`, :meth:`~frozenset.symmetric_difference`, :meth:`~frozenset.issubset`, and
+:meth:`~frozenset.issuperset` methods will accept any iterable as an argument.  In
+contrast, their operator based counterparts require their arguments to be
+sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
+in favor of the more readable ``set('abc').intersection('cbs')``.
 
-   Note, the *elem* argument to the :meth:`~object.__contains__`,
-   :meth:`remove`, and
-   :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, a temporary one is created from *elem*.
+Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
+sets are equal if and only if every element of each set is contained in the
+other (each is a subset of the other). A set is less than another set if and
+only if the first set is a proper subset of the second set (is a subset, but
+is not equal). A set is greater than another set if and only if the first set
+is a proper superset of the second set (is a superset, but is not equal).
+
+Instances of :class:`set` are compared to instances of :class:`frozenset`
+based on their members.  For example, ``set('abc') == frozenset('abc')``
+returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
+
+The subset and equality comparisons do not generalize to a total ordering
+function.  For example, any two nonempty disjoint sets are not equal and are not
+subsets of each other, so *all* of the following return ``False``: ``a<b``,
+``a==b``, or ``a>b``.
+
+Since sets only define partial ordering (subset relationships), the output of
+the :meth:`list.sort` method is undefined for lists of sets.
+
+Set elements, like dictionary keys, must be :term:`hashable`.
+
+Binary operations that mix :class:`set` instances with :class:`frozenset`
+return the type of the first operand.  For example: ``frozenset('ab') |
+set('bc')`` returns an instance of :class:`frozenset`.
+
+The following table lists operations available for :class:`set` that do not
+apply to immutable instances of :class:`frozenset`:
+
+.. method:: set.update(*others)
+.. describe:: set |= other | ...
+
+   Update the set, adding elements from all others.
+
+.. method:: set.intersection_update(*others)
+.. describe:: set &= other & ...
+
+   Update the set, keeping only elements found in it and all others.
+
+.. method:: set.difference_update(*others)
+.. describe:: set -= other | ...
+
+   Update the set, removing elements found in others.
+
+.. method:: set.symmetric_difference_update(other, /)
+.. describe:: set ^= other
+
+   Update the set, keeping only elements found in either set, but not in both.
+
+.. method:: set.add(elem, /)
+
+   Add element *elem* to the set.
+
+.. method:: set.remove(elem, /)
+
+   Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
+   not contained in the set.
+
+.. method:: set.discard(elem, /)
+
+   Remove element *elem* from the set if it is present.
+
+.. method:: set.pop()
+
+   Remove and return an arbitrary element from the set.  Raises
+   :exc:`KeyError` if the set is empty.
+
+.. method:: set.clear()
+
+   Remove all elements from the set.
+
+
+Note, the non-operator versions of the :meth:`~set.update`,
+:meth:`~set.intersection_update`, :meth:`~set.difference_update`, and
+:meth:`~set.symmetric_difference_update` methods will accept any iterable as an
+argument.
+
+Note, the *elem* argument to the :meth:`~object.__contains__`,
+:meth:`~set.remove`, and
+:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
+frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:

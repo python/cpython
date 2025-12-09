@@ -4587,6 +4587,41 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                pass
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
+        self.assertIn("pass", stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

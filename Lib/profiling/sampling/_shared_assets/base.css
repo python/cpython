@@ -1,0 +1,369 @@
+/* ==========================================================================
+   Python Profiler - Shared CSS Foundation
+   Design system shared between Flamegraph and Heatmap viewers
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   CSS Variables & Theme System
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Typography */
+  --font-sans: "Source Sans Pro", "Lucida Grande", "Lucida Sans Unicode",
+               "Geneva", "Verdana", sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+
+  /* Python brand colors (theme-independent) */
+  --python-blue: #3776ab;
+  --python-blue-light: #4584bb;
+  --python-blue-lighter: #5592cc;
+  --python-gold: #ffd43b;
+  --python-gold-dark: #ffcd02;
+  --python-gold-light: #ffdc5c;
+
+  /* Heat palette - defined per theme below */
+
+  /* Layout */
+  --sidebar-width: 280px;
+  --sidebar-collapsed: 44px;
+  --topbar-height: 56px;
+  --statusbar-height: 32px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+/* Light theme (default) */
+:root, [data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --border: #e9ecef;
+  --border-subtle: #f0f2f5;
+
+  --text-primary: #2e3338;
+  --text-secondary: #5a6c7d;
+  --text-muted: #6f767e;
+
+  --accent: #3776ab;
+  --accent-hover: #2d5aa0;
+  --accent-glow: rgba(55, 118, 171, 0.15);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  --header-gradient: linear-gradient(135deg, #3776ab 0%, #4584bb 100%);
+
+  /* Light mode heat palette - blue to yellow to orange to red (cold to hot) */
+  --heat-1: #7ba3d1;
+  --heat-2: #a8d0ef;
+  --heat-3: #d6e9f8;
+  --heat-4: #ffe6a8;
+  --heat-5: #ffd43b;
+  --heat-6: #ffb84d;
+  --heat-7: #ff9966;
+  --heat-8: #ff6347;
+
+  /* Code view specific */
+  --code-bg: #ffffff;
+  --code-bg-line: #f8f9fa;
+  --code-border: #e9ecef;
+  --code-text: #2e3338;
+  --code-text-muted: #8b949e;
+  --code-accent: #3776ab;
+
+  /* Navigation colors */
+  --nav-caller: #2563eb;
+  --nav-caller-hover: #1d4ed8;
+  --nav-callee: #dc2626;
+  --nav-callee-hover: #b91c1c;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --border: #30363d;
+  --border-subtle: #21262d;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #757e8a;
+
+  --accent: #58a6ff;
+  --accent-hover: #79b8ff;
+  --accent-glow: rgba(88, 166, 255, 0.15);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
+
+  /* Dark mode heat palette - dark blue to teal to yellow to orange (cold to hot) */
+  --heat-1: #4a7ba7;
+  --heat-2: #5a9fa8;
+  --heat-3: #6ab5b5;
+  --heat-4: #7ec488;
+  --heat-5: #a0d878;
+  --heat-6: #c4de6a;
+  --heat-7: #f4d44d;
+  --heat-8: #ff6b35;
+
+  /* Code view specific - dark mode */
+  --code-bg: #0d1117;
+  --code-bg-line: #161b22;
+  --code-border: #30363d;
+  --code-text: #e6edf3;
+  --code-text-muted: #6e7681;
+  --code-accent: #58a6ff;
+
+  /* Navigation colors - dark theme friendly */
+  --nav-caller: #58a6ff;
+  --nav-caller-hover: #4184e4;
+  --nav-callee: #f87171;
+  --nav-callee-hover: #e53e3e;
+}
+
+/* --------------------------------------------------------------------------
+   Base Styles
+   -------------------------------------------------------------------------- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+/* --------------------------------------------------------------------------
+   Layout Structure
+   -------------------------------------------------------------------------- */
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Top Bar
+   -------------------------------------------------------------------------- */
+
+.top-bar {
+  height: var(--topbar-height);
+  background: var(--header-gradient);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(55, 118, 171, 0.25);
+  border-bottom: 2px solid var(--python-gold);
+}
+
+/* Brand / Logo */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+/* Style the inlined SVG/img inside brand-logo */
+.brand-logo svg,
+.brand-logo img {
+  width: 48px;
+  height: 40px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brand-text {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.brand-subtitle {
+  font-weight: 500;
+  font-size: 10px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.brand-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 15px;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+/* --------------------------------------------------------------------------
+   Status Bar
+   -------------------------------------------------------------------------- */
+
+.status-bar {
+  height: var(--statusbar-height);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-item::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--python-gold);
+  border-radius: 50%;
+}
+
+.status-item:first-child::before {
+  display: none;
+}
+
+.status-label {
+  color: var(--text-muted);
+}
+
+.status-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.status-value.accent {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Animations
+   -------------------------------------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* --------------------------------------------------------------------------
+   Focus States (Accessibility)
+   -------------------------------------------------------------------------- */
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--python-gold);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Shared Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .brand-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar-btn:not(.theme-toggle) {
+    display: none;
+  }
+}

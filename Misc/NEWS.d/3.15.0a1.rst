@@ -4554,7 +4554,7 @@ auto-completion of imports.
 .. nonce: yLZJpV
 .. section: Core and Builtins
 
-Make :mod:`cProfile` thread-safe on the :term:`free threaded <free
+Make :mod:`!cProfile` thread-safe on the :term:`free threaded <free
 threading>` build.
 
 ..

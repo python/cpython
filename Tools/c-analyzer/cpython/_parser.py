@@ -114,7 +114,10 @@ INCL_DIRS = format_tsv_lines([
     ('*', './Include/internal/mimalloc'),
 
     ('Modules/_decimal/**/*.c', 'Modules/_decimal/libmpdec'),
+
     ('Modules/_elementtree.c', 'Modules/expat'),
+    ('Modules/pyexpat.c', 'Modules/expat'),
+
     ('Modules/_hacl/*.c', 'Modules/_hacl/include'),
     ('Modules/_hacl/*.c', 'Modules/_hacl/'),
     ('Modules/_hacl/*.h', 'Modules/_hacl/include'),
@@ -125,6 +128,7 @@ INCL_DIRS = format_tsv_lines([
     ('Modules/sha3module.c', 'Modules/_hacl/include'),
     ('Modules/blake2module.c', 'Modules/_hacl/include'),
     ('Modules/hmacmodule.c', 'Modules/_hacl/include'),
+
     ('Objects/stringlib/*.h', 'Objects'),
 
     # possible system-installed headers, just in case
