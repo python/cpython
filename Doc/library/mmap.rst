@@ -328,6 +328,16 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. versionadded:: 3.13
 
+   .. method:: set_name(name)
+      
+      Annotate the memory map with the given *name* for easier identification
+      in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
+      to the Python or Python is built in :ref:`debug mode <debug-build>`
+
+      Availability: Linux kernel 5.17 or newer.
+
+      .. versionadded:: 3.15
+
    .. method:: size()
 
       Return the length of the file, which can be larger than the size of the
