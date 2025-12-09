@@ -359,9 +359,6 @@ of what happens during the loading portion of import::
     if spec.loader is None:
         # unsupported
         raise ImportError
-    if spec.origin is None and spec.submodule_search_locations is not None:
-        # namespace package
-        sys.modules[spec.name] = module
 
     sys.modules[spec.name] = module
     try:
