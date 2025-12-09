@@ -292,33 +292,31 @@ function createPythonTooltip(data) {
         const pct = ((count / totalOpcodeSamples) * 100).toFixed(1);
         const barWidth = (count / maxCount) * 100;
         const specializedBadge = opcodeInfo.isSpecialized
-          ? '<span style="background: #2e7d32; color: white; font-size: 9px; padding: 1px 4px; border-radius: 3px; margin-left: 4px;">SPECIALIZED</span>'
+          ? '<span class="tooltip-opcode-badge">SPECIALIZED</span>'
           : '';
         const baseOpHint = opcodeInfo.isSpecialized
-          ? `<span style="color: #888; font-size: 11px; margin-left: 4px;">(${opcodeInfo.baseOpname})</span>`
+          ? `<span class="tooltip-opcode-base-hint">(${opcodeInfo.baseOpname})</span>`
           : '';
+        const nameClass = opcodeInfo.isSpecialized
+          ? 'tooltip-opcode-name specialized'
+          : 'tooltip-opcode-name';
 
         return `
-          <div style="display: grid; grid-template-columns: 1fr 60px 60px; gap: 8px; align-items: center; padding: 3px 0;">
-            <div style="font-family: monospace; font-size: 11px; color: ${opcodeInfo.isSpecialized ? '#2e7d32' : '#333'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <div class="tooltip-opcode-row">
+            <div class="${nameClass}">
               ${opcodeInfo.opname}${baseOpHint}${specializedBadge}
             </div>
-            <div style="text-align: right; font-size: 11px; color: #666;">${count.toLocaleString()}</div>
-            <div style="background: #e9ecef; border-radius: 2px; height: 8px; overflow: hidden;">
-              <div style="background: linear-gradient(90deg, #3776ab, #5a9bd5); height: 100%; width: ${barWidth}%;"></div>
+            <div class="tooltip-opcode-count">${count.toLocaleString()}</div>
+            <div class="tooltip-opcode-bar">
+              <div class="tooltip-opcode-bar-fill" style="width: ${barWidth}%;"></div>
             </div>
           </div>`;
       }).join('');
 
       opcodeSection = `
-        <div style="margin-top: 16px; padding-top: 12px;
-                    border-top: 1px solid #e9ecef;">
-          <div style="color: #3776ab; font-size: 13px;
-                      margin-bottom: 8px; font-weight: 600;">
-            Bytecode Instructions:
-          </div>
-          <div style="background: #f8f9fa; border: 1px solid #e9ecef;
-                      border-radius: 6px; padding: 10px;">
+        <div class="tooltip-opcodes">
+          <div class="tooltip-opcodes-title">Bytecode Instructions:</div>
+          <div class="tooltip-opcodes-list">
             ${opcodeLines}
           </div>
         </div>`;

@@ -864,6 +864,84 @@ body.resizing-sidebar {
 }
 
 /* --------------------------------------------------------------------------
+   Tooltip Bytecode/Opcode Section
+   -------------------------------------------------------------------------- */
+
+.tooltip-opcodes {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tooltip-opcodes-title {
+  color: var(--accent);
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.tooltip-opcodes-list {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.tooltip-opcode-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.tooltip-opcode-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-opcode-name.specialized {
+  color: var(--spec-high-text);
+}
+
+.tooltip-opcode-base-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.tooltip-opcode-badge {
+  background: var(--spec-high);
+  color: white;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.tooltip-opcode-count {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tooltip-opcode-bar {
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.tooltip-opcode-bar-fill {
+  background: linear-gradient(90deg, var(--python-blue), var(--python-blue-light));
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
    Responsive (Flamegraph-specific)
    -------------------------------------------------------------------------- */
 
