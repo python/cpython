@@ -15485,12 +15485,21 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (path->fd > -1)
         result = fsetxattr(path->fd, attribute->narrow,
                            value->buf, value->len, flags);
+#ifdef __APPLE__
+    else
+        result = setxattr(path->narrow,
+            attribute->narrow,
+            value->buf,
+            value->len,
+            followSymLinks ? flags : flags | XATTR_NOFOLLOW);
+#else
     else if (follow_symlinks)
         result = setxattr(path->narrow, attribute->narrow,
                            value->buf, value->len, flags);
     else
         result = lsetxattr(path->narrow, attribute->narrow,
                            value->buf, value->len, flags);
+#endif
     Py_END_ALLOW_THREADS;
 
     if (result) {
