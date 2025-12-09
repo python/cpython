@@ -146,6 +146,10 @@ Generate a line-by-line heatmap::
 
    python -m profiling.sampling run --heatmap script.py
 
+Enable opcode-level profiling to see which bytecode instructions are executing::
+
+   python -m profiling.sampling run --opcodes --flamegraph script.py
+
 
 Commands
 ========
@@ -377,6 +381,44 @@ GC frames help identify programs where garbage collection consumes significant
 time, which may indicate memory allocation patterns worth optimizing. If you
 see substantial time in ``<GC>`` frames, consider investigating object
 allocation rates or using object pooling.
+
+
+Opcode-aware profiling
+----------------------
+
+The ``--opcodes`` option enables instruction-level profiling that captures
+which Python bytecode instructions are executing at each sample::
+
+   python -m profiling.sampling run --opcodes --flamegraph script.py
+
+This feature provides visibility into Python's bytecode execution, including
+adaptive specialization optimizations. When a generic instruction like
+``LOAD_ATTR`` is specialized at runtime into a more efficient variant like
+``LOAD_ATTR_INSTANCE_VALUE``, the profiler shows both the specialized name
+and the base instruction.
+
+Opcode information appears in several output formats:
+
+- **Live mode**: An opcode panel shows instruction-level statistics for the
+  selected function, accessible via keyboard navigation
+- **Flame graphs**: Nodes display opcode information when available, helping
+  identify which instructions consume the most time
+- **Heatmap**: Expandable bytecode panels per source line show instruction
+  breakdown with specialization percentages
+- **Gecko format**: Opcode transitions are emitted as interval markers in the
+  Firefox Profiler timeline
+
+This level of detail is particularly useful for:
+
+- Understanding the performance impact of Python's adaptive specialization
+- Identifying hot bytecode instructions that might benefit from optimization
+- Analyzing the effectiveness of different code patterns at the instruction level
+- Debugging performance issues that occur at the bytecode level
+
+The ``--opcodes`` option is compatible with ``--live``, ``--flamegraph``,
+``--heatmap``, and ``--gecko`` formats. It requires additional memory to store
+opcode information and may slightly reduce sampling performance, but provides
+unprecedented visibility into Python's execution model.
 
 
 Real-time statistics
@@ -760,6 +802,11 @@ and thread status statistics (GIL held percentage, CPU usage, GC time). The
 main table shows function statistics with the currently sorted column indicated
 by an arrow (▼).
 
+When ``--opcodes`` is enabled, an additional opcode panel appears below the
+main table, showing instruction-level statistics for the currently selected
+function. This panel displays which bytecode instructions are executing most
+frequently, including specialized variants and their base opcodes.
+
 
 Keyboard commands
 -----------------
@@ -812,6 +859,11 @@ Within live mode, keyboard commands control the display:
 
 :kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
+
+:kbd:`j` / :kbd:`k`
+   Navigate through opcode entries in the opcode panel (when ``--opcodes`` is
+   enabled). These keys scroll through the instruction-level statistics for the
+   currently selected function.
 
 When profiling finishes (duration expires or target process exits), the display
 shows a "PROFILING COMPLETE" banner and freezes the final results. You can
@@ -938,6 +990,13 @@ Sampling options
 .. option:: --async-aware
 
    Enable async-aware profiling for asyncio programs.
+
+.. option:: --opcodes
+
+   Gather bytecode opcode information for instruction-level profiling. Shows
+   which bytecode instructions are executing, including specializations.
+   Compatible with ``--live``, ``--flamegraph``, ``--heatmap``, and ``--gecko``
+   formats only.
 
 
 Mode options
