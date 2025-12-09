@@ -648,7 +648,8 @@ are set.
 
    Error messages will include color codes when redirecting stderr to a
    file. To avoid this, set the |NO_COLOR|_ or :envvar:`PYTHON_COLORS`
-   environment variable (e.g., ``NO_COLOR=1 python script.py 2> errors.txt``).
+   environment variable (for example,
+   ``NO_COLOR=1 python script.py 2> errors.txt``).
 
 .. versionadded:: 3.14
 
