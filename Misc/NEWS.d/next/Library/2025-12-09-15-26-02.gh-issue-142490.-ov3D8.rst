@@ -1,0 +1,2 @@
+It comes straight from the mach header as a global variable. No need to call
+to get it.

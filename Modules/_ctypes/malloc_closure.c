@@ -12,6 +12,9 @@
 #  if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 #    define MAP_ANONYMOUS MAP_ANON
 #  endif
+#  if defined(__APPLE__)
+#    include <mach/vm_page_size.h>
+#  endif
 #endif
 #include "ctypes.h"
 #include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
@@ -55,7 +58,9 @@ static void more_core(void)
     }
 #else
     if (!_pagesize) {
-#ifdef _SC_PAGESIZE
+#ifdef __APPLE__
+        _pagesize = vm_page_size;
+#elif defined(_SC_PAGESIZE)
         _pagesize = sysconf(_SC_PAGESIZE);
 #else
         _pagesize = getpagesize();
