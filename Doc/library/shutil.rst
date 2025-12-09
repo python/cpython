@@ -540,7 +540,7 @@ On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
-:func:`shutil.copyfileobj` is used, which is still read and write in a loop.
+:func:`shutil.copyfileobj` is used, which is still reads and writes in a loop.
 :func:`shutil.copy2` uses native call ``CopyFile2`` on windows and it is the most
 efficient and support copy-on-write, but preserve the metadata.
 
