@@ -1,10 +1,11 @@
 #!/bin/bash
 
-if [[ "${PYTHON_ASAN}" == 1 ]]; then
+if [[ "${PYTHON_VARIANT}" == "asan" ]]; then
     echo "BUILD TYPE: ASAN"
     BUILD_DIR="../build_asan"
     CONFIGURE_EXTRA="--with-address-sanitizer"
-    export ASAN_OPTIONS="detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
+    export PYTHON_ASAN="1"
+    export ASAN_OPTIONS="strict_init_order=true"
 else
     echo "BUILD TYPE: DEFAULT"
     BUILD_DIR="../build"
@@ -28,7 +29,7 @@ fi
 touch configure-done
 
 make -j"${CPU_COUNT}" install
-ln -sf "${PREFIX}/bin/python${MINOR_VERSION}" "${PREFIX}/bin/python"
+ln -sf "${PREFIX}/bin/python3" "${PREFIX}/bin/python"
 
 # https://github.com/prefix-dev/rattler-build/issues/2012
 if [[ ${OSTYPE} == "darwin"* ]]; then

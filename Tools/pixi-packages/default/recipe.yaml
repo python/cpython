@@ -1,7 +1,6 @@
 context:
   # XXX: keep up to date
   version: "3.15"
-  minor_version: "3.15"
 
 package:
   name: python
@@ -16,8 +15,6 @@ build:
       - "*.o"
   script:
     file: ../build.sh
-    env:
-      MINOR_VERSION: ${{ minor_version }}
 
 # XXX: maybe not all requirements necessary
 # derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
