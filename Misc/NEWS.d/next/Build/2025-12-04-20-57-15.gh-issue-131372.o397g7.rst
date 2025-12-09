@@ -1,0 +1,2 @@
+``build-details.py`` will only be installed as part of the main install
+(``make install``). ``make altinstall`` will no longer include it.
