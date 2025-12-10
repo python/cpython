@@ -191,6 +191,8 @@ _PyOptimizer_Optimize(
     if (exit != NULL) {
         exit->executor = executor;
     } else {
+        // An executor inserted into the code object now has a strong reference
+        // to it from the code object. Thus, we don't need this reference anymore.
         Py_DECREF(executor);
     }
     interp->compiling = false;
