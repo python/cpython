@@ -1,1 +1,4 @@
-Fix inspect.iscoroutinefunction() not detecting marked functools.partial or functools.partialmethod objects.
+Fix ``inspect.iscoroutinefunction()`` incorrectly returning ``False`` for
+callables wrapped in ``functools.partial`` or ``functools.partialmethod`` when
+explicitly marked with ``inspect.markcoroutinefunction()``. The function now
+detects coroutine markers on wrappers at each unwrap stage.
