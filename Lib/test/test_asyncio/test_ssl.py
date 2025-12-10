@@ -349,7 +349,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 sock=sock,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=support.LONG_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
