@@ -328,7 +328,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. versionadded:: 3.13
 
-   .. method:: set_name(name)
+   .. method:: set_name(name, /)
 
       Annotate the memory map with the given *name* for easier identification
       in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
