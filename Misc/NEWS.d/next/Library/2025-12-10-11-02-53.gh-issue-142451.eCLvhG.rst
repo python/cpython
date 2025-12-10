@@ -1,0 +1,2 @@
+:mod:`hmac`: correctly copy :class:`~hmac.HMAC` attributes for objects
+copied through :meth:`HMAC.copy() <hmac.HMAC.copy>`. Patch by Bénédikt Tran.
