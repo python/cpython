@@ -122,6 +122,15 @@ static struct _inittab *inittab_copy = NULL;
 #define LAZY_IMPORTS_FILTER(interp) \
     (interp)->imports.lazy_imports_filter
 
+#ifdef Py_GIL_DISABLED
+#define LAZY_IMPORTS_LOCK(interp) PyMutex_Lock(&(interp)->imports.lazy_mutex)
+#define LAZY_IMPORTS_UNLOCK(interp) PyMutex_Unlock(&(interp)->imports.lazy_mutex)
+#else
+#define LAZY_IMPORTS_LOCK(interp)
+#define LAZY_IMPORTS_UNLOCK(interp)
+#endif
+
+
 #define _IMPORT_TIME_HEADER(interp)                                           \
     do {                                                                      \
         if (FIND_AND_LOAD((interp)).header) {                                 \
@@ -4248,6 +4257,26 @@ get_mod_dict(PyObject *module)
     return PyObject_GetAttr(module, &_Py_ID(__dict__));
 }
 
+// ensure we have the set for the parent module name in sys.lazy_modules.
+// Returns a new reference.
+static PyObject *
+ensure_lazy_submodules(PyDictObject *lazy_modules, PyObject *parent)
+{
+    PyObject *lazy_submodules;
+    Py_BEGIN_CRITICAL_SECTION(lazy_modules);
+    int err = _PyDict_GetItemRef_Unicode_LockHeld(lazy_modules, parent, &lazy_submodules);
+    if (err == 0) {
+        // value isn't present
+        lazy_submodules = PySet_New(NULL);
+        if (lazy_submodules != NULL &&
+            _PyDict_SetItem_LockHeld(lazy_modules, parent, lazy_submodules) < 0) {
+            Py_CLEAR(lazy_submodules);
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return lazy_submodules;
+}
+
 static int
 register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtins)
 {
@@ -4282,20 +4311,12 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
         }
 
         // Record the child as being lazily imported from the parent.
-        PyObject *lazy_submodules;
-        if (PyDict_GetItemRef(lazy_modules, parent, &lazy_submodules) < 0) {
+        PyObject *lazy_submodules = ensure_lazy_submodules((PyDictObject *)lazy_modules,
+                                                           parent);
+        if (lazy_submodules == NULL) {
             goto done;
         }
-        if (lazy_submodules == NULL) {
-            lazy_submodules = PySet_New(NULL);
-            if (lazy_submodules == NULL) {
-                goto done;
-            }
-            if (PyDict_SetItem(lazy_modules, parent, lazy_submodules) < 0) {
-                Py_DECREF(lazy_submodules);
-                goto done;
-            }
-        }
+
         if (PySet_Add(lazy_submodules, child) < 0) {
             Py_DECREF(lazy_submodules);
             goto done;
@@ -4379,8 +4400,10 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
     // Check if the filter disables the lazy import.
     // We must hold a reference to the filter while calling it to prevent
     // use-after-free if another thread replaces it via PyImport_SetLazyImportsFilter.
-    PyObject *filter = FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp));
-    Py_XINCREF(filter);
+    LAZY_IMPORTS_LOCK(interp);
+    PyObject *filter = Py_XNewRef(LAZY_IMPORTS_FILTER(interp));
+    LAZY_IMPORTS_UNLOCK(interp);
+
     if (filter != NULL) {
         PyObject *modname;
         if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
@@ -4809,15 +4832,13 @@ PyImport_SetLazyImportsFilter(PyObject *filter)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef Py_GIL_DISABLED
-    // Exchange the filter atomically. Use deferred DECREF to prevent
-    // use-after-free: another thread may have loaded the old filter
-    // and be about to INCREF it.
-    PyObject *old = _Py_atomic_exchange_ptr(&LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
-    _PyObject_XDecRefDelayed(old);
-#else
-    Py_XSETREF(LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
-#endif
+    // Exchange the filter w/ the lock held. We can't use Py_XSETREF
+    // because we need to release the lock before the decref.
+    LAZY_IMPORTS_LOCK(interp);
+    PyObject *old = LAZY_IMPORTS_FILTER(interp);
+    LAZY_IMPORTS_FILTER(interp) = Py_XNewRef(filter);
+    LAZY_IMPORTS_UNLOCK(interp);
+    Py_XDECREF(old);
     return 0;
 }
 
@@ -4828,7 +4849,10 @@ PyObject *
 PyImport_GetLazyImportsFilter(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return Py_XNewRef(FT_ATOMIC_LOAD_PTR_RELAXED(LAZY_IMPORTS_FILTER(interp)));
+    LAZY_IMPORTS_LOCK(interp);
+    PyObject *res = Py_XNewRef(LAZY_IMPORTS_FILTER(interp));
+    LAZY_IMPORTS_UNLOCK(interp);
+    return res;
 }
 
 int
