@@ -134,7 +134,8 @@ mark_executable(unsigned char *memory, size_t size)
 
 // JIT compiler stuff: /////////////////////////////////////////////////////////
 
-#define SYMBOL_MASK_WORDS 4
+#define GOT_SLOT_SIZE sizeof(uintptr_t)
+#define SYMBOL_MASK_WORDS 8
 
 typedef uint32_t symbol_mask[SYMBOL_MASK_WORDS];
 
@@ -142,10 +143,11 @@ typedef struct {
     unsigned char *mem;
     symbol_mask mask;
     size_t size;
-} trampoline_state;
+} symbol_state;
 
 typedef struct {
-    trampoline_state trampolines;
+    symbol_state trampolines;
+    symbol_state got_symbols;
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
 } jit_state;
 
@@ -209,6 +211,33 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
 // - x86_64-unknown-linux-gnu:
 //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
+
+
+// Get the symbol slot memory location for a given symbol ordinal.
+static unsigned char *
+get_symbol_slot(int ordinal, symbol_state *state, int size)
+{
+    const uint32_t symbol_mask = 1U << (ordinal % 32);
+    const uint32_t state_mask = state->mask[ordinal / 32];
+    assert(symbol_mask & state_mask);
+
+     // Count the number of set bits in the symbol mask lower than ordinal
+    size_t index = _Py_popcount32(state_mask & (symbol_mask - 1));
+    for (int i = 0; i < ordinal / 32; i++) {
+        index += _Py_popcount32(state->mask[i]);
+    }
+
+    unsigned char *slot = state->mem + index * size;
+    assert((size_t)(index + 1) * size <= state->size);
+    return slot;
+}
+
+// Return the address of the GOT slot for the requested symbol ordinal.
+static uintptr_t
+got_symbol_address(int ordinal, jit_state *state)
+{
+    return (uintptr_t)get_symbol_slot(ordinal, &state->got_symbols, GOT_SLOT_SIZE);
+}
 
 // Many of these patches are "relaxing", meaning that they can rewrite the
 // code they're patching to be more efficient (like turning a 64-bit memory
@@ -452,6 +481,7 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
     patch_32r(location, value);
 }
 
+void patch_got_symbol(jit_state *state, int ordinal);
 void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state);
 void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state);
 
@@ -470,23 +500,13 @@ void patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *st
     #define DATA_ALIGN 1
 #endif
 
-// Get the trampoline memory location for a given symbol ordinal.
-static unsigned char *
-get_trampoline_slot(int ordinal, jit_state *state)
+// Populate the GOT entry for the given symbol ordinal with its resolved address.
+void
+patch_got_symbol(jit_state *state, int ordinal)
 {
-    const uint32_t symbol_mask = 1 << (ordinal % 32);
-    const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
-    assert(symbol_mask & trampoline_mask);
-
-     // Count the number of set bits in the trampoline mask lower than ordinal
-    int index = _Py_popcount32(trampoline_mask & (symbol_mask - 1));
-    for (int i = 0; i < ordinal / 32; i++) {
-        index += _Py_popcount32(state->trampolines.mask[i]);
-    }
-
-    unsigned char *trampoline = state->trampolines.mem + index * TRAMPOLINE_SIZE;
-    assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
-    return trampoline;
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
+    unsigned char *location = (unsigned char *)get_symbol_slot(ordinal, &state->got_symbols, GOT_SLOT_SIZE);
+    patch_64(location, value);
 }
 
 // Generate and patch AArch64 trampolines. The symbols to jump to are stored
@@ -506,8 +526,7 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     }
 
     // Out of range - need a trampoline
-    uint32_t *p = (uint32_t *)get_trampoline_slot(ordinal, state);
-
+    uint32_t *p = (uint32_t *)get_symbol_slot(ordinal, &state->trampolines, TRAMPOLINE_SIZE);
 
     /* Generate the trampoline
        0: 58000048      ldr     x8, 8
@@ -537,7 +556,7 @@ patch_x86_64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     }
 
     // Out of range - need a trampoline
-    unsigned char *trampoline = get_trampoline_slot(ordinal, state);
+    unsigned char *trampoline = get_symbol_slot(ordinal, &state->trampolines, TRAMPOLINE_SIZE);
 
     /* Generate the trampoline (14 bytes, padded to 16):
        0: ff 25 00 00 00 00    jmp *(%rip)
@@ -579,21 +598,26 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         code_size += group->code_size;
         data_size += group->data_size;
         combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+        combine_symbol_mask(group->got_mask, state.got_symbols.mask);
     }
     group = &stencil_groups[_FATAL_ERROR_r00];
     code_size += group->code_size;
     data_size += group->data_size;
     combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    combine_symbol_mask(group->got_mask, state.got_symbols.mask);
     // Calculate the size of the trampolines required by the whole trace
     for (size_t i = 0; i < Py_ARRAY_LENGTH(state.trampolines.mask); i++) {
         state.trampolines.size += _Py_popcount32(state.trampolines.mask[i]) * TRAMPOLINE_SIZE;
+    }
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(state.got_symbols.mask); i++) {
+        state.got_symbols.size += _Py_popcount32(state.got_symbols.mask[i]) * GOT_SLOT_SIZE;
     }
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
     size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
-    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
@@ -603,6 +627,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     OPT_STAT_ADD(jit_code_size, code_size);
     OPT_STAT_ADD(jit_trampoline_size, state.trampolines.size);
     OPT_STAT_ADD(jit_data_size, data_size);
+    OPT_STAT_ADD(jit_got_size, state.got_symbols.size);
     OPT_STAT_ADD(jit_padding_size, padding);
     OPT_HIST(total_size, trace_total_memory_hist);
     // Update the offsets of each instruction:
@@ -614,6 +639,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
     assert(trace[0].opcode == _START_EXECUTOR_r00 || trace[0].opcode == _COLD_EXIT_r00 || trace[0].opcode == _COLD_DYNAMIC_EXIT_r00);
+    state.got_symbols.mem = data + data_size;
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -654,12 +680,13 @@ compile_trampoline(void)
     code_size += group->code_size;
     data_size += group->data_size;
     combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    combine_symbol_mask(group->got_mask, state.got_symbols.mask);
     // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
     size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
-    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
-    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + state.got_symbols.size + padding;
     unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return NULL;
@@ -667,6 +694,7 @@ compile_trampoline(void)
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    state.got_symbols.mem = data + data_size;
     // Compile the shim, which handles converting between the native
     // calling convention and the calling convention used by jitted code
     // (which may be different for efficiency reasons).
