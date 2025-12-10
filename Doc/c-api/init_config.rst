@@ -247,8 +247,25 @@ Initialization Callback
    Python interpreter is initialized, before the first import. For example, it
    can be used to add a meta path importer into :data:`sys.meta_path`.
 
-   Python is not fully initialized yet when the callback is called. For
-   example, :data:`sys.stdout` may not exist yet.
+   When the callback is called, Python is only partially initialized. What's
+   available at this point:
+
+   * Builtin types;
+   * Builtin exceptions;
+   * Builtin and frozen modules (can be imported);
+   * The :mod:`sys` module is only partially initialized
+     (ex: :data:`sys.path` and :data:`sys.stdout` don't exist yet).
+
+   After the callback, the Python initialization is completed:
+
+   * Install and configure :mod:`importlib`;
+   * Apply the :ref:`Path Configuration <init-path-config>`;
+   * Install signal handlers;
+   * Finish :mod:`sys` module initialization (ex: create :data:`sys.stdout`
+     and :data:`sys.path`);
+   * Enable optional features like :mod:`faulthandler` and :mod:`tracemalloc`;
+   * Import the :mod:`site` module;
+   * etc.
 
    A single callback can be registered. If this function is called more than
    once, the previous callback is overridden.
