@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -309,13 +310,8 @@ PyImport_GetModule(PyObject *name)
    if not, create a new one and insert it in the modules dictionary. */
 
 static PyObject *
-import_add_module(PyThreadState *tstate, PyObject *name)
+import_add_module_lock_held(PyObject *modules, PyObject *name)
 {
-    PyObject *modules = get_modules_dict(tstate, false);
-    if (modules == NULL) {
-        return NULL;
-    }
-
     PyObject *m;
     if (PyMapping_GetOptionalItem(modules, name, &m) < 0) {
         return NULL;
@@ -332,6 +328,21 @@ import_add_module(PyThreadState *tstate, PyObject *name)
         return NULL;
     }
 
+    return m;
+}
+
+static PyObject *
+import_add_module(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *modules = get_modules_dict(tstate, false);
+    if (modules == NULL) {
+        return NULL;
+    }
+
+    PyObject *m;
+    Py_BEGIN_CRITICAL_SECTION(modules);
+    m = import_add_module_lock_held(modules, name);
+    Py_END_CRITICAL_SECTION();
     return m;
 }
 
@@ -804,7 +815,7 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
    substitute this (if the name actually matches).
 */
 
-_Py_thread_local const char *pkgcontext = NULL;
+static _Py_thread_local const char *pkgcontext = NULL;
 # undef PKGCONTEXT
 # define PKGCONTEXT pkgcontext
 
@@ -1017,9 +1028,10 @@ struct extensions_cache_value {
     _Py_ext_module_origin origin;
 
 #ifdef Py_GIL_DISABLED
-    /* The module's md_gil slot, for legacy modules that are reinitialized from
-       m_dict rather than calling their initialization function again. */
-    void *md_gil;
+    /* The module's md_requires_gil member, for legacy modules that are
+     * reinitialized from m_dict rather than calling their initialization
+     * function again. */
+    bool md_requires_gil;
 #endif
 };
 
@@ -1350,7 +1362,7 @@ static struct extensions_cache_value *
 _extensions_cache_set(PyObject *path, PyObject *name,
                       PyModuleDef *def, PyModInitFunction m_init,
                       Py_ssize_t m_index, PyObject *m_dict,
-                      _Py_ext_module_origin origin, void *md_gil)
+                      _Py_ext_module_origin origin, bool requires_gil)
 {
     struct extensions_cache_value *value = NULL;
     void *key = NULL;
@@ -1405,11 +1417,11 @@ _extensions_cache_set(PyObject *path, PyObject *name,
         /* m_dict is set by set_cached_m_dict(). */
         .origin=origin,
 #ifdef Py_GIL_DISABLED
-        .md_gil=md_gil,
+        .md_requires_gil=requires_gil,
 #endif
     };
 #ifndef Py_GIL_DISABLED
-    (void)md_gil;
+    (void)requires_gil;
 #endif
     if (init_cached_m_dict(newvalue, m_dict) < 0) {
         goto finally;
@@ -1547,32 +1559,41 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
     }
 
     if (!PyModule_Check(module) ||
-        ((PyModuleObject *)module)->md_gil == Py_MOD_GIL_USED) {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            int warn_result = PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-            if (warn_result < 0) {
-                return warn_result;
-            }
+        ((PyModuleObject *)module)->md_requires_gil)
+    {
+        if (PyModule_Check(module)) {
+            assert(((PyModuleObject *)module)->md_token_is_def);
         }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
+        if (_PyImport_EnableGILAndWarn(tstate, module_name) < 0) {
+            return -1;
         }
     }
     else {
         _PyEval_DisableGIL(tstate);
     }
 
+    return 0;
+}
+
+int
+_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name)
+{
+    if (_PyEval_EnableGILPermanent(tstate)) {
+        return PyErr_WarnFormat(
+            PyExc_RuntimeWarning,
+            1,
+            "The global interpreter lock (GIL) has been enabled to load "
+            "module '%U', which has not declared that it can run safely "
+            "without the GIL. To override this behavior and keep the GIL "
+            "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+            module_name
+        );
+    }
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+        PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                            module_name);
+    }
     return 0;
 }
 #endif
@@ -1725,7 +1746,7 @@ struct singlephase_global_update {
     Py_ssize_t m_index;
     PyObject *m_dict;
     _Py_ext_module_origin origin;
-    void *md_gil;
+    bool md_requires_gil;
 };
 
 static struct extensions_cache_value *
@@ -1784,7 +1805,7 @@ update_global_state_for_extension(PyThreadState *tstate,
 #endif
         cached = _extensions_cache_set(
                 path, name, def, m_init, singlephase->m_index, m_dict,
-                singlephase->origin, singlephase->md_gil);
+                singlephase->origin, singlephase->md_requires_gil);
         if (cached == NULL) {
             // XXX Ignore this error?  Doing so would effectively
             // mark the module as not loadable.
@@ -1873,7 +1894,7 @@ reload_singlephase_extension(PyThreadState *tstate,
         if (def->m_base.m_copy != NULL) {
             // For non-core modules, fetch the GIL slot that was stored by
             // import_run_extension().
-            ((PyModuleObject *)mod)->md_gil = cached->md_gil;
+            ((PyModuleObject *)mod)->md_requires_gil = cached->md_requires_gil;
         }
 #endif
         /* We can't set mod->md_def if it's missing,
@@ -2128,7 +2149,7 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                 .m_index=def->m_base.m_index,
                 .origin=info->origin,
 #ifdef Py_GIL_DISABLED
-                .md_gil=((PyModuleObject *)mod)->md_gil,
+                .md_requires_gil=((PyModuleObject *)mod)->md_requires_gil,
 #endif
             };
             // gh-88216: Extensions and def->m_base.m_copy can be updated
@@ -2323,7 +2344,7 @@ _PyImport_FixupBuiltin(PyThreadState *tstate, PyObject *mod, const char *name,
             .origin=_Py_ext_module_origin_CORE,
 #ifdef Py_GIL_DISABLED
             /* Unused when m_dict == NULL. */
-            .md_gil=NULL,
+            .md_requires_gil=false,
 #endif
         };
         cached = update_global_state_for_extension(
@@ -2362,8 +2383,23 @@ is_builtin(PyObject *name)
     return 0;
 }
 
+static PyModInitFunction
+lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
+{
+    for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
+        if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
+            return (PyModInitFunction)p->initfunc;
+        }
+    }
+    // not found
+    return NULL;
+}
+
 static PyObject*
-create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
+create_builtin(
+    PyThreadState *tstate, PyObject *name,
+    PyObject *spec,
+    PyModInitFunction initfunc)
 {
     struct _Py_ext_module_loader_info info;
     if (_Py_ext_module_loader_info_init_for_builtin(&info, name) < 0) {
@@ -2394,25 +2430,15 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         _extensions_cache_delete(info.path, info.name);
     }
 
-    struct _inittab *found = NULL;
-    for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
-        if (_PyUnicode_EqualToASCIIString(info.name, p->name)) {
-            found = p;
-            break;
-        }
-    }
-    if (found == NULL) {
-        // not found
-        mod = Py_NewRef(Py_None);
-        goto finally;
-    }
-
-    PyModInitFunction p0 = (PyModInitFunction)found->initfunc;
+    PyModInitFunction p0 = initfunc;
     if (p0 == NULL) {
-        /* Cannot re-init internal module ("sys" or "builtins") */
-        assert(is_core_module(tstate->interp, info.name, info.path));
-        mod = import_add_module(tstate, info.name);
-        goto finally;
+        p0 = lookup_inittab_initfunc(&info);
+        if (p0 == NULL) {
+            /* Cannot re-init internal module ("sys" or "builtins") */
+            assert(is_core_module(tstate->interp, info.name, info.path));
+            mod = import_add_module(tstate, info.name);
+            goto finally;
+        }
     }
 
 #ifdef Py_GIL_DISABLED
@@ -2438,6 +2464,33 @@ finally:
     return mod;
 }
 
+PyObject*
+PyImport_CreateModuleFromInitfunc(
+    PyObject *spec, PyObject *(*initfunc)(void))
+{
+    if (initfunc == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyObject *name = PyObject_GetAttr(spec, &_Py_ID(name));
+    if (name == NULL) {
+        return NULL;
+    }
+
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "spec name must be string, not %T", name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    PyObject *mod = create_builtin(tstate, name, spec, initfunc);
+    Py_DECREF(name);
+    return mod;
+}
 
 /*****************************/
 /* the builtin modules table */
@@ -3207,7 +3260,7 @@ bootstrap_imp(PyThreadState *tstate)
     }
 
     // Create the _imp module from its definition.
-    PyObject *mod = create_builtin(tstate, name, spec);
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_CLEAR(name);
     Py_DECREF(spec);
     if (mod == NULL) {
@@ -4367,7 +4420,13 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
-    PyObject *mod = create_builtin(tstate, name, spec);
+    if (PyUnicode_GetLength(name) == 0) {
+        PyErr_Format(PyExc_ValueError, "name must not be empty");
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
 }
@@ -4751,6 +4810,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
     if (ex0) {
         mod = import_run_modexport(tstate, ex0, &info, spec);
+        // Modules created from slots handle GIL enablement (Py_mod_gil slot)
+        // when they're created.
         goto cleanup;
     }
     if (p0 == NULL) {

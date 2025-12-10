@@ -25,13 +25,7 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-/* PyBytesObject_SIZE gives the basic size of a bytes object; any memory allocation
-   for a bytes object of length n should request PyBytesObject_SIZE + n bytes.
-
-   Using PyBytesObject_SIZE instead of sizeof(PyBytesObject) saves
-   3 or 7 bytes per bytes object allocation on a typical system.
-*/
-#define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
+#define PyBytesObject_SIZE _PyBytesObject_SIZE
 
 /* Forward declaration */
 static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,

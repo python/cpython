@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tachyon Profiler - Heatmap Report</title>
+    <!-- INLINE_CSS -->
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="brand">
+                <div class="brand-logo"><!-- PYTHON_LOGO --></div>
+                <span class="brand-text">Tachyon</span>
+                <span class="brand-divider"></span>
+                <span class="brand-subtitle">Heatmap Report</span>
+            </div>
+            <div class="toolbar">
+                <button
+                    class="toolbar-btn theme-toggle"
+                    onclick="toggleTheme()"
+                    title="Toggle theme"
+                    id="theme-btn"
+                >&#9790;</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Stats Summary -->
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <div class="stat-icon">&#128196;</div>
+                    <div class="stat-data">
+                        <span class="stat-value"><!-- NUM_FILES --></span>
+                        <span class="stat-label">Files Profiled</span>
+                    </div>
+                    <div class="stat-sparkline"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">&#128202;</div>
+                    <div class="stat-data">
+                        <span class="stat-value"><!-- TOTAL_SAMPLES --></span>
+                        <span class="stat-label">Total Snapshots</span>
+                    </div>
+                    <div class="stat-sparkline"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">&#9201;</div>
+                    <div class="stat-data">
+                        <span class="stat-value"><!-- DURATION --></span>
+                        <span class="stat-label">Duration</span>
+                    </div>
+                    <div class="stat-sparkline"></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">&#9889;</div>
+                    <div class="stat-data">
+                        <span class="stat-value"><!-- SAMPLE_RATE --></span>
+                        <span class="stat-label">Samples/sec</span>
+                    </div>
+                    <div class="stat-sparkline"></div>
+                </div>
+                <div class="rate-card">
+                    <div class="rate-header">
+                        <div class="rate-info">
+                            <div class="rate-icon">&#9888;</div>
+                            <span class="rate-label">Error Rate</span>
+                        </div>
+                        <span class="rate-value"><!-- ERROR_RATE --></span>
+                    </div>
+                    <div class="rate-bar">
+                        <div class="rate-fill <!-- ERROR_RATE_CLASS -->" style="width: <!-- ERROR_RATE_WIDTH -->%;"></div>
+                    </div>
+                </div>
+                <div class="rate-card">
+                    <div class="rate-header">
+                        <div class="rate-info">
+                            <div class="rate-icon">&#128165;</div>
+                            <span class="rate-label">Missed Samples</span>
+                        </div>
+                        <span class="rate-value"><!-- MISSED_SAMPLES --></span>
+                    </div>
+                    <div class="rate-bar">
+                        <div class="rate-fill <!-- MISSED_SAMPLES_CLASS -->" style="width: <!-- MISSED_SAMPLES_WIDTH -->%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File List Section -->
+            <div class="section-header">
+                <h2 class="section-title">Profiled Files</h2>
+            </div>
+
+            <div class="filter-controls">
+                <button onclick="expandAll()" class="control-btn">Expand All</button>
+                <button onclick="collapseAll()" class="control-btn">Collapse All</button>
+            </div>
+
+            <div class="module-sections">
+<!-- SECTIONS_HTML -->
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <span class="status-item">
+                <span class="status-value">Tachyon Profiler</span>
+            </span>
+            <span class="status-item">
+                <span class="status-label">Python Sampling Profiler</span>
+            </span>
+        </footer>
+    </div>
+
+    <!-- INLINE_JS -->
+</body>
+</html>

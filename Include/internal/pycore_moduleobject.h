@@ -30,7 +30,7 @@ typedef struct {
     PyObject *md_name;
     bool md_token_is_def;  /* if true, `md_token` is the PyModuleDef */
 #ifdef Py_GIL_DISABLED
-    void *md_gil;
+    bool md_requires_gil;
 #endif
     Py_ssize_t md_state_size;
     traverseproc md_state_traverse;

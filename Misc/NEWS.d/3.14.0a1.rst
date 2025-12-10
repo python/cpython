@@ -2623,7 +2623,7 @@ Fix :func:`unittest.mock.patch` to not read attributes of the target when
 .. nonce: s4HXR0
 .. section: Library
 
-Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+Fixed the use-after-free issue in :mod:`!cProfile` by disallowing
 ``disable()`` and ``clear()`` in external timers.
 
 ..
@@ -6092,7 +6092,7 @@ Patch by Victor Stinner.
 .. nonce: qOr9GF
 .. section: C API
 
-Soft deprecate the :c:macro:`!Py_MEMCPY` macro: use directly ``memcpy()``
+Soft deprecate the :c:macro:`Py_MEMCPY` macro: use directly ``memcpy()``
 instead.  Patch by Victor Stinner.
 
 ..
