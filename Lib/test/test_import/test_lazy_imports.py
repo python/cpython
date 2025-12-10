@@ -1,7 +1,9 @@
 """Tests for PEP 810 lazy imports."""
 
-import sys
+import io
+import dis
 import subprocess
+import sys
 import textwrap
 import threading
 import types
@@ -1604,6 +1606,28 @@ class ThreadSafetyTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, f"stdout: {result.stdout}, stderr: {result.stderr}")
         self.assertIn("OK", result.stdout)
+
+
+class LazyImportDisTests(unittest.TestCase):
+    def test_lazy_import_dis(self):
+        """dis should properly show lazy import"""
+        code = compile("lazy import foo", "exec", "exec")
+        f = io.StringIO()
+        dis.dis(code, file=f)
+        self.assertIn("foo + lazy", f.getvalue())
+
+    def test_normal_import_dis(self):
+        """non lazy imports should just show the name"""
+        code = compile("import foo", "exec", "exec")
+        f = io.StringIO()
+        dis.dis(code, file=f)
+        for line in f.getvalue().split('\n'):
+            if "IMPORT_NAME" in line:
+                self.assertIn("(foo)", line)
+                break
+        else:
+            self.assertFail("IMPORT_NAME not found")
+
 
 
 if __name__ == '__main__':
