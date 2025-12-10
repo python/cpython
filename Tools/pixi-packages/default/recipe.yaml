@@ -16,7 +16,6 @@ build:
   script:
     file: ../build.sh
 
-# XXX: maybe not all requirements necessary
 # derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
 requirements:
   build:
