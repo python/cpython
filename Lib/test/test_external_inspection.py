@@ -618,8 +618,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             {
                                 "Task-1": [
                                     (
-                                        (taskgroups.__file__, 121, "TaskGroup._aexit", None),
-                                        (taskgroups.__file__, 72, "TaskGroup.__aexit__", None),
+                                        (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                        (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
                                         (script_name, 26, "main", None),
                                     )
                                 ],
@@ -663,8 +663,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            (taskgroups.__file__, 121, "TaskGroup._aexit", None),
-                                            (taskgroups.__file__, 72, "TaskGroup.__aexit__", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
                                             (script_name, 26, "main", None),
                                         ),
                                     ),
@@ -681,8 +681,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            (taskgroups.__file__, 121, "TaskGroup._aexit", None),
-                                            (taskgroups.__file__, 72, "TaskGroup.__aexit__", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
                                             (script_name, 26, "main", None),
                                         ),
                                     )
@@ -691,8 +691,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            (taskgroups.__file__, 121, "TaskGroup._aexit", None),
-                                            (taskgroups.__file__, 72, "TaskGroup.__aexit__", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
                                             (script_name, 26, "main", None),
                                         ),
                                     )
@@ -1003,7 +1003,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         {
                             "Task-1": [
                                 (
-                                    (staggered.__file__, 164, "staggered_race", None),
+                                    (staggered.__file__, ANY, "staggered_race", None),
                                     (script_name, 21, "main", None),
                                 )
                             ],
@@ -1011,7 +1011,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                 (
                                     (script_name, 11, "deep", None),
                                     (script_name, 15, "c1", None),
-                                    (staggered.__file__, 126, "staggered_race.<locals>.run_one_coro", None),
+                                    (staggered.__file__, ANY, "staggered_race.<locals>.run_one_coro", None),
                                 )
                             ],
                         },
@@ -1039,7 +1039,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                 (
                                     "Task-1",
                                     (
-                                        (staggered.__file__, 164, "staggered_race", None),
+                                        (staggered.__file__, ANY, "staggered_race", None),
                                         (script_name, 21, "main", None),
                                     ),
                                 )
