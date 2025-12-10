@@ -81,18 +81,38 @@ We want this function to be callable from Python as follows:
    both Unix and Windows.
 
 
-Warming up your build tool
-==========================
+Start with the headers
+======================
 
 Begin by creating a file named :file:`spammodule.c`. [#why-spammodule]_
 
-Now, while the file is empty, we'll compile it.
+We'll start by including two headers: :file:`Python.h` to pull in
+all declarations of the Python C API, and :file:`stdlib.h` for the
+:c:func:`system` function. [#stdlib-h]_
 
-Choose a build tool such as Setuptools or Meson, and follow its instructions
-to compile and install the empty :file:`spammodule.c` as a C extension module.
+Add the following lines to :file:`spammodule.c`:
 
+.. literalinclude:: ../includes/capi-extension/spammodule-01.c
+   :start-at: <Python.h>
+   :end-at: <stdlib.h>
+
+Be sure to put :file:`stdlib.h`, and any other standard library includes,
+*after* :file:`Python.h`.
+On some systems, Python may define some pre-processor definitions
+that affect the standard headers.
+
+
+Warming up your build tool
+==========================
+
+With only the includes in place, your extension won't do anything.
+Still, it's a good time to try compiling and importing it.
 This will ensure that your build tool works, so that you can make
 and test incremental changes as you follow the rest of the text.
+
+Choose a build tool such as Setuptools or Meson [#compile-directly]_, and
+follow its instructions to compile and install :file:`spammodule.c`
+as a C extension module.
 
 .. note:: Workaround for missing ``PyInit``
 
@@ -113,23 +133,8 @@ and test incremental changes as you follow the rest of the text.
    ``SystemError: initialization of spam failed without raising an exception``
    instead of an :py:exc:`ImportError` in the next step.
 
-.. note::
-
-   Using a third-party build tool is heavily recommended, as it will take
-   care of various details of your platform and Python installation,
-   of naming the resulting extension, and, later, of distributing your work.
-
-   If you don't want to use a tool, you can try to run your compiler directly.
-   The following command should work for many flavors of Linux, and generate
-   a ``spam.so`` file that you need to put in a directory
-   on :py:attr:`sys.path`:
-
-   .. code-block:: sh
-
-      gcc --shared spammodule.c -o spam.so
-
-When your extension is compiled and installed, start Python and try to import
-your extension.
+When your extension is compiled and installed, start Python and try to
+import it.
 This should fail with the following exception:
 
 .. code-block:: pycon
@@ -138,51 +143,6 @@ This should fail with the following exception:
    Traceback (most recent call last):
       ...
    ImportError: dynamic module does not define module export function (PyModExport_spam or PyInit_spam)
-
-
-Including the Header
-====================
-
-Now, add the first line to your file: include :file:`Python.h` to pull in
-all declarations of the Python C API:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: <Python.h>
-   :end-at: <Python.h>
-
-Next, include the header for the :c:func:`system` function:
-
-.. literalinclude:: ../includes/capi-extension/spammodule-01.c
-   :start-at: <stdlib.h>
-   :end-at: <stdlib.h>
-
-Be sure to put this, and any other standard library includes, *after*
-:file:`Python.h`.
-On some systems, Python may define some pre-processor definitions
-that affect the standard headers.
-
-.. note::
-
-   This include is technically not necessary: :file:`Python.h` includes
-   ``stdlib`` and :ref:`several other standard headers <capi-system-includes>`
-   for its own use.
-   However, it is good practice to explicitly include what you need.
-
-With the includes in place, compile and import the extension again.
-You should get the same exception as with the empty file.
-
-.. note::
-
-   Third-party build tools should handle pointing the compiler to
-   the CPython headers and libraries, and setting appropriate options.
-
-   If you are running the compiler directly, you will need to do this yourself.
-   If your installation of Python comes with a corresponding ``python-config``
-   command, you can run something like:
-
-   .. code-block:: shell
-
-      gcc --shared $(python-config --cflags --ldflags) spammodule.c -o spam.so
 
 
 Module export hook
@@ -565,6 +525,27 @@ Here is the entire source file, for your convenience:
    named ``spam``,
    projects where Python isn't the primary language might use ``py_spam.c``,
    and so on.
+.. [#stdlib-h] Including :file:`stdlib.h` is technically not necessary,
+   since :file:`Python.h` includes it and
+   :ref:`several other standard headers <capi-system-includes>` for its own use
+   or for backwards compatibility.
+   However, it is good practice to explicitly include what you need.
+.. [#compile-directly] Using a third-party build tool is heavily recommended,
+   as it will take
+   care of various details of your platform and Python installation,
+   of naming the resulting extension, and, later, of distributing your work.
+
+   If you don't want to use a tool, you can try to run your compiler directly.
+   The following command should work on Linux systems that include a
+   correctly configured ``python-config`` command that corresponds to the
+   CPython interpreter you use.
+   It should generate a ``spam.so`` file that you need to put in a directory
+   on :py:attr:`sys.path`.
+
+   .. code-block:: sh
+
+      gcc --shared $(python-config --cflags --ldflags) spammodule.c -o spam.so
+
 .. [#why-pymethoddef] The :c:type:`!PyMethodDef` structure is also used
    to create methods of classes, so there's no separate
    ":c:type:`!PyFunctionDef`".
