@@ -391,10 +391,10 @@ There's a slight type mismatch here: Python's :py:class:`str` objects store
 Unicode text, but C strings are arrays of bytes.
 So, we'll need to *encode* the data, and we'll use the UTF-8 encoding for it.
 (UTF-8 might not always be correct for system commands, but it's what
-:py:meth:`str.decode` uses by default,
+:py:meth:`str.encode` uses by default,
 and the C API has special support for it.)
 
-The function to decode a Python string into a UTF-8 buffer is named
+The function to encode a Python string into a UTF-8 buffer is named
 :c:func:`PyUnicode_AsUTF8` [#why-pyunicodeasutf8]_.
 Call it like this:
 
