@@ -722,11 +722,21 @@
   color: var(--text-muted);
   transition: color var(--transition-fast);
   white-space: nowrap;
+  display: inline-flex;
+  flex-direction: column;
 }
 
 .toggle-switch .toggle-label.active {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Reserve space for bold text to prevent layout shift on toggle */
+.toggle-switch .toggle-label::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  visibility: hidden;
 }
 
 .toggle-switch.disabled {
