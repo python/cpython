@@ -3158,7 +3158,7 @@ Mutable sequences should provide methods
 like Python standard :class:`list` objects.
 Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
-:meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
+:meth:`~object.__add__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
 described below; they should not define other numerical
 operators.
