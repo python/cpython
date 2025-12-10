@@ -5513,16 +5513,16 @@ publish_lazy_imports_on_module(PyThreadState *tstate, PyObject *lazy_submodules,
 
 /*[clinic input]
 _imp._set_lazy_attributes
-    module: object
+    modobj: object
     name: unicode
     /
 Sets attributes to lazy submodules on the module, as side effects.
 [clinic start generated code]*/
 
 static PyObject *
-_imp__set_lazy_attributes_impl(PyObject *sys_module, PyObject *module,
+_imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
                                PyObject *name)
-/*[clinic end generated code: output=bd34f2e16f215c29 input=d959fbfa236f4d59]*/
+/*[clinic end generated code: output=3369bb3242b1f043 input=38ea6f30956dd7d6]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *module_dict = NULL;
@@ -5538,7 +5538,7 @@ _imp__set_lazy_attributes_impl(PyObject *sys_module, PyObject *module,
         Py_RETURN_NONE;
     }
 
-    module_dict = get_mod_dict(module);
+    module_dict = get_mod_dict(modobj);
     if (module_dict == NULL || !PyDict_CheckExact(module_dict)) {
         goto done;
     }

@@ -623,7 +623,7 @@ exit:
 }
 
 PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
-"_set_lazy_attributes($module, child_module, name, /)\n"
+"_set_lazy_attributes($module, modobj, name, /)\n"
 "--\n"
 "\n"
 "Sets attributes to lazy submodules on the module, as side effects.");
@@ -632,26 +632,26 @@ PyDoc_STRVAR(_imp__set_lazy_attributes__doc__,
     {"_set_lazy_attributes", _PyCFunction_CAST(_imp__set_lazy_attributes), METH_FASTCALL, _imp__set_lazy_attributes__doc__},
 
 static PyObject *
-_imp__set_lazy_attributes_impl(PyObject *module, PyObject *child_module,
+_imp__set_lazy_attributes_impl(PyObject *module, PyObject *modobj,
                                PyObject *name);
 
 static PyObject *
 _imp__set_lazy_attributes(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *child_module;
+    PyObject *modobj;
     PyObject *name;
 
     if (!_PyArg_CheckPositional("_set_lazy_attributes", nargs, 2, 2)) {
         goto exit;
     }
-    child_module = args[0];
+    modobj = args[0];
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("_set_lazy_attributes", "argument 2", "str", args[1]);
         goto exit;
     }
     name = args[1];
-    return_value = _imp__set_lazy_attributes_impl(module, child_module, name);
+    return_value = _imp__set_lazy_attributes_impl(module, modobj, name);
 
 exit:
     return return_value;
@@ -664,4 +664,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0fe31ade5e29e8d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5fa42f580441b3fa input=a9049054013a1b77]*/
