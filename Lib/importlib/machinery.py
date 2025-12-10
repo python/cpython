@@ -16,6 +16,7 @@ from ._bootstrap_external import SourcelessFileLoader
 from ._bootstrap_external import ExtensionFileLoader
 from ._bootstrap_external import AppleFrameworkLoader
 from ._bootstrap_external import NamespaceLoader
+from ._bootstrap_external import NamespacePath
 
 
 def all_suffixes():

@@ -871,6 +871,10 @@ class MmapTests(unittest.TestCase):
         size = 2 * PAGESIZE
         m = mmap.mmap(-1, size)
 
+        class Number:
+            def __index__(self):
+                return 2
+
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
             m.madvise(mmap.MADV_NORMAL, size)
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
@@ -879,10 +883,14 @@ class MmapTests(unittest.TestCase):
             m.madvise(mmap.MADV_NORMAL, 0, -1)
         with self.assertRaisesRegex(OverflowError, "madvise length too large"):
             m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        with self.assertRaisesRegex(
+                TypeError, "'str' object cannot be interpreted as an integer"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, "Not a Number")
         self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, Number()), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')

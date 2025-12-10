@@ -847,8 +847,8 @@ Other Language Changes
   respectively.
   (Contributed by Joshua Bronson, Daniel Pope, and Justin Wang in :issue:`31861`.)
 
-* Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-  (:func:`@classmethod <classmethod>`) now inherit the method attributes
+* Static methods (:deco:`staticmethod`) and class methods
+  (:deco:`classmethod`) now inherit the method attributes
   (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
   ``__annotations__``) and have a new ``__wrapped__`` attribute.
   Moreover, static methods are now callable as regular functions.

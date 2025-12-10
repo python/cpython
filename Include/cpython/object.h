@@ -295,7 +295,10 @@ PyAPI_FUNC(PyObject *) PyType_GetDict(PyTypeObject *);
 
 PyAPI_FUNC(int) PyObject_Print(PyObject *, FILE *, int);
 PyAPI_FUNC(void) _Py_BreakPoint(void);
-PyAPI_FUNC(void) _PyObject_Dump(PyObject *);
+PyAPI_FUNC(void) PyUnstable_Object_Dump(PyObject *);
+
+// Alias for backward compatibility
+#define _PyObject_Dump PyUnstable_Object_Dump
 
 PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
@@ -387,10 +390,11 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
    process with a message on stderr if the given condition fails to hold,
    but compile away to nothing if NDEBUG is defined.
 
-   However, before aborting, Python will also try to call _PyObject_Dump() on
-   the given object.  This may be of use when investigating bugs in which a
-   particular object is corrupt (e.g. buggy a tp_visit method in an extension
-   module breaking the garbage collector), to help locate the broken objects.
+   However, before aborting, Python will also try to call
+   PyUnstable_Object_Dump() on the given object. This may be of use when
+   investigating bugs in which a particular object is corrupt (e.g. buggy a
+   tp_visit method in an extension module breaking the garbage collector), to
+   help locate the broken objects.
 
    The WITH_MSG variant allows you to supply an additional message that Python
    will attempt to print to stderr, after the object dump. */
@@ -432,8 +436,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
-PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count);
-
 /* For backwards compatibility with the old trashcan mechanism */
 #define Py_TRASHCAN_BEGIN(op, dealloc)
 #define Py_TRASHCAN_END
@@ -442,7 +444,6 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int m
 PyAPI_FUNC(void *) PyObject_GetItemData(PyObject *obj);
 
 PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg);
-PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
 
@@ -492,7 +493,3 @@ PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
 PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);
 
 PyAPI_FUNC(int) PyUnstable_Object_IsUniquelyReferenced(PyObject *);
-
-/* Utility for the tp_traverse slot of mutable heap types that have no other
- * references. */
-PyAPI_FUNC(int) _PyObject_VisitType(PyObject *op, visitproc visit, void *arg);

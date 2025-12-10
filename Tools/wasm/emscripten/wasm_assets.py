@@ -15,7 +15,6 @@ import pathlib
 import sys
 import sysconfig
 import zipfile
-from typing import Dict
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parents[3].absolute()
@@ -27,7 +26,9 @@ WASM_LIB = pathlib.PurePath("lib")
 WASM_STDLIB_ZIP = (
     WASM_LIB / f"python{sys.version_info.major}{sys.version_info.minor}.zip"
 )
-WASM_STDLIB = WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
+WASM_STDLIB = (
+    WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
+)
 WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
 
 
@@ -132,7 +133,7 @@ def create_stdlib_zip(
                 pzf.writepy(entry, filterfunc=filterfunc)
 
 
-def detect_extension_modules(args: argparse.Namespace) -> Dict[str, bool]:
+def detect_extension_modules(args: argparse.Namespace) -> dict[str, bool]:
     modules = {}
 
     # disabled by Modules/Setup.local ?
@@ -147,7 +148,7 @@ def detect_extension_modules(args: argparse.Namespace) -> Dict[str, bool]:
     # disabled by configure?
     with open(args.sysconfig_data) as f:
         data = f.read()
-    loc: Dict[str, Dict[str, str]] = {}
+    loc: dict[str, dict[str, str]] = {}
     exec(data, globals(), loc)
 
     for key, value in loc["build_time_vars"].items():
