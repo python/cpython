@@ -115,7 +115,7 @@ and test incremental changes as you follow the rest of the text.
 
 .. note::
 
-   Using a third-party build tool is heavily recommended, as in will take
+   Using a third-party build tool is heavily recommended, as it will take
    care of various details of your platform and Python installation,
    of naming the resulting extension, and, later, of distributing your work.
 
@@ -382,7 +382,7 @@ from a C ``int`` values: :c:func:`PyLong_FromLong`. [#why-pylongfromlong]_
 
 To call it, replace the ``Py_RETURN_NONE`` with the following 3 lines:
 
-.. this could be a one-liner, but we want to how the data types here.
+.. this could be a one-liner, but we want to show the data types here
 
 .. code-block:: c
    :emphasize-lines: 4-6
