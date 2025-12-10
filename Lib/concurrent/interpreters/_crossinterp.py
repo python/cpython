@@ -82,6 +82,10 @@ _UNBOUND_FLAG_TO_CONSTANT = {v: k
                              for k, v in _UNBOUND_CONSTANT_TO_FLAG.items()}
 
 
+def register_unbound(unbound, flag):
+    _UNBOUND_CONSTANT_TO_FLAG[unbound] = flag
+
+
 def serialize_unbound(unbound):
     op = unbound
     try:

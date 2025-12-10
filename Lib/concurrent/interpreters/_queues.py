@@ -47,6 +47,7 @@ _PICKLED = 1
 
 
 UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
+_crossinterp.register_unbound(UNBOUND, 3)
 
 
 def _serialize_unbound(unbound):
