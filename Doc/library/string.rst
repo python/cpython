@@ -662,7 +662,7 @@ Accessing arguments by position::
    'a, b, c'
    >>> '{2}, {1}, {0}'.format('a', 'b', 'c')
    'c, b, a'
-   >>> '{2}, {1}, {0}'.format(*'abc')      # unpacking argument sequence
+   >>> '{2}, {1}, {0}'.format(*'abc')      # unpacking argument list
    'c, b, a'
    >>> '{0}{1}{0}'.format('abra', 'cad')   # arguments' indices can be repeated
    'abracadabra'
