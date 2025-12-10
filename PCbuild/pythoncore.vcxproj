@@ -745,4 +745,7 @@
   <Target Name="_DeletePyBuildDirTxt" BeforeTargets="PrepareForBuild">
     <Delete Files="$(OutDir)pybuilddir.txt" />
   </Target>
+  <Target Name="_DeleteBuildDetailsJson" BeforeTargets="PrepareForBuild">
+    <Delete Files="$(OutDir)build-details.json" />
+  </Target>
 </Project>

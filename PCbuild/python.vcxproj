@@ -126,6 +126,12 @@
     <Message Text="Generating $(OutDir)pybuilddir.txt" />
     <WriteLinesToFile File="$(OutDir)pybuilddir.txt" Lines="%0D%0A" Overwrite="true" />
   </Target>
+  <Target Name="GenerateBuildDetailsJSON" AfterTargets="Link">
+    <Message Text="Generating $(OutDir)build-details.json" />
+    <Exec Command='setlocal
+set PYTHONPATH=$(PySourcePath)Lib
+"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)Tools\build\generate_build_details.py" "$(OutDir)build-details.json"' ContinueOnError="true" />
+  </Target>
   <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
     <PropertyGroup>
       <UcrtName>ucrtbase</UcrtName>
