@@ -278,7 +278,7 @@ ABC hierarchy::
    .. method:: discover(parent=None)
 
       An optional method which searches for possible specs with given *parent*
-      module spec. If *parent* is *None*, :meth:`PathEntryFinder.discover` will
+      module spec. If *parent* is *None*, :meth:`MetaPathFinder.discover` will
       search for top-level modules.
 
       Returns an iterable of possible specs.
