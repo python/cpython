@@ -1,5 +1,5 @@
 context:
-  # XXX: keep up to date
+  # Keep up to date
   version: "3.15"
 
 package:
