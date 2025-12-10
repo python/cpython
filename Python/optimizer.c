@@ -610,6 +610,25 @@ _PyJit_translate_single_bytecode_to_trace(
         target--;
     }
 
+    if (_PyOpcode_Caches[_PyOpcode_Deopt[opcode]] > 0) {
+        uint16_t backoff = (this_instr + 1)->counter.value_and_backoff;
+        // adaptive_counter_cooldown is a fresh specialization.
+        // trigger_backoff_counter is what we set during tracing.
+        // All tracing backoffs should be freshly specialized or untouched.
+        // If not, that indicates a deopt during tracing, and
+        // thus the "actual" instruction executed is not the one that is
+        // in the instruction stream, but rather the deopt.
+        // It's important we check for this, as some specializations might make
+        // no progress (they can immediately deopt after specializing).
+        // We do this to improve performance, as otherwise a compiled trace
+        // will just deopt immediately.
+        if (backoff != adaptive_counter_cooldown().value_and_backoff &&
+            backoff != trigger_backoff_counter().value_and_backoff) {
+            OPT_STAT_INC(trace_immediately_deopts);
+            opcode = _PyOpcode_Deopt[opcode];
+        }
+    }
+
     int old_stack_level = _tstate->jit_tracer_state.prev_state.instr_stacklevel;
 
     // Strange control-flow
