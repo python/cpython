@@ -124,6 +124,10 @@ Functions
     need to call :func:`invalidate_caches` in order for the new module to be
     noticed by the import system.
 
+    If the module cannot be imported, :func:`import_module` will raise
+    :exc:`ImportError` or an appropriate subclass like
+    :exc:`ModuleNotFoundError`.
+
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
@@ -206,6 +210,10 @@ Functions
        :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
        a :class:`~importlib.machinery.ModuleSpec`.
 
+   .. warning::
+      This function is not thread-safe. Calling it from multiple threads can result
+      in unexpected behavior. It's recommended to use the :class:`threading.Lock`
+      or other synchronization primitives for thread-safe module reloading.
 
 :mod:`importlib.abc` -- Abstract base classes related to import
 ---------------------------------------------------------------
@@ -389,6 +397,8 @@ ABC hierarchy::
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
        through :class:`importlib.resources.abc.TraversableResources`.
+       This class exists for backwards compatibility only with other ABCs in
+       this module.
 
     .. method:: get_data(path)
        :abstractmethod:
@@ -449,7 +459,7 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
-    .. staticmethod:: source_to_code(data, path='<string>')
+    .. staticmethod:: source_to_code(data, path='<string>', fullname=None)
 
         Create a code object from Python source.
 
@@ -461,10 +471,18 @@ ABC hierarchy::
         With the subsequent code object one can execute it in a module by
         running ``exec(code, module.__dict__)``.
 
+        The optional argument *fullname* specifies the module name.
+        It is needed to unambiguous :ref:`filter <warning-filter>` syntax
+        warnings by module name.
+
         .. versionadded:: 3.4
 
         .. versionchanged:: 3.5
            Made the method static.
+
+        .. versionadded:: 3.15
+           Added the *fullname* parameter.
+
 
     .. method:: exec_module(module)
 
@@ -1003,6 +1021,36 @@ find and load modules.
       :exc:`ImportError` is raised.
 
 
+.. class:: NamespacePath(name, path, path_finder)
+
+   Represents a :term:`namespace package`'s path (:attr:`module.__path__`).
+
+   When its ``__path__`` value is accessed it will be recomputed if necessary.
+   This keeps it in-sync with the global state (:attr:`sys.modules`).
+
+   The *name* argument is the name of the namespace module.
+
+   The *path* argument is the initial path value.
+
+   The *path_finder* argument is the callable used to recompute the path value.
+   The callable has the same signature as :meth:`importlib.abc.MetaPathFinder.find_spec`.
+
+   When the parent's :attr:`module.__path__` attribute is updated, the path
+   value is recomputed.
+
+   If the parent module is missing from :data:`sys.modules`, then
+   :exc:`ModuleNotFoundError` will be raised.
+
+   For top-level modules, the parent module's path is :data:`sys.path`.
+
+   .. note::
+
+      :meth:`PathFinder.invalidate_caches` invalidates :class:`NamespacePath`,
+      forcing the path value to be recomputed next time it is accessed.
+
+   .. versionadded:: 3.15
+
+
 .. class:: SourceFileLoader(fullname, path)
 
    A concrete implementation of :class:`importlib.abc.SourceLoader` by
@@ -1247,7 +1295,7 @@ find and load modules.
    To accommodate this requirement, when running on iOS, extension module
    binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
    individual standalone frameworks. To discover those frameworks, this loader
-   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   is registered against the ``.fwork`` file extension, with a ``.fwork``
    file acting as a placeholder in the original location of the binary on
    ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
    the ``Frameworks`` folder, relative to the app bundle. To allow for

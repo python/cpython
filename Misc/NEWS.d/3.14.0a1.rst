@@ -1999,7 +1999,7 @@ with an escape character.
 .. nonce: vi2bP-
 .. section: Library
 
-:func:`@warnings.deprecated <warnings.deprecated>` now copies the coroutine
+:deco:`warnings.deprecated` now copies the coroutine
 status of functions and methods so that :func:`inspect.iscoroutinefunction`
 returns the correct result.
 
@@ -2623,7 +2623,7 @@ Fix :func:`unittest.mock.patch` to not read attributes of the target when
 .. nonce: s4HXR0
 .. section: Library
 
-Fixed the use-after-free issue in :mod:`cProfile` by disallowing
+Fixed the use-after-free issue in :mod:`!cProfile` by disallowing
 ``disable()`` and ``clear()`` in external timers.
 
 ..
@@ -4913,11 +4913,11 @@ Allow tuples of length 20 in the freelist to be reused.
 .. nonce: lYKYYP
 .. section: Core and Builtins
 
-:exc:`ValueError` messages for :meth:`!list.index`, :meth:`!range.index`,
+:exc:`ValueError` messages for :meth:`list.index`, :meth:`range.index`,
 :meth:`!deque.index`, :meth:`!deque.remove` and :meth:`!ShareableList.index`
 no longer contain the repr of the searched value (which can be arbitrary
-large) and are consistent with error messages for other :meth:`!index` and
-:meth:`!remove` methods.
+large) and are consistent with error messages for other :meth:`~sequence.index` and
+:meth:`~sequence.remove` methods.
 
 ..
 
@@ -5604,7 +5604,7 @@ Using :data:`NotImplemented` in a boolean context now raises
 .. nonce: wNMKVd
 .. section: Core and Builtins
 
-Fix race condition in free-threaded build where :meth:`!list.extend` could
+Fix race condition in free-threaded build where :meth:`list.extend` could
 expose uninitialised memory to concurrent readers.
 
 ..
@@ -6092,7 +6092,7 @@ Patch by Victor Stinner.
 .. nonce: qOr9GF
 .. section: C API
 
-Soft deprecate the :c:macro:`!Py_MEMCPY` macro: use directly ``memcpy()``
+Soft deprecate the :c:macro:`Py_MEMCPY` macro: use directly ``memcpy()``
 instead.  Patch by Victor Stinner.
 
 ..

@@ -41,7 +41,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -1020,6 +1019,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1108,7 +1113,7 @@ code, or when embedding the Python interpreter:
    This function is safe to call without an :term:`attached thread state`; it
    will simply return ``NULL`` indicating that there was no prior thread state.
 
-   .. seealso:
+   .. seealso::
       :c:func:`PyEval_ReleaseThread`
 
    .. note::
@@ -1118,6 +1123,19 @@ code, or when embedding the Python interpreter:
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
+
+.. c:type:: PyGILState_STATE
+
+   The type of the value returned by :c:func:`PyGILState_Ensure` and passed to
+   :c:func:`PyGILState_Release`.
+
+   .. c:enumerator:: PyGILState_LOCKED
+
+      The GIL was already held when :c:func:`PyGILState_Ensure` was called.
+
+   .. c:enumerator:: PyGILState_UNLOCKED
+
+      The GIL was not held when :c:func:`PyGILState_Ensure` was called.
 
 .. c:function:: PyGILState_STATE PyGILState_Ensure()
 
@@ -1169,12 +1187,12 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
    .. note::
-      This function does not account for :term:`thread states <thread state>` created
-      by something other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      This function may return non-``NULL`` even when the :term:`thread state`
+      is detached.
       Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
       for most cases.
 
-   .. seealso: :c:func:`PyThreadState_Get``
+   .. seealso:: :c:func:`PyThreadState_Get`
 
 .. c:function:: int PyGILState_Check()
 
@@ -1250,7 +1268,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  There must be
-   an :term:`attached thread state` for the the interpreter.
+   an :term:`attached thread state` for the interpreter.
 
    .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
@@ -1273,11 +1291,11 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    must be :term:`attached <attached thread state>`
 
    .. versionchanged:: 3.9
-      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      This function now calls the :c:member:`!PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
    .. versionchanged:: 3.13
-      The :c:member:`PyThreadState.on_delete` callback was removed.
+      The :c:member:`!PyThreadState.on_delete` callback was removed.
 
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
@@ -1348,6 +1366,43 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.11
 
 
+.. c:function:: int PyUnstable_ThreadState_SetStackProtection(PyThreadState *tstate, void *stack_start_addr, size_t stack_size)
+
+   Set the stack protection start address and stack protection size
+   of a Python thread state.
+
+   On success, return ``0``.
+   On failure, set an exception and return ``-1``.
+
+   CPython implements :ref:`recursion control <recursion>` for C code by raising
+   :py:exc:`RecursionError` when it notices that the machine execution stack is close
+   to overflow. See for example the :c:func:`Py_EnterRecursiveCall` function.
+   For this, it needs to know the location of the current thread's stack, which it
+   normally gets from the operating system.
+   When the stack is changed, for example using context switching techniques like the
+   Boost library's ``boost::context``, you must call
+   :c:func:`~PyUnstable_ThreadState_SetStackProtection` to inform CPython of the change.
+
+   Call :c:func:`~PyUnstable_ThreadState_SetStackProtection` either before
+   or after changing the stack.
+   Do not call any other Python C API between the call and the stack
+   change.
+
+   See :c:func:`PyUnstable_ThreadState_ResetStackProtection` for undoing this operation.
+
+   .. versionadded:: 3.15
+
+
+.. c:function:: void PyUnstable_ThreadState_ResetStackProtection(PyThreadState *tstate)
+
+   Reset the stack protection start address and stack protection size
+   of a Python thread state to the operating system defaults.
+
+   See :c:func:`PyUnstable_ThreadState_SetStackProtection` for an explanation.
+
+   .. versionadded:: 3.15
+
+
 .. c:function:: PyInterpreterState* PyInterpreterState_Get(void)
 
    Get the current interpreter.
@@ -1376,6 +1431,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    This is not a replacement for :c:func:`PyModule_GetState()`, which
    extensions should use to store interpreter-specific state information.
+
+   The returned dictionary is borrowed from the interpreter and is valid until
+   interpreter shutdown.
 
    .. versionadded:: 3.8
 
@@ -1659,7 +1717,8 @@ function. You can create and destroy them using the following functions:
       Only C-level static and global variables are shared between these
       module objects.
 
-   *  For modules using single-phase initialization,
+   *  For modules using legacy
+      :ref:`single-phase initialization <single-phase-initialization>`,
       e.g. :c:func:`PyModule_Create`, the first time a particular extension
       is imported, it is initialized normally, and a (shallow) copy of its
       module's dictionary is squirreled away.
@@ -1711,6 +1770,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1722,7 +1783,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -1826,6 +1887,29 @@ pointer and a void pointer argument.
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
+
+   .. versionchanged:: 3.12
+      This function now always schedules *func* to be run in the main
+      interpreter.
+
+
+.. c:function:: int Py_MakePendingCalls(void)
+
+   Execute all pending calls. This is usually executed automatically by the
+   interpreter.
+
+   This function returns ``0`` on success, and returns ``-1`` with an exception
+   set on failure.
+
+   If this is not called in the main thread of the main
+   interpreter, this function does nothing and returns ``0``.
+   The caller must hold an :term:`attached thread state`.
+
+   .. versionadded:: 3.1
+
+   .. versionchanged:: 3.12
+      This function only runs pending calls in the main interpreter.
+
 
 .. _profiling:
 
@@ -2003,6 +2087,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2014,6 +2103,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2029,6 +2125,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 
@@ -2097,7 +2197,7 @@ use a thread key and functions to associate a :c:expr:`void*` value per
 thread.
 
 A :term:`thread state` does *not* need to be :term:`attached <attached thread state>`
-when calling these functions; they suppl their own locking.
+when calling these functions; they supply their own locking.
 
 Note that :file:`Python.h` does not include the declaration of the TLS APIs,
 you need to include :file:`pythread.h` to use thread-local storage.
@@ -2277,6 +2377,18 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: 3.14
+
 .. _python-critical-section-api:
 
 Python Critical Section API
@@ -2287,12 +2399,26 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
+
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
+available. Use these variants to start a critical section in a situation where
+there is no :c:type:`PyObject` -- for example, when working with a C type that
+does not extend or wrap :c:type:`PyObject` but still needs to call into the C
+API in a manner that might lead to deadlocks.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
@@ -2339,6 +2465,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION_MUTEX(m)
+
+   Locks the mutex *m* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_BeginMutex(&_py_cs, m)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
    Ends the critical section and releases the per-object lock.
@@ -2368,6 +2511,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)
+
+   Locks the mutexes *m1* and *m2* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 
    Ends the critical section and releases the per-object locks.
@@ -2380,3 +2540,220 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``}``.
 
    .. versionadded:: 3.13
+
+
+Legacy Locking APIs
+-------------------
+
+These APIs are obsolete since Python 3.13 with the introduction of
+:c:type:`PyMutex`.
+
+.. versionchanged:: 3.15
+   These APIs are now a simple wrapper around ``PyMutex``.
+
+
+.. c:type:: PyThread_type_lock
+
+   A pointer to a mutual exclusion lock.
+
+
+.. c:type:: PyLockStatus
+
+   The result of acquiring a lock with a timeout.
+
+   .. c:namespace:: NULL
+
+   .. c:enumerator:: PY_LOCK_FAILURE
+
+      Failed to acquire the lock.
+
+   .. c:enumerator:: PY_LOCK_ACQUIRED
+
+      The lock was successfully acquired.
+
+   .. c:enumerator:: PY_LOCK_INTR
+
+      The lock was interrupted by a signal.
+
+
+.. c:function:: PyThread_type_lock PyThread_allocate_lock(void)
+
+   Allocate a new lock.
+
+   On success, this function returns a lock; on failure, this
+   function returns ``0`` without an exception set.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+   .. versionchanged:: 3.15
+      This function now always uses :c:type:`PyMutex`. In prior versions, this
+      would use a lock provided by the operating system.
+
+
+.. c:function:: void PyThread_free_lock(PyThread_type_lock lock)
+
+   Destroy *lock*. The lock should not be held by any thread when calling
+   this.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: PyLockStatus PyThread_acquire_lock_timed(PyThread_type_lock lock, long long microseconds, int intr_flag)
+
+   Acquire *lock* with a timeout.
+
+   This will wait for *microseconds* microseconds to acquire the lock. If the
+   timeout expires, this function returns :c:enumerator:`PY_LOCK_FAILURE`.
+   If *microseconds* is ``-1``, this will wait indefinitely until the lock has
+   been released.
+
+   If *intr_flag* is ``1``, acquiring the lock may be interrupted by a signal,
+   in which case this function returns :c:enumerator:`PY_LOCK_INTR`. Upon
+   interruption, it's generally expected that the caller makes a call to
+   :c:func:`Py_MakePendingCalls` to propagate an exception to Python code.
+
+   If the lock is successfully acquired, this function returns
+   :c:enumerator:`PY_LOCK_ACQUIRED`.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: int PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
+
+   Acquire *lock*.
+
+   If *waitflag* is ``1`` and another thread currently holds the lock, this
+   function will wait until the lock can be acquired and will always return
+   ``1``.
+
+   If *waitflag* is ``0`` and another thread holds the lock, this function will
+   not wait and instead return ``0``. If the lock is not held by any other
+   thread, then this function will acquire it and return ``1``.
+
+   Unlike :c:func:`PyThread_acquire_lock_timed`, acquiring the lock cannot be
+   interrupted by a signal.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: int PyThread_release_lock(PyThread_type_lock lock)
+
+   Release *lock*. If *lock* is not held, then this function issues a
+   fatal error.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+Operating System Thread APIs
+============================
+
+.. c:macro:: PYTHREAD_INVALID_THREAD_ID
+
+   Sentinel value for an invalid thread ID.
+
+   This is currently equivalent to ``(unsigned long)-1``.
+
+
+.. c:function:: unsigned long PyThread_start_new_thread(void (*func)(void *), void *arg)
+
+   Start function *func* in a new thread with argument *arg*.
+   The resulting thread is not intended to be joined.
+
+   *func* must not be ``NULL``, but *arg* may be ``NULL``.
+
+   On success, this function returns the identifier of the new thread; on failure,
+   this returns :c:macro:`PYTHREAD_INVALID_THREAD_ID`.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: unsigned long PyThread_get_thread_ident(void)
+
+   Return the identifier of the current thread, which will never be zero.
+
+   This function cannot fail, and the caller does not need to hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`threading.get_ident`
+
+
+.. c:function:: PyObject *PyThread_GetInfo(void)
+
+   Get general information about the current thread in the form of a
+   :ref:`struct sequence <struct-sequence-objects>` object. This information is
+   accessible as :py:attr:`sys.thread_info` in Python.
+
+   On success, this returns a new :term:`strong reference` to the thread
+   information; on failure, this returns ``NULL`` with an exception set.
+
+   The caller must hold an :term:`attached thread state`.
+
+
+.. c:macro:: PY_HAVE_THREAD_NATIVE_ID
+
+   This macro is defined when the system supports native thread IDs.
+
+
+.. c:function:: unsigned long PyThread_get_thread_native_id(void)
+
+   Get the native identifier of the current thread as it was assigned by the operating
+   system's kernel, which will never be less than zero.
+
+   This function is only available when :c:macro:`PY_HAVE_THREAD_NATIVE_ID` is
+   defined.
+
+   This function cannot fail, and the caller does not need to hold an
+   :term:`attached thread state`.
+
+   .. seealso::
+      :py:func:`threading.get_native_id`
+
+
+.. c:function:: void PyThread_exit_thread(void)
+
+   Terminate the current thread. This function is generally considered unsafe
+   and should be avoided. It is kept solely for backwards compatibility.
+
+   This function is only safe to call if all functions in the full call
+   stack are written to safely allow it.
+
+   .. warning::
+
+      If the current system uses POSIX threads (also known as "pthreads"),
+      this calls :manpage:`pthread_exit(3)`, which attempts to unwind the stack
+      and call C++ destructors on some libc implementations. However, if a
+      ``noexcept`` function is reached, it may terminate the process.
+      Other systems, such as macOS, do unwinding.
+
+      On Windows, this function calls ``_endthreadex()``, which kills the thread
+      without calling C++ destructors.
+
+      In any case, there is a risk of corruption on the thread's stack.
+
+   .. deprecated:: 3.14
+
+
+.. c:function:: void PyThread_init_thread(void)
+
+   Initialize ``PyThread*`` APIs. Python executes this function automatically,
+   so there's little need to call it from an extension module.
+
+
+.. c:function:: int PyThread_set_stacksize(size_t size)
+
+   Set the stack size of the current thread to *size* bytes.
+
+   This function returns ``0`` on success, ``-1`` if *size* is invalid, or
+   ``-2`` if the system does not support changing the stack size. This function
+   does not set exceptions.
+
+   The caller does not need to hold an :term:`attached thread state`.
+
+
+.. c:function:: size_t PyThread_get_stacksize(void)
+
+   Return the stack size of the current thread in bytes, or ``0`` if the system's
+   default stack size is in use.
+
+   The caller does not need to hold an :term:`attached thread state`.

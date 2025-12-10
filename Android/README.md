@@ -96,10 +96,12 @@ similar to the `Android` directory of the CPython source tree.
 
 ## Testing
 
-The Python test suite can be run on Linux, macOS, or Windows:
+The Python test suite can be run on Linux, macOS, or Windows.
 
-* On Linux, the emulator needs access to the KVM virtualization interface, and
-  a DISPLAY environment variable pointing at an X server. Xvfb is acceptable.
+On Linux, the emulator needs access to the KVM virtualization interface. This may
+require adding your user to a group, or changing your udev rules. On GitHub
+Actions, the test script will do this automatically using the commands shown
+[here](https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
 
 The test suite can usually be run on a device with 2 GB of RAM, but this is
 borderline, so you may need to increase it to 4 GB. As of Android
