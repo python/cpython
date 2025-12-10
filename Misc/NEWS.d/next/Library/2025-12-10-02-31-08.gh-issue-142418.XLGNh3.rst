@@ -1,0 +1,2 @@
+Fix markcoroutinefunction by letting it set the coroutine function marker on
+underlying function correctly.

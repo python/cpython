@@ -317,6 +317,7 @@ def markcoroutinefunction(func):
     """
     if hasattr(func, '__func__'):
         func = func.__func__
+    func = functools._unwrap_partial(func)
     func._is_coroutine_marker = _is_coroutine_mark
     return func
 
