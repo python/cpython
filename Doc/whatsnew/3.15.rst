@@ -1246,12 +1246,6 @@ Build changes
   modules that are missing or packaged separately.
   (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
 
-* Annotating anonymous mmap usage is now supported if Linux kernel supports
-  :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
-  Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
-  and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
-  (Contributed by Donghee Na in :gh:`141770`)
-
 
 Porting to Python 3.15
 ======================

@@ -2,7 +2,6 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
-#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
 #include "pycore_obmalloc_init.h"
@@ -468,7 +467,6 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
-    _PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc");
     return ptr;
 #else
     return malloc(size);

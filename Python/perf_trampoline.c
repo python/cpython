@@ -132,7 +132,6 @@ any DWARF information available for them).
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
-#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_runtime.h"       // _PyRuntime
 
 
@@ -291,7 +290,6 @@ new_code_arena(void)
         perf_status = PERF_STATUS_FAILED;
         return -1;
     }
-    _PyAnnotateMemoryMap(memory, mem_size, "cpython:perf_trampoline");
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;

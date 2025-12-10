@@ -1378,7 +1378,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_memoryobject.h \
 		$(srcdir)/Include/internal/pycore_mimalloc.h \
-		$(srcdir)/Include/internal/pycore_mmap.h \
 		$(srcdir)/Include/internal/pycore_modsupport.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
 		$(srcdir)/Include/internal/pycore_namespace.h \

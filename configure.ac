@@ -5583,13 +5583,6 @@ AC_CHECK_DECLS([UT_NAMESIZE],
               [],
               [@%:@include <utmp.h>])
 
-AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
-              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
-                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
-              [],
-              [@%:@include <linux/prctl.h>
-               @%:@include <sys/prctl.h>])
-
 # check for openpty, login_tty, and forkpty
 
 AC_CHECK_FUNCS([openpty], [],

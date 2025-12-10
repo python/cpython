@@ -277,7 +277,6 @@
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
-    <ClInclude Include="..\Include\internal\pycore_mmap.h" />
     <ClInclude Include="..\Include\internal\pycore_modsupport.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
