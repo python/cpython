@@ -109,8 +109,8 @@ _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.EXECUTOR: "(uintptr_t)executor",
+    HoleValue.GOT: "",
     # These should all have been turned into DATA values by process_relocations:
-    # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
     HoleValue.OPARG_16: "instruction->oparg",
     HoleValue.OPERAND0: "instruction->operand0",
@@ -127,6 +127,24 @@ _HOLE_EXPRS = {
     HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
     HoleValue.ZERO: "",
+}
+
+_AARCH64_GOT_RELOCATIONS = {
+    "R_AARCH64_ADR_GOT_PAGE",
+    "R_AARCH64_LD64_GOT_LO12_NC",
+    "ARM64_RELOC_GOT_LOAD_PAGE21",
+    "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
+    "IMAGE_REL_ARM64_PAGEBASE_REL21",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12L",
+    "IMAGE_REL_ARM64_PAGEOFFSET_12A",
+}
+
+_X86_GOT_RELOCATIONS = {
+    "R_X86_64_GOTPCRELX",
+    "R_X86_64_REX_GOTPCRELX",
+    "X86_64_RELOC_GOT",
+    "X86_64_RELOC_GOT_LOAD",
+    "IMAGE_REL_AMD64_REL32",
 }
 
 
@@ -147,6 +165,8 @@ class Hole:
     # ...plus this addend:
     addend: int
     need_state: bool = False
+    custom_location: str = ""
+    custom_value: str = ""
     func: str = dataclasses.field(init=False)
     # Convenience method:
     replace = dataclasses.replace
@@ -184,19 +204,25 @@ class Hole:
 
     def as_c(self, where: str) -> str:
         """Dump this hole as a call to a patch_* function."""
-        location = f"{where} + {self.offset:#x}"
-        value = _HOLE_EXPRS[self.value]
-        if self.symbol:
-            if value:
-                value += " + "
-            if self.symbol.startswith("CONST"):
-                value += f"instruction->{self.symbol[10:].lower()}"
-            else:
-                value += f"(uintptr_t)&{self.symbol}"
-        if _signed(self.addend) or not value:
-            if value:
-                value += " + "
-            value += f"{_signed(self.addend):#x}"
+        if self.custom_location:
+            location = self.custom_location
+        else:
+            location = f"{where} + {self.offset:#x}"
+        if self.custom_value:
+            value = self.custom_value
+        else:
+            value = _HOLE_EXPRS[self.value]
+            if self.symbol:
+                if value:
+                    value += " + "
+                if self.symbol.startswith("CONST"):
+                    value += f"instruction->{self.symbol[10:].lower()}"
+                else:
+                    value += f"(uintptr_t)&{self.symbol}"
+            if _signed(self.addend) or not value:
+                if value:
+                    value += " + "
+                value += f"{_signed(self.addend):#x}"
         if self.need_state:
             return f"{self.func}({location}, {value}, state);"
         return f"{self.func}({location}, {value});"
@@ -236,8 +262,11 @@ class StencilGroup:
     symbols: dict[int | str, tuple[HoleValue, int]] = dataclasses.field(
         default_factory=dict, init=False
     )
-    _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
+    _jit_symbol_table: dict[str, int] = dataclasses.field(
+        default_factory=dict, init=False
+    )
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
+    _got_entries: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def convert_labels_to_relocations(self) -> None:
         for name, hole_plus in self.symbols.items():
@@ -287,13 +316,39 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
+            elif (
+                hole.kind in _AARCH64_GOT_RELOCATIONS | _X86_GOT_RELOCATIONS
+                and hole.symbol
+                and "_JIT_" not in hole.symbol
+                and hole.value is HoleValue.GOT
+            ):
+                if hole.symbol in known_symbols:
+                    ordinal = known_symbols[hole.symbol]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[hole.symbol] = ordinal
+                self._got_entries.add(ordinal)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
-                    hole.value = HoleValue.DATA
-                    hole.addend += self._global_offset_table_lookup(hole.symbol)
+                    if "_JIT_" in hole.symbol:
+                        # Relocations for local symbols
+                        hole.value = HoleValue.DATA
+                        hole.addend += self._jit_symbol_table_lookup(hole.symbol)
+                    else:
+                        _ordinal = known_symbols[hole.symbol]
+                        _custom_value = f"got_symbol_address({_ordinal:#x}, state)"
+                        if hole.kind in _X86_GOT_RELOCATIONS:
+                            # When patching on x86, subtract the addend -4
+                            # that is used to compute the 32 bit RIP relative
+                            # displacement to the GOT entry
+                            _custom_value = (
+                                f"got_symbol_address({_ordinal:#x}, state) - 4"
+                            )
+                        hole.addend = _ordinal
+                        hole.custom_value = _custom_value
                     hole.symbol = None
                 elif hole.symbol in self.symbols:
                     hole.value, addend = self.symbols[hole.symbol]
@@ -306,16 +361,19 @@ class StencilGroup:
                     raise ValueError(
                         f"Add PyAPI_FUNC(...) or PyAPI_DATA(...) to declaration of {hole.symbol}!"
                     )
+        self._emit_jit_symbol_table()
         self._emit_global_offset_table()
         self.code.holes.sort(key=lambda hole: hole.offset)
         self.data.holes.sort(key=lambda hole: hole.offset)
 
-    def _global_offset_table_lookup(self, symbol: str) -> int:
-        return len(self.data.body) + self._got.setdefault(symbol, 8 * len(self._got))
+    def _jit_symbol_table_lookup(self, symbol: str) -> int:
+        return len(self.data.body) + self._jit_symbol_table.setdefault(
+            symbol, 8 * len(self._jit_symbol_table)
+        )
 
-    def _emit_global_offset_table(self) -> None:
+    def _emit_jit_symbol_table(self) -> None:
         got = len(self.data.body)
-        for s, offset in self._got.items():
+        for s, offset in self._jit_symbol_table.items():
             if s in self.symbols:
                 value, addend = self.symbols[s]
                 symbol = None
@@ -339,20 +397,35 @@ class StencilGroup:
             )
             self.data.body.extend([0] * 8)
 
-    def _get_trampoline_mask(self) -> str:
+    def _emit_global_offset_table(self) -> None:
+        for hole in self.code.holes:
+            if hole.value is HoleValue.GOT:
+                _got_hole = Hole(0, "R_X86_64_64", hole.value, None, hole.addend)
+                _got_hole.func = "patch_got_symbol"
+                _got_hole.custom_location = "state"
+                if _got_hole not in self.data.holes:
+                    self.data.holes.append(_got_hole)
+
+    def _get_symbol_mask(self, ordinals: set[int]) -> str:
         bitmask: int = 0
-        trampoline_mask: list[str] = []
-        for ordinal in self._trampolines:
+        symbol_mask: list[str] = []
+        for ordinal in ordinals:
             bitmask |= 1 << ordinal
         while bitmask:
             word = bitmask & ((1 << 32) - 1)
-            trampoline_mask.append(f"{word:#04x}")
+            symbol_mask.append(f"{word:#04x}")
             bitmask >>= 32
-        return "{" + (", ".join(trampoline_mask) or "0") + "}"
+        return "{" + (", ".join(symbol_mask) or "0") + "}"
+
+    def _get_trampoline_mask(self) -> str:
+        return self._get_symbol_mask(self._trampolines)
+
+    def _get_got_mask(self) -> str:
+        return self._get_symbol_mask(self._got_entries)
 
     def as_c(self, opname: str) -> str:
         """Dump this hole as a StencilGroup initializer."""
-        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}}}"
+        return f"{{emit_{opname}, {len(self.code.body)}, {len(self.data.body)}, {self._get_trampoline_mask()}, {self._get_got_mask()}}}"
 
 
 def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
