@@ -1224,6 +1224,7 @@ class MH(Mailbox):
         with f:
             all_keys = set(self.keys())
             for line in f:
+                line = line.rstrip()
                 try:
                     name, contents = line.split(':')
                     keys = set()
@@ -1239,7 +1240,7 @@ class MH(Mailbox):
                         del results[name]
                 except ValueError:
                     raise FormatError('Invalid sequence specification: %s' %
-                                      line.rstrip())
+                                      line)
         return results
 
     def set_sequences(self, sequences):
@@ -1291,7 +1292,7 @@ class MH(Mailbox):
         self._next_key = prev + 1
         if len(changes) == 0:
             return
-        for name, key_list in sequences.items():
+        for key_list in sequences.values():
             for old, new in changes:
                 if old in key_list:
                     key_list[key_list.index(old)] = new
