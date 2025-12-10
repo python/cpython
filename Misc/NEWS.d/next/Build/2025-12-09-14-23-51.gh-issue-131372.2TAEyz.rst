@@ -1,0 +1,2 @@
+Add ``LDVERSION`` and ``EXE`` to the ``base_interpreter`` value of
+``build-details.json``.

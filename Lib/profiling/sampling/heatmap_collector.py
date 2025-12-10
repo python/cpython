@@ -204,15 +204,15 @@ class _TemplateLoader:
             self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
             self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
-            # Load Python logo
+            # Load Tachyon logo
             logo_dir = template_dir / "_assets"
             try:
-                png_path = logo_dir / "python-logo-only.png"
+                png_path = logo_dir / "tachyon-logo.png"
                 b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
-                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo" class="python-logo"/>'
+                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo" class="python-logo"/>'
             except (FileNotFoundError, IOError) as e:
                 self.logo_html = '<div class="python-logo-placeholder"></div>'
-                print(f"Warning: Could not load Python logo: {e}")
+                print(f"Warning: Could not load Tachyon logo: {e}")
 
         except (FileNotFoundError, IOError) as e:
             raise RuntimeError(f"Failed to load heatmap template files: {e}") from e
@@ -335,12 +335,14 @@ class _HtmlRenderer:
             icon = '▶' if is_collapsed else '▼'
             content_style = ' style="display: none;"' if is_collapsed else ''
 
+            file_word = "file" if tree.count == 1 else "files"
+            sample_word = "sample" if tree.samples == 1 else "samples"
             section_html = f'''
 <div class="type-section">
   <div class="type-header" onclick="toggleTypeSection(this)">
     <span class="type-icon">{icon}</span>
     <span class="type-title">{type_names[module_type]}</span>
-    <span class="type-stats">({tree.count} files, {tree.samples:,} samples)</span>
+    <span class="type-stats">({tree.count} {file_word}, {tree.samples:,} {sample_word})</span>
   </div>
   <div class="type-content"{content_style}>
 '''
@@ -380,11 +382,14 @@ class _HtmlRenderer:
         parts = []
 
         # Render folder header (collapsed by default)
+        file_word = "file" if node.count == 1 else "files"
+        sample_word = "sample" if node.samples == 1 else "samples"
         parts.append(f'{indent}<div class="folder-node collapsed" data-level="{level}">')
         parts.append(f'{indent}  <div class="folder-header" onclick="toggleFolder(this)">')
         parts.append(f'{indent}    <span class="folder-icon">▶</span>')
         parts.append(f'{indent}    <span class="folder-name">📁 {html.escape(name)}</span>')
-        parts.append(f'{indent}    <span class="folder-stats">({node.count} files, {node.samples:,} samples)</span>')
+        parts.append(f'{indent}    <span class="folder-stats">'
+                     f'({node.count} {file_word}, {node.samples:,} {sample_word})</span>')
         parts.append(f'{indent}  </div>')
         parts.append(f'{indent}  <div class="folder-content" style="display: none;">')
 
@@ -804,6 +809,7 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- CODE_LINES -->": ''.join(code_lines_html),
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
+            "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
         }
 
         html_content = self._template_loader.file_template

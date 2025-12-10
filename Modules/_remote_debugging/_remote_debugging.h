@@ -401,6 +401,7 @@ extern int process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
+    uintptr_t base_frame_addr,
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     int *stopped_at_cached_frame,
