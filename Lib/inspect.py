@@ -307,23 +307,17 @@ _is_coroutine_mark = object()
 
 def _has_coroutine_mark(f):
     while True:
+        # Direct marker check
         if getattr(f, "_is_coroutine_marker", None) is _is_coroutine_mark:
             return True
 
-        pm = getattr(f, "__partialmethod__", None)
-        if isinstance(pm, functools.partialmethod):
-            f = pm
-            continue
-
-        if isinstance(f, functools.partialmethod):
-            f = getattr(f, 'func')
-            continue
-
+        # Methods: unwrap first (methods cannot be coroutine-marked)
         if ismethod(f):
             f = f.__func__
             continue
 
-        if isinstance(f, functools.partial):
+        # partial and partialmethod share .func
+        if isinstance(f, (functools.partial, functools.partialmethod)):
             f = f.func
             continue
 
