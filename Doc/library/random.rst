@@ -78,10 +78,10 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
-   object gets converted to an :class:`int` and all of its bits are used.
+   object gets converted to an :class:`int` and all of its bits except the sign are used.
 
    With version 1 (provided for reproducing random sequences from older versions
    of Python), the algorithm for :class:`str` and :class:`bytes` generates a
