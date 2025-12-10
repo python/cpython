@@ -380,6 +380,27 @@ class TestPredicates(IsTestBase):
 
         coro.close(); gen_coro.close(); # silence warnings
 
+    def test_marked_partials_are_coroutinefunctions(self):
+        def regular_function():
+            pass
+
+        marked_partial = inspect.markcoroutinefunction(
+            functools.partial(regular_function))
+        self.assertTrue(inspect.iscoroutinefunction(marked_partial))
+        self.assertFalse(
+            inspect.iscoroutinefunction(functools.partial(regular_function)))
+
+        class PMClass:
+            def method(self, /):
+                pass
+
+            marked = inspect.markcoroutinefunction(
+                functools.partialmethod(method))
+            unmarked = functools.partialmethod(method)
+
+        self.assertTrue(inspect.iscoroutinefunction(PMClass.marked))
+        self.assertFalse(inspect.iscoroutinefunction(PMClass.unmarked))
+
     def test_isawaitable(self):
         def gen(): yield
         self.assertFalse(inspect.isawaitable(gen()))

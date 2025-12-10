@@ -1,0 +1,1 @@
+Fix inspect.iscoroutinefunction() not detecting marked functools.partial or functools.partialmethod objects.
