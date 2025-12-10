@@ -1,0 +1,2 @@
+Flag: a ``dir()`` on a ``Flag`` enumeration now shows non-canonical members.
+(i.e. aliases).
