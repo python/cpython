@@ -334,9 +334,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
       to the Python or Python is built in :ref:`debug mode <debug-build>`
 
-      Availability: Linux kernel 5.17 or newer.
+      .. availability:: Linux >= 5.17
 
-      .. versionadded:: 3.15
+      .. versionadded:: next
 
    .. method:: size()
 
