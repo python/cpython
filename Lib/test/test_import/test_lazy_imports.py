@@ -9,6 +9,11 @@ import threading
 import types
 import unittest
 
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 class LazyImportTests(unittest.TestCase):
     """Tests for basic lazy import functionality."""
@@ -1628,6 +1633,30 @@ class LazyImportDisTests(unittest.TestCase):
         else:
             self.assertFail("IMPORT_NAME not found")
 
+
+@unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+class LazyCApiTests(unittest.TestCase):
+    def tearDown(self):
+        sys.set_lazy_imports("normal")
+        sys.set_lazy_imports_filter(None)
+
+    def test_set_matches_sys(self):
+        self.assertEqual(_testcapi.PyImport_GetLazyImportsMode(), sys.get_lazy_imports())
+        for mode in ("normal", "all", "none"):
+            _testcapi.PyImport_SetLazyImportsMode(mode)
+            self.assertEqual(_testcapi.PyImport_GetLazyImportsMode(), sys.get_lazy_imports())
+
+    def test_filter_matches_sys(self):
+        self.assertEqual(_testcapi.PyImport_GetLazyImportsFilter(), sys.get_lazy_imports_filter())
+
+        def filter(*args):
+            pass
+
+        _testcapi.PyImport_SetLazyImportsFilter(filter)
+        self.assertEqual(_testcapi.PyImport_GetLazyImportsFilter(), sys.get_lazy_imports_filter())
+
+    def test_set_bad_filter(self):
+        self.assertRaises(ValueError, _testcapi.PyImport_SetLazyImportsFilter, 42)
 
 
 if __name__ == '__main__':
