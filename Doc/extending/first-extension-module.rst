@@ -36,7 +36,7 @@ a system command name.
 
 .. note::
 
-   This tutorial uses API that was added in CPython 3.15.
+   This tutorial uses APIs that were added in CPython 3.15.
    To create an extension that's compatible with earlier versions of CPython,
    please follow an earlier version of this documentation.
 
@@ -122,7 +122,7 @@ and test incremental changes as you follow the rest of the text.
    If you don't want to use a tool, you can try to run your compiler directly.
    The following command should work for many flavors of Linux, and generate
    a ``spam.so`` file that you need to put in a directory
-   in :py:attr:`sys.path`:
+   on :py:attr:`sys.path`:
 
    .. code-block:: sh
 
@@ -161,12 +161,11 @@ Be sure to put this, and any other standard library includes, *after*
 On some systems, Python may define some pre-processor definitions
 that affect the standard headers.
 
-.. tip::
+.. note::
 
-   The ``<stdlib.h>`` include is technically not necessary.
-   :file:`Python.h` :ref:`includes several standard header files <capi-system-includes>`
-   for its own use and for backwards compatibility,
-   and ``stdlib`` is one of them.
+   This include is technically not necessary: :file:`Python.h` includes
+   ``stdlib`` and :ref:`several other standard headers <capi-system-includes>`
+   for its own use.
    However, it is good practice to explicitly include what you need.
 
 With the includes in place, compile and import the extension again.
@@ -357,7 +356,10 @@ Add a :c:data:`Py_mod_methods` slot to your a :c:type:`PyMethodDef` array:
    :emphasize-lines: 6
 
 Recompile your extension again, and test it.
-You should now be able to call the function, and get ``None`` back:
+Be sure to restart the Python interpreter, so that ``import spam`` picks
+up the new version if the module.
+
+You should now be able to call the function:
 
 .. code-block:: pycon
 
@@ -366,6 +368,9 @@ You should now be able to call the function, and get ``None`` back:
    <built-in function system>
    >>> print(spam.system('whoami'))
    None
+
+Note that our ``spam.system`` does not yet run the ``whoami`` command;
+it only returns ``None``.
 
 
 Returning an integer
@@ -396,7 +401,8 @@ To call it, replace the ``Py_RETURN_NONE`` with the following 3 lines:
    }
 
 
-Recompile and run again, and check that the function now returns 3:
+Recompile, restart the Python interpreter again,
+and check that the function now returns 3:
 
 .. code-block:: pycon
 
@@ -421,7 +427,7 @@ We expect that it should be a Python string.
 In order to use the information in it, we will need
 to convert it to a C value --- in this case, a C string (``const char *``).
 
-There's a slight type mismatch here: Python's :c:type:`str` objects store
+There's a slight type mismatch here: Python's :py:class:`str` objects store
 Unicode text, but C strings are arrays of bytes.
 So, we'll need to *encode* the data, and we'll use the UTF-8 encoding for it.
 (UTF-8 might not always be correct for system commands, but it's what
@@ -500,7 +506,9 @@ the ``char *`` buffer, and using its result instead of the ``3``:
       return result;
    }
 
-Compile your module, and test:
+Compile your module, restart Python, and test.
+This time, you should see your username -- the output of the ``whoami``
+system command:
 
 .. code-block:: pycon
 
