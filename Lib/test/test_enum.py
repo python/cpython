@@ -5492,12 +5492,16 @@ class TestEnumDict(unittest.TestCase):
 # helpers
 
 def enum_dir(cls):
+    if issubclass(cls, Flag):
+        members = list(cls._member_map_.keys())
+    else:
+        members = cls._member_names_
     interesting = set([
             '__class__', '__contains__', '__doc__', '__getitem__',
             '__iter__', '__len__', '__members__', '__module__',
             '__name__', '__qualname__',
             ]
-            + cls._member_names_
+            + members
             )
     if cls._new_member_ is not object.__new__:
         interesting.add('__new__')
