@@ -1262,6 +1262,26 @@ class MiscTestCase(unittest.TestCase):
                 expected.append(name)
         self.assertCountEqual(server.__all__, expected)
 
+    def test_http_status_str_equals_value_str(self):
+        """Ensure string render of an HTTPStatus is the same as of its
+        value attribute."""
+        for http_status_attr in HTTPStatus._member_map_:
+            http_status = getattr(HTTPStatus, http_status_attr)
+            with self.subTest(http_status_attr=http_status_attr):
+                self.assertEqual(str(http_status), str(http_status.value))
+
+    def test_http_status_str_is_numeric(self):
+        """Ensure string render of an HTTPStatus is the same as of its
+        value attribute."""
+        for http_status_attr in HTTPStatus._member_map_:
+            http_status = getattr(HTTPStatus, http_status_attr)
+            with self.subTest(http_status_attr=http_status_attr):
+                self.assertTrue(str(http_status).isdigit())
+
+    def test_http_status_bad_request_str_looks_like_a_number(self):
+        """Ensure string render of ``HTTPStatus.BAD_REQUEST`` is 400."""
+        self.assertEqual(str(HTTPStatus.BAD_REQUEST), '400')
+
 
 class ScriptTestCase(unittest.TestCase):
 
