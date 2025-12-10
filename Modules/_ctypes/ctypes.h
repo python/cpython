@@ -608,7 +608,8 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
-/* A variant of PyStgInfo_FromType that doesn't need the state,
+/* A variant of PyStgInfo_FromType that doesn't need the state
+ * and doesn't modify any refcounts,
  * so it can be called from finalization functions when the module
  * state is torn down.
  */
