@@ -46,8 +46,9 @@ class MetaPathFinder(metaclass=abc.ABCMeta):
         """
 
     def discover(self, parent=None):
-        """An optional method which searches for possible specs with given *parent*.
-        If *parent* is *None*, MetaPathFinder.discover will search for top-level modules.
+        """An optional method which searches for possible specs with given *parent*
+        module spec. If *parent* is *None*, MetaPathFinder.discover will search
+        for top-level modules.
 
         Returns an iterable of possible specs.
         """
@@ -68,8 +69,9 @@ class PathEntryFinder(metaclass=abc.ABCMeta):
         """
 
     def discover(self, parent=None):
-        """An optional method which searches for possible specs with given *parent*.
-        If *parent* is *None*, PathEntryFinder.discover will search for top-level modules.
+        """An optional method which searches for possible specs with given
+        *parent* module spec. If *parent* is *None*, PathEntryFinder.discover
+        will search for top-level modules.
 
         Returns an iterable of possible specs.
         """
