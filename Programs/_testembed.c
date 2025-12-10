@@ -2072,6 +2072,7 @@ static int check_use_frozen_modules(const char *rawval)
         wcscpy(optval, L"frozen_modules=");
         if ((wcslen(optval) + wcslen(val)) >= Py_ARRAY_LENGTH(optval)) {
             error("TESTFROZEN is too long");
+            PyMem_RawFree(val);
             return -1;
         }
         wcscat(optval, val);
