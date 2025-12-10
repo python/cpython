@@ -11,7 +11,7 @@ from _interpqueues import (
     QueueError, QueueNotFoundError,
 )
 from ._crossinterp import (
-    UNBOUND_ERROR, UNBOUND_REMOVE,
+    UNBOUND, UNBOUND_ERROR, UNBOUND_REMOVE,
 )
 
 __all__ = [
@@ -44,10 +44,6 @@ class ItemInterpreterDestroyed(QueueError,
 
 _SHARED_ONLY = 0
 _PICKLED = 1
-
-
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
-_crossinterp.register_unbound(UNBOUND, 3)
 
 
 def _serialize_unbound(unbound):
