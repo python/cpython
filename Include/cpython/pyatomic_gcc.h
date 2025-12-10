@@ -549,7 +549,6 @@ static inline void
 _Py_atomic_store_llong_relaxed(long long *obj, long long value)
 { __atomic_store_n(obj, value, __ATOMIC_RELAXED); }
 
-
 // --- _Py_atomic_load_ptr_acquire / _Py_atomic_store_ptr_release ------------
 
 static inline void *
