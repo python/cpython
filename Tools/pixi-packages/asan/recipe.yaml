@@ -25,7 +25,6 @@ requirements:
     - ${{ compiler('c') }}
     - ${{ compiler('cxx') }}
     - make
-    - libtool
     - pkg-config
     # configure script looks for llvm-ar for lto
     - if: osx
