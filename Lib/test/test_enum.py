@@ -4887,7 +4887,7 @@ class TestInternals(unittest.TestCase):
                 def _generate_next_value_(name, start, count, last):
                     return name
 
-    def test_auto_order_wierd(self):
+    def test_auto_order_weird(self):
         weird_auto = auto()
         weird_auto.value = 'pathological case'
         class Color(Enum):
@@ -5324,7 +5324,7 @@ class TestStdLib(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
-        support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+        support.check__all__(self, enum)
 
     @cpython_only
     def test_lazy_import(self):

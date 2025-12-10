@@ -1,0 +1,2 @@
+Make ``test_sysconfig.test_parse_makefile_renamed_vars`` less fragile by
+clearing the environment variables before parsing the Makefile.

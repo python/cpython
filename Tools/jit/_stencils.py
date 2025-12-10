@@ -58,9 +58,11 @@ _PATCH_FUNCS = {
     "ARM64_RELOC_PAGE21": "patch_aarch64_21r",
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
+    "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
     # x86_64-pc-windows-msvc:
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
+    "IMAGE_REL_ARM64_BRANCH19": "patch_aarch64_19r",
     "IMAGE_REL_ARM64_BRANCH26": "patch_aarch64_26r",
     "IMAGE_REL_ARM64_PAGEBASE_REL21": "patch_aarch64_21rx",
     "IMAGE_REL_ARM64_PAGEOFFSET_12A": "patch_aarch64_12",
@@ -74,6 +76,7 @@ _PATCH_FUNCS = {
     "R_AARCH64_ADR_GOT_PAGE": "patch_aarch64_21rx",
     "R_AARCH64_ADR_PREL_PG_HI21": "patch_aarch64_21r",
     "R_AARCH64_CALL26": "patch_aarch64_26r",
+    "R_AARCH64_CONDBR19": "patch_aarch64_19r",
     "R_AARCH64_JUMP26": "patch_aarch64_26r",
     "R_AARCH64_LD64_GOT_LO12_NC": "patch_aarch64_12x",
     "R_AARCH64_MOVW_UABS_G0_NC": "patch_aarch64_16a",
@@ -137,11 +140,7 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(
-        self,
-        other: typing.Self,
-        body: bytes | bytearray,
-    ) -> typing.Self | None:
+    def fold(self, other: typing.Self, body: bytearray) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
         instruction_a = int.from_bytes(
             body[self.offset : self.offset + 4], byteorder=sys.byteorder
@@ -223,6 +222,17 @@ class StencilGroup:
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
+    def convert_labels_to_relocations(self) -> None:
+        for name, hole_plus in self.symbols.items():
+            if isinstance(name, str) and "_JIT_RELOCATION_" in name:
+                _, offset = hole_plus
+                reloc, target, _ = name.split("_JIT_RELOCATION_")
+                value, symbol = symbol_to_value(target)
+                hole = Hole(
+                    int(offset), typing.cast(_schema.HoleKind, reloc), value, symbol, 0
+                )
+                self.code.holes.append(hole)
+
     def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
@@ -233,6 +243,23 @@ class StencilGroup:
                 and hole.symbol not in self.symbols
             ):
                 hole.func = "patch_aarch64_trampoline"
+                hole.need_state = True
+                assert hole.symbol is not None
+                if hole.symbol in known_symbols:
+                    ordinal = known_symbols[hole.symbol]
+                else:
+                    ordinal = len(known_symbols)
+                    known_symbols[hole.symbol] = ordinal
+                self._trampolines.add(ordinal)
+                hole.addend = ordinal
+                hole.symbol = None
+            # x86_64 Darwin trampolines for external symbols
+            elif (
+                hole.kind == "X86_64_RELOC_BRANCH"
+                and hole.value is HoleValue.ZERO
+                and hole.symbol not in self.symbols
+            ):
+                hole.func = "patch_x86_64_trampoline"
                 hole.need_state = True
                 assert hole.symbol is not None
                 if hole.symbol in known_symbols:

@@ -4474,7 +4474,7 @@ class CheckAttributes(unittest.TestCase):
         self.assertTrue(C.HAVE_THREADS is True or C.HAVE_THREADS is False)
         self.assertTrue(P.HAVE_THREADS is True or P.HAVE_THREADS is False)
 
-        self.assertEqual(C.__version__, P.__version__)
+        self.assertEqual(C.SPEC_VERSION, P.SPEC_VERSION)
 
         self.assertLessEqual(set(dir(C)), set(dir(P)))
         self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
@@ -5927,6 +5927,23 @@ class SignatureTest(unittest.TestCase):
 
         doit('Decimal')
         doit('Context')
+
+
+class TestModule:
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(self.decimal, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
+@requires_cdecimal
+class CTestModule(TestModule, unittest.TestCase):
+    decimal = C
+class PyTestModule(TestModule, unittest.TestCase):
+    decimal = P
 
 
 def load_tests(loader, tests, pattern):

@@ -15,6 +15,7 @@
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #include "datetime.h"
 
@@ -1760,6 +1761,24 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     return 0;
 }
 
+/* Check whether year with century should be normalized for strftime. */
+inline static int
+normalize_century(void)
+{
+    static int cache = -1;
+    if (cache < 0) {
+        char year[5];
+        struct tm date = {
+            .tm_year = -1801,
+            .tm_mon = 0,
+            .tm_mday = 1
+        };
+        cache = (strftime(year, sizeof(year), "%Y", &date) &&
+                 strcmp(year, "0099") != 0);
+    }
+    return cache;
+}
+
 static PyObject *
 make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
@@ -1931,10 +1950,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-#ifdef _Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G'
-                 || ch == 'F' || ch == 'C'
-        ) {
+        else if (normalize_century()
+                 && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
+        {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
@@ -1985,7 +2003,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#endif
         else {
             /* percent followed by something else */
             continue;
@@ -2524,14 +2541,16 @@ static Py_hash_t
 delta_hash(PyObject *op)
 {
     PyDateTime_Delta *self = PyDelta_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *temp = delta_getstate(self);
         if (temp != NULL) {
-            self->hashcode = PyObject_Hash(temp);
+            hash = PyObject_Hash(temp);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp);
         }
     }
-    return self->hashcode;
+    return hash;
 }
 
 static PyObject *
@@ -3275,19 +3294,31 @@ static PyObject *
 datetime_date_today_impl(PyTypeObject *type)
 /*[clinic end generated code: output=d5474697df6b251c input=21688afa289c0a06]*/
 {
-    PyObject *time;
-    PyObject *result;
-    time = time_time();
-    if (time == NULL)
-        return NULL;
+    /* Use C implementation to boost performance for date type */
+    if (type == &PyDateTime_DateType) {
+        struct tm tm;
+        time_t t;
+        time(&t);
 
-    /* Note well:  today() is a class method, so this may not call
-     * date.fromtimestamp.  For example, it may call
-     * datetime.fromtimestamp.  That's why we need all the accuracy
-     * time.time() delivers; if someone were gonzo about optimization,
-     * date.today() could get away with plain C time().
+        if (_PyTime_localtime(t, &tm) != 0) {
+            return NULL;
+        }
+
+        return new_date_ex(tm.tm_year + 1900,
+                           tm.tm_mon + 1,
+                           tm.tm_mday,
+                           type);
+    }
+
+    PyObject *time = time_time();
+    if (time == NULL) {
+        return NULL;
+    }
+
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
-    result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
+    PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
@@ -3452,12 +3483,15 @@ datetime.date.strptime
     /
 
 Parse string according to the given date format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=001904ab34f594a1]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=31d57bb789433e99]*/
 {
     PyObject *result;
 
@@ -3592,11 +3626,14 @@ datetime.date.strftime
 Format using strftime().
 
 Example: "%d/%m/%Y, %H:%M:%S".
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strftime_impl(PyObject *self, PyObject *format)
-/*[clinic end generated code: output=6529b70095e16778 input=72af55077e606ed8]*/
+/*[clinic end generated code: output=6529b70095e16778 input=b6fd4a2ded27b557]*/
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
@@ -3887,12 +3924,14 @@ static Py_hash_t
 date_hash(PyObject *op)
 {
     PyDateTime_Date *self = PyDate_CAST(op);
-    if (self->hashcode == -1) {
-        self->hashcode = generic_hash(
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
+        hash = generic_hash(
             (unsigned char *)self->data, _PyDateTime_DATE_DATASIZE);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
     }
 
-    return self->hashcode;
+    return hash;
 }
 
 static PyObject *
@@ -4695,12 +4734,15 @@ datetime.time.strptime
     /
 
 Parse string according to the given time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=6d0f263a5f94d78d]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=82ba425ecacc54aa]*/
 {
     PyObject *result;
 
@@ -4875,11 +4917,14 @@ datetime.time.strftime
 Format using strftime().
 
 The date part of the timestamp passed to underlying strftime should not be used.
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=541934a2860f7db5]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=c4a5bbecd798654b]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5003,7 +5048,8 @@ static Py_hash_t
 time_hash(PyObject *op)
 {
     PyDateTime_Time *self = PyTime_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *offset, *self0;
         if (TIME_GET_FOLD(self)) {
             self0 = new_time_ex2(TIME_GET_HOUR(self),
@@ -5025,10 +5071,11 @@ time_hash(PyObject *op)
             return -1;
 
         /* Reduce this to a hash of another object. */
-        if (offset == Py_None)
-            self->hashcode = generic_hash(
+        if (offset == Py_None) {
+            hash = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_TIME_DATASIZE);
-        else {
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
+        } else {
             PyObject *temp1, *temp2;
             int seconds, microseconds;
             assert(HASTZINFO(self));
@@ -5047,12 +5094,13 @@ time_hash(PyObject *op)
                 Py_DECREF(offset);
                 return -1;
             }
-            self->hashcode = PyObject_Hash(temp2);
+            hash = PyObject_Hash(temp2);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp2);
         }
         Py_DECREF(offset);
     }
-    return self->hashcode;
+    return hash;
 }
 
 /*[clinic input]
@@ -5771,12 +5819,15 @@ datetime.datetime.strptime
     /
 
 Parse string according to the given date and time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
-/*[clinic end generated code: output=af2c2d024f3203f5 input=d7597c7f5327117b]*/
+/*[clinic end generated code: output=af2c2d024f3203f5 input=ef7807589f1d50e7]*/
 {
     PyObject *result;
 
@@ -6584,7 +6635,8 @@ static Py_hash_t
 datetime_hash(PyObject *op)
 {
     PyDateTime_DateTime *self = PyDateTime_CAST(op);
-    if (self->hashcode == -1) {
+    Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->hashcode);
+    if (hash == -1) {
         PyObject *offset, *self0;
         if (DATE_GET_FOLD(self)) {
             self0 = new_datetime_ex2(GET_YEAR(self),
@@ -6609,10 +6661,11 @@ datetime_hash(PyObject *op)
             return -1;
 
         /* Reduce this to a hash of another object. */
-        if (offset == Py_None)
-            self->hashcode = generic_hash(
+        if (offset == Py_None) {
+            hash = generic_hash(
                 (unsigned char *)self->data, _PyDateTime_DATETIME_DATASIZE);
-        else {
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
+        } else {
             PyObject *temp1, *temp2;
             int days, seconds;
 
@@ -6636,12 +6689,13 @@ datetime_hash(PyObject *op)
                 Py_DECREF(offset);
                 return -1;
             }
-            self->hashcode = PyObject_Hash(temp2);
+            hash = PyObject_Hash(temp2);
+            FT_ATOMIC_STORE_SSIZE_RELAXED(self->hashcode, hash);
             Py_DECREF(temp2);
         }
         Py_DECREF(offset);
     }
-    return self->hashcode;
+    return hash;
 }
 
 /*[clinic input]
@@ -7600,6 +7654,7 @@ finally:
 }
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_INTERNAL_ABI_SLOT,
     {Py_mod_exec, _datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

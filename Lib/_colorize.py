@@ -1,4 +1,3 @@
-import io
 import os
 import sys
 
@@ -155,7 +154,7 @@ class ThemeSection(Mapping[str, str]):
         return iter(self.__dataclass_fields__)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Argparse(ThemeSection):
     usage: str = ANSIColors.BOLD_BLUE
     prog: str = ANSIColors.BOLD_MAGENTA
@@ -169,7 +168,12 @@ class Argparse(ThemeSection):
     short_option: str = ANSIColors.BOLD_GREEN
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
+    default: str = ANSIColors.GREY
+    default_value: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
+    error: str = ANSIColors.BOLD_MAGENTA
+    warning: str = ANSIColors.BOLD_YELLOW
+    message: str = ANSIColors.MAGENTA
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -187,6 +191,7 @@ class Difflib(ThemeSection):
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
+    keyword_constant: str = ANSIColors.BOLD_BLUE
     builtin: str = ANSIColors.CYAN
     comment: str = ANSIColors.RED
     string: str = ANSIColors.GREEN
@@ -287,21 +292,29 @@ def decolor(text: str) -> str:
 
 
 def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
+
+    def _safe_getenv(k: str, fallback: str | None = None) -> str | None:
+        """Exception-safe environment retrieval. See gh-128636."""
+        try:
+            return os.environ.get(k, fallback)
+        except Exception:
+            return fallback
+
     if file is None:
         file = sys.stdout
 
     if not sys.flags.ignore_environment:
-        if os.environ.get("PYTHON_COLORS") == "0":
+        if _safe_getenv("PYTHON_COLORS") == "0":
             return False
-        if os.environ.get("PYTHON_COLORS") == "1":
+        if _safe_getenv("PYTHON_COLORS") == "1":
             return True
-    if os.environ.get("NO_COLOR"):
+    if _safe_getenv("NO_COLOR"):
         return False
     if not COLORIZE:
         return False
-    if os.environ.get("FORCE_COLOR"):
+    if _safe_getenv("FORCE_COLOR"):
         return True
-    if os.environ.get("TERM") == "dumb":
+    if _safe_getenv("TERM") == "dumb":
         return False
 
     if not hasattr(file, "fileno"):
@@ -318,7 +331,7 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
 
     try:
         return os.isatty(file.fileno())
-    except io.UnsupportedOperation:
+    except OSError:
         return hasattr(file, "isatty") and file.isatty()
 
 
@@ -344,7 +357,8 @@ def get_theme(
     environment (including environment variable state and console configuration
     on Windows) can also change in the course of the application life cycle.
     """
-    if force_color or (not force_no_color and can_colorize(file=tty_file)):
+    if force_color or (not force_no_color and
+                       can_colorize(file=tty_file)):
         return _theme
     return theme_no_color
 
