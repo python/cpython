@@ -132,10 +132,10 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
     assert(SIZEOF_VOID_P == 4);
     PATCH_VALUE(uint32_t, _operand0_hi, _JIT_OPERAND0_HI)
     PATCH_VALUE(uint32_t, _operand0_lo, _JIT_OPERAND0_LO)
-    uint64_t _operand0 = ((uint64_t)_operand0_hi << 32) | _operand0_lo;
+    uint64_t _operand0_64 = ((uint64_t)_operand0_hi << 32) | _operand0_lo;
     PATCH_VALUE(uint32_t, _operand1_hi, _JIT_OPERAND1_HI)
     PATCH_VALUE(uint32_t, _operand1_lo, _JIT_OPERAND1_LO)
-    uint64_t _operand1 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
+    uint64_t _operand1_64 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
 #endif
 #if SUPPORTS_SMALL_CONSTS
     PATCH_VALUE(uint32_t, _operand0_32, _JIT_OPERAND0_32)
