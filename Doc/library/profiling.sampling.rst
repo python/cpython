@@ -860,7 +860,7 @@ Within live mode, keyboard commands control the display:
 :kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
 
-:kbd:`j` / :kbd:`k`
+:kbd:`j` / :kbd:`k` (or :kbd:`Up` / :kbd:`Down`)
    Navigate through opcode entries in the opcode panel (when ``--opcodes`` is
    enabled). These keys scroll through the instruction-level statistics for the
    currently selected function.
