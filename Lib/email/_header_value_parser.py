@@ -2792,6 +2792,9 @@ def _steal_trailing_WSP_if_exists(lines):
     if lines and lines[-1] and lines[-1][-1] in WSP:
         wsp = lines[-1][-1]
         lines[-1] = lines[-1][:-1]
+        # gh-142006: if the line is now empty, remove it entirely.
+        if not lines[-1]:
+            lines.pop()
     return wsp
 
 def _refold_parse_tree(parse_tree, *, policy):
