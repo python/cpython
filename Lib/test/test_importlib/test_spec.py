@@ -287,20 +287,6 @@ class ModuleSpecMethodsTests:
                 loaded = self.bootstrap._load(self.spec)
             self.assertNotIn(self.spec.name, sys.modules)
 
-    def test_load_legacy_attributes_immutable(self):
-        module = object()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            class ImmutableLoader(TestLoader):
-                def load_module(self, name):
-                    sys.modules[name] = module
-                    return module
-            self.spec.loader = ImmutableLoader()
-            with CleanImport(self.spec.name):
-                loaded = self.bootstrap._load(self.spec)
-
-                self.assertIs(sys.modules[self.spec.name], module)
-
     # reload()
 
     def test_reload(self):
