@@ -316,12 +316,19 @@ def _has_coroutine_mark(f):
             f = f.__func__
             continue
 
+        # Functions created by partialmethod descriptors keep a __partialmethod__ reference
+        pm = getattr(f, "__partialmethod__", None)
+        if isinstance(pm, functools.partialmethod):
+            f = pm
+            continue
+
         # partial and partialmethod share .func
         if isinstance(f, (functools.partial, functools.partialmethod)):
             f = f.func
             continue
 
         return False
+
 
 def markcoroutinefunction(func):
     """
