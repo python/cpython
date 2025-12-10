@@ -117,7 +117,7 @@ happens transparently when you first access the name:
 
    print("Starting up...")  # json and datetime not loaded yet
 
-   data = json.loads('{"key": "value"}')  # json loads here
+   data = json.loads('{"key": "value"}')  # json gets loads here
    now = datetime()  # datetime loads here
 
 This mechanism is particularly useful for applications that import many modules
