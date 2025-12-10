@@ -470,9 +470,10 @@ which you can use to judge whether the data is sufficient for your analysis.
 Profiling modes
 ===============
 
-The sampling profiler supports three modes that control which samples are
+The sampling profiler supports four modes that control which samples are
 recorded. The mode determines what the profile measures: total elapsed time,
-CPU execution time, or time spent holding the global interpreter lock.
+CPU execution time, time spent holding the global interpreter lock, or
+exception handling.
 
 
 Wall-clock mode
@@ -551,6 +552,73 @@ GIL mode helps answer questions like "which functions are monopolizing the
 GIL?" and "why are my other threads starving?" It can also be useful in
 single-threaded programs to distinguish Python execution time from time spent
 in C extensions or I/O.
+
+
+Exception mode
+--------------
+
+Exception mode (``--mode=exception``) records samples only when a thread has
+an active exception::
+
+   python -m profiling.sampling run --mode=exception script.py
+
+Samples are recorded in two situations: when an exception is being propagated
+up the call stack (after ``raise`` but before being caught), or when code is
+executing inside an ``except`` block where exception information is still
+present in the thread state.
+
+The profiler detects exceptions by checking two internal thread state fields:
+the ``current_exception`` field (set when an exception is actively propagating)
+and the ``exc_info`` field (set when inside an ``except`` block). When either
+field contains an exception object, the thread is considered to have an active
+exception.
+
+The following example illustrates which code regions are captured:
+
+.. code-block:: python
+
+   def example():
+       try:
+           raise ValueError("error")    # Captured: exception being raised
+       except ValueError:
+           process_error()              # Captured: inside except block
+       finally:
+           cleanup()                    # NOT captured: exception already handled
+
+   def example_propagating():
+       try:
+           try:
+               raise ValueError("error")
+           finally:
+               cleanup()                # Captured: exception propagating through
+       except ValueError:
+           pass
+
+   def example_no_exception():
+       try:
+           do_work()
+       finally:
+           cleanup()                    # NOT captured: no exception involved
+
+Note that ``finally`` blocks are only captured when an exception is actively
+propagating through them. Once an ``except`` block finishes executing, Python
+clears the exception information before running any subsequent ``finally``
+block. Similarly, ``finally`` blocks that run during normal execution (when no
+exception was raised) are not captured because no exception state is present.
+
+This mode is useful for understanding where your program spends time handling
+errors. Exception handling can be a significant source of overhead in code
+that uses exceptions for flow control (such as ``StopIteration`` in iterators)
+or in applications that process many error conditions (such as network servers
+handling connection failures).
+
+Exception mode helps answer questions like "how much time is spent handling
+exceptions?" and "which exception handlers are the most expensive?" It can
+reveal hidden performance costs in code that catches and processes many
+exceptions, even when those exceptions are handled gracefully. For example,
+if a parsing library uses exceptions internally to signal format errors, this
+mode will capture time spent in those handlers even if the calling code never
+sees the exceptions.
 
 
 Output formats
@@ -1006,8 +1074,9 @@ Mode options
 
 .. option:: --mode <mode>
 
-   Sampling mode: ``wall`` (default), ``cpu``, or ``gil``.
-   The ``cpu`` and ``gil`` modes are incompatible with ``--async-aware``.
+   Sampling mode: ``wall`` (default), ``cpu``, ``gil``, or ``exception``.
+   The ``cpu``, ``gil``, and ``exception`` modes are incompatible with
+   ``--async-aware``.
 
 .. option:: --async-mode <mode>
 
