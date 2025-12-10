@@ -340,12 +340,8 @@ are always available.  They are listed here in alphabetical order.
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   This function raises the following exceptions:
-
-   - :exc:`SyntaxError` if the compiled source is invalid
-   - :exc:`ValueError` if the source contains null bytes
-   - :exc:`UnicodeDecodeError` if the source code contains docstrings that
-     cannot be encoded as UTF-8 and the optimization level is below ``2``
+   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
+   source is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -376,11 +372,6 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       Previously, :exc:`TypeError` was raised when null bytes were encountered
       in *source*.
-
-   .. versionchanged:: 3.13
-      :exc:`UnicodeDecodeError` is now raised if any docstring in *source*
-      contains surrogates (like ``\ud800``) and therefore cannot be encoded
-      as UTF-8.
 
    .. versionadded:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
