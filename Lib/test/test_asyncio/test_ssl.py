@@ -27,6 +27,7 @@ from test.test_asyncio import utils as test_utils
 
 MACOS = (sys.platform == 'darwin')
 BUF_MULTIPLIER = 1024 if not MACOS else 64
+HANDSHAKE_TIMEOUT = support.LONG_TIMEOUT
 
 
 def tearDownModule():
@@ -257,15 +258,12 @@ class TestSSL(test_utils.TestCase):
             await fut
 
         async def start_server():
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
-
             srv = await asyncio.start_server(
                 handle_client,
                 '127.0.0.1', 0,
                 family=socket.AF_INET,
                 ssl=sslctx,
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             try:
                 srv_socks = srv.sockets
@@ -322,14 +320,11 @@ class TestSSL(test_utils.TestCase):
             sock.close()
 
         async def client(addr):
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
-
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -350,7 +345,7 @@ class TestSSL(test_utils.TestCase):
                 sock=sock,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=support.LONG_TIMEOUT)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -449,7 +444,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=support.LONG_TIMEOUT)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.close()
             await self.wait_closed(writer)
 
@@ -611,7 +606,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -660,7 +655,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             self.assertEqual(await reader.readline(), b'A\n')
             writer.write(b'B')
@@ -1153,14 +1149,11 @@ class TestSSL(test_utils.TestCase):
             await fut
 
         async def start_server():
-            extras = {}
-
             srv = await self.loop.create_server(
                 server_protocol_factory,
                 '127.0.0.1', 0,
                 family=socket.AF_INET,
-                ssl=sslctx_1,
-                **extras)
+                ssl=sslctx_1)
 
             try:
                 srv_socks = srv.sockets
@@ -1210,14 +1203,11 @@ class TestSSL(test_utils.TestCase):
             sock.close()
 
         async def client(addr):
-            extras = {}
-            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
-
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                **extras)
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
 
             writer.write(A_DATA)
             self.assertEqual(await reader.readexactly(2), b'OK')
@@ -1287,7 +1277,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             sslprotocol = writer.transport._ssl_protocol
             writer.write(b'ping')
             data = await reader.readexactly(4)
@@ -1399,7 +1390,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
@@ -1530,7 +1522,8 @@ class TestSSL(test_utils.TestCase):
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
-                server_hostname='')
+                server_hostname='',
+                ssl_handshake_timeout=HANDSHAKE_TIMEOUT)
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
