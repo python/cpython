@@ -38,3 +38,18 @@ function intensityToColor(intensity) {
     const rootStyle = getComputedStyle(document.documentElement);
     return rootStyle.getPropertyValue(`--heat-${level}`).trim();
 }
+
+// ============================================================================
+// Favicon (Reuse logo image as favicon)
+// ============================================================================
+
+(function() {
+    const logo = document.querySelector('.brand-logo img');
+    if (logo) {
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/png';
+        favicon.href = logo.src;
+        document.head.appendChild(favicon);
+    }
+})();
