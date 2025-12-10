@@ -258,7 +258,7 @@ class TestSSL(test_utils.TestCase):
 
         async def start_server():
             extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
 
             srv = await asyncio.start_server(
                 handle_client,
@@ -323,7 +323,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
@@ -448,7 +448,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=support.SHORT_TIMEOUT)
+                ssl_handshake_timeout=support.LONG_TIMEOUT)
             writer.close()
             await self.wait_closed(writer)
 
@@ -610,7 +610,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -1210,7 +1210,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
+            extras = dict(ssl_handshake_timeout=support.LONG_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
