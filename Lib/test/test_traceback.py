@@ -5226,5 +5226,32 @@ class TestColorizedTraceback(unittest.TestCase):
         ]
         self.assertEqual(actual, expected(**colors))
 
+    def test_colorized_traceback_unicode(self):
+        try:
+            啊哈=1; 啊哈/0####
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"    啊哈=1; {e}啊哈{z}{E}/{z}{e}0{z}####",
+                f"            {e}~~~~{z}{E}^{z}{e}~{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
+        try:
+            ééééé/0
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(e)
+
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        def expected(t, m, fn, l, f, E, e, z):
+            return [
+                f"    {E}ééééé{z}/0",
+                f"    {E}^^^^^{z}",
+            ]
+        self.assertEqual(actual[2:4], expected(**colors))
+
 if __name__ == "__main__":
     unittest.main()
