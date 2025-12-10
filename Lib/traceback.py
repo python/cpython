@@ -680,12 +680,12 @@ class StackSummary(list):
                         colorized_line_parts = []
                         colorized_carets_parts = []
 
-                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
+                        for color, group in itertools.groupby(_zip_display_width(line, carets), key=lambda x: x[1]):
                             caret_group = list(group)
-                            if color == "^":
+                            if "^" in color:
                                 colorized_line_parts.append(theme.error_highlight + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_highlight + "".join(caret for _, caret in caret_group) + theme.reset)
-                            elif color == "~":
+                            elif "~" in color:
                                 colorized_line_parts.append(theme.error_range + "".join(char for char, _ in caret_group) + theme.reset)
                                 colorized_carets_parts.append(theme.error_range + "".join(caret for _, caret in caret_group) + theme.reset)
                             else:
@@ -967,7 +967,24 @@ def _extract_caret_anchors_from_line_segment(segment):
 
     return None
 
-_WIDE_CHAR_SPECIFIERS = "WF"
+
+def _lookahead(iterator, default):
+    forked = itertools.tee(iterator, 1)[0]
+    return next(forked, default)
+
+
+def _zip_display_width(line, carets):
+    line = itertools.tee(line, 1)[0]
+    carets = iter(carets)
+    for char in line:
+        char_width = _display_width(char)
+        next_char = _lookahead(line, "")
+        if next_char and char_width == _display_width(char + next_char):
+            next(line)
+            yield char + next_char, "".join(itertools.islice(carets, char_width))
+        else:
+            yield char, "".join(itertools.islice(carets, char_width))
+
 
 def _display_width(line, offset=None):
     """Calculate the extra amount of width space the given source
@@ -981,13 +998,9 @@ def _display_width(line, offset=None):
     if line.isascii():
         return offset
 
-    import unicodedata
+    from _pyrepl.utils import wlen
 
-    return sum(
-        2 if unicodedata.east_asian_width(char) in _WIDE_CHAR_SPECIFIERS else 1
-        for char in line[:offset]
-    )
-
+    return wlen(line[:offset])
 
 
 class _ExceptionPrintContext:
