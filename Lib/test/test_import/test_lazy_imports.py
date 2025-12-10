@@ -204,6 +204,11 @@ class LazyImportTypeTests(unittest.TestCase):
         self.assertHasAttr(types, 'LazyImportType')
         self.assertEqual(types.LazyImportType.__name__, 'lazy_import')
 
+    def test_lazy_import_type_invalid_name(self):
+        """passing invalid name to lazy imports should raise a TypeError"""
+        with self.assertRaises(TypeError) as cm:
+            types.LazyImportType({}, None)
+
     def test_lazy_import_type_invalid_fromlist_type(self):
         """LazyImportType should reject invalid fromlist types."""
         # fromlist must be None, a string, or a tuple - not an int
