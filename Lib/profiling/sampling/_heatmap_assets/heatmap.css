@@ -971,7 +971,6 @@
     outline-offset: -3px;
   }
   100% {
-    background: inherit;
     outline: 3px solid transparent;
     outline-offset: -3px;
   }
