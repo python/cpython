@@ -88,6 +88,12 @@ class TracebackCases(unittest.TestCase):
     def tokenizer_error_with_caret_range(self):
         compile("blech  (  ", "?", "exec")
 
+    def syntax_error_with_caret_wide_char(self):
+        compile("女女女=1; 女女女/", "?", "exec")
+
+    def syntax_error_with_caret_wide_char_range(self):
+        compile("f(x, 女女女 for 女女女 in range(30), z)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -124,6 +130,20 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
         self.assertEqual(err[1].find("("), err[2].find("^"))  # in the right place
         self.assertEqual(err[2].count("^"), 1)
+
+    def test_caret_wide_char(self):
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        # "女女女=1; 女女女/" has display width 17
+        self.assertEqual(err[2].find("^"), 4 + 17)
+
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char_range,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        self.assertEqual(err[2].find("^"), 4 + 5)
+        # "女女女 for 女女女 in range(30)" has display width 30
+        self.assertEqual(err[2].count("^"), 30)
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -1783,6 +1803,23 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                 rc, stdout, stderr = assert_python_failure('-c', source)
                 stderr_text = stderr.decode('utf-8')
                 self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_no_keyword_suggestion_for_comma_errors(self):
+        # When the parser identifies a missing comma, don't suggest
+        # bogus keyword replacements like 'print' -> 'not'
+        code = '''\
+import sys
+print(
+    "line1"
+    "line2"
+    file=sys.stderr
+)
+'''
+        source = textwrap.dedent(code).strip()
+        rc, stdout, stderr = assert_python_failure('-c', source)
+        stderr_text = stderr.decode('utf-8')
+        self.assertIn("Perhaps you forgot a comma", stderr_text)
+        self.assertNotIn("Did you mean", stderr_text)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class

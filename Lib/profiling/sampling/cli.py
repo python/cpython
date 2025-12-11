@@ -195,6 +195,17 @@ def _add_sampling_options(parser):
         dest="gc",
         help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
     )
+    sampling_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Gather bytecode opcode information for instruction-level profiling "
+        "(shows which bytecode instructions are executing, including specializations).",
+    )
+    sampling_group.add_argument(
+        "--async-aware",
+        action="store_true",
+        help="Enable async-aware profiling (uses task-based stack reconstruction)",
+    )
 
 
 def _add_mode_options(parser):
@@ -205,7 +216,14 @@ def _add_mode_options(parser):
         choices=["wall", "cpu", "gil"],
         default="wall",
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
-        "gil (only samples when thread holds the GIL)",
+        "gil (only samples when thread holds the GIL). Incompatible with --async-aware",
+    )
+    mode_group.add_argument(
+        "--async-mode",
+        choices=["running", "all"],
+        default="running",
+        help='Async profiling mode: "running" (only running task) '
+        'or "all" (all tasks including waiting). Requires --async-aware',
     )
 
 
@@ -304,13 +322,15 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 
-def _create_collector(format_type, interval, skip_idle):
+def _create_collector(format_type, interval, skip_idle, opcodes=False):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
         interval: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
+        opcodes: Whether to collect opcode information (only used by gecko format
+                 for creating interval markers in Firefox Profiler)
 
     Returns:
         A collector instance of the appropriate type
@@ -320,8 +340,10 @@ def _create_collector(format_type, interval, skip_idle):
         raise ValueError(f"Unknown format: {format_type}")
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
+    # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
+        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
 
     return collector_class(interval, skip_idle=skip_idle)
 
@@ -382,6 +404,27 @@ def _validate_args(args, parser):
             "Live mode requires the curses module, which is not available."
         )
 
+    # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
+    if args.async_aware:
+        issues = []
+        if args.native:
+            issues.append("--native")
+        if not args.gc:
+            issues.append("--no-gc")
+        if hasattr(args, 'mode') and args.mode != "wall":
+            issues.append(f"--mode={args.mode}")
+        if hasattr(args, 'all_threads') and args.all_threads:
+            issues.append("--all-threads")
+        if issues:
+            parser.error(
+                f"Options {', '.join(issues)} are incompatible with --async-aware. "
+                "Async-aware profiling uses task-based stack reconstruction."
+            )
+
+    # --async-mode requires --async-aware
+    if hasattr(args, 'async_mode') and args.async_mode != "running" and not args.async_aware:
+        parser.error("--async-mode requires --async-aware to be enabled.")
+
     # Live mode is incompatible with format options
     if hasattr(args, 'live') and args.live:
         if args.format != "pstats":
@@ -411,6 +454,13 @@ def _validate_args(args, parser):
         parser.error(
             "--mode option is incompatible with --gecko. "
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
+        )
+
+    # Validate --opcodes is only used with compatible formats
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
+    if args.opcodes and args.format not in opcodes_compatible_formats:
+        parser.error(
+            f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
         )
 
     # Validate pstats-specific options are only used with pstats format
@@ -560,7 +610,7 @@ def _handle_attach(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Sample the process
     collector = sample(
@@ -570,8 +620,10 @@ def _handle_attach(args):
         all_threads=args.all_threads,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_mode if args.async_aware else None,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
     # Handle output
@@ -607,7 +659,7 @@ def _handle_run(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Profile the subprocess
     try:
@@ -618,8 +670,10 @@ def _handle_run(args):
             all_threads=args.all_threads,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
 
         # Handle output
@@ -650,6 +704,8 @@ def _handle_live_attach(args, pid):
         limit=20,  # Default limit
         pid=pid,
         mode=mode,
+        opcodes=args.opcodes,
+        async_aware=args.async_mode if args.async_aware else None,
     )
 
     # Sample in live mode
@@ -660,8 +716,10 @@ def _handle_live_attach(args, pid):
         all_threads=args.all_threads,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_mode if args.async_aware else None,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
 
@@ -689,6 +747,8 @@ def _handle_live_run(args):
         limit=20,  # Default limit
         pid=process.pid,
         mode=mode,
+        opcodes=args.opcodes,
+        async_aware=args.async_mode if args.async_aware else None,
     )
 
     # Profile the subprocess in live mode
@@ -700,8 +760,10 @@ def _handle_live_run(args):
             all_threads=args.all_threads,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
     finally:
         # Clean up the subprocess

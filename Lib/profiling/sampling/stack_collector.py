@@ -7,7 +7,8 @@ import linecache
 import os
 
 from ._css_utils import get_combined_css
-from .collector import Collector
+from .collector import Collector, extract_lineno
+from .opcode_utils import get_opcode_mapping
 from .string_table import StringTable
 
 
@@ -17,10 +18,18 @@ class StackTraceCollector(Collector):
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=False):
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
-            if not frames:
-                continue
-            self.process_frames(frames, thread_id)
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            # Async-aware mode: process async task frames
+            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
+                if not frames:
+                    continue
+                self.process_frames(frames, thread_id)
+        else:
+            # Sync-only mode
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if not frames:
+                    continue
+                self.process_frames(frames, thread_id)
 
     def process_frames(self, frames, thread_id):
         pass
@@ -32,7 +41,11 @@ class CollapsedStackCollector(StackTraceCollector):
         self.stack_counter = collections.Counter()
 
     def process_frames(self, frames, thread_id):
-        call_tree = tuple(reversed(frames))
+        # Extract only (filename, lineno, funcname) - opcode not needed for collapsed stacks
+        # frame is (filename, location, funcname, opcode)
+        call_tree = tuple(
+            (f[0], extract_lineno(f[1]), f[2]) for f in reversed(frames)
+        )
         self.stack_counter[(call_tree, thread_id)] += 1
 
     def export(self, filename):
@@ -205,6 +218,11 @@ class FlamegraphCollector(StackTraceCollector):
                     source_indices = [self._string_table.intern(line) for line in source]
                     child_entry["source"] = source_indices
 
+                # Include opcode data if available
+                opcodes = node.get("opcodes", {})
+                if opcodes:
+                    child_entry["opcodes"] = dict(opcodes)
+
                 # Recurse
                 child_entry["children"] = convert_children(
                     node["children"], min_samples
@@ -251,6 +269,9 @@ class FlamegraphCollector(StackTraceCollector):
                 **stats
             }
 
+        # Build opcode mapping for JS
+        opcode_mapping = get_opcode_mapping()
+
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
             main_child = root_children[0]
@@ -265,6 +286,7 @@ class FlamegraphCollector(StackTraceCollector):
             }
             main_child["threads"] = sorted(list(self._all_threads))
             main_child["strings"] = self._string_table.get_strings()
+            main_child["opcode_mapping"] = opcode_mapping
             return main_child
 
         return {
@@ -277,27 +299,41 @@ class FlamegraphCollector(StackTraceCollector):
                 "per_thread_stats": per_thread_stats_with_pct
             },
             "threads": sorted(list(self._all_threads)),
-            "strings": self._string_table.get_strings()
+            "strings": self._string_table.get_strings(),
+            "opcode_mapping": opcode_mapping
         }
 
     def process_frames(self, frames, thread_id):
-        # Reverse to root->leaf
-        call_tree = reversed(frames)
+        """Process stack frames into flamegraph tree structure.
+
+        Args:
+            frames: List of (filename, location, funcname, opcode) tuples in
+                    leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
+                    opcode is None if not gathered.
+            thread_id: Thread ID for this stack trace
+        """
+        # Reverse to root->leaf order for tree building
         self._root["samples"] += 1
         self._total_samples += 1
         self._root["threads"].add(thread_id)
         self._all_threads.add(thread_id)
 
         current = self._root
-        for func in call_tree:
+        for filename, location, funcname, opcode in reversed(frames):
+            lineno = extract_lineno(location)
+            func = (filename, lineno, funcname)
             func = self._func_intern.setdefault(func, func)
-            children = current["children"]
-            node = children.get(func)
+
+            node = current["children"].get(func)
             if node is None:
-                node = {"samples": 0, "children": {}, "threads": set()}
-                children[func] = node
+                node = {"samples": 0, "children": {}, "threads": set(), "opcodes": collections.Counter()}
+                current["children"][func] = node
             node["samples"] += 1
             node["threads"].add(thread_id)
+
+            if opcode is not None:
+                node["opcodes"][opcode] += 1
+
             current = node
 
     def _get_source_lines(self, func):
@@ -344,11 +380,11 @@ class FlamegraphCollector(StackTraceCollector):
             "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
         )
 
-        png_path = assets_dir / "python-logo-only.png"
+        png_path = assets_dir / "tachyon-logo.png"
         b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
 
         # Let CSS control size; keep markup simple
-        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo"/>'
+        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo"/>'
         html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
 
         d3_js = d3_path.read_text(encoding="utf-8")
