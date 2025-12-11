@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pegen import grammar
 from pegen.grammar import Alt, GrammarVisitor, Rhs, Rule
 
@@ -11,7 +9,7 @@ class ValidationError(Exception):
 class GrammarValidator(GrammarVisitor):
     def __init__(self, grammar: grammar.Grammar) -> None:
         self.grammar = grammar
-        self.rulename: Optional[str] = None
+        self.rulename: str | None = None
 
     def validate_rule(self, rulename: str, node: Rule) -> None:
         self.rulename = rulename

@@ -1,3 +1,4 @@
+import importlib
 import io
 import itertools
 import os
@@ -9,10 +10,10 @@ import subprocess
 import sys
 import tempfile
 from pkgutil import ModuleInfo
-from unittest import TestCase, skipUnless, skipIf
+from unittest import TestCase, skipUnless, skipIf, SkipTest
 from unittest.mock import patch
 from test.support import force_not_colorized, make_clean_env, Py_DEBUG
-from test.support import SHORT_TIMEOUT, STDLIB_DIR
+from test.support import has_subprocess_support, SHORT_TIMEOUT, STDLIB_DIR
 from test.support.import_helper import import_module
 from test.support.os_helper import EnvironmentVarGuard, unlink
 
@@ -26,9 +27,16 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
-from _pyrepl._module_completer import ImportParser, ModuleCompleter
-from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
-                              _ReadlineWrapper)
+from _pyrepl._module_completer import (
+    ImportParser,
+    ModuleCompleter,
+    HARDCODED_SUBMODULES,
+)
+from _pyrepl.readline import (
+    ReadlineAlikeReader,
+    ReadlineConfig,
+    _ReadlineWrapper,
+)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
@@ -38,6 +46,10 @@ except ImportError:
 
 
 class ReplTestCase(TestCase):
+    def setUp(self):
+        if not has_subprocess_support:
+            raise SkipTest("test module requires subprocess")
+
     def run_repl(
         self,
         repl_input: str | list[str],
@@ -47,6 +59,7 @@ class ReplTestCase(TestCase):
         cwd: str | None = None,
         skip: bool = False,
         timeout: float = SHORT_TIMEOUT,
+        exit_on_output: str | None = None,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -60,6 +73,7 @@ class ReplTestCase(TestCase):
                 cwd=cwd,
                 skip=skip,
                 timeout=timeout,
+                exit_on_output=exit_on_output,
             )
         finally:
             if temp_dir is not None:
@@ -74,6 +88,7 @@ class ReplTestCase(TestCase):
         cwd: str,
         skip: bool,
         timeout: float,
+        exit_on_output: str | None,
     ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
@@ -119,6 +134,11 @@ class ReplTestCase(TestCase):
             except OSError:
                 break
             output.append(data)
+            if exit_on_output is not None:
+                output = ["".join(output)]
+                if exit_on_output in output[0]:
+                    process.kill()
+                    break
         else:
             os.close(master_fd)
             process.kill()
@@ -918,7 +938,13 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # interfere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
         self._saved_sys_path = sys.path
+        sys.path = [lib_path]
 
     def tearDown(self):
         sys.path = self._saved_sys_path
@@ -932,14 +958,6 @@ class TestPyReplModuleCompleter(TestCase):
         return reader
 
     def test_import_completions(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
@@ -1002,14 +1020,6 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_builtin_completion_top_level(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import bui\t\n", "import builtins"),
             ("from bui\t\n", "from builtins"),
@@ -1051,6 +1061,45 @@ class TestPyReplModuleCompleter(TestCase):
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, expected)
+
+    def test_no_fallback_on_regular_completion(self):
+        cases = (
+            ("import pri\t\n", "import pri"),
+            ("from pri\t\n", "from pri"),
+            ("from typing import Na\t\n", "from typing import Na"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_hardcoded_stdlib_submodules(self):
+        cases = (
+            ("import collections.\t\n", "import collections.abc"),
+            ("from os import \t\n", "from os import path"),
+            ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
+            ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_hardcoded_stdlib_submodules_not_proposed_if_local_import(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+            with patch.object(sys, "path", [dir, *sys.path]):
+                events = code_to_events("import collections.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, "import collections.foo")
 
     def test_get_path_and_prefix(self):
         cases = (
@@ -1179,6 +1228,19 @@ class TestPyReplModuleCompleter(TestCase):
             actual = parser.parse()
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
+
+
+class TestHardcodedSubmodules(TestCase):
+    def test_hardcoded_stdlib_submodules_are_importable(self):
+        for parent_path, submodules in HARDCODED_SUBMODULES.items():
+            for module_name in submodules:
+                path = f"{parent_path}.{module_name}"
+                with self.subTest(path=path):
+                    # We can't use importlib.util.find_spec here,
+                    # since some hardcoded submodules parents are
+                    # not proper packages
+                    importlib.import_module(path)
+
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
@@ -1344,6 +1406,9 @@ class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
+        # Ignore PYTHONSTARTUP to not pollute the output
+        # with an unrelated traceback. See GH-137568.
+        env.pop('PYTHONSTARTUP', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -1359,6 +1424,7 @@ class TestMain(ReplTestCase):
         # Cleanup from PYTHON* variables to isolate from local
         # user settings, see #121359.  Such variables should be
         # added later in test methods to patched os.environ.
+        super().setUp()
         patcher = patch('os.environ', new=make_clean_env())
         self.addCleanup(patcher.stop)
         patcher.start()
@@ -1660,6 +1726,17 @@ class TestMain(ReplTestCase):
         self.assertEqual(exit_code, 0)
         self.assertNotIn("TypeError", output)
 
+    @force_not_colorized
+    def test_non_string_suggestion_candidates(self):
+        commands = ("import runpy\n"
+                    "runpy._run_module_code('blech', {0: '', 'bluch': ''}, '')\n"
+                    "exit()\n")
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("all elements in 'candidates' must be strings", output)
+        self.assertIn("bluch", output)
+
     def test_readline_history_file(self):
         # skip, if readline module is not available
         readline = import_module('readline')
@@ -1690,18 +1767,24 @@ class TestMain(ReplTestCase):
 
             commands = "1\n2\n3\nexit()\n"
             output, exit_code = self.run_repl(commands, env=env, skip=True)
+            self.assertEqual(exit_code, 0)
 
-            commands = "spam\nimport time\ntime.sleep(1000)\nquit\n"
-            try:
-                self.run_repl(commands, env=env, timeout=3)
-            except AssertionError:
-                pass
+            # Run until "0xcafe" is printed (as "51966") and then kill the
+            # process to simulate a crash. Note that the output also includes
+            # the echoed input commands.
+            commands = "spam\nimport time\n0xcafe\ntime.sleep(1000)\nquit\n"
+            output, exit_code = self.run_repl(commands, env=env,
+                                              exit_on_output="51966")
+            self.assertNotEqual(exit_code, 0)
 
             history = pathlib.Path(hfile.name).read_text()
             self.assertIn("2", history)
             self.assertIn("exit()", history)
             self.assertIn("spam", history)
             self.assertIn("import time", history)
+            # History is written after each command's output is printed to the
+            # console, so depending on how quickly the process is killed,
+            # the last command may or may not be written to the history file.
             self.assertNotIn("sleep", history)
             self.assertNotIn("quit", history)
 
@@ -1734,3 +1817,97 @@ class TestMain(ReplTestCase):
         output, _ = self.run_repl("1\n1+2\nexit()\n", cmdline_args=['-Xshowrefcount'], env=env)
         matches = re.findall(r'\[-?\d+ refs, \d+ blocks\]', output)
         self.assertEqual(len(matches), 3)
+
+    def test_detect_pip_usage_in_repl(self):
+        for pip_cmd in ("pip", "pip3", "python -m pip", "python3 -m pip"):
+            with self.subTest(pip_cmd=pip_cmd):
+                output, exit_code = self.run_repl([f"{pip_cmd} install sampleproject", "exit"])
+                self.assertIn("SyntaxError", output)
+                hint = (
+                    "The Python package manager (pip) can only be used"
+                    " outside of the Python REPL"
+                )
+                self.assertIn(hint, output)
+
+class TestPyReplCtrlD(TestCase):
+    """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
+
+    Ctrl+D should:
+    - Exit on empty buffer (raises EOFError)
+    - Delete character when cursor is in middle of line
+    - Perform no operation when cursor is at end of line without newline
+    - Exit multiline mode when cursor is at end with trailing newline
+    - Run code up to that point when pressed on blank line with preceding lines
+    """
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_ctrl_d_empty_line(self):
+        """Test that pressing Ctrl+D on empty line exits the program"""
+        events = [
+            Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+        ]
+        reader = self.prepare_reader(events)
+        with self.assertRaises(EOFError):
+            multiline_input(reader)
+
+    def test_ctrl_d_multiline_with_new_line(self):
+        """Test that pressing Ctrl+D in multiline mode with trailing newline exits multiline mode"""
+        events = itertools.chain(
+            code_to_events("def f():\n    pass\n"),  # Enter multiline mode with trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertTrue(reader.finished)
+        self.assertEqual("def f():\n    pass\n", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_middle_of_line(self):
+        """Test that pressing Ctrl+D in multiline mode with cursor in middle deletes character"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello world"),  # Enter multiline mode
+            [
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))
+            ] * 5,  # move cursor to 'w' in "world"
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ], # Ctrl+D should delete 'w'
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello orld", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_end_of_line_no_newline(self):
+        """Test that pressing Ctrl+D at end of line without newline performs no operation"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello"),  # Enter multiline mode, no trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ],  # Ctrl+D should be no-op
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_middle_of_line(self):
+        """Test that pressing Ctrl+D in single line mode deletes current character"""
+        events = itertools.chain(
+            code_to_events("hello"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],  # move left
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],    # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hell", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_end_no_newline(self):
+        """Test that pressing Ctrl+D at end of single line without newline does nothing"""
+        events = itertools.chain(
+            code_to_events("hello"),  # cursor at end of line
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],  # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hello", "".join(reader.buffer))

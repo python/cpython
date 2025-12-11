@@ -7,7 +7,6 @@
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
 #include "pycore_stats.h"
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -30,17 +29,19 @@ we often skip in-between states for convenience:
    |     |
 NULL     |
 |        |                <- Anything below this level is an object.
-|        NON_NULL
-|        |      |         <- Anything below this level has a known type version.
-| TYPE_VERSION  |
-| |             |         <- Anything below this level has a known type.
-| KNOWN_CLASS   |
-| |         |   |         <- Anything below this level has a known truthiness.
-| |         |  TRUTHINESS
-| |         |  |
-| TUPLE     |  |
-|     |     |  |          <- Anything below this level is a known constant.
-|    KNOWN_VALUE
+|        NON_NULL-+
+|          |      |       <- Anything below this level has a known type version.
+|    TYPE_VERSION |
+|    |            |       <- Anything below this level has a known type.
+|    KNOWN_CLASS  |
+|    |  |  |   |  |
+|    |  | INT* |  |
+|    |  |  |   |  |       <- Anything below this level has a known truthiness.
+|    |  |  |   |  TRUTHINESS
+|    |  |  |   |  |
+| TUPLE |  |   |  |
+|    |  |  |   |  |       <- Anything below this level is a known constant.
+|    KNOWN_VALUE--+
 |    |                    <- Anything below this level is unreachable.
 BOTTOM
 
@@ -51,6 +52,8 @@ result of a truth test, which would allow us to narrow the symbol to KNOWN_VALUE
 (with a value of integer zero). If at any point we encounter a float guard on
 the same symbol, that would be a contradiction, and the symbol would be set to
 BOTTOM (indicating that the code is unreachable).
+
+INT* is a limited range int, currently a "compact" int.
 
 */
 
@@ -88,6 +91,12 @@ out_of_space(JitOptContext *ctx)
     return &NO_SPACE_SYMBOL;
 }
 
+JitOptRef
+out_of_space_ref(JitOptContext *ctx)
+{
+    return PyJitRef_Wrap(out_of_space(ctx));
+}
+
 static JitOptSymbol *
 sym_new(JitOptContext *ctx)
 {
@@ -98,7 +107,7 @@ sym_new(JitOptContext *ctx)
         return NULL;
     }
     ctx->t_arena.ty_curr_number++;
-    self->tag = JIT_SYM_UNKNOWN_TAG;
+    self->tag = JIT_SYM_UNKNOWN_TAG;;
     return self;
 }
 
@@ -117,25 +126,28 @@ sym_set_bottom(JitOptContext *ctx, JitOptSymbol *sym)
 }
 
 bool
-_Py_uop_sym_is_bottom(JitOptSymbol *sym)
+_Py_uop_sym_is_bottom(JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return sym->tag == JIT_SYM_BOTTOM_TAG;
 }
 
 bool
-_Py_uop_sym_is_not_null(JitOptSymbol *sym) {
+_Py_uop_sym_is_not_null(JitOptRef ref) {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     return sym->tag == JIT_SYM_NON_NULL_TAG || sym->tag > JIT_SYM_BOTTOM_TAG;
 }
 
 bool
-_Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_is_const(JitOptContext *ctx, JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return true;
     }
     if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
         JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-        int truthiness = _Py_uop_sym_truthiness(ctx, value);
+        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_Wrap(value));
         if (truthiness < 0) {
             return false;
         }
@@ -146,21 +158,22 @@ _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym)
 }
 
 bool
-_Py_uop_sym_is_null(JitOptSymbol *sym)
+_Py_uop_sym_is_null(JitOptRef ref)
 {
-    return sym->tag == JIT_SYM_NULL_TAG;
+    return PyJitRef_Unwrap(ref)->tag == JIT_SYM_NULL_TAG;
 }
 
 
 PyObject *
-_Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return sym->value.value;
     }
     if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
         JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-        int truthiness = _Py_uop_sym_truthiness(ctx, value);
+        int truthiness = _Py_uop_sym_truthiness(ctx, PyJitRef_Wrap(value));
         if (truthiness < 0) {
             return NULL;
         }
@@ -171,9 +184,41 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym)
     return NULL;
 }
 
-void
-_Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
+_PyStackRef
+_Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym)
 {
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectBorrow(const_val);
+}
+
+/*
+ Indicates whether the constant is safe to constant evaluate
+ (without side effects).
+ */
+bool
+_Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
+{
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return false;
+    }
+    if (_PyLong_CheckExactAndCompact(const_val)) {
+        return true;
+    }
+    PyTypeObject *typ = Py_TYPE(const_val);
+    return (typ == &PyUnicode_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type);
+}
+
+void
+_Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -218,15 +263,21 @@ _Py_uop_sym_set_type(JitOptContext *ctx, JitOptSymbol *sym, PyTypeObject *typ)
                 sym_set_bottom(ctx, sym);
             }
             return;
+        case JIT_SYM_COMPACT_INT:
+            if (typ != &PyLong_Type) {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
     }
 }
 
 bool
-_Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int version)
+_Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptRef ref, unsigned int version)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     PyTypeObject *type = _PyType_LookupByVersion(version);
     if (type) {
-        _Py_uop_sym_set_type(ctx, sym, type);
+        _Py_uop_sym_set_type(ctx, ref, type);
     }
     JitSymType tag = sym->tag;
     switch(tag) {
@@ -274,13 +325,20 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int
                 return false;
             }
             return true;
+        case JIT_SYM_COMPACT_INT:
+            if (version != PyLong_Type.tp_version_tag) {
+                sym_set_bottom(ctx, sym);
+                return false;
+            }
+            return true;
     }
     Py_UNREACHABLE();
 }
 
 void
-_Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val)
+_Py_uop_sym_set_const(JitOptContext *ctx, JitOptRef ref, PyObject *const_val)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -301,10 +359,10 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             return;
         case JIT_SYM_TUPLE_TAG:
             if (PyTuple_CheckExact(const_val)) {
-                Py_ssize_t len = _Py_uop_sym_tuple_length(sym);
+                Py_ssize_t len = _Py_uop_sym_tuple_length(ref);
                 if (len == PyTuple_GET_SIZE(const_val)) {
                     for (Py_ssize_t i = 0; i < len; i++) {
-                        JitOptSymbol *sym_item = _Py_uop_sym_tuple_getitem(ctx, sym, i);
+                        JitOptRef sym_item = _Py_uop_sym_tuple_getitem(ctx, ref, i);
                         PyObject *item = PyTuple_GET_ITEM(const_val, i);
                         _Py_uop_sym_set_const(ctx, sym_item, item);
                     }
@@ -329,13 +387,14 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             return;
         case JIT_SYM_TRUTHINESS_TAG:
             if (!PyBool_Check(const_val) ||
-                (_Py_uop_sym_is_const(ctx, sym) &&
-                 _Py_uop_sym_get_const(ctx, sym) != const_val))
+                (_Py_uop_sym_is_const(ctx, ref) &&
+                 _Py_uop_sym_get_const(ctx, ref) != const_val))
             {
                 sym_set_bottom(ctx, sym);
                 return;
             }
-            JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
+            JitOptRef value = PyJitRef_Wrap(
+                allocation_base(ctx) + sym->truthiness.value);
             PyTypeObject *type = _Py_uop_sym_get_type(value);
             if (const_val == (sym->truthiness.invert ? Py_False : Py_True)) {
                 // value is truthy. This is only useful for bool:
@@ -356,12 +415,21 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             // TODO: More types (GH-130415)!
             make_const(sym, const_val);
             return;
+        case JIT_SYM_COMPACT_INT:
+            if (_PyLong_CheckExactAndCompact(const_val)) {
+                make_const(sym, const_val);
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
     }
 }
 
 void
-_Py_uop_sym_set_null(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_set_null(JitOptContext *ctx, JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
         sym->tag = JIT_SYM_NULL_TAG;
     }
@@ -371,8 +439,9 @@ _Py_uop_sym_set_null(JitOptContext *ctx, JitOptSymbol *sym)
 }
 
 void
-_Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_UNKNOWN_TAG) {
         sym->tag = JIT_SYM_NON_NULL_TAG;
     }
@@ -381,66 +450,79 @@ _Py_uop_sym_set_non_null(JitOptContext *ctx, JitOptSymbol *sym)
     }
 }
 
-
-JitOptSymbol *
+JitOptRef
 _Py_uop_sym_new_unknown(JitOptContext *ctx)
 {
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
-    return res;
+    return PyJitRef_Wrap(res);
 }
 
-JitOptSymbol *
+JitOptRef
 _Py_uop_sym_new_not_null(JitOptContext *ctx)
 {
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
     res->tag = JIT_SYM_NON_NULL_TAG;
-    return res;
+    return PyJitRef_Wrap(res);
 }
 
-JitOptSymbol *
+JitOptRef
 _Py_uop_sym_new_type(JitOptContext *ctx, PyTypeObject *typ)
 {
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
-    _Py_uop_sym_set_type(ctx, res, typ);
-    return res;
+    JitOptRef ref = PyJitRef_Wrap(res);
+    _Py_uop_sym_set_type(ctx, ref, typ);
+    return ref;
 }
 
 // Adds a new reference to const_val, owned by the symbol.
-JitOptSymbol *
+JitOptRef
 _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
-    _Py_uop_sym_set_const(ctx, res, const_val);
+    JitOptRef ref = PyJitRef_Wrap(res);
+    _Py_uop_sym_set_const(ctx, ref, const_val);
+    return ref;
+}
+
+JitOptRef
+_Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    JitOptRef res = _Py_uop_sym_new_const(ctx, const_val);
+    // Decref once because sym_new_const increfs it.
+    Py_DECREF(const_val);
     return res;
 }
 
-JitOptSymbol *
+JitOptRef
 _Py_uop_sym_new_null(JitOptContext *ctx)
 {
     JitOptSymbol *null_sym = sym_new(ctx);
     if (null_sym == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
-    _Py_uop_sym_set_null(ctx, null_sym);
-    return null_sym;
+    JitOptRef ref = PyJitRef_Wrap(null_sym);
+    _Py_uop_sym_set_null(ctx, ref);
+    return ref;
 }
 
 PyTypeObject *
-_Py_uop_sym_get_type(JitOptSymbol *sym)
+_Py_uop_sym_get_type(JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -458,13 +540,17 @@ _Py_uop_sym_get_type(JitOptSymbol *sym)
             return &PyTuple_Type;
         case JIT_SYM_TRUTHINESS_TAG:
             return &PyBool_Type;
+        case JIT_SYM_COMPACT_INT:
+            return &PyLong_Type;
+
     }
     Py_UNREACHABLE();
 }
 
 unsigned int
-_Py_uop_sym_get_type_version(JitOptSymbol *sym)
+_Py_uop_sym_get_type_version(JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     JitSymType tag = sym->tag;
     switch(tag) {
         case JIT_SYM_NULL_TAG:
@@ -482,38 +568,42 @@ _Py_uop_sym_get_type_version(JitOptSymbol *sym)
             return PyTuple_Type.tp_version_tag;
         case JIT_SYM_TRUTHINESS_TAG:
             return PyBool_Type.tp_version_tag;
+        case JIT_SYM_COMPACT_INT:
+            return PyLong_Type.tp_version_tag;
     }
     Py_UNREACHABLE();
 }
 
 bool
-_Py_uop_sym_has_type(JitOptSymbol *sym)
+_Py_uop_sym_has_type(JitOptRef sym)
 {
     return _Py_uop_sym_get_type(sym) != NULL;
 }
 
 bool
-_Py_uop_sym_matches_type(JitOptSymbol *sym, PyTypeObject *typ)
+_Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
     return _Py_uop_sym_get_type(sym) == typ;
 }
 
 bool
-_Py_uop_sym_matches_type_version(JitOptSymbol *sym, unsigned int version)
+_Py_uop_sym_matches_type_version(JitOptRef sym, unsigned int version)
 {
     return _Py_uop_sym_get_type_version(sym) == version;
 }
 
 int
-_Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym)
+_Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     switch(sym->tag) {
         case JIT_SYM_NULL_TAG:
         case JIT_SYM_TYPE_VERSION_TAG:
         case JIT_SYM_BOTTOM_TAG:
         case JIT_SYM_NON_NULL_TAG:
         case JIT_SYM_UNKNOWN_TAG:
+        case JIT_SYM_COMPACT_INT:
             return -1;
         case JIT_SYM_KNOWN_CLASS_TAG:
             /* TODO :
@@ -527,7 +617,8 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym)
         case JIT_SYM_TRUTHINESS_TAG:
             ;
             JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
-            int truthiness = _Py_uop_sym_truthiness(ctx, value);
+            int truthiness = _Py_uop_sym_truthiness(ctx,
+                                                    PyJitRef_Wrap(value));
             if (truthiness < 0) {
                 return truthiness;
             }
@@ -553,12 +644,12 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym)
     return -1;
 }
 
-JitOptSymbol *
-_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
+JitOptRef
+_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
 {
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
     if (size > MAX_SYMBOLIC_TUPLE_SIZE) {
         res->tag = JIT_SYM_KNOWN_CLASS_TAG;
@@ -568,15 +659,16 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args)
         res->tag = JIT_SYM_TUPLE_TAG;
         res->tuple.length = size;
         for (int i = 0; i < size; i++) {
-            res->tuple.items[i] = (uint16_t)(args[i] - allocation_base(ctx));
+            res->tuple.items[i] = (uint16_t)(PyJitRef_Unwrap(args[i]) - allocation_base(ctx));
         }
     }
-    return res;
+    return PyJitRef_Wrap(res);
 }
 
-JitOptSymbol *
-_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item)
+JitOptRef
+_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, Py_ssize_t item)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     assert(item >= 0);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         PyObject *tuple = sym->value.value;
@@ -585,14 +677,15 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item)
         }
     }
     else if (sym->tag == JIT_SYM_TUPLE_TAG && item < sym->tuple.length) {
-        return allocation_base(ctx) + sym->tuple.items[item];
+        return PyJitRef_Wrap(allocation_base(ctx) + sym->tuple.items[item]);
     }
     return _Py_uop_sym_new_not_null(ctx);
 }
 
-int
-_Py_uop_sym_tuple_length(JitOptSymbol *sym)
+Py_ssize_t
+_Py_uop_sym_tuple_length(JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         PyObject *tuple = sym->value.value;
         if (PyTuple_CheckExact(tuple)) {
@@ -607,7 +700,7 @@ _Py_uop_sym_tuple_length(JitOptSymbol *sym)
 
 // Return true if known to be immortal.
 bool
-_Py_uop_sym_is_immortal(JitOptSymbol *sym)
+_Py_uop_symbol_is_immortal(JitOptSymbol *sym)
 {
     if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
         return _Py_IsImmortal(sym->value.value);
@@ -615,25 +708,84 @@ _Py_uop_sym_is_immortal(JitOptSymbol *sym)
     if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
         return sym->cls.type == &PyBool_Type;
     }
-    if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
-        return true;
-    }
     return false;
 }
 
-JitOptSymbol *
-_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy)
+bool
+_Py_uop_sym_is_compact_int(JitOptRef ref)
 {
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    if (sym->tag == JIT_SYM_KNOWN_VALUE_TAG) {
+        return (bool)_PyLong_CheckExactAndCompact(sym->value.value);
+    }
+    return sym->tag == JIT_SYM_COMPACT_INT;
+}
+
+bool
+_Py_uop_sym_is_immortal(JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    return _Py_uop_symbol_is_immortal(sym);
+}
+
+void
+_Py_uop_sym_set_compact_int(JitOptContext *ctx, JitOptRef ref)
+{
+    JitOptSymbol *sym = PyJitRef_Unwrap(ref);
+    JitSymType tag = sym->tag;
+    switch(tag) {
+        case JIT_SYM_NULL_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_KNOWN_CLASS_TAG:
+            if (sym->cls.type == &PyLong_Type) {
+                sym->tag = JIT_SYM_COMPACT_INT;
+            } else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TYPE_VERSION_TAG:
+            if (sym->version.version == PyLong_Type.tp_version_tag) {
+                sym->tag = JIT_SYM_COMPACT_INT;
+            }
+            else {
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_KNOWN_VALUE_TAG:
+            if (!_PyLong_CheckExactAndCompact(sym->value.value)) {
+                Py_CLEAR(sym->value.value);
+                sym_set_bottom(ctx, sym);
+            }
+            return;
+        case JIT_SYM_TUPLE_TAG:
+        case JIT_SYM_TRUTHINESS_TAG:
+            sym_set_bottom(ctx, sym);
+            return;
+        case JIT_SYM_BOTTOM_TAG:
+        case JIT_SYM_COMPACT_INT:
+            return;
+        case JIT_SYM_NON_NULL_TAG:
+        case JIT_SYM_UNKNOWN_TAG:
+            sym->tag = JIT_SYM_COMPACT_INT;
+            return;
+    }
+}
+
+JitOptRef
+_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef ref, bool truthy)
+{
+    JitOptSymbol *value = PyJitRef_Unwrap(ref);
     // It's clearer to invert this in the signature:
     bool invert = !truthy;
     if (value->tag == JIT_SYM_TRUTHINESS_TAG && value->truthiness.invert == invert) {
-        return value;
+        return ref;
     }
     JitOptSymbol *res = sym_new(ctx);
     if (res == NULL) {
-        return out_of_space(ctx);
+        return out_of_space_ref(ctx);
     }
-    int truthiness = _Py_uop_sym_truthiness(ctx, value);
+    int truthiness = _Py_uop_sym_truthiness(ctx, ref);
     if (truthiness < 0) {
         res->tag = JIT_SYM_TRUTHINESS_TAG;
         res->truthiness.invert = invert;
@@ -642,7 +794,18 @@ _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy)
     else {
         make_const(res, (truthiness ^ invert) ? Py_True : Py_False);
     }
-    return res;
+    return PyJitRef_Wrap(res);
+}
+
+JitOptRef
+_Py_uop_sym_new_compact_int(JitOptContext *ctx)
+{
+    JitOptSymbol *sym = sym_new(ctx);
+    if (sym == NULL) {
+        return out_of_space_ref(ctx);
+    }
+    sym->tag = JIT_SYM_COMPACT_INT;
+    return PyJitRef_Wrap(sym);
 }
 
 // 0 on success, -1 on error.
@@ -651,18 +814,26 @@ _Py_uop_frame_new(
     JitOptContext *ctx,
     PyCodeObject *co,
     int curr_stackentries,
-    JitOptSymbol **args,
+    JitOptRef *args,
     int arg_len)
 {
-    assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
+    if (ctx->curr_frame_depth >= MAX_ABSTRACT_FRAME_DEPTH) {
+        ctx->done = true;
+        ctx->out_of_space = true;
+        OPT_STAT_INC(optimizer_frame_overflow);
+        return NULL;
+    }
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
-
+    frame->code = co;
     frame->stack_len = co->co_stacksize;
     frame->locals_len = co->co_nlocalsplus;
 
     frame->locals = ctx->n_consumed;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
+    frame->globals_checked_version = 0;
+    frame->globals_watched = false;
+    frame->func = NULL;
     ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         ctx->done = true;
@@ -676,14 +847,14 @@ _Py_uop_frame_new(
     }
 
     for (int i = arg_len; i < co->co_nlocalsplus; i++) {
-        JitOptSymbol *local = _Py_uop_sym_new_unknown(ctx);
+        JitOptRef local = _Py_uop_sym_new_unknown(ctx);
         frame->locals[i] = local;
     }
 
 
     // Initialize the stack as well
     for (int i = 0; i < curr_stackentries; i++) {
-        JitOptSymbol *stackvar = _Py_uop_sym_new_unknown(ctx);
+        JitOptRef stackvar = _Py_uop_sym_new_unknown(ctx);
         frame->stack[i] = stackvar;
     }
 
@@ -709,12 +880,12 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
 void
 _Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
-    static_assert(sizeof(JitOptSymbol) <= 2 * sizeof(uint64_t), "JitOptSymbol has grown");
+    static_assert(sizeof(JitOptSymbol) <= 3 * sizeof(uint64_t), "JitOptSymbol has grown");
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
     for (int i = 0 ; i < MAX_ABSTRACT_INTERP_SIZE; i++) {
-        ctx->locals_and_stack[i] = NULL;
+        ctx->locals_and_stack[i] = PyJitRef_NULL;
     }
 #endif
 
@@ -724,16 +895,53 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
 
     // Frame setup
     ctx->curr_frame_depth = 0;
+
+    // Ctx signals.
+    // Note: this must happen before frame_new, as it might override
+    // the result should frame_new set things to bottom.
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
+    ctx->builtins_watched = false;
 }
 
 int
-_Py_uop_frame_pop(JitOptContext *ctx)
+_Py_uop_frame_pop(JitOptContext *ctx, PyCodeObject *co, int curr_stackentries)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
+
     ctx->curr_frame_depth--;
-    assert(ctx->curr_frame_depth >= 1);
-    ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+
+    if (ctx->curr_frame_depth >= 1) {
+        ctx->frame = &ctx->frames[ctx->curr_frame_depth - 1];
+
+        // We returned to the correct code. Nothing to do here.
+        if (co == ctx->frame->code) {
+            return 0;
+        }
+        // Else: the code we recorded doesn't match the code we *think* we're
+        // returning to. We could trace anything, we can't just return to the
+        // old frame. We have to restore what the tracer recorded
+        // as the traced next frame.
+        // Remove the current frame, and later swap it out with the right one.
+        else {
+            ctx->curr_frame_depth--;
+        }
+    }
+    // Else: trace stack underflow.
+
+    // This handles swapping out frames.
+    assert(curr_stackentries >= 1);
+    // -1 to stackentries as we push to the stack our return value after this.
+    _Py_UOpsAbstractFrame *new_frame = _Py_uop_frame_new(ctx, co, curr_stackentries - 1, NULL, 0);
+    if (new_frame == NULL) {
+        ctx->done = true;
+        return 1;
+    }
+
+    ctx->curr_frame_depth++;
+    ctx->frame = new_frame;
 
     return 0;
 }
@@ -764,47 +972,48 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_init(ctx);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
+    PyObject *val_big = NULL;
     PyObject *tuple = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
-    JitOptSymbol *sym = _Py_uop_sym_new_unknown(ctx);
-    if (sym == NULL) {
+    JitOptRef ref = _Py_uop_sym_new_unknown(ctx);
+    if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "top is NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "top is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "top matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "top is a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "top as constant is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_bottom(sym), "top is bottom");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(ref), "top is NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(ref), "top is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(ref, &PyLong_Type), "top matches a type");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, ref), "top is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "top as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_bottom(ref), "top is bottom");
 
-    sym = make_bottom(ctx);
-    if (sym == NULL) {
+    ref = PyJitRef_Wrap(make_bottom(ctx));
+    if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "bottom is NULL is not false");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "bottom is not NULL is not false");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "bottom matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "bottom is a constant is not false");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "bottom as constant is not NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "bottom isn't bottom");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(ref), "bottom is NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(ref), "bottom is not NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(ref, &PyLong_Type), "bottom matches a type");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, ref), "bottom is a constant is not false");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "bottom as constant is not NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref), "bottom isn't bottom");
 
-    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
-    if (sym == NULL) {
+    ref = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int isn't not NULL");
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "int isn't int");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, sym), "int is a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "int as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(ref), "int is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(ref), "int isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyLong_Type), "int isn't int");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(ref, &PyFloat_Type), "int matches float");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(ctx, ref), "int is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "int as constant is not NULL");
 
-    _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(int and int) isn't int");
+    _Py_uop_sym_set_type(ctx, ref, &PyLong_Type);  // Should be a no-op
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyLong_Type), "(int and int) isn't int");
 
-    _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(int and float) isn't bottom");
+    _Py_uop_sym_set_type(ctx, ref, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref), "(int and float) isn't bottom");
 
     val_42 = PyLong_FromLong(42);
     assert(val_42 != NULL);
@@ -814,89 +1023,118 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     assert(val_43 != NULL);
     assert(_Py_IsImmortal(val_43));
 
-    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
-    if (sym == NULL) {
+    ref = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
-    _Py_uop_sym_set_const(ctx, sym, val_42);
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 1, "bool(42) is not True");
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "42 isn't an int");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "42 matches float");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym), "42 is not a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) != NULL, "42 as constant is NULL");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == val_42, "42 as constant isn't 42");
-    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "42 is not immortal");
+    _Py_uop_sym_set_const(ctx, ref, val_42);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 1, "bool(42) is not True");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(ref), "42 is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(ref), "42 isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyLong_Type), "42 isn't an int");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(ref, &PyFloat_Type), "42 matches float");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, ref), "42 is not a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) != NULL, "42 as constant is NULL");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == val_42, "42 as constant isn't 42");
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(ref), "42 is not immortal");
 
-    _Py_uop_sym_set_type(ctx, sym, &PyLong_Type);  // Should be a no-op
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 42) isn't an int");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == val_42, "(42 and 42) as constant isn't 42");
+    _Py_uop_sym_set_type(ctx, ref, &PyLong_Type);  // Should be a no-op
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyLong_Type), "(42 and 42) isn't an int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == val_42, "(42 and 42) as constant isn't 42");
 
-    _Py_uop_sym_set_type(ctx, sym, &PyFloat_Type);  // Should make it bottom
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
+    _Py_uop_sym_set_type(ctx, ref, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref), "(42 and float) isn't bottom");
 
-    sym = _Py_uop_sym_new_type(ctx, &PyBool_Type);
-    TEST_PREDICATE(_Py_uop_sym_is_immortal(sym), "a bool is not immortal");
+    ref = _Py_uop_sym_new_type(ctx, &PyBool_Type);
+    TEST_PREDICATE(_Py_uop_sym_is_immortal(ref), "a bool is not immortal");
 
-    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
-    if (sym == NULL) {
+    ref = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (PyJitRef_IsNull(ref)) {
         goto fail;
     }
-    _Py_uop_sym_set_const(ctx, sym, val_42);
-    _Py_uop_sym_set_const(ctx, sym, val_43);  // Should make it bottom
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
+    _Py_uop_sym_set_const(ctx, ref, val_42);
+    _Py_uop_sym_set_const(ctx, ref, val_43);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref), "(42 and 43) isn't bottom");
 
 
-    sym = _Py_uop_sym_new_const(ctx, Py_None);
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(None) is not False");
-    sym = _Py_uop_sym_new_const(ctx, Py_False);
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(False) is not False");
-    sym = _Py_uop_sym_new_const(ctx, PyLong_FromLong(0));
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "bool(0) is not False");
+    ref = _Py_uop_sym_new_const(ctx, Py_None);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 0, "bool(None) is not False");
+    ref = _Py_uop_sym_new_const(ctx, Py_False);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 0, "bool(False) is not False");
+    ref = _Py_uop_sym_new_const(ctx, PyLong_FromLong(0));
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 0, "bool(0) is not False");
 
-    JitOptSymbol *i1 = _Py_uop_sym_new_type(ctx, &PyFloat_Type);
-    JitOptSymbol *i2 = _Py_uop_sym_new_const(ctx, val_43);
-    JitOptSymbol *array[2] = { i1, i2 };
-    sym = _Py_uop_sym_new_tuple(ctx, 2, array);
+    JitOptRef i1 = _Py_uop_sym_new_type(ctx, &PyFloat_Type);
+    JitOptRef i2 = _Py_uop_sym_new_const(ctx, val_43);
+    JitOptRef array[2] = { i1, i2 };
+    ref = _Py_uop_sym_new_tuple(ctx, 2, array);
     TEST_PREDICATE(
-        _Py_uop_sym_matches_type(_Py_uop_sym_tuple_getitem(ctx, sym, 0), &PyFloat_Type),
+        _Py_uop_sym_matches_type(_Py_uop_sym_tuple_getitem(ctx, ref, 0), &PyFloat_Type),
         "tuple item does not match value used to create tuple"
     );
     TEST_PREDICATE(
-        _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, ref, 1)) == val_43,
         "tuple item does not match value used to create tuple"
     );
     PyObject *pair[2] = { val_42, val_43 };
-    tuple = _PyTuple_FromArray(pair, 2);
-    sym = _Py_uop_sym_new_const(ctx, tuple);
+    tuple = PyTuple_FromArray(pair, 2);
+    ref = _Py_uop_sym_new_const(ctx, tuple);
     TEST_PREDICATE(
-        _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
+        _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, ref, 1)) == val_43,
         "tuple item does not match value used to create tuple"
     );
-    sym = _Py_uop_sym_new_type(ctx, &PyTuple_Type);
+    ref = _Py_uop_sym_new_type(ctx, &PyTuple_Type);
     TEST_PREDICATE(
-        _Py_uop_sym_is_not_null(_Py_uop_sym_tuple_getitem(ctx, sym, 42)),
+        _Py_uop_sym_is_not_null(_Py_uop_sym_tuple_getitem(ctx, ref, 42)),
         "Unknown tuple item is not narrowed to non-NULL"
     );
-    JitOptSymbol *value = _Py_uop_sym_new_type(ctx, &PyBool_Type);
-    sym = _Py_uop_sym_new_truthiness(ctx, value, false);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == -1, "truthiness is not unknown");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == false, "truthiness is constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "truthiness is not NULL");
+    JitOptRef value = _Py_uop_sym_new_type(ctx, &PyBool_Type);
+    ref = _Py_uop_sym_new_truthiness(ctx, value, false);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyBool_Type), "truthiness is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == -1, "truthiness is not unknown");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, ref) == false, "truthiness is constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == NULL, "truthiness is not NULL");
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == false, "value is constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == NULL, "value is not NULL");
-    _Py_uop_sym_set_const(ctx, sym, Py_False);
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
-    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "truthiness is not True");
-    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == true, "truthiness is not constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == Py_False, "truthiness is not False");
+    _Py_uop_sym_set_const(ctx, ref, Py_False);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref, &PyBool_Type), "truthiness is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, ref) == 0, "truthiness is not True");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, ref) == true, "truthiness is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref) == Py_False, "truthiness is not False");
     TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
+
+
+    val_big = PyNumber_Lshift(_PyLong_GetOne(), PyLong_FromLong(66));
+    if (val_big == NULL) {
+        goto fail;
+    }
+
+    JitOptRef ref_42 = _Py_uop_sym_new_const(ctx, val_42);
+    JitOptRef ref_big = _Py_uop_sym_new_const(ctx, val_big);
+    JitOptRef ref_int = _Py_uop_sym_new_compact_int(ctx);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_42), "42 is not a compact int");
+    TEST_PREDICATE(!_Py_uop_sym_is_compact_int(ref_big), "(1 << 66) is a compact int");
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyLong_Type);  // Should have no effect
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "compact int is not a compact int after cast");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "compact int is not an int after cast");
+
+    _Py_uop_sym_set_type(ctx, ref_int, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(ref_int), "compact int cast to float isn't bottom");
+
+    ref_int = _Py_uop_sym_new_compact_int(ctx);
+    _Py_uop_sym_set_const(ctx, ref_int, val_43);
+    TEST_PREDICATE(_Py_uop_sym_is_compact_int(ref_int), "43 is not a compact int");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(ref_int, &PyLong_Type), "43 is not an int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, ref_int) == val_43, "43 isn't 43");
+
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
+    Py_DECREF(val_big);
     Py_DECREF(tuple);
     Py_RETURN_NONE;
 
@@ -904,6 +1142,7 @@ fail:
     _Py_uop_abstractcontext_fini(ctx);
     Py_XDECREF(val_42);
     Py_XDECREF(val_43);
+    Py_XDECREF(val_big);
     Py_DECREF(tuple);
     return NULL;
 }

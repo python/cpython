@@ -8,11 +8,12 @@
 #endif
 
 #include "Python.h"
-#include "pycore_pyerrors.h"        // _PyErr_SetLocaleString()
+#include "pycore_object.h"        // _PyObject_VisitType()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 #include "gdbm.h"
 
 #include <fcntl.h>
-#include <stdlib.h>                 // free()
+#include <stdlib.h>               // free()
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -122,13 +123,6 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-static int
-gdbm_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 gdbm_dealloc(PyObject *op)
 {
@@ -377,6 +371,7 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _gdbm.gdbm.setdefault
 
@@ -390,7 +385,7 @@ Get value for key, or set it to default and return default if not present.
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value)
-/*[clinic end generated code: output=f3246e880509f142 input=854374cd81ab51b6]*/
+/*[clinic end generated code: output=f3246e880509f142 input=f4008b358165bbb8]*/
 {
     PyObject *res;
 
@@ -678,8 +673,10 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls)
         }
         if (gdbm_delete(self->di_dbm, key) < 0) {
             PyErr_SetString(state->gdbm_error, "cannot delete item from database");
+            free(key.dptr);
             return NULL;
         }
+        free(key.dptr);
     }
     Py_RETURN_NONE;
 }
@@ -693,7 +690,11 @@ gdbm__enter__(PyObject *self, PyObject *args)
 static PyObject *
 gdbm__exit__(PyObject *self, PyObject *args)
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _gdbm_gdbm_close_impl((gdbmobject *)self);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef gdbm_methods[] = {
@@ -713,7 +714,7 @@ static PyMethodDef gdbm_methods[] = {
 
 static PyType_Slot gdbmtype_spec_slots[] = {
     {Py_tp_dealloc, gdbm_dealloc},
-    {Py_tp_traverse, gdbm_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, gdbm_methods},
     {Py_sq_contains, gdbm_contains},
     {Py_mp_length, gdbm_length},

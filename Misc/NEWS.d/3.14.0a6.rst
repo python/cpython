@@ -621,7 +621,7 @@ Andrew Svetlov.
 .. nonce: jQ0CvW
 .. section: Library
 
-Update the deprecation warning of :meth:`importlib.abc.Loader.load_module`.
+Update the deprecation warning of ``importlib.abc.Loader.load_module``.
 
 ..
 
@@ -758,7 +758,7 @@ Patch by Semyon Moroz.
 .. nonce: wDLTay
 .. section: Library
 
-Delay deprecated :meth:`zipimport.zipimporter.load_module` removal time to
+Delay deprecated :meth:`!zipimport.zipimporter.load_module` removal time to
 3.15. Use :meth:`zipimport.zipimporter.exec_module` instead.
 
 ..
@@ -1325,7 +1325,7 @@ variable.
 .. nonce: d75n8U
 .. section: Core and Builtins
 
-Adapt :func:`reversed` for use in the free-theading build. The
+Adapt :func:`reversed` for use in the free-threading build. The
 :func:`reversed` is still not thread-safe in the sense that concurrent
 iterations may see the same object, but they will not corrupt the
 interpreter state.

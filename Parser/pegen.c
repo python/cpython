@@ -5,6 +5,7 @@
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
 #include "pycore_runtime.h"     // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
+#include "pycore_pyatomic_ft_wrappers.h"
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -299,22 +300,14 @@ error:
 #define NSTATISTICS _PYPEGEN_NSTATISTICS
 #define memo_statistics _PyRuntime.parser.memo_statistics
 
-#ifdef Py_GIL_DISABLED
-#define MUTEX_LOCK() PyMutex_Lock(&_PyRuntime.parser.mutex)
-#define MUTEX_UNLOCK() PyMutex_Unlock(&_PyRuntime.parser.mutex)
-#else
-#define MUTEX_LOCK()
-#define MUTEX_UNLOCK()
-#endif
-
 void
 _PyPegen_clear_memo_statistics(void)
 {
-    MUTEX_LOCK();
+    FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
     }
-    MUTEX_UNLOCK();
+    FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
 }
 
 PyObject *
@@ -325,22 +318,22 @@ _PyPegen_get_memo_statistics(void)
         return NULL;
     }
 
-    MUTEX_LOCK();
+    FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
-            MUTEX_UNLOCK();
+            FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
         // PyList_SetItem borrows a reference to value.
         if (PyList_SetItem(ret, i, value) < 0) {
-            MUTEX_UNLOCK();
+            FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
     }
-    MUTEX_UNLOCK();
+    FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
     return ret;
 }
 #endif
@@ -366,9 +359,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 if (count <= 0) {
                     count = 1;
                 }
-                MUTEX_LOCK();
+                FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
                 memo_statistics[type] += count;
-                MUTEX_UNLOCK();
+                FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
             }
 #endif
             p->mark = m->mark;
@@ -379,44 +372,34 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
     return 0;
 }
 
-int
-_PyPegen_lookahead_with_name(int positive, expr_ty (func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD1(NAME, RES_TYPE)                                  \
+    int                                                             \
+    NAME (int positive, RES_TYPE (func)(Parser *), Parser *p)       \
+    {                                                               \
+        int mark = p->mark;                                         \
+        void *res = func(p);                                        \
+        p->mark = mark;                                             \
+        return (res != NULL) == positive;                           \
+    }
 
-int
-_PyPegen_lookahead_with_string(int positive, expr_ty (func)(Parser *, const char*), Parser *p, const char* arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD1(_PyPegen_lookahead, void *)
+LOOKAHEAD1(_PyPegen_lookahead_for_expr, expr_ty)
+LOOKAHEAD1(_PyPegen_lookahead_for_stmt, stmt_ty)
+#undef LOOKAHEAD1
 
-int
-_PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *p, int arg)
-{
-    int mark = p->mark;
-    void *res = func(p, arg);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+#define LOOKAHEAD2(NAME, RES_TYPE, T)                                   \
+    int                                                                 \
+    NAME (int positive, RES_TYPE (func)(Parser *, T), Parser *p, T arg) \
+    {                                                                   \
+        int mark = p->mark;                                             \
+        void *res = func(p, arg);                                       \
+        p->mark = mark;                                                 \
+        return (res != NULL) == positive;                               \
+    }
 
-// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
-// undefined behavior (UBsan) in this function, rather than changing 'func'
-// callback API.
-int _Py_NO_SANITIZE_UNDEFINED
-_PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
-{
-    int mark = p->mark;
-    void *res = func(p);
-    p->mark = mark;
-    return (res != NULL) == positive;
-}
+LOOKAHEAD2(_PyPegen_lookahead_with_int, Token *, int)
+LOOKAHEAD2(_PyPegen_lookahead_with_string, expr_ty, const char *)
+#undef LOOKAHEAD2
 
 Token *
 _PyPegen_expect_token(Parser *p, int type)
@@ -620,7 +603,8 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     Py_ssize_t size;
     PyBytes_AsStringAndSize(t->bytes, &the_token, &size);
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
-        if (strncmp(*keyword, the_token, (size_t)size) == 0) {
+        if (strlen(*keyword) == (size_t)size &&
+            strncmp(*keyword, the_token, (size_t)size) == 0) {
             return _PyPegen_name_from_token(p, t);
         }
     }
@@ -1026,6 +1010,11 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
     // From here on we need to clean up even if there's an error
     mod_ty result = NULL;
 
+    tok->module = PyUnicode_FromString("__main__");
+    if (tok->module == NULL) {
+        goto error;
+    }
+
     int parser_flags = compute_parser_flags(flags);
     Parser *p = _PyPegen_Parser_New(tok, start_rule, parser_flags, PY_MINOR_VERSION,
                                     errcode, NULL, arena);
@@ -1052,7 +1041,7 @@ error:
 
 mod_ty
 _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filename_ob,
-                       PyCompilerFlags *flags, PyArena *arena)
+                       PyCompilerFlags *flags, PyArena *arena, PyObject *module)
 {
     int exec_input = start_rule == Py_file_input;
 
@@ -1070,6 +1059,7 @@ _PyPegen_run_parser_from_string(const char *str, int start_rule, PyObject *filen
     }
     // This transfers the ownership to the tokenizer
     tok->filename = Py_NewRef(filename_ob);
+    tok->module = Py_XNewRef(module);
 
     // We need to clear up from here on
     mod_ty result = NULL;

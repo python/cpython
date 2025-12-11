@@ -9,10 +9,9 @@ import os
 import struct
 import sys
 import unittest
-import warnings
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
-from test.support import import_helper
+from test.support import force_not_colorized_test_class, import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -354,7 +353,7 @@ class TestGzip(BaseTest):
     def test_metadata(self):
         mtime = 123456789
 
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime = mtime, compresslevel = 9) as fWrite:
             fWrite.write(data1)
 
         with open(self.filename, 'rb') as fRead:
@@ -640,7 +639,7 @@ class TestGzip(BaseTest):
             with open(self.filename, mode) as f:
                 with gzip.GzipFile(fileobj=f) as g:
                     self.assertEqual(g.mode, gzip.READ)
-        for mode in "wb", "ab", "xb":
+        for mode in "wb", "ab", "xb", "wb+", "ab+", "xb+":
             if "x" in mode:
                 os_helper.unlink(self.filename)
             with open(self.filename, mode) as f:
@@ -1058,6 +1057,7 @@ def create_and_remove_directory(directory):
     return decorator
 
 
+@force_not_colorized_test_class
 class TestCommandLine(unittest.TestCase):
     data = b'This is a simple test with gzip'
 

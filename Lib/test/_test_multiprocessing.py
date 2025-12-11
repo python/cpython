@@ -39,7 +39,8 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-
+from test.support import subTests
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 # Skip tests if _multiprocessing wasn't built.
 _multiprocessing = import_helper.import_module('_multiprocessing')
@@ -329,6 +330,7 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(current.ident, os.getpid())
         self.assertEqual(current.exitcode, None)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_set_executable(self):
         if self.TYPE == 'threads':
             self.skipTest(f'test not appropriate for {self.TYPE}')
@@ -345,6 +347,7 @@ class _TestProcess(BaseTestCase):
             p.join()
             self.assertEqual(p.exitcode, 0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('cpu')
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
@@ -392,6 +395,7 @@ class _TestProcess(BaseTestCase):
             q.put(bytes(current.authkey))
             q.put(current.pid)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_parent_process_attributes(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -412,6 +416,7 @@ class _TestProcess(BaseTestCase):
         from multiprocessing.process import parent_process
         wconn.send([parent_process().pid, parent_process().name])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_parent_process(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -450,6 +455,7 @@ class _TestProcess(BaseTestCase):
         parent_process().join(timeout=support.SHORT_TIMEOUT)
         wconn.send("alive" if parent_process().is_alive() else "not alive")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_process(self):
         q = self.Queue(1)
         e = self.Event()
@@ -490,6 +496,7 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
         close_queue(q)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(threading._HAVE_THREAD_NATIVE_ID, "needs native_id")
     def test_process_mainthread_native_id(self):
         if self.TYPE == 'threads':
@@ -530,6 +537,7 @@ class _TestProcess(BaseTestCase):
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _kill_process(self, meth, target=None):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -587,6 +595,7 @@ class _TestProcess(BaseTestCase):
 
         return p.exitcode
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipIf(os.name == 'nt', "POSIX only")
     def test_interrupt(self):
         exitcode = self._kill_process(multiprocessing.Process.interrupt)
@@ -595,15 +604,18 @@ class _TestProcess(BaseTestCase):
         # (KeyboardInterrupt in this case)
         # in multiprocessing.BaseProcess._bootstrap
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipIf(os.name == 'nt', "POSIX only")
     def test_interrupt_no_handler(self):
         exitcode = self._kill_process(multiprocessing.Process.interrupt, target=self._sleep_no_int_handler)
         self.assertEqual(exitcode, -signal.SIGINT)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
         self.assertEqual(exitcode, -signal.SIGTERM)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_kill(self):
         exitcode = self._kill_process(multiprocessing.Process.kill)
         if os.name != 'nt':
@@ -619,6 +631,7 @@ class _TestProcess(BaseTestCase):
         self.assertIsInstance(cpus, int)
         self.assertGreaterEqual(cpus, 1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
 
@@ -647,6 +660,7 @@ class _TestProcess(BaseTestCase):
                 p.start()
                 p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_recursion(self):
         rconn, wconn = self.Pipe(duplex=False)
         self._test_recursion(wconn, [])
@@ -671,6 +685,7 @@ class _TestProcess(BaseTestCase):
     def _test_sentinel(cls, event):
         event.wait(10.0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_sentinel(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -693,6 +708,7 @@ class _TestProcess(BaseTestCase):
             q.get()
         sys.exit(rc)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_close(self):
         if self.TYPE == "threads":
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -725,6 +741,7 @@ class _TestProcess(BaseTestCase):
 
         close_queue(q)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('walltime')
     def test_many_processes(self):
         if self.TYPE == 'threads':
@@ -761,6 +778,7 @@ class _TestProcess(BaseTestCase):
             for p in procs:
                 self.assertIn(p.exitcode, exitcodes)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_lose_target_ref(self):
         c = DummyCallable()
         wr = weakref.ref(c)
@@ -823,6 +841,7 @@ class _TestProcess(BaseTestCase):
         threading.Thread(target=func1).start()
         threading.Thread(target=func2, daemon=True).start()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait_for_threads(self):
         # A child process should wait for non-daemonic threads to end
         # before exiting
@@ -847,6 +866,7 @@ class _TestProcess(BaseTestCase):
             setattr(sys, stream_name, None)
         evt.set()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_error_on_stdio_flush_1(self):
         # Check that Process works with broken standard streams
         streams = [io.StringIO(), None]
@@ -866,6 +886,7 @@ class _TestProcess(BaseTestCase):
                 finally:
                     setattr(sys, stream_name, old_stream)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_error_on_stdio_flush_2(self):
         # Same as test_error_on_stdio_flush_1(), but standard streams are
         # broken by the child process
@@ -1016,6 +1037,7 @@ class _TestSubclassingProcess(BaseTestCase):
 
     ALLOWED_TYPES = ('processes',)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_subclassing(self):
         uppercaser = _UpperCaser()
         uppercaser.daemon = True
@@ -1025,6 +1047,7 @@ class _TestSubclassingProcess(BaseTestCase):
         uppercaser.stop()
         uppercaser.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_stderr_flush(self):
         # sys.stderr is flushed at process shutdown (issue #13812)
         if self.TYPE == "threads":
@@ -1055,6 +1078,7 @@ class _TestSubclassingProcess(BaseTestCase):
         sys.stderr = open(fd, 'w', encoding="utf-8", closefd=False)
         sys.exit(reason)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_sys_exit(self):
         # See Issue 13854
         if self.TYPE == 'threads':
@@ -1122,6 +1146,7 @@ class _TestQueue(BaseTestCase):
             queue.get()
         parent_can_continue.set()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_put(self):
         MAXSIZE = 6
         queue = self.Queue(maxsize=MAXSIZE)
@@ -1184,13 +1209,14 @@ class _TestQueue(BaseTestCase):
     @classmethod
     def _test_get(cls, queue, child_can_start, parent_can_continue):
         child_can_start.wait()
-        #queue.put(1)
+        queue.put(1)
         queue.put(2)
         queue.put(3)
         queue.put(4)
         queue.put(5)
         parent_can_continue.set()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_get(self):
         queue = self.Queue()
         child_can_start = self.Event()
@@ -1208,15 +1234,16 @@ class _TestQueue(BaseTestCase):
         child_can_start.set()
         parent_can_continue.wait()
 
-        time.sleep(DELTA)
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+            if not queue_empty(queue):
+                break
         self.assertEqual(queue_empty(queue), False)
 
-        # Hangs unexpectedly, remove for now
-        #self.assertEqual(queue.get(), 1)
+        self.assertEqual(queue.get_nowait(), 1)
         self.assertEqual(queue.get(True, None), 2)
         self.assertEqual(queue.get(True), 3)
         self.assertEqual(queue.get(timeout=1), 4)
-        self.assertEqual(queue.get_nowait(), 5)
+        self.assertEqual(queue.get(), 5)
 
         self.assertEqual(queue_empty(queue), True)
 
@@ -1252,6 +1279,7 @@ class _TestQueue(BaseTestCase):
         # process cannot shutdown until the feeder thread has finished
         # pushing items onto the pipe.
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_fork(self):
         # Old versions of Queue would fail to create a new feeder
         # thread for a forked process if the original process had its
@@ -1302,6 +1330,7 @@ class _TestQueue(BaseTestCase):
             time.sleep(DELTA)
             q.task_done()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_task_done(self):
         queue = self.JoinableQueue()
 
@@ -1345,6 +1374,7 @@ class _TestQueue(BaseTestCase):
                     self.fail("Probable regression on import lock contention;"
                               " see Issue #22853")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_timeout(self):
         q = multiprocessing.Queue()
         start = time.monotonic()
@@ -1468,6 +1498,7 @@ class _TestLock(BaseTestCase):
         event.set()
         time.sleep(1.0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_repr_lock(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1531,6 +1562,7 @@ class _TestLock(BaseTestCase):
         res.value = lock.locked()
         event.set()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_lock_locked_2processes(self):
         if self.TYPE != 'processes':
@@ -1557,6 +1589,7 @@ class _TestLock(BaseTestCase):
         for _ in range(n):
             lock.release()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_repr_rlock(self):
         if self.TYPE != 'processes':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1616,6 +1649,7 @@ class _TestLock(BaseTestCase):
         self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_rlock_locked_2processes(self):
         if self.TYPE != 'processes':
@@ -1725,6 +1759,7 @@ class _TestCondition(BaseTestCase):
             except NotImplementedError:
                 pass
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_notify(self):
         cond = self.Condition()
         sleeping = self.Semaphore(0)
@@ -1767,6 +1802,7 @@ class _TestCondition(BaseTestCase):
         threading_helper.join_thread(t)
         join_process(p)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_notify_all(self):
         cond = self.Condition()
         sleeping = self.Semaphore(0)
@@ -1836,6 +1872,7 @@ class _TestCondition(BaseTestCase):
             # NOTE: join_process and join_thread are the same
             threading_helper.join_thread(w)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_notify_n(self):
         cond = self.Condition()
         sleeping = self.Semaphore(0)
@@ -1909,6 +1946,7 @@ class _TestCondition(BaseTestCase):
             if not result or state.value != 4:
                 sys.exit(1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_waitfor(self):
         # based on test in test/lock_tests.py
@@ -1944,6 +1982,7 @@ class _TestCondition(BaseTestCase):
             if not result and (expected - CLOCK_RES) <= dt:
                 success.value = True
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
     def test_waitfor_timeout(self):
         # based on test in test/lock_tests.py
@@ -1976,6 +2015,7 @@ class _TestCondition(BaseTestCase):
         if pid is not None:
             os.kill(pid, signal.SIGINT)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait_result(self):
         if isinstance(self, ProcessesMixin) and sys.platform != 'win32':
             pid = os.getpid()
@@ -2004,6 +2044,7 @@ class _TestEvent(BaseTestCase):
         time.sleep(TIMEOUT2)
         event.set()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_event(self):
         event = self.Event()
         wait = TimingWrapper(event.wait)
@@ -2200,6 +2241,7 @@ class _TestBarrier(BaseTestCase):
             pass
         assert not barrier.broken
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_barrier(self, passes=1):
         """
         Test that a barrier is passed in lockstep
@@ -2207,6 +2249,7 @@ class _TestBarrier(BaseTestCase):
         results = [self.DummyList(), self.DummyList()]
         self.run_threads(self.multipass, (self.barrier, results, passes))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_barrier_10(self):
         """
         Test that a barrier works for 10 consecutive runs
@@ -2218,6 +2261,7 @@ class _TestBarrier(BaseTestCase):
         res = barrier.wait()
         queue.put(res)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait_return(self):
         """
         test the return value from barrier.wait
@@ -2234,6 +2278,7 @@ class _TestBarrier(BaseTestCase):
         if len(results) != 1:
             raise RuntimeError
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_action(self):
         """
         Test the 'action' callback
@@ -2256,6 +2301,7 @@ class _TestBarrier(BaseTestCase):
         except RuntimeError:
             barrier.abort()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_abort(self):
         """
         Test that an abort will put the barrier in a broken state
@@ -2286,6 +2332,7 @@ class _TestBarrier(BaseTestCase):
         barrier.wait()
         results3.append(True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_reset(self):
         """
         Test that a 'reset' on a barrier frees the waiting threads
@@ -2321,6 +2368,7 @@ class _TestBarrier(BaseTestCase):
         barrier.wait()
         results3.append(True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_abort_and_reset(self):
         """
         Test that a barrier can be reset after being broken.
@@ -2347,6 +2395,7 @@ class _TestBarrier(BaseTestCase):
         except threading.BrokenBarrierError:
             results.append(True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_timeout(self):
         """
         Test wait(timeout)
@@ -2366,6 +2415,7 @@ class _TestBarrier(BaseTestCase):
         except threading.BrokenBarrierError:
             results.append(True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_default_timeout(self):
         """
         Test the barrier's default timeout
@@ -2387,6 +2437,7 @@ class _TestBarrier(BaseTestCase):
             with lock:
                 conn.send(i)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_thousand(self):
         if self.TYPE == 'manager':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -2428,7 +2479,7 @@ class _TestValue(BaseTestCase):
         for sv, cv in zip(values, cls.codes_values):
             sv.value = cv[2]
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_value(self, raw=False):
         if raw:
             values = [self.RawValue(code, value)
@@ -2492,6 +2543,7 @@ class _TestArray(BaseTestCase):
         for i in range(1, len(seq)):
             seq[i] += seq[i-1]
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipIf(c_int is None, "requires _ctypes")
     def test_array(self, raw=False):
         seq = [680, 626, 934, 821, 150, 233, 548, 982, 714, 831]
@@ -2803,8 +2855,9 @@ class _TestPool(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        cls.pool = cls.Pool(4)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            super().setUpClass()
+            cls.pool = cls.Pool(4)
 
     @classmethod
     def tearDownClass(cls):
@@ -2903,6 +2956,7 @@ class _TestPool(BaseTestCase):
         self.assertEqual(get(), 49)
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_async_timeout(self):
         p = self.Pool(3)
         try:
@@ -3000,6 +3054,7 @@ class _TestPool(BaseTestCase):
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_make_pool(self):
         expected_error = (RemoteError if self.TYPE == 'manager'
                           else ValueError)
@@ -3015,6 +3070,7 @@ class _TestPool(BaseTestCase):
                 p.close()
                 p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_terminate(self):
         # Simulate slow tasks which take "forever" to complete
         sleep_time = support.LONG_TIMEOUT
@@ -3032,6 +3088,7 @@ class _TestPool(BaseTestCase):
         p.terminate()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_empty_iterable(self):
         # See Issue 12157
         p = self.Pool(1)
@@ -3044,6 +3101,7 @@ class _TestPool(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_context(self):
         if self.TYPE == 'processes':
             L = list(range(10))
@@ -3058,6 +3116,7 @@ class _TestPool(BaseTestCase):
     def _test_traceback(cls):
         raise RuntimeError(123) # some comment
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_traceback(self):
         # We want ensure that the traceback from the child process is
         # contained in the traceback raised in the main process.
@@ -3097,9 +3156,11 @@ class _TestPool(BaseTestCase):
             p.join()
 
     @classmethod
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _test_wrapped_exception(cls):
         raise RuntimeError('foo')
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wrapped_exception(self):
         # Issue #20980: Should not wrap exception when using thread pool
         with self.Pool(1) as p:
@@ -3107,6 +3168,7 @@ class _TestPool(BaseTestCase):
                 p.apply(self._test_wrapped_exception)
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_map_no_failfast(self):
         # Issue #23992: the fail-fast behaviour when an exception is raised
         # during map() would make Pool.join() deadlock, because a worker
@@ -3142,6 +3204,7 @@ class _TestPool(BaseTestCase):
         # they were released too.
         self.assertEqual(CountedObject.n_instances, 0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_enter(self):
         if self.TYPE == 'manager':
             self.skipTest("test not applicable to manager")
@@ -3158,6 +3221,7 @@ class _TestPool(BaseTestCase):
                 pass
         pool.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_resource_warning(self):
         if self.TYPE == 'manager':
             self.skipTest("test not applicable to manager")
@@ -3183,6 +3247,7 @@ def unpickleable_result():
 class _TestPoolWorkerErrors(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_async_error_callback(self):
         p = multiprocessing.Pool(2)
 
@@ -3198,6 +3263,7 @@ class _TestPoolWorkerErrors(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_unpickleable_result(self):
         from multiprocessing.pool import MaybeEncodingError
         p = multiprocessing.Pool(2)
@@ -3223,6 +3289,7 @@ class _TestPoolWorkerErrors(BaseTestCase):
 class _TestPoolWorkerLifetime(BaseTestCase):
     ALLOWED_TYPES = ('processes', )
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool_worker_lifetime(self):
         p = multiprocessing.Pool(3, maxtasksperchild=10)
         self.assertEqual(3, len(p._pool))
@@ -3252,6 +3319,7 @@ class _TestPoolWorkerLifetime(BaseTestCase):
         p.close()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool_worker_lifetime_early_close(self):
         # Issue #10332: closing a pool whose workers have limited lifetimes
         # before all the tasks completed would make join() hang.
@@ -3325,6 +3393,7 @@ class _TestMyManager(BaseTestCase):
 
     ALLOWED_TYPES = ('manager',)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_mymanager(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3336,6 +3405,7 @@ class _TestMyManager(BaseTestCase):
         # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_mymanager_context(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         with manager:
@@ -3345,6 +3415,7 @@ class _TestMyManager(BaseTestCase):
         # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_mymanager_context_prestarted(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3415,6 +3486,7 @@ class _TestRemoteManager(BaseTestCase):
         # Note that xmlrpclib will deserialize object as a list not a tuple
         queue.put(tuple(cls.values))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_remote(self):
         authkey = os.urandom(32)
 
@@ -3456,6 +3528,7 @@ class _TestManagerRestart(BaseTestCase):
         queue = manager.get_queue()
         queue.put('hello world')
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
@@ -3508,12 +3581,14 @@ class FakeConnection:
 class TestManagerExceptions(unittest.TestCase):
     # Issue 106558: Manager exceptions avoids creating cyclic references.
     def setUp(self):
-        self.mgr = multiprocessing.Manager()
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            self.mgr = multiprocessing.Manager()
 
     def tearDown(self):
         self.mgr.shutdown()
         self.mgr.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_queue_get(self):
         queue = self.mgr.Queue()
         if gc.isenabled():
@@ -3525,6 +3600,7 @@ class TestManagerExceptions(unittest.TestCase):
             wr = weakref.ref(e)
         self.assertEqual(wr(), None)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_dispatch(self):
         if gc.isenabled():
             gc.disable()
@@ -3551,6 +3627,7 @@ class _TestConnection(BaseTestCase):
             conn.send_bytes(msg)
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_connection(self):
         conn, child_conn = self.Pipe()
 
@@ -3643,6 +3720,7 @@ class _TestConnection(BaseTestCase):
             self.assertRaises(OSError, writer.recv)
             self.assertRaises(OSError, writer.poll)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_close(self):
         # We test that a pipe connection can be closed by parent
         # process immediately after child is spawned.  On Windows this
@@ -3719,6 +3797,7 @@ class _TestConnection(BaseTestCase):
         os.write(fd, data)
         os.close(fd)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_fd_transfer(self):
         if self.TYPE != 'processes':
@@ -3738,6 +3817,7 @@ class _TestConnection(BaseTestCase):
         with open(os_helper.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"foo")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     @unittest.skipIf(sys.platform == "win32",
                      "test semantics don't make sense on Windows")
@@ -3775,6 +3855,7 @@ class _TestConnection(BaseTestCase):
     def _send_data_without_fd(self, conn):
         os.write(conn.fileno(), b"\0")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     @unittest.skipIf(sys.platform == "win32", "doesn't make sense on Windows")
     def test_missing_fd_transfer(self):
@@ -3874,6 +3955,7 @@ class _TestListenerClient(BaseTestCase):
         conn.send('hello')
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_listener_client(self):
         for family in self.connection.families:
             l = self.connection.Listener(family=family)
@@ -3885,6 +3967,7 @@ class _TestListenerClient(BaseTestCase):
             p.join()
             l.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_issue14725(self):
         l = self.connection.Listener()
         p = self.Process(target=self._test, args=(l.address,))
@@ -3930,6 +4013,7 @@ class _TestPoll(BaseTestCase):
             conn.send_bytes(s)
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_strings(self):
         strings = (b'hello', b'', b'a', b'b', b'', b'bye', b'', b'lop')
         a, b = self.Pipe()
@@ -3953,6 +4037,7 @@ class _TestPoll(BaseTestCase):
         # read from it.
         r.poll(5)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_boundaries(self):
         r, w = self.Pipe(False)
         p = self.Process(target=self._child_boundaries, args=(r,))
@@ -3971,6 +4056,7 @@ class _TestPoll(BaseTestCase):
         b.send_bytes(b'b')
         b.send_bytes(b'cd')
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_dont_merge(self):
         a, b = self.Pipe()
         self.assertEqual(a.poll(0.0), False)
@@ -4039,6 +4125,7 @@ class _TestPicklingConnections(BaseTestCase):
 
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pickling(self):
         families = self.connection.families
 
@@ -4097,6 +4184,7 @@ class _TestPicklingConnections(BaseTestCase):
 
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_access(self):
         # On Windows, if we do not specify a destination pid when
         # using DupHandle then we need to be careful to use the
@@ -4260,6 +4348,7 @@ class _TestSharedCTypes(BaseTestCase):
         for i in range(len(arr)):
             arr[i] *= 2
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_sharedctypes(self, lock=False):
         x = Value('i', 7, lock=lock)
         y = Value(c_double, 1.0/3.0, lock=lock)
@@ -4296,6 +4385,19 @@ class _TestSharedCTypes(BaseTestCase):
         self.assertAlmostEqual(bar.y, 5.0)
         self.assertEqual(bar.z, 2 ** 33)
 
+
+def resource_tracker_format_subtests(func):
+    """Run given test using both resource tracker communication formats"""
+    def _inner(self, *args, **kwargs):
+        tracker = resource_tracker._resource_tracker
+        for use_simple_format in False, True:
+            with (
+                self.subTest(use_simple_format=use_simple_format),
+                unittest.mock.patch.object(
+                    tracker, '_use_simple_format', use_simple_format)
+            ):
+                func(self, *args, **kwargs)
+    return _inner
 
 @unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
 @hashlib_helper.requires_hashdigest('sha256')
@@ -4521,6 +4623,7 @@ class _TestSharedMemory(BaseTestCase):
                 with self.assertRaises(FileNotFoundError):
                     pickle.loads(pickled_sms)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shared_memory_across_processes(self):
         # bpo-40135: don't define shared memory block's name in case of
         # the failure when we run multiprocessing tests in parallel.
@@ -4549,6 +4652,7 @@ class _TestSharedMemory(BaseTestCase):
 
         sms.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipIf(os.name != "posix", "not feasible in non-posix platforms")
     def test_shared_memory_SharedMemoryServer_ignores_sigint(self):
         # bpo-36368: protect SharedMemoryManager server process from
@@ -4574,6 +4678,7 @@ class _TestSharedMemory(BaseTestCase):
         smm.shutdown()
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_SharedMemoryManager_reuses_resource_tracker(self):
         # bpo-36867: test that a SharedMemoryManager uses the
         # same resource_tracker process as its parent.
@@ -4594,6 +4699,7 @@ class _TestSharedMemory(BaseTestCase):
         # properly released sl.
         self.assertFalse(err)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shared_memory_SharedMemoryManager_basics(self):
         smm1 = multiprocessing.managers.SharedMemoryManager()
         with self.assertRaises(ValueError):
@@ -4824,6 +4930,7 @@ class _TestSharedMemory(BaseTestCase):
                     "shared_memory objects to clean up at shutdown", err)
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_untracking(self):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=False, it must not cause the memory to be deleted
@@ -4851,6 +4958,7 @@ class _TestSharedMemory(BaseTestCase):
             mem.close()
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    @resource_tracker_format_subtests
     def test_shared_memory_tracking(self):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=True, it must cause the memory to be deleted when
@@ -4933,6 +5041,7 @@ class _TestFinalize(BaseTestCase):
         conn.close()
         os._exit(0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_finalize(self):
         conn, child_conn = self.Pipe()
 
@@ -5060,6 +5169,7 @@ class _TestLogging(BaseTestCase):
         logger = multiprocessing.get_logger()
         conn.send(logger.getEffectiveLevel())
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_level(self):
         LEVEL1 = 32
         LEVEL2 = 37
@@ -5144,6 +5254,7 @@ class _TestPollEintr(BaseTestCase):
         time.sleep(0.1)
         os.kill(pid, signal.SIGUSR1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_poll_eintr(self):
         got_signal = [False]
@@ -5186,6 +5297,23 @@ class TestInvalidHandle(unittest.TestCase):
         self.assertRaises((ValueError, OSError),
                           multiprocessing.connection.Connection, -1)
 
+
+#
+# Regression tests for BaseProcess kwargs handling
+#
+
+class TestBaseProcessKwargs(unittest.TestCase):
+    def test_default_kwargs_not_shared_between_instances(self):
+        # Creating multiple Process instances without passing kwargs
+        # must create independent empty dicts (no shared state).
+        p1 = multiprocessing.Process(target=lambda: None)
+        p2 = multiprocessing.Process(target=lambda: None)
+        self.assertIsInstance(p1._kwargs, dict)
+        self.assertIsInstance(p2._kwargs, dict)
+        self.assertIsNot(p1._kwargs, p2._kwargs)
+        # Mutating one should not affect the other
+        p1._kwargs['x'] = 1
+        self.assertNotIn('x', p2._kwargs)
 
 
 @hashlib_helper.requires_hashdigest('sha256')
@@ -5266,14 +5394,16 @@ def initializer(ns):
 @hashlib_helper.requires_hashdigest('sha256')
 class TestInitializers(unittest.TestCase):
     def setUp(self):
-        self.mgr = multiprocessing.Manager()
-        self.ns = self.mgr.Namespace()
-        self.ns.test = 0
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            self.mgr = multiprocessing.Manager()
+            self.ns = self.mgr.Namespace()
+            self.ns.test = 0
 
     def tearDown(self):
         self.mgr.shutdown()
         self.mgr.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_manager_initializer(self):
         m = multiprocessing.managers.SyncManager()
         self.assertRaises(TypeError, m.start, 1)
@@ -5282,6 +5412,7 @@ class TestInitializers(unittest.TestCase):
         m.shutdown()
         m.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool_initializer(self):
         self.assertRaises(TypeError, multiprocessing.Pool, initializer=1)
         p = multiprocessing.Pool(1, initializer, (self.ns,))
@@ -5339,16 +5470,19 @@ class _file_like(object):
 
 class TestStdinBadfiledescriptor(unittest.TestCase):
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_queue_in_process(self):
         proc = multiprocessing.Process(target=_test_process)
         proc.start()
         proc.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool_in_process(self):
         p = multiprocessing.Process(target=pool_in_process)
         p.start()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_flushing(self):
         sio = io.StringIO()
         flike = _file_like(sio)
@@ -5368,6 +5502,7 @@ class TestWait(unittest.TestCase):
             w.send((i, os.getpid()))
         w.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait(self, slow=False):
         from multiprocessing.connection import wait
         readers = []
@@ -5408,6 +5543,7 @@ class TestWait(unittest.TestCase):
             s.sendall(('%s\n' % i).encode('ascii'))
         s.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_wait_socket(self, slow=False):
         from multiprocessing.connection import wait
         l = socket.create_server((socket_helper.HOST, 0))
@@ -5472,6 +5608,7 @@ class TestWait(unittest.TestCase):
         sem.release()
         time.sleep(period)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_resource('walltime')
     def test_wait_integer(self):
         from multiprocessing.connection import wait
@@ -5516,6 +5653,7 @@ class TestWait(unittest.TestCase):
         p.terminate()
         p.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_neg_timeout(self):
         from multiprocessing.connection import wait
         a, b = multiprocessing.Pipe()
@@ -5593,6 +5731,7 @@ class TestTimeouts(unittest.TestCase):
         conn.send(456)
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_timeout(self):
         old_timeout = socket.getdefaulttimeout()
         try:
@@ -5650,6 +5789,7 @@ class TestForkAwareThreadLock(unittest.TestCase):
             conn.send(len(util._afterfork_registry))
         conn.close()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_lock(self):
         r, w = multiprocessing.Pipe(False)
         l = util.ForkAwareThreadLock()
@@ -5701,6 +5841,7 @@ class TestCloseFds(unittest.TestCase):
             s.close()
             conn.send(None)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_closefd(self):
         if not HAS_REDUCTION:
             raise unittest.SkipTest('requires fd pickling')
@@ -5746,6 +5887,7 @@ class TestIgnoreEINTR(unittest.TestCase):
         conn.send(x)
         conn.send_bytes(b'x' * cls.CONN_MAX_SIZE)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore(self):
         conn, child_conn = multiprocessing.Pipe()
@@ -5779,6 +5921,7 @@ class TestIgnoreEINTR(unittest.TestCase):
             a = l.accept()
             a.send('welcome')
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
     def test_ignore_listener(self):
         conn, child_conn = multiprocessing.Pipe()
@@ -5813,6 +5956,7 @@ class TestStartMethod(unittest.TestCase):
         p.join()
         self.assertEqual(child_method, ctx.get_start_method())
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_context(self):
         for method in ('fork', 'spawn', 'forkserver'):
             try:
@@ -5833,6 +5977,7 @@ class TestStartMethod(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'module_names must be a list of strings'):
             ctx.set_forkserver_preload([1, 2, 3])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_set_get(self):
         multiprocessing.set_forkserver_preload(PRELOAD)
         count = 0
@@ -5890,6 +6035,7 @@ class TestStartMethod(unittest.TestCase):
             print(err)
             self.fail("failed spawning forkserver or grandchild")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipIf(sys.platform == "win32",
                      "Only Spawn on windows so no risk of mixing")
     @only_run_in_spawn_testsuite("avoids redundant testing.")
@@ -5923,6 +6069,7 @@ class TestStartMethod(unittest.TestCase):
         process.start()
         process.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_nested_startmethod(self):
         # gh-108520: Regression test to ensure that child process can send its
         # arguments to another process
@@ -6078,6 +6225,7 @@ class TestResourceTracker(unittest.TestCase):
         reused &= _resource_tracker._check_alive()
         conn.send(reused)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_resource_tracker_reused(self):
         from multiprocessing.resource_tracker import _resource_tracker
         _resource_tracker.ensure_running()
@@ -6179,6 +6327,7 @@ class TestSimpleQueue(unittest.TestCase):
         with self.assertRaisesRegex(OSError, 'is closed'):
             q.empty()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_empty(self):
         queue = multiprocessing.SimpleQueue()
         child_can_start = multiprocessing.Event()
@@ -6286,7 +6435,8 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def setUp(self):
         self.manager = self.manager_class()
-        self.manager.start()
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            self.manager.start()
         self.proc = None
 
     def tearDown(self):
@@ -6335,6 +6485,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         obj.wait(0.001)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_event(self):
         o = self.manager.Event()
         o.set()
@@ -6347,6 +6498,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.acquire()
         obj.locked()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_lock, o)
@@ -6359,6 +6511,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.release()
         obj.locked()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_rlock(self, lname="RLock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_rlock, o)
@@ -6367,6 +6520,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     def _test_semaphore(cls, obj):
         obj.acquire()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_semaphore(self, sname="Semaphore"):
         o = getattr(self.manager, sname)()
         self.run_worker(self._test_semaphore, o)
@@ -6380,6 +6534,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.acquire()
         obj.release()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_condition(self):
         o = self.manager.Condition()
         self.run_worker(self._test_condition, o)
@@ -6389,6 +6544,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         assert obj.parties == 5
         obj.reset()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_barrier(self):
         o = self.manager.Barrier(5)
         self.run_worker(self._test_barrier, o)
@@ -6399,6 +6555,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         with obj:
             pass
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_pool(self):
         o = self.manager.Pool(processes=4)
         self.run_worker(self._test_pool, o)
@@ -6413,6 +6570,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         assert obj.get() == 6
         assert obj.empty()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_queue(self, qname="Queue"):
         o = getattr(self.manager, qname)(2)
         o.put(5)
@@ -6421,6 +6579,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         assert o.empty()
         assert not o.full()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_joinable_queue(self):
         self.test_queue("JoinableQueue")
 
@@ -6455,6 +6614,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         case.assertEqual(len(obj), 0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_list(self):
         o = self.manager.list()
         o.append(5)
@@ -6496,6 +6656,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.clear()
         case.assertEqual(len(obj), 0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_dict(self):
         o = self.manager.dict()
         o['foo'] = 5
@@ -6510,6 +6671,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(obj.get(), 1)
         obj.set(2)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_value(self):
         o = self.manager.Value('i', 1)
         self.run_worker(self._test_value, o)
@@ -6524,6 +6686,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(len(obj), 2)
         case.assertListEqual(list(obj), [0, 1])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_array(self):
         o = self.manager.Array('i', [0, 1])
         self.run_worker(self._test_array, o)
@@ -6534,6 +6697,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertEqual(obj.x, 0)
         case.assertEqual(obj.y, 1)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_namespace(self):
         o = self.manager.Namespace()
         o.x = 0
@@ -6653,6 +6817,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertGreater(obj, {'a'})
         case.assertGreaterEqual(obj, {'a', 'b'})
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_set(self):
         o = self.manager.set()
         self.run_worker(self._test_set_operator_symbols, o)
@@ -6670,6 +6835,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.assertSetEqual(o, {"a", "b", "c"})
         self.assertRaises(RemoteError, self.manager.set, 1234)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_set_contain_all_method(self):
         o = self.manager.set()
         set_methods = {
@@ -6723,6 +6889,7 @@ class _TestAtExit(BaseTestCase):
                 f.write("deadbeef")
         atexit.register(exit_handler)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_atexit(self):
         # gh-83856
         with os_helper.temp_dir() as temp_dir:
@@ -6803,6 +6970,20 @@ class _TestSpawnedSysPath(BaseTestCase):
         self.assertEqual(child_sys_path[1:], sys.path[1:])
         self.assertIsNone(import_error, msg=f"child could not import {self._mod_name}")
 
+    def test_std_streams_flushed_after_preload(self):
+        # gh-135335: Check fork server flushes standard streams after
+        # preloading modules
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+
+        # Check stderr first, as it is more likely to be useful to see in the
+        # event of a failure.
+        self.assertEqual(err.decode().rstrip(), '__main____mp_main__')
+        self.assertEqual(out.decode().rstrip(), '__main____mp_main__')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -6846,6 +7027,7 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_forked_thread_not_started(self):
         # gh-134381: Ensure that a thread that has not been started yet in
         # the parent process can be started within a forked child process.
@@ -6868,6 +7050,18 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(q.get_nowait(), "done")
         close_queue(q)
 
+    def test_preload_main(self):
+        # gh-126631: Check that __main__ can be pre-loaded
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_main.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+        self.assertEqual(err, b'')
+
+        # The trailing empty string comes from split() on output ending with \n
+        out = out.decode().split("\n")
+        self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
 
 #
 # Tests for workaround macOSX Semaphore
@@ -7004,8 +7198,9 @@ class ManagerMixin(BaseMixin):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        cls.manager = multiprocessing.Manager()
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            super().setUpClass()
+            cls.manager = multiprocessing.Manager()
 
     @classmethod
     def tearDownClass(cls):
@@ -7172,3 +7367,110 @@ class SemLockTests(unittest.TestCase):
         name = f'test_semlock_subclass-{os.getpid()}'
         s = SemLock(1, 0, 10, name, False)
         _multiprocessing.sem_unlink(name)
+
+
+@unittest.skipIf(sys.platform != "linux", "Linux only")
+class ForkInThreads(unittest.TestCase):
+
+    def test_fork(self):
+        code = """
+        import os, sys, threading, time
+
+        t = threading.Thread(target=time.sleep, args=(1,), daemon=True)
+        t.start()
+
+        assert threading.active_count() == 2
+
+        pid = os.fork()
+        if pid < 0:
+            print("Fork failed")
+        elif pid == 0:
+            print("In child")
+            sys.exit(0)
+        print("In parent")
+        """
+
+        res = assert_python_ok("-c", code, PYTHONWARNINGS='always')
+        self.assertIn(b'In child', res.out)
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
+
+        res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of fork() may lead to deadlocks in the child', res.err)
+
+    def test_forkpty(self):
+        code = """
+        import os, sys, threading, time
+
+        t = threading.Thread(target=time.sleep, args=(1,), daemon=True)
+        t.start()
+
+        assert threading.active_count() == 2
+
+        pid, _ = os.forkpty()
+        if pid < 0:
+            print(f"forkpty failed")
+        elif pid == 0:
+            print(f"In child")
+            sys.exit(0)
+        print(f"In parent")
+        """
+
+        res = assert_python_ok("-c", code, PYTHONWARNINGS='always')
+        self.assertIn(b'In parent', res.out)
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+        res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
+        self.assertIn(b'DeprecationWarning', res.err)
+        self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
+class TestSharedMemoryNames(unittest.TestCase):
+    @subTests('use_simple_format', (True, False))
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(
+            self, use_simple_format):
+        # Test script that creates and cleans up shared memory with colon in name
+        test_script = textwrap.dedent("""
+            import sys
+            from multiprocessing import shared_memory
+            from multiprocessing import resource_tracker
+            import time
+
+            resource_tracker._resource_tracker._use_simple_format = %s
+
+            # Test various patterns of colons in names
+            test_names = [
+                "a:b",
+                "a:b:c",
+                "test:name:with:many:colons",
+                ":starts:with:colon",
+                "ends:with:colon:",
+                "::double::colons::",
+                "name\\nwithnewline",
+                "name-with-trailing-newline\\n",
+                "\\nname-starts-with-newline",
+                "colons:and\\nnewlines:mix",
+                "multi\\nline\\nname",
+            ]
+
+            for name in test_names:
+                try:
+                    shm = shared_memory.SharedMemory(create=True, size=100, name=name)
+                    shm.buf[:5] = b'hello'  # Write something to the shared memory
+                    shm.close()
+                    shm.unlink()
+
+                except Exception as e:
+                    print(f"Error with name '{name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            print("SUCCESS")
+        """ % use_simple_format)
+
+        rc, out, err = assert_python_ok("-c", test_script)
+        self.assertIn(b"SUCCESS", out)
+        self.assertNotIn(b"traceback", err.lower(), err)
+        self.assertNotIn(b"resource_tracker.py", err, err)

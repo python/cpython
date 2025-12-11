@@ -262,7 +262,7 @@ extern PyObject* _PyCode_GetFreevars(PyCodeObject *);
 extern PyObject* _PyCode_GetCode(PyCodeObject *);
 
 /** API for initializing the line number tables. */
-extern int _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
+PyAPI_FUNC(int) _PyCode_InitAddressRange(PyCodeObject* co, PyCodeAddressRange *bounds);
 
 /** Out of process API for initializing the location table. */
 extern void _PyLineTable_InitAddressRange(
@@ -272,8 +272,15 @@ extern void _PyLineTable_InitAddressRange(
     PyCodeAddressRange *range);
 
 /** API for traversing the line number table. */
-extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
+PyAPI_FUNC(int) _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+
+// Similar to PyCode_Addr2Line(), but return -1 if the code object is invalid
+// and can be called without an attached tstate. Used by dump_frame() in
+// Python/traceback.c. The function uses heuristics to detect freed memory,
+// it's not 100% reliable.
+extern int _PyCode_SafeAddr2Line(PyCodeObject *co, int addr);
+
 
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
@@ -291,33 +298,34 @@ extern void _PyCode_Clear_Executors(PyCodeObject *code);
 #define ENABLE_SPECIALIZATION_FT ENABLE_SPECIALIZATION
 #endif
 
-/* Specialization functions */
+/* Specialization functions, these are exported only for other re-generated
+ * interpreters to call */
 
-extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
+PyAPI_FUNC(void) _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef cls,
                                          _Py_CODEUNIT *instr, int load_method);
-extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
-extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
+PyAPI_FUNC(void) _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
-extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
+PyAPI_FUNC(void) _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
-extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
-                                int nargs);
-extern void _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_Call(_PyStackRef callable, _PyStackRef self_or_null,
+                                _Py_CODEUNIT *instr, int nargs);
+PyAPI_FUNC(void) _Py_Specialize_CallKw(_PyStackRef callable, _Py_CODEUNIT *instr,
                                   int nargs);
-extern void _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_BinaryOp(_PyStackRef lhs, _PyStackRef rhs, _Py_CODEUNIT *instr,
                                     int oparg, _PyStackRef *locals);
-extern void _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
+PyAPI_FUNC(void) _Py_Specialize_CompareOp(_PyStackRef lhs, _PyStackRef rhs,
                                      _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
+PyAPI_FUNC(void) _Py_Specialize_UnpackSequence(_PyStackRef seq, _Py_CODEUNIT *instr,
                                           int oparg);
-extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int oparg);
-extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
-extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
-extern void _Py_GatherStats_GetIter(_PyStackRef iterable);
+PyAPI_FUNC(void) _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT *instr, int oparg);
+PyAPI_FUNC(void) _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
+PyAPI_FUNC(void) _Py_GatherStats_GetIter(_PyStackRef iterable);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
@@ -512,7 +520,7 @@ typedef struct {
 
 #define COMPARISON_NOT_EQUALS (COMPARISON_UNORDERED | COMPARISON_LESS_THAN | COMPARISON_GREATER_THAN)
 
-extern int _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
+PyAPI_FUNC(int) _Py_Instrument(PyCodeObject *co, PyInterpreterState *interp);
 
 extern _Py_CODEUNIT _Py_GetBaseCodeUnit(PyCodeObject *code, int offset);
 
@@ -659,6 +667,15 @@ PyAPI_FUNC(int) _PyCode_VerifyStateless(
 
 PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
+
+/* Create a comparable key used to compare constants taking in account the
+ * object type. It is used to make sure types are not coerced (e.g., float and
+ * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
+ *
+ * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
+ * depending on the type and the value. The type is the first item to not
+ * compare bytes and str which can raise a BytesWarning exception. */
+extern PyObject* _PyCode_ConstantKey(PyObject *obj);
 
 
 #ifdef __cplusplus

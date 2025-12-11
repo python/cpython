@@ -8,6 +8,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_object.h"        // _PyObject_VisitType()
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -96,12 +97,6 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-static int
-dbm_traverse(PyObject *dp, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(dp));
-    return 0;
-}
 
 static void
 dbm_dealloc(PyObject *self)
@@ -456,10 +451,7 @@ _dbm_dbm_setdefault_impl(dbmobject *self, PyTypeObject *cls, const char *key,
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
     }
     if (default_value == NULL) {
-        default_value = PyBytes_FromStringAndSize(NULL, 0);
-        if (default_value == NULL) {
-            return NULL;
-        }
+        default_value = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         val.dptr = NULL;
         val.dsize = 0;
     }
@@ -523,8 +515,12 @@ dbm__enter__(PyObject *self, PyObject *Py_UNUSED(dummy))
 static PyObject *
 dbm__exit__(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyObject *result;
     dbmobject *dp = dbmobject_CAST(self);
-    return _dbm_dbm_close_impl(dp);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = _dbm_dbm_close_impl(dp);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -540,7 +536,7 @@ static PyMethodDef dbm_methods[] = {
 
 static PyType_Slot dbmtype_spec_slots[] = {
     {Py_tp_dealloc, dbm_dealloc},
-    {Py_tp_traverse, dbm_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
     {Py_mp_length, dbm_length},

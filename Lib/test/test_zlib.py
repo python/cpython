@@ -119,6 +119,114 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
 
+class ChecksumCombineMixin:
+    """Mixin class for testing checksum combination."""
+
+    N = 1000
+    default_iv: int
+
+    def parse_iv(self, iv):
+        """Parse an IV value.
+
+        - The default IV is returned if *iv* is None.
+        - A random IV is returned if *iv* is -1.
+        - Otherwise, *iv* is returned as is.
+        """
+        if iv is None:
+            return self.default_iv
+        if iv == -1:
+            return random.randint(1, 0x80000000)
+        return iv
+
+    def checksum(self, data, init=None):
+        """Compute the checksum of data with a given initial value.
+
+        The *init* value is parsed by ``parse_iv``.
+        """
+        iv = self.parse_iv(init)
+        return self._checksum(data, iv)
+
+    def _checksum(self, data, init):
+        raise NotImplementedError
+
+    def combine(self, a, b, blen):
+        """Combine two checksums together."""
+        raise NotImplementedError
+
+    def get_random_data(self, data_len, *, iv=None):
+        """Get a triplet (data, iv, checksum)."""
+        data = random.randbytes(data_len)
+        init = self.parse_iv(iv)
+        checksum = self.checksum(data, init)
+        return data, init, checksum
+
+    def test_combine_empty(self):
+        for _ in range(self.N):
+            a, iv, checksum = self.get_random_data(32, iv=-1)
+            res = self.combine(iv, self.checksum(a), len(a))
+            self.assertEqual(res, checksum)
+
+    def test_combine_no_iv(self):
+        for _ in range(self.N):
+            a, _, chk_a = self.get_random_data(32)
+            b, _, chk_b = self.get_random_data(64)
+            res = self.combine(chk_a, chk_b, len(b))
+            self.assertEqual(res, self.checksum(a + b))
+
+    def test_combine_no_iv_invalid_length(self):
+        a, _, chk_a = self.get_random_data(32)
+        b, _, chk_b = self.get_random_data(64)
+        checksum = self.checksum(a + b)
+        for invalid_len in [1, len(a), 48, len(b) + 1, 191]:
+            invalid_res = self.combine(chk_a, chk_b, invalid_len)
+            self.assertNotEqual(invalid_res, checksum)
+
+        self.assertRaises(TypeError, self.combine, 0, 0, "len")
+
+    def test_combine_with_iv(self):
+        for _ in range(self.N):
+            a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
+            chk_a_no_iv = self.checksum(a)
+            b, iv_b, chk_b_with_iv = self.get_random_data(64, iv=-1)
+            chk_b_no_iv = self.checksum(b)
+
+            # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
+            #
+            #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
+            #     = COMBINE(
+            #           COMBINE(CHK(b'', iv_a), CHK(a)),
+            #           COMBINE(CHK(b'', iv_b), CHK(b)),
+            #       )
+            #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
+            tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
+            tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
+            expected = self.combine(tmp0, tmp1, len(b))
+            checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
+            self.assertEqual(checksum, expected)
+
+
+class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 0
+
+    def _checksum(self, data, init):
+        return zlib.crc32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.crc32_combine(a, b, blen)
+
+
+class Adler32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 1
+
+    def _checksum(self, data, init):
+        return zlib.adler32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.adler32_combine(a, b, blen)
+
+
 # Issue #10276 - check that inputs >=4 GiB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
@@ -1112,6 +1220,16 @@ class ZlibDecompressorTest(unittest.TestCase):
 class CustomInt:
     def __index__(self):
         return 100
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(zlib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

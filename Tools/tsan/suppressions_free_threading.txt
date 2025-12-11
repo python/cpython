@@ -12,15 +12,12 @@
 
 # These warnings trigger directly in a CPython function.
 
-race_top:assign_version_tag
-race_top:_Py_slot_tp_getattr_hook
 race_top:dump_traceback
 race_top:fatal_error
 race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
 race_top:_PyObject_TryGetInstanceAttribute
 race_top:PyUnstable_InterpreterFrame_GetLine
-race_top:type_modified_unlocked
 race_top:write_thread_id
 
 # gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
@@ -28,9 +25,6 @@ race_top:rangeiter_next
 
 # gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
 race_top:mi_block_set_nextx
-
-# gh-127266: type slot updates are not thread-safe (test_opcache.test_load_attr_method_lazy_dict)
-race_top:update_one_slot
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
@@ -47,11 +41,3 @@ race:list_inplace_repeat_lock_held
 # PyObject_Realloc internally does memcpy which isn't atomic so can race
 # with non-locking reads. See #132070
 race:PyObject_Realloc
-
-# gh-133467.  Some of these could be hard to trigger.
-race_top:update_one_slot
-race_top:_Py_slot_tp_getattr_hook
-race_top:slot_tp_descr_get
-race_top:type_set_name
-race_top:set_tp_bases
-race_top:type_set_bases_unlocked

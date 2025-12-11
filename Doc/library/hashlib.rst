@@ -94,6 +94,13 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    OpenSSL does not provide we fall back to a verified implementation from
    the `HACL\* project`_.
 
+.. deprecated-removed:: 3.15 3.19
+   The undocumented ``string`` keyword parameter in :func:`!_hashlib.new`
+   and hash-named constructors such as :func:`!_md5.md5` is deprecated.
+   Prefer passing the initial data as a positional argument for maximum
+   backwards compatibility.
+
+
 Usage
 -----
 
@@ -303,7 +310,7 @@ a file or file-like object.
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.14
-      Now raises a :exc:`BlockingIOError` if the file is opened in blocking
+      Now raises a :exc:`BlockingIOError` if the file is opened in non-blocking
       mode. Previously, spurious null bytes were added to the digest.
 
 

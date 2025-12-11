@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test.support import check_syntax_error
+from test.support import check_syntax_error, skip_wasi_stack_overflow
 from test.support import import_helper
 import annotationlib
 import inspect
@@ -248,6 +248,18 @@ the \'lazy\' dog.\n\
             with self.assertRaises(SyntaxError) as cm:
                 compile(s, "<test>", "exec")
             self.assertIn("was never closed", str(cm.exception))
+
+    @skip_wasi_stack_overflow()
+    def test_max_level(self):
+        # Macro defined in Parser/lexer/state.h
+        MAXLEVEL = 200
+
+        result = eval("(" * MAXLEVEL + ")" * MAXLEVEL)
+        self.assertEqual(result, ())
+
+        with self.assertRaises(SyntaxError) as cm:
+            eval("(" * (MAXLEVEL + 1) + ")" * (MAXLEVEL + 1))
+        self.assertStartsWith(str(cm.exception), 'too many nested parentheses')
 
 var_annot_global: int # a global annotated is necessary for test_var_annot
 
@@ -1542,6 +1554,8 @@ class GrammarTests(unittest.TestCase):
         check('[None [i, j]]')
         check('[True [i, j]]')
         check('[... [i, j]]')
+        check('[t"{x}" [i, j]]')
+        check('[t"x={x}" [i, j]]')
 
         msg=r'indices must be integers or slices, not tuple; perhaps you missed a comma\?'
         check('[(1, 2) [i, j]]')
@@ -1552,8 +1566,6 @@ class GrammarTests(unittest.TestCase):
         check('[f"x={x}" [i, j]]')
         check('["abc" [i, j]]')
         check('[b"abc" [i, j]]')
-        check('[t"{x}" [i, j]]')
-        check('[t"x={x}" [i, j]]')
 
         msg=r'indices must be integers or slices, not tuple;'
         check('[[1, 2] [3, 4]]')
@@ -1574,6 +1586,7 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] [f"{x}"]]')
         check('[[1, 2] [f"x={x}"]]')
         check('[[1, 2] ["abc"]]')
+        msg=r'indices must be integers or slices, not string.templatelib.Template;'
         check('[[1, 2] [t"{x}"]]')
         check('[[1, 2] [t"x={x}"]]')
         msg=r'indices must be integers or slices, not'

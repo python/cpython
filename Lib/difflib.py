@@ -30,6 +30,7 @@ __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
            'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
+from _colorize import can_colorize, get_theme
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
 from types import GenericAlias
@@ -78,8 +79,8 @@ class SequenceMatcher:
     sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
     sequences are close matches:
 
-    >>> print(round(s.ratio(), 3))
-    0.866
+    >>> print(round(s.ratio(), 2))
+    0.87
     >>>
 
     If you're only interested in where the sequences match,
@@ -1094,7 +1095,7 @@ def _format_range_unified(start, stop):
     return '{},{}'.format(beginning, length)
 
 def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
-                 tofiledate='', n=3, lineterm='\n'):
+                 tofiledate='', n=3, lineterm='\n', *, color=False):
     r"""
     Compare two sequences of lines; generate the delta as a unified diff.
 
@@ -1110,6 +1111,10 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
 
     For inputs that do not have trailing newlines, set the lineterm
     argument to "" so that the output will be uniformly newline free.
+
+    Set 'color' to True to enable output in color, similar to
+    'git diff --color'. Even if enabled, it can be
+    controlled using environment variables such as 'NO_COLOR'.
 
     The unidiff format normally has a header for filenames and modification
     times.  Any or all of these may be specified using strings for
@@ -1134,6 +1139,11 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
      four
     """
 
+    if color and can_colorize():
+        t = get_theme(force_color=True).difflib
+    else:
+        t = get_theme(force_no_color=True).difflib
+
     _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
@@ -1141,25 +1151,25 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
             started = True
             fromdate = '\t{}'.format(fromfiledate) if fromfiledate else ''
             todate = '\t{}'.format(tofiledate) if tofiledate else ''
-            yield '--- {}{}{}'.format(fromfile, fromdate, lineterm)
-            yield '+++ {}{}{}'.format(tofile, todate, lineterm)
+            yield f'{t.header}--- {fromfile}{fromdate}{lineterm}{t.reset}'
+            yield f'{t.header}+++ {tofile}{todate}{lineterm}{t.reset}'
 
         first, last = group[0], group[-1]
         file1_range = _format_range_unified(first[1], last[2])
         file2_range = _format_range_unified(first[3], last[4])
-        yield '@@ -{} +{} @@{}'.format(file1_range, file2_range, lineterm)
+        yield f'{t.hunk}@@ -{file1_range} +{file2_range} @@{lineterm}{t.reset}'
 
         for tag, i1, i2, j1, j2 in group:
             if tag == 'equal':
                 for line in a[i1:i2]:
-                    yield ' ' + line
+                    yield f'{t.context} {line}{t.reset}'
                 continue
             if tag in {'replace', 'delete'}:
                 for line in a[i1:i2]:
-                    yield '-' + line
+                    yield f'{t.removed}-{line}{t.reset}'
             if tag in {'replace', 'insert'}:
                 for line in b[j1:j2]:
-                    yield '+' + line
+                    yield f'{t.added}+{line}{t.reset}'
 
 
 ########################################################################
@@ -1615,16 +1625,13 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
 
 
 _file_template = """
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta http-equiv="Content-Type"
-          content="text/html; charset=%(charset)s" />
-    <title></title>
-    <style type="text/css">%(styles)s
+    <meta charset="%(charset)s">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diff comparison</title>
+    <style>%(styles)s
     </style>
 </head>
 
@@ -1636,13 +1643,36 @@ _file_template = """
 
 _styles = """
         :root {color-scheme: light dark}
-        table.diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
-        .diff_header {background-color:#e0e0e0}
-        td.diff_header {text-align:right}
-        .diff_next {background-color:#c0c0c0}
+        table.diff {
+            font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+            border: medium;
+        }
+        .diff_header {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        td.diff_header {
+            text-align: right;
+            padding: 0 8px;
+        }
+        .diff_next {
+            background-color: #c0c0c0;
+            padding: 4px 0;
+        }
         .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
         .diff_sub {background-color:#ffaaaa}
+        table.diff[summary="Legends"] {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+        table.diff[summary="Legends"] th {
+            background-color: #e0e0e0;
+            padding: 4px 8px;
+        }
+        table.diff[summary="Legends"] td {
+            padding: 4px 8px;
+        }
 
         @media (prefers-color-scheme: dark) {
             .diff_header {background-color:#666}
@@ -1650,6 +1680,8 @@ _styles = """
             .diff_add {background-color:darkgreen}
             .diff_chg {background-color:#847415}
             .diff_sub {background-color:darkred}
+            table.diff[summary="Legends"] {border-color:#555}
+            table.diff[summary="Legends"] th{background-color:#666}
         }"""
 
 _table_template = """
@@ -1692,7 +1724,7 @@ class HtmlDiff(object):
     make_table -- generates HTML for a single side by side table
     make_file -- generates complete HTML file with a single side by side table
 
-    See tools/scripts/diff.py for an example usage of this class.
+    See Doc/includes/diff.py for an example usage of this class.
     """
 
     _file_template = _file_template
@@ -1892,8 +1924,11 @@ class HtmlDiff(object):
         # make space non-breakable so they don't get compressed or line wrapped
         text = text.replace(' ','&nbsp;').rstrip()
 
-        return '<td class="diff_header"%s>%s</td><td nowrap="nowrap">%s</td>' \
-               % (id,linenum,text)
+        # add a class to the td tag if there is a difference on the line
+        css_class = ' class="diff_changed" ' if flag else ' '
+
+        return f'<td class="diff_header"{id}>{linenum}</td>' \
+            + f'<td{css_class}nowrap="nowrap">{text}</td>'
 
     def _make_prefix(self):
         """Create unique anchor prefixes"""
