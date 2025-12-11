@@ -1460,7 +1460,7 @@ application).
       lst.reverse()
       lst.sort()
 
-   The following operations/methods are not atomic:
+   The following operations/methods are not fully atomic:
 
    .. code-block::
       :class: maybe
@@ -1468,6 +1468,11 @@ application).
       lst.index(item)
       lst.count(item)
       item in lst
+
+      lst.extend(iterable)
+      lst += iterable
+
+      lst[i:j] = iterable
 
    The :meth:`~list.index` and :meth:`~list.count` methods, and the ``in``
    operator, iterate the list without holding a lock. They are safe to call
@@ -1482,9 +1487,9 @@ application).
    applies to inplace concatenation of list with other iterables when using
    ``lst += iterable``.
 
-   Similarly, assigning to a list slice with ``lst[i:j] = obj`` is always
-   atomic with respect to the target list, but ``obj`` is only locked when it
-   is also a :class:`list`.
+   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is always
+   atomic with respect to the target list, but ``iterable`` is only locked when
+   it is also a :class:`list`.
 
    Operations that involve multiple accesses, as well as iteration, are not
    atomic. For example:
