@@ -2060,6 +2060,24 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
             self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
+    def test_search_methods_reentrancy_raises_buffererror(self):
+        ba = bytearray(b"A")
+        class Evil:
+            def __index__(self):
+                ba.clear()
+                return 65  # ord('A')
+        with self.assertRaises(BufferError):
+            ba.find(Evil())
+        with self.assertRaises(BufferError):
+            ba.count(Evil())
+        with self.assertRaises(BufferError):
+            ba.index(Evil())
+        with self.assertRaises(BufferError):
+            ba.rindex(Evil())
+        with self.assertRaises(BufferError):
+            ba.rfind(Evil())
+
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
