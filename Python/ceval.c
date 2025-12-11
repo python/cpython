@@ -3128,7 +3128,7 @@ _PyEval_GetBuiltins(PyThreadState *tstate)
 {
     _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
     if (frame != NULL) {
-        return frame->f_builtins;
+        return _PyFrame_GetBuiltins(frame);
     }
     return tstate->interp->builtins;
 }
@@ -3237,7 +3237,7 @@ _PyEval_GetGlobals(PyThreadState *tstate)
     if (current_frame == NULL) {
         return NULL;
     }
-    return current_frame->f_globals;
+    return _PyFrame_GetGlobals(current_frame);
 }
 
 PyObject *
@@ -3367,7 +3367,7 @@ PyObject* PyEval_GetFrameGlobals(void)
     if (current_frame == NULL) {
         return NULL;
     }
-    return Py_XNewRef(current_frame->f_globals);
+    return Py_XNewRef(_PyFrame_GetGlobals(current_frame));
 }
 
 PyObject* PyEval_GetFrameBuiltins(void)
@@ -3477,11 +3477,15 @@ _PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(_PyFrame_GetBuiltins(frame), &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
         _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
+        return NULL;
+    }
+
+    if (_PyFrame_EnsureFrameFullyInitialized(frame) < 0) {
         return NULL;
     }
 

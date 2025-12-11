@@ -2286,6 +2286,10 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
 PyObject *
 _PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
+    if (_PyFrame_EnsureFrameFullyInitialized(frame) < 0) {
+        return NULL;
+    }
+
     // We should try to avoid creating the FrameObject if possible.
     // So we check if the frame is a module or class level scope
     PyCodeObject *co = _PyFrame_GetCode(frame);
