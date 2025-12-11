@@ -1,1 +1,1 @@
-Checks that the file opening worked first before flushing.
+:c:func:`PyUnstable_CopyPerfMapFile` now checks that opening the file succeeded before flushing.
