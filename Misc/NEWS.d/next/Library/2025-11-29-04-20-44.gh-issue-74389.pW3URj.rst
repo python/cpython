@@ -1,0 +1,3 @@
+When the stdin being used by a :class:`subprocess.Popen` instance is closed,
+this is now ignored in :meth:`subprocess.Popen.communicate` instead of
+leaving the class in an inconsistent state.

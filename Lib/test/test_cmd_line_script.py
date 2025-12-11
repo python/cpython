@@ -810,6 +810,30 @@ class CmdLineTest(unittest.TestCase):
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 
+    def test_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        rc, out, err = assert_python_ok(
+            '-Werror',
+            '-Walways:::__main__',
+            '-Werror:::test.test_import.data.syntax_warnings',
+            '-Werror:::syntax_warnings',
+            filename)
+        self.assertEqual(err.count(b': SyntaxWarning: '), 6)
+
+    def test_zipfile_run_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with os_helper.temp_dir() as script_dir:
+            zip_name, _ = make_zip_pkg(
+                script_dir, 'test_zip', 'test_pkg', '__main__', source)
+            rc, out, err = assert_python_ok(
+                '-Werror',
+                '-Walways:::__main__',
+                '-Werror:::test_pkg.__main__',
+                os.path.join(zip_name, 'test_pkg')
+            )
+            self.assertEqual(err.count(b': SyntaxWarning: '), 12)
 
 
 def tearDownModule():

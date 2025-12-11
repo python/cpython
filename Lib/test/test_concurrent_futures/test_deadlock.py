@@ -10,6 +10,7 @@ from concurrent import futures
 from concurrent.futures.process import BrokenProcessPool, _ThreadWakeup
 
 from test import support
+from test.support import warnings_helper
 
 from .util import (
     create_executor_tests, setup_module,
@@ -111,6 +112,7 @@ class ExecutorDeadlockTest:
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
         self.fail(f"Executor deadlock:\n\n{tb}")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _check_error(self, error, func, *args, ignore_stderr=False):
         # test for deadlock caused by crashes or exiting in a pool
         self.executor.shutdown(wait=True)
@@ -199,6 +201,7 @@ class ExecutorDeadlockTest:
         # the result_handler thread
         self._check_error(BrokenProcessPool, _return_instance, ExitAtUnpickle)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock
@@ -212,6 +215,7 @@ class ExecutorDeadlockTest:
             with self.assertRaises(BrokenProcessPool):
                 f.result()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_shutdown_deadlock_pickle(self):
         # Test that the pool calling shutdown with wait=False does not cause
         # a deadlock if a task fails at pickle after the shutdown call.
@@ -238,6 +242,7 @@ class ExecutorDeadlockTest:
         # dangling threads
         executor_manager.join()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_crash_big_data(self):
         # Test that there is a clean exception instead of a deadlock when a
@@ -254,6 +259,7 @@ class ExecutorDeadlockTest:
 
         executor.shutdown(wait=True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_gh105829_should_not_deadlock_if_wakeup_pipe_full(self):
         # Issue #105829: The _ExecutorManagerThread wakeup pipe could
         # fill up and block. See: https://github.com/python/cpython/issues/105829
