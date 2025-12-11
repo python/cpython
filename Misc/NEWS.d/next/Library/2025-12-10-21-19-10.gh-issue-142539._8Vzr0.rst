@@ -1,0 +1,2 @@
+:mod:`traceback`: Fix location of carets in :exc:`SyntaxError`\s when the
+source contains wide characters.
