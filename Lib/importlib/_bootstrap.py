@@ -521,24 +521,6 @@ def _requires_frozen(fxn):
     return _requires_frozen_wrapper
 
 
-# Typically used by loader classes as a method replacement.
-def _load_module_shim(self, fullname):
-    """Load the specified module into sys.modules and return it.
-
-    This method is deprecated.  Use loader.exec_module() instead.
-
-    """
-    msg = ("the load_module() method is deprecated and slated for removal in "
-           "Python 3.15; use exec_module() instead")
-    _warnings.warn(msg, DeprecationWarning)
-    spec = spec_from_loader(fullname, self)
-    if fullname in sys.modules:
-        module = sys.modules[fullname]
-        _exec(spec, module)
-        return sys.modules[fullname]
-    else:
-        return _load(spec)
-
 # Module specifications #######################################################
 
 def _module_repr(module):
@@ -763,8 +745,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 # should also be None for consistency.  While a bit of a hack,
                 # this is the best place to ensure this consistency.
                 #
-                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
-                # and bpo-32305
+                # See bpo-32305
                 module.__file__ = None
         try:
             module.__loader__ = loader
@@ -844,7 +825,7 @@ def _module_repr_from_spec(spec):
             return f'<module {spec.name!r} ({spec.origin})>'
 
 
-# Used by importlib.reload() and _load_module_shim().
+# Used by importlib.reload().
 def _exec(spec, module):
     """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
@@ -860,13 +841,7 @@ def _exec(spec, module):
                 _init_module_attrs(spec, module, override=True)
             else:
                 _init_module_attrs(spec, module, override=True)
-                if not hasattr(spec.loader, 'exec_module'):
-                    msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                           "falling back to load_module()")
-                    _warnings.warn(msg, ImportWarning)
-                    spec.loader.load_module(name)
-                else:
-                    spec.loader.exec_module(module)
+                spec.loader.exec_module(module)
         finally:
             # Update the order of insertion into sys.modules for module
             # clean-up at shutdown.
@@ -874,53 +849,8 @@ def _exec(spec, module):
             sys.modules[spec.name] = module
     return module
 
-
-def _load_backward_compatible(spec):
-    # It is assumed that all callers have been warned about using load_module()
-    # appropriately before calling this function.
-    try:
-        spec.loader.load_module(spec.name)
-    except:
-        if spec.name in sys.modules:
-            module = sys.modules.pop(spec.name)
-            sys.modules[spec.name] = module
-        raise
-    # The module must be in sys.modules at this point!
-    # Move it to the end of sys.modules.
-    module = sys.modules.pop(spec.name)
-    sys.modules[spec.name] = module
-    if getattr(module, '__loader__', None) is None:
-        try:
-            module.__loader__ = spec.loader
-        except AttributeError:
-            pass
-    if getattr(module, '__package__', None) is None:
-        try:
-            # Since module.__path__ may not line up with
-            # spec.submodule_search_paths, we can't necessarily rely
-            # on spec.parent here.
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = spec.name.rpartition('.')[0]
-        except AttributeError:
-            pass
-    if getattr(module, '__spec__', None) is None:
-        try:
-            module.__spec__ = spec
-        except AttributeError:
-            pass
-    return module
-
 def _load_unlocked(spec):
     # A helper for direct use by the import system.
-    if spec.loader is not None:
-        # Not a namespace package.
-        if not hasattr(spec.loader, 'exec_module'):
-            msg = (f"{_object_name(spec.loader)}.exec_module() not found; "
-                    "falling back to load_module()")
-            _warnings.warn(msg, ImportWarning)
-            return _load_backward_compatible(spec)
-
     module = module_from_spec(spec)
 
     # This must be done before putting the module in sys.modules
@@ -954,8 +884,7 @@ def _load_unlocked(spec):
 
     return module
 
-# A method used during testing of _load_unlocked() and by
-# _load_module_shim().
+# A method used during testing of _load_unlocked().
 def _load(spec):
     """Return a new module object, loaded by the spec's loader.
 
@@ -1019,8 +948,6 @@ class BuiltinImporter:
     def is_package(cls, fullname):
         """Return False as built-in modules are never packages."""
         return False
-
-    load_module = classmethod(_load_module_shim)
 
 
 class FrozenImporter:
@@ -1179,25 +1106,6 @@ class FrozenImporter:
         exec(code, module.__dict__)
 
     @classmethod
-    def load_module(cls, fullname):
-        """Load a frozen module.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # Warning about deprecation implemented in _load_module_shim().
-        module = _load_module_shim(cls, fullname)
-        info = _imp.find_frozen(fullname)
-        assert info is not None
-        _, ispkg, origname = info
-        module.__origname__ = origname
-        vars(module).pop('__file__', None)
-        if ispkg:
-            module.__path__ = []
-        cls._fix_up_module(module)
-        return module
-
-    @classmethod
     @_requires_frozen
     def get_code(cls, fullname):
         """Return the code object for the frozen module."""
@@ -1307,6 +1215,14 @@ _ERR_MSG_PREFIX = 'No module named '
 
 def _find_and_load_unlocked(name, import_):
     path = None
+    sys.audit(
+        "import",
+        name,
+        path,
+        getattr(sys, "path", None),
+        getattr(sys, "meta_path", None),
+        getattr(sys, "path_hooks", None)
+    )
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:

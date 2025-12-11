@@ -120,9 +120,6 @@ BaseServer:
 
 # Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
-__version__ = "0.4"
-
-
 import socket
 import selectors
 import os
@@ -861,3 +858,12 @@ class DatagramRequestHandler(BaseRequestHandler):
 
     def finish(self):
         self.socket.sendto(self.wfile.getvalue(), self.client_address)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.4"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

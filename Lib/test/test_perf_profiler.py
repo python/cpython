@@ -160,50 +160,67 @@ class TestPerfTrampoline(unittest.TestCase):
         self.assertIn(f"py::bar_fork:{script}", child_perf_file_contents)
         self.assertIn(f"py::baz_fork:{script}", child_perf_file_contents)
 
+        # The parent's map should not contain the child's symbols.
+        self.assertNotIn(f"py::foo_fork:{script}", perf_file_contents)
+        self.assertNotIn(f"py::bar_fork:{script}", perf_file_contents)
+        self.assertNotIn(f"py::baz_fork:{script}", perf_file_contents)
+
+        # The child's map should not contain the parent's symbols.
+        self.assertNotIn(f"py::foo:{script}", child_perf_file_contents)
+        self.assertNotIn(f"py::bar:{script}", child_perf_file_contents)
+        self.assertNotIn(f"py::baz:{script}", child_perf_file_contents)
+
     @unittest.skipIf(support.check_bolt_optimized(), "fails on BOLT instrumented binaries")
     def test_sys_api(self):
-        code = """if 1:
-                import sys
-                def foo():
-                    pass
+        for define_eval_hook in (False, True):
+            code = """if 1:
+                    import sys
+                    def foo():
+                        pass
 
-                def spam():
-                    pass
+                    def spam():
+                        pass
 
-                def bar():
-                    sys.deactivate_stack_trampoline()
-                    foo()
+                    def bar():
+                        sys.deactivate_stack_trampoline()
+                        foo()
+                        sys.activate_stack_trampoline("perf")
+                        spam()
+
+                    def baz():
+                        bar()
+
                     sys.activate_stack_trampoline("perf")
-                    spam()
+                    baz()
+                    """
+            if define_eval_hook:
+                set_eval_hook = """if 1:
+                                import _testinternalcapi
+                                _testinternalcapi.set_eval_frame_record([])
+"""
+                code = set_eval_hook + code
+            with temp_dir() as script_dir:
+                script = make_script(script_dir, "perftest", code)
+                env = {**os.environ, "PYTHON_JIT": "0"}
+                with subprocess.Popen(
+                    [sys.executable, script],
+                    text=True,
+                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    env=env,
+                ) as process:
+                    stdout, stderr = process.communicate()
 
-                def baz():
-                    bar()
+            self.assertEqual(stderr, "")
+            self.assertEqual(stdout, "")
 
-                sys.activate_stack_trampoline("perf")
-                baz()
-                """
-        with temp_dir() as script_dir:
-            script = make_script(script_dir, "perftest", code)
-            env = {**os.environ, "PYTHON_JIT": "0"}
-            with subprocess.Popen(
-                [sys.executable, script],
-                text=True,
-                stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                env=env,
-            ) as process:
-                stdout, stderr = process.communicate()
-
-        self.assertEqual(stderr, "")
-        self.assertEqual(stdout, "")
-
-        perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
-        self.assertTrue(perf_file.exists())
-        perf_file_contents = perf_file.read_text()
-        self.assertNotIn(f"py::foo:{script}", perf_file_contents)
-        self.assertIn(f"py::spam:{script}", perf_file_contents)
-        self.assertIn(f"py::bar:{script}", perf_file_contents)
-        self.assertIn(f"py::baz:{script}", perf_file_contents)
+            perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
+            self.assertTrue(perf_file.exists())
+            perf_file_contents = perf_file.read_text()
+            self.assertNotIn(f"py::foo:{script}", perf_file_contents)
+            self.assertIn(f"py::spam:{script}", perf_file_contents)
+            self.assertIn(f"py::bar:{script}", perf_file_contents)
+            self.assertIn(f"py::baz:{script}", perf_file_contents)
 
     def test_sys_api_with_existing_trampoline(self):
         code = """if 1:
@@ -228,6 +245,24 @@ class TestPerfTrampoline(unittest.TestCase):
                 assert sys.is_stack_trampoline_active() is True
                 sys.deactivate_stack_trampoline()
                 assert sys.is_stack_trampoline_active() is False
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    def test_sys_api_perf_jit_backend(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                assert sys.is_stack_trampoline_active() is True
+                sys.deactivate_stack_trampoline()
+                assert sys.is_stack_trampoline_active() is False
+                """
+        assert_python_ok("-c", code, PYTHON_JIT="0")
+
+    def test_sys_api_with_existing_perf_jit_trampoline(self):
+        code = """if 1:
+                import sys
+                sys.activate_stack_trampoline("perf_jit")
+                sys.activate_stack_trampoline("perf_jit")
                 """
         assert_python_ok("-c", code, PYTHON_JIT="0")
 
@@ -318,6 +353,7 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        text=True,
     )
     if proc.returncode:
         print(proc.stderr, file=sys.stderr)
@@ -327,10 +363,10 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         jit_output_file = cwd + "/jit_output.dump"
         command = ("perf", "inject", "-j", "-i", output_file, "-o", jit_output_file)
         proc = subprocess.run(
-            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env
+            command, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env, text=True
         )
         if proc.returncode:
-            print(proc.stderr)
+            print(proc.stderr, file=sys.stderr)
             raise ValueError(f"Perf failed with return code {proc.returncode}")
         # Copy the jit_output_file to the output_file
         os.rename(jit_output_file, output_file)
@@ -342,10 +378,9 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
         stderr=subprocess.PIPE,
         env=env,
         check=True,
+        text=True,
     )
-    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
-        "utf-8", "replace"
-    )
+    return proc.stdout, proc.stderr
 
 
 class TestPerfProfilerMixin:

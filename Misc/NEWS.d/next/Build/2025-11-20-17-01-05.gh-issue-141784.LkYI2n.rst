@@ -1,0 +1,4 @@
+Fix ``_remote_debugging_module.c`` compilation on 32-bit Linux. Include
+Python.h before system headers to make sure that
+``_remote_debugging_module.c`` uses the same types (ABI) than Python. Patch
+by Victor Stinner.

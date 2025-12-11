@@ -2,34 +2,35 @@
 
 .. _perf_profiling:
 
-==============================================
-Python support for the Linux ``perf`` profiler
-==============================================
+========================================================
+Python support for the ``perf map`` compatible profilers
+========================================================
 
 :author: Pablo Galindo
 
-`The Linux perf profiler <https://perf.wiki.kernel.org>`_
-is a very powerful tool that allows you to profile and obtain
-information about the performance of your application.
-``perf`` also has a very vibrant ecosystem of tools
-that aid with the analysis of the data that it produces.
+`The Linux perf profiler <https://perf.wiki.kernel.org>`_ and
+`samply <https://github.com/mstange/samply>`_ are powerful tools that allow you to
+profile and obtain information about the performance of your application.
+Both tools have vibrant ecosystems that aid with the analysis of the data they produce.
 
-The main problem with using the ``perf`` profiler with Python applications is that
-``perf`` only gets information about native symbols, that is, the names of
+The main problem with using these profilers with Python applications is that
+they only get information about native symbols, that is, the names of
 functions and procedures written in C. This means that the names and file names
-of Python functions in your code will not appear in the output of ``perf``.
+of Python functions in your code will not appear in the profiler output.
 
 Since Python 3.12, the interpreter can run in a special mode that allows Python
-functions to appear in the output of the ``perf`` profiler. When this mode is
+functions to appear in the output of compatible profilers. When this mode is
 enabled, the interpreter will interpose a small piece of code compiled on the
-fly before the execution of every Python function and it will teach ``perf`` the
+fly before the execution of every Python function and it will teach the profiler the
 relationship between this piece of code and the associated Python function using
 :doc:`perf map files <../c-api/perfmaps>`.
 
 .. note::
 
-    Support for the ``perf`` profiler is currently only available for Linux on
-    select architectures. Check the output of the ``configure`` build step or
+    Support for profiling is available on Linux and macOS on select architectures.
+    Perf is available on Linux, while samply can be used on both Linux and macOS.
+    samply support on macOS is available starting from Python 3.15.
+    Check the output of the ``configure`` build step or
     check the output of ``python -m sysconfig | grep HAVE_PERF_TRAMPOLINE``
     to see if your system is supported.
 
@@ -147,6 +148,31 @@ Instead, if we run the same experiment with ``perf`` support enabled we get:
                             |          |          |                     |          |          |--3.26%--_PyObject_Malloc
 
 
+
+Using the samply profiler
+-------------------------
+
+samply is a modern profiler that can be used as an alternative to perf.
+It uses the same perf map files that Python generates, making it compatible
+with Python's profiling support. samply is particularly useful on macOS
+where perf is not available.
+
+To use samply with Python, first install it following the instructions at
+https://github.com/mstange/samply, then run::
+
+    $ samply record PYTHONPERFSUPPORT=1 python my_script.py
+
+This will open a web interface where you can analyze the profiling data
+interactively. The advantage of samply is that it provides a modern
+web-based interface for analyzing profiling data and works on both Linux
+and macOS.
+
+On macOS, samply support requires Python 3.15 or later. Also on macOS, samply
+can't profile signed Python executables due to restrictions by macOS. You can
+profile with Python binaries that you've compiled yourself, or which are
+unsigned or locally-signed (such as anything installed by Homebrew). In
+order to attach to running processes on macOS, run ``samply setup`` once (and
+every time samply is updated) to self-sign the samply binary.
 
 How to enable ``perf`` profiling support
 ----------------------------------------

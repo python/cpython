@@ -13,6 +13,7 @@
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
@@ -713,14 +714,6 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 }
 
 /* Methods */
-
-static int
-array_tp_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 array_dealloc(PyObject *op)
 {
@@ -728,9 +721,7 @@ array_dealloc(PyObject *op)
     PyObject_GC_UnTrack(op);
 
     arrayobject *self = arrayobject_CAST(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     if (self->ob_item != NULL) {
         PyMem_Free(self->ob_item);
     }
@@ -1375,6 +1366,7 @@ array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v)
 }
 
 /*[clinic input]
+@permit_long_summary
 array.array.buffer_info
 
 Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array's contents.
@@ -1385,7 +1377,7 @@ the buffer length in bytes.
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
-/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=a58bae5c6e1ac6a6]*/
+/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=63d9ad83ba60cda8]*/
 {
     PyObject *retval = NULL, *v;
 
@@ -1427,6 +1419,7 @@ array_array_append_impl(arrayobject *self, PyObject *v)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 array.array.byteswap
 
 Byteswap all items of the array.
@@ -1437,7 +1430,7 @@ raised.
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=6a85591b950a0186]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=9af1d1749000b14f]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1520,11 +1513,12 @@ array_array_reverse_impl(arrayobject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 array.array.fromfile
 
     cls: defining_class
     f: object
-    n: Py_ssize_t
+    n: Py_ssize_t(allow_negative=False)
     /
 
 Read n objects from the file object f and append them to the end of the array.
@@ -1533,17 +1527,13 @@ Read n objects from the file object f and append them to the end of the array.
 static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
                           Py_ssize_t n)
-/*[clinic end generated code: output=83a667080b345ebc input=3822e907c1c11f1a]*/
+/*[clinic end generated code: output=83a667080b345ebc input=db46b06ac1b6de87]*/
 {
     PyObject *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
     int not_enough_bytes;
 
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative count");
-        return NULL;
-    }
     if (n > PY_SSIZE_T_MAX / itemsize) {
         PyErr_NoMemory();
         return NULL;
@@ -1740,6 +1730,7 @@ frombytes(arrayobject *self, Py_buffer *buffer)
 }
 
 /*[clinic input]
+@permit_long_summary
 array.array.frombytes
 
     buffer: Py_buffer
@@ -1750,12 +1741,13 @@ Appends items from the string, interpreting it as an array of machine values, as
 
 static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=d9842c8f7510a516 input=378db226dfac949e]*/
+/*[clinic end generated code: output=d9842c8f7510a516 input=6b90ce5895f677a4]*/
 {
     return frombytes(self, buffer);
 }
 
 /*[clinic input]
+@permit_long_summary
 array.array.tobytes
 
 Convert the array to an array of machine values and return the bytes representation.
@@ -1763,7 +1755,7 @@ Convert the array to an array of machine values and return the bytes representat
 
 static PyObject *
 array_array_tobytes_impl(arrayobject *self)
-/*[clinic end generated code: output=87318e4edcdc2bb6 input=90ee495f96de34f5]*/
+/*[clinic end generated code: output=87318e4edcdc2bb6 input=41081256b97f9d7a]*/
 {
     if (Py_SIZE(self) <= PY_SSIZE_T_MAX / self->ob_descr->itemsize) {
         return PyBytes_FromStringAndSize(self->ob_item,
@@ -1774,6 +1766,7 @@ array_array_tobytes_impl(arrayobject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 array.array.fromunicode
 
     ustr: unicode
@@ -1788,7 +1781,7 @@ some other type.
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
-/*[clinic end generated code: output=24359f5e001a7f2b input=025db1fdade7a4ce]*/
+/*[clinic end generated code: output=24359f5e001a7f2b input=158d47c302f27ca1]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {
@@ -1836,6 +1829,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 array.array.tounicode
 
 Extends this array with data from the unicode string ustr.
@@ -1847,7 +1841,7 @@ unicode string from an array of some other type.
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self)
-/*[clinic end generated code: output=08e442378336e1ef input=127242eebe70b66d]*/
+/*[clinic end generated code: output=08e442378336e1ef input=6690997213d219db]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {
@@ -2839,6 +2833,9 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         Py_SET_SIZE(self, n);
                         self->allocated = n;
                     }
+                    else {
+                        PyMem_Free(ustr);
+                    }
                 }
                 else { // c == 'w'
                     Py_ssize_t n = PyUnicode_GET_LENGTH(initial);
@@ -2962,7 +2959,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_getset, array_getsets},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
-    {Py_tp_traverse, array_tp_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, array_length},

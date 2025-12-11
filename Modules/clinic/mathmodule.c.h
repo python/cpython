@@ -8,60 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-PyDoc_STRVAR(math_gcd__doc__,
-"gcd($module, /, *integers)\n"
-"--\n"
-"\n"
-"Greatest Common Divisor.");
-
-#define MATH_GCD_METHODDEF    \
-    {"gcd", _PyCFunction_CAST(math_gcd), METH_FASTCALL, math_gcd__doc__},
-
-static PyObject *
-math_gcd_impl(PyObject *module, PyObject * const *args,
-              Py_ssize_t args_length);
-
-static PyObject *
-math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
-
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = math_gcd_impl(module, __clinic_args, args_length);
-
-    return return_value;
-}
-
-PyDoc_STRVAR(math_lcm__doc__,
-"lcm($module, /, *integers)\n"
-"--\n"
-"\n"
-"Least Common Multiple.");
-
-#define MATH_LCM_METHODDEF    \
-    {"lcm", _PyCFunction_CAST(math_lcm), METH_FASTCALL, math_lcm__doc__},
-
-static PyObject *
-math_lcm_impl(PyObject *module, PyObject * const *args,
-              Py_ssize_t args_length);
-
-static PyObject *
-math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
-
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = math_lcm_impl(module, __clinic_args, args_length);
-
-    return return_value;
-}
-
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
 "--\n"
@@ -84,6 +30,146 @@ PyDoc_STRVAR(math_floor__doc__,
 #define MATH_FLOOR_METHODDEF    \
     {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
 
+PyDoc_STRVAR(math_fmax__doc__,
+"fmax($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the larger of two floating-point arguments.");
+
+#define MATH_FMAX_METHODDEF    \
+    {"fmax", _PyCFunction_CAST(math_fmax), METH_FASTCALL, math_fmax__doc__},
+
+static double
+math_fmax_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmax", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmax_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_fmin__doc__,
+"fmin($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the smaller of two floating-point arguments.");
+
+#define MATH_FMIN_METHODDEF    \
+    {"fmin", _PyCFunction_CAST(math_fmin), METH_FASTCALL, math_fmin__doc__},
+
+static double
+math_fmin_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_fmin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+    double _return_value;
+
+    if (!_PyArg_CheckPositional("fmin", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_fmin_impl(module, x, y);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_signbit__doc__,
+"signbit($module, x, /)\n"
+"--\n"
+"\n"
+"Return True if the sign of x is negative and False otherwise.");
+
+#define MATH_SIGNBIT_METHODDEF    \
+    {"signbit", (PyCFunction)math_signbit, METH_O, math_signbit__doc__},
+
+static PyObject *
+math_signbit_impl(PyObject *module, double x);
+
+static PyObject *
+math_signbit(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_signbit_impl(module, x);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
@@ -94,24 +180,6 @@ PyDoc_STRVAR(math_fsum__doc__,
 
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
-
-PyDoc_STRVAR(math_isqrt__doc__,
-"isqrt($module, n, /)\n"
-"--\n"
-"\n"
-"Return the integer part of the square root of the input.");
-
-#define MATH_ISQRT_METHODDEF    \
-    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
-
-PyDoc_STRVAR(math_factorial__doc__,
-"factorial($module, n, /)\n"
-"--\n"
-"\n"
-"Find n!.");
-
-#define MATH_FACTORIAL_METHODDEF    \
-    {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
 
 PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
@@ -967,89 +1035,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_perm__doc__,
-"perm($module, n, k=None, /)\n"
-"--\n"
-"\n"
-"Number of ways to choose k items from n items without repetition and with order.\n"
-"\n"
-"Evaluates to n! / (n - k)! when k <= n and evaluates\n"
-"to zero when k > n.\n"
-"\n"
-"If k is not specified or is None, then k defaults to n\n"
-"and the function returns n!.\n"
-"\n"
-"Raises TypeError if either of the arguments are not integers.\n"
-"Raises ValueError if either of the arguments are negative.");
-
-#define MATH_PERM_METHODDEF    \
-    {"perm", _PyCFunction_CAST(math_perm), METH_FASTCALL, math_perm__doc__},
-
-static PyObject *
-math_perm_impl(PyObject *module, PyObject *n, PyObject *k);
-
-static PyObject *
-math_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *n;
-    PyObject *k = Py_None;
-
-    if (!_PyArg_CheckPositional("perm", nargs, 1, 2)) {
-        goto exit;
-    }
-    n = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
-    k = args[1];
-skip_optional:
-    return_value = math_perm_impl(module, n, k);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(math_comb__doc__,
-"comb($module, n, k, /)\n"
-"--\n"
-"\n"
-"Number of ways to choose k items from n items without repetition and without order.\n"
-"\n"
-"Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates\n"
-"to zero when k > n.\n"
-"\n"
-"Also called the binomial coefficient because it is equivalent\n"
-"to the coefficient of k-th term in polynomial expansion of the\n"
-"expression (1 + x)**n.\n"
-"\n"
-"Raises TypeError if either of the arguments are not integers.\n"
-"Raises ValueError if either of the arguments are negative.");
-
-#define MATH_COMB_METHODDEF    \
-    {"comb", _PyCFunction_CAST(math_comb), METH_FASTCALL, math_comb__doc__},
-
-static PyObject *
-math_comb_impl(PyObject *module, PyObject *n, PyObject *k);
-
-static PyObject *
-math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyObject *return_value = NULL;
-    PyObject *n;
-    PyObject *k;
-
-    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
-        goto exit;
-    }
-    n = args[0];
-    k = args[1];
-    return_value = math_comb_impl(module, n, k);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_nextafter__doc__,
 "nextafter($module, x, y, /, *, steps=None)\n"
 "--\n"
@@ -1178,4 +1163,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=44bba3a0a052a364 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23b2453ba77453e5 input=a9049054013a1b77]*/

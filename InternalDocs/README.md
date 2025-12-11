@@ -36,12 +36,17 @@ Program Execution
 
 - [The Bytecode Interpreter](interpreter.md)
 
+- [Stack references (_PyStackRef)](stackrefs.md)
+
 - [The JIT](jit.md)
 
 - [Garbage Collector Design](garbage_collector.md)
 
 - [Exception Handling](exception_handling.md)
 
+- [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
+
+- [Stack protection](stack_protection.md)
 
 Modules
 ---
