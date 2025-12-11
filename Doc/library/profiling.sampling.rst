@@ -386,7 +386,7 @@ allocation rates or using object pooling.
 Opcode-aware profiling
 ----------------------
 
-The ``--opcodes`` option enables instruction-level profiling that captures
+The :option:`--opcodes` option enables instruction-level profiling that captures
 which Python bytecode instructions are executing at each sample::
 
    python -m profiling.sampling run --opcodes --flamegraph script.py
