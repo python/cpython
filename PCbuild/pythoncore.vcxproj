@@ -107,9 +107,10 @@
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTIER2)' != '' and '$(UseTIER2)' != '0'">_Py_TIER2=$(UseTIER2);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">_Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(WITH_COMPUTED_GOTOS)' != ''">HAVE_COMPUTED_GOTOS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DisableRemoteDebug)' != 'true'">Py_REMOTE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(StackRefDebug)' == 'true'">Py_STACKREF_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -165,12 +166,14 @@
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
-    <ClInclude Include="..\Include\cpython\lock.h" />
+    <ClInclude Include="..\Include\cpython\pylock.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
     <ClInclude Include="..\Include\cpython\longobject.h" />
+    <ClInclude Include="..\Include\cpython\marshal.h" />
     <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
     <ClInclude Include="..\Include\cpython\modsupport.h" />
+    <ClInclude Include="..\Include\cpython\monitoring.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
@@ -190,6 +193,8 @@
     <ClInclude Include="..\Include\cpython\pythonrun.h" />
     <ClInclude Include="..\Include\cpython\pythread.h" />
     <ClInclude Include="..\Include\cpython\setobject.h" />
+    <ClInclude Include="..\Include\cpython\sliceobject.h" />
+    <ClInclude Include="..\Include\cpython\structseq.h" />
     <ClInclude Include="..\Include\cpython\traceback.h" />
     <ClInclude Include="..\Include\cpython\tracemalloc.h" />
     <ClInclude Include="..\Include\cpython\tupleobject.h" />
@@ -272,6 +277,7 @@
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_mmap.h" />
     <ClInclude Include="..\Include\internal\pycore_modsupport.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
@@ -324,6 +330,7 @@
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_unicodectype.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h" />
@@ -332,7 +339,6 @@
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
     <ClInclude Include="..\Include\listobject.h" />
-    <ClInclude Include="..\Include\lock.h" />
     <ClInclude Include="..\Include\longobject.h" />
     <ClInclude Include="..\Include\marshal.h" />
     <ClInclude Include="..\Include\memoryobject.h" />
@@ -475,6 +481,7 @@
     <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
+    <ClCompile Include="..\Modules\mathintegermodule.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
@@ -555,7 +562,10 @@
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
     <ClCompile Include="..\Objects\typevarobject.c" />
+    <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
+    <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
@@ -602,7 +612,6 @@
     <ClCompile Include="..\Python\errors.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
-    <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\frozen.c">
       <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -651,6 +660,7 @@
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />

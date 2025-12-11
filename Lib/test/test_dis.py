@@ -453,52 +453,53 @@ dis_compound_stmt_str = """\
 """
 
 dis_traceback = """\
-%4d           RESUME                   0
+%4d            RESUME                   0
 
-%4d           NOP
+%4d            NOP
 
-%4d   L1:     LOAD_SMALL_INT           1
-               LOAD_SMALL_INT           0
-           --> BINARY_OP               11 (/)
-               POP_TOP
+%4d    L1:     LOAD_SMALL_INT           1
+                LOAD_SMALL_INT           0
+            --> BINARY_OP               11 (/)
+                POP_TOP
 
-%4d   L2:     LOAD_FAST_CHECK          1 (tb)
-               RETURN_VALUE
+%4d    L2:     LOAD_FAST_CHECK          1 (tb)
+                RETURN_VALUE
 
-  --   L3:     PUSH_EXC_INFO
+  --    L3:     PUSH_EXC_INFO
 
-%4d           LOAD_GLOBAL              0 (Exception)
-               CHECK_EXC_MATCH
-               POP_JUMP_IF_FALSE       24 (to L7)
-               NOT_TAKEN
-               STORE_FAST               0 (e)
+%4d            LOAD_GLOBAL              0 (Exception)
+                CHECK_EXC_MATCH
+                POP_JUMP_IF_FALSE       24 (to L9)
+        L4:     NOT_TAKEN
+        L5:     STORE_FAST               0 (e)
 
-%4d   L4:     LOAD_FAST                0 (e)
-               LOAD_ATTR                2 (__traceback__)
-               STORE_FAST               1 (tb)
-       L5:     POP_EXCEPT
-               LOAD_CONST               1 (None)
-               STORE_FAST               0 (e)
-               DELETE_FAST              0 (e)
+%4d    L6:     LOAD_FAST                0 (e)
+                LOAD_ATTR                2 (__traceback__)
+                STORE_FAST               1 (tb)
+        L7:     POP_EXCEPT
+                LOAD_CONST               1 (None)
+                STORE_FAST               0 (e)
+                DELETE_FAST              0 (e)
 
-%4d           LOAD_FAST                1 (tb)
-               RETURN_VALUE
+%4d            LOAD_FAST                1 (tb)
+                RETURN_VALUE
 
-  --   L6:     LOAD_CONST               1 (None)
-               STORE_FAST               0 (e)
-               DELETE_FAST              0 (e)
-               RERAISE                  1
+  --    L8:     LOAD_CONST               1 (None)
+                STORE_FAST               0 (e)
+                DELETE_FAST              0 (e)
+                RERAISE                  1
 
-%4d   L7:     RERAISE                  0
+%4d    L9:     RERAISE                  0
 
-  --   L8:     COPY                     3
-               POP_EXCEPT
-               RERAISE                  1
+  --   L10:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
 ExceptionTable:
   L1 to L2 -> L3 [0]
-  L3 to L4 -> L8 [1] lasti
-  L4 to L5 -> L6 [1] lasti
-  L6 to L8 -> L8 [1] lasti
+  L3 to L4 -> L10 [1] lasti
+  L5 to L6 -> L10 [1] lasti
+  L6 to L7 -> L8 [1] lasti
+  L8 to L10 -> L10 [1] lasti
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -567,11 +568,11 @@ dis_with = """\
 %4d   L3:     PUSH_EXC_INFO
                WITH_EXCEPT_START
                TO_BOOL
-               POP_JUMP_IF_TRUE         2 (to L4)
-               NOT_TAKEN
-               RERAISE                  2
-       L4:     POP_TOP
-       L5:     POP_EXCEPT
+               POP_JUMP_IF_TRUE         2 (to L6)
+       L4:     NOT_TAKEN
+       L5:     RERAISE                  2
+       L6:     POP_TOP
+       L7:     POP_EXCEPT
                POP_TOP
                POP_TOP
                POP_TOP
@@ -581,12 +582,13 @@ dis_with = """\
                LOAD_CONST               1 (None)
                RETURN_VALUE
 
-  --   L6:     COPY                     3
+  --   L8:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
   L1 to L2 -> L3 [2] lasti
-  L3 to L5 -> L6 [4] lasti
+  L3 to L4 -> L8 [4] lasti
+  L5 to L7 -> L8 [4] lasti
 """ % (_with.__code__.co_firstlineno,
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 2,
@@ -828,7 +830,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %4d           LOAD_GLOBAL              1 (list + NULL)
                LOAD_FAST_BORROW         0 (x)
                BUILD_TUPLE              1
-               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
+               LOAD_CONST               %d (<code object <genexpr> at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
@@ -840,6 +842,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 3,
+       1 if __debug__ else 0,
        __file__,
        _h.__code__.co_firstlineno + 3,
 )
@@ -1466,7 +1469,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
-Flags:             OPTIMIZED, NEWLOCALS, HAS_DOCSTRING
+Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING)?
 Constants:
    {code_info_consts}
 Names:

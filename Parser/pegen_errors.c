@@ -2,6 +2,7 @@
 #include <errcode.h>
 
 #include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "lexer/state.h"
 #include "lexer/lexer.h"
 #include "pegen.h"
@@ -23,6 +24,13 @@ _PyPegen_raise_tokenizer_init_error(PyObject *filename)
     PyObject *value;
     PyObject *tback;
     PyErr_Fetch(&type, &value, &tback);
+    if (PyErr_GivenExceptionMatches(value, PyExc_SyntaxError)) {
+        if (PyObject_SetAttr(value, &_Py_ID(filename), filename)) {
+            goto error;
+        }
+        PyErr_Restore(type, value, tback);
+        return;
+    }
     errstr = PyObject_Str(value);
     if (!errstr) {
         goto error;

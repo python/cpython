@@ -19,6 +19,16 @@ from _tkinter import TclError
 from tkinter import ttk
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(ttk, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
 def setUpModule():
     root = None
     try:
