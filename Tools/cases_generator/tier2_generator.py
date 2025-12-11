@@ -222,12 +222,13 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack, offset_strs: dict[str, t
         idx = 0
         for cache in uop.caches:
             if cache.name != "unused":
+                bits = cache.size*16
                 if cache.size == 4:
                     type = cast = "PyObject *"
                 else:
-                    type = f"uint{cache.size*16}_t "
-                    cast = f"uint{cache.size*16}_t"
-                emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+                    type = f"uint{bits}_t "
+                    cast = f"uint{bits}_t"
+                emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}_{bits}();\n")
                 idx += 1
         reachable, storage = emitter.emit_tokens(uop, storage, None, False)
         if reachable:

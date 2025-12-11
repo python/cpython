@@ -1925,6 +1925,21 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
+    def test_call_tuple_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = tuple(())
+                x += len(t) == 0
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TUPLE_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_str_1(self):
         def testfunc(n):
             x = 0

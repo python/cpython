@@ -450,8 +450,12 @@ do {                                                   \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
-#define CURRENT_OPERAND0() (next_uop[-1].operand0)
-#define CURRENT_OPERAND1() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_64() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_64() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_32() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_32() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_16() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_16() (next_uop[-1].operand1)
 #define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
