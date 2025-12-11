@@ -2759,8 +2759,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
-        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            return PyStackRef_IsHeapSafe(*stackpointer);
+        _PyStackRef ref = *stackpointer;
+        if (PyStackRef_IsTaggedInt(ref)) {
+            continue;
+        }
+        if (op == PyStackRef_AsPyObjectBorrow(ref)) {
+            return PyStackRef_IsHeapSafe(ref);
         }
     }
     return 0;

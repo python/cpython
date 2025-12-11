@@ -1,0 +1,2 @@
+Fix :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary()` handling of
+tagged ints on the interpreter stack.
