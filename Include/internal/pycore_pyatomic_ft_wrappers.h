@@ -127,6 +127,7 @@ extern "C" {
 #define FT_ATOMIC_LOAD_SSIZE_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_SSIZE_RELAXED(value) value
 #define FT_ATOMIC_LOAD_PTR_ACQUIRE(value) value
+#define FT_ATOMIC_LOAD_PTR_CONSUME(value) value
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_PTR_RELAXED(value) value
 #define FT_ATOMIC_LOAD_UINT8(value) value
