@@ -135,13 +135,6 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
-    return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
-}
-
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
