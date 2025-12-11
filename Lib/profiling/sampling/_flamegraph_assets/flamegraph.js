@@ -1131,25 +1131,29 @@ function accumulateInvertedNode(parent, stackFrame, leaf) {
   return node;
 }
 
-function traverseInvert(path, currentNode, invertedRoot) {
-  if (!currentNode.children || currentNode.children.length === 0) {
-    // We've reached a leaf node
-    if (!path || path.length === 0) {
-      return;
-    }
-
-    let invertedParent = accumulateInvertedNode(invertedRoot, currentNode, currentNode);
-
-    // Walk backwards through the call stack
-    for (let i = path.length - 2; i >= 0; i--) {
-      invertedParent = accumulateInvertedNode(invertedParent, path[i], currentNode);
-    }
-  } else {
-    // Not a leaf, continue traversing down the tree
-    for (const child of currentNode.children) {
-      traverseInvert(path.concat([child]), child, invertedRoot);
-    }
+function processLeaf(invertedRoot, path, leafNode) {
+  if (!path || path.length === 0) {
+    return;
   }
+
+  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode);
+
+  // Walk backwards through the call stack
+  for (let i = path.length - 2; i >= 0; i--) {
+    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode);
+  }
+}
+
+function traverseInvert(path, currentNode, invertedRoot) {
+  const children = currentNode.children || [];
+  const childThreads = new Set(children.flatMap(c => c.threads || []));
+  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+
+  if (selfThreads.length > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads });
+  }
+
+  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot));
 }
 
 function convertInvertDictToArray(node) {
@@ -1175,13 +1179,15 @@ function generateInvertedFlamegraph(data) {
     threads: data.threads
   };
 
-  data.children?.forEach(child => {
-    traverseInvert([child], child, invertedRoot);
-  });
+  const children = data.children || [];
+  if (children.length === 0) {
+    // Single-frame tree: the root is its own leaf
+    processLeaf(invertedRoot, [data], data);
+  } else {
+    children.forEach(child => traverseInvert([child], child, invertedRoot));
+  }
 
-  // Convert children dictionaries to arrays for rendering
   convertInvertDictToArray(invertedRoot);
-
   return invertedRoot;
 }
 
