@@ -488,7 +488,8 @@ This module offers the following functions:
    *type* is an integer that specifies the type of the data. See
    :ref:`Value Types <value-types>` for the available types.
 
-   *value* is a string that specifies the new value.
+   *value* is the new value to set. The acceptable types depend on the *type*
+   parameter.
 
    This method can also set additional value and type information for the specified
    key.  The key identified by the key parameter must have been opened with
@@ -691,64 +692,84 @@ For more information, see `Registry Value Types
 .. data:: REG_BINARY
 
    Binary data in any form.
+   *value* must be a :term:`bytes-like object` for this type.
+   Returns a :class:`bytes` object, or :const:`None` for empty values.
 
 .. data:: REG_DWORD
 
    32-bit number.
+   *value* must be an :class:`int` in Python for this type.
 
 .. data:: REG_DWORD_LITTLE_ENDIAN
 
    A 32-bit number in little-endian format. Equivalent to :const:`REG_DWORD`.
+   *value* must be an :class:`int` in Python for this type.
 
 .. data:: REG_DWORD_BIG_ENDIAN
 
    A 32-bit number in big-endian format.
+   *value* must be an :class:`int` in Python for this type.
 
 .. data:: REG_EXPAND_SZ
 
    Null-terminated string containing references to environment
    variables (``%PATH%``).
+   *value* must be a :class:`str` in Python for this type.
 
 .. data:: REG_LINK
 
    A Unicode symbolic link.
+   *value* must be a :term:`bytes-like object` in Python for this type.
 
 .. data:: REG_MULTI_SZ
 
    A sequence of null-terminated strings, terminated by two null characters.
    (Python handles this termination automatically.)
+   *value* must be a :class:`list` of :class:`str` in Python for this type.
+   Returns a :class:`list` of :class:`str`, or an empty list for empty values.
 
 .. data:: REG_NONE
 
    No defined value type.
+   *value* must be a :term:`bytes-like object` in Python for this type.
 
 .. data:: REG_QWORD
 
    A 64-bit number.
+   *value* must be an :class:`int` in Python for this type.
 
    .. versionadded:: 3.6
 
 .. data:: REG_QWORD_LITTLE_ENDIAN
 
    A 64-bit number in little-endian format. Equivalent to :const:`REG_QWORD`.
+   *value* must be an :class:`int` in Python for this type.
 
    .. versionadded:: 3.6
 
 .. data:: REG_RESOURCE_LIST
 
    A device-driver resource list.
+   *value* must be a :term:`bytes-like object` in Python for this type.
 
 .. data:: REG_FULL_RESOURCE_DESCRIPTOR
 
    A hardware setting.
+   *value* must be a :term:`bytes-like object` in Python for this type.
 
 .. data:: REG_RESOURCE_REQUIREMENTS_LIST
 
    A hardware resource list.
+   *value* must be a :term:`bytes-like object` in Python for this type.
 
 .. data:: REG_SZ
 
    A null-terminated string.
+   *value* must be a :class:`str` in Python for this type.
+
+Note that :const:`None` is also accepted for these types. when :const:`None`
+is passed, it is converted to the corresponding zero or empty value for the type
+(0 for integers, empty string for strings, empty list for multi-strings, etc.).
 
 
 .. _handle-object:
