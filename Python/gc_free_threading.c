@@ -2347,10 +2347,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (err == 0) {
         clear_weakrefs(state);
     }
-    _PyEval_StartTheWorld(interp);
-
     // Record the number of live GC objects
     interp->gc.long_lived_total = state->long_lived_total;
+    _PyEval_StartTheWorld(interp);
+
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
