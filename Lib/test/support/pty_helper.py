@@ -10,21 +10,18 @@ from errno import EIO
 
 from test.support.import_helper import import_module
 
-def run_pty(script, input=b"dummy input\r", env=None, readline=None):
+def run_pty(script, input=b"dummy input\r", env=None):
     pty = import_module('pty')
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
 
-    if readline is None:
-        readline = "readline" in sys.modules
-    if readline:
-        # Isolate readline from personal init files by setting INPUTRC
-        # to an empty file. See also GH-142353.
-        if env is None:
-            env = {**os.environ.copy(), "INPUTRC": os.devnull}
-        else:
-            env.setdefault("INPUTRC", os.devnull)
+    # Isolate readline from personal init files by setting INPUTRC
+    # to an empty file. See also GH-142353.
+    if env is None:
+        env = {**os.environ.copy(), "INPUTRC": os.devnull}
+    else:
+        env.setdefault("INPUTRC", os.devnull)
 
     proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
     os.close(slave)
