@@ -1,0 +1,3 @@
+Fix a potential use‑after‑free in :class:`bytearray` search‑like methods by
+exporting the instance’s buffer to prevent reallocation during the
+operation.
