@@ -292,6 +292,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
   cursor: pointer;
+  text-decoration: none;
   transition: all var(--transition-fast);
 }
 
@@ -386,7 +387,8 @@ body {
 button:focus-visible,
 select:focus-visible,
 input:focus-visible,
-.toggle-switch:focus-visible {
+.toggle-switch:focus-visible,
+a.toolbar-btn:focus-visible {
   outline: 2px solid var(--python-gold);
   outline-offset: 2px;
 }
