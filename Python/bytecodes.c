@@ -4073,9 +4073,9 @@ dummy_func(
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            INPUTS_DEAD();
             PyObject *res_o = PySequence_Tuple(arg_o);
             a = arg;
+            INPUTS_DEAD();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }

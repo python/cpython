@@ -12902,11 +12902,18 @@
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
+            stack_pointer[0] = _stack_item_0;
+            stack_pointer[1] = _stack_item_1;
+            stack_pointer[2] = arg;
+            stack_pointer += 3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = PySequence_Tuple(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             a = arg;
             if (res_o == NULL) {
+                stack_pointer += -3;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
@@ -12915,6 +12922,8 @@
             _tos_cache0 = res;
             _tos_cache2 = PyStackRef_ZERO_BITS;
             SET_CURRENT_CACHED_VALUES(2);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
             break;
         }
