@@ -131,7 +131,7 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
     PyThread_type_lock lock = get_state_sock(ssl_obj)->keylog_lock;
     assert(lock != NULL);
     if (ssl_obj->ctx->keylog_bio == NULL) {
-        return;
+        goto done;
     }
     /*
      * The lock is neither released on exit nor on fork(). The lock is
@@ -155,6 +155,8 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
                                              ssl_obj->ctx->keylog_filename);
         ssl_obj->exc = PyErr_GetRaisedException();
     }
+
+done:
     PyGILState_Release(threadstate);
 }
 
