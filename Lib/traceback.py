@@ -1464,10 +1464,11 @@ class TracebackException:
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
-                caretspace = ' '
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
                     start_color = end_color = ""
                     if colorize:
                         # colorize from colno to end_colno
@@ -1480,9 +1481,9 @@ class TracebackException:
                         end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
-                        "".join(caretspace),
+                        ' ' * dp_colno,
                         start_color,
-                        ('^' * (end_colno - colno)),
+                        '^' * caret_count,
                         end_color,
                     )
                 else:
