@@ -700,6 +700,10 @@
   opacity: 0.85;
 }
 
+.toggle-switch:focus-visible {
+  border-radius: 4px;
+}
+
 .toggle-switch .toggle-label {
   font-size: 11px;
   font-weight: 500;
