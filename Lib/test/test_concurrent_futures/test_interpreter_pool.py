@@ -427,6 +427,8 @@ class InterpreterPoolExecutorTest(
                         ready.get(timeout=1)  # blocking
                     except interpreters.QueueEmpty:
                         pass
+                    except queues.QueueEmpty:
+                        pass
                     else:
                         done += 1
                 pending -= done
