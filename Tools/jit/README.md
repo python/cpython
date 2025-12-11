@@ -50,7 +50,7 @@ set PreferredToolArchitecture=AMD64
 PCbuild\build.bat --experimental-jit
 ```
 
-Valid values are `AMD64` (or `x64`/`x86`) and `ARM64`.
+Valid values are`x64`, `x86` and `ARM64`.
 
 Otherwise, you can install LLVM 21 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=21), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
