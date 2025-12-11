@@ -1141,6 +1141,7 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
         char buf[81] = {0, };
         sprintf(buf, "%s%s", prefix, name);
         _PyAnnotateMemoryMap(self->data, self->size, buf);
+        Py_RETURN_NONE;
     }
     else {
         /* cannot name non-anonymous mappings */
@@ -1154,7 +1155,6 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
                     "Annotation of mmap is not supported on this platform");
     return NULL;
 #endif
-    Py_RETURN_NONE;
 }
 
 /*[clinic input]
