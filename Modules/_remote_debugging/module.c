@@ -568,7 +568,8 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                                                            gc_frame);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
-                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL) && !PyErr_Occurred()) {
+                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
+                     self->mode == PROFILING_MODE_EXCEPTION) && !PyErr_Occurred()) {
                     // Thread was skipped due to mode filtering, continue to next thread
                     continue;
                 }
@@ -1066,6 +1067,9 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_GIL_REQUESTED", THREAD_STATUS_GIL_REQUESTED) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
         return -1;
     }
 
