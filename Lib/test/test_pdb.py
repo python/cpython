@@ -4629,10 +4629,12 @@ def bœr():
         """
         commands = """
             break main:foo
+            clear main:foo
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:3")
+        self.assertRegex(stdout, r"Deleted breakpoint 1 at .*main\.py:3")
 
 
 class ChecklineTests(unittest.TestCase):

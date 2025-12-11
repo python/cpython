@@ -1692,7 +1692,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     if find_res:
                         _, filename, lineno = find_res
                     else:
-                        err = "Invalid line number or function name:(%r)" % arg
+                        err = "Invalid line number or function name:(%s)" % arg
             if not err:
                 bplist = self.get_breaks(filename, lineno)[:]
                 err = self.clear_break(filename, lineno)
