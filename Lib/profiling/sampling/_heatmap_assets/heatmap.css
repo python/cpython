@@ -20,24 +20,6 @@
   z-index: 100;
 }
 
-/* Back link in toolbar */
-.back-link {
-  color: white;
-  text-decoration: none;
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--transition-fast);
-}
-
-.back-link:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
 /* --------------------------------------------------------------------------
    Main Content Area
    -------------------------------------------------------------------------- */
