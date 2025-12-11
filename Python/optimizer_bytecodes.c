@@ -250,31 +250,25 @@ dummy_func(void) {
         res = sym_new_compact_int(ctx);
     }
 
-    op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {

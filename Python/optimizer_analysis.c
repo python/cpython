@@ -327,13 +327,6 @@ _Py_opt_assert_within_stack_bounds(
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif
 
-// TODO (gh-134584) generate most of this table automatically
-const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
-    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
-};
-
 /* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
