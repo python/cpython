@@ -1150,7 +1150,7 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
     }
 #else
     /* naming not supported on this platform */
-    PyErr_SetString(NotImplementedError,
+    PyErr_SetString(PyExc_NotImplementedError,
                     "Annotation of mmap is not supported on this platform");
     return NULL;
 #endif
