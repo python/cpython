@@ -614,6 +614,10 @@ def _handle_attach(args):
 
 def _handle_run(args):
     """Handle the 'run' command."""
+    # Validate script exists (only for scripts, not modules)
+    if not args.module and not os.path.exists(args.target):
+        sys.exit(f"Error: script not found: {args.target}")
+
     # Check if live mode is requested
     if args.live:
         _handle_live_run(args)
