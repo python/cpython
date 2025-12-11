@@ -112,6 +112,11 @@ DEFAULT_ERROR_MESSAGE = """\
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
+def _validate_header_string(value):
+    """Validate header values preventing CRLF injection."""
+    if '\r' in value or '\n' in value:
+        raise ValueError('Invalid header name/value: contains CR or LF')
+
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = True    # Seems to make sense in testing environment
@@ -553,6 +558,8 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     def send_header(self, keyword, value):
         """Send a MIME header to the headers buffer."""
+        _validate_header_string(keyword)
+        _validate_header_string(value)
         if self.request_version != 'HTTP/0.9':
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []

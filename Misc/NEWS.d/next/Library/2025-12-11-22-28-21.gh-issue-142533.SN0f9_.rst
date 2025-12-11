@@ -1,0 +1,2 @@
+Reject CR/LF in HTTP headers in `http.server` and `wsgiref.headers` to prevent
+CRLF injection attacks.
