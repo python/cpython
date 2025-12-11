@@ -1,2 +1,0 @@
-Inconsistent indentation in user input crashed the new REPL when syntax
-highlighting was active. This is now fixed.

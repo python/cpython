@@ -21,6 +21,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import contextlib
+import functools
 import os
 import sqlite3 as sqlite
 import subprocess
@@ -630,6 +631,14 @@ class SerializeTests(unittest.TestCase):
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
+    def test_open_with_bytes_path(self):
+        path = os.fsencode(TESTFN)
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
@@ -1052,7 +1061,7 @@ class CursorTests(unittest.TestCase):
         # now set to 2
         self.cu.arraysize = 2
 
-        # now make the query return 3 rows
+        # now make the query return 2 rows from a table of 3 rows
         self.cu.execute("delete from test")
         self.cu.execute("insert into test(name) values ('A')")
         self.cu.execute("insert into test(name) values ('B')")
@@ -1062,12 +1071,49 @@ class CursorTests(unittest.TestCase):
 
         self.assertEqual(len(res), 2)
 
+    def test_invalid_array_size(self):
+        UINT32_MAX = (1 << 32) - 1
+        setter = functools.partial(setattr, self.cu, 'arraysize')
+
+        self.assertRaises(TypeError, setter, 1.0)
+        self.assertRaises(ValueError, setter, -3)
+        self.assertRaises(OverflowError, setter, UINT32_MAX + 1)
+
     def test_fetchmany(self):
+        # no active SQL statement
+        res = self.cu.fetchmany()
+        self.assertEqual(res, [])
+        res = self.cu.fetchmany(1000)
+        self.assertEqual(res, [])
+
+        # test default parameter
+        self.cu.execute("select name from test")
+        res = self.cu.fetchmany()
+        self.assertEqual(len(res), 1)
+
+        # test when the number of requested rows exceeds the actual count
         self.cu.execute("select name from test")
         res = self.cu.fetchmany(100)
         self.assertEqual(len(res), 1)
         res = self.cu.fetchmany(100)
         self.assertEqual(res, [])
+
+        # test when size = 0
+        self.cu.execute("select name from test")
+        res = self.cu.fetchmany(0)
+        self.assertEqual(res, [])
+        res = self.cu.fetchmany(100)
+        self.assertEqual(len(res), 1)
+        res = self.cu.fetchmany(100)
+        self.assertEqual(res, [])
+
+    def test_invalid_fetchmany(self):
+        UINT32_MAX = (1 << 32) - 1
+        fetchmany = self.cu.fetchmany
+
+        self.assertRaises(TypeError, fetchmany, 1.0)
+        self.assertRaises(ValueError, fetchmany, -3)
+        self.assertRaises(OverflowError, fetchmany, UINT32_MAX + 1)
 
     def test_fetchmany_kw_arg(self):
         """Checks if fetchmany works with keyword arguments"""

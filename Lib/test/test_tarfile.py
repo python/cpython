@@ -2777,7 +2777,7 @@ class MiscTest(unittest.TestCase):
             str(excinfo.exception),
         )
 
-    @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
+    @os_helper.skip_unless_symlink
     @unittest.skipUnless(hasattr(os, 'chmod'), "missing os.chmod")
     @unittest.mock.patch('os.chmod')
     def test_deferred_directory_attributes_update(self, mock_chmod):
@@ -3663,6 +3663,39 @@ class TestExtractionFilters(unittest.TestCase):
     # The destination for the extraction, within `outerdir`
     destdir = outerdir / 'dest'
 
+    @classmethod
+    def setUpClass(cls):
+        # Posix and Windows have different pathname resolution:
+        # either symlink or a '..' component resolve first.
+        # Let's see which we are on.
+        if os_helper.can_symlink():
+            testpath = os.path.join(TEMPDIR, 'resolution_test')
+            os.mkdir(testpath)
+
+            # testpath/current links to `.` which is all of:
+            #   - `testpath`
+            #   - `testpath/current`
+            #   - `testpath/current/current`
+            #   - etc.
+            os.symlink('.', os.path.join(testpath, 'current'))
+
+            # we'll test where `testpath/current/../file` ends up
+            with open(os.path.join(testpath, 'current', '..', 'file'), 'w'):
+                pass
+
+            if os.path.exists(os.path.join(testpath, 'file')):
+                # Windows collapses 'current\..' to '.' first, leaving
+                # 'testpath\file'
+                cls.dotdot_resolves_early = True
+            elif os.path.exists(os.path.join(testpath, '..', 'file')):
+                # Posix resolves 'current' to '.' first, leaving
+                # 'testpath/../file'
+                cls.dotdot_resolves_early = False
+            else:
+                raise AssertionError('Could not determine link resolution')
+        else:
+            cls.dotdot_resolves_early = False
+
     @contextmanager
     def check_context(self, tar, filter, *, check_flag=True):
         """Extracts `tar` to `self.destdir` and allows checking the result
@@ -3809,23 +3842,21 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add('current', symlink_to='.')
 
             # effectively points to ./../
-            arc.add('parent', symlink_to='current/..')
+            if self.dotdot_resolves_early and os_helper.can_symlink():
+                arc.add('parent', symlink_to='current/../..')
+            else:
+                arc.add('parent', symlink_to='current/..')
 
             arc.add('parent/evil')
 
         if os_helper.can_symlink():
             with self.check_context(arc.open(), 'fully_trusted'):
-                if self.raised_exception is not None:
-                    # Windows will refuse to create a file that's a symlink to itself
-                    # (and tarfile doesn't swallow that exception)
-                    self.expect_exception(FileExistsError)
-                    # The other cases will fail with this error too.
-                    # Skip the rest of this test.
-                    return
+                self.expect_file('current', symlink_to='.')
+                if self.dotdot_resolves_early:
+                    self.expect_file('parent', symlink_to='current/../..')
                 else:
-                    self.expect_file('current', symlink_to='.')
                     self.expect_file('parent', symlink_to='current/..')
-                    self.expect_file('../evil')
+                self.expect_file('../evil')
 
             with self.check_context(arc.open(), 'tar'):
                 self.expect_exception(
@@ -3927,35 +3958,6 @@ class TestExtractionFilters(unittest.TestCase):
         # Test interplaying symlinks
         # Inspired by 'dirsymlink2b' in jwilk/traversal-archives
 
-        # Posix and Windows have different pathname resolution:
-        # either symlink or a '..' component resolve first.
-        # Let's see which we are on.
-        if os_helper.can_symlink():
-            testpath = os.path.join(TEMPDIR, 'resolution_test')
-            os.mkdir(testpath)
-
-            # testpath/current links to `.` which is all of:
-            #   - `testpath`
-            #   - `testpath/current`
-            #   - `testpath/current/current`
-            #   - etc.
-            os.symlink('.', os.path.join(testpath, 'current'))
-
-            # we'll test where `testpath/current/../file` ends up
-            with open(os.path.join(testpath, 'current', '..', 'file'), 'w'):
-                pass
-
-            if os.path.exists(os.path.join(testpath, 'file')):
-                # Windows collapses 'current\..' to '.' first, leaving
-                # 'testpath\file'
-                dotdot_resolves_early = True
-            elif os.path.exists(os.path.join(testpath, '..', 'file')):
-                # Posix resolves 'current' to '.' first, leaving
-                # 'testpath/../file'
-                dotdot_resolves_early = False
-            else:
-                raise AssertionError('Could not determine link resolution')
-
         with ArchiveMaker() as arc:
 
             # `current` links to `.` which is both the destination directory
@@ -3991,7 +3993,7 @@ class TestExtractionFilters(unittest.TestCase):
 
         with self.check_context(arc.open(), 'data'):
             if os_helper.can_symlink():
-                if dotdot_resolves_early:
+                if self.dotdot_resolves_early:
                     # Fail when extracting a file outside destination
                     self.expect_exception(
                             tarfile.OutsideDestinationError,
@@ -4038,6 +4040,21 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_exception(
                 tarfile.AbsoluteLinkError,
                 "'parent' is a link to an absolute path")
+
+    @symlink_test
+    @os_helper.skip_unless_symlink
+    def test_symlink_target_seperator_rewrite_on_windows(self):
+        with ArchiveMaker() as arc:
+            arc.add('link', symlink_to="relative/test/path")
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            self.expect_file('link', type=tarfile.SYMTYPE)
+            link_path = os.path.normpath(self.destdir / "link")
+            link_target = os.readlink(link_path)
+            if os.name == "nt":
+                self.assertEqual(link_target, "relative\\test\\path")
+            else:
+                self.assertEqual(link_target, "relative/test/path")
 
     def test_absolute_hardlink(self):
         # Test hardlink to an absolute path

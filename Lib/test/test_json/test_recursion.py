@@ -71,7 +71,7 @@ class TestRecursion:
     @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_highly_nested_objects_decoding(self):
-        very_deep = 200000
+        very_deep = 500_000
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
         with self.assertRaises(RecursionError):
@@ -90,7 +90,7 @@ class TestRecursion:
     def test_highly_nested_objects_encoding(self):
         # See #12051
         l, d = [], {}
-        for x in range(200_000):
+        for x in range(500_000):
             l, d = [l], {'k':d}
         with self.assertRaises(RecursionError):
             with support.infinite_recursion(5000):

@@ -2,7 +2,9 @@
 
 import asyncio
 import argparse
+import json
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -27,6 +29,7 @@ in_source_tree = (
     ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
 )
 
+ENV_SCRIPT = ANDROID_DIR / "android-env.sh"
 TESTBED_DIR = ANDROID_DIR / "testbed"
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
@@ -127,12 +130,11 @@ def android_env(host):
         sysconfig_filename = next(sysconfig_files).name
         host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
 
-    env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
         f"set -eu; "
         f"HOST={host}; "
         f"PREFIX={prefix}; "
-        f". {env_script}; "
+        f". {ENV_SCRIPT}; "
         f"export",
         check=True, shell=True, capture_output=True, encoding='utf-8',
     ).stdout
@@ -149,7 +151,7 @@ def android_env(host):
                 env[key] = value
 
     if not env:
-        raise ValueError(f"Found no variables in {env_script.name} output:\n"
+        raise ValueError(f"Found no variables in {ENV_SCRIPT.name} output:\n"
                          + env_output)
     return env
 
@@ -183,10 +185,16 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
+# To create new builds of these dependencies, usually all that's necessary is to
+# push a tag to the cpython-android-source-deps repository, and GitHub Actions
+# will do the rest.
+#
+# If you're a member of the Python core team, and you'd like to be able to push
+# these tags yourself, please contact Malcolm Smith or Russell Keith-Magee.
 def unpack_deps(host, prefix_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.15-4",
+    for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.18-0",
                      "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
@@ -247,7 +255,13 @@ def make_host_python(context):
     # flags to be duplicated. So we don't use the `host` argument here.
     os.chdir(host_dir)
     run(["make", "-j", str(os.cpu_count())])
-    run(["make", "install", f"prefix={prefix_dir}"])
+
+    # The `make install` output is very verbose and rarely useful, so
+    # suppress it by default.
+    run(
+        ["make", "install", f"prefix={prefix_dir}"],
+        capture_output=not context.verbose,
+    )
 
 
 def build_all(context):
@@ -264,6 +278,33 @@ def clean(host):
 def clean_all(context):
     for host in HOSTS + ["build"]:
         clean(host)
+
+
+def setup_ci():
+    if "GITHUB_ACTIONS" in os.environ:
+        # Enable emulator hardware acceleration
+        # (https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/).
+        if platform.system() == "Linux":
+            run(
+                ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
+                input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
+                text=True,
+            )
+            run(["sudo", "udevadm", "control", "--reload-rules"])
+            run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
+
+        # Free up disk space by deleting unused versions of the NDK
+        # (https://github.com/freakboy3742/pyspamsum/pull/108).
+        for line in ENV_SCRIPT.read_text().splitlines():
+            if match := re.fullmatch(r"ndk_version=(.+)", line):
+                ndk_version = match[1]
+                break
+        else:
+            raise ValueError(f"Failed to find NDK version in {ENV_SCRIPT.name}")
+
+        for item in (android_home / "ndk").iterdir():
+            if item.name[0].isdigit() and item.name != ndk_version:
+                delete_glob(item)
 
 
 def setup_sdk():
@@ -527,27 +568,33 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
-    if context.command:
-        mode = "-c"
-        module = context.command
-    else:
-        mode = "-m"
-        module = context.module or "test"
+    if context.ci_mode:
+        context.args[0:0] = [
+            # See _add_ci_python_opts in libregrtest/main.py.
+            "-W", "error", "-bb", "-E",
+
+            # Randomization is disabled because order-dependent failures are
+            # much less likely to pass on a rerun in single-process mode.
+            "-m", "test",
+            f"--{context.ci_mode}-ci", "--single-process", "--no-randomize"
+        ]
+
+    if not any(arg in context.args for arg in ["-c", "-m"]):
+        context.args[0:0] = ["-m", "test"]
 
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
     ] + [
-        # Build-time properties
-        f"-Ppython.{name}={value}"
+        f"-P{name}={value}"
         for name, value in [
-            ("sitePackages", context.site_packages), ("cwd", context.cwd)
-        ] if value
-    ] + [
-        # Runtime properties
-        f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
-        for name, value in [
-            ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
-        ] if value
+            ("python.sitePackages", context.site_packages),
+            ("python.cwd", context.cwd),
+            (
+                "android.testInstrumentationRunnerArguments.pythonArgs",
+                json.dumps(context.args),
+            ),
+        ]
+        if value
     ]
     if context.verbose >= 2:
         args.append("--info")
@@ -578,6 +625,7 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
+    setup_ci()
     setup_sdk()
     setup_testbed()
 
@@ -671,11 +719,60 @@ def package(context):
                     else:
                         shutil.copy2(src, dst, follow_symlinks=False)
 
+        # Strip debug information.
+        if not context.debug:
+            so_files = glob(f"{temp_dir}/**/*.so", recursive=True)
+            run([android_env(context.host)["STRIP"], *so_files], log=False)
+
         dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
             f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
         )
         print(f"Wrote {package_path}")
+        return package_path
+
+
+def ci(context):
+    for step in [
+        configure_build_python,
+        make_build_python,
+        configure_host_python,
+        make_host_python,
+        package,
+    ]:
+        caption = (
+            step.__name__.replace("_", " ")
+            .capitalize()
+            .replace("python", "Python")
+        )
+        print(f"::group::{caption}")
+        result = step(context)
+        if step is package:
+            package_path = result
+        print("::endgroup::")
+
+    if (
+        "GITHUB_ACTIONS" in os.environ
+        and (platform.system(), platform.machine()) != ("Linux", "x86_64")
+    ):
+        print(
+            "Skipping tests: GitHub Actions does not support the Android "
+            "emulator on this platform."
+        )
+    else:
+        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+            print("::group::Tests")
+
+            # Prove the package is self-contained by using it to run the tests.
+            shutil.unpack_archive(package_path, temp_dir)
+            launcher_args = [
+                "--managed", "maxVersion", "-v", f"--{context.ci_mode}-ci"
+            ]
+            run(
+                ["./android.py", "test", *launcher_args],
+                cwd=temp_dir
+            )
+            print("::endgroup::")
 
 
 def env(context):
@@ -695,32 +792,40 @@ def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
+    def add_parser(*args, **kwargs):
+        parser = subcommands.add_parser(*args, **kwargs)
+        parser.add_argument(
+            "-v", "--verbose", action="count", default=0,
+            help="Show verbose output. Use twice to be even more verbose.")
+        return parser
+
     # Subcommands
-    build = subcommands.add_parser(
+    build = add_parser(
         "build", help="Run configure-build, make-build, configure-host and "
         "make-host")
-    configure_build = subcommands.add_parser(
+    configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    subcommands.add_parser(
+    add_parser(
         "make-build", help="Run `make` for the build Python")
-    configure_host = subcommands.add_parser(
+    configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
-    make_host = subcommands.add_parser(
+    make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    subcommands.add_parser("clean", help="Delete all build directories")
-    subcommands.add_parser("build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser("test", help="Run the testbed app")
-    package = subcommands.add_parser("package", help="Make a release package")
-    env = subcommands.add_parser("env", help="Print environment variables")
+    add_parser("clean", help="Delete all build directories")
+    add_parser("build-testbed", help="Build the testbed app")
+    test = add_parser("test", help="Run the testbed app")
+    package = add_parser("package", help="Make a release package")
+    ci = add_parser("ci", help="Run build, package and test")
+    env = add_parser("env", help="Print environment variables")
 
     # Common arguments
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package]
+    host_commands = [build, configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -728,16 +833,11 @@ def parse_args():
             "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
 
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
 
     # Test arguments
-    test.add_argument(
-        "-v", "--verbose", action="count", default=0,
-        help="Show Gradle output, and non-Python logcat messages. "
-        "Use twice to include high-volume messages which are rarely useful.")
-
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -752,18 +852,27 @@ def parse_args():
     test.add_argument(
         "--cwd", metavar="DIR", type=abspath,
         help="Directory to copy as the app's working directory.")
-
-    mode_group = test.add_mutually_exclusive_group()
-    mode_group.add_argument(
-        "-c", dest="command", help="Execute the given Python code.")
-    mode_group.add_argument(
-        "-m", dest="module", help="Execute the module with the given name.")
-    test.epilog = (
-        "If neither -c nor -m are passed, the default is '-m test', which will "
-        "run Python's own test suite.")
     test.add_argument(
-        "args", nargs="*", help=f"Arguments to add to sys.argv. "
-        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
+        "args", nargs="*", help=f"Python command-line arguments. "
+        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`. "
+        f"If neither -c nor -m are included, `-m test` will be prepended, "
+        f"which will run Python's own test suite.")
+
+    # Package arguments.
+    for subcommand in [package, ci]:
+        subcommand.add_argument(
+            "-g", action="store_true", default=False, dest="debug",
+            help="Include debug information in package")
+
+    # CI arguments
+    for subcommand in [test, ci]:
+        group = subcommand.add_mutually_exclusive_group(required=subcommand is ci)
+        group.add_argument(
+            "--fast-ci", action="store_const", dest="ci_mode", const="fast",
+            help="Add test arguments for GitHub Actions")
+        group.add_argument(
+            "--slow-ci", action="store_const", dest="ci_mode", const="slow",
+            help="Add test arguments for buildbots")
 
     return parser.parse_args()
 
@@ -788,6 +897,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
+        "ci": ci,
         "env": env,
     }
 
@@ -803,6 +913,8 @@ def main():
 def print_called_process_error(e):
     for stream_name in ["stdout", "stderr"]:
         content = getattr(e, stream_name)
+        if isinstance(content, bytes):
+            content = content.decode(*DECODE_ARGS)
         stream = getattr(sys, stream_name)
         if content:
             stream.write(content)

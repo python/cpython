@@ -20,6 +20,7 @@ class Properties:
     error_with_pop: bool
     error_without_pop: bool
     deopts: bool
+    deopts_periodic: bool
     oparg: bool
     jumps: bool
     eval_breaker: bool
@@ -33,6 +34,8 @@ class Properties:
     side_exit: bool
     pure: bool
     uses_opcode: bool
+    needs_guard_ip: bool
+    unpredictable_jump: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -58,6 +61,7 @@ class Properties:
             error_with_pop=any(p.error_with_pop for p in properties),
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
+            deopts_periodic=any(p.deopts_periodic for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
@@ -73,6 +77,8 @@ class Properties:
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
             no_save_ip=all(p.no_save_ip for p in properties),
+            needs_guard_ip=any(p.needs_guard_ip for p in properties),
+            unpredictable_jump=any(p.unpredictable_jump for p in properties),
         )
 
     @property
@@ -85,6 +91,7 @@ SKIP_PROPERTIES = Properties(
     error_with_pop=False,
     error_without_pop=False,
     deopts=False,
+    deopts_periodic=False,
     oparg=False,
     jumps=False,
     eval_breaker=False,
@@ -99,6 +106,8 @@ SKIP_PROPERTIES = Properties(
     side_exit=False,
     pure=True,
     no_save_ip=False,
+    needs_guard_ip=False,
+    unpredictable_jump=False,
 )
 
 
@@ -605,6 +614,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_Concat",
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
+    "PyUnicode_IS_COMPACT_ASCII",
+    "PyUnicode_1BYTE_DATA",
     "Py_ARRAY_LENGTH",
     "Py_FatalError",
     "Py_INCREF",
@@ -689,6 +700,11 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_Wrap",
     "PyStackRef_Unwrap",
     "_PyLong_CheckExactAndCompact",
+    "_PyExecutor_FromExit",
+    "_PyJit_TryInitializeTracing",
+    "_Py_unset_eval_breaker_bit",
+    "_Py_set_eval_breaker_bit",
+    "trigger_backoff_counter",
 )
 
 
@@ -706,7 +722,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
             in_if = 0
             tkn_iter = iter(stmt.contents)
             for tkn in tkn_iter:
-                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "HANDLE_PENDING_AND_DEOPT_IF", "AT_END_EXIT_IF"):
                     in_if = 1
                     next(tkn_iter)
                 elif tkn.kind == "LPAREN":
@@ -833,7 +849,7 @@ def stmt_is_simple_exit(stmt: Stmt) -> bool:
     if len(tokens) < 4:
         return False
     return (
-        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF")
+        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF", "AT_END_EXIT_IF")
         and
         tokens[1].text == "("
         and
@@ -879,6 +895,46 @@ def stmt_escapes(stmt: Stmt) -> bool:
     else:
         assert False, "Unexpected statement type"
 
+def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_seen: int) -> tuple[bool, int]:
+    if not stmts:
+        return False, branches_seen
+    predict = False
+    seen = 0
+    for st in stmts:
+        predict_body, seen_body = stmt_has_jump_on_unpredictable_path(st, branches_seen)
+        predict = predict or predict_body
+        seen += seen_body
+    return predict, seen
+
+def stmt_has_jump_on_unpredictable_path(stmt: Stmt, branches_seen: int) -> tuple[bool, int]:
+    if isinstance(stmt, BlockStmt):
+        return stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+    elif isinstance(stmt, SimpleStmt):
+        for tkn in stmt.contents:
+            if tkn.text == "JUMPBY":
+                return True, branches_seen
+        return False, branches_seen
+    elif isinstance(stmt, IfStmt):
+        predict, seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        if stmt.else_body:
+            predict_else, seen_else = stmt_has_jump_on_unpredictable_path(stmt.else_body, branches_seen)
+            return predict != predict_else, seen + seen_else + 1
+        return predict, seen + 1
+    elif isinstance(stmt, MacroIfStmt):
+        predict, seen = stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+        if stmt.else_body:
+            predict_else, seen_else = stmt_has_jump_on_unpredictable_path_body(stmt.else_body, branches_seen)
+            return predict != predict_else, seen + seen_else
+        return predict, seen
+    elif isinstance(stmt, ForStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    elif isinstance(stmt, WhileStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    else:
+        assert False, f"Unexpected statement type {stmt}"
+
 
 def compute_properties(op: parser.CodeDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
@@ -889,11 +945,13 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
-    exits_if = variable_used(op, "EXIT_IF")
-    if deopts_if and exits_if:
+    exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "AT_END_EXIT_IF")
+    deopts_periodic = variable_used(op, "HANDLE_PENDING_AND_DEOPT_IF")
+    exits_and_deopts = sum((deopts_if, exits_if, deopts_periodic))
+    if exits_and_deopts > 1:
         tkn = op.tokens[0]
         raise lexer.make_syntax_error(
-            "Op cannot contain both EXIT_IF and DEOPT_IF",
+            "Op cannot contain more than one of EXIT_IF, DEOPT_IF and HANDLE_PENDING_AND_DEOPT_IF",
             tkn.filename,
             tkn.line,
             tkn.column,
@@ -904,12 +962,15 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     escapes = stmt_escapes(op.block)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
+    unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(op.block, 0)
+    unpredictable_jump = False if isinstance(op, parser.LabelDef) else (unpredictable and branches_seen > 0)
     return Properties(
         escaping_calls=escaping_calls,
         escapes=escapes,
         error_with_pop=error_with_pop,
         error_without_pop=error_without_pop,
         deopts=deopts_if,
+        deopts_periodic=deopts_periodic,
         side_exit=exits_if,
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
@@ -926,6 +987,11 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         no_save_ip=no_save_ip,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
+        needs_guard_ip=(isinstance(op, parser.InstDef)
+                        and (unpredictable_jump and "replaced" not in op.annotations))
+                       or variable_used(op, "LOAD_IP")
+                       or variable_used(op, "DISPATCH_INLINED"),
+        unpredictable_jump=unpredictable_jump,
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
@@ -1131,8 +1197,9 @@ def assign_opcodes(
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
-    instmap["INSTRUMENTED_LINE"] = 254
-    instmap["ENTER_EXECUTOR"] = 255
+    instmap["INSTRUMENTED_LINE"] = 253
+    instmap["ENTER_EXECUTOR"] = 254
+    instmap["TRACE_RECORD"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
@@ -1157,7 +1224,7 @@ def assign_opcodes(
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
     min_internal = instmap["RESUME"] + 1
-    min_instrumented = 254 - (len(instrumented) - 1)
+    min_instrumented = 254 - len(instrumented)
     assert min_internal + len(specialized) < min_instrumented
 
     next_opcode = 1
