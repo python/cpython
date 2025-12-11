@@ -371,7 +371,7 @@
                 assert(next_instr->op.code == STORE_FAST);
                 next_oparg = next_instr->op.arg;
                 #else
-                next_oparg = (int)CURRENT_OPERAND0();
+                next_oparg = (int)CURRENT_OPERAND0_16();
                 #endif
                 _PyStackRef *target_local = &GETLOCAL(next_oparg);
                 assert(PyUnicode_CheckExact(left_o));
