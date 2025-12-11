@@ -516,6 +516,27 @@ class InterpreterPoolExecutorTest(
         self.assertStartsWith(self.executor.submit(get_thread_name).result(),
                               "InterpreterPoolExecutor-"[:15])
 
+    def test_cross_interpreter_unbound_identity(self):
+        # Prepare shared queues.
+        input_q = interpreters.create_queue()
+        input_q.put(queues.UNBOUND)
+        result_q = interpreters.create_queue()
+
+        # Create a sub-interpreter.
+        interp = interpreters.create()
+        interp.prepare_main({"input_q": input_q, "result_q": result_q})
+
+        # Run and compare the items in queue.
+        interp.exec("""
+from concurrent.interpreters import _queues as queues
+obj = input_q.get()
+is_identical = (obj is queues.UNBOUND)
+result_q.put(is_identical)
+""")
+        is_identical = result_q.get()
+        self.assertTrue(is_identical, "UNBOUND identity mismatch across interpreters")
+
+
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
     @classmethod
