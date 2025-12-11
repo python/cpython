@@ -1003,3 +1003,13 @@ body.resizing-sidebar {
 .d3-flame-graph g:first-of-type .d3-flame-graph-label {
   color: var(--text-muted);
 }
+
+/* --------------------------------------------------------------------------
+   Flamegraph-Specific Toggle Override
+   -------------------------------------------------------------------------- */
+
+#toggle-invert .toggle-track.on {
+  background: #8e44ad;
+  border-color: #8e44ad;
+  box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
+}
