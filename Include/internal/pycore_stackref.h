@@ -628,14 +628,14 @@ PyStackRef_DUP(_PyStackRef ref)
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
+#ifdef Py_GIL_DISABLED
     if ((ref.bits & Py_TAG_BITS) != Py_TAG_REFCNT) {
         return true;
     }
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
-#ifdef Py_GIL_DISABLED
     return obj == NULL || _PyObject_HasDeferredRefcount(obj);
 #else
-    return obj == NULL || _Py_IsImmortal(obj);
+    return (ref.bits & Py_TAG_BITS) != Py_TAG_REFCNT || ref.bits == PyStackRef_NULL_BITS || _Py_IsImmortal(BITS_TO_PTR_MASKED(ref));
 #endif
 }
 
