@@ -17,6 +17,7 @@ from .constants import (
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
     PROFILING_MODE_ALL,
+    PROFILING_MODE_EXCEPTION,
 )
 try:
     from .live_collector import LiveStatsCollector
@@ -300,7 +301,8 @@ def sample(
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
-              GIL (only when holding GIL), ALL (includes GIL and CPU status)
+              GIL (only when holding GIL), ALL (includes GIL and CPU status),
+              EXCEPTION (only when thread has an active exception)
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information
@@ -360,7 +362,8 @@ def sample_live(
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
-              GIL (only when holding GIL), ALL (includes GIL and CPU status)
+              GIL (only when holding GIL), ALL (includes GIL and CPU status),
+              EXCEPTION (only when thread has an active exception)
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information

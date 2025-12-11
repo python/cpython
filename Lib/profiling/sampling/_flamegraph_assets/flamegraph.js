@@ -717,6 +717,10 @@ function populateThreadStats(data, selectedThreadId = null) {
 
   const gcPctElem = document.getElementById('gc-pct');
   if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+
+  // Exception stats
+  const excPctElem = document.getElementById('exc-pct');
+  if (excPctElem) excPctElem.textContent = `${(threadStats.has_exception_pct || 0).toFixed(1)}%`;
 }
 
 // ============================================================================

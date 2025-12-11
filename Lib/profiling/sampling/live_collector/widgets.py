@@ -389,6 +389,7 @@ class HeaderWidget(Widget):
         pct_on_gil = (status_counts["has_gil"] / total_threads) * 100
         pct_off_gil = 100.0 - pct_on_gil
         pct_gil_requested = (status_counts["gil_requested"] / total_threads) * 100
+        pct_exception = (status_counts.get("has_exception", 0) / total_threads) * 100
 
         # Get GC percentage based on view mode
         if thread_data:
@@ -425,6 +426,17 @@ class HeaderWidget(Widget):
                 "waiting for gil",
                 self.colors["yellow"],
                 add_separator=True,
+            )
+
+        # Show exception stats
+        if col < width - 15:
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_exception,
+                "exc",
+                self.colors["red"],
+                add_separator=(col > 11),
             )
 
         # Always show GC stats

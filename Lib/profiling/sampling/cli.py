@@ -16,6 +16,7 @@ from .constants import (
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
+    PROFILING_MODE_EXCEPTION,
     SORT_MODE_NSAMPLES,
     SORT_MODE_TOTTIME,
     SORT_MODE_CUMTIME,
@@ -90,6 +91,7 @@ def _parse_mode(mode_string):
         "wall": PROFILING_MODE_WALL,
         "cpu": PROFILING_MODE_CPU,
         "gil": PROFILING_MODE_GIL,
+        "exception": PROFILING_MODE_EXCEPTION,
     }
     return mode_map[mode_string]
 
@@ -213,10 +215,12 @@ def _add_mode_options(parser):
     mode_group = parser.add_argument_group("Mode options")
     mode_group.add_argument(
         "--mode",
-        choices=["wall", "cpu", "gil"],
+        choices=["wall", "cpu", "gil", "exception"],
         default="wall",
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
-        "gil (only samples when thread holds the GIL). Incompatible with --async-aware",
+        "gil (only samples when thread holds the GIL), "
+        "exception (only samples when thread has an active exception). "
+        "Incompatible with --async-aware",
     )
     mode_group.add_argument(
         "--async-mode",

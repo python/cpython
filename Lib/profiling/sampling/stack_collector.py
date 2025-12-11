@@ -87,12 +87,13 @@ class FlamegraphCollector(StackTraceCollector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         self.samples_with_gc_frames = 0
 
         # Per-thread statistics
-        self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, total, gc_samples}}
+        self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, has_exception, total, gc_samples}}
 
     def collect(self, stack_frames, skip_idle=False):
         """Override to track thread status statistics before processing frames."""
@@ -118,6 +119,7 @@ class FlamegraphCollector(StackTraceCollector):
                     "on_cpu": 0,
                     "gil_requested": 0,
                     "unknown": 0,
+                    "has_exception": 0,
                     "total": 0,
                     "gc_samples": 0,
                 }
@@ -247,12 +249,16 @@ class FlamegraphCollector(StackTraceCollector):
             }
 
         # Calculate thread status percentages for display
+        import sysconfig
+        is_free_threaded = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
         total_threads = max(1, self.thread_status_counts["total"])
         thread_stats = {
             "has_gil_pct": (self.thread_status_counts["has_gil"] / total_threads) * 100,
             "on_cpu_pct": (self.thread_status_counts["on_cpu"] / total_threads) * 100,
             "gil_requested_pct": (self.thread_status_counts["gil_requested"] / total_threads) * 100,
+            "has_exception_pct": (self.thread_status_counts["has_exception"] / total_threads) * 100,
             "gc_pct": (self.samples_with_gc_frames / max(1, self._sample_count)) * 100,
+            "free_threaded": is_free_threaded,
             **self.thread_status_counts
         }
 
@@ -265,6 +271,7 @@ class FlamegraphCollector(StackTraceCollector):
                 "has_gil_pct": (stats["has_gil"] / total) * 100,
                 "on_cpu_pct": (stats["on_cpu"] / total) * 100,
                 "gil_requested_pct": (stats["gil_requested"] / total) * 100,
+                "has_exception_pct": (stats["has_exception"] / total) * 100,
                 "gc_pct": (stats["gc_samples"] / total_samples_denominator) * 100,
                 **stats
             }
