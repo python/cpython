@@ -14,6 +14,10 @@ SORT_MODE_SAMPLE_PCT = 3
 SORT_MODE_CUMUL_PCT = 4
 SORT_MODE_NSAMPLES_CUMUL = 5
 
+# Default location for synthetic frames (native, GC) that have no source location
+# Format: (lineno, end_lineno, col_offset, end_col_offset)
+DEFAULT_LOCATION = (0, 0, -1, -1)
+
 # Thread status flags
 try:
     from _remote_debugging import (

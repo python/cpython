@@ -2053,10 +2053,6 @@ class ImportTracebackTests(unittest.TestCase):
         # away from the traceback.
         self.create_module("foo", "")
         importlib = sys.modules['_frozen_importlib_external']
-        if 'load_module' in vars(importlib.SourceLoader):
-            old_exec_module = importlib.SourceLoader.exec_module
-        else:
-            old_exec_module = None
         try:
             def exec_module(*args):
                 1/0
@@ -2069,10 +2065,7 @@ class ImportTracebackTests(unittest.TestCase):
                 self.fail("ZeroDivisionError should have been raised")
             self.assert_traceback(tb, [__file__, '<frozen importlib', __file__])
         finally:
-            if old_exec_module is None:
-                del importlib.SourceLoader.exec_module
-            else:
-                importlib.SourceLoader.exec_module = old_exec_module
+            del importlib.SourceLoader.exec_module
 
     @unittest.skipUnless(TESTFN_UNENCODABLE, 'need TESTFN_UNENCODABLE')
     def test_unencodable_filename(self):
@@ -2792,9 +2785,6 @@ class SinglephaseInitTests(unittest.TestCase):
         # This is essentially copied from the old imp module.
         from importlib._bootstrap import _load
         loader = self.LOADER(name, path)
-
-        # Issue bpo-24748: Skip the sys.modules check in _load_module_shim;
-        # always load new extension.
         spec = importlib.util.spec_from_file_location(name, path,
                                                       loader=loader)
         return _load(spec)
