@@ -13408,9 +13408,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            res = PyStackRef_FromPyObjectSteal(res_o);
             a = arg;
             c = callable;
+            res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = c;
             _tos_cache1 = a;
             _tos_cache0 = res;

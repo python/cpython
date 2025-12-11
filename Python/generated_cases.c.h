@@ -3185,9 +3185,9 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
-                res = PyStackRef_FromPyObjectSteal(res_o);
                 a = arg;
                 c = callable;
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
             {
