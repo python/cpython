@@ -32,6 +32,12 @@ class HoleValue(enum.Enum):
     # The current uop's operand0 on 32-bit platforms (exposed as _JIT_OPERAND0_HI/LO):
     OPERAND0_HI = enum.auto()
     OPERAND0_LO = enum.auto()
+    # 16 and 32 bit versions of OPARG, OPERAND0 and OPERAND1
+    OPARG_16 = enum.auto()
+    OPERAND0_16 = enum.auto()
+    OPERAND1_16 = enum.auto()
+    OPERAND0_32 = enum.auto()
+    OPERAND1_32 = enum.auto()
     # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND1):
     OPERAND1 = enum.auto()
     # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND1_HI/LO):
@@ -59,6 +65,8 @@ _PATCH_FUNCS = {
     "ARM64_RELOC_PAGEOFF12": "patch_aarch64_12",
     "ARM64_RELOC_UNSIGNED": "patch_64",
     "CUSTOM_AARCH64_BRANCH19": "patch_aarch64_19r",
+    "CUSTOM_AARCH64_CONST16a": "patch_aarch64_16a",
+    "CUSTOM_AARCH64_CONST16b": "patch_aarch64_16b",
     # x86_64-pc-windows-msvc:
     "IMAGE_REL_AMD64_REL32": "patch_x86_64_32rx",
     # aarch64-pc-windows-msvc:
@@ -95,6 +103,7 @@ _PATCH_FUNCS = {
     "X86_64_RELOC_SIGNED": "patch_32r",
     "X86_64_RELOC_UNSIGNED": "patch_64",
 }
+
 # Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
@@ -103,10 +112,15 @@ _HOLE_EXPRS = {
     HoleValue.GOT: "",
     # These should all have been turned into DATA values by process_relocations:
     HoleValue.OPARG: "instruction->oparg",
+    HoleValue.OPARG_16: "instruction->oparg",
     HoleValue.OPERAND0: "instruction->operand0",
+    HoleValue.OPERAND0_16: "instruction->operand0",
+    HoleValue.OPERAND0_32: "instruction->operand0",
     HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
     HoleValue.OPERAND0_LO: "(instruction->operand0 & UINT32_MAX)",
     HoleValue.OPERAND1: "instruction->operand1",
+    HoleValue.OPERAND1_16: "instruction->operand1",
+    HoleValue.OPERAND1_32: "instruction->operand1",
     HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
     HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
@@ -201,7 +215,10 @@ class Hole:
             if self.symbol:
                 if value:
                     value += " + "
-                value += f"(uintptr_t)&{self.symbol}"
+                if self.symbol.startswith("CONST"):
+                    value += f"instruction->{self.symbol[10:].lower()}"
+                else:
+                    value += f"(uintptr_t)&{self.symbol}"
             if _signed(self.addend) or not value:
                 if value:
                     value += " + "
