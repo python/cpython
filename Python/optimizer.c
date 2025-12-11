@@ -193,6 +193,13 @@ _PyOptimizer_Optimize(
     } else {
         // An executor inserted into the code object now has a strong reference
         // to it from the code object. Thus, we don't need this reference anymore.
+        PyGC_Head *gc = ((PyGC_Head*)executor) - 1;
+        printf("DEBUG: executor=%p, refcnt=%zd, gc_next=%p, gc_prev=%p\n",
+                (void*)executor,
+                Py_REFCNT(executor),
+                (void*)(gc->_gc_next),
+                (void*)(gc->_gc_prev));
+        fflush(stdout);
         Py_DECREF(executor);
     }
     interp->compiling = false;
