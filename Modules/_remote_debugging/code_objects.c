@@ -155,48 +155,45 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
 {
     const uint8_t* ptr = (const uint8_t*)(linetable);
     uintptr_t addr = 0;
-    info->lineno = firstlineno;
+    int computed_line = firstlineno;  // Running accumulator, separate from output
 
     while (*ptr != '\0') {
-        // See InternalDocs/code_objects.md for where these magic numbers are from
-        // and for the decoding algorithm.
         uint8_t first_byte = *(ptr++);
         uint8_t code = (first_byte >> 3) & 15;
         size_t length = (first_byte & 7) + 1;
         uintptr_t end_addr = addr + length;
+
         switch (code) {
-            case PY_CODE_LOCATION_INFO_NONE: {
+            case PY_CODE_LOCATION_INFO_NONE:
+                info->lineno = info->end_lineno = -1;
+                info->column = info->end_column = -1;
                 break;
-            }
-            case PY_CODE_LOCATION_INFO_LONG: {
-                int line_delta = scan_signed_varint(&ptr);
-                info->lineno += line_delta;
-                info->end_lineno = info->lineno + scan_varint(&ptr);
+            case PY_CODE_LOCATION_INFO_LONG:
+                computed_line += scan_signed_varint(&ptr);
+                info->lineno = computed_line;
+                info->end_lineno = computed_line + scan_varint(&ptr);
                 info->column = scan_varint(&ptr) - 1;
                 info->end_column = scan_varint(&ptr) - 1;
                 break;
-            }
-            case PY_CODE_LOCATION_INFO_NO_COLUMNS: {
-                int line_delta = scan_signed_varint(&ptr);
-                info->lineno += line_delta;
+            case PY_CODE_LOCATION_INFO_NO_COLUMNS:
+                computed_line += scan_signed_varint(&ptr);
+                info->lineno = info->end_lineno = computed_line;
                 info->column = info->end_column = -1;
                 break;
-            }
             case PY_CODE_LOCATION_INFO_ONE_LINE0:
             case PY_CODE_LOCATION_INFO_ONE_LINE1:
-            case PY_CODE_LOCATION_INFO_ONE_LINE2: {
-                int line_delta = code - 10;
-                info->lineno += line_delta;
-                info->end_lineno = info->lineno;
+            case PY_CODE_LOCATION_INFO_ONE_LINE2:
+                computed_line += code - 10;
+                info->lineno = info->end_lineno = computed_line;
                 info->column = *(ptr++);
                 info->end_column = *(ptr++);
                 break;
-            }
             default: {
                 uint8_t second_byte = *(ptr++);
                 if ((second_byte & 128) != 0) {
                     return false;
                 }
+                info->lineno = info->end_lineno = computed_line;
                 info->column = code << 3 | (second_byte >> 4);
                 info->end_column = info->column + (second_byte & 15);
                 break;
@@ -215,8 +212,50 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
  * ============================================================================ */
 
 PyObject *
-make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *line,
-                PyObject *func)
+make_location_info(RemoteUnwinderObject *unwinder, int lineno, int end_lineno,
+                   int col_offset, int end_col_offset)
+{
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
+    PyObject *info = PyStructSequence_New(state->LocationInfo_Type);
+    if (info == NULL) {
+        set_exception_cause(unwinder, PyExc_MemoryError, "Failed to create LocationInfo");
+        return NULL;
+    }
+
+    PyObject *py_lineno = PyLong_FromLong(lineno);
+    if (py_lineno == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 0, py_lineno);  // steals reference
+
+    PyObject *py_end_lineno = PyLong_FromLong(end_lineno);
+    if (py_end_lineno == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 1, py_end_lineno);  // steals reference
+
+    PyObject *py_col_offset = PyLong_FromLong(col_offset);
+    if (py_col_offset == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 2, py_col_offset);  // steals reference
+
+    PyObject *py_end_col_offset = PyLong_FromLong(end_col_offset);
+    if (py_end_col_offset == NULL) {
+        Py_DECREF(info);
+        return NULL;
+    }
+    PyStructSequence_SetItem(info, 3, py_end_col_offset);  // steals reference
+
+    return info;
+}
+
+PyObject *
+make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *location,
+                PyObject *func, PyObject *opcode)
 {
     RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)unwinder);
     PyObject *info = PyStructSequence_New(state->FrameInfo_Type);
@@ -225,11 +264,13 @@ make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *line,
         return NULL;
     }
     Py_INCREF(file);
-    Py_INCREF(line);
+    Py_INCREF(location);
     Py_INCREF(func);
+    Py_INCREF(opcode);
     PyStructSequence_SetItem(info, 0, file);
-    PyStructSequence_SetItem(info, 1, line);
+    PyStructSequence_SetItem(info, 1, location);
     PyStructSequence_SetItem(info, 2, func);
+    PyStructSequence_SetItem(info, 3, opcode);
     return info;
 }
 
@@ -370,16 +411,43 @@ done_tlbc:
                               meta->first_lineno, &info);
     if (!ok) {
         info.lineno = -1;
+        info.end_lineno = -1;
+        info.column = -1;
+        info.end_column = -1;
     }
 
-    PyObject *lineno = PyLong_FromLong(info.lineno);
-    if (!lineno) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create line number object");
+    // Create the LocationInfo structseq: (lineno, end_lineno, col_offset, end_col_offset)
+    PyObject *location = make_location_info(unwinder,
+        info.lineno,
+        info.end_lineno,
+        info.column,
+        info.end_column);
+    if (!location) {
         goto error;
     }
 
-    PyObject *tuple = make_frame_info(unwinder, meta->file_name, lineno, meta->func_name);
-    Py_DECREF(lineno);
+    // Read the instruction opcode from target process if opcodes flag is set
+    PyObject *opcode_obj = NULL;
+    if (unwinder->opcodes) {
+        uint16_t instruction_word = 0;
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, ip,
+                                                   sizeof(uint16_t), &instruction_word) == 0) {
+            opcode_obj = PyLong_FromLong(instruction_word & 0xFF);
+            if (!opcode_obj) {
+                Py_DECREF(location);
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create opcode object");
+                goto error;
+            }
+        } else {
+            // Opcode read failed - clear the exception since opcode is optional
+            PyErr_Clear();
+        }
+    }
+
+    PyObject *tuple = make_frame_info(unwinder, meta->file_name, location,
+                                      meta->func_name, opcode_obj ? opcode_obj : Py_None);
+    Py_DECREF(location);
+    Py_XDECREF(opcode_obj);
     if (!tuple) {
         goto error;
     }

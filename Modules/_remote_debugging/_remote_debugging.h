@@ -190,6 +190,7 @@ typedef struct {
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
     PyTypeObject *TaskInfo_Type;
+    PyTypeObject *LocationInfo_Type;
     PyTypeObject *FrameInfo_Type;
     PyTypeObject *CoroInfo_Type;
     PyTypeObject *ThreadInfo_Type;
@@ -228,6 +229,7 @@ typedef struct {
     int skip_non_matching_threads;
     int native;
     int gc;
+    int opcodes;
     int cache_frames;
     int collect_stats;  // whether to collect statistics
     uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
@@ -286,6 +288,7 @@ typedef int (*set_entry_processor_func)(
  * ============================================================================ */
 
 extern PyStructSequence_Desc TaskInfo_desc;
+extern PyStructSequence_Desc LocationInfo_desc;
 extern PyStructSequence_Desc FrameInfo_desc;
 extern PyStructSequence_Desc CoroInfo_desc;
 extern PyStructSequence_Desc ThreadInfo_desc;
@@ -336,11 +339,20 @@ extern int parse_code_object(
     int32_t tlbc_index
 );
 
+extern PyObject *make_location_info(
+    RemoteUnwinderObject *unwinder,
+    int lineno,
+    int end_lineno,
+    int col_offset,
+    int end_col_offset
+);
+
 extern PyObject *make_frame_info(
     RemoteUnwinderObject *unwinder,
     PyObject *file,
-    PyObject *line,
-    PyObject *func
+    PyObject *location,  // LocationInfo structseq or None for synthetic frames
+    PyObject *func,
+    PyObject *opcode
 );
 
 /* Line table parsing */
