@@ -1197,8 +1197,7 @@ find and load modules.
 
    .. attribute:: cached
 
-      The filename of a compiled version of the module's code
-      (see :attr:`module.__cached__`).
+      The filename of a compiled version of the module's code.
       The :term:`finder` should always set this attribute but it may be ``None``
       for modules that do not need compiled code stored.
 

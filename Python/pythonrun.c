@@ -478,9 +478,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
-        if (PyDict_SetItemString(dict, "__cached__", Py_None) < 0) {
-            goto done;
-        }
         set_file_name = 1;
     }
 
@@ -533,9 +530,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
-        }
-        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
             PyErr_Print();
         }
     }

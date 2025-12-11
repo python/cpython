@@ -565,8 +565,7 @@ class ModuleSpec:
     `has_location` indicates that a spec's "origin" reflects a location.
     When this is True, `__file__` attribute of the module is set.
 
-    `cached` is the location of the cached bytecode file, if any.  It
-    corresponds to the `__cached__` attribute.
+    `cached` is the location of the cached bytecode file, if any.
 
     `submodule_search_locations` is the sequence of path entries to
     search when importing submodules.  If set, is_package should be
@@ -700,17 +699,13 @@ def _spec_from_module(module, loader=None, origin=None):
         if not origin and location is not None:
             origin = location
     try:
-        cached = module.__cached__
-    except AttributeError:
-        cached = None
-    try:
         submodule_search_locations = list(module.__path__)
     except AttributeError:
         submodule_search_locations = None
 
     spec = ModuleSpec(name, loader, origin=origin)
     spec._set_fileattr = False if location is None else (origin == location)
-    spec.cached = cached
+    spec.cached = None
     spec.submodule_search_locations = submodule_search_locations
     return spec
 
@@ -770,7 +765,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 module.__path__ = spec.submodule_search_locations
             except AttributeError:
                 pass
-    # __file__/__cached__
+    # __file__
     if spec.has_location:
         if override or getattr(module, '__file__', None) is None:
             try:
@@ -778,12 +773,6 @@ def _init_module_attrs(spec, module, *, override=False):
             except AttributeError:
                 pass
 
-        if override or getattr(module, '__cached__', None) is None:
-            if spec.cached is not None:
-                try:
-                    module.__cached__ = spec.cached
-                except AttributeError:
-                    pass
     return module
 
 

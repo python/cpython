@@ -111,7 +111,7 @@ def makepath(*paths):
 
 
 def abs_paths():
-    """Set all module __file__ and __cached__ attributes to an absolute path"""
+    """Set __file__ to an absolute path."""
     for m in set(sys.modules.values()):
         loader_module = None
         try:
@@ -125,10 +125,6 @@ def abs_paths():
             continue   # don't mess with a PEP 302-supplied __file__
         try:
             m.__file__ = os.path.abspath(m.__file__)
-        except (AttributeError, OSError, TypeError):
-            pass
-        try:
-            m.__cached__ = os.path.abspath(m.__cached__)
         except (AttributeError, OSError, TypeError):
             pass
 
@@ -699,7 +695,7 @@ def main():
     known_paths = removeduppaths()
     if orig_path != sys.path:
         # removeduppaths() might make sys.path absolute.
-        # fix __file__ and __cached__ of already imported modules too.
+        # Fix __file__ of already imported modules too.
         abs_paths()
 
     known_paths = venv(known_paths)

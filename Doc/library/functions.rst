@@ -526,7 +526,7 @@ are always available.  They are listed here in alphabetical order.
       >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
-      ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
+      ['Struct', '__all__', '__builtins__', '__doc__', '__file__',
        '__initializing__', '__loader__', '__name__', '__package__',
        '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']

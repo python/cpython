@@ -50,10 +50,10 @@ The :mod:`runpy` module provides two functions:
    overridden by :func:`run_module`.
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
-   ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed. (Note that this is a
-   minimal set of variables - other variables may be set implicitly as an
-   interpreter implementation detail.)
+   ``__loader__`` and ``__package__`` are set in the globals dictionary before
+   the module code is executed. (Note that this is a minimal set of variables -
+   other variables may be set implicitly as an interpreter implementation
+   detail.)
 
    ``__name__`` is set to *run_name* if this optional argument is not
    :const:`None`, to ``mod_name + '.__main__'`` if the named module is a
@@ -63,7 +63,7 @@ The :mod:`runpy` module provides two functions:
    module (that is, ``__spec__.name`` will always be *mod_name* or
    ``mod_name + '.__main__'``, never *run_name*).
 
-   ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` are
+   ``__file__``, ``__loader__`` and ``__package__`` are
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    If the argument *alter_sys* is supplied and evaluates to :const:`True`,
@@ -98,6 +98,9 @@ The :mod:`runpy` module provides two functions:
       ``__package__`` are deprecated. See
       :class:`~importlib.machinery.ModuleSpec` for alternatives.
 
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
+
 .. function:: run_path(path_name, init_globals=None, run_name=None)
 
    .. index::
@@ -125,23 +128,23 @@ The :mod:`runpy` module provides two functions:
    overridden by :func:`run_path`.
 
    The special global variables ``__name__``, ``__spec__``, ``__file__``,
-   ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
-   dictionary before the module code is executed. (Note that this is a
-   minimal set of variables - other variables may be set implicitly as an
-   interpreter implementation detail.)
+   ``__loader__`` and ``__package__`` are set in the globals dictionary before
+   the module code is executed. (Note that this is a minimal set of variables -
+   other variables may be set implicitly as an interpreter implementation
+   detail.)
 
    ``__name__`` is set to *run_name* if this optional argument is not
    :const:`None` and to ``'<run_path>'`` otherwise.
 
    If *file_path* directly references a script file (whether as source
    or as precompiled byte code), then ``__file__`` will be set to
-   *file_path*, and ``__spec__``, ``__cached__``, ``__loader__`` and
+   *file_path*, and ``__spec__``, ``__loader__`` and
    ``__package__`` will all be set to :const:`None`.
 
    If *file_path* is a reference to a valid :data:`sys.path` entry, then
    ``__spec__`` will be set appropriately for the imported :mod:`__main__`
    module (that is, ``__spec__.name`` will always be ``__main__``).
-   ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
+   ``__file__``, ``__loader__`` and ``__package__`` will be
    :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    A number of alterations are also made to the :mod:`sys` module. Firstly,
@@ -172,6 +175,9 @@ The :mod:`runpy` module provides two functions:
    .. versionchanged:: 3.12
       The setting of ``__cached__``, ``__loader__``, and
       ``__package__`` are deprecated.
+
+   .. versionchanged:: 3.15
+      ``__cached__`` is no longer set.
 
 .. seealso::
 
