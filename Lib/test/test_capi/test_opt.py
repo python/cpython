@@ -2066,6 +2066,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.

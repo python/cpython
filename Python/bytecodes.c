@@ -4280,7 +4280,9 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_LEN +
-            _CALL_LEN;
+            _CALL_LEN +
+            POP_TOP +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4288,9 +4290,8 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.len);
         }
 
-        op(_CALL_LEN, (callable, null, arg -- res)) {
+        op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
             /* len(o) */
-            (void)null;
             STAT_INC(CALL, hit);
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             Py_ssize_t len_i = PyObject_Length(arg_o);
@@ -4302,9 +4303,9 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(arg);
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

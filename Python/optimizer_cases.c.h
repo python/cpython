@@ -3002,8 +3002,12 @@
 
         case _CALL_LEN: {
             JitOptRef arg;
+            JitOptRef callable;
             JitOptRef res;
+            JitOptRef a;
+            JitOptRef c;
             arg = stack_pointer[-1];
+            callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
             Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
@@ -3023,10 +3027,11 @@
                 Py_DECREF(temp);
                 stack_pointer += 2;
             }
-            CHECK_STACK_BOUNDS(-2);
+            a = arg;
+            c = callable;
             stack_pointer[-3] = res;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-2] = a;
+            stack_pointer[-1] = c;
             break;
         }
 
