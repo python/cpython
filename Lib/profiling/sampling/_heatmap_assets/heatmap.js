@@ -733,13 +733,17 @@ function toggleAllBytecode() {
     }
 }
 
-// Keyboard shortcut: 'b' toggles all bytecode panels
+// Keyboard shortcut: 'b' toggles all bytecode panels, Enter/Space activates toggle switches
 document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
     }
     if (e.key === 'b' && !e.ctrlKey && !e.altKey && !e.metaKey) {
         toggleAllBytecode();
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('toggle-switch')) {
+        e.preventDefault();
+        e.target.click();
     }
 });
 
