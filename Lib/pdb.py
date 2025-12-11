@@ -1675,13 +1675,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if ':' in arg:
             # Make sure it works for "clear C:\foo\bar.py:12"
             i = arg.rfind(':')
-            filename = arg[:i]
-            arg = arg[i+1:]
+            filename = arg[:i].rstrip()
+            arg = arg[i+1:].lstrip()
+            err = None
             try:
                 lineno = int(arg)
             except ValueError:
-                err = "Invalid line number (%s)" % arg
-            else:
+                f = self.lookupmodule(filename)
+                if not f:
+                    err = '%r not found from sys.path' % filename
+                else:
+                    filename = f
+                    func = arg
+                    find_res = find_function(func, self.canonic(filename))
+                    if find_res:
+                        _, filename, lineno = find_res
+                    else:
+                        err = "Invalid line number or function name:(%r)" % arg
+            if not err:
                 bplist = self.get_breaks(filename, lineno)[:]
                 err = self.clear_break(filename, lineno)
             if err:
