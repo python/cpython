@@ -4295,7 +4295,6 @@ dummy_func(
         op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
             /* len(o) */
             STAT_INC(CALL, hit);
-            INPUTS_DEAD();
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             Py_ssize_t len_i = PyObject_Length(arg_o);
             if (len_i < 0) {
@@ -4306,6 +4305,7 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
             a = arg;
             c = callable;

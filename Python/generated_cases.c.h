@@ -3174,8 +3174,6 @@
                 arg = stack_pointer[-1];
                 STAT_INC(CALL, hit);
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
-                stack_pointer += -3;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_ssize_t len_i = PyObject_Length(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -3194,9 +3192,9 @@
             // _POP_TOP
             {
                 value = c;
-                stack_pointer[0] = res;
-                stack_pointer[1] = a;
-                stack_pointer += 2;
+                stack_pointer[-3] = res;
+                stack_pointer[-2] = a;
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
