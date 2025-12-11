@@ -68,17 +68,6 @@ class UnboundItem:
         return f'{self._MODULE}.{self._NAME}'
 #        return f'interpreters._queues.UNBOUND'
 
-    def __hash__(self):
-        return hash((self._NAME, self._MODULE))
-
-    def __reduce__(self):
-        return self._NAME
-
-    def __eq__(self, other):
-        if other is self:
-            return True
-        return repr(other) == repr(self)
-
 
 UNBOUND = object.__new__(UnboundItem)
 UNBOUND_ERROR = object()
