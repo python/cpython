@@ -140,7 +140,7 @@ incorrect_keys(PyObject *obj, uint32_t version)
 
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
-#define STACK_SIZE()      ((int)(ctx->frame->stack_len) + MAX_CACHED_REGISTER)
+#define STACK_SIZE()      ((int)(ctx->frame->stack_len))
 
 #define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
 
@@ -196,7 +196,7 @@ check_stack_bounds(JitOptContext *ctx, JitOptRef *stack_pointer, int offset, int
         (opcode == _RETURN_VALUE) ||
         (opcode == _RETURN_GENERATOR) ||
         (opcode == _YIELD_VALUE);
-    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE())) {
+    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE() + MAX_CACHED_REGISTER)) {
         ctx->contradiction = true;
         ctx->done = true;
         return 1;
