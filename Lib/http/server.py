@@ -114,7 +114,7 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
 def _validate_header_string(value):
     """Validate header values preventing CRLF injection."""
-    if '\r' in value or '\n' in value:
+    if isinstance(value, str) and ('\r' in value or '\n' in value):
         raise ValueError('Invalid header name/value: contains CR or LF')
 
 class HTTPServer(socketserver.TCPServer):
