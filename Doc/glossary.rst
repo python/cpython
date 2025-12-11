@@ -1016,7 +1016,7 @@ Glossary
       An :term:`object` with state that is allowed to change during the course
       of the program.  In multi-threaded programs, mutable objects that are
       shared between threads require careful synchronization to avoid
-      :term:`concurrent modification` issues.  See also :term:`immutable`,
+      :term:`race conditions <race condition>`.  See also :term:`immutable`,
       :term:`thread-safe`, and :term:`concurrent modification`.
 
    named tuple
@@ -1472,9 +1472,9 @@ Glossary
       See also :term:`borrowed reference`.
 
    synchronization primitive
-      A basic building block for coordinating the execution of multiple threads
-      to ensure :term:`thread-safe` access to shared resources.  Python's
-      :mod:`threading` module provides several synchronization primitives
+      A basic building block for coordinating (synchronizing) the execution of
+      multiple threads to ensure :term:`thread-safe` access to shared resources.
+      Python's :mod:`threading` module provides several synchronization primitives
       including :class:`~threading.Lock`, :class:`~threading.RLock`,
       :class:`~threading.Semaphore`, :class:`~threading.Condition`,
       :class:`~threading.Event`, and :class:`~threading.Barrier`.  Additionally,
