@@ -338,7 +338,7 @@ def _requires_unix_version(sysname, min_version):
         else:
             skip = version < min_version
     else:
-        skip = False
+        skip = True
 
     return unittest.skipIf(
         skip,
