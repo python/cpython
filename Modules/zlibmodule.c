@@ -837,7 +837,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
             if (new_unused_data == NULL) {
                 return -1;
             }
-            Py_XSETREF(self->unused_data, new_unused_data);
+            Py_SETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
@@ -851,7 +851,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
                 (char *)self->zst.next_in, left_size);
         if (new_data == NULL)
             return -1;
-        Py_XSETREF(self->unconsumed_tail, new_data);
+        Py_SETREF(self->unconsumed_tail, new_data);
     }
 
     return 0;
