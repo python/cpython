@@ -70,6 +70,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             from profiling.sampling.cli import main
             self._setup_sync_mocks(mock_socket, mock_popen)
@@ -96,6 +97,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
             from profiling.sampling.cli import main
@@ -115,6 +117,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
             from profiling.sampling.cli import main
@@ -139,6 +142,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             # Use the helper to set up mocks consistently
             mock_process = self._setup_sync_mocks(mock_socket, mock_popen)
@@ -248,6 +252,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
             from profiling.sampling.cli import main
@@ -278,6 +283,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
             from profiling.sampling.cli import main
@@ -319,6 +325,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli.select.select", return_value=([True], [], [])),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
             from profiling.sampling.cli import main

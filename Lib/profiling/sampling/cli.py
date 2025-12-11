@@ -2,9 +2,11 @@
 
 import argparse
 import os
+import select
 import socket
 import subprocess
 import sys
+import time
 
 from .sample import sample, sample_live
 from .pstats_collector import PstatsCollector
@@ -119,24 +121,49 @@ def _run_with_sync(original_cmd, suppress_output=False):
         ) + tuple(target_args)
 
         # Start the process with coordinator
-        # Suppress stdout/stderr if requested (for live mode)
+        # Suppress stdout if requested (for live mode), but capture stderr
+        # so we can report errors if the process fails to start
         popen_kwargs = {}
         if suppress_output:
             popen_kwargs["stdin"] = subprocess.DEVNULL
             popen_kwargs["stdout"] = subprocess.DEVNULL
-            popen_kwargs["stderr"] = subprocess.DEVNULL
+            popen_kwargs["stderr"] = subprocess.PIPE
 
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            # Wait for ready signal with timeout
-            with sync_sock.accept()[0] as conn:
-                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
-
-                if ready_signal != _READY_MESSAGE:
+            # Wait for ready signal, but also check if process dies early
+            deadline = time.monotonic() + _SYNC_TIMEOUT
+            while True:
+                # Check if process died
+                if process.poll() is not None:
+                    stderr_msg = ""
+                    if process.stderr:
+                        try:
+                            stderr_msg = process.stderr.read().decode().strip()
+                        except (OSError, UnicodeDecodeError):
+                            pass
+                    if stderr_msg:
+                        raise RuntimeError(stderr_msg)
                     raise RuntimeError(
-                        f"Invalid ready signal received: {ready_signal!r}"
+                        f"Process exited with code {process.returncode}"
                     )
+
+                # Check remaining timeout
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise socket.timeout("timed out")
+
+                # Wait for socket with short timeout to allow process checks
+                ready, _, _ = select.select([sync_sock], [], [], min(0.1, remaining))
+                if ready:
+                    with sync_sock.accept()[0] as conn:
+                        ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+                        if ready_signal != _READY_MESSAGE:
+                            raise RuntimeError(
+                                f"Invalid ready signal received: {ready_signal!r}"
+                            )
+                        break
 
         except socket.timeout:
             # If we timeout, kill the process and raise an error
@@ -614,15 +641,6 @@ def _handle_attach(args):
 
 def _handle_run(args):
     """Handle the 'run' command."""
-    # Validate target exists before launching
-    if args.module:
-        import importlib.util
-        if importlib.util.find_spec(args.target) is None:
-            sys.exit(f"Error: module not found: {args.target}")
-    else:
-        if not os.path.exists(args.target):
-            sys.exit(f"Error: script not found: {args.target}")
-
     # Check if live mode is requested
     if args.live:
         _handle_live_run(args)
@@ -681,6 +699,14 @@ def _handle_run(args):
 
 def _handle_live_attach(args, pid):
     """Handle live mode for an existing process."""
+    # Check if process exists
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        sys.exit(f"Error: process not found: {pid}")
+    except PermissionError:
+        pass  # Process exists, permission error will be handled later
+
     mode = _parse_mode(args.mode)
 
     # Determine skip_idle based on mode
@@ -720,6 +746,7 @@ def _handle_live_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization, suppressing output for live mode
+    # Note: _run_with_sync will raise if the process dies before signaling ready
     process = _run_with_sync(cmd, suppress_output=True)
 
     mode = _parse_mode(args.mode)
