@@ -75,18 +75,6 @@
   overflow: hidden;
 }
 
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--python-blue), var(--python-gold));
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
 .stat-card:nth-child(1) { --i: 0; --card-color: 55, 118, 171; }
 .stat-card:nth-child(2) { --i: 1; --card-color: 40, 167, 69; }
 .stat-card:nth-child(3) { --i: 2; --card-color: 255, 193, 7; }
@@ -99,10 +87,6 @@
   background: linear-gradient(135deg, rgba(var(--card-color), 0.08) 0%, var(--bg-primary) 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(var(--card-color), 0.15);
-}
-
-.stat-card:hover::before {
-  opacity: 1;
 }
 
 .stat-icon {
@@ -1094,18 +1078,34 @@
 }
 
 #scroll_marker .marker.cold {
+  background: var(--heat-1);
+}
+
+#scroll_marker .marker.cool {
   background: var(--heat-2);
 }
 
+#scroll_marker .marker.mild {
+  background: var(--heat-3);
+}
+
 #scroll_marker .marker.warm {
-  background: var(--heat-5);
+  background: var(--heat-4);
 }
 
 #scroll_marker .marker.hot {
+  background: var(--heat-5);
+}
+
+#scroll_marker .marker.very-hot {
+  background: var(--heat-6);
+}
+
+#scroll_marker .marker.intense {
   background: var(--heat-7);
 }
 
-#scroll_marker .marker.vhot {
+#scroll_marker .marker.extreme {
   background: var(--heat-8);
 }
 

@@ -257,6 +257,11 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
     if (unwinder && unwinder->code_object_cache != NULL) {
         meta = _Py_hashtable_get(unwinder->code_object_cache, key);
+        if (meta) {
+            STATS_INC(unwinder, code_object_cache_hits);
+        } else {
+            STATS_INC(unwinder, code_object_cache_misses);
+        }
     }
 
     if (meta == NULL) {
