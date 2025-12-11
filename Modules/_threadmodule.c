@@ -231,7 +231,7 @@ ThreadHandle_new(void)
     self->os_handle = 0;
     self->has_os_handle = 0;
     self->thread_is_exiting = (PyEvent){0};
-    self->mutex = (PyMutex){_Py_UNLOCKED};
+    self->mutex = PyMutex_STATIC_INIT;
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_NOT_STARTED;
     self->refcount = 1;
@@ -320,7 +320,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         // it's safe to set this non-atomically.
         handle->state = THREAD_HANDLE_DONE;
         handle->once = (_PyOnceFlag){_Py_ONCE_INITIALIZED};
-        handle->mutex = (PyMutex){_Py_UNLOCKED};
+        handle->mutex = PyMutex_STATIC_INIT;
         _PyEvent_Notify(&handle->thread_is_exiting);
         llist_remove(node);
         remove_from_shutdown_handles(handle);
@@ -995,7 +995,7 @@ lock_new_impl(PyTypeObject *type)
     if (self == NULL) {
         return NULL;
     }
-    self->lock = (PyMutex){0};
+    self->lock = PyMutex_STATIC_INIT;
     return (PyObject *)self;
 }
 

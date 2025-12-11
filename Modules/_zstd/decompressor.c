@@ -499,7 +499,7 @@ _zstd_ZstdDecompressor_new_impl(PyTypeObject *type, PyObject *zstd_dict,
     self->unused_data = NULL;
     self->eof = 0;
     self->dict = NULL;
-    self->lock = (PyMutex){0};
+    self->lock = PyMutex_STATIC_INIT;
 
     /* needs_input flag */
     self->needs_input = 1;

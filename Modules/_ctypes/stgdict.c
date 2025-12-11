@@ -29,7 +29,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
 #ifdef Py_GIL_DISABLED
-    dst_info->mutex = (PyMutex){0};
+    dst_info->mutex = PyMutex_STATIC_INIT;
 #endif
     dst_info->dict_final = 0;
 

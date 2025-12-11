@@ -13,7 +13,7 @@ extern "C" {
 // represent the unlocked state.
 //
 // Typical initialization:
-//   PyMutex m = (PyMutex){0};
+//   PyMutex m = PyMutex_STATIC_INIT;
 //
 // Or initialize as global variables:
 //   static PyMutex m;
@@ -33,6 +33,10 @@ extern "C" {
 typedef struct PyMutex {
     uint8_t _bits;  // (private)
 } PyMutex;
+
+// Static initialization for a PyMutex. Typical usage:
+//   PyMutex mutex = PyMutex_STATIC_INIT;
+#define PyMutex_STATIC_INIT (PyMutex){_Py_UNLOCKED}
 
 // exported function for locking the mutex
 PyAPI_FUNC(void) PyMutex_Lock(PyMutex *m);

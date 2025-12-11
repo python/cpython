@@ -348,7 +348,7 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
         return NULL;
     }
 
-    self->mutex = (PyMutex){0};
+    self->mutex = PyMutex_STATIC_INIT;
     self->bzs.opaque = NULL;
     self->bzs.bzalloc = BZ2_Malloc;
     self->bzs.bzfree = BZ2_Free;
@@ -633,7 +633,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
         return NULL;
     }
 
-    self->mutex = (PyMutex){0};
+    self->mutex = PyMutex_STATIC_INIT;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;

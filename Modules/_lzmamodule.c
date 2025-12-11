@@ -813,7 +813,7 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     self->alloc.free = PyLzma_Free;
     self->lzs.allocator = &self->alloc;
 
-    self->mutex = (PyMutex){0};
+    self->mutex = PyMutex_STATIC_INIT;
 
     self->flushed = 0;
     switch (format) {
@@ -1230,7 +1230,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->lzs.allocator = &self->alloc;
     self->lzs.next_in = NULL;
 
-    self->mutex = (PyMutex){0};
+    self->mutex = PyMutex_STATIC_INIT;
 
     self->check = LZMA_CHECK_UNKNOWN;
     self->needs_input = 1;

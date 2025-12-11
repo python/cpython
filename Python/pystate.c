@@ -554,7 +554,7 @@ init_interpreter(PyInterpreterState *interp,
 
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
-    interp->asyncio_tasks_lock = (PyMutex){0};
+    interp->asyncio_tasks_lock = PyMutex_STATIC_INIT;
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }

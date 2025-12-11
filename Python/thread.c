@@ -85,7 +85,7 @@ PyThread_allocate_lock(void)
 
     PyMutex *lock = (PyMutex *)PyMem_RawMalloc(sizeof(PyMutex));
     if (lock) {
-        *lock = (PyMutex){0};
+        *lock = PyMutex_STATIC_INIT;
     }
 
     return (PyThread_type_lock)lock;

@@ -348,7 +348,7 @@ _zstd_ZstdCompressor_new_impl(PyTypeObject *type, PyObject *level,
 
     self->use_multithread = 0;
     self->dict = NULL;
-    self->lock = (PyMutex){0};
+    self->lock = PyMutex_STATIC_INIT;
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();

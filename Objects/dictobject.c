@@ -796,7 +796,7 @@ new_keys_object(uint8_t log2_size, bool unicode)
     dk->dk_log2_index_bytes = log2_bytes;
     dk->dk_kind = unicode ? DICT_KEYS_UNICODE : DICT_KEYS_GENERAL;
 #ifdef Py_GIL_DISABLED
-    dk->dk_mutex = (PyMutex){0};
+    dk->dk_mutex = PyMutex_STATIC_INIT;
 #endif
     dk->dk_nentries = 0;
     dk->dk_usable = usable;

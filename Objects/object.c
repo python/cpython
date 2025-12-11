@@ -2632,7 +2632,7 @@ new_reference(PyObject *op)
 #endif
 #else
     op->ob_flags = 0;
-    op->ob_mutex = (PyMutex){ 0 };
+    op->ob_mutex = PyMutex_STATIC_INIT;
 #ifdef _Py_THREAD_SANITIZER
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, _Py_ThreadId());
     _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, 0);

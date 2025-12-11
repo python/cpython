@@ -3503,7 +3503,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->psk_client_callback = NULL;
     self->psk_server_callback = NULL;
 #endif
-    self->tstate_mutex = (PyMutex){0};
+    self->tstate_mutex = PyMutex_STATIC_INIT;
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {

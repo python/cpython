@@ -62,7 +62,7 @@ _zstd_ZstdDict_new_impl(PyTypeObject *type, Py_buffer *dict_content,
     self->d_dict = NULL;
     self->dict_buffer = NULL;
     self->dict_id = 0;
-    self->lock = (PyMutex){0};
+    self->lock = PyMutex_STATIC_INIT;
 
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
