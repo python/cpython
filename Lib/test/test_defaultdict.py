@@ -7,6 +7,7 @@ import time
 import unittest
 
 from collections import defaultdict
+from test.support import threading_helper
 
 def foobar():
     return list
@@ -188,6 +189,7 @@ class TestDefaultDict(unittest.TestCase):
         with self.assertRaises(TypeError):
             i |= None
 
+    @threading_helper.requires_working_threading()
     def test_no_value_overwrite_race_condition(self):
         """Test that concurrent access to missing keys doesn't overwrite values."""
         # Use a factory that returns unique objects so we can detect overwrites
