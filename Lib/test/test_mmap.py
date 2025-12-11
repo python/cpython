@@ -1165,6 +1165,7 @@ class MmapTests(unittest.TestCase):
             m.flush(PAGESIZE)
             m.flush(PAGESIZE, PAGESIZE)
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
     @support.requires_linux_version(5, 17, 0)
     def test_set_name(self):
         # Test setting name on anonymous mmap
