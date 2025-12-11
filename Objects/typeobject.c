@@ -5931,6 +5931,9 @@ found:
 int
 PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    if (result != NULL) {
+         *result = NULL;
+    }
     if (token == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "PyType_GetBaseByToken called with token=NULL");
