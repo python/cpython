@@ -52,7 +52,8 @@ do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
     jit_func_preserve_none jitted = _executor->jit_code;                   \
-    __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
+    __attribute__((musttail)) return jitted(frame, stack_pointer, tstate,  \
+    _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
 #undef GOTO_TIER_ONE_SETUP
@@ -75,7 +76,8 @@ do {                                                                       \
 #define PATCH_JUMP(ALIAS)                                                 \
 do {                                                                      \
     DECLARE_TARGET(ALIAS);                                                \
-    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate); \
+    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate,  \
+    _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -93,8 +95,10 @@ do {                                                                      \
 #endif
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
-{
+_JIT_ENTRY(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
+     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
+) {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;

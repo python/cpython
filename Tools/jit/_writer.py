@@ -25,7 +25,7 @@ def _dump_footer(
     yield ""
     yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
     yield ""
-    yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
+    yield "static const StencilGroup stencil_groups[MAX_UOP_REGS_ID + 1] = {"
     for opname, group in sorted(groups.items()):
         if opname == "trampoline":
             continue

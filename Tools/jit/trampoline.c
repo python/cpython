@@ -12,5 +12,5 @@ _JIT_ENTRY(
 ) {
     // Note that this is *not* a tail call
     jit_func_preserve_none jitted = (jit_func_preserve_none)exec->jit_code;
-    return jitted(frame, stack_pointer, tstate);
+    return jitted(frame, stack_pointer, tstate, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS, PyStackRef_ZERO_BITS);
 }

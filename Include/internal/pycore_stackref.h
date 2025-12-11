@@ -76,6 +76,8 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
+#define PyStackRef_ZERO_BITS PyStackRef_NULL
+
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
 {
@@ -368,6 +370,10 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #else
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
+/* For use in the JIT to clear an unused value.
+ * PyStackRef_ZERO_BITS has no meaning and should not be used other than by the JIT. */
+static const _PyStackRef PyStackRef_ZERO_BITS = { .bits = 0 };
 
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used
@@ -920,6 +926,17 @@ _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
     tstate_impl->c_stack_refs = ref->next;
 #endif
     PyStackRef_XCLOSE(ref->ref);
+}
+
+static inline _PyStackRef
+_PyThreadState_PopCStackRefSteal(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    return ref->ref;
 }
 
 #ifdef Py_GIL_DISABLED

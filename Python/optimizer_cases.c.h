@@ -1719,17 +1719,17 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef *attr;
+            JitOptRef attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
-            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            *attr = sym_new_not_null(ctx);
+            attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
             CHECK_STACK_BOUNDS((oparg&1));
+            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -3625,6 +3625,10 @@
         }
 
         case _ERROR_POP_N: {
+            break;
+        }
+
+        case _SPILL_OR_RELOAD: {
             break;
         }
 

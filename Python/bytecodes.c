@@ -2318,20 +2318,22 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                *attr = PyStackRef_NULL;
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, attr);
+                _PyCStackRef method;
+                _PyThreadState_PushCStackRef(tstate, &method);
+                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
                 if (is_meth) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
+                    assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
                     self_or_null[0] = owner;  // Transfer ownership
                     DEAD(owner);
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -2341,8 +2343,9 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     PyStackRef_CLOSE(owner);
-                    ERROR_IF(PyStackRef_IsNull(*attr));
                     self_or_null[0] = PyStackRef_NULL;
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
+                    ERROR_IF(PyStackRef_IsNull(attr));
                 }
             }
             else {
@@ -2350,7 +2353,7 @@ dummy_func(
                 PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
                 ERROR_IF(attr_o == NULL);
-                *attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
         }
 
@@ -5337,13 +5340,17 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
+            SYNC_SP();
             GOTO_TIER_ONE((frame->owner == FRAME_OWNED_BY_INTERPRETER)
                 ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
+            SYNC_SP();
             int err = _Py_HandlePending(tstate);
             GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
@@ -5351,6 +5358,10 @@ dummy_func(
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
             GOTO_TIER_ONE(NULL);
+            Py_UNREACHABLE();
+        }
+
+        tier2 op(_SPILL_OR_RELOAD, (--)) {
         }
 
         /* Progress is guaranteed if we DEOPT on the eval breaker, because
@@ -5381,6 +5392,7 @@ dummy_func(
                 TIER2_TO_TIER2(exit->executor);
             }
             else {
+                SYNC_SP();
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);
@@ -5399,13 +5411,16 @@ dummy_func(
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
                 }
                 GOTO_TIER_ONE(target);
+                Py_UNREACHABLE();
             }
         }
 
         tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
+            SYNC_SP();
             // TODO (gh-139109): This should be similar to _COLD_EXIT in the future.
             _Py_CODEUNIT *target = frame->instr_ptr;
             GOTO_TIER_ONE(target);
+            Py_UNREACHABLE();
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {
