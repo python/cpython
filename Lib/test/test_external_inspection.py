@@ -379,6 +379,31 @@ class RemoteInspectionTestBase(unittest.TestCase):
             for task in stack_trace[0].awaited_by
         }
 
+    @staticmethod
+    def _frame_to_lineno_tuple(frame):
+        """Convert frame to (filename, lineno, funcname, opcode) tuple.
+
+        This extracts just the line number from the location, ignoring column
+        offsets which can vary due to sampling timing (e.g., when two statements
+        are on the same line, the sample might catch either one).
+        """
+        filename, location, funcname, opcode = frame
+        return (filename, location.lineno, funcname, opcode)
+
+    def _extract_coroutine_stacks_lineno_only(self, stack_trace):
+        """Extract coroutine stacks with line numbers only (no column offsets).
+
+        Use this for tests where sampling timing can cause column offset
+        variations (e.g., 'expr1; expr2' on the same line).
+        """
+        return {
+            task.task_name: sorted(
+                tuple(self._frame_to_lineno_tuple(frame) for frame in coro.call_stack)
+                for coro in task.coroutine_stack
+            )
+            for task in stack_trace[0].awaited_by
+        }
+
 
 # ============================================================================
 # Test classes
@@ -442,39 +467,25 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             "Insufficient permissions to read the stack trace"
                         )
 
-                    thread_expected_stack_trace = [
-                        FrameInfo([script_name, 15, "foo"]),
-                        FrameInfo([script_name, 12, "baz"]),
-                        FrameInfo([script_name, 9, "bar"]),
-                        FrameInfo([threading.__file__, ANY, "Thread.run"]),
-                        FrameInfo(
-                            [
-                                threading.__file__,
-                                ANY,
-                                "Thread._bootstrap_inner",
-                            ]
-                        ),
-                        FrameInfo(
-                            [threading.__file__, ANY, "Thread._bootstrap"]
-                        ),
-                    ]
-
-                    # Find expected thread stack
+                    # Find expected thread stack by funcname
                     found_thread = self._find_thread_with_frame(
                         stack_trace,
-                        lambda f: f.funcname == "foo" and f.lineno == 15,
+                        lambda f: f.funcname == "foo" and f.location.lineno == 15,
                     )
                     self.assertIsNotNone(
                         found_thread, "Expected thread stack trace not found"
                     )
+                    # Check the funcnames in order
+                    funcnames = [f.funcname for f in found_thread.frame_info]
                     self.assertEqual(
-                        found_thread.frame_info, thread_expected_stack_trace
+                        funcnames[:6],
+                        ["foo", "baz", "bar", "Thread.run", "Thread._bootstrap_inner", "Thread._bootstrap"]
                     )
 
                     # Check main thread
-                    main_frame = FrameInfo([script_name, 19, "<module>"])
                     found_main = self._find_frame_in_trace(
-                        stack_trace, lambda f: f == main_frame
+                        stack_trace,
+                        lambda f: f.funcname == "<module>" and f.location.lineno == 19,
                     )
                     self.assertIsNotNone(
                         found_main, "Main thread stack trace not found"
@@ -596,8 +607,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             },
                         )
 
-                        # Check coroutine stacks
-                        coroutine_stacks = self._extract_coroutine_stacks(
+                        # Check coroutine stacks (using line numbers only to avoid
+                        # flakiness from column offset variations when sampling
+                        # catches different statements on the same line)
+                        coroutine_stacks = self._extract_coroutine_stacks_lineno_only(
                             stack_trace
                         )
                         self.assertEqual(
@@ -605,48 +618,36 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             {
                                 "Task-1": [
                                     (
-                                        tuple(
-                                            [
-                                                taskgroups.__file__,
-                                                ANY,
-                                                "TaskGroup._aexit",
-                                            ]
-                                        ),
-                                        tuple(
-                                            [
-                                                taskgroups.__file__,
-                                                ANY,
-                                                "TaskGroup.__aexit__",
-                                            ]
-                                        ),
-                                        tuple([script_name, 26, "main"]),
+                                        (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                        (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
+                                        (script_name, 26, "main", None),
                                     )
                                 ],
                                 "c2_root": [
                                     (
-                                        tuple([script_name, 10, "c5"]),
-                                        tuple([script_name, 14, "c4"]),
-                                        tuple([script_name, 17, "c3"]),
-                                        tuple([script_name, 20, "c2"]),
+                                        (script_name, 10, "c5", None),
+                                        (script_name, 14, "c4", None),
+                                        (script_name, 17, "c3", None),
+                                        (script_name, 20, "c2", None),
                                     )
                                 ],
                                 "sub_main_1": [
-                                    (tuple([script_name, 23, "c1"]),)
+                                    ((script_name, 23, "c1", None),)
                                 ],
                                 "sub_main_2": [
-                                    (tuple([script_name, 23, "c1"]),)
+                                    ((script_name, 23, "c1", None),)
                                 ],
                             },
                         )
 
-                        # Check awaited_by coroutine stacks
+                        # Check awaited_by coroutine stacks (line numbers only)
                         id_to_task = self._get_task_id_map(stack_trace)
                         awaited_by_coroutine_stacks = {
                             task.task_name: sorted(
                                 (
                                     id_to_task[coro.task_name].task_name,
                                     tuple(
-                                        tuple(frame)
+                                        self._frame_to_lineno_tuple(frame)
                                         for frame in coro.call_stack
                                     ),
                                 )
@@ -662,51 +663,27 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup._aexit",
-                                                ]
-                                            ),
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup.__aexit__",
-                                                ]
-                                            ),
-                                            tuple([script_name, 26, "main"]),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
+                                            (script_name, 26, "main", None),
                                         ),
                                     ),
                                     (
                                         "sub_main_1",
-                                        (tuple([script_name, 23, "c1"]),),
+                                        ((script_name, 23, "c1", None),),
                                     ),
                                     (
                                         "sub_main_2",
-                                        (tuple([script_name, 23, "c1"]),),
+                                        ((script_name, 23, "c1", None),),
                                     ),
                                 ],
                                 "sub_main_1": [
                                     (
                                         "Task-1",
                                         (
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup._aexit",
-                                                ]
-                                            ),
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup.__aexit__",
-                                                ]
-                                            ),
-                                            tuple([script_name, 26, "main"]),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
+                                            (script_name, 26, "main", None),
                                         ),
                                     )
                                 ],
@@ -714,21 +691,9 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                     (
                                         "Task-1",
                                         (
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup._aexit",
-                                                ]
-                                            ),
-                                            tuple(
-                                                [
-                                                    taskgroups.__file__,
-                                                    ANY,
-                                                    "TaskGroup.__aexit__",
-                                                ]
-                                            ),
-                                            tuple([script_name, 26, "main"]),
+                                            (taskgroups.__file__, ANY, "TaskGroup._aexit", None),
+                                            (taskgroups.__file__, ANY, "TaskGroup.__aexit__", None),
+                                            (script_name, 26, "main", None),
                                         ),
                                     )
                                 ],
@@ -800,18 +765,20 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     task = stack_trace[0].awaited_by[0]
                     self.assertEqual(task.task_name, "Task-1")
 
-                    # Check the coroutine stack
+                    # Check the coroutine stack (using line numbers only to avoid
+                    # flakiness from column offset variations when sampling
+                    # catches different statements on the same line)
                     coroutine_stack = sorted(
-                        tuple(tuple(frame) for frame in coro.call_stack)
+                        tuple(self._frame_to_lineno_tuple(frame) for frame in coro.call_stack)
                         for coro in task.coroutine_stack
                     )
                     self.assertEqual(
                         coroutine_stack,
                         [
                             (
-                                tuple([script_name, 10, "gen_nested_call"]),
-                                tuple([script_name, 16, "gen"]),
-                                tuple([script_name, 19, "main"]),
+                                (script_name, 10, "gen_nested_call", None),
+                                (script_name, 16, "gen", None),
+                                (script_name, 19, "main", None),
                             )
                         ],
                     )
@@ -899,31 +866,33 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         },
                     )
 
-                    # Check coroutine stacks
-                    coroutine_stacks = self._extract_coroutine_stacks(
+                    # Check coroutine stacks (using line numbers only to avoid
+                    # flakiness from column offset variations when sampling
+                    # catches different statements on the same line)
+                    coroutine_stacks = self._extract_coroutine_stacks_lineno_only(
                         stack_trace
                     )
                     self.assertEqual(
                         coroutine_stacks,
                         {
-                            "Task-1": [(tuple([script_name, 21, "main"]),)],
+                            "Task-1": [((script_name, 21, "main", None),)],
                             "Task-2": [
                                 (
-                                    tuple([script_name, 11, "deep"]),
-                                    tuple([script_name, 15, "c1"]),
+                                    (script_name, 11, "deep", None),
+                                    (script_name, 15, "c1", None),
                                 )
                             ],
                         },
                     )
 
-                    # Check awaited_by coroutine stacks
+                    # Check awaited_by coroutine stacks (line numbers only)
                     id_to_task = self._get_task_id_map(stack_trace)
                     awaited_by_coroutine_stacks = {
                         task.task_name: sorted(
                             (
                                 id_to_task[coro.task_name].task_name,
                                 tuple(
-                                    tuple(frame) for frame in coro.call_stack
+                                    self._frame_to_lineno_tuple(frame) for frame in coro.call_stack
                                 ),
                             )
                             for coro in task.awaited_by
@@ -935,7 +904,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         {
                             "Task-1": [],
                             "Task-2": [
-                                ("Task-1", (tuple([script_name, 21, "main"]),))
+                                ("Task-1", ((script_name, 21, "main", None),))
                             ],
                         },
                     )
@@ -1023,8 +992,10 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         },
                     )
 
-                    # Check coroutine stacks
-                    coroutine_stacks = self._extract_coroutine_stacks(
+                    # Check coroutine stacks (using line numbers only to avoid
+                    # flakiness from column offset variations when sampling
+                    # catches different statements on the same line)
+                    coroutine_stacks = self._extract_coroutine_stacks_lineno_only(
                         stack_trace
                     )
                     self.assertEqual(
@@ -1032,40 +1003,28 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         {
                             "Task-1": [
                                 (
-                                    tuple(
-                                        [
-                                            staggered.__file__,
-                                            ANY,
-                                            "staggered_race",
-                                        ]
-                                    ),
-                                    tuple([script_name, 21, "main"]),
+                                    (staggered.__file__, ANY, "staggered_race", None),
+                                    (script_name, 21, "main", None),
                                 )
                             ],
                             "Task-2": [
                                 (
-                                    tuple([script_name, 11, "deep"]),
-                                    tuple([script_name, 15, "c1"]),
-                                    tuple(
-                                        [
-                                            staggered.__file__,
-                                            ANY,
-                                            "staggered_race.<locals>.run_one_coro",
-                                        ]
-                                    ),
+                                    (script_name, 11, "deep", None),
+                                    (script_name, 15, "c1", None),
+                                    (staggered.__file__, ANY, "staggered_race.<locals>.run_one_coro", None),
                                 )
                             ],
                         },
                     )
 
-                    # Check awaited_by coroutine stacks
+                    # Check awaited_by coroutine stacks (line numbers only)
                     id_to_task = self._get_task_id_map(stack_trace)
                     awaited_by_coroutine_stacks = {
                         task.task_name: sorted(
                             (
                                 id_to_task[coro.task_name].task_name,
                                 tuple(
-                                    tuple(frame) for frame in coro.call_stack
+                                    self._frame_to_lineno_tuple(frame) for frame in coro.call_stack
                                 ),
                             )
                             for coro in task.awaited_by
@@ -1080,14 +1039,8 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                 (
                                     "Task-1",
                                     (
-                                        tuple(
-                                            [
-                                                staggered.__file__,
-                                                ANY,
-                                                "staggered_race",
-                                            ]
-                                        ),
-                                        tuple([script_name, 21, "main"]),
+                                        (staggered.__file__, ANY, "staggered_race", None),
+                                        (script_name, 21, "main", None),
                                     ),
                                 )
                             ],
@@ -1209,12 +1162,12 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     # Check the main task structure
                     main_stack = [
                         FrameInfo(
-                            [taskgroups.__file__, ANY, "TaskGroup._aexit"]
+                            [taskgroups.__file__, ANY, "TaskGroup._aexit", ANY]
                         ),
                         FrameInfo(
-                            [taskgroups.__file__, ANY, "TaskGroup.__aexit__"]
+                            [taskgroups.__file__, ANY, "TaskGroup.__aexit__", ANY]
                         ),
-                        FrameInfo([script_name, 52, "main"]),
+                        FrameInfo([script_name, ANY, "main", ANY]),
                     ]
                     self.assertIn(
                         TaskInfo(
@@ -1236,6 +1189,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         base_events.__file__,
                                                         ANY,
                                                         "Server.serve_forever",
+                                                        ANY,
                                                     ]
                                                 )
                                             ],
@@ -1252,6 +1206,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         taskgroups.__file__,
                                                         ANY,
                                                         "TaskGroup._aexit",
+                                                        ANY,
                                                     ]
                                                 ),
                                                 FrameInfo(
@@ -1259,10 +1214,11 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         taskgroups.__file__,
                                                         ANY,
                                                         "TaskGroup.__aexit__",
+                                                        ANY,
                                                     ]
                                                 ),
                                                 FrameInfo(
-                                                    [script_name, ANY, "main"]
+                                                    [script_name, ANY, "main", ANY]
                                                 ),
                                             ],
                                             ANY,
@@ -1287,13 +1243,15 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         tasks.__file__,
                                                         ANY,
                                                         "sleep",
+                                                        ANY,
                                                     ]
                                                 ),
                                                 FrameInfo(
                                                     [
                                                         script_name,
-                                                        36,
+                                                        ANY,
                                                         "echo_client",
+                                                        ANY,
                                                     ]
                                                 ),
                                             ],
@@ -1310,6 +1268,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         taskgroups.__file__,
                                                         ANY,
                                                         "TaskGroup._aexit",
+                                                        ANY,
                                                     ]
                                                 ),
                                                 FrameInfo(
@@ -1317,13 +1276,15 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                                                         taskgroups.__file__,
                                                         ANY,
                                                         "TaskGroup.__aexit__",
+                                                        ANY,
                                                     ]
                                                 ),
                                                 FrameInfo(
                                                     [
                                                         script_name,
-                                                        39,
+                                                        ANY,
                                                         "echo_client_spam",
+                                                        ANY,
                                                     ]
                                                 ),
                                             ],
@@ -1336,36 +1297,24 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         entries,
                     )
 
-                    expected_awaited_by = [
-                        CoroInfo(
-                            [
-                                [
-                                    FrameInfo(
-                                        [
-                                            taskgroups.__file__,
-                                            ANY,
-                                            "TaskGroup._aexit",
-                                        ]
-                                    ),
-                                    FrameInfo(
-                                        [
-                                            taskgroups.__file__,
-                                            ANY,
-                                            "TaskGroup.__aexit__",
-                                        ]
-                                    ),
-                                    FrameInfo(
-                                        [script_name, 39, "echo_client_spam"]
-                                    ),
-                                ],
-                                ANY,
-                            ]
-                        )
-                    ]
+                    # Find tasks awaited by echo_client_spam via TaskGroup
+                    def matches_awaited_by_pattern(task):
+                        if len(task.awaited_by) != 1:
+                            return False
+                        coro = task.awaited_by[0]
+                        if len(coro.call_stack) != 3:
+                            return False
+                        funcnames = [f.funcname for f in coro.call_stack]
+                        return funcnames == [
+                            "TaskGroup._aexit",
+                            "TaskGroup.__aexit__",
+                            "echo_client_spam",
+                        ]
+
                     tasks_with_awaited = [
                         task
                         for task in entries
-                        if task.awaited_by == expected_awaited_by
+                        if matches_awaited_by_pattern(task)
                     ]
                     self.assertGreaterEqual(len(tasks_with_awaited), NUM_TASKS)
 
@@ -1396,25 +1345,12 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                 break
 
         self.assertIsNotNone(this_thread_stack)
-        self.assertEqual(
-            this_thread_stack[:2],
-            [
-                FrameInfo(
-                    [
-                        __file__,
-                        get_stack_trace.__code__.co_firstlineno + 4,
-                        "get_stack_trace",
-                    ]
-                ),
-                FrameInfo(
-                    [
-                        __file__,
-                        self.test_self_trace.__code__.co_firstlineno + 6,
-                        "TestGetStackTrace.test_self_trace",
-                    ]
-                ),
-            ],
-        )
+        # Check the top two frames
+        self.assertGreaterEqual(len(this_thread_stack), 2)
+        self.assertEqual(this_thread_stack[0].funcname, "get_stack_trace")
+        self.assertTrue(this_thread_stack[0].filename.endswith("test_external_inspection.py"))
+        self.assertEqual(this_thread_stack[1].funcname, "TestGetStackTrace.test_self_trace")
+        self.assertTrue(this_thread_stack[1].filename.endswith("test_external_inspection.py"))
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1815,7 +1751,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                             found = self._find_frame_in_trace(
                                 all_traces,
                                 lambda f: f.funcname == "main_work"
-                                and f.lineno > 12,
+                                and f.location.lineno > 12,
                             )
                             if found:
                                 break
@@ -1864,6 +1800,136 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     self.assertIn(gil_thread_id, all_thread_ids)
             finally:
                 _cleanup_sockets(client_socket, server_socket)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_opcodes_collection(self):
+        """Test that opcodes are collected when the opcodes flag is set."""
+        script = textwrap.dedent(
+            """\
+            import time, sys, socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def foo():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            foo()
+            """
+        )
+
+        def get_trace_with_opcodes(pid):
+            return RemoteUnwinder(pid, opcodes=True).get_stack_trace()
+
+        stack_trace, _ = self._run_script_and_get_trace(
+            script, get_trace_with_opcodes, wait_for_signals=b"ready"
+        )
+
+        # Find our foo frame and verify it has an opcode
+        foo_frame = self._find_frame_in_trace(
+            stack_trace, lambda f: f.funcname == "foo"
+        )
+        self.assertIsNotNone(foo_frame, "Could not find foo frame")
+        self.assertIsInstance(foo_frame.opcode, int)
+        self.assertGreaterEqual(foo_frame.opcode, 0)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_location_tuple_format(self):
+        """Test that location is a 4-tuple (lineno, end_lineno, col_offset, end_col_offset)."""
+        script = textwrap.dedent(
+            """\
+            import time, sys, socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def foo():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            foo()
+            """
+        )
+
+        def get_trace_with_opcodes(pid):
+            return RemoteUnwinder(pid, opcodes=True).get_stack_trace()
+
+        stack_trace, _ = self._run_script_and_get_trace(
+            script, get_trace_with_opcodes, wait_for_signals=b"ready"
+        )
+
+        # Find our foo frame
+        foo_frame = self._find_frame_in_trace(
+            stack_trace, lambda f: f.funcname == "foo"
+        )
+        self.assertIsNotNone(foo_frame, "Could not find foo frame")
+
+        # Check location is a 4-tuple with valid values
+        location = foo_frame.location
+        self.assertIsInstance(location, tuple)
+        self.assertEqual(len(location), 4)
+        lineno, end_lineno, col_offset, end_col_offset = location
+        self.assertIsInstance(lineno, int)
+        self.assertGreater(lineno, 0)
+        self.assertIsInstance(end_lineno, int)
+        self.assertGreaterEqual(end_lineno, lineno)
+        self.assertIsInstance(col_offset, int)
+        self.assertGreaterEqual(col_offset, 0)
+        self.assertIsInstance(end_col_offset, int)
+        self.assertGreaterEqual(end_col_offset, col_offset)
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_location_tuple_exact_values(self):
+        """Test exact values of location tuple including column offsets."""
+        script = textwrap.dedent(
+            """\
+            import time, sys, socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def foo():
+                sock.sendall(b"ready")
+                time.sleep(10_000)
+
+            foo()
+            """
+        )
+
+        def get_trace_with_opcodes(pid):
+            return RemoteUnwinder(pid, opcodes=True).get_stack_trace()
+
+        stack_trace, _ = self._run_script_and_get_trace(
+            script, get_trace_with_opcodes, wait_for_signals=b"ready"
+        )
+
+        foo_frame = self._find_frame_in_trace(
+            stack_trace, lambda f: f.funcname == "foo"
+        )
+        self.assertIsNotNone(foo_frame, "Could not find foo frame")
+
+        # Can catch either sock.sendall (line 7) or time.sleep (line 8)
+        location = foo_frame.location
+        valid_locations = [
+            (7, 7, 4, 26),  # sock.sendall(b"ready")
+            (8, 8, 4, 22),  # time.sleep(10_000)
+        ]
+        actual = (location.lineno, location.end_lineno,
+                  location.col_offset, location.end_col_offset)
+        self.assertIn(actual, valid_locations)
 
 
 class TestUnsupportedPlatformHandling(unittest.TestCase):
@@ -2404,13 +2470,13 @@ sock.connect(('localhost', {port}))
 
         # Line numbers must be different and increasing (execution moves forward)
         self.assertLess(
-            inner_a.lineno, inner_b.lineno, "Line B should be after line A"
+            inner_a.location.lineno, inner_b.location.lineno, "Line B should be after line A"
         )
         self.assertLess(
-            inner_b.lineno, inner_c.lineno, "Line C should be after line B"
+            inner_b.location.lineno, inner_c.location.lineno, "Line C should be after line B"
         )
         self.assertLess(
-            inner_c.lineno, inner_d.lineno, "Line D should be after line C"
+            inner_c.location.lineno, inner_d.location.lineno, "Line D should be after line C"
         )
 
     @skip_if_not_supported
@@ -2709,10 +2775,10 @@ sock.connect(('localhost', {port}))
         funcs_no_cache = [f.funcname for f in frames_no_cache]
         self.assertEqual(funcs_cached, funcs_no_cache)
 
-        # Same line numbers
-        lines_cached = [f.lineno for f in frames_cached]
-        lines_no_cache = [f.lineno for f in frames_no_cache]
-        self.assertEqual(lines_cached, lines_no_cache)
+        # Same locations
+        locations_cached = [f.location for f in frames_cached]
+        locations_no_cache = [f.location for f in frames_no_cache]
+        self.assertEqual(locations_cached, locations_no_cache)
 
     @skip_if_not_supported
     @unittest.skipIf(

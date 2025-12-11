@@ -76,7 +76,7 @@ class _Target(typing.Generic[_S, _R]):
             # Exclude cache files from digest computation to ensure reproducible builds.
             if dirpath.endswith("__pycache__"):
                 continue
-            for filename in filenames:
+            for filename in sorted(filenames):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
@@ -138,6 +138,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
