@@ -308,8 +308,8 @@ Glossary
       :term:`parallelism`).
 
    concurrent modification
-      When multiple threads modify shared data at the same time without
-      proper synchronization.  Concurrent modification can cause
+      When multiple threads modify shared data at the same time.  Concurrent
+      modification without proper synchronization can cause
       :term:`race conditions <race condition>`, and might also trigger a
       :term:`data race <data race>`, data corruption, or both.
 
