@@ -1,1 +1,1 @@
-:mod:`pdb` now supports setting breakpoints using the ``filename:function`` syntax.
+:mod:`pdb` now supports setting or clearing breakpoints with the ``filename:function`` syntax.
