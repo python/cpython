@@ -1939,6 +1939,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(only_keys));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(oparg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(opcode));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(opcodes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(open));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(opener));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(operation));

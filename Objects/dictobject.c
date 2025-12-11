@@ -1078,7 +1078,7 @@ compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *ep_key = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key);
+    PyObject *ep_key = FT_ATOMIC_LOAD_PTR_CONSUME(ep->me_key);
     assert(ep_key != NULL);
     assert(PyUnicode_CheckExact(ep_key));
     if (ep_key == key ||
@@ -1371,7 +1371,7 @@ compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     assert(startkey == NULL || PyUnicode_CheckExact(ep->me_key));
     assert(!PyUnicode_CheckExact(key));
 
@@ -1414,7 +1414,7 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     if (startkey == key) {
         assert(PyUnicode_CheckExact(startkey));
         return 1;
@@ -1450,7 +1450,7 @@ compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                            void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     if (startkey == key) {
         return 1;
     }
@@ -5534,7 +5534,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
-        PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
+        PyDictValues *values = _Py_atomic_load_ptr_consume(&d->ma_values);
         if (values == NULL) {
             goto concurrent_modification;
         }
@@ -7122,7 +7122,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
     Py_BEGIN_CRITICAL_SECTION(dict);
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+        value = _Py_atomic_load_ptr_consume(&values->values[ix]);
         *attr = _Py_XNewRefWithLock(value);
         success = true;
     } else {

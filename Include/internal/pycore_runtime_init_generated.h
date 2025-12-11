@@ -1937,6 +1937,7 @@ extern "C" {
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
+    INIT_ID(opcodes), \
     INIT_ID(open), \
     INIT_ID(opener), \
     INIT_ID(operation), \

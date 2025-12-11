@@ -240,6 +240,8 @@ Key features include:
     and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
   * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
     Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+  * **Exception handling time** (``--mode exception``): Captures samples only from threads with
+    an active exception. Use this to analyze exception handling overhead.
 
 * **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
   essential for understanding multi-threaded application behavior.
@@ -268,6 +270,10 @@ Key features include:
 * **Async-aware profiling**: Profile async/await code with task-based stack reconstruction
   (``--async-aware``). See which coroutines are consuming time, with options to show only
   running tasks or all tasks including those waiting.
+
+* **Opcode-level profiling**: Gather bytecode opcode information for instruction-level
+  profiling (``--opcodes``). Shows which bytecode instructions are executing, including
+  specializations from the adaptive interpreter.
 
 See :mod:`profiling.sampling` for the complete documentation, including all
 available output formats, profiling modes, and configuration options.

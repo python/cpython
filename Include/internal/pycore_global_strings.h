@@ -662,6 +662,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(only_keys)
         STRUCT_FOR_ID(oparg)
         STRUCT_FOR_ID(opcode)
+        STRUCT_FOR_ID(opcodes)
         STRUCT_FOR_ID(open)
         STRUCT_FOR_ID(opener)
         STRUCT_FOR_ID(operation)
