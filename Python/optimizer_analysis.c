@@ -140,7 +140,7 @@ incorrect_keys(PyObject *obj, uint32_t version)
 
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
-#define STACK_SIZE()      ((int)(ctx->frame->stack_len))
+#define STACK_SIZE()      ((int)(ctx->frame->stack_len) + MAX_CACHED_REGISTER)
 
 #define CURRENT_FRAME_IS_INIT_SHIM() (ctx->frame->code == ((PyCodeObject *)&_Py_InitCleanup))
 
@@ -312,7 +312,7 @@ _Py_opt_assert_within_stack_bounds(
         fflush(stdout);
         abort();
     }
-    int size = (int)(frame->stack_len);
+    int size = (int)(frame->stack_len) + MAX_CACHED_REGISTER;
     if (level > size) {
         printf("Stack overflow (depth = %d) at %s:%d\n", level, filename, lineno);
         fflush(stdout);
