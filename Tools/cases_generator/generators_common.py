@@ -255,7 +255,7 @@ class Emitter:
             emit_to(self.out, tkn_iter, "RPAREN")
             self.out.emit(") {\n")
         next(tkn_iter)  # Semi colon
-        storage.clear_inputs("at ERROR_IF")
+        storage.clear_inputs_and_close_live_ones(self.out)
 
         c_offset = storage.stack.sp_offset()
         try:

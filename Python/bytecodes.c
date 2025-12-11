@@ -348,6 +348,10 @@ dummy_func(
             PyStackRef_XCLOSE(value);
         }
 
+        op(_POP_TOP_NOT_NULL, (value --)) {
+            PyStackRef_CLOSE(value);
+        }
+
         op(_POP_TOP_NOP, (value --)) {
             assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
                 _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
@@ -4074,9 +4078,10 @@ dummy_func(
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
+            DEAD(null);
+            ERROR_IF(res_o == NULL);
             a = arg;
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4086,7 +4091,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
-            POP_TOP +
+            _POP_TOP_NOT_NULL +
             _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -4281,8 +4286,8 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_LEN +
             _CALL_LEN +
-            POP_TOP +
-            POP_TOP;
+            _POP_TOP_NOT_NULL +
+            _POP_TOP_NOT_NULL;
 
         op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);

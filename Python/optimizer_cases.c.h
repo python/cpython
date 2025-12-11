@@ -112,21 +112,17 @@
         case _POP_TOP: {
             JitOptRef value;
             value = stack_pointer[-1];
-            PyTypeObject *typ = sym_get_type(value);
-            if (PyJitRef_IsBorrowed(value) ||
-                sym_is_immortal(PyJitRef_Unwrap(value)) ||
-                sym_is_null(value)) {
-                REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
-            }
-            else if (typ == &PyLong_Type) {
-                REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
-            }
-            else if (typ == &PyFloat_Type) {
-                REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
-            }
-            else if (typ == &PyUnicode_Type) {
-                REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
-            }
+            optimize_pop_top(value, this_instr);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _POP_TOP_NOT_NULL: {
+            JitOptRef value;
+            value = stack_pointer[-1];
+            optimize_pop_top(value, this_instr);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);

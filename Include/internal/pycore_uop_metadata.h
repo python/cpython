@@ -75,6 +75,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_FAST_7] = HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ESCAPES_FLAG,
     [_POP_TOP] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_POP_TOP_NOT_NULL] = HAS_ESCAPES_FLAG,
     [_POP_TOP_NOP] = 0,
     [_POP_TOP_INT] = 0,
     [_POP_TOP_FLOAT] = 0,
@@ -724,6 +725,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { 0, 1, _POP_TOP_r10 },
+            { -1, -1, -1 },
+            { -1, -1, -1 },
+        },
+    },
+    [_POP_TOP_NOT_NULL] = {
+        .best = { 1, 1, 1, 1 },
+        .entries = {
+            { -1, -1, -1 },
+            { 0, 1, _POP_TOP_NOT_NULL_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -3338,6 +3348,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_STORE_FAST_7_r10] = _STORE_FAST_7,
     [_STORE_FAST_r10] = _STORE_FAST,
     [_POP_TOP_r10] = _POP_TOP,
+    [_POP_TOP_NOT_NULL_r10] = _POP_TOP_NOT_NULL,
     [_POP_TOP_NOP_r00] = _POP_TOP_NOP,
     [_POP_TOP_NOP_r10] = _POP_TOP_NOP,
     [_POP_TOP_NOP_r21] = _POP_TOP_NOP,
@@ -4756,6 +4767,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_POP_TOP_NOP_r10] = "_POP_TOP_NOP_r10",
     [_POP_TOP_NOP_r21] = "_POP_TOP_NOP_r21",
     [_POP_TOP_NOP_r32] = "_POP_TOP_NOP_r32",
+    [_POP_TOP_NOT_NULL] = "_POP_TOP_NOT_NULL",
+    [_POP_TOP_NOT_NULL_r10] = "_POP_TOP_NOT_NULL_r10",
     [_POP_TOP_UNICODE] = "_POP_TOP_UNICODE",
     [_POP_TOP_UNICODE_r00] = "_POP_TOP_UNICODE_r00",
     [_POP_TOP_UNICODE_r10] = "_POP_TOP_UNICODE_r10",
@@ -5011,6 +5024,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _STORE_FAST:
             return 1;
         case _POP_TOP:
+            return 1;
+        case _POP_TOP_NOT_NULL:
             return 1;
         case _POP_TOP_NOP:
             return 1;
