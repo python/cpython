@@ -179,7 +179,7 @@ def validator(application):
         environ['wsgi.errors'] = ErrorWrapper(environ['wsgi.errors'])
 
         iterator = application(environ, start_response_wrapper)
-        assert_(iterator is not None and iterator != False,
+        assert_(iterator is not None and iterator is not False,
             "The application must return an iterator, if only an empty list")
 
         check_iterator(iterator)
