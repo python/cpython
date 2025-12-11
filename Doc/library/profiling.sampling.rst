@@ -567,12 +567,6 @@ up the call stack (after ``raise`` but before being caught), or when code is
 executing inside an ``except`` block where exception information is still
 present in the thread state.
 
-The profiler detects exceptions by checking two internal thread state fields:
-the ``current_exception`` field (set when an exception is actively propagating)
-and the ``exc_info`` field (set when inside an ``except`` block). When either
-field contains an exception object, the thread is considered to have an active
-exception.
-
 The following example illustrates which code regions are captured:
 
 .. code-block:: python
