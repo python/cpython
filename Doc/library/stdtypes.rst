@@ -1475,21 +1475,20 @@ application).
       lst[i:j] = iterable
 
    The :meth:`~list.index` and :meth:`~list.count` methods, and the ``in``
-   operator, iterate the list without holding a lock. They are safe to call
+   operator, iterate the list without holding a lock.  They are safe to call
    concurrently but may return results affected by concurrent modifications.
 
-   :meth:`~list.extend` is always atomic with respect to the target list.
-   However, the operation is fully atomic only when the iterable that's passed
-   to ``extend`` is a :class:`list`, a :class:`tuple`, a :class:`set`, a
-   :class:`frozenset`, a :class:`dict` or a
-   :ref:`dictionary view object <dict-views>`. Otherwise, an iterator is
-   created which can be concurrently modified by another thread. The same
-   applies to inplace concatenation of list with other iterables when using
-   ``lst += iterable``.
+   :meth:`~list.extend` is safe to call from multiple threads.  However, the
+   operation is fully atomic only when the iterable that's passed to ``extend``
+   is a :class:`list`, a :class:`tuple`, a :class:`set`, a :class:`frozenset`,
+   a :class:`dict` or a :ref:`dictionary view object <dict-views>` (but not
+   their subclasses).  Otherwise, an iterator is created which can be
+   concurrently modified by another thread.  The same applies to inplace
+   concatenation of list with other iterables when using ``lst += iterable``.
 
-   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is always
-   atomic with respect to the target list, but ``iterable`` is only locked when
-   it is also a :class:`list`.
+   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+   to call from multiple threads, but ``iterable`` is only locked when it is
+   also a :class:`list` (but not its subclasses).
 
    Operations that involve multiple accesses, as well as iteration, are not
    atomic. For example:
