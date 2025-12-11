@@ -666,7 +666,7 @@ class Storage:
         if PRINT_STACKS:
             out.emit(self.as_comment() + "\n")
 
-    def close_named(self, out: CWriter, close: str, name: str, overwrite: str) -> bool:
+    def close_named(self, out: CWriter, close: str, name: str, overwrite: str) -> None:
         if overwrite:
             if not self.tmp_defined:
                 out.emit("_PyStackRef ")
@@ -678,7 +678,7 @@ class Storage:
         else:
             out.emit(f"{close}({name});\n")
 
-    def close_variable(self, out: CWriter, var: Local, overwrite: str) -> bool:
+    def close_variable(self, out: CWriter, var: Local, overwrite: str) -> None:
         close = "PyStackRef_CLOSE"
         if "null" in var.name:
             close = "PyStackRef_XCLOSE"
