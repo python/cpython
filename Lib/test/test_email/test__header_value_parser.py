@@ -2867,6 +2867,81 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_parse_message_ids_valid(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_empty(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            " ",
+            " ",
+            " ",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comment(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> ",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar> ')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_no_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comma_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar>,<bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_invalid_id(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            [errors.InvalidHeaderDefect]*2,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_broken_ang(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            [errors.InvalidHeaderDefect]*1,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
 
 
 @parameterize
@@ -3254,6 +3329,16 @@ class TestFolding(TestEmailBase):
                 "_TEST_TEST_TEST_TEST_TEST;\n"
             " filename*1*=_TEST_TES.txt\n",
             )
+
+    def test_fold_unfoldable_element_stealing_whitespace(self):
+        # gh-142006: When an element is too long to fit on the current line
+        # the previous line's trailing whitespace should not trigger a double newline.
+        policy = self.policy.clone(max_line_length=10)
+        # The non-whitespace text needs to exactly fill the max_line_length (10).
+        text = ("a" * 9) + ", " + ("b" * 20)
+        expected = ("a" * 9) + ",\n " + ("b" * 20) + "\n"
+        token = parser.get_address_list(text)[0]
+        self._test(token, expected, policy=policy)
 
 if __name__ == '__main__':
     unittest.main()

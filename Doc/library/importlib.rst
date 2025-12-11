@@ -320,6 +320,9 @@ ABC hierarchy::
     .. versionchanged:: 3.7
        Introduced the optional :meth:`get_resource_reader` method.
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
     .. method:: create_module(spec)
 
        A method that returns the module object to use when
@@ -343,46 +346,6 @@ ABC hierarchy::
 
        .. versionchanged:: 3.6
           :meth:`create_module` must also be defined.
-
-    .. method:: load_module(fullname)
-
-        A legacy method for loading a module.  If the module cannot be
-        loaded, :exc:`ImportError` is raised, otherwise the loaded module is
-        returned.
-
-        If the requested module already exists in :data:`sys.modules`, that
-        module should be used and reloaded.
-        Otherwise the loader should create a new module and insert it into
-        :data:`sys.modules` before any loading begins, to prevent recursion
-        from the import.  If the loader inserted a module and the load fails, it
-        must be removed by the loader from :data:`sys.modules`; modules already
-        in :data:`sys.modules` before the loader began execution should be left
-        alone.
-
-        The loader should set several attributes on the module
-        (note that some of these attributes can change when a module is
-        reloaded):
-
-        - :attr:`module.__name__`
-        - :attr:`module.__file__`
-        - :attr:`module.__path__`
-        - :attr:`module.__package__` *(deprecated)*
-        - :attr:`module.__loader__` *(deprecated)*
-
-        When :meth:`exec_module` is available then backwards-compatible
-        functionality is provided.
-
-        .. versionchanged:: 3.4
-           Raise :exc:`ImportError` when called instead of
-           :exc:`NotImplementedError`.  Functionality provided when
-           :meth:`exec_module` is available.
-
-        .. deprecated-removed:: 3.4 3.15
-           The recommended API for loading a module is :meth:`exec_module`
-           (and :meth:`create_module`).  Loaders should implement it instead of
-           :meth:`load_module`.  The import machinery takes care of all the
-           other responsibilities of :meth:`load_module` when
-           :meth:`exec_module` is implemented.
 
 
 .. class:: ResourceLoader
@@ -489,13 +452,6 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-    .. method:: load_module(fullname)
-
-       Implementation of :meth:`Loader.load_module`.
-
-       .. deprecated-removed:: 3.4 3.15
-          use :meth:`exec_module` instead.
-
 
 .. class:: ExecutionLoader
 
@@ -529,6 +485,9 @@ ABC hierarchy::
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
    .. attribute:: name
 
       The name of the module the loader can handle.
@@ -536,13 +495,6 @@ ABC hierarchy::
    .. attribute:: path
 
       Path to the file of the module.
-
-   .. method:: load_module(fullname)
-
-      Calls super's ``load_module()``.
-
-      .. deprecated-removed:: 3.4 3.15
-         Use :meth:`Loader.exec_module` instead.
 
    .. method:: get_filename(fullname)
       :abstractmethod:
@@ -574,6 +526,9 @@ ABC hierarchy::
     loading where only bytecode is provided.  Bytecode files are an
     optimization to speed up loading by removing the parsing step of Python's
     compiler, and so no bytecode-specific API is exposed.
+
+    .. versionchanged:: 3.15
+       Removed the ``load_module()`` method.
 
     .. method:: path_stats(path)
 
@@ -627,13 +582,6 @@ ABC hierarchy::
        Concrete implementation of :meth:`Loader.exec_module`.
 
        .. versionadded:: 3.4
-
-    .. method:: load_module(fullname)
-
-       Concrete implementation of :meth:`Loader.load_module`.
-
-       .. deprecated-removed:: 3.4 3.15
-          Use :meth:`exec_module` instead.
 
     .. method:: get_source(fullname)
 
@@ -1058,6 +1006,9 @@ find and load modules.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
+
    .. attribute:: name
 
       The name of the module that this loader will handle.
@@ -1078,15 +1029,6 @@ find and load modules.
 
       Concrete implementation of :meth:`importlib.abc.SourceLoader.set_data`.
 
-   .. method:: load_module(name=None)
-
-      Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
-      specifying the name of the module to load is optional.
-
-      .. deprecated-removed:: 3.6 3.15
-
-         Use :meth:`importlib.abc.Loader.exec_module` instead.
-
 
 .. class:: SourcelessFileLoader(fullname, path)
 
@@ -1099,6 +1041,9 @@ find and load modules.
    format.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Removed the ``load_module()`` method.
 
    .. attribute:: name
 
@@ -1120,15 +1065,6 @@ find and load modules.
 
       Returns ``None`` as bytecode files have no source when this loader is
       used.
-
-   .. method:: load_module(name=None)
-
-   Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
-   specifying the name of the module to load is optional.
-
-   .. deprecated-removed:: 3.6 3.15
-
-      Use :meth:`importlib.abc.Loader.exec_module` instead.
 
 
 .. class:: ExtensionFileLoader(fullname, path)
@@ -1363,7 +1299,7 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
-.. function:: cache_from_source(path, debug_override=None, *, optimization=None)
+.. function:: cache_from_source(path, *, optimization=None)
 
    Return the :pep:`3147`/:pep:`488` path to the byte-compiled file associated
    with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
@@ -1382,12 +1318,6 @@ an :term:`importer`.
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
 
-   The *debug_override* parameter is deprecated and can be used to override
-   the system's value for ``__debug__``. A ``True`` value is the equivalent of
-   setting *optimization* to the empty string. A ``False`` value is the same as
-   setting *optimization* to ``1``. If both *debug_override* an *optimization*
-   are not ``None`` then :exc:`TypeError` is raised.
-
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.5
@@ -1396,6 +1326,9 @@ an :term:`importer`.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.15
+      The *debug_override* parameter was removed.
 
 
 .. function:: source_from_cache(path)

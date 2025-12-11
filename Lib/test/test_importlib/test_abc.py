@@ -194,10 +194,6 @@ class LoaderDefaultsTests(ABCTestHarness):
         spec = 'a spec'
         self.assertIsNone(self.ins.create_module(spec))
 
-    def test_load_module(self):
-        with self.assertRaises(ImportError):
-            self.ins.load_module('something')
-
     def test_module_repr(self):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
@@ -358,38 +354,6 @@ class LoaderLoadModuleTests:
 
         return SpecLoader()
 
-    def test_fresh(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            loader = self.loader()
-            name = 'blah'
-            with test_util.uncache(name):
-                loader.load_module(name)
-                module = loader.found
-                self.assertIs(sys.modules[name], module)
-            self.assertEqual(loader, module.__loader__)
-            self.assertEqual(loader, module.__spec__.loader)
-            self.assertEqual(name, module.__name__)
-            self.assertEqual(name, module.__spec__.name)
-            self.assertIsNotNone(module.__path__)
-            self.assertIsNotNone(module.__path__,
-                                module.__spec__.submodule_search_locations)
-
-    def test_reload(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            name = 'blah'
-            loader = self.loader()
-            module = types.ModuleType(name)
-            module.__spec__ = self.util.spec_from_loader(name, loader)
-            module.__loader__ = loader
-            with test_util.uncache(name):
-                sys.modules[name] = module
-                loader.load_module(name)
-                found = loader.found
-                self.assertIs(found, sys.modules[name])
-                self.assertIs(module, sys.modules[name])
-
 
 (Frozen_LoaderLoadModuleTests,
  Source_LoaderLoadModuleTests
@@ -476,59 +440,6 @@ class InspectLoaderGetCodeTests:
  Source_ILGetCodeTests
  ) = test_util.test_both(InspectLoaderGetCodeTests,
                          InspectLoaderSubclass=SPLIT_IL)
-
-
-class InspectLoaderLoadModuleTests:
-
-    """Test InspectLoader.load_module()."""
-
-    module_name = 'blah'
-
-    def setUp(self):
-        import_helper.unload(self.module_name)
-        self.addCleanup(import_helper.unload, self.module_name)
-
-    def load(self, loader):
-        spec = self.util.spec_from_loader(self.module_name, loader)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return self.init._bootstrap._load_unlocked(spec)
-
-    def mock_get_code(self):
-        return mock.patch.object(self.InspectLoaderSubclass, 'get_code')
-
-    def test_get_code_ImportError(self):
-        # If get_code() raises ImportError, it should propagate.
-        with self.mock_get_code() as mocked_get_code:
-            mocked_get_code.side_effect = ImportError
-            with self.assertRaises(ImportError):
-                loader = self.InspectLoaderSubclass()
-                self.load(loader)
-
-    def test_get_code_None(self):
-        # If get_code() returns None, raise ImportError.
-        with self.mock_get_code() as mocked_get_code:
-            mocked_get_code.return_value = None
-            with self.assertRaises(ImportError):
-                loader = self.InspectLoaderSubclass()
-                self.load(loader)
-
-    def test_module_returned(self):
-        # The loaded module should be returned.
-        code = compile('attr = 42', '<string>', 'exec')
-        with self.mock_get_code() as mocked_get_code:
-            mocked_get_code.return_value = code
-            loader = self.InspectLoaderSubclass()
-            module = self.load(loader)
-            self.assertEqual(module, sys.modules[self.module_name])
-
-
-(Frozen_ILLoadModuleTests,
- Source_ILLoadModuleTests
- ) = test_util.test_both(InspectLoaderLoadModuleTests,
-                         InspectLoaderSubclass=SPLIT_IL,
-                         init=init,
-                         util=util)
 
 
 ##### ExecutionLoader concrete methods #########################################
@@ -724,34 +635,6 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         # Verify the compiled code object.
         code = self.loader.source_to_code(self.loader.source, self.path)
         self.verify_code(code)
-
-    def test_load_module(self):
-        # Loading a module should set __name__, __loader__, __package__,
-        # __path__ (for packages), and __file__.
-        # The module should also be put into sys.modules.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            with test_util.uncache(self.name):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    module = self.loader.load_module(self.name)
-                self.verify_module(module)
-                self.assertEqual(module.__path__, [os.path.dirname(self.path)])
-                self.assertIn(self.name, sys.modules)
-
-    def test_package_settings(self):
-        # __package__ needs to be set, while __path__ is set on if the module
-        # is a package.
-        # Testing the values for a package are covered by test_load_module.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", ImportWarning)
-            self.setUp(is_package=False)
-            with test_util.uncache(self.name):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    module = self.loader.load_module(self.name)
-                self.verify_module(module)
-                self.assertNotHasAttr(module, '__path__')
 
     def test_get_source_encoding(self):
         # Source is considered encoded in UTF-8 by default unless otherwise

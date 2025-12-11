@@ -12,7 +12,8 @@ preserve
 PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "RemoteUnwinder(pid, *, all_threads=False, only_active_thread=False,\n"
 "               mode=0, debug=False, skip_non_matching_threads=True,\n"
-"               native=False, gc=False)\n"
+"               native=False, gc=False, opcodes=False,\n"
+"               cache_frames=False, stats=False)\n"
 "--\n"
 "\n"
 "Initialize a new RemoteUnwinder object for debugging a remote Python process.\n"
@@ -32,6 +33,12 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "            non-Python code.\n"
 "    gc: If True, include artificial \"<GC>\" frames to denote active garbage\n"
 "        collection.\n"
+"    opcodes: If True, gather bytecode opcode information for instruction-level\n"
+"             profiling.\n"
+"    cache_frames: If True, enable frame caching optimization to avoid re-reading\n"
+"                 unchanged parent frames between samples.\n"
+"    stats: If True, collect statistics about cache hits, memory reads, etc.\n"
+"           Use get_stats() to retrieve the collected statistics.\n"
 "\n"
 "The RemoteUnwinder provides functionality to inspect and debug a running Python\n"
 "process, including examining thread states, stack frames and other runtime data.\n"
@@ -48,7 +55,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
-                                               int native, int gc);
+                                               int native, int gc,
+                                               int opcodes, int cache_frames,
+                                               int stats);
 
 static int
 _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -56,7 +65,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 8
+    #define NUM_KEYWORDS 11
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -65,7 +74,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(only_active_thread), &_Py_ID(mode), &_Py_ID(debug), &_Py_ID(skip_non_matching_threads), &_Py_ID(native), &_Py_ID(gc), },
+        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(only_active_thread), &_Py_ID(mode), &_Py_ID(debug), &_Py_ID(skip_non_matching_threads), &_Py_ID(native), &_Py_ID(gc), &_Py_ID(opcodes), &_Py_ID(cache_frames), &_Py_ID(stats), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -74,14 +83,14 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"pid", "all_threads", "only_active_thread", "mode", "debug", "skip_non_matching_threads", "native", "gc", NULL};
+    static const char * const _keywords[] = {"pid", "all_threads", "only_active_thread", "mode", "debug", "skip_non_matching_threads", "native", "gc", "opcodes", "cache_frames", "stats", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "RemoteUnwinder",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[8];
+    PyObject *argsbuf[11];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -93,6 +102,9 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int skip_non_matching_threads = 1;
     int native = 0;
     int gc = 0;
+    int opcodes = 0;
+    int cache_frames = 0;
+    int stats = 0;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -160,12 +172,39 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
             goto skip_optional_kwonly;
         }
     }
-    gc = PyObject_IsTrue(fastargs[7]);
-    if (gc < 0) {
+    if (fastargs[7]) {
+        gc = PyObject_IsTrue(fastargs[7]);
+        if (gc < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[8]) {
+        opcodes = PyObject_IsTrue(fastargs[8]);
+        if (opcodes < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (fastargs[9]) {
+        cache_frames = PyObject_IsTrue(fastargs[9]);
+        if (cache_frames < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    stats = PyObject_IsTrue(fastargs[10]);
+    if (stats < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, only_active_thread, mode, debug, skip_non_matching_threads, native, gc);
+    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, only_active_thread, mode, debug, skip_non_matching_threads, native, gc, opcodes, cache_frames, stats);
 
 exit:
     return return_value;
@@ -347,4 +386,51 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=99fed5c94cf36881 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stats__doc__,
+"get_stats($self, /)\n"
+"--\n"
+"\n"
+"Get collected statistics about profiling performance.\n"
+"\n"
+"Returns a dictionary containing statistics about cache performance,\n"
+"memory reads, and other profiling metrics. Only available if the\n"
+"RemoteUnwinder was created with stats=True.\n"
+"\n"
+"Returns:\n"
+"    dict: A dictionary containing:\n"
+"        - total_samples: Total number of get_stack_trace calls\n"
+"        - frame_cache_hits: Full cache hits (entire stack unchanged)\n"
+"        - frame_cache_misses: Cache misses requiring full walk\n"
+"        - frame_cache_partial_hits: Partial hits (stopped at cached frame)\n"
+"        - frames_read_from_cache: Total frames retrieved from cache\n"
+"        - frames_read_from_memory: Total frames read from remote memory\n"
+"        - memory_reads: Total remote memory read operations\n"
+"        - memory_bytes_read: Total bytes read from remote memory\n"
+"        - code_object_cache_hits: Code object cache hits\n"
+"        - code_object_cache_misses: Code object cache misses\n"
+"        - stale_cache_invalidations: Times stale cache entries were cleared\n"
+"        - frame_cache_hit_rate: Percentage of samples that hit the cache\n"
+"        - code_object_cache_hit_rate: Percentage of code object lookups that hit cache\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If stats collection was not enabled (stats=False)");
+
+#define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STATS_METHODDEF    \
+    {"get_stats", (PyCFunction)_remote_debugging_RemoteUnwinder_get_stats, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_stats__doc__},
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self);
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_stats(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _remote_debugging_RemoteUnwinder_get_stats_impl((RemoteUnwinderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+/*[clinic end generated code: output=1943fb7a56197e39 input=a9049054013a1b77]*/
