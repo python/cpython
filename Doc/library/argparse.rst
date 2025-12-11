@@ -1656,7 +1656,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1679,42 +1679,42 @@ Sub-commands
       Creates and returns a new :class:`!ArgumentParser` object for the
       subcommand *name*.
 
-      The *name* argument is the name of the sub-command.
-      The *help* argument provides a short description for this sub-command. If provided, it will be listed next to the command in the main parser's help message (e.g., ``PROG --help``).
+      The *name* argument is the name of the subcommand.
+      The *help* argument provides a short description for this subcommand. If provided, it will be listed next to the command in the main parser's help message (e.g., ``PROG --help``).
 
-      The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this sub-command (e.g., ``aliases=['r']`` for a ``'run'`` command).
+      The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this subcommand (e.g., ``aliases=['r']`` for a ``'run'`` command).
 
-      The *deprecated* argument, if :const:`True`, marks the sub-command as deprecated, which typically issues a warning when used.
+      The *deprecated* argument, if :const:`True`, marks the subcommand as deprecated, which typically issues a warning when used.
       All other keyword arguments are passed directly to the
       :class:`!ArgumentParser` constructor.
       This returned :class:`!ArgumentParser` object can be modified as usual.
 
    Description of parameters:
 
-   * *title* - title for the sub-parser group in help output; by default
+   * *title* - title for the subparser group in help output; by default
      "subcommands" if description is provided, otherwise uses title for
      positional arguments
 
-   * *description* - description for the sub-parser group in help output, by
+   * *description* - description for the subparser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
-   * *parser_class* - class which will be used to create sub-parser instances, by
+   * *parser_class* - class which will be used to create subparser instances, by
      default the class of the current parser (e.g. :class:`ArgumentParser`)
 
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
      ``False`` (added in 3.7)
 
-   * help_ - help for sub-parser group in help output, by default ``None``
+   * help_ - help for subparser group in help output, by default ``None``
 
    * metavar_ - string presenting available subcommands in help; by default it
      is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
@@ -2254,7 +2254,7 @@ Registering custom types or actions
 
    Sometimes it's desirable to use a custom string in error messages to provide
    more user-friendly output. In these cases, :meth:`!register` can be used to
-   register custom actions or types with a parser and allow you to reference the
+   register custom actions or types with a parser anto reference the
    type by their registered name instead of their callable name.
 
    The :meth:`!register` method accepts three arguments - a *registry_name*,
