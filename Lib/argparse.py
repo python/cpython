@@ -89,8 +89,8 @@ __all__ = [
 import os as _os
 import re as _re
 import sys as _sys
-
-from gettext import gettext as _, ngettext
+from gettext import gettext as _
+from gettext import ngettext
 
 SUPPRESS = '==SUPPRESS=='
 
@@ -191,10 +191,10 @@ class HelpFormatter(object):
 
         self._set_color(False)
 
-    def _set_color(self, color):
+    def _set_color(self, color, *, file=None):
         from _colorize import can_colorize, decolor, get_theme
 
-        if color and can_colorize():
+        if color and can_colorize(file=file):
             self._theme = get_theme(force_color=True).argparse
             self._decolor = decolor
         else:
@@ -738,18 +738,21 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         if help is None:
             help = ''
 
-        if '%(default)' not in help:
-            if action.default is not SUPPRESS:
-                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
-                    t = self._theme
-                    default_str = _(" (default: %(default)s)")
-                    prefix, suffix = default_str.split("%(default)s")
-                    help += (
-                        f" {t.default}{prefix.lstrip()}"
-                        f"{t.default_value}%(default)s"
-                        f"{t.default}{suffix}{t.reset}"
-                    )
+        if (
+            '%(default)' not in help
+            and action.default is not SUPPRESS
+            and not action.required
+        ):
+            defaulting_nargs = (OPTIONAL, ZERO_OR_MORE)
+            if action.option_strings or action.nargs in defaulting_nargs:
+                t = self._theme
+                default_str = _(" (default: %(default)s)")
+                prefix, suffix = default_str.split("%(default)s")
+                help += (
+                    f" {t.default}{prefix.lstrip()}"
+                    f"{t.default_value}%(default)s"
+                    f"{t.default}{suffix}{t.reset}"
+                )
         return help
 
 
@@ -1675,7 +1678,7 @@ class _ActionsContainer(object):
         option_strings = []
         for option_string in args:
             # error on strings that don't start with an appropriate prefix
-            if not option_string[0] in self.prefix_chars:
+            if option_string[0] not in self.prefix_chars:
                 raise ValueError(
                     f'invalid option string {option_string!r}: '
                     f'must start with a character {self.prefix_chars!r}')
@@ -2455,7 +2458,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             return None
 
         # if it doesn't start with a prefix, it was meant to be positional
-        if not arg_string[0] in self.prefix_chars:
+        if arg_string[0] not in self.prefix_chars:
             return None
 
         # if the option string is present in the parser, return the action
@@ -2717,14 +2720,16 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     # Help-formatting methods
     # =======================
 
-    def format_usage(self):
-        formatter = self._get_formatter()
+    def format_usage(self, formatter=None):
+        if formatter is None:
+            formatter = self._get_formatter()
         formatter.add_usage(self.usage, self._actions,
                             self._mutually_exclusive_groups)
         return formatter.format_help()
 
-    def format_help(self):
-        formatter = self._get_formatter()
+    def format_help(self, formatter=None):
+        if formatter is None:
+            formatter = self._get_formatter()
 
         # usage
         formatter.add_usage(self.usage, self._actions,
@@ -2746,9 +2751,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         # determine help from format above
         return formatter.format_help()
 
-    def _get_formatter(self):
+    def _get_formatter(self, file=None):
         formatter = self.formatter_class(prog=self.prog)
-        formatter._set_color(self.color)
+        formatter._set_color(self.color, file=file)
         return formatter
 
     def _get_validation_formatter(self):
@@ -2765,12 +2770,26 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def print_usage(self, file=None):
         if file is None:
             file = _sys.stdout
-        self._print_message(self.format_usage(), file)
+        formatter = self._get_formatter(file=file)
+        try:
+            usage_text = self.format_usage(formatter=formatter)
+        except TypeError:
+            # Backward compatibility for formatter classes that
+            # do not accept the 'formatter' keyword argument.
+            usage_text = self.format_usage()
+        self._print_message(usage_text, file)
 
     def print_help(self, file=None):
         if file is None:
             file = _sys.stdout
-        self._print_message(self.format_help(), file)
+        formatter = self._get_formatter(file=file)
+        try:
+            help_text = self.format_help(formatter=formatter)
+        except TypeError:
+            # Backward compatibility for formatter classes that
+            # do not accept the 'formatter' keyword argument.
+            help_text = self.format_help()
+        self._print_message(help_text, file)
 
     def _print_message(self, message, file=None):
         if message:

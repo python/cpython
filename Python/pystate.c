@@ -1765,16 +1765,23 @@ PyThreadState_Clear(PyThreadState *tstate)
     struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 
+    // Flush the thread's local GC allocation count to the global count
+    // before the thread state is cleared, otherwise the count is lost.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    _Py_atomic_add_int(&tstate->interp->gc.young.count,
+                       (int)tstate_impl->gc.alloc_count);
+    tstate_impl->gc.alloc_count = 0;
+
     // Merge our thread-local refcounts into the type's own refcount and
     // free our local refcount array.
-    _PyObject_FinalizePerThreadRefcounts((_PyThreadStateImpl *)tstate);
+    _PyObject_FinalizePerThreadRefcounts(tstate_impl);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
 
     // Release our thread-local copies of the bytecode for reuse by another
     // thread
-    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
+    _Py_ClearTLBCIndex(tstate_impl);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.

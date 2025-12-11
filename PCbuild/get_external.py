@@ -49,7 +49,7 @@ def fetch_release(tag, tarball_dir, *, org='python', verbose=False):
     if not arch:
         machine = platform.machine()
         arch = 'ARM64' if machine == 'ARM64' else 'AMD64'
-    elif arch in ('x86', 'x64'):
+    elif arch.lower() in ('x86', 'x64'):
         arch = 'AMD64'
     reporthook = None
     if verbose:
