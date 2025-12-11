@@ -4067,7 +4067,7 @@ PyImport_Import(PyObject *module_name)
        Always use absolute import here.
        Calling for side-effect of import. */
     r = PyObject_CallFunction(import, "OOOOi", module_name, globals,
-                              globals, from_list, 0, NULL);
+                              globals, from_list, 0);
     if (r == NULL)
         goto err;
     Py_DECREF(r);
