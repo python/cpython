@@ -191,6 +191,27 @@ function restoreUIState() {
 }
 
 // ============================================================================
+// Logo/Favicon Setup
+// ============================================================================
+
+function setupLogos() {
+    const logo = document.querySelector('.sidebar-logo-img img');
+    if (!logo) return;
+
+    const navbarLogoContainer = document.getElementById('navbar-logo');
+    if (navbarLogoContainer) {
+        const navbarLogo = logo.cloneNode(true);
+        navbarLogoContainer.appendChild(navbarLogo);
+    }
+
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.href = logo.src;
+    document.head.appendChild(favicon);
+}
+
+// ============================================================================
 // Status Bar
 // ============================================================================
 
@@ -200,6 +221,11 @@ function updateStatusBar(nodeData, rootValue) {
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
+
+  const brandEl = document.getElementById('status-brand');
+  const taglineEl = document.getElementById('status-tagline');
+  if (brandEl) brandEl.style.display = 'none';
+  if (taglineEl) taglineEl.style.display = 'none';
 
   const locationEl = document.getElementById('status-location');
   const funcItem = document.getElementById('status-func-item');
@@ -233,6 +259,11 @@ function clearStatusBar() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+
+  const brandEl = document.getElementById('status-brand');
+  const taglineEl = document.getElementById('status-tagline');
+  if (brandEl) brandEl.style.display = 'flex';
+  if (taglineEl) taglineEl.style.display = 'flex';
 }
 
 // ============================================================================
@@ -723,6 +754,10 @@ function populateThreadStats(data, selectedThreadId = null) {
 
   const gcPctElem = document.getElementById('gc-pct');
   if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+
+  // Exception stats
+  const excPctElem = document.getElementById('exc-pct');
+  if (excPctElem) excPctElem.textContent = `${(threadStats.has_exception_pct || 0).toFixed(1)}%`;
 }
 
 // ============================================================================
@@ -1235,6 +1270,7 @@ function toggleInvert() {
 function initFlamegraph() {
   ensureLibraryLoaded();
   restoreUIState();
+  setupLogos();
 
   if (EMBEDDED_DATA.strings) {
     stringTable = EMBEDDED_DATA.strings;

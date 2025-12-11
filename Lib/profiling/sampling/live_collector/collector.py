@@ -17,6 +17,7 @@ from ..constants import (
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_UNKNOWN,
     THREAD_STATUS_GIL_REQUESTED,
+    THREAD_STATUS_HAS_EXCEPTION,
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
     PROFILING_MODE_WALL,
@@ -61,6 +62,7 @@ class ThreadData:
     on_cpu: int = 0
     gil_requested: int = 0
     unknown: int = 0
+    has_exception: int = 0
     total: int = 0  # Total status samples for this thread
 
     # Sample counts
@@ -82,6 +84,8 @@ class ThreadData:
             self.gil_requested += 1
         if status_flags & THREAD_STATUS_UNKNOWN:
             self.unknown += 1
+        if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+            self.has_exception += 1
         self.total += 1
 
     def as_status_dict(self):
@@ -91,6 +95,7 @@ class ThreadData:
             "on_cpu": self.on_cpu,
             "gil_requested": self.gil_requested,
             "unknown": self.unknown,
+            "has_exception": self.has_exception,
             "total": self.total,
         }
 
@@ -160,6 +165,7 @@ class LiveStatsCollector(Collector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,  # Total thread count across all samples
         }
         self.gc_frame_samples = 0  # Track samples with GC frames
@@ -359,6 +365,7 @@ class LiveStatsCollector(Collector):
                 thread_data.on_cpu += stats.get("on_cpu", 0)
                 thread_data.gil_requested += stats.get("gil_requested", 0)
                 thread_data.unknown += stats.get("unknown", 0)
+                thread_data.has_exception += stats.get("has_exception", 0)
                 thread_data.total += stats.get("total", 0)
                 if stats.get("gc_samples", 0):
                     thread_data.gc_frame_samples += stats["gc_samples"]
@@ -723,6 +730,7 @@ class LiveStatsCollector(Collector):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         self.gc_frame_samples = 0

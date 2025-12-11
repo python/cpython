@@ -17,7 +17,7 @@
                 <span class="brand-subtitle" style="font-family: var(--font-mono); font-size: 13px;"><!-- FILENAME --></span>
             </div>
             <div class="toolbar">
-                <a href="index.html" class="back-link">Back to Index</a>
+                <a href="index.html" class="toolbar-btn" title="Back to Index" aria-label="Back to Index">&#8962;</a>
                 <button
                     class="toolbar-btn theme-toggle"
                     onclick="toggleTheme()"
@@ -70,17 +70,17 @@
                 </div>
                 <div class="legend-separator" aria-hidden="true"></div>
                 <div class="legend-controls">
-                    <div class="toggle-switch" id="toggle-color-mode" title="Toggle between self time and total time coloring">
+                    <div class="toggle-switch" id="toggle-color-mode" title="Toggle between self time and total time coloring" tabindex="0">
                         <span class="toggle-label active" data-text="Self Time">Self Time</span>
                         <div class="toggle-track"></div>
                         <span class="toggle-label" data-text="Total Time">Total Time</span>
                     </div>
-                    <div class="toggle-switch" id="toggle-cold" title="Toggle visibility of lines with zero samples">
+                    <div class="toggle-switch" id="toggle-cold" title="Toggle visibility of lines with zero samples" tabindex="0">
                         <span class="toggle-label active" data-text="Show All">Show All</span>
                         <div class="toggle-track"></div>
                         <span class="toggle-label" data-text="Hot Only">Hot Only</span>
                     </div>
-                    <div class="toggle-switch" id="toggle-spec-view" title="Color lines by specialization level (requires bytecode data)">
+                    <div class="toggle-switch" id="toggle-spec-view" title="Color lines by specialization level (requires bytecode data)" tabindex="0">
                         <span class="toggle-label active" data-text="Heat">Heat</span>
                         <div class="toggle-track"></div>
                         <span class="toggle-label" data-text="Specialization">Specialization</span>

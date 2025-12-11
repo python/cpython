@@ -292,6 +292,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
   cursor: pointer;
+  text-decoration: none;
   transition: all var(--transition-fast);
 }
 
@@ -385,7 +386,9 @@ body {
 
 button:focus-visible,
 select:focus-visible,
-input:focus-visible {
+input:focus-visible,
+.toggle-switch:focus-visible,
+a.toolbar-btn:focus-visible {
   outline: 2px solid var(--python-gold);
   outline-offset: 2px;
 }
@@ -418,6 +421,7 @@ input:focus-visible {
   user-select: none;
   font-family: var(--font-sans);
   transition: opacity var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .toggle-switch:hover {
@@ -428,18 +432,29 @@ input:focus-visible {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-muted);
-  min-width: 55px;
-  text-align: right;
   transition: color var(--transition-fast);
-}
-
-.toggle-switch .toggle-label:last-child {
-  text-align: left;
+  white-space: nowrap;
+  display: inline-flex;
+  flex-direction: column;
 }
 
 .toggle-switch .toggle-label.active {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Reserve space for bold text to prevent layout shift on toggle */
+.toggle-switch .toggle-label::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  visibility: hidden;
+}
+
+.toggle-switch.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 .toggle-track {
