@@ -1,1 +1,1 @@
-Unified the UNBOUND constant in the internal implementation of Lib/concurrent/interpreters.
+Fix spurious KeyError when concurrent.interpreters is reloaded after import.
