@@ -1451,7 +1451,7 @@ under no memory.
 .. section: Core and Builtins
 
 Update :class:`bytearray` to use a :class:`bytes` under the hood as its
-buffer and add :func:`bytearray.take_bytes` to take it out.
+buffer and add :meth:`bytearray.take_bytes` to take it out.
 
 ..
 

@@ -130,7 +130,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'(?:async\s+)?def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -183,19 +183,37 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = os.path.realpath(target)
+        self._check(target)
+        self._target = self._safe_realpath(target)
 
-        if not os.path.exists(self._target):
-            print(f'Error: {target} does not exist')
-            sys.exit(1)
-        if os.path.isdir(self._target):
-            print(f'Error: {target} is a directory')
-            sys.exit(1)
-
-        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self._target)
+
+    @staticmethod
+    def _check(target):
+        """
+        Check that target is plausibly a script.
+        """
+        if not os.path.exists(target):
+            print(f'Error: {target} does not exist')
+            sys.exit(1)
+        if os.path.isdir(target):
+            print(f'Error: {target} is a directory')
+            sys.exit(1)
+
+    @staticmethod
+    def _safe_realpath(path):
+        """
+        Return the canonical path (realpath) if it is accessible from the userspace.
+        Otherwise (for example, if the path is a symlink to an anonymous pipe),
+        return the original path.
+
+        See GH-142315.
+        """
+        realpath = os.path.realpath(path)
+        return realpath if os.path.exists(realpath) else path
 
     def __repr__(self):
         return self._target
@@ -1487,7 +1505,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             f = self.lookupmodule(parts[0])
             if f:
                 fname = f
-            item = parts[1]
+                item = parts[1]
+            else:
+                return failed
         answer = find_function(item, self.canonic(fname))
         return answer or failed
 

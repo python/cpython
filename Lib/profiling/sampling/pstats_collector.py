@@ -2,7 +2,7 @@ import collections
 import marshal
 
 from _colorize import ANSIColors
-from .collector import Collector
+from .collector import Collector, extract_lineno
 
 
 class PstatsCollector(Collector):
@@ -23,12 +23,15 @@ class PstatsCollector(Collector):
             return
 
         # Process each frame in the stack to track cumulative calls
+        # frame.location is int, tuple (lineno, end_lineno, col_offset, end_col_offset), or None
         for frame in frames:
-            location = (frame.filename, frame.lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
+            lineno = extract_lineno(frame.location)
+            loc = (frame.filename, lineno, frame.funcname)
+            self.result[loc]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
-        top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
+        top_lineno = extract_lineno(frames[0].location)
+        top_location = (frames[0].filename, top_lineno, frames[0].funcname)
         self.result[top_location]["direct_calls"] += 1
 
         # Track caller-callee relationships for call graph
@@ -36,14 +39,22 @@ class PstatsCollector(Collector):
             callee_frame = frames[i - 1]
             caller_frame = frames[i]
 
-            callee = (callee_frame.filename, callee_frame.lineno, callee_frame.funcname)
-            caller = (caller_frame.filename, caller_frame.lineno, caller_frame.funcname)
+            callee_lineno = extract_lineno(callee_frame.location)
+            caller_lineno = extract_lineno(caller_frame.location)
+            callee = (callee_frame.filename, callee_lineno, callee_frame.funcname)
+            caller = (caller_frame.filename, caller_lineno, caller_frame.funcname)
 
             self.callers[callee][caller] += 1
 
     def collect(self, stack_frames):
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
-            self._process_frames(frames)
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            # Async frame processing
+            for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
+                self._process_frames(frames)
+        else:
+            # Regular frame processing
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
+                self._process_frames(frames)
 
     def export(self, filename):
         self.create_stats()
