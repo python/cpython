@@ -2882,6 +2882,7 @@
         case _CALL_TUPLE_1: {
             JitOptRef arg;
             JitOptRef res;
+            JitOptRef a;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyTuple_Type)) {
                 res = PyJitRef_StripReferenceInfo(arg);
@@ -2889,9 +2890,11 @@
             else {
                 res = sym_new_type(ctx, &PyTuple_Type);
             }
-            CHECK_STACK_BOUNDS(-2);
+            a = arg;
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[-2] = a;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
