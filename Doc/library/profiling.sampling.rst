@@ -13,6 +13,8 @@
 
 **Source code:** :source:`Lib/profiling/sampling/`
 
+.. program:: profiling.sampling
+
 --------------
 
 .. image:: tachyon-logo.png
@@ -145,6 +147,10 @@ Profile for 60 seconds with a faster sampling rate::
 Generate a line-by-line heatmap::
 
    python -m profiling.sampling run --heatmap script.py
+
+Enable opcode-level profiling to see which bytecode instructions are executing::
+
+   python -m profiling.sampling run --opcodes --flamegraph script.py
 
 
 Commands
@@ -308,7 +314,7 @@ The two most fundamental parameters are the sampling interval and duration.
 Together, these determine how many samples will be collected during a profiling
 session.
 
-The ``--interval`` option (``-i``) sets the time between samples in
+The :option:`--interval` option (:option:`-i`) sets the time between samples in
 microseconds. The default is 100 microseconds, which produces approximately
 10,000 samples per second::
 
@@ -319,7 +325,7 @@ cost of slightly higher profiler CPU usage. Higher intervals reduce profiler
 overhead but may miss short-lived functions. For most applications, the
 default interval provides a good balance between accuracy and overhead.
 
-The ``--duration`` option (``-d``) sets how long to profile in seconds. The
+The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. The
 default is 10 seconds::
 
    python -m profiling.sampling run -d 60 script.py
@@ -337,8 +343,8 @@ Python programs often use multiple threads, whether explicitly through the
 :mod:`threading` module or implicitly through libraries that manage thread
 pools.
 
-By default, the profiler samples only the main thread. The ``--all-threads``
-option (``-a``) enables sampling of all threads in the process::
+By default, the profiler samples only the main thread. The :option:`--all-threads`
+option (:option:`-a`) enables sampling of all threads in the process::
 
    python -m profiling.sampling run -a script.py
 
@@ -357,7 +363,7 @@ additional context about what the interpreter is doing at the moment each
 sample is taken. These synthetic frames help distinguish different types of
 execution that would otherwise be invisible.
 
-The ``--native`` option adds ``<native>`` frames to indicate when Python has
+The :option:`--native` option adds ``<native>`` frames to indicate when Python has
 called into C code (extension modules, built-in functions, or the interpreter
 itself)::
 
@@ -369,7 +375,7 @@ in the Python function that made the call. This is useful when optimizing
 code that makes heavy use of C extensions like NumPy or database drivers.
 
 By default, the profiler includes ``<GC>`` frames when garbage collection is
-active. The ``--no-gc`` option suppresses these frames::
+active. The :option:`--no-gc` option suppresses these frames::
 
    python -m profiling.sampling run --no-gc script.py
 
@@ -379,10 +385,48 @@ see substantial time in ``<GC>`` frames, consider investigating object
 allocation rates or using object pooling.
 
 
+Opcode-aware profiling
+----------------------
+
+The :option:`--opcodes` option enables instruction-level profiling that captures
+which Python bytecode instructions are executing at each sample::
+
+   python -m profiling.sampling run --opcodes --flamegraph script.py
+
+This feature provides visibility into Python's bytecode execution, including
+adaptive specialization optimizations. When a generic instruction like
+``LOAD_ATTR`` is specialized at runtime into a more efficient variant like
+``LOAD_ATTR_INSTANCE_VALUE``, the profiler shows both the specialized name
+and the base instruction.
+
+Opcode information appears in several output formats:
+
+- **Live mode**: An opcode panel shows instruction-level statistics for the
+  selected function, accessible via keyboard navigation
+- **Flame graphs**: Nodes display opcode information when available, helping
+  identify which instructions consume the most time
+- **Heatmap**: Expandable bytecode panels per source line show instruction
+  breakdown with specialization percentages
+- **Gecko format**: Opcode transitions are emitted as interval markers in the
+  Firefox Profiler timeline
+
+This level of detail is particularly useful for:
+
+- Understanding the performance impact of Python's adaptive specialization
+- Identifying hot bytecode instructions that might benefit from optimization
+- Analyzing the effectiveness of different code patterns at the instruction level
+- Debugging performance issues that occur at the bytecode level
+
+The :option:`--opcodes` option is compatible with :option:`--live`, :option:`--flamegraph`,
+:option:`--heatmap`, and :option:`--gecko` formats. It requires additional memory to store
+opcode information and may slightly reduce sampling performance, but provides
+unprecedented visibility into Python's execution model.
+
+
 Real-time statistics
 --------------------
 
-The ``--realtime-stats`` option displays sampling rate statistics during
+The :option:`--realtime-stats` option displays sampling rate statistics during
 profiling::
 
    python -m profiling.sampling run --realtime-stats script.py
@@ -426,15 +470,16 @@ which you can use to judge whether the data is sufficient for your analysis.
 Profiling modes
 ===============
 
-The sampling profiler supports three modes that control which samples are
+The sampling profiler supports four modes that control which samples are
 recorded. The mode determines what the profile measures: total elapsed time,
-CPU execution time, or time spent holding the global interpreter lock.
+CPU execution time, time spent holding the global interpreter lock, or
+exception handling.
 
 
 Wall-clock mode
 ---------------
 
-Wall-clock mode (``--mode=wall``) captures all samples regardless of what the
+Wall-clock mode (:option:`--mode`\ ``=wall``) captures all samples regardless of what the
 thread is doing. This is the default mode and provides a complete picture of
 where time passes during program execution::
 
@@ -454,7 +499,7 @@ latency.
 CPU mode
 --------
 
-CPU mode (``--mode=cpu``) records samples only when the thread is actually
+CPU mode (:option:`--mode`\ ``=cpu``) records samples only when the thread is actually
 executing on a CPU core::
 
    python -m profiling.sampling run --mode=cpu script.py
@@ -488,7 +533,7 @@ connection pooling, or reducing wait time instead.
 GIL mode
 --------
 
-GIL mode (``--mode=gil``) records samples only when the thread holds Python's
+GIL mode (:option:`--mode`\ ``=gil``) records samples only when the thread holds Python's
 global interpreter lock::
 
    python -m profiling.sampling run --mode=gil script.py
@@ -509,6 +554,67 @@ single-threaded programs to distinguish Python execution time from time spent
 in C extensions or I/O.
 
 
+Exception mode
+--------------
+
+Exception mode (``--mode=exception``) records samples only when a thread has
+an active exception::
+
+   python -m profiling.sampling run --mode=exception script.py
+
+Samples are recorded in two situations: when an exception is being propagated
+up the call stack (after ``raise`` but before being caught), or when code is
+executing inside an ``except`` block where exception information is still
+present in the thread state.
+
+The following example illustrates which code regions are captured:
+
+.. code-block:: python
+
+   def example():
+       try:
+           raise ValueError("error")    # Captured: exception being raised
+       except ValueError:
+           process_error()              # Captured: inside except block
+       finally:
+           cleanup()                    # NOT captured: exception already handled
+
+   def example_propagating():
+       try:
+           try:
+               raise ValueError("error")
+           finally:
+               cleanup()                # Captured: exception propagating through
+       except ValueError:
+           pass
+
+   def example_no_exception():
+       try:
+           do_work()
+       finally:
+           cleanup()                    # NOT captured: no exception involved
+
+Note that ``finally`` blocks are only captured when an exception is actively
+propagating through them. Once an ``except`` block finishes executing, Python
+clears the exception information before running any subsequent ``finally``
+block. Similarly, ``finally`` blocks that run during normal execution (when no
+exception was raised) are not captured because no exception state is present.
+
+This mode is useful for understanding where your program spends time handling
+errors. Exception handling can be a significant source of overhead in code
+that uses exceptions for flow control (such as ``StopIteration`` in iterators)
+or in applications that process many error conditions (such as network servers
+handling connection failures).
+
+Exception mode helps answer questions like "how much time is spent handling
+exceptions?" and "which exception handlers are the most expensive?" It can
+reveal hidden performance costs in code that catches and processes many
+exceptions, even when those exceptions are handled gracefully. For example,
+if a parsing library uses exceptions internally to signal format errors, this
+mode will capture time spent in those handlers even if the calling code never
+sees the exceptions.
+
+
 Output formats
 ==============
 
@@ -520,7 +626,7 @@ output goes to stdout, a file, or a directory depending on the format.
 pstats format
 -------------
 
-The pstats format (``--pstats``) produces a text table similar to what
+The pstats format (:option:`--pstats`) produces a text table similar to what
 deterministic profilers generate. This is the default output format::
 
    python -m profiling.sampling run script.py
@@ -567,31 +673,31 @@ interesting functions that highlights:
   samples (high cumulative/direct multiplier). These are frequently-nested
   functions that appear deep in many call chains.
 
-Use ``--no-summary`` to suppress both the legend and summary sections.
+Use :option:`--no-summary` to suppress both the legend and summary sections.
 
 To save pstats output to a file instead of stdout::
 
    python -m profiling.sampling run -o profile.txt script.py
 
 The pstats format supports several options for controlling the display.
-The ``--sort`` option determines the column used for ordering results::
+The :option:`--sort` option determines the column used for ordering results::
 
    python -m profiling.sampling run --sort=tottime script.py
    python -m profiling.sampling run --sort=cumtime script.py
    python -m profiling.sampling run --sort=nsamples script.py
 
-The ``--limit`` option restricts output to the top N entries::
+The :option:`--limit` option restricts output to the top N entries::
 
    python -m profiling.sampling run --limit=30 script.py
 
-The ``--no-summary`` option suppresses the header summary that precedes the
+The :option:`--no-summary` option suppresses the header summary that precedes the
 statistics table.
 
 
 Collapsed stacks format
 -----------------------
 
-Collapsed stacks format (``--collapsed``) produces one line per unique call
+Collapsed stacks format (:option:`--collapsed`) produces one line per unique call
 stack, with a count of how many times that stack was sampled::
 
    python -m profiling.sampling run --collapsed script.py
@@ -621,7 +727,7 @@ visualization where you can click to zoom into specific call paths.
 Flame graph format
 ------------------
 
-Flame graph format (``--flamegraph``) produces a self-contained HTML file with
+Flame graph format (:option:`--flamegraph`) produces a self-contained HTML file with
 an interactive flame graph visualization::
 
    python -m profiling.sampling run --flamegraph script.py
@@ -667,7 +773,7 @@ or through their callees.
 Gecko format
 ------------
 
-Gecko format (``--gecko``) produces JSON output compatible with the Firefox
+Gecko format (:option:`--gecko`) produces JSON output compatible with the Firefox
 Profiler::
 
    python -m profiling.sampling run --gecko script.py
@@ -694,14 +800,14 @@ Firefox Profiler timeline:
 - **Code type markers**: distinguish Python code from native (C extension) code
 - **GC markers**: indicate garbage collection activity
 
-For this reason, the ``--mode`` option is not available with Gecko format;
+For this reason, the :option:`--mode` option is not available with Gecko format;
 all relevant data is captured automatically.
 
 
 Heatmap format
 --------------
 
-Heatmap format (``--heatmap``) generates an interactive HTML visualization
+Heatmap format (:option:`--heatmap`) generates an interactive HTML visualization
 showing sample counts at the source line level::
 
    python -m profiling.sampling run --heatmap script.py
@@ -744,7 +850,7 @@ interpretation of hierarchical visualizations.
 Live mode
 =========
 
-Live mode (``--live``) provides a terminal-based real-time view of profiling
+Live mode (:option:`--live`) provides a terminal-based real-time view of profiling
 data, similar to the ``top`` command for system processes::
 
    python -m profiling.sampling run --live script.py
@@ -759,6 +865,11 @@ The header displays the top 3 hottest functions, sampling efficiency metrics,
 and thread status statistics (GIL held percentage, CPU usage, GC time). The
 main table shows function statistics with the currently sorted column indicated
 by an arrow (▼).
+
+When :option:`--opcodes` is enabled, an additional opcode panel appears below the
+main table, showing instruction-level statistics for the currently selected
+function. This panel displays which bytecode instructions are executing most
+frequently, including specialized variants and their base opcodes.
 
 
 Keyboard commands
@@ -813,12 +924,17 @@ Within live mode, keyboard commands control the display:
 :kbd:`h` or :kbd:`?`
    Show the help screen with all available commands.
 
+:kbd:`j` / :kbd:`k` (or :kbd:`Up` / :kbd:`Down`)
+   Navigate through opcode entries in the opcode panel (when ``--opcodes`` is
+   enabled). These keys scroll through the instruction-level statistics for the
+   currently selected function.
+
 When profiling finishes (duration expires or target process exits), the display
 shows a "PROFILING COMPLETE" banner and freezes the final results. You can
 still navigate, sort, and filter the results before pressing :kbd:`q` to exit.
 
-Live mode is incompatible with output format options (``--collapsed``,
-``--flamegraph``, and so on) because it uses an interactive terminal
+Live mode is incompatible with output format options (:option:`--collapsed`,
+:option:`--flamegraph`, and so on) because it uses an interactive terminal
 interface rather than producing file output.
 
 
@@ -826,7 +942,7 @@ Async-aware profiling
 =====================
 
 For programs using :mod:`asyncio`, the profiler offers async-aware mode
-(``--async-aware``) that reconstructs call stacks based on the task structure
+(:option:`--async-aware`) that reconstructs call stacks based on the task structure
 rather than the raw Python frames::
 
    python -m profiling.sampling run --async-aware async_script.py
@@ -846,16 +962,16 @@ and presenting stacks that reflect the ``await`` chain.
 Async modes
 -----------
 
-The ``--async-mode`` option controls which tasks appear in the profile::
+The :option:`--async-mode` option controls which tasks appear in the profile::
 
    python -m profiling.sampling run --async-aware --async-mode=running async_script.py
    python -m profiling.sampling run --async-aware --async-mode=all async_script.py
 
-With ``--async-mode=running`` (the default), only the task currently executing
+With :option:`--async-mode`\ ``=running`` (the default), only the task currently executing
 on the CPU is profiled. This shows where your program is actively spending time
 and is the typical choice for performance analysis.
 
-With ``--async-mode=all``, tasks that are suspended (awaiting I/O, locks, or
+With :option:`--async-mode`\ ``=all``, tasks that are suspended (awaiting I/O, locks, or
 other tasks) are also included. This mode is useful for understanding what your
 program is waiting on, but produces larger profiles since every suspended task
 appears in each sample.
@@ -884,8 +1000,8 @@ Option restrictions
 -------------------
 
 Async-aware mode uses a different stack reconstruction mechanism and is
-incompatible with: ``--native``, ``--no-gc``, ``--all-threads``, and
-``--mode=cpu`` or ``--mode=gil``.
+incompatible with: :option:`--native`, :option:`--no-gc`, :option:`--all-threads`, and
+:option:`--mode`\ ``=cpu`` or :option:`--mode`\ ``=gil``.
 
 
 Command-line interface
@@ -939,14 +1055,22 @@ Sampling options
 
    Enable async-aware profiling for asyncio programs.
 
+.. option:: --opcodes
+
+   Gather bytecode opcode information for instruction-level profiling. Shows
+   which bytecode instructions are executing, including specializations.
+   Compatible with ``--live``, ``--flamegraph``, ``--heatmap``, and ``--gecko``
+   formats only.
+
 
 Mode options
 ------------
 
 .. option:: --mode <mode>
 
-   Sampling mode: ``wall`` (default), ``cpu``, or ``gil``.
-   The ``cpu`` and ``gil`` modes are incompatible with ``--async-aware``.
+   Sampling mode: ``wall`` (default), ``cpu``, ``gil``, or ``exception``.
+   The ``cpu``, ``gil``, and ``exception`` modes are incompatible with
+   ``--async-aware``.
 
 .. option:: --async-mode <mode>
 

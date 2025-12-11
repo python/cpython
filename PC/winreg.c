@@ -264,19 +264,8 @@ class HKEY_return_converter(CReturnConverter):
         self.err_occurred_if_null_pointer("_return_value", data)
         data.return_conversion.append(
             'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
-
-# HACK: this only works for PyHKEYObjects, nothing else.
-#       Should this be generalized and enshrined in clinic.py,
-#       destroy this converter with prejudice.
-class self_return_converter(CReturnConverter):
-    type = 'PyHKEYObject *'
-
-    def render(self, function, data):
-        self.declare(data)
-        data.return_conversion.append(
-            'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=b34c8217647f5fef]*/
 
 #include "clinic/winreg.c.h"
 
@@ -333,14 +322,14 @@ winreg_HKEYType_Detach_impl(PyHKEYObject *self)
 }
 
 /*[clinic input]
-winreg.HKEYType.__enter__ -> self
+winreg.HKEYType.__enter__
 [clinic start generated code]*/
 
-static PyHKEYObject *
+static PyObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self)
-/*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
+/*[clinic end generated code: output=70ec10933068a08c input=85f6abf60774c88c]*/
 {
-    return (PyHKEYObject*)Py_XNewRef(self);
+    return Py_XNewRef(self);
 }
 
 

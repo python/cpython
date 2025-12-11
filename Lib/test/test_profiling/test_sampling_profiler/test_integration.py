@@ -305,10 +305,10 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            ("factorial.py", 10, "factorial"),  # recursive
-                            ("factorial.py", 10, "factorial"),  # deeper
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # recursive
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # deeper
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
@@ -319,13 +319,9 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            (
-                                "factorial.py",
-                                10,
-                                "factorial",
-                            ),  # different depth
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # different depth
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
