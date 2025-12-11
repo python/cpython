@@ -1369,49 +1369,6 @@ Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
 application).
 
-.. note::
-
-   Individual operations on :class:`list` instances such as
-   :meth:`~list.append`, :meth:`~list.pop`, ``lst[i] = x``, and ``x = lst[i]``
-   are atomic and will not corrupt the list or crash when called concurrently
-   from multiple threads:
-
-   .. code-block::
-      :class: good
-
-      # These operations are safe to call concurrently from multiple threads
-      lst.append(item)       # atomically appends item
-      lst.pop()              # atomically removes and returns last item
-      lst[i] = value         # atomically replaces item at index i
-      item = lst[i]          # atomically retrieves item at index i
-
-   One exception to this rule is :meth:`~list.extend`. Its atomicity
-   guarantees depend on the iterable being passed. When the iterable is
-   a :class:`list`, a :class:`tuple`, a :class:`set`, a :class:`frozenset`,
-   a :class:`dict` or a :ref:`dictionary view object <dict-views>`, the
-   operation is atomic. Otherwise, an iterator is created which can be
-   concurrently modified by another thread.
-
-   Operations that involve multiple accesses, as well as iteration, are not
-   atomic. For example, the following patterns are not thread-safe:
-
-   .. code-block::
-      :class: bad
-
-      # NOT atomic: read-modify-write
-      lst[i] = lst[i] + 1
-
-      # NOT atomic: check-then-act
-      if lst:
-          item = lst.pop()
-
-      # NOT thread-safe: iteration while modifying
-      for item in lst:
-          process(item)  # another thread may modify lst
-
-   Consider external synchronization when sharing :class:`list` instances
-   across threads.  See :ref:`freethreading-python-howto` for more information.
-
 .. class:: list(iterable=(), /)
 
    Lists may be constructed in several ways:
@@ -1478,6 +1435,76 @@ application).
          inspect, the list is undefined.  The C implementation of Python makes the
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
+
+.. admonition:: Thread safety
+
+   Most individual operations on :class:`list` instances are atomic:
+
+   .. code-block::
+      :class: good
+
+      # The following operations are atomic
+      lst1 + lst2    # atomic concatenation of two lists
+      x * lst        # atomic repeat of lst x times
+      item = lst[i]  # atomically retrieves item at index i
+      lst[i] = value # atomically replaces item at index i
+      lst *= x       # atomically extend the list x times
+
+      # Calls to the following list methods are atomic
+      lst.clear()
+      lst.copy()
+      lst.append(item)
+      lst.insert(idx, item)
+      lst.pop(idx)
+      lst.remove(item)
+      lst.reverse()
+      lst.sort()
+
+   The following operations/methods are not atomic:
+
+   .. code-block::
+      :class: maybe
+
+      lst.index(item)
+      lst.count(item)
+      item in lst
+
+   The :meth:`~list.index` and :meth:`~list.count` methods, and the ``in``
+   operator, iterate the list without holding a lock. They are safe to call
+   concurrently but may return results affected by concurrent modifications.
+
+   :meth:`~list.extend` is always atomic with respect to the target list.
+   However, the operation is fully atomic only when the iterable that's passed
+   to ``extend`` is a :class:`list`, a :class:`tuple`, a :class:`set`, a
+   :class:`frozenset`, a :class:`dict` or a
+   :ref:`dictionary view object <dict-views>`. Otherwise, an iterator is
+   created which can be concurrently modified by another thread. The same
+   applies to inplace concatenation of list with other iterables when using
+   ``lst += iterable``.
+
+   Similarly, assigning to a list slice with ``lst[i:j] = obj`` is always
+   atomic with respect to the target list, but ``obj`` is only locked when it
+   is also a :class:`list`.
+
+   Operations that involve multiple accesses, as well as iteration, are not
+   atomic. For example:
+
+   .. code-block::
+      :class: bad
+
+      # NOT atomic: read-modify-write
+      lst[i] = lst[i] + 1
+
+      # NOT atomic: check-then-act
+      if lst:
+          item = lst.pop()
+
+      # NOT thread-safe: iteration while modifying
+      for item in lst:
+          process(item)  # another thread may modify lst
+
+   Consider external synchronization when sharing :class:`list` instances
+   across threads.  See :ref:`freethreading-python-howto` for more information.
 
 
 .. _typesseq-tuple:
