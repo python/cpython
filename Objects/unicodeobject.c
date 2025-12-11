@@ -1329,7 +1329,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
     else
         data = unicode + 1;
     _PyUnicode_LENGTH(unicode) = size;
-    PyUnicode_SET_HASH((PyObject *)unicode, -1);
+    _PyUnicode_HASH(unicode) = -1;
     _PyUnicode_STATE(unicode).interned = 0;
     _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
@@ -13903,9 +13903,9 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 
     _PyUnicode_LENGTH(self) = length;
 #ifdef Py_DEBUG
-    PyUnicode_SET_HASH((PyObject *)self, -1);
+    _PyUnicode_HASH(self) = -1;
 #else
-    PyUnicode_SET_HASH((PyObject *)self, PyUnicode_HASH(unicode));
+    _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
     _PyUnicode_STATE(self).interned = 0;
     _PyUnicode_STATE(self).kind = kind;
@@ -13950,7 +13950,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
     memcpy(data, PyUnicode_DATA(unicode), kind * (length + 1));
     assert(_PyUnicode_CheckConsistency(self, 1));
 #ifdef Py_DEBUG
-    PyUnicode_SET_HASH((PyObject *)self, PyUnicode_HASH(unicode));
+    _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
     return self;
 
