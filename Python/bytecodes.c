@@ -4305,10 +4305,10 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            INPUTS_DEAD();
-            res = PyStackRef_FromPyObjectSteal(res_o);
             a = arg;
             c = callable;
+            INPUTS_DEAD();
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused, unused -- callable, unused, unused, unused)) {
