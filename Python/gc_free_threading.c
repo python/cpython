@@ -1230,6 +1230,9 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         else {
             worklist_push(&state->unreachable, op);
         }
+        // It is possible this object will be resurrected but
+        // for now we assume it will be deallocated.
+        state->long_lived_total--;
         return true;
     }
 
@@ -1911,6 +1914,7 @@ handle_resurrected_objects(struct collection_state *state)
                 _PyObject_ASSERT(op, Py_REFCNT(op) > 1);
                 worklist_remove(&iter);
                 merge_refcount(op, -1);  // remove worklist reference
+                state->long_lived_total++;
             }
         }
     }
@@ -2311,9 +2315,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         }
     }
 
-    // Record the number of live GC objects
-    interp->gc.long_lived_total = state->long_lived_total;
-
     // Find weakref callbacks we will honor (but do not call them).
     find_weakref_callbacks(state);
     _PyEval_StartTheWorld(interp);
@@ -2335,6 +2336,9 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         clear_weakrefs(state);
     }
     _PyEval_StartTheWorld(interp);
+
+    // Record the number of live GC objects
+    interp->gc.long_lived_total = state->long_lived_total;
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
