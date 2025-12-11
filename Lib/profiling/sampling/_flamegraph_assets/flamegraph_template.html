@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tachyon Profiler - Flamegraph</title>
+    <title>Tachyon Profiler - Flamegraph Report</title>
     <!-- INLINE_VENDOR_D3_JS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_JS -->
@@ -15,9 +15,10 @@
       <!-- Top Bar -->
       <header class="top-bar">
         <div class="brand">
+          <div class="brand-logo" id="navbar-logo"></div>
           <span class="brand-text">Tachyon</span>
           <span class="brand-divider"></span>
-          <span class="brand-subtitle">Profiler</span>
+          <span class="brand-subtitle">Flamegraph Report</span>
         </div>
         <div class="search-wrapper">
           <input
@@ -286,6 +287,12 @@
 
       <!-- Status Bar -->
       <footer class="status-bar">
+        <span class="status-item" id="status-brand">
+          <span class="status-value">Tachyon Profiler</span>
+        </span>
+        <span class="status-item" id="status-tagline">
+          <span class="status-label">Python Sampling Profiler</span>
+        </span>
         <span class="status-item" id="status-location" style="display: none;">
           <span class="status-label">File:</span>
           <span class="status-value" id="status-file">--</span>
