@@ -585,9 +585,9 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
-        *attr = sym_new_not_null(ctx);
+        attr = sym_new_not_null(ctx);
         if (oparg & 1) {
             self_or_null[0] = sym_new_unknown(ctx);
         }
@@ -1097,7 +1097,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+    op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
             // Note: we must strip the reference information because it goes
@@ -1107,6 +1107,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
         }
+        a = arg;
     }
 
     op(_GUARD_TOS_LIST, (tos -- tos)) {

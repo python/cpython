@@ -138,6 +138,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
