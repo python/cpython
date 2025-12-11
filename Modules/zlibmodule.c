@@ -8,7 +8,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_object.h"        // _PyObject_XSetRefDelayed
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_CHAR_RELAXED
 
 #include "zlib.h"
 #include "stdbool.h"
@@ -837,7 +837,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
             if (new_unused_data == NULL) {
                 return -1;
             }
-            _PyObject_XSetRefDelayed(&self->unused_data, new_unused_data);
+            Py_XSETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
@@ -851,7 +851,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
                 (char *)self->zst.next_in, left_size);
         if (new_data == NULL)
             return -1;
-        _PyObject_XSetRefDelayed(&self->unconsumed_tail, new_data);
+        Py_XSETREF(self->unconsumed_tail, new_data);
     }
 
     return 0;
@@ -1628,7 +1628,7 @@ decompress(ZlibDecompressor *self, uint8_t *data,
             if (unused_data == NULL) {
                 goto error;
             }
-            _PyObject_XSetRefDelayed(&self->unused_data, unused_data);
+            Py_XSETREF(self->unused_data, unused_data);
         }
     }
     else if (self->avail_in_real == 0) {
@@ -1809,10 +1809,36 @@ static PyMethodDef ZlibDecompressor_methods[] = {
     {NULL}
 };
 
+static PyObject *
+Decomp_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    compobject *self = _compobject_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyObject *
+Decomp_unconsumed_tail_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    compobject *self = _compobject_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unconsumed_tail != NULL);
+    PyObject *result = Py_NewRef(self->unconsumed_tail);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef Decomp_getset[] = {
+    {"unused_data", Decomp_unused_data_get, NULL, NULL},
+    {"unconsumed_tail", Decomp_unconsumed_tail_get, NULL, NULL},
+    {NULL},
+};
+
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
-    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
     {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
@@ -1826,11 +1852,26 @@ PyDoc_STRVAR(ZlibDecompressor_unused_data__doc__,
 PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
+static PyObject *
+ZlibDecompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+{
+    ZlibDecompressor *self = ZlibDecompressor_CAST(op);
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
+    return result;
+}
+
+static PyGetSetDef ZlibDecompressor_getset[] = {
+    {"unused_data", ZlibDecompressor_unused_data_get, NULL,
+     ZlibDecompressor_unused_data__doc__},
+    {NULL},
+};
+
 static PyMemberDef ZlibDecompressor_members[] = {
     {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
      Py_READONLY, ZlibDecompressor_eof__doc__},
-    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
-     Py_READONLY, ZlibDecompressor_unused_data__doc__},
     {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
     {NULL},
@@ -2056,6 +2097,7 @@ static PyType_Slot Decomptype_slots[] = {
     {Py_tp_traverse, compobject_traverse},
     {Py_tp_methods, Decomp_methods},
     {Py_tp_members, Decomp_members},
+    {Py_tp_getset, Decomp_getset},
     {0, 0},
 };
 
@@ -2075,6 +2117,7 @@ static PyType_Slot ZlibDecompressor_type_slots[] = {
     {Py_tp_dealloc, ZlibDecompressor_dealloc},
     {Py_tp_traverse, ZlibDecompressor_traverse},
     {Py_tp_members, ZlibDecompressor_members},
+    {Py_tp_getset, ZlibDecompressor_getset},
     {Py_tp_new, zlib__ZlibDecompressor},
     {Py_tp_doc, (char *)zlib__ZlibDecompressor__doc__},
     {Py_tp_methods, ZlibDecompressor_methods},
