@@ -762,7 +762,7 @@ Glossary
       role in places where a constant hash value is needed, for example as a key
       in a dictionary.  Immutable objects are inherently :term:`thread-safe`
       because their state cannot be modified after creation, eliminating concerns
-      about :term:`concurrent modification`.
+      about improperly synchronized :term:`concurrent modification`.
 
    import path
       A list of locations (or :term:`path entries <path entry>`) that are
@@ -1073,7 +1073,7 @@ Glossary
       Code that is compiled to machine instructions and runs directly on the
       processor, as opposed to code that is interpreted or runs in a virtual
       machine.  In the context of Python, native code typically refers to
-      C, C++, Rust of Fortran code in :term:`extension modules <extension module>`
+      C, C++, Rust or Fortran code in :term:`extension modules <extension module>`
       that can be called from Python.  See also :term:`extension module`.
 
    nested scope
