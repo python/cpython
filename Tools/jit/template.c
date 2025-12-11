@@ -34,14 +34,38 @@
 
 #include "jit.h"
 
+
+#undef CURRENT_OPERAND0_64
+#define CURRENT_OPERAND0_64() (_operand0_64)
+
+#undef CURRENT_OPERAND1_64
+#define CURRENT_OPERAND1_64() (_operand1_64)
+
+
 #undef CURRENT_OPARG
+#undef CURRENT_OPERAND0_16
+#undef CURRENT_OPERAND0_32
+#undef CURRENT_OPERAND1_16
+#undef CURRENT_OPERAND1_32
+
+#if SUPPORTS_SMALL_CONSTS
+
+#define CURRENT_OPARG() (_oparg_16)
+#define CURRENT_OPERAND0_32() (_operand0_32)
+#define CURRENT_OPERAND0_16() (_operand0_16)
+#define CURRENT_OPERAND1_32() (_operand1_32)
+#define CURRENT_OPERAND1_16() (_operand1_16)
+
+#else
+
 #define CURRENT_OPARG() (_oparg)
+#define CURRENT_OPERAND0_32() (_operand0_64)
+#define CURRENT_OPERAND0_16() (_operand0_64)
+#define CURRENT_OPERAND1_32() (_operand1_64)
+#define CURRENT_OPERAND1_16() (_operand1_64)
 
-#undef CURRENT_OPERAND0
-#define CURRENT_OPERAND0() (_operand0)
+#endif
 
-#undef CURRENT_OPERAND1
-#define CURRENT_OPERAND1() (_operand1)
 
 #undef CURRENT_TARGET
 #define CURRENT_TARGET() (_target)
@@ -52,7 +76,8 @@ do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
     jit_func_preserve_none jitted = _executor->jit_code;                   \
-    __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
+    __attribute__((musttail)) return jitted(frame, stack_pointer, tstate,  \
+    _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
 #undef GOTO_TIER_ONE_SETUP
@@ -75,7 +100,8 @@ do {                                                                       \
 #define PATCH_JUMP(ALIAS)                                                 \
 do {                                                                      \
     DECLARE_TARGET(ALIAS);                                                \
-    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate); \
+    __attribute__((musttail)) return ALIAS(frame, stack_pointer, tstate,  \
+    _tos_cache0, _tos_cache1, _tos_cache2); \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
@@ -93,26 +119,36 @@ do {                                                                      \
 #endif
 
 __attribute__((preserve_none)) _Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate)
-{
+_JIT_ENTRY(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
+     _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2
+) {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int uopcode = _JIT_OPCODE;
     _Py_CODEUNIT *next_instr;
     // Other stuff we need handy:
-    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
 #if SIZEOF_VOID_P == 8
-    PATCH_VALUE(uint64_t, _operand0, _JIT_OPERAND0)
-    PATCH_VALUE(uint64_t, _operand1, _JIT_OPERAND1)
+    PATCH_VALUE(uint64_t, _operand0_64, _JIT_OPERAND0)
+    PATCH_VALUE(uint64_t, _operand1_64, _JIT_OPERAND1)
 #else
     assert(SIZEOF_VOID_P == 4);
     PATCH_VALUE(uint32_t, _operand0_hi, _JIT_OPERAND0_HI)
     PATCH_VALUE(uint32_t, _operand0_lo, _JIT_OPERAND0_LO)
-    uint64_t _operand0 = ((uint64_t)_operand0_hi << 32) | _operand0_lo;
+    uint64_t _operand0_64 = ((uint64_t)_operand0_hi << 32) | _operand0_lo;
     PATCH_VALUE(uint32_t, _operand1_hi, _JIT_OPERAND1_HI)
     PATCH_VALUE(uint32_t, _operand1_lo, _JIT_OPERAND1_LO)
-    uint64_t _operand1 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
+    uint64_t _operand1_64 = ((uint64_t)_operand1_hi << 32) | _operand1_lo;
+#endif
+#if SUPPORTS_SMALL_CONSTS
+    PATCH_VALUE(uint32_t, _operand0_32, _JIT_OPERAND0_32)
+    PATCH_VALUE(uint32_t, _operand1_32, _JIT_OPERAND1_32)
+    PATCH_VALUE(uint16_t, _operand0_16, _JIT_OPERAND0_16)
+    PATCH_VALUE(uint16_t, _operand1_16, _JIT_OPERAND1_16)
+    PATCH_VALUE(uint16_t, _oparg_16, _JIT_OPARG_16)
+#else
+    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
 #endif
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
     OPT_STAT_INC(uops_executed);
