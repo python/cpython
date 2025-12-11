@@ -1654,12 +1654,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return reply.strip().lower()
 
     def do_clear(self, arg):
-        """cl(ear) [filename:lineno | bpnumber ...]
+        """cl(ear) [filename:(lineno | function) | bpnumber ...]
 
         With a space separated list of breakpoint numbers, clear
         those breakpoints.  Without argument, clear all breaks (but
         first ask confirmation).  With a filename:lineno argument,
-        clear all breaks at that line in that file.
+        clear all breakpoints at that line.  With a filename:function
+        argument, clear all breakpoints at that function.
         """
         if not arg:
             reply = self._prompt_for_confirmation(
