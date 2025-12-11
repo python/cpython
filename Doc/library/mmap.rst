@@ -332,7 +332,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Annotate the memory map with the given *name* for easier identification
       in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
-      to the Python or Python is built in :ref:`debug mode <debug-build>`
+      to Python or if Python is built in :ref:`debug mode <debug-build>`
       The length of *name* must not exceed 67 bytes.
 
       .. availability:: Linux >= 5.17
