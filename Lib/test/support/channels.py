@@ -28,12 +28,10 @@ class ItemInterpreterDestroyed(ChannelError,
     """Raised from get() and get_nowait()."""
 
 
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
+UNBOUND = _crossinterp.UnboundItem('queue', __name__)
 
 
 def _serialize_unbound(unbound):
-    if unbound is UNBOUND:
-        unbound = _crossinterp.UNBOUND
     return _crossinterp.serialize_unbound(unbound)
 
 

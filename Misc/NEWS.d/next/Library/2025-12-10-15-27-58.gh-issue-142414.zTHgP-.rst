@@ -1,0 +1,1 @@
+Fix spurious KeyError when concurrent.interpreters is reloaded after import.

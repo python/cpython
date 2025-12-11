@@ -46,12 +46,10 @@ _SHARED_ONLY = 0
 _PICKLED = 1
 
 
-UNBOUND = _crossinterp.UnboundItem.singleton('queue', __name__)
+UNBOUND = _crossinterp.UnboundItem('queue', __name__)
 
 
 def _serialize_unbound(unbound):
-    if unbound is UNBOUND:
-        unbound = _crossinterp.UNBOUND
     return _crossinterp.serialize_unbound(unbound)
 
 
