@@ -43,6 +43,15 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 LLVM is downloaded automatically (along with other external binary dependencies) by `PCbuild\build.bat`.
 
+By default, the architecture of the LLVM tools is auto-detected based on the host machine. To override this, set the `PreferredToolArchitecture` environment variable before building:
+
+```sh
+set PreferredToolArchitecture=AMD64
+PCbuild\build.bat --experimental-jit
+```
+
+Valid values are `AMD64`, `ARM64`, `x64`, and `x86` (the latter two are mapped to `AMD64`).
+
 Otherwise, you can install LLVM 21 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=21), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 Alternatively, you can use [chocolatey](https://chocolatey.org):
