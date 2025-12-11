@@ -191,54 +191,42 @@ class TestDefaultDict(unittest.TestCase):
 
     @threading_helper.requires_working_threading()
     def test_no_value_overwrite_race_condition(self):
-        """Test that concurrent access to missing keys doesn't overwrite values."""
-        # Use a factory that returns unique objects so we can detect overwrites
         call_count = 0
 
         def unique_factory():
             nonlocal call_count
             call_count += 1
-            # Return a unique object that identifies this call
             return f"value_{call_count}_{threading.get_ident()}"
 
         d = defaultdict(unique_factory)
         results = {}
 
         def worker(thread_id):
-            # Multiple threads access the same missing key
             for _ in range(5):
                 value = d['shared_key']
                 if 'shared_key' not in results:
                     results['shared_key'] = value
-                # Small delay to increase chance of race conditions
                 time.sleep(0.001)
 
-        # Start multiple threads
         threads = []
         for i in range(3):
             t = threading.Thread(target=worker, args=(i,))
             threads.append(t)
             t.start()
 
-        # Wait for all threads to complete
         for t in threads:
             t.join()
 
-        # Key should exist in the dictionary
         self.assertIn('shared_key', d)
 
-        # All threads should see the same value (no overwrites occurred)
         final_value = d['shared_key']
         self.assertEqual(results['shared_key'], final_value)
 
-        # The value should be from the first successful factory call
         self.assertTrue(final_value.startswith('value_'))
 
-        # Factory should only be called once (since key only inserted once)
         self.assertEqual(call_count, 1)
 
     def test_factory_called_only_when_key_missing(self):
-        """Test that factory is only called when key is truly missing."""
         factory_calls = []
 
         def tracked_factory():
@@ -247,17 +235,14 @@ class TestDefaultDict(unittest.TestCase):
 
         d = defaultdict(tracked_factory)
 
-        # First access should call factory
         value1 = d['key']
         self.assertEqual(value1, [1, 2, 3])
         initial_call_count = len(factory_calls)
 
-        # Multiple subsequent accesses should not call factory
         for _ in range(10):
             value = d['key']
             self.assertEqual(value, [1, 2, 3])
 
-        # Factory call count should not have increased
         self.assertEqual(len(factory_calls), initial_call_count)
 
 

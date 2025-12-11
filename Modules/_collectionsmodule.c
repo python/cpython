@@ -2218,6 +2218,7 @@ defdict_missing(PyObject *op, PyObject *key)
 {
     defdictobject *dd = defdictobject_CAST(op);
     PyObject *factory = dd->default_factory;
+    PyObject *value;
     if (factory == NULL || factory == Py_None) {
         /* XXX Call dict.__missing__(key) */
         PyObject *tup;
@@ -2228,10 +2229,9 @@ defdict_missing(PyObject *op, PyObject *key)
         return NULL;
     }
 
-    PyObject *value = _PyObject_CallNoArgs(factory);
-    if (value == NULL) {
+    value = _PyObject_CallNoArgs(factory);
+    if (value == NULL)
         return NULL;
-    }
 
     /* Use PyDict_SetDefaultRef to atomically insert the value only if the key is absent.
      * This ensures we don't overwrite a value that another thread inserted
@@ -2239,11 +2239,6 @@ defdict_missing(PyObject *op, PyObject *key)
      */
     PyObject *result_value = NULL;
     int res = PyDict_SetDefaultRef(op, key, value, &result_value);
-
-    if (res < 0) {
-        Py_DECREF(value);
-        return NULL;
-    }
 
     if (res != 0) {
         Py_DECREF(value);
