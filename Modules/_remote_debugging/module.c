@@ -28,11 +28,28 @@ PyStructSequence_Desc TaskInfo_desc = {
     4
 };
 
+// LocationInfo structseq type
+static PyStructSequence_Field LocationInfo_fields[] = {
+    {"lineno", "Line number"},
+    {"end_lineno", "End line number"},
+    {"col_offset", "Column offset"},
+    {"end_col_offset", "End column offset"},
+    {NULL}
+};
+
+PyStructSequence_Desc LocationInfo_desc = {
+    "_remote_debugging.LocationInfo",
+    "Source location information: (lineno, end_lineno, col_offset, end_col_offset)",
+    LocationInfo_fields,
+    4
+};
+
 // FrameInfo structseq type
 static PyStructSequence_Field FrameInfo_fields[] = {
     {"filename", "Source code filename"},
-    {"lineno", "Line number"},
+    {"location", "LocationInfo structseq or None for synthetic frames"},
     {"funcname", "Function name"},
+    {"opcode", "Opcode being executed (None if not gathered)"},
     {NULL}
 };
 
@@ -40,7 +57,7 @@ PyStructSequence_Desc FrameInfo_desc = {
     "_remote_debugging.FrameInfo",
     "Information about a frame",
     FrameInfo_fields,
-    3
+    4
 };
 
 // CoroInfo structseq type
@@ -235,6 +252,9 @@ _remote_debugging.RemoteUnwinder.__init__
     skip_non_matching_threads: bool = True
     native: bool = False
     gc: bool = False
+    opcodes: bool = False
+    cache_frames: bool = False
+    stats: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
 
@@ -253,6 +273,12 @@ Args:
             non-Python code.
     gc: If True, include artificial "<GC>" frames to denote active garbage
         collection.
+    opcodes: If True, gather bytecode opcode information for instruction-level
+             profiling.
+    cache_frames: If True, enable frame caching optimization to avoid re-reading
+                 unchanged parent frames between samples.
+    stats: If True, collect statistics about cache hits, memory reads, etc.
+           Use get_stats() to retrieve the collected statistics.
 
 The RemoteUnwinder provides functionality to inspect and debug a running Python
 process, including examining thread states, stack frames and other runtime data.
@@ -270,8 +296,10 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int only_active_thread,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
-                                               int native, int gc)
-/*[clinic end generated code: output=e9eb6b4df119f6e0 input=606d099059207df2]*/
+                                               int native, int gc,
+                                               int opcodes, int cache_frames,
+                                               int stats)
+/*[clinic end generated code: output=0031f743f4b9ad52 input=8fb61b24102dec6e]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -283,18 +311,25 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 #ifdef Py_GIL_DISABLED
     if (only_active_thread) {
         PyErr_SetString(PyExc_ValueError,
-                       "only_active_thread is not supported when Py_GIL_DISABLED is not defined");
+                       "only_active_thread is not supported in free-threaded builds");
         return -1;
     }
 #endif
 
     self->native = native;
     self->gc = gc;
+    self->opcodes = opcodes;
+    self->cache_frames = cache_frames;
+    self->collect_stats = stats;
+    self->stale_invalidation_counter = 0;
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
     self->skip_non_matching_threads = skip_non_matching_threads;
     self->cached_state = NULL;
+    self->frame_cache = NULL;
+    // Initialize stats to zero
+    memset(&self->stats, 0, sizeof(self->stats));
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
         return -1;
@@ -375,6 +410,16 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->win_process_buffer_size = 0;
 #endif
 
+    if (cache_frames && frame_cache_init(self) < 0) {
+        return -1;
+    }
+
+    // Clear stale last_profiled_frame values from previous profilers
+    // This prevents us from stopping frame walking early due to stale values
+    if (cache_frames) {
+        clear_last_profiled_frames(self);
+    }
+
     return 0;
 }
 
@@ -429,6 +474,8 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=666192b90c69d567 input=bcff01c73cccc1c0]*/
 {
+    STATS_INC(self, total_samples);
+
     PyObject* result = PyList_New(0);
     if (!result) {
         set_exception_cause(self, PyExc_MemoryError, "Failed to create stack trace result list");
@@ -591,7 +638,15 @@ next_interpreter:
     }
 
 exit:
-   _Py_RemoteDebug_ClearCache(&self->handle);
+    // Invalidate cache entries for threads not seen in this sample.
+    // Only do this every 1024 iterations to avoid performance overhead.
+    if (self->cache_frames && result) {
+        if (++self->stale_invalidation_counter >= 1024) {
+            self->stale_invalidation_counter = 0;
+            frame_cache_invalidate_stale(self, result);
+        }
+    }
+    _Py_RemoteDebug_ClearCache(&self->handle);
     return result;
 }
 
@@ -645,9 +700,7 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=6a49cd345e8aec53 input=307f754cbe38250c]*/
 {
-    if (!self->async_debug_offsets_available) {
-        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
-        set_exception_cause(self, PyExc_RuntimeError, "AsyncioDebug section unavailable in get_all_awaited_by");
+    if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
 
@@ -736,9 +789,7 @@ static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
 /*[clinic end generated code: output=6433d52b55e87bbe input=6129b7d509a887c9]*/
 {
-    if (!self->async_debug_offsets_available) {
-        PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
-        set_exception_cause(self, PyExc_RuntimeError, "AsyncioDebug section unavailable in get_async_stack_trace");
+    if (ensure_async_debug_offsets(self) < 0) {
         return NULL;
     }
 
@@ -761,10 +812,114 @@ result_err:
     return NULL;
 }
 
+/*[clinic input]
+@permit_long_docstring_body
+@critical_section
+_remote_debugging.RemoteUnwinder.get_stats
+
+Get collected statistics about profiling performance.
+
+Returns a dictionary containing statistics about cache performance,
+memory reads, and other profiling metrics. Only available if the
+RemoteUnwinder was created with stats=True.
+
+Returns:
+    dict: A dictionary containing:
+        - total_samples: Total number of get_stack_trace calls
+        - frame_cache_hits: Full cache hits (entire stack unchanged)
+        - frame_cache_misses: Cache misses requiring full walk
+        - frame_cache_partial_hits: Partial hits (stopped at cached frame)
+        - frames_read_from_cache: Total frames retrieved from cache
+        - frames_read_from_memory: Total frames read from remote memory
+        - memory_reads: Total remote memory read operations
+        - memory_bytes_read: Total bytes read from remote memory
+        - code_object_cache_hits: Code object cache hits
+        - code_object_cache_misses: Code object cache misses
+        - stale_cache_invalidations: Times stale cache entries were cleared
+        - frame_cache_hit_rate: Percentage of samples that hit the cache
+        - code_object_cache_hit_rate: Percentage of code object lookups that hit cache
+
+Raises:
+    RuntimeError: If stats collection was not enabled (stats=False)
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=21e36477122be2a0 input=75fef4134c12a8c9]*/
+{
+    if (!self->collect_stats) {
+        PyErr_SetString(PyExc_RuntimeError,
+                       "Statistics collection was not enabled. "
+                       "Create RemoteUnwinder with stats=True to collect statistics.");
+        return NULL;
+    }
+
+    PyObject *result = PyDict_New();
+    if (!result) {
+        return NULL;
+    }
+
+#define ADD_STAT(name) do { \
+    PyObject *val = PyLong_FromUnsignedLongLong(self->stats.name); \
+    if (!val || PyDict_SetItemString(result, #name, val) < 0) { \
+        Py_XDECREF(val); \
+        Py_DECREF(result); \
+        return NULL; \
+    } \
+    Py_DECREF(val); \
+} while(0)
+
+    ADD_STAT(total_samples);
+    ADD_STAT(frame_cache_hits);
+    ADD_STAT(frame_cache_misses);
+    ADD_STAT(frame_cache_partial_hits);
+    ADD_STAT(frames_read_from_cache);
+    ADD_STAT(frames_read_from_memory);
+    ADD_STAT(memory_reads);
+    ADD_STAT(memory_bytes_read);
+    ADD_STAT(code_object_cache_hits);
+    ADD_STAT(code_object_cache_misses);
+    ADD_STAT(stale_cache_invalidations);
+
+#undef ADD_STAT
+
+    // Calculate and add derived statistics
+    // Hit rate is calculated as (hits + partial_hits) / total_cache_lookups
+    double frame_cache_hit_rate = 0.0;
+    uint64_t total_cache_lookups = self->stats.frame_cache_hits + self->stats.frame_cache_partial_hits + self->stats.frame_cache_misses;
+    if (total_cache_lookups > 0) {
+        frame_cache_hit_rate = 100.0 * (double)(self->stats.frame_cache_hits + self->stats.frame_cache_partial_hits)
+                               / (double)total_cache_lookups;
+    }
+    PyObject *hit_rate = PyFloat_FromDouble(frame_cache_hit_rate);
+    if (!hit_rate || PyDict_SetItemString(result, "frame_cache_hit_rate", hit_rate) < 0) {
+        Py_XDECREF(hit_rate);
+        Py_DECREF(result);
+        return NULL;
+    }
+    Py_DECREF(hit_rate);
+
+    double code_object_hit_rate = 0.0;
+    uint64_t total_code_lookups = self->stats.code_object_cache_hits + self->stats.code_object_cache_misses;
+    if (total_code_lookups > 0) {
+        code_object_hit_rate = 100.0 * (double)self->stats.code_object_cache_hits / (double)total_code_lookups;
+    }
+    PyObject *code_hit_rate = PyFloat_FromDouble(code_object_hit_rate);
+    if (!code_hit_rate || PyDict_SetItemString(result, "code_object_cache_hit_rate", code_hit_rate) < 0) {
+        Py_XDECREF(code_hit_rate);
+        Py_DECREF(result);
+        return NULL;
+    }
+    Py_DECREF(code_hit_rate);
+
+    return result;
+}
+
 static PyMethodDef RemoteUnwinder_methods[] = {
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ALL_AWAITED_BY_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF
+    _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STATS_METHODDEF
     {NULL, NULL}
 };
 
@@ -791,6 +946,7 @@ RemoteUnwinder_dealloc(PyObject *op)
         _Py_RemoteDebug_ClearCache(&self->handle);
         _Py_RemoteDebug_CleanupProcHandle(&self->handle);
     }
+    frame_cache_cleanup(self);
     PyObject_Del(self);
     Py_DECREF(tp);
 }
@@ -841,6 +997,14 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
     if (PyModule_AddType(m, st->TaskInfo_Type) < 0) {
+        return -1;
+    }
+
+    st->LocationInfo_Type = PyStructSequence_NewType(&LocationInfo_desc);
+    if (st->LocationInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->LocationInfo_Type) < 0) {
         return -1;
     }
 
@@ -917,6 +1081,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_VISIT(state->RemoteDebugging_Type);
     Py_VISIT(state->TaskInfo_Type);
+    Py_VISIT(state->LocationInfo_Type);
     Py_VISIT(state->FrameInfo_Type);
     Py_VISIT(state->CoroInfo_Type);
     Py_VISIT(state->ThreadInfo_Type);
@@ -931,6 +1096,7 @@ remote_debugging_clear(PyObject *mod)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_CLEAR(state->RemoteDebugging_Type);
     Py_CLEAR(state->TaskInfo_Type);
+    Py_CLEAR(state->LocationInfo_Type);
     Py_CLEAR(state->FrameInfo_Type);
     Py_CLEAR(state->CoroInfo_Type);
     Py_CLEAR(state->ThreadInfo_Type);
