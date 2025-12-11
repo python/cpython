@@ -76,6 +76,13 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
 
+static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.index & Py_TAG_BITS;
+    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
+}
+
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
 {
@@ -368,6 +375,19 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #else
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
+static inline PyObject *
+_PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
+{
+    int flags = ref.bits & Py_TAG_BITS;
+#ifdef Py_GIL_DISABLED
+    if (_Py_IsImmortal(op)) {
+        // Do not check flags on immortal objects in the free threading build.
+        flags = -1;
+    }
+#endif
+    return Py_BuildValue("(ni)", Py_REFCNT(op), flags);
+}
 
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used
