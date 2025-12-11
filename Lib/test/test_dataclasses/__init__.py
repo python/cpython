@@ -445,6 +445,8 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(CFloat(nan), CFloat(0.0))
         self.assertNotEqual(CFloat(nan), CFloat(nan))
 
+        # gh-137658: Testing <, <=, == all return False with NaN
+        # Previously, <= would incorrectly return True on Python 3.13+ even though both < and == were False
         for idx, fn in enumerate([lambda a, b: a < b,
                                   lambda a, b: a <= b,
                                   lambda a, b: a == b]):
@@ -453,6 +455,8 @@ class TestCase(unittest.TestCase):
                 self.assertFalse(fn(CFloat(nan), CFloat(0.0)))
                 self.assertFalse(fn(CFloat(nan), CFloat(nan)))
 
+        # gh-137658: Testing >, >=, == all return False with NaN
+        # Previously, >= would incorrectly return True on Python 3.13+ even though both > and == were False
         for idx, fn in enumerate([lambda a, b: a > b,
                                   lambda a, b: a >= b,
                                   lambda a, b: a == b]):
@@ -527,6 +531,8 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(CFloat(0.0, nan), CFloat(nan, nan))
         self.assertNotEqual(CFloat(nan, nan), CFloat(nan, nan))
 
+        # gh-137658: Testing <, <=, == all return False with NaN
+        # Previously, <= would incorrectly return True on Python 3.13+ even though both < and == were False
         for idx, fn in enumerate([lambda a, b: a < b,
                                   lambda a, b: a <= b,
                                   lambda a, b: a == b]):
@@ -536,6 +542,8 @@ class TestCase(unittest.TestCase):
                 self.assertFalse(fn(CFloat(0.0, nan), CFloat(nan, nan)))
                 self.assertFalse(fn(CFloat(nan, nan), CFloat(nan, nan)))
 
+        # gh-137658: Testing >, >=, == all return False with NaN
+        # Previously, >= would incorrectly return True on Python 3.13+ even though both > and == were False
         for idx, fn in enumerate([lambda a, b: a > b,
                                   lambda a, b: a >= b,
                                   lambda a, b: a == b]):

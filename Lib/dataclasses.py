@@ -1149,7 +1149,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                               '  if other.__class__ is self.__class__:',
                               *(
                                 f'   if self.{f.name} != other.{f.name}:\n'
-                                # ? use "op[0]" here since gated by "!=", probably not worth confusion
                                 f'    return self.{f.name} {op} other.{f.name}'
                                 for f in flds
                               ),
