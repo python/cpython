@@ -1577,9 +1577,13 @@ dummy_func(
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
             if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
+                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                } else {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              NAME_ERROR_MSG, name);
+                }
                 ERROR_NO_POP();
             }
         }
@@ -1720,8 +1724,13 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (err == 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
+                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                } else {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                              NAME_ERROR_MSG, name);
+                }
                 ERROR_NO_POP();
             }
         }
@@ -1888,10 +1897,15 @@ dummy_func(
         inst(DELETE_FAST, (--)) {
             _PyStackRef v = GETLOCAL(oparg);
             if (PyStackRef_IsNull(v)) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
+                PyObject *localsplusnames = _PyFrame_GetCode(frame)->co_localsplusnames;
+                PyObject *name = PyTuple_GetItem(localsplusnames, oparg);
+                if (name && PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                                              CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                } else {
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                                              UNBOUNDLOCAL_ERROR_MSG, name);
+                }
                 ERROR_IF(true);
             }
             _PyStackRef tmp = GETLOCAL(oparg);

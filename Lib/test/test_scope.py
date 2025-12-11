@@ -835,5 +835,23 @@ class ScopeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             closure(_MultiplyNested__arg=2)
 
+    def test_builtin_deletion_err_message(self):
+        with self.assertRaisesRegex(NameError, "cannot delete builtin 'all'"):
+            del all
+
+        def f():
+            del all
+
+        with self.assertRaisesRegex(UnboundLocalError, "cannot delete builtin 'all'"):
+            f()
+
+        def g():
+            global all
+            del all
+
+        with self.assertRaisesRegex(NameError, "cannot delete builtin 'all'"):
+            g()
+
+
 if __name__ == '__main__':
     unittest.main()

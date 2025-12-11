@@ -346,6 +346,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     "cannot access free variable '%s' where it is not associated with a value" \
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
+#define CANNOT_DELETE_BUILTIN_ERROR_MSG "cannot delete builtin '%.200s'"
 
 // If a trace function sets a new f_lineno and
 // *then* raises, we use the destination when searching
