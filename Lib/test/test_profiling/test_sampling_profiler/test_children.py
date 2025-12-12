@@ -1,4 +1,4 @@
-"""Tests for --children subprocess profiling support."""
+"""Tests for --subprocesses subprocess profiling support."""
 
 import argparse
 import io
@@ -334,7 +334,7 @@ class TestChildProcessMonitor(unittest.TestCase):
 @skip_if_not_supported
 @requires_subprocess()
 class TestCLIChildrenFlag(unittest.TestCase):
-    """Tests for the --children CLI flag."""
+    """Tests for the --subprocesses CLI flag."""
 
     def setUp(self):
         reap_children()
@@ -342,28 +342,28 @@ class TestCLIChildrenFlag(unittest.TestCase):
     def tearDown(self):
         reap_children()
 
-    def test_children_flag_parsed(self):
-        """Test that --children flag is recognized."""
+    def test_subprocesses_flag_parsed(self):
+        """Test that --subprocesses flag is recognized."""
         from profiling.sampling.cli import _add_sampling_options
 
         parser = argparse.ArgumentParser()
         _add_sampling_options(parser)
 
-        # Parse with --children
-        args = parser.parse_args(["--children"])
-        self.assertTrue(args.children)
+        # Parse with --subprocesses
+        args = parser.parse_args(["--subprocesses"])
+        self.assertTrue(args.subprocesses)
 
-        # Parse without --children
+        # Parse without --subprocesses
         args = parser.parse_args([])
-        self.assertFalse(args.children)
+        self.assertFalse(args.subprocesses)
 
-    def test_children_incompatible_with_live(self):
-        """Test that --children is incompatible with --live."""
+    def test_subprocesses_incompatible_with_live(self):
+        """Test that --subprocesses is incompatible with --live."""
         from profiling.sampling.cli import _validate_args
 
-        # Create mock args with both children and live
+        # Create mock args with both subprocesses and live
         args = argparse.Namespace(
-            children=True,
+            subprocesses=True,
             live=True,
             async_aware=False,
             format="pstats",
@@ -500,7 +500,7 @@ class TestCLIChildrenFlag(unittest.TestCase):
     "Test requires process_vm_readv support on Linux",
 )
 class TestChildrenIntegration(unittest.TestCase):
-    """Integration tests for --children functionality."""
+    """Integration tests for --subprocesses functionality."""
 
     def setUp(self):
         reap_children()
@@ -891,7 +891,7 @@ class TestWaitForProfilers(unittest.TestCase):
     "Test requires process_vm_readv support on Linux",
 )
 class TestEndToEndChildrenCLI(unittest.TestCase):
-    """End-to-end tests for --children CLI flag."""
+    """End-to-end tests for --subprocesses CLI flag."""
 
     def setUp(self):
         reap_children()
@@ -899,8 +899,8 @@ class TestEndToEndChildrenCLI(unittest.TestCase):
     def tearDown(self):
         reap_children()
 
-    def test_children_flag_spawns_child_and_creates_output(self):
-        """Test that --children flag works end-to-end with actual subprocesses."""
+    def test_subprocesses_flag_spawns_child_and_creates_output(self):
+        """Test that --subprocesses flag works end-to-end with actual subprocesses."""
         # Create a temporary directory for output files
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a script that spawns a child Python process
@@ -926,14 +926,14 @@ child.wait()
 
             output_file = os.path.join(tmpdir, "profile.pstats")
 
-            # Run the profiler with --children flag
+            # Run the profiler with --subprocesses flag
             result = subprocess.run(
                 [
                     sys.executable,
                     "-m",
                     "profiling.sampling",
                     "run",
-                    "--children",
+                    "--subprocesses",
                     "-d",
                     "3",
                     "-i",
@@ -971,8 +971,8 @@ child.wait()
                     f"stdout: {result.stdout}, stderr: {result.stderr}"
                 )
 
-    def test_children_flag_with_flamegraph_output(self):
-        """Test --children with flamegraph output format."""
+    def test_subprocesses_flag_with_flamegraph_output(self):
+        """Test --subprocesses with flamegraph output format."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Simple parent that spawns a child
             parent_script = f"""
@@ -995,7 +995,7 @@ child.wait()
                     "-m",
                     "profiling.sampling",
                     "run",
-                    "--children",
+                    "--subprocesses",
                     "-d",
                     "2",
                     "-i",
@@ -1024,8 +1024,8 @@ child.wait()
                     "Flamegraph output should be HTML",
                 )
 
-    def test_children_flag_no_crash_on_quick_child(self):
-        """Test that --children doesn't crash when child exits quickly."""
+    def test_subprocesses_flag_no_crash_on_quick_child(self):
+        """Test that --subprocesses doesn't crash when child exits quickly."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Parent spawns a child that exits immediately
             parent_script = f"""
@@ -1049,7 +1049,7 @@ time.sleep(1)
                     "-m",
                     "profiling.sampling",
                     "run",
-                    "--children",
+                    "--subprocesses",
                     "-d",
                     "2",
                     "-i",

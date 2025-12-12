@@ -310,8 +310,8 @@ The default configuration works well for most use cases:
      - Wall-clock mode (all samples recorded)
    * - ``--realtime-stats``
      - No live statistics display during profiling
-   * - ``--children``
-     - Profile only the target process (no child process monitoring)
+   * - ``--subprocesses``
+     - Profile only the target process (no subprocess monitoring)
 
 
 Sampling interval and duration
@@ -444,14 +444,14 @@ working correctly and that sufficient samples are being collected. See
 :ref:`sampling-efficiency` for details on interpreting these metrics.
 
 
-Child process profiling
------------------------
+Subprocess profiling
+--------------------
 
-The :option:`--children` option enables automatic profiling of child processes
+The :option:`--subprocesses` option enables automatic profiling of subprocesses
 spawned by the target::
 
-   python -m profiling.sampling run --children script.py
-   python -m profiling.sampling attach --children 12345
+   python -m profiling.sampling run --subprocesses script.py
+   python -m profiling.sampling attach --subprocesses 12345
 
 When enabled, the profiler monitors the target process for child process
 creation. When a new Python child process is detected, a separate profiler
@@ -480,39 +480,39 @@ or other process spawning mechanisms.
 
 ::
 
-   python -m profiling.sampling run --children --flamegraph worker_pool.py
+   python -m profiling.sampling run --subprocesses --flamegraph worker_pool.py
 
 This produces separate flame graphs for the main process and each worker
 process: ``flamegraph.<main_pid>.html``, ``flamegraph.<worker1_pid>.html``,
 and so on.
 
-Each child process receives its own output file. The filename is derived from
-the specified output path (or the default) with the child's process ID
+Each subprocess receives its own output file. The filename is derived from
+the specified output path (or the default) with the subprocess's process ID
 appended:
 
-- If you specify ``-o profile.html``, children produce ``profile_12345.html``,
+- If you specify ``-o profile.html``, subprocesses produce ``profile_12345.html``,
   ``profile_12346.html``, and so on
-- With default output, children produce files like ``flamegraph.12345.html``
+- With default output, subprocesses produce files like ``flamegraph.12345.html``
   or directories like ``heatmap_12345``
-- For pstats format (which defaults to stdout), children produce files like
+- For pstats format (which defaults to stdout), subprocesses produce files like
   ``profile.12345.pstats``
 
-The child profilers inherit most sampling options from the parent (interval,
+The subprocess profilers inherit most sampling options from the parent (interval,
 duration, thread selection, native frames, GC frames, async-aware mode, and
 output format). All Python descendant processes are profiled recursively,
 including grandchildren and further descendants.
 
-Child process detection works by periodically scanning for new descendants of
+Subprocess detection works by periodically scanning for new descendants of
 the target process and checking whether each new process is a Python process.
 On Linux, this uses a fast check of the executable name followed by a full
-probe of the process memory if needed. Non-Python child processes (such as
+probe of the process memory if needed. Non-Python subprocesses (such as
 shell commands or external tools) are ignored.
 
-There is a limit of 100 concurrent child profilers to prevent resource
+There is a limit of 100 concurrent subprocess profilers to prevent resource
 exhaustion in programs that spawn many processes. If this limit is reached,
-additional child processes are not profiled and a warning is printed.
+additional subprocesses are not profiled and a warning is printed.
 
-The :option:`--children` option is incompatible with :option:`--live` mode
+The :option:`--subprocesses` option is incompatible with :option:`--live` mode
 because live mode uses an interactive terminal interface that cannot
 accommodate multiple concurrent profiler displays.
 
@@ -1203,9 +1203,9 @@ Sampling options
    Compatible with ``--live``, ``--flamegraph``, ``--heatmap``, and ``--gecko``
    formats only.
 
-.. option:: --children
+.. option:: --subprocesses
 
-   Also profile child processes. Each child process gets its own profiler
+   Also profile subprocesses. Each subprocess gets its own profiler
    instance and output file. Incompatible with ``--live``.
 
 

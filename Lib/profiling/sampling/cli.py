@@ -89,7 +89,7 @@ COLLECTOR_MAP = {
 def _setup_child_monitor(args, parent_pid):
     from ._child_monitor import ChildProcessMonitor
 
-    # Build CLI args for child profilers (excluding --children to avoid recursion)
+    # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
 
     # Build output pattern
@@ -103,7 +103,7 @@ def _setup_child_monitor(args, parent_pid):
 
 
 def _get_child_monitor_context(args, pid):
-    if getattr(args, 'children', False):
+    if getattr(args, 'subprocesses', False):
         return _setup_child_monitor(args, pid)
     return nullcontext()
 
@@ -157,7 +157,7 @@ def _build_output_pattern(args):
         if args.format == "heatmap":
             return "heatmap_{pid}"
         if args.format == "pstats":
-            # pstats defaults to stdout, but for children we need files
+            # pstats defaults to stdout, but for subprocesses we need files
             return "profile.{pid}.pstats"
         return f"{args.format}.{{pid}}.{extension}"
 
@@ -286,9 +286,9 @@ def _add_sampling_options(parser):
         help="Enable async-aware profiling (uses task-based stack reconstruction)",
     )
     sampling_group.add_argument(
-        "--children",
+        "--subprocesses",
         action="store_true",
-        help="Also profile child processes. Each child gets its own profiler and output file.",
+        help="Also profile subprocesses. Each subprocess gets its own profiler and output file.",
     )
 
 
@@ -490,10 +490,10 @@ def _validate_args(args, parser):
             "Live mode requires the curses module, which is not available."
         )
 
-    # --children is incompatible with --live
-    if hasattr(args, 'children') and args.children:
+    # --subprocesses is incompatible with --live
+    if hasattr(args, 'subprocesses') and args.subprocesses:
         if hasattr(args, 'live') and args.live:
-            parser.error("--children is incompatible with --live mode.")
+            parser.error("--subprocesses is incompatible with --live mode.")
 
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
     if args.async_aware:
