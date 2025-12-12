@@ -1097,7 +1097,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
+    op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
             // Note: we must strip the reference information because it goes
@@ -1107,7 +1107,6 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
         }
-        a = arg;
     }
 
     op(_GUARD_TOS_LIST, (tos -- tos)) {
