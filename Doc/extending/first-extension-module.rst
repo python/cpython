@@ -315,7 +315,7 @@ Add a :c:data:`Py_mod_methods` slot to your a :c:type:`PyMethodDef` array:
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module slot table
    :end-before: ///
-   :emphasize-lines: 6
+   :emphasize-lines: 5
 
 Recompile your extension again, and test it.
 Be sure to restart the Python interpreter, so that ``import spam`` picks
