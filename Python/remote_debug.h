@@ -729,6 +729,11 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
             filename = path;  // No directories, or an empty string
         }
 
+        if (filename[0] == '[' && filename[strlen(filename)-1] == ']') {
+            // Skip anonymous mapping: [heap], [anon:cpython:pymalloc], etc.
+            continue;
+        }
+
         if (strstr(filename, substr)) {
             retval = search_elf_file_for_section(handle, secname, start, path);
             if (retval) {
