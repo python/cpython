@@ -5,15 +5,17 @@ import collections
 import html
 import importlib.resources
 import json
+import math
 import os
 import platform
 import site
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple
 
 from ._css_utils import get_combined_css
+from .collector import normalize_location, extract_lineno
 from .stack_collector import StackTraceCollector
 
 
@@ -42,31 +44,6 @@ class TreeNode:
     samples: int = 0
     count: int = 0
     children: Dict[str, 'TreeNode'] = field(default_factory=dict)
-
-
-@dataclass
-class ColorGradient:
-    """Configuration for heatmap color gradient calculations."""
-    # Color stops thresholds
-    stop_1: float = 0.2  # Blue to cyan transition
-    stop_2: float = 0.4  # Cyan to green transition
-    stop_3: float = 0.6  # Green to yellow transition
-    stop_4: float = 0.8  # Yellow to orange transition
-    stop_5: float = 1.0  # Orange to red transition
-
-    # Alpha (opacity) values
-    alpha_very_cold: float = 0.3
-    alpha_cold: float = 0.4
-    alpha_medium: float = 0.5
-    alpha_warm: float = 0.6
-    alpha_hot_base: float = 0.7
-    alpha_hot_range: float = 0.15
-
-    # Gradient multiplier
-    multiplier: int = 5
-
-    # Cache for calculated colors
-    cache: Dict[float, Tuple[int, int, int, float]] = field(default_factory=dict)
 
 
 # ============================================================================
@@ -224,18 +201,19 @@ class _TemplateLoader:
             self.file_css = css_content
 
             # Load JS
-            self.index_js = (assets_dir / "heatmap_index.js").read_text(encoding="utf-8")
-            self.file_js = (assets_dir / "heatmap.js").read_text(encoding="utf-8")
+            shared_js = (assets_dir / "heatmap_shared.js").read_text(encoding="utf-8")
+            self.index_js = f"{shared_js}\n{(assets_dir / 'heatmap_index.js').read_text(encoding='utf-8')}"
+            self.file_js = f"{shared_js}\n{(assets_dir / 'heatmap.js').read_text(encoding='utf-8')}"
 
-            # Load Python logo
+            # Load Tachyon logo
             logo_dir = template_dir / "_assets"
             try:
-                png_path = logo_dir / "python-logo-only.png"
+                png_path = logo_dir / "tachyon-logo.png"
                 b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
-                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo" class="python-logo"/>'
+                self.logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo" class="python-logo"/>'
             except (FileNotFoundError, IOError) as e:
                 self.logo_html = '<div class="python-logo-placeholder"></div>'
-                print(f"Warning: Could not load Python logo: {e}")
+                print(f"Warning: Could not load Tachyon logo: {e}")
 
         except (FileNotFoundError, IOError) as e:
             raise RuntimeError(f"Failed to load heatmap template files: {e}") from e
@@ -321,18 +299,13 @@ class _TreeBuilder:
 class _HtmlRenderer:
     """Renders hierarchical tree structures as HTML."""
 
-    def __init__(self, file_index: Dict[str, str], color_gradient: ColorGradient,
-                 calculate_intensity_color_func):
-        """Initialize renderer with file index and color calculation function.
+    def __init__(self, file_index: Dict[str, str]):
+        """Initialize renderer with file index.
 
         Args:
             file_index: Mapping from filenames to HTML file names
-            color_gradient: ColorGradient configuration
-            calculate_intensity_color_func: Function to calculate colors
         """
         self.file_index = file_index
-        self.color_gradient = color_gradient
-        self.calculate_intensity_color = calculate_intensity_color_func
         self.heatmap_bar_height = 16
 
     def render_hierarchical_html(self, trees: Dict[str, TreeNode]) -> str:
@@ -363,12 +336,14 @@ class _HtmlRenderer:
             icon = '▶' if is_collapsed else '▼'
             content_style = ' style="display: none;"' if is_collapsed else ''
 
+            file_word = "file" if tree.count == 1 else "files"
+            sample_word = "sample" if tree.samples == 1 else "samples"
             section_html = f'''
 <div class="type-section">
   <div class="type-header" onclick="toggleTypeSection(this)">
     <span class="type-icon">{icon}</span>
     <span class="type-title">{type_names[module_type]}</span>
-    <span class="type-stats">({tree.count} files, {tree.samples:,} samples)</span>
+    <span class="type-stats">({tree.count} {file_word}, {tree.samples:,} {sample_word})</span>
   </div>
   <div class="type-content"{content_style}>
 '''
@@ -408,11 +383,14 @@ class _HtmlRenderer:
         parts = []
 
         # Render folder header (collapsed by default)
+        file_word = "file" if node.count == 1 else "files"
+        sample_word = "sample" if node.samples == 1 else "samples"
         parts.append(f'{indent}<div class="folder-node collapsed" data-level="{level}">')
         parts.append(f'{indent}  <div class="folder-header" onclick="toggleFolder(this)">')
         parts.append(f'{indent}    <span class="folder-icon">▶</span>')
         parts.append(f'{indent}    <span class="folder-name">📁 {html.escape(name)}</span>')
-        parts.append(f'{indent}    <span class="folder-stats">({node.count} files, {node.samples:,} samples)</span>')
+        parts.append(f'{indent}    <span class="folder-stats">'
+                     f'({node.count} {file_word}, {node.samples:,} {sample_word})</span>')
         parts.append(f'{indent}  </div>')
         parts.append(f'{indent}  <div class="folder-content" style="display: none;">')
 
@@ -450,8 +428,6 @@ class _HtmlRenderer:
         module_name = html.escape(stat.module_name)
 
         intensity = stat.percentage / 100.0
-        r, g, b, alpha = self.calculate_intensity_color(intensity)
-        bg_color = f"rgba({r}, {g}, {b}, {alpha})"
         bar_width = min(stat.percentage, 100)
 
         html_file = self.file_index[stat.filename]
@@ -459,7 +435,7 @@ class _HtmlRenderer:
         return (f'{indent}<div class="file-item">\n'
                 f'{indent}  <a href="{html_file}" class="file-link" title="{full_path}">📄 {module_name}</a>\n'
                 f'{indent}  <span class="file-samples">{stat.total_samples:,} samples</span>\n'
-                f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; background-color: {bg_color}; height: {self.heatmap_bar_height}px;"></div></div>\n'
+                f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; height: {self.heatmap_bar_height}px;" data-intensity="{intensity:.3f}"></div></div>\n'
                 f'{indent}</div>\n')
 
 
@@ -488,21 +464,26 @@ class HeatmapCollector(StackTraceCollector):
         self.line_self_samples = collections.Counter()
         self.file_self_samples = collections.defaultdict(collections.Counter)
 
-        # Call graph data structures for navigation
-        self.call_graph = collections.defaultdict(list)
-        self.callers_graph = collections.defaultdict(list)
+        # Call graph data structures for navigation (sets for O(1) deduplication)
+        self.call_graph = collections.defaultdict(set)
+        self.callers_graph = collections.defaultdict(set)
         self.function_definitions = {}
 
         # Edge counting for call path analysis
         self.edge_samples = collections.Counter()
+
+        # Bytecode-level tracking data structures
+        # Track samples per (file, lineno) -> {opcode: {'count': N, 'locations': set()}}
+        # Locations are deduplicated via set to minimize memory usage
+        self.line_opcodes = collections.defaultdict(dict)
 
         # Statistics and metadata
         self._total_samples = 0
         self._path_info = get_python_path_info()
         self.stats = {}
 
-        # Color gradient configuration
-        self._color_gradient = ColorGradient()
+        # Opcode collection flag
+        self.opcodes_enabled = False
 
         # Template loader (loads all templates once)
         self._template_loader = _TemplateLoader()
@@ -510,10 +491,9 @@ class HeatmapCollector(StackTraceCollector):
         # File index (populated during export)
         self.file_index = {}
 
-    @property
-    def _color_cache(self):
-        """Compatibility property for accessing color cache."""
-        return self._color_gradient.cache
+        # Reusable set for deduplicating line locations within a single sample.
+        # This avoids over-counting recursive functions in cumulative stats.
+        self._seen_lines = set()
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, missed_samples=None, **kwargs):
         """Set profiling statistics to include in heatmap output.
@@ -542,26 +522,45 @@ class HeatmapCollector(StackTraceCollector):
         """Process stack frames and count samples per line.
 
         Args:
-            frames: List of frame tuples (filename, lineno, funcname)
-                    frames[0] is the leaf (top of stack, where execution is)
+            frames: List of (filename, location, funcname, opcode) tuples in
+                    leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
+                    opcode is None if not gathered.
             thread_id: Thread ID for this stack trace
         """
         self._total_samples += 1
+        self._seen_lines.clear()
 
-        # Count each line in the stack and build call graph
-        for i, frame_info in enumerate(frames):
-            filename, lineno, funcname = frame_info
+        for i, (filename, location, funcname, opcode) in enumerate(frames):
+            # Normalize location to 4-tuple format
+            lineno, end_lineno, col_offset, end_col_offset = normalize_location(location)
 
             if not self._is_valid_frame(filename, lineno):
                 continue
 
             # frames[0] is the leaf - where execution is actually happening
             is_leaf = (i == 0)
-            self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf)
+            line_key = (filename, lineno)
+            count_cumulative = line_key not in self._seen_lines
+            if count_cumulative:
+                self._seen_lines.add(line_key)
+
+            self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf,
+                                     count_cumulative=count_cumulative)
+
+            if opcode is not None:
+                # Set opcodes_enabled flag when we first encounter opcode data
+                self.opcodes_enabled = True
+                self._record_bytecode_sample(filename, lineno, opcode,
+                                             end_lineno, col_offset, end_col_offset)
 
             # Build call graph for adjacent frames
             if i + 1 < len(frames):
-                self._record_call_relationship(frames[i], frames[i + 1])
+                next_frame = frames[i + 1]
+                next_lineno = extract_lineno(next_frame[1])
+                self._record_call_relationship(
+                    (filename, lineno, funcname),
+                    (next_frame[0], next_lineno, next_frame[2])
+                )
 
     def _is_valid_frame(self, filename, lineno):
         """Check if a frame should be included in the heatmap."""
@@ -575,11 +574,13 @@ class HeatmapCollector(StackTraceCollector):
 
         return True
 
-    def _record_line_sample(self, filename, lineno, funcname, is_leaf=False):
+    def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
+                            count_cumulative=True):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
-        self.line_samples[(filename, lineno)] += 1
-        self.file_samples[filename][lineno] += 1
+        if count_cumulative:
+            self.line_samples[(filename, lineno)] += 1
+            self.file_samples[filename][lineno] += 1
 
         # Track self/leaf samples (only when at top of stack)
         if is_leaf:
@@ -589,6 +590,79 @@ class HeatmapCollector(StackTraceCollector):
         # Record function definition location
         if funcname and (filename, funcname) not in self.function_definitions:
             self.function_definitions[(filename, funcname)] = lineno
+
+    def _record_bytecode_sample(self, filename, lineno, opcode,
+                                end_lineno=None, col_offset=None, end_col_offset=None):
+        """Record a sample for a specific bytecode instruction.
+
+        Args:
+            filename: Source filename
+            lineno: Line number
+            opcode: Opcode number being executed
+            end_lineno: End line number (may be -1 if not available)
+            col_offset: Column offset in UTF-8 bytes (may be -1 if not available)
+            end_col_offset: End column offset in UTF-8 bytes (may be -1 if not available)
+        """
+        key = (filename, lineno)
+
+        # Initialize opcode entry if needed - use set for location deduplication
+        if opcode not in self.line_opcodes[key]:
+            self.line_opcodes[key][opcode] = {'count': 0, 'locations': set()}
+
+        self.line_opcodes[key][opcode]['count'] += 1
+
+        # Store unique location info if column offset is available (not -1)
+        if col_offset is not None and col_offset >= 0:
+            # Use tuple as set key for deduplication
+            loc_key = (end_lineno, col_offset, end_col_offset)
+            self.line_opcodes[key][opcode]['locations'].add(loc_key)
+
+    def _get_bytecode_data_for_line(self, filename, lineno):
+        """Get bytecode disassembly data for instructions on a specific line.
+
+        Args:
+            filename: Source filename
+            lineno: Line number
+
+        Returns:
+            List of dicts with instruction info, sorted by samples descending
+        """
+        from .opcode_utils import get_opcode_info, format_opcode
+
+        key = (filename, lineno)
+        opcode_data = self.line_opcodes.get(key, {})
+
+        result = []
+        for opcode, data in opcode_data.items():
+            info = get_opcode_info(opcode)
+            # Handle both old format (int count) and new format (dict with count/locations)
+            if isinstance(data, dict):
+                count = data.get('count', 0)
+                raw_locations = data.get('locations', set())
+                # Convert set of tuples to list of dicts for JSON serialization
+                if isinstance(raw_locations, set):
+                    locations = [
+                        {'end_lineno': loc[0], 'col_offset': loc[1], 'end_col_offset': loc[2]}
+                        for loc in raw_locations
+                    ]
+                else:
+                    locations = raw_locations
+            else:
+                count = data
+                locations = []
+
+            result.append({
+                'opcode': opcode,
+                'opname': format_opcode(opcode),
+                'base_opname': info['base_opname'],
+                'is_specialized': info['is_specialized'],
+                'samples': count,
+                'locations': locations,
+            })
+
+        # Sort by samples descending, then by opcode number
+        result.sort(key=lambda x: (-x['samples'], x['opcode']))
+        return result
 
     def _record_call_relationship(self, callee_frame, caller_frame):
         """Record caller/callee relationship between adjacent frames."""
@@ -604,17 +678,15 @@ class HeatmapCollector(StackTraceCollector):
             (callee_filename, callee_funcname), callee_lineno
         )
 
-        # Record caller -> callee relationship
+        # Record caller -> callee relationship (set handles deduplication)
         caller_key = (caller_filename, caller_lineno)
         callee_info = (callee_filename, callee_def_line, callee_funcname)
-        if callee_info not in self.call_graph[caller_key]:
-            self.call_graph[caller_key].append(callee_info)
+        self.call_graph[caller_key].add(callee_info)
 
-        # Record callee <- caller relationship
+        # Record callee <- caller relationship (set handles deduplication)
         callee_key = (callee_filename, callee_def_line)
         caller_info = (caller_filename, caller_lineno, caller_funcname)
-        if caller_info not in self.callers_graph[callee_key]:
-            self.callers_graph[callee_key].append(caller_info)
+        self.callers_graph[callee_key].add(caller_info)
 
         # Count this call edge for path analysis
         edge_key = (caller_key, callee_key)
@@ -746,8 +818,7 @@ class HeatmapCollector(StackTraceCollector):
         tree = _TreeBuilder.build_file_tree(file_stats)
 
         # Render tree as HTML
-        renderer = _HtmlRenderer(self.file_index, self._color_gradient,
-                                self._calculate_intensity_color)
+        renderer = _HtmlRenderer(self.file_index)
         sections_html = renderer.render_hierarchical_html(tree)
 
         # Format error rate and missed samples with bar classes
@@ -809,56 +880,6 @@ class HeatmapCollector(StackTraceCollector):
         except (IOError, OSError) as e:
             raise RuntimeError(f"Failed to write index file {index_path}: {e}") from e
 
-    def _calculate_intensity_color(self, intensity: float) -> Tuple[int, int, int, float]:
-        """Calculate RGB color and alpha for given intensity (0-1 range).
-
-        Returns (r, g, b, alpha) tuple representing the heatmap color gradient:
-        blue -> green -> yellow -> orange -> red
-
-        Results are cached to improve performance.
-        """
-        # Round to 3 decimal places for cache key
-        cache_key = round(intensity, 3)
-        if cache_key in self._color_gradient.cache:
-            return self._color_gradient.cache[cache_key]
-
-        gradient = self._color_gradient
-        m = gradient.multiplier
-
-        # Color stops with (threshold, rgb_func, alpha_func)
-        stops = [
-            (gradient.stop_1,
-             lambda i: (0, int(150 * i * m), 255),
-             lambda i: gradient.alpha_very_cold),
-            (gradient.stop_2,
-             lambda i: (0, 255, int(255 * (1 - (i - gradient.stop_1) * m))),
-             lambda i: gradient.alpha_cold),
-            (gradient.stop_3,
-             lambda i: (int(255 * (i - gradient.stop_2) * m), 255, 0),
-             lambda i: gradient.alpha_medium),
-            (gradient.stop_4,
-             lambda i: (255, int(200 - 100 * (i - gradient.stop_3) * m), 0),
-             lambda i: gradient.alpha_warm),
-            (gradient.stop_5,
-             lambda i: (255, int(100 * (1 - (i - gradient.stop_4) * m)), 0),
-             lambda i: gradient.alpha_hot_base + gradient.alpha_hot_range * (i - gradient.stop_4) * m),
-        ]
-
-        result = None
-        for threshold, rgb_func, alpha_func in stops:
-            if intensity < threshold or threshold == gradient.stop_5:
-                r, g, b = rgb_func(intensity)
-                result = (r, g, b, alpha_func(intensity))
-                break
-
-        # Fallback
-        if result is None:
-            result = (255, 0, 0, 0.75)
-
-        # Cache the result
-        self._color_gradient.cache[cache_key] = result
-        return result
-
     def _generate_file_html(self, output_path: Path, filename: str,
                           line_counts: Dict[int, int], self_counts: Dict[int, int],
                           file_stat: FileStats):
@@ -893,6 +914,7 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- CODE_LINES -->": ''.join(code_lines_html),
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
+            "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
         }
 
         html_content = self._template_loader.file_template
@@ -913,58 +935,205 @@ class HeatmapCollector(StackTraceCollector):
 
         # Calculate colors for both self and cumulative modes
         if cumulative_samples > 0:
-            cumulative_intensity = cumulative_samples / max_samples if max_samples > 0 else 0
-            self_intensity = self_samples / max_self_samples if max_self_samples > 0 and self_samples > 0 else 0
+            log_cumulative = math.log(cumulative_samples + 1)
+            log_max = math.log(max_samples + 1)
+            cumulative_intensity = log_cumulative / log_max if log_max > 0 else 0
 
-            # Default to self-based coloring
-            intensity = self_intensity if self_samples > 0 else cumulative_intensity
-            r, g, b, alpha = self._calculate_intensity_color(intensity)
-            bg_color = f"rgba({r}, {g}, {b}, {alpha})"
-
-            # Pre-calculate colors for both modes (for JS toggle)
-            self_bg_color = self._format_color_for_intensity(self_intensity) if self_samples > 0 else "transparent"
-            cumulative_bg_color = self._format_color_for_intensity(cumulative_intensity)
+            if self_samples > 0 and max_self_samples > 0:
+                log_self = math.log(self_samples + 1)
+                log_max_self = math.log(max_self_samples + 1)
+                self_intensity = log_self / log_max_self if log_max_self > 0 else 0
+            else:
+                self_intensity = 0
 
             self_display = f"{self_samples:,}" if self_samples > 0 else ""
             cumulative_display = f"{cumulative_samples:,}"
             tooltip = f"Self: {self_samples:,}, Total: {cumulative_samples:,}"
         else:
-            bg_color = "transparent"
-            self_bg_color = "transparent"
-            cumulative_bg_color = "transparent"
+            cumulative_intensity = 0
+            self_intensity = 0
             self_display = ""
             cumulative_display = ""
             tooltip = ""
 
+        # Get bytecode data for this line (if any)
+        bytecode_data = self._get_bytecode_data_for_line(filename, line_num)
+        has_bytecode = len(bytecode_data) > 0 and cumulative_samples > 0
+
+        # Build bytecode toggle button if data is available
+        bytecode_btn_html = ''
+        bytecode_panel_html = ''
+        if has_bytecode:
+            bytecode_json = html.escape(json.dumps(bytecode_data))
+
+            # Calculate specialization percentage
+            total_samples = sum(d['samples'] for d in bytecode_data)
+            specialized_samples = sum(d['samples'] for d in bytecode_data if d['is_specialized'])
+            spec_pct = int(100 * specialized_samples / total_samples) if total_samples > 0 else 0
+
+            bytecode_btn_html = (
+                f'<button class="bytecode-toggle" data-bytecode=\'{bytecode_json}\' '
+                f'data-spec-pct="{spec_pct}" '
+                f'onclick="toggleBytecode(this)" title="Show bytecode">&#9654;</button>'
+            )
+            bytecode_panel_html = f'        <div class="bytecode-panel" id="bytecode-{line_num}" style="display:none;"></div>\n'
+        elif self.opcodes_enabled:
+            # Add invisible spacer to maintain consistent indentation when opcodes are enabled
+            bytecode_btn_html = '<div class="bytecode-spacer"></div>'
+
         # Get navigation buttons
         nav_buttons_html = self._build_navigation_buttons(filename, line_num)
 
-        # Build line HTML
-        line_html = html.escape(line_content.rstrip('\n'))
+        # Build line HTML with instruction highlights if available
+        line_html = self._render_source_with_highlights(line_content, line_num,
+                                                         filename, bytecode_data)
         title_attr = f' title="{html.escape(tooltip)}"' if tooltip else ""
 
+        # Specialization color for toggle mode (green gradient based on spec %)
+        spec_color_attr = ''
+        if has_bytecode:
+            spec_color = self._format_specialization_color(spec_pct)
+            spec_color_attr = f'data-spec-color="{spec_color}" '
+
         return (
-            f'        <div class="code-line" data-bg-color="{bg_color}" '
-            f'data-self-color="{self_bg_color}" data-cumulative-color="{cumulative_bg_color}" '
+            f'        <div class="code-line" '
+            f'data-self-intensity="{self_intensity:.3f}" '
+            f'data-cumulative-intensity="{cumulative_intensity:.3f}" '
+            f'{spec_color_attr}'
             f'id="line-{line_num}"{title_attr}>\n'
             f'            <div class="line-number">{line_num}</div>\n'
             f'            <div class="line-samples-self">{self_display}</div>\n'
             f'            <div class="line-samples-cumulative">{cumulative_display}</div>\n'
+            f'            {bytecode_btn_html}\n'
             f'            <div class="line-content">{line_html}</div>\n'
             f'            {nav_buttons_html}\n'
             f'        </div>\n'
+            f'{bytecode_panel_html}'
         )
 
-    def _format_color_for_intensity(self, intensity: float) -> str:
-        """Format color as rgba() string for given intensity."""
-        r, g, b, alpha = self._calculate_intensity_color(intensity)
+    def _render_source_with_highlights(self, line_content: str, line_num: int,
+                                        filename: str, bytecode_data: list) -> str:
+        """Render source line with instruction highlight spans.
+
+        Simple: collect ranges with sample counts, assign each byte position to
+        smallest covering range, then emit spans for contiguous runs with sample data.
+        """
+        import html as html_module
+
+        content = line_content.rstrip('\n')
+        if not content:
+            return ''
+
+        # Collect all (start, end) -> {samples, opcodes} mapping from instructions
+        # Multiple instructions may share the same range, so we sum samples and collect opcodes
+        range_data = {}
+        for instr in bytecode_data:
+            samples = instr.get('samples', 0)
+            opname = instr.get('opname', '')
+            for loc in instr.get('locations', []):
+                if loc.get('end_lineno', line_num) == line_num:
+                    start, end = loc.get('col_offset', -1), loc.get('end_col_offset', -1)
+                    if start >= 0 and end >= 0:
+                        key = (start, end)
+                        if key not in range_data:
+                            range_data[key] = {'samples': 0, 'opcodes': []}
+                        range_data[key]['samples'] += samples
+                        if opname and opname not in range_data[key]['opcodes']:
+                            range_data[key]['opcodes'].append(opname)
+
+        if not range_data:
+            return html_module.escape(content)
+
+        # For each byte position, find the smallest covering range
+        byte_to_range = {}
+        for (start, end) in range_data.keys():
+            for pos in range(start, end):
+                if pos not in byte_to_range:
+                    byte_to_range[pos] = (start, end)
+                else:
+                    # Keep smaller range
+                    old_start, old_end = byte_to_range[pos]
+                    if (end - start) < (old_end - old_start):
+                        byte_to_range[pos] = (start, end)
+
+        # Calculate totals for percentage and intensity
+        total_line_samples = sum(d['samples'] for d in range_data.values())
+        max_range_samples = max(d['samples'] for d in range_data.values()) if range_data else 1
+
+        # Render character by character
+        result = []
+        byte_offset = 0
+        char_idx = 0
+        current_range = None
+        span_chars = []
+
+        def flush_span():
+            nonlocal span_chars, current_range
+            if span_chars:
+                text = html_module.escape(''.join(span_chars))
+                if current_range:
+                    data = range_data.get(current_range, {'samples': 0, 'opcodes': []})
+                    samples = data['samples']
+                    opcodes = ', '.join(data['opcodes'][:3])  # Top 3 opcodes
+                    if len(data['opcodes']) > 3:
+                        opcodes += f" +{len(data['opcodes']) - 3} more"
+                    pct = int(100 * samples / total_line_samples) if total_line_samples > 0 else 0
+                    result.append(f'<span class="instr-span" '
+                                  f'data-col-start="{current_range[0]}" '
+                                  f'data-col-end="{current_range[1]}" '
+                                  f'data-samples="{samples}" '
+                                  f'data-max-samples="{max_range_samples}" '
+                                  f'data-pct="{pct}" '
+                                  f'data-opcodes="{html_module.escape(opcodes)}">{text}</span>')
+                else:
+                    result.append(text)
+                span_chars = []
+
+        while char_idx < len(content):
+            char = content[char_idx]
+            char_bytes = len(char.encode('utf-8'))
+            char_range = byte_to_range.get(byte_offset)
+
+            if char_range != current_range:
+                flush_span()
+                current_range = char_range
+
+            span_chars.append(char)
+            byte_offset += char_bytes
+            char_idx += 1
+
+        flush_span()
+        return ''.join(result)
+
+    def _format_specialization_color(self, spec_pct: int) -> str:
+        """Format specialization color based on percentage.
+
+        Uses a gradient from gray (0%) through orange (50%) to green (100%).
+        """
+        # Normalize to 0-1
+        ratio = spec_pct / 100.0
+
+        if ratio >= 0.5:
+            # Orange to green (50-100%)
+            t = (ratio - 0.5) * 2  # 0 to 1
+            r = int(255 * (1 - t))  # 255 -> 0
+            g = int(180 + 75 * t)   # 180 -> 255
+            b = int(50 * (1 - t))   # 50 -> 0
+        else:
+            # Gray to orange (0-50%)
+            t = ratio * 2  # 0 to 1
+            r = int(158 + 97 * t)   # 158 -> 255
+            g = int(158 + 22 * t)   # 158 -> 180
+            b = int(158 - 108 * t)  # 158 -> 50
+
+        alpha = 0.15 + 0.25 * ratio  # 0.15 to 0.4
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     def _build_navigation_buttons(self, filename: str, line_num: int) -> str:
         """Build navigation buttons for callers/callees."""
         line_key = (filename, line_num)
-        caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, []))
-        callee_list = self._deduplicate_by_function(self.call_graph.get(line_key, []))
+        caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+        callee_list = self._deduplicate_by_function(self.call_graph.get(line_key, set()))
 
         # Get edge counts for each caller/callee
         callers_with_counts = self._get_edge_counts(line_key, caller_list, is_caller=True)
@@ -996,8 +1165,12 @@ class HeatmapCollector(StackTraceCollector):
         result.sort(key=lambda x: x[3], reverse=True)
         return result
 
-    def _deduplicate_by_function(self, items: List[Tuple[str, int, str]]) -> List[Tuple[str, int, str]]:
-        """Remove duplicate entries based on (file, function) key."""
+    def _deduplicate_by_function(self, items) -> List[Tuple[str, int, str]]:
+        """Remove duplicate entries based on (file, function) key.
+
+        Args:
+            items: Iterable of (file, line, func) tuples (set or list)
+        """
         seen = {}
         result = []
         for file, line, func in items:

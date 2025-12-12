@@ -1925,6 +1925,21 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
+    def test_call_tuple_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = tuple(())
+                x += len(t) == 0
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TUPLE_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_str_1(self):
         def testfunc(n):
             x = 0
@@ -2051,6 +2066,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -2695,6 +2711,28 @@ class TestUopsOptimization(unittest.TestCase):
                     pass
         """))
 
+    def test_attribute_changes_are_watched(self):
+        # Just running to make sure it doesn't crash.
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest import TestCase
+            NTHREADS = 6
+            BOTTOM = 0
+            TOP = 1250000
+            class A:
+                attr = 10**1000
+            class TestType(TestCase):
+                def read(id0):
+                    for _ in range(BOTTOM, TOP):
+                        A.attr
+                def write(id0):
+                    x = A.attr
+                    x += 1
+                    A.attr = x
+                    with ThreadPoolExecutor(NTHREADS) as pool:
+                        pool.submit(read, (1,))
+                        pool.submit(write, (1,))
+        """))
 
 def global_identity(x):
     return x
