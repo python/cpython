@@ -1999,6 +1999,48 @@ Loading and running tests
       .. versionchanged:: 3.13
          *top_level_dir* is only stored for the duration of *discover* call.
 
+
+.. _testrunner-objects:
+
+Test runners
+~~~~~~~~~~~~
+
+.. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1,
+                          warnings=None, *, resultclass=None)
+
+   A basic test runner implementation that outputs results to a stream.
+
+   This class has a few configurable parameters, controlling the output:
+
+   :param stream: The stream to which the test results are printed. By
+      default, this is ``sys.stderr``.
+   :param descriptions: Controls whether test descriptions are displayed.
+      Defaults to ``True``.
+   :param verbosity: Controls the verbosity level of the output. Higher
+      numbers mean more verbose output. Defaults to ``1``.
+   :param warnings: Controls how warnings are handled during the test run.
+      See the :mod:`warnings` module documentation for details.
+      Defaults to ``None``.
+   :param resultclass: The class to instantiate for test results. Defaults
+      to :class:`TextTestResult`.
+
+   .. versionchanged:: 3.1
+      Added `warnings` parameter.
+
+   .. versionchanged:: 3.2
+      Added `resultclass` parameter.
+
+   .. method:: run(test)
+
+      Run the given test case or test suite.
+
+      :param test: The :class:`TestCase` or :class:`TestSuite` object to run.
+      :returns: The :class:`TestResult` object produced by the test run.
+
+      This method is commonly used by :func:`unittest.main` to execute tests.
+      `unittest.main` will instantiate a :class:`TextTestRunner` and call its
+      `run()` method implicitly.
+
       .. versionchanged:: 3.14
          *start_dir* can once again be a :term:`namespace package`.
 
