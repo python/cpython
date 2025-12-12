@@ -110,7 +110,6 @@ _bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
     self->ob_exports--;
     assert(self->ob_exports >= 0);
     Py_END_CRITICAL_SECTION();
-    
     return res;
 }
 
