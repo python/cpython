@@ -5,37 +5,7 @@ class ItemInterpreterDestroyed(Exception):
     """Raised when trying to get an item whose interpreter was destroyed."""
 
 
-class UnboundItem:
-    """Represents a cross-interpreter item no longer bound to an interpreter.
-
-    An item is unbound when the interpreter that added it to the
-    cross-interpreter container is destroyed.
-    """
-
-    __slots__ = ()
-    _MODULE = __name__
-    _NAME = 'UNBOUND'
-
-    def __new__(cls):
-        raise Exception(f'use {cls._MODULE}.{cls._NAME}')
-
-    def __hash__(self):
-        return hash((self._NAME, self._MODULE))
-
-    def __reduce__(self):
-        return self._NAME
-
-    def __eq__(self, other):
-        if other is self:
-            return True
-        return repr(other) == repr(self)
-
-    def __repr__(self):
-        return f'{self._MODULE}.{self._NAME}'
-#        return f'interpreters._queues.UNBOUND'
-
-
-UNBOUND = UnboundItem()
+UNBOUND = object()
 UNBOUND_ERROR = object()
 UNBOUND_REMOVE = object()
 
