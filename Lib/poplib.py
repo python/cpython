@@ -221,27 +221,7 @@ class POP3:
     def auth(self, mechanism, authobject=None, initial_response=None):
         """Authenticate to the POP3 server using the AUTH command (RFC 5034).
 
-        Parameters
-        ----------
-        mechanism : str
-            SASL mechanism name, e.g. 'PLAIN', 'CRAM-MD5'.
-        authobject : callable, optional
-            Challenge-response callback.  Called with a `bytes` challenge
-            (already base64-decoded) and must return `bytes` or `str`.
-            Return ``b'*'`` to abort the exchange.
-        initial_response : bytes or str, optional
-            Initial client response to send immediately after the AUTH command.
-            If you supply this you must **not** supply *authobject*.
-
-        Returns
-        -------
-        bytes
-            The server's final line (``+OK ...`` or ``-ERR ...``).
-
-        Raises
-        ------
-        ValueError
-            If both *authobject* and *initial_response* are given.
+        Result is 'response'.
         """
         if authobject is not None and initial_response is not None:
             raise ValueError('authobject and initial_response are mutually exclusive')
