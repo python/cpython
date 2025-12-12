@@ -801,6 +801,17 @@ class PydocDocTest(unittest.TestCase):
         run_pydoc_pager('sys', 'sys', 'Help on built-in module sys:')
         run_pydoc_pager(sys, 'sys', 'Help on built-in module sys:')
 
+    @requires_docstrings
+    def test_str_docstring_signature(self):
+        doc = pydoc.TextDoc()
+        text = clean_text(doc.docclass(str))
+        self.assertIn(" |  str(object='') -> str", text)
+        self.assertIn(" |  str(object=b'', encoding='utf-8', errors='strict') -> str", text)
+        self.assertNotIn("str(bytes_or_buffer", text)
+        self.assertIn("bytes-like object", text)
+        self.assertNotIn("encoding defaults", text)
+        self.assertNotIn("errors defaults", text)
+
     def test_showtopic(self):
         with captured_stdout() as showtopic_io:
             helper = pydoc.Helper()
