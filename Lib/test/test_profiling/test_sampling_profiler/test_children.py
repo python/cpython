@@ -19,6 +19,10 @@ from .helpers import (
     _cleanup_process,
 )
 
+# String to check for in stderr when profiler lacks permissions (e.g., macOS)
+_PERMISSION_ERROR_MSG = "Permission Error"
+_SKIP_PERMISSION_MSG = "Insufficient permissions for remote profiling"
+
 
 def _readline_with_timeout(file_obj, timeout):
     # Thread-based readline with timeout - works across all platforms
@@ -580,9 +584,12 @@ class TestIsPythonProcess(unittest.TestCase):
             while time.time() < deadline:
                 if proc.poll() is not None:
                     self.fail(f"Process {proc.pid} exited unexpectedly")
-                if is_python_process(proc.pid):
-                    detected = True
-                    break
+                try:
+                    if is_python_process(proc.pid):
+                        detected = True
+                        break
+                except PermissionError:
+                    self.skipTest(_SKIP_PERMISSION_MSG)
                 time.sleep(0.05)
 
             self.assertTrue(
@@ -947,6 +954,9 @@ child.wait()
                 timeout=SHORT_TIMEOUT,
             )
 
+            if _PERMISSION_ERROR_MSG in result.stderr:
+                self.skipTest(_SKIP_PERMISSION_MSG)
+
             # Check that parent output file was created
             self.assertTrue(
                 os.path.exists(output_file),
@@ -1010,6 +1020,9 @@ child.wait()
                 timeout=SHORT_TIMEOUT,
             )
 
+            if _PERMISSION_ERROR_MSG in result.stderr:
+                self.skipTest(_SKIP_PERMISSION_MSG)
+
             self.assertTrue(
                 os.path.exists(output_file),
                 f"Flamegraph output not created. stderr: {result.stderr}",
@@ -1062,6 +1075,9 @@ time.sleep(1)
                 text=True,
                 timeout=SHORT_TIMEOUT,
             )
+
+            if _PERMISSION_ERROR_MSG in result.stderr:
+                self.skipTest(_SKIP_PERMISSION_MSG)
 
             # Should not crash - exit code 0
             self.assertEqual(
