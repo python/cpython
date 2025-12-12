@@ -191,6 +191,11 @@ production systems. The target process requires no modification and need not
 be restarted. The profiler attaches, collects samples for the specified
 duration, then detaches and produces output.
 
+::
+
+   python -m profiling.sampling attach --live 12345
+   python -m profiling.sampling attach --flamegraph -d 30 -o profile.html 12345
+
 On most systems, attaching to another process requires appropriate permissions.
 See :ref:`profiling-permissions` for platform-specific requirements.
 
@@ -529,6 +534,25 @@ I/O-bound or waiting. The function spends most of its time waiting for network,
 disk, locks, or sleep. CPU optimization won't help here; consider async I/O,
 connection pooling, or reducing wait time instead.
 
+.. code-block:: python
+
+   import time
+
+   def do_sleep():
+       time.sleep(2)
+
+   def do_compute():
+       sum(i**2 for i in range(1000000))
+
+   if __name__ == "__main__":
+       do_sleep()
+       do_compute()
+
+::
+
+   python -m profiling.sampling run --mode=wall script.py  # do_sleep ~98%, do_compute ~1%
+   python -m profiling.sampling run --mode=cpu script.py   # do_sleep absent, do_compute dominates
+
 
 GIL mode
 --------
@@ -552,6 +576,29 @@ GIL mode helps answer questions like "which functions are monopolizing the
 GIL?" and "why are my other threads starving?" It can also be useful in
 single-threaded programs to distinguish Python execution time from time spent
 in C extensions or I/O.
+
+.. code-block:: python
+
+   import hashlib
+
+   def hash_work():
+       # C extension - releases GIL during computation
+       for _ in range(200):
+           hashlib.sha256(b"data" * 250000).hexdigest()
+
+   def python_work():
+       # Pure Python - holds GIL during computation
+       for _ in range(3):
+           sum(i**2 for i in range(1000000))
+
+   if __name__ == "__main__":
+       hash_work()
+       python_work()
+
+::
+
+   python -m profiling.sampling run --mode=cpu script.py  # hash_work ~42%, python_work ~38%
+   python -m profiling.sampling run --mode=gil script.py  # hash_work ~5%, python_work ~60%
 
 
 Exception mode
@@ -951,6 +998,25 @@ Standard profiling of async code can be confusing because the physical call
 stack often shows event loop internals rather than the logical flow of your
 coroutines. Async-aware mode addresses this by tracking which task is running
 and presenting stacks that reflect the ``await`` chain.
+
+.. code-block:: python
+
+   import asyncio
+
+   async def fetch(url):
+       await asyncio.sleep(0.1)
+       return url
+
+   async def main():
+       for _ in range(50):
+           await asyncio.gather(fetch("a"), fetch("b"), fetch("c"))
+
+   if __name__ == "__main__":
+       asyncio.run(main())
+
+::
+
+   python -m profiling.sampling run --async-aware --flamegraph -o out.html script.py
 
 .. note::
 
