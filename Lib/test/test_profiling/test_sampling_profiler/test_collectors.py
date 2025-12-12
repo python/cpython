@@ -87,7 +87,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Should still process the frames
         self.assertEqual(len(collector.result), 1)
 
-        # Test collecting duplicate frames in same sample
+        # Test collecting duplicate frames in same sample (recursive function)
         test_frames = [
             MockInterpreterInfo(
                 0,  # interpreter_id
@@ -96,7 +96,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("file.py", 10, "func1"),
-                            MockFrameInfo("file.py", 10, "func1"),  # Duplicate
+                            MockFrameInfo("file.py", 10, "func1"),  # Duplicate (recursion)
                         ],
                     )
                 ],
@@ -104,9 +104,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector = PstatsCollector(sample_interval_usec=1000)
         collector.collect(test_frames)
-        # Should count both occurrences
+        # Should count only once per sample to avoid over-counting recursive functions
         self.assertEqual(
-            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 2
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 1
         )
 
     def test_pstats_collector_single_frame_stacks(self):
@@ -1203,6 +1203,197 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(collector.per_thread_stats[2]["gc_samples"], 1)
         self.assertEqual(collector.per_thread_stats[2]["total"], 6)
         self.assertAlmostEqual(per_thread_stats[2]["gc_pct"], 10.0, places=1)
+
+
+class TestRecursiveFunctionHandling(unittest.TestCase):
+    """Tests for correct handling of recursive functions in cumulative stats."""
+
+    def test_pstats_collector_recursive_function_single_sample(self):
+        """Test that recursive functions are counted once per sample, not per occurrence."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Simulate a recursive function appearing 5 times in one sample
+        recursive_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(recursive_frames)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 1 cumulative call (present in 1 sample), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 1)
+        # Direct calls should be 1 (top of stack)
+        self.assertEqual(collector.result[location]["direct_calls"], 1)
+
+    def test_pstats_collector_recursive_function_multiple_samples(self):
+        """Test cumulative counting across multiple samples with recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Sample 1: recursive function at depth 3
+        sample1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 2: recursive function at depth 2
+        sample2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 3: recursive function at depth 4
+        sample3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(sample1)
+        collector.collect(sample2)
+        collector.collect(sample3)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 3 cumulative calls (present in 3 samples)
+        # Not 3+2+4=9 which would be the buggy behavior
+        self.assertEqual(collector.result[location]["cumulative_calls"], 3)
+        self.assertEqual(collector.result[location]["direct_calls"], 3)
+
+    def test_pstats_collector_mixed_recursive_and_nonrecursive(self):
+        """Test a call stack with both recursive and non-recursive functions."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Stack: main -> foo (recursive x3) -> bar
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 50, "bar"),       # top of stack
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 10, "main"),     # bottom
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # bar: 1 cumulative (in stack), 1 direct (top)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["direct_calls"], 1)
+
+        # foo: 1 cumulative (counted once despite 3 occurrences), 0 direct
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["direct_calls"], 0)
+
+        # main: 1 cumulative, 0 direct
+        self.assertEqual(collector.result[("test.py", 10, "main")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "main")]["direct_calls"], 0)
+
+    def test_pstats_collector_cumulative_percentage_cannot_exceed_100(self):
+        """Test that cumulative percentage stays <= 100% even with deep recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000000)  # 1 second for easy math
+
+        # Collect 10 samples, each with recursive function at depth 100
+        for _ in range(10):
+            frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 10, "deep_recursive")] * 100,
+                        )
+                    ],
+                )
+            ]
+            collector.collect(frames)
+
+        location = ("test.py", 10, "deep_recursive")
+        # Cumulative calls should be 10 (number of samples), not 1000
+        self.assertEqual(collector.result[location]["cumulative_calls"], 10)
+
+        # Verify stats calculation gives correct percentage
+        collector.create_stats()
+        stats = collector.stats[location]
+        # stats format: (direct_calls, cumulative_calls, total_time, cumulative_time, callers)
+        cumulative_calls = stats[1]
+        self.assertEqual(cumulative_calls, 10)
+
+    def test_pstats_collector_different_lines_same_function_counted_separately(self):
+        """Test that different line numbers in same function are tracked separately."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Function with multiple line numbers (e.g., different call sites within recursion)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 15, "func"),  # line 15
+                            MockFrameInfo("test.py", 12, "func"),  # line 12
+                            MockFrameInfo("test.py", 15, "func"),  # line 15 again
+                            MockFrameInfo("test.py", 10, "func"),  # line 10
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Each unique (file, line, func) should be counted once
+        self.assertEqual(collector.result[("test.py", 15, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 12, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "func")]["cumulative_calls"], 1)
 
 
 class TestLocationHelpers(unittest.TestCase):
