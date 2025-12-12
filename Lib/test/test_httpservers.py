@@ -1052,6 +1052,19 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         handler.end_headers()
         self.assertEqual(output.numWrites, 1)
 
+    def test_send_response_only_rejects_crlf_message(self):
+        input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+
+        with self.assertRaises(ValueError) as ctx:
+            handler.send_response_only(418, 'value\r\nSet-Cookie: custom=true')
+        self.assertIn('Invalid header name/value: contains CR or LF',
+                      str(ctx.exception))
+
     def test_header_buffering_of_send_header(self):
 
         input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
