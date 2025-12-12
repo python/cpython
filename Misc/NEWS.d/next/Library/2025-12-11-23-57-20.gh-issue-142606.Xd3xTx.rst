@@ -1,3 +1,0 @@
-Fix two internal C API call sites where ``PyObject_CallFunction`` was
-incorrectly passed an extra ``NULL`` argument in
-:class:`collections.deque` and in the import machinery.
