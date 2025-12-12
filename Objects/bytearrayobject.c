@@ -90,6 +90,24 @@ bytearray_releasebuffer(PyObject *self, Py_buffer *view)
     Py_END_CRITICAL_SECTION();
 }
 
+typedef PyObject* (*_ba_bytes_op)(const char *buf, Py_ssize_t len,
+                                  PyObject *sub, Py_ssize_t start,
+                                  Py_ssize_t end);
+
+static PyObject *
+_bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
+                       Py_ssize_t start, Py_ssize_t end, _ba_bytes_op op)
+{
+    Py_buffer view;
+    PyObject *res;
+    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_SIMPLE) != 0) {
+        return NULL;
+    }
+    res = op((const char *)view.buf, view.len, sub, start, end);
+    PyBuffer_Release(&view);
+    return res;
+}
+
 static int
 _canresize(PyByteArrayObject *self)
 {
@@ -1227,24 +1245,6 @@ Return the lowest index in B where subsection 'sub' is found, such that 'sub' is
 
 Return -1 on failure.
 [clinic start generated code]*/
-
-typedef PyObject* (*_ba_bytes_op)(const char *buf, Py_ssize_t len,
-                                  PyObject *sub, Py_ssize_t start,
-                                  Py_ssize_t end);
-
-static PyObject *
-_bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
-                       Py_ssize_t start, Py_ssize_t end, _ba_bytes_op op)
-{
-    Py_buffer view;
-    PyObject *res;
-    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_SIMPLE) != 0) {
-        return NULL;
-    }
-    res = op((const char *)view.buf, view.len, sub, start, end);
-    PyBuffer_Release(&view);
-    return res;
-}
 
 static PyObject *
 bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
