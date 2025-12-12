@@ -1,0 +1,2 @@
+Pdb can now run scripts from anonymous pipes used in process substitution.
+Patch by Bartosz Sławecki.
