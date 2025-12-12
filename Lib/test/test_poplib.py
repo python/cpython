@@ -2,7 +2,7 @@
 
 # Modified by Giampaolo Rodola' to give poplib.POP3 and poplib.POP3_SSL
 # a real test suite
-
+import base64
 import poplib
 import socket
 import os
@@ -49,7 +49,7 @@ line3\r\n\
 
 class DummyPOP3Handler(asynchat.async_chat):
 
-    CAPAS = {'UIDL': [], 'IMPLEMENTATION': ['python-testlib-pop-server']}
+    CAPAS = {'UIDL': [], 'SASL': ['PLAIN'], 'IMPLEMENTATION': ['python-testlib-pop-server']}
     enable_UTF8 = False
 
     def __init__(self, conn):
@@ -59,6 +59,8 @@ class DummyPOP3Handler(asynchat.async_chat):
         self.push('+OK dummy pop3 server ready. <timestamp>')
         self.tls_active = False
         self.tls_starting = False
+        self._auth_pending = False
+        self._auth_mech = None
 
     def collect_incoming_data(self, data):
         self.in_buffer.append(data)
@@ -67,6 +69,20 @@ class DummyPOP3Handler(asynchat.async_chat):
         line = b''.join(self.in_buffer)
         line = str(line, 'ISO-8859-1')
         self.in_buffer = []
+
+        if self._auth_pending:
+            self._auth_pending = False
+            if line == '*':
+                self.push('-ERR authentication cancelled')
+                return
+            try:
+                base64.b64decode(line.encode('ascii'))
+            except Exception:
+                self.push('-ERR invalid base64')
+                return
+            self.push('+OK Logged in.')
+            return
+
         cmd = line.split(' ')[0].lower()
         space = line.find(' ')
         if space != -1:
@@ -84,6 +100,28 @@ class DummyPOP3Handler(asynchat.async_chat):
 
     def push(self, data):
         asynchat.async_chat.push(self, data.encode("ISO-8859-1") + b'\r\n')
+
+    def cmd_auth(self, arg):
+        parts = arg.split()
+        if not parts:
+            self.push('-ERR missing mechanism')
+            return
+        mech = parts[0].upper()
+        if mech != 'PLAIN':
+            self.push('-ERR unsupported mechanism')
+            return
+        if len(parts) >= 2:
+            try:
+                base64.b64decode(parts[1].encode('ascii'))
+            except Exception:
+                self.push('-ERR invalid base64')
+                return
+            self.push('+OK Logged in.')
+        else:
+            self._auth_pending = True
+            self._auth_mech = mech
+            self.in_buffer.clear()
+            self.push('+ ')
 
     def cmd_echo(self, arg):
         # sends back the received string (used by the test suite)
@@ -285,6 +323,22 @@ class TestPOP3Class(TestCase):
     def test_pass_(self):
         self.assertOK(self.client.pass_('python'))
         self.assertRaises(poplib.error_proto, self.client.user, 'invalid')
+
+    def test_auth_plain_initial_response(self):
+        secret = b"user\x00adminuser\x00password"
+        resp = self.client.auth("PLAIN", initial_response=secret)
+        self.assertStartsWith(resp, b"+OK")
+
+    def test_auth_plain_challenge_response(self):
+        secret = b"user\x00adminuser\x00password"
+        def authobject(challenge):
+            return secret
+        resp = self.client.auth("PLAIN", authobject=authobject)
+        self.assertStartsWith(resp, b"+OK")
+
+    def test_auth_rejects_conflicting_args(self):
+        with self.assertRaises(ValueError):
+            self.client.auth("PLAIN", authobject=lambda c: b"x", initial_response=b"y")
 
     def test_stat(self):
         self.assertEqual(self.client.stat(), (10, 100))
