@@ -1925,6 +1925,22 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
+    def test_call_tuple_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = tuple(())
+                x += len(t) == 0
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TUPLE_1", uops)
+        # Re-enable later gh-134584
+        # self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_str_1(self):
         def testfunc(n):
             x = 0
@@ -2051,6 +2067,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.

@@ -96,6 +96,8 @@ class InstructionKind(enum.Enum):
     LONG_BRANCH = enum.auto()
     SHORT_BRANCH = enum.auto()
     RETURN = enum.auto()
+    SMALL_CONST_1 = enum.auto()
+    SMALL_CONST_2 = enum.auto()
     OTHER = enum.auto()
 
 
@@ -172,6 +174,7 @@ class Optimizer:
     )
     # Override everything that follows in subclasses:
     _supports_external_relocations = True
+    supports_small_constants = False
     _branches: typing.ClassVar[dict[str, tuple[str | None, str | None]]] = {}
     # Short branches are instructions that can branch within a micro-op,
     # but might not have the reach to branch anywhere within a trace.
@@ -184,6 +187,9 @@ class Optimizer:
     _re_return: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
     text: str = ""
     globals: set[str] = dataclasses.field(default_factory=set)
+    _re_small_const_1 = _RE_NEVER_MATCH
+    _re_small_const_2 = _RE_NEVER_MATCH
+    const_reloc = "<Not supported>"
 
     def __post_init__(self) -> None:
         # Split the code into a linked list of basic blocks. A basic block is an
@@ -253,6 +259,14 @@ class Optimizer:
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
+        elif match := self._re_small_const_1.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            kind = InstructionKind.SMALL_CONST_1
+        elif match := self._re_small_const_2.match(line):
+            target = match["value"]
+            name = match["instruction"]
+            kind = InstructionKind.SMALL_CONST_2
         else:
             name, *_ = line.split(" ")
             kind = InstructionKind.OTHER
@@ -385,7 +399,7 @@ class Optimizer:
                 block.fallthrough = True
                 block.instructions.pop()
             # Before:
-            #    br ? FOO:
+            #    branch  FOO:
             #    ...
             #    FOO:
             #    jump BAR
@@ -461,6 +475,70 @@ class Optimizer:
                     )
                     block.instructions.append(branch.update_target("0"))
 
+    def _make_temp_label(self, index: int) -> Instruction:
+        marker = f"jit_temp_{index}:"
+        return Instruction(InstructionKind.OTHER, "", marker, None)
+
+    def _fixup_constants(self) -> None:
+        if not self.supports_small_constants:
+            return
+        index = 0
+        for block in self._blocks():
+            fixed: list[Instruction] = []
+            small_const_index = -1
+            for inst in block.instructions:
+                if inst.kind == InstructionKind.SMALL_CONST_1:
+                    marker = f"jit_pending_{inst.target}{index}:"
+                    fixed.append(self._make_temp_label(index))
+                    index += 1
+                    small_const_index = len(fixed)
+                    fixed.append(inst)
+                elif inst.kind == InstructionKind.SMALL_CONST_2:
+                    if small_const_index < 0:
+                        fixed.append(inst)
+                        continue
+                    small_const_1 = fixed[small_const_index]
+                    if not self._small_consts_match(small_const_1, inst):
+                        small_const_index = -1
+                        fixed.append(inst)
+                        continue
+                    assert small_const_1.target is not None
+                    if small_const_1.target.endswith("16"):
+                        fixed[small_const_index] = self._make_temp_label(index)
+                        index += 1
+                    else:
+                        assert small_const_1.target.endswith("32")
+                        patch_kind, replacement = self._small_const_1(small_const_1)
+                        if replacement is not None:
+                            label = f"{self.const_reloc}{patch_kind}_JIT_RELOCATION_CONST{small_const_1.target[:-3]}_JIT_RELOCATION_{index}:"
+                            index += 1
+                            fixed[small_const_index - 1] = Instruction(
+                                InstructionKind.OTHER, "", label, None
+                            )
+                            fixed[small_const_index] = replacement
+                    patch_kind, replacement = self._small_const_2(inst)
+                    if replacement is not None:
+                        assert inst.target is not None
+                        label = f"{self.const_reloc}{patch_kind}_JIT_RELOCATION_CONST{inst.target[:-3]}_JIT_RELOCATION_{index}:"
+                        index += 1
+                        fixed.append(
+                            Instruction(InstructionKind.OTHER, "", label, None)
+                        )
+                        fixed.append(replacement)
+                    small_const_index = -1
+                else:
+                    fixed.append(inst)
+            block.instructions = fixed
+
+    def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
+        raise NotImplementedError()
+
+    def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
+        raise NotImplementedError()
+
+    def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
+        raise NotImplementedError()
+
     def run(self) -> None:
         """Run this optimizer."""
         self._insert_continue_label()
@@ -472,6 +550,7 @@ class Optimizer:
             self._remove_redundant_jumps()
             self._remove_unreachable()
         self._fixup_external_labels()
+        self._fixup_constants()
         self.path.write_text(self._body())
 
 
@@ -491,6 +570,54 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
     _re_return = re.compile(r"\s*ret\b")
+
+    supports_small_constants = True
+    _re_small_const_1 = re.compile(
+        r"\s*(?P<instruction>adrp)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
+    )
+    _re_small_const_2 = re.compile(
+        r"\s*(?P<instruction>ldr)\s+.*(?P<value>_JIT_OP(ARG|ERAND(0|1))_(16|32)).*"
+    )
+    const_reloc = "CUSTOM_AARCH64_CONST"
+
+    def _get_reg(self, inst: Instruction) -> str:
+        _, rest = inst.text.split(inst.name)
+        reg, *_ = rest.split(",")
+        return reg.strip()
+
+    def _small_const_1(self, inst: Instruction) -> tuple[str, Instruction | None]:
+        assert inst.kind is InstructionKind.SMALL_CONST_1
+        assert inst.target is not None
+        if "16" in inst.target:
+            return "", None
+        pre, _ = inst.text.split(inst.name)
+        return "16a", Instruction(
+            InstructionKind.OTHER, "movz", f"{pre}movz {self._get_reg(inst)}, 0", None
+        )
+
+    def _small_const_2(self, inst: Instruction) -> tuple[str, Instruction | None]:
+        assert inst.kind is InstructionKind.SMALL_CONST_2
+        assert inst.target is not None
+        pre, _ = inst.text.split(inst.name)
+        if "16" in inst.target:
+            return "16a", Instruction(
+                InstructionKind.OTHER,
+                "movz",
+                f"{pre}movz {self._get_reg(inst)}, 0",
+                None,
+            )
+        else:
+            return "16b", Instruction(
+                InstructionKind.OTHER,
+                "movk",
+                f"{pre}movk {self._get_reg(inst)}, 0, lsl #16",
+                None,
+            )
+
+    def _small_consts_match(self, inst1: Instruction, inst2: Instruction) -> bool:
+        reg1 = self._get_reg(inst1)
+        reg2 = self._get_reg(inst2)
+        return reg1 == reg2
 
 
 class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
