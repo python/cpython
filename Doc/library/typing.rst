@@ -2875,8 +2875,8 @@ ABCs and Protocols for working with I/O
 ---------------------------------------
 
 .. class:: IO[AnyStr]
-           TextIO[AnyStr]
-           BinaryIO[AnyStr]
+           TextIO
+           BinaryIO
 
    Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
