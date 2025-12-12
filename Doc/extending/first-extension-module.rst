@@ -137,7 +137,9 @@ First, add ``pyproject.toml`` with these contents:
    requires = ['meson-python']
 
    [project]
-   name = 'spammodule'
+   # Placeholder project information
+   # (change this before distributing the module)
+   name = 'sampleproject'
    version = '0'
 
 Then, create ``meson.build`` containing the following:
