@@ -1150,95 +1150,9 @@ Raises:
 [clinic start generated code]*/
 
 static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid, int recursive);
-
-static PyObject *
-_remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(pid), &_Py_ID(recursive), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"pid", "recursive", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "get_child_pids",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    int pid;
-    int recursive = 1;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    pid = PyLong_AsInt(args[0]);
-    if (pid == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_kwonly;
-    }
-    recursive = PyObject_IsTrue(args[1]);
-    if (recursive < 0) {
-        goto exit;
-    }
-skip_optional_kwonly:
-    return_value = _remote_debugging_get_child_pids_impl(module, pid, recursive);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
-"get_child_pids($module, /, pid, *, recursive=True)\n"
-"--\n"
-"\n"
-"Get all child process IDs of the given process.\n"
-"\n"
-"  pid\n"
-"    Process ID of the parent process\n"
-"  recursive\n"
-"    If True, return all descendants (children, grandchildren, etc.).\n"
-"    If False, return only direct children.\n"
-"\n"
-"Returns a list of child process IDs. Returns an empty list if no children\n"
-"are found.\n"
-"\n"
-"This function provides a snapshot of child processes at a moment in time.\n"
-"Child processes may exit or new ones may be created after the list is returned.\n"
-"\n"
-"Raises:\n"
-"    OSError: If unable to enumerate processes\n"
-"    NotImplementedError: If not supported on this platform");
-
-#define _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF    \
-    {"get_child_pids", _PyCFunction_CAST(_remote_debugging_get_child_pids), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_child_pids__doc__},
-/*[clinic end generated code: output=b21aaa012edb5379 input=c445e924c6be29f2]*/
-
-static PyObject *
-_remote_debugging_get_child_pids_impl(PyObject *module, int pid, int recursive)
+_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+                                      int recursive)
+/*[clinic end generated code: output=1ae2289c6b953e4b input=3395cbe7f17066c9]*/
 {
     return enumerate_child_pids((pid_t)pid, recursive);
 }
