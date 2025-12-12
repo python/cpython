@@ -1,6 +1,5 @@
 import concurrent.futures
 import unittest
-import threading
 from threading import Barrier
 from unittest import TestCase
 import random
