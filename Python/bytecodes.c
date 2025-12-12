@@ -4068,13 +4068,13 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
         }
 
-        op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
-            a = arg;
+            PyStackRef_CLOSE(arg);
             INPUTS_DEAD();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4086,7 +4086,6 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
-            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
