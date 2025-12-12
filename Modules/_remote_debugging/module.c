@@ -1157,8 +1157,39 @@ _remote_debugging_get_child_pids_impl(PyObject *module, int pid,
     return enumerate_child_pids((pid_t)pid, recursive);
 }
 
+/*[clinic input]
+_remote_debugging.is_python_process
+
+    pid: int
+
+Check if a process is a Python process.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_is_python_process_impl(PyObject *module, int pid)
+/*[clinic end generated code: output=22947dc8afcac362 input=13488e28c7295d84]*/
+{
+    proc_handle_t handle;
+
+    if (_Py_RemoteDebug_InitProcHandle(&handle, pid) < 0) {
+        PyErr_Clear();
+        Py_RETURN_FALSE;
+    }
+
+    uintptr_t runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&handle);
+    _Py_RemoteDebug_CleanupProcHandle(&handle);
+
+    if (runtime_start_address == 0) {
+        PyErr_Clear();
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef remote_debugging_methods[] = {
     _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF
+    _REMOTE_DEBUGGING_IS_PYTHON_PROCESS_METHODDEF
     {NULL, NULL, 0, NULL},
 };
 
