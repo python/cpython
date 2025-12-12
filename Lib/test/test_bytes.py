@@ -549,6 +549,17 @@ class BaseBytesTest:
         self.assertEqual(three_bytes.hex(':', 2), 'b9:01ef')
         self.assertEqual(three_bytes.hex(':', 1), 'b9:01:ef')
         self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
+        self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
+        self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
+        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                try:
+                    self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+                except OverflowError:
+                    pass
 
         value = b'{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
         self.assertEqual(value.hex('.', 8), '7b7305000000776f.726c646902000000.730500000068656c.6c6f690100000030')
