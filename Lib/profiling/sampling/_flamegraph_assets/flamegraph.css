@@ -1023,3 +1023,7 @@ body.resizing-sidebar {
   border-color: #8e44ad;
   box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
 }
+
+.toggle-switch:focus-visible {
+  border-radius: 4px;
+}
