@@ -13,7 +13,6 @@ import linecache
 import os
 import dis
 from os.path import normcase
-import _pickle
 import pickle
 import shutil
 import stat
@@ -28,6 +27,12 @@ import unittest
 import unittest.mock
 import warnings
 import weakref
+
+try:
+    import _pickle
+    MISSING_C_PICKLE = False
+except ImportError:
+    MISSING_C_PICKLE = True
 
 
 try:
@@ -1410,6 +1415,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @unittest.skipIf(MISSING_C_PICKLE, "requires _pickle")
     def test_getfullargspec_builtin_methods(self):
         self.assertFullArgSpecEquals(_pickle.Pickler.dump, ['self', 'obj'])
 
@@ -4635,6 +4641,7 @@ class TestSignatureObject(unittest.TestCase):
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @unittest.skipIf(MISSING_C_PICKLE, "requires _pickle")
     def test_signature_on_builtin_class(self):
         expected = ('(file, protocol=None, fix_imports=True, '
                     'buffer_callback=None)')
@@ -5176,6 +5183,7 @@ class TestSignatureObject(unittest.TestCase):
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @unittest.skipIf(MISSING_C_PICKLE, "requires _pickle")
     def test_signature_from_callable_builtin_obj(self):
         class MySignature(inspect.Signature): pass
         sig = MySignature.from_callable(_pickle.Pickler)
