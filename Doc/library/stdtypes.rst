@@ -1436,6 +1436,80 @@ application).
          list appear empty for the duration, and raises :exc:`ValueError` if it can
          detect that the list has been mutated during a sort.
 
+.. admonition:: Thread safety
+
+   Most individual operations on :class:`list` instances are atomic:
+
+   .. code-block::
+      :class: good
+
+      # The following operations are atomic
+      lst1 + lst2    # atomic concatenation of two lists
+      x * lst        # atomic repeat of lst x times
+      item = lst[i]  # atomically retrieves item at index i
+      lst[i] = value # atomically replaces item at index i
+      lst *= x       # atomically extend the list x times
+
+      # Calls to the following list methods are atomic
+      lst.clear()
+      lst.copy()
+      lst.append(item)
+      lst.insert(idx, item)
+      lst.pop(idx)
+      lst.remove(item)
+      lst.reverse()
+      lst.sort()
+
+   The following operations/methods are not fully atomic:
+
+   .. code-block::
+      :class: maybe
+
+      lst.index(item)
+      lst.count(item)
+      item in lst
+
+      lst.extend(iterable)
+      lst += iterable
+
+      lst[i:j] = iterable
+
+   The :meth:`~list.index` and :meth:`~list.count` methods, and the ``in``
+   operator, iterate the list without holding a lock.  They are safe to call
+   concurrently but may return results affected by concurrent modifications.
+
+   :meth:`~list.extend` is safe to call from multiple threads.  However, the
+   operation is fully atomic only when the iterable that's passed to ``extend``
+   is a :class:`list`, a :class:`tuple`, a :class:`set`, a :class:`frozenset`,
+   a :class:`dict` or a :ref:`dictionary view object <dict-views>` (but not
+   their subclasses).  Otherwise, an iterator is created which can be
+   concurrently modified by another thread.  The same applies to inplace
+   concatenation of list with other iterables when using ``lst += iterable``.
+
+   Similarly, assigning to a list slice with ``lst[i:j] = iterable`` is safe
+   to call from multiple threads, but ``iterable`` is only locked when it is
+   also a :class:`list` (but not its subclasses).
+
+   Operations that involve multiple accesses, as well as iteration, are not
+   atomic. For example:
+
+   .. code-block::
+      :class: bad
+
+      # NOT atomic: read-modify-write
+      lst[i] = lst[i] + 1
+
+      # NOT atomic: check-then-act
+      if lst:
+          item = lst.pop()
+
+      # NOT thread-safe: iteration while modifying
+      for item in lst:
+          process(item)  # another thread may modify lst
+
+   Consider external synchronization when sharing :class:`list` instances
+   across threads.  See :ref:`freethreading-python-howto` for more information.
+
 
 .. _typesseq-tuple:
 
