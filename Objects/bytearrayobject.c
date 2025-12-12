@@ -98,13 +98,19 @@ static PyObject *
 _bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
                        Py_ssize_t start, Py_ssize_t end, _ba_bytes_op op)
 {
-    Py_buffer view;
     PyObject *res;
-    if (PyObject_GetBuffer((PyObject *)self, &view, PyBUF_SIMPLE) != 0) {
-        return NULL;
-    }
-    res = op((const char *)view.buf, view.len, sub, start, end);
-    PyBuffer_Release(&view);
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->ob_exports++;
+    Py_END_CRITICAL_SECTION();
+
+    res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->ob_exports--;
+    assert(self->ob_exports >= 0);
+    Py_END_CRITICAL_SECTION();
+    
     return res;
 }
 
