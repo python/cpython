@@ -31,6 +31,9 @@ Runtime Objects
 
 - [String Interning](string_interning.md)
 
+- [List sort algorithm](../Objects/listsort.txt)
+  <!-- (kept at the original location outside this directory) -->
+
 Program Execution
 ---
 
