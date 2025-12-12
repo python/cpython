@@ -292,7 +292,9 @@ are always available.  They are listed here in alphabetical order.
       :func:`property`.
 
 
-.. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
+.. function:: compile(source, filename, mode, flags=0, \
+                      dont_inherit=False, optimize=-1, \
+                      *, module=None)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by :func:`exec` or :func:`eval`.  *source* can either be a normal string, a
@@ -334,6 +336,10 @@ are always available.  They are listed here in alphabetical order.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
+   The optional argument *module* specifies the module name.
+   It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
+   by module name.
+
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`ValueError` if the source contains null bytes.
 
@@ -370,6 +376,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.8
       ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` can now be passed in flags to enable
       support for top-level ``await``, ``async for``, and ``async with``.
+
+   .. versionadded:: 3.15
+      Added the *module* parameter.
 
 
 .. class:: complex(number=0, /)
@@ -517,7 +526,7 @@ are always available.  They are listed here in alphabetical order.
       >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
-      ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
+      ['Struct', '__all__', '__builtins__', '__doc__', '__file__',
        '__initializing__', '__loader__', '__name__', '__package__',
        '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
@@ -1859,7 +1868,7 @@ are always available.  They are listed here in alphabetical order.
    the same data with other ordering tools such as :func:`max` that rely
    on a different underlying method.  Implementing all six comparisons
    also helps avoid confusion for mixed type comparisons which can call
-   reflected the :meth:`~object.__gt__` method.
+   the reflected :meth:`~object.__gt__` method.
 
    For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 

@@ -139,8 +139,8 @@ _Py_c_prod(Py_complex z, Py_complex w)
             recalc = 1;
         }
         if (recalc) {
-            r.real = Py_INFINITY*(a*c - b*d);
-            r.imag = Py_INFINITY*(a*d + b*c);
+            r.real = INFINITY*(a*c - b*d);
+            r.imag = INFINITY*(a*d + b*c);
         }
     }
 
@@ -229,8 +229,8 @@ _Py_c_quot(Py_complex a, Py_complex b)
         {
             const double x = copysign(isinf(a.real) ? 1.0 : 0.0, a.real);
             const double y = copysign(isinf(a.imag) ? 1.0 : 0.0, a.imag);
-            r.real = Py_INFINITY * (x*b.real + y*b.imag);
-            r.imag = Py_INFINITY * (y*b.real - x*b.imag);
+            r.real = INFINITY * (x*b.real + y*b.imag);
+            r.imag = INFINITY * (y*b.real - x*b.imag);
         }
         else if ((isinf(abs_breal) || isinf(abs_bimag))
                  && isfinite(a.real) && isfinite(a.imag))
@@ -644,7 +644,7 @@ complex_hash(PyObject *op)
      * compare equal must have the same hash value, so that
      * hash(x + 0*j) must equal hash(x).
      */
-    combined = hashreal + _PyHASH_IMAG * hashimag;
+    combined = hashreal + PyHASH_IMAG * hashimag;
     if (combined == (Py_uhash_t)-1)
         combined = (Py_uhash_t)-2;
     return (Py_hash_t)combined;

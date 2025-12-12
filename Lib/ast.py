@@ -24,7 +24,7 @@ from _ast import *
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
-          type_comments=False, feature_version=None, optimize=-1):
+          type_comments=False, feature_version=None, optimize=-1, module=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
@@ -44,7 +44,8 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version, optimize=optimize)
+                   _feature_version=feature_version, optimize=optimize,
+                   module=module)
 
 
 def literal_eval(node_or_string):

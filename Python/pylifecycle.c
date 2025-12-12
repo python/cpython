@@ -26,6 +26,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -655,6 +656,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -2469,6 +2478,14 @@ new_interpreter(PyThreadState **tstate_p,
         return status;
     }
 
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
@@ -2554,7 +2571,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2626,7 +2643,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong

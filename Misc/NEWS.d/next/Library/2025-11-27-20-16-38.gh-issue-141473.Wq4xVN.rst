@@ -1,0 +1,4 @@
+When :meth:`subprocess.Popen.communicate` was called with *input* and a
+*timeout* and is called for a second time after a
+:exc:`~subprocess.TimeoutExpired` exception before the process has died, it
+should no longer hang.

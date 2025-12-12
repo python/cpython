@@ -1,0 +1,1 @@
+Fix crash when a task gets re-registered during finalization in :mod:`asyncio`. Patch by Kumar Aditya.

@@ -119,7 +119,7 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 } Py_AsyncioModuleDebugOffsets;
 
-GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _AsyncioDebug)
+GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _Py_AsyncioDebug)
     = {.asyncio_task_object = {
            .size = sizeof(TaskObj),
            .task_name = offsetof(TaskObj, task_name),
@@ -2990,16 +2990,12 @@ static PyType_Spec Task_spec = {
 static void
 TaskObj_dealloc(PyObject *self)
 {
-    _PyObject_ResurrectStart(self);
-    // Unregister the task here so that even if any subclass of Task
-    // which doesn't end up calling TaskObj_finalize not crashes.
-    unregister_task((TaskObj *)self);
-
-    PyObject_CallFinalizer(self);
-
-    if (_PyObject_ResurrectEnd(self)) {
-        return;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return; // resurrected
     }
+    // unregister the task after finalization so that
+    // if the task gets resurrected, it remains registered
+    unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -4338,7 +4334,7 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->debug_offsets = &_AsyncioDebug;
+    state->debug_offsets = &_Py_AsyncioDebug;
 
     Py_DECREF(module);
     return 0;
