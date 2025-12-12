@@ -408,3 +408,90 @@ a.toolbar-btn:focus-visible {
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Toggle Switch
+   -------------------------------------------------------------------------- */
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-switch:hover {
+  opacity: 0.85;
+}
+
+.toggle-switch .toggle-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.toggle-switch .toggle-label.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Reserve space for bold text to prevent layout shift on toggle */
+.toggle-switch .toggle-label::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  visibility: hidden;
+}
+
+.toggle-switch.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+  box-shadow: inset var(--shadow-sm);
+}
+
+.toggle-track:hover {
+  border-color: var(--text-muted);
+}
+
+.toggle-track.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.toggle-track.on::after {
+  transform: translateX(16px);
+  box-shadow: var(--shadow-md);
+}
