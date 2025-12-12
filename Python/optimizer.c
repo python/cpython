@@ -314,7 +314,11 @@ add_to_pending_deletion_list(_PyExecutorObject *self)
 static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
-    _PyObject_GC_UNTRACK(self);
+
+    if (_PyObject_GC_IS_TRACKED(self)) {
+        _PyObject_GC_UNTRACK(self);
+    }
+
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
     // Once unlinked it becomes impossible to invalidate an executor, so do it here.
