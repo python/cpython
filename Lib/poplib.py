@@ -17,6 +17,7 @@ import errno
 import re
 import socket
 import sys
+import base64
 
 try:
     import ssl
@@ -216,6 +217,71 @@ class POP3:
         NB: mailbox is locked by server from here to 'quit()'
         """
         return self._shortcmd('PASS %s' % pswd)
+
+    def auth(self, mechanism, authobject=None, initial_response=None):
+        """Authenticate to the POP3 server using the AUTH command (RFC 5034).
+
+        Parameters
+        ----------
+        mechanism : str
+            SASL mechanism name, e.g. 'PLAIN', 'CRAM-MD5'.
+        authobject : callable, optional
+            Challenge-response callback.  Called with a `bytes` challenge
+            (already base64-decoded) and must return `bytes` or `str`.
+            Return ``b'*'`` to abort the exchange.
+        initial_response : bytes or str, optional
+            Initial client response to send immediately after the AUTH command.
+            If you supply this you must **not** supply *authobject*.
+
+        Returns
+        -------
+        bytes
+            The server's final line (``+OK ...`` or ``-ERR ...``).
+
+        Raises
+        ------
+        ValueError
+            If both *authobject* and *initial_response* are given.
+        """
+        if authobject is not None and initial_response is not None:
+            raise ValueError('authobject and initial_response are mutually exclusive')
+
+        if initial_response is not None:
+            if isinstance(initial_response, str):
+                initial_response = initial_response.encode(self.encoding)
+            b64 = base64.b64encode(initial_response).decode('ascii')
+            return self._shortcmd(f'AUTH {mechanism} {b64}'.rstrip())
+
+        if authobject is None:
+            return self._shortcmd(f'AUTH {mechanism}')
+
+        self._putcmd(f'AUTH {mechanism}')
+        while True:
+            resp = self._getresp()
+            if resp[:3] == b'+OK':
+                return resp
+
+            challenge_b64 = resp[1:].lstrip(b' ')
+            if challenge_b64:
+                try:
+                    challenge = base64.b64decode(challenge_b64)
+                except Exception:
+                    padded = challenge_b64 + b'=' * (-len(challenge_b64) % 4)
+                    challenge = base64.b64decode(padded, validate=False)
+            else:
+                challenge = b''
+
+            response = authobject(challenge)
+            if response is None:
+                response = b''
+            if isinstance(response, str):
+                response = response.encode(self.encoding)
+
+            if response == b'*':
+                self._putcmd('*')
+                return self._getresp()
+
+            self._putcmd(base64.b64encode(response).decode('ascii'))
 
 
     def stat(self):
