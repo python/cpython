@@ -517,7 +517,27 @@ class HelpFormatter(object):
             text = text % dict(prog=self._prog)
         text_width = max(self._width - self._current_indent, 11)
         indent = ' ' * self._current_indent
-        return self._fill_text(text, text_width, indent) + '\n\n'
+        text = self._fill_text(text, text_width, indent)
+        text = self._apply_text_markup(text)
+        return text + '\n\n'
+
+    def _apply_text_markup(self, text):
+        """Apply color markup to text.
+
+        Supported markup:
+          `...` - inline code (rendered with prog_extra color)
+
+        When colors are disabled, backticks are preserved as-is.
+        """
+        t = self._theme
+        if not t.reset:
+            return text
+        text = _re.sub(
+            r'`([^`]+)`',
+            rf'{t.prog_extra}\1{t.reset}',
+            text,
+        )
+        return text
 
     def _format_action(self, action):
         # determine the required width and the entry label
