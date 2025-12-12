@@ -1667,23 +1667,6 @@
             break;
         }
 
-        case _POP_TOP_NOT_NULL_r10: {
-            CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
-            _PyStackRef value;
-            _PyStackRef _stack_item_0 = _tos_cache0;
-            value = _stack_item_0;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(value);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            _tos_cache0 = PyStackRef_ZERO_BITS;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
-            break;
-        }
-
         case _POP_TOP_NOP_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_WITH_CACHE());

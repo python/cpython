@@ -232,25 +232,6 @@ optimize_to_bool(
 }
 
 static void
-optimize_pop_top(JitOptRef value, _PyUOpInstruction *this_instr){
-    PyTypeObject *typ = sym_get_type(value);
-    if (PyJitRef_IsBorrowed(value) ||
-        sym_is_immortal(PyJitRef_Unwrap(value)) ||
-        sym_is_null(value)) {
-        REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
-    }
-    else if (typ == &PyLong_Type) {
-        REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
-    }
-    else if (typ == &PyFloat_Type) {
-        REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
-    }
-    else if (typ == &PyUnicode_Type) {
-        REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
-    }
-}
-
-static void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 {
     REPLACE_OP(this_instr, _POP_TOP, 0, 0);

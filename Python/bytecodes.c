@@ -348,10 +348,6 @@ dummy_func(
             PyStackRef_XCLOSE(value);
         }
 
-        op(_POP_TOP_NOT_NULL, (value --)) {
-            PyStackRef_CLOSE(value);
-        }
-
         op(_POP_TOP_NOP, (value --)) {
             assert(PyStackRef_IsNull(value) || (!PyStackRef_RefcountOnObject(value)) ||
                 _Py_IsImmortal((PyStackRef_AsPyObjectBorrow(value))));
@@ -4091,7 +4087,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
-            _POP_TOP_NOT_NULL +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -4286,8 +4282,8 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_LEN +
             _CALL_LEN +
-            _POP_TOP_NOT_NULL +
-            _POP_TOP_NOT_NULL;
+            POP_TOP +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);

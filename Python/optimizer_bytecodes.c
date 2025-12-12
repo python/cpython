@@ -512,11 +512,21 @@ dummy_func(void) {
     }
 
     op(_POP_TOP, (value -- )) {
-        optimize_pop_top(value, this_instr);
-    }
-
-    op(_POP_TOP_NOT_NULL, (value -- )) {
-        optimize_pop_top(value, this_instr);
+        PyTypeObject *typ = sym_get_type(value);
+        if (PyJitRef_IsBorrowed(value) ||
+            sym_is_immortal(PyJitRef_Unwrap(value)) ||
+            sym_is_null(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+        else if (typ == &PyLong_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_INT, 0, 0);
+        }
+        else if (typ == &PyFloat_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_FLOAT, 0, 0);
+        }
+        else if (typ == &PyUnicode_Type) {
+            REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
+        }
     }
 
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {

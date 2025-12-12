@@ -3189,7 +3189,7 @@
                 c = callable;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
-            // _POP_TOP_NOT_NULL
+            // _POP_TOP
             {
                 value = c;
                 stack_pointer[-3] = res;
@@ -3197,16 +3197,16 @@
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            // _POP_TOP_NOT_NULL
+            // _POP_TOP
             {
                 value = a;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -4088,14 +4088,14 @@
                 a = arg;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
-            // _POP_TOP_NOT_NULL
+            // _POP_TOP
             {
                 value = a;
                 stack_pointer[-3] = res;
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _CHECK_PERIODIC_AT_END
