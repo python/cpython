@@ -567,6 +567,10 @@ class PlatformTest(unittest.TestCase):
                 # musl uses semver, but we accept some variations anyway:
                 (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
+                (b'libc.musl.so.1', ('musl', '1')),
+                (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -585,6 +589,14 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0', ('glibc', '1.23.4')),
                 (b'libc.so.2.4\0libc.so.9\0libc.so.23.1\0', ('libc', '23.1')),
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
+                (
+                    b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
             ):
             with open(filename, 'wb') as f:
@@ -764,13 +776,14 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
-            output = io.StringIO()
             # suppress argparse error message
             with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
-            self.assertStartsWith(output, "usage: ")
+        self.assertStartsWith(output.getvalue(), "usage: ")
 
     def test_invocation(self):
         flags = (

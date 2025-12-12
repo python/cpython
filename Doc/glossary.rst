@@ -21,7 +21,9 @@ Glossary
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
 
-      * The :const:`Ellipsis` built-in constant.
+      .. index:: single: ...; ellipsis literal
+
+      * The three dots form of the :ref:`Ellipsis <bltin-ellipsis-object>` object.
 
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
@@ -1023,6 +1025,15 @@ Glossary
       applied to all scopes, only those relying on a known set of local
       and nonlocal variable names are restricted to optimized scopes.
 
+   optional module
+      An :term:`extension module` that is part of the :term:`standard library`,
+      but may be absent in some builds of :term:`CPython`,
+      usually due to missing third-party libraries or because the module
+      is not available for a given platform.
+
+      See :ref:`optional-module-requirements` for a list of optional modules
+      that require third-party libraries.
+
    package
       A Python :term:`module` which can contain submodules or recursively,
       subpackages.  Technically, a package is a Python module with a
@@ -1249,8 +1260,9 @@ Glossary
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
       :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
-      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
-      :meth:`~object.__reversed__`. Types that implement this expanded
+      :meth:`~sequence.count`, :meth:`~sequence.index`,
+      :meth:`~object.__contains__`, and :meth:`~object.__reversed__`.
+      Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.ABCMeta.register`. For more documentation on sequence
       methods generally, see

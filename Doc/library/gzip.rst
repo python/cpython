@@ -11,6 +11,8 @@
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
 
+.. include:: ../includes/optional-module.rst
+
 The data compression is provided by the :mod:`zlib` module.
 
 The :mod:`gzip` module provides the :class:`GzipFile` class, as well as the
@@ -59,7 +61,7 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
@@ -186,7 +188,7 @@ The module defines the following items:
       Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
       attribute instead.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
@@ -216,7 +218,7 @@ The module defines the following items:
       The *mtime* parameter now defaults to 0 for reproducible output.
       For the previous behaviour of using the current time,
       pass ``None`` to *mtime*.
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
@@ -281,7 +283,7 @@ Example of how to GZIP compress a binary string::
 
 .. _gzip-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or
@@ -294,7 +296,7 @@ Once executed the :mod:`gzip` module keeps the input file(s).
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: file

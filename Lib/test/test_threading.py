@@ -6,7 +6,7 @@ import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports, import_module
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, spawn_python
 from test.support import force_not_colorized
 
 import random
@@ -1430,6 +1430,33 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(len(native_ids), 2)
         self.assertNotEqual(native_ids[0], native_ids[1])
 
+    def test_stop_the_world_during_finalization(self):
+        # gh-137433: Test functions that trigger a stop-the-world in the free
+        # threading build concurrent with interpreter finalization.
+        script = """if True:
+            import gc
+            import sys
+            import threading
+            NUM_THREADS = 5
+            b = threading.Barrier(NUM_THREADS + 1)
+            def run_in_bg():
+                b.wait()
+                while True:
+                    sys.setprofile(None)
+                    gc.collect()
+
+            for _ in range(NUM_THREADS):
+                t = threading.Thread(target=run_in_bg, daemon=True)
+                t.start()
+
+            b.wait()
+            print("Exiting...")
+        """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"Exiting...")
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
@@ -1749,6 +1776,7 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
+    @support.skip_if_sanitizer(thread=True, memory=True)
     def test_daemon_threads_fatal_error(self):
         import_module("_testcapi")
         subinterp_code = f"""if 1:
@@ -1767,10 +1795,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
             _testcapi.run_in_subinterp(%r)
             """ % (subinterp_code,)
-        with test.support.SuppressCrashReport():
-            rc, out, err = assert_python_failure("-c", script)
-        self.assertIn("Fatal Python error: Py_EndInterpreter: "
-                      "not the last thread", err.decode())
+        assert_python_ok("-c", script)
 
     def _check_allowed(self, before_start='', *,
                        allowed=True,
@@ -2059,6 +2084,32 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
 
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
+    def test_keyboard_interrupt_during_threading_shutdown(self):
+        import subprocess
+        source = f"""
+        from threading import Thread
+        import time
+        import os
+
+
+        def test():
+            print('a', flush=True, end='')
+            time.sleep(10)
+
+
+        for _ in range(3):
+            Thread(target=test).start()
+        """
+
+        with spawn_python("-c", source, stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(3), b'aaa')
+            proc.send_signal(signal.SIGINT)
+            proc.stderr.flush()
+            error = proc.stderr.read()
+            self.assertIn(b"KeyboardInterrupt", error)
+
 
 class ThreadRunFail(threading.Thread):
     def run(self):
@@ -2281,6 +2332,9 @@ class MiscTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
     def test_set_name(self):
+        # Ensure main thread name is restored after test
+        self.addCleanup(_thread.set_name, _thread._get_name())
+
         # set_name() limit in bytes
         truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
@@ -2320,7 +2374,8 @@ class MiscTestCase(unittest.TestCase):
             tests.append(os_helper.TESTFN_UNENCODABLE)
 
         if sys.platform.startswith("sunos"):
-            encoding = "utf-8"
+            # Use ASCII encoding on Solaris/Illumos/OpenIndiana
+            encoding = "ascii"
         else:
             encoding = sys.getfilesystemencoding()
 
@@ -2336,7 +2391,7 @@ class MiscTestCase(unittest.TestCase):
                 if truncate is not None:
                     encoded = encoded[:truncate]
                 if sys.platform.startswith("sunos"):
-                    expected = encoded.decode("utf-8", "surrogateescape")
+                    expected = encoded.decode("ascii", "surrogateescape")
                 else:
                     expected = os.fsdecode(encoded)
             else:
@@ -2355,7 +2410,11 @@ class MiscTestCase(unittest.TestCase):
                 if '\0' in expected:
                     expected = expected.split('\0', 1)[0]
 
-            with self.subTest(name=name, expected=expected):
+            with self.subTest(name=name, expected=expected, thread="main"):
+                _thread.set_name(name)
+                self.assertEqual(_thread._get_name(), expected)
+
+            with self.subTest(name=name, expected=expected, thread="worker"):
                 work_name = None
                 thread = threading.Thread(target=work, name=name)
                 thread.start()

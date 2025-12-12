@@ -24,7 +24,7 @@ from test.support import (
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '9e43ee3929471739680c0e705482b4ae1c4122e4'
+    expectedchecksum = '8b2615a9fc627676cbc0b6fac0191177df97ef5f'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -77,7 +77,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '23ab09ed4abdf93db23b97359108ed630dd8311d'
+    expectedchecksum = '65670ae03a324c5f9e826a4de3e25bae4d73c9b7'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -275,6 +275,33 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
     def test_east_asian_width_9_0_changes(self):
         self.assertEqual(self.db.ucd_3_2_0.east_asian_width('\u231a'), 'N')
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
+
+    def test_isxidstart(self):
+        self.assertTrue(self.db.isxidstart('S'))
+        self.assertTrue(self.db.isxidstart('\u0AD0'))  # GUJARATI OM
+        self.assertTrue(self.db.isxidstart('\u0EC6'))  # LAO KO LA
+        self.assertTrue(self.db.isxidstart('\u17DC'))  # KHMER SIGN AVAKRAHASANYA
+        self.assertTrue(self.db.isxidstart('\uA015'))  # YI SYLLABLE WU
+        self.assertTrue(self.db.isxidstart('\uFE7B'))  # ARABIC KASRA MEDIAL FORM
+
+        self.assertFalse(self.db.isxidstart(' '))
+        self.assertFalse(self.db.isxidstart('0'))
+        self.assertRaises(TypeError, self.db.isxidstart)
+        self.assertRaises(TypeError, self.db.isxidstart, 'xx')
+
+    def test_isxidcontinue(self):
+        self.assertTrue(self.db.isxidcontinue('S'))
+        self.assertTrue(self.db.isxidcontinue('_'))
+        self.assertTrue(self.db.isxidcontinue('0'))
+        self.assertTrue(self.db.isxidcontinue('\u00BA'))  # MASCULINE ORDINAL INDICATOR
+        self.assertTrue(self.db.isxidcontinue('\u0640'))  # ARABIC TATWEEL
+        self.assertTrue(self.db.isxidcontinue('\u0710'))  # SYRIAC LETTER ALAPH
+        self.assertTrue(self.db.isxidcontinue('\u0B3E'))  # ORIYA VOWEL SIGN AA
+        self.assertTrue(self.db.isxidcontinue('\u17D7'))  # KHMER SIGN LEK TOO
+
+        self.assertFalse(self.db.isxidcontinue(' '))
+        self.assertRaises(TypeError, self.db.isxidcontinue)
+        self.assertRaises(TypeError, self.db.isxidcontinue, 'xx')
 
 class UnicodeMiscTest(UnicodeDatabaseTest):
 

@@ -23,6 +23,8 @@ Linux and the BSD variants of Unix.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
    Whenever the documentation mentions a *character* it can be specified
@@ -716,8 +718,10 @@ The module :mod:`curses` defines the following functions:
 Window Objects
 --------------
 
-Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
-the following methods and attributes:
+.. class:: window
+
+   Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
+   the following methods and attributes:
 
 
 .. method:: window.addch(ch[, attr])
@@ -1347,7 +1351,6 @@ The :mod:`curses` module defines the following data members:
 
 
 .. data:: version
-.. data:: __version__
 
    A bytes object representing the current version of the module.
 

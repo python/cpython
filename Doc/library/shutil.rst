@@ -90,6 +90,13 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+.. exception:: SpecialFileError
+
+   This exception is raised when :func:`copyfile` or :func:`copytree` attempt
+   to copy a named pipe.
+
+   .. versionadded:: 2.7
+
 .. exception:: SameFileError
 
    This exception is raised if source and destination in :func:`copyfile`
