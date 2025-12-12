@@ -2233,16 +2233,9 @@ defdict_missing(PyObject *op, PyObject *key)
         return value;
     PyObject* result;
     int res = PyDict_SetDefaultRef(op, key, value, &result);
-    if (res < 0) {
-        // set default ref with error
-        PyObject *tup;
-        tup = PyTuple_Pack(1, key);
-        if (!tup) return NULL;
-        PyErr_SetObject(PyExc_KeyError, tup);
-        Py_DECREF(tup);
-        Py_DECREF(value);
-    } else if (res > 0) {
-        // Key was already in the dict
+    if (res != 0) {
+        // when res < 0, result will be NULL
+        // when res > 0, result is a new reference to the existing value
         Py_DECREF(value);
     }
     return result;
