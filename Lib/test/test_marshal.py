@@ -36,6 +36,11 @@ class IntTestCase(unittest.TestCase, HelperMixin):
             for expected in (-n, n):
                 self.helper(expected)
             n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
+                self.helper(expected)
+            n = n >> 1
 
     def test_int64(self):
         # Simulate int marshaling with TYPE_INT64.
