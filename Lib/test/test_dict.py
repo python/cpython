@@ -1695,6 +1695,7 @@ class FrozenDictTests(unittest.TestCase):
         fd = frozendict(x=1, y=2)
         self.assertIs(fd | frozendict(), fd)
         self.assertIs(fd | {}, fd)
+        self.assertIs(frozendict() | fd, fd)
 
     def test_update(self):
         # test "a |= b" operator
