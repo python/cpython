@@ -2067,7 +2067,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
                 self.ba = ba
             def __index__(self):
                 self.ba.clear()
-                return 65
+                return ord("A")
 
         def make_case():
             ba = bytearray(b"A")
@@ -2075,8 +2075,9 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
         for name in ("find", "count", "index", "rindex", "rfind"):
             ba, evil = make_case()
-            with self.assertRaises(BufferError):
-                getattr(ba, name)(evil)
+            with self.subTest(name):
+                with self.assertRaises(BufferError):
+                    getattr(ba, name)(evil)
 
 
 class AssortedBytesTest(unittest.TestCase):
