@@ -31,6 +31,8 @@ extern "C" {
     _Py_atomic_store_ptr(&value, new_value)
 #define FT_ATOMIC_LOAD_PTR_ACQUIRE(value) \
     _Py_atomic_load_ptr_acquire(&value)
+#define FT_ATOMIC_LOAD_PTR_CONSUME(value) \
+    _Py_atomic_load_ptr_consume(&value)
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) \
     _Py_atomic_load_uintptr_acquire(&value)
 #define FT_ATOMIC_LOAD_PTR_RELAXED(value) \
@@ -131,6 +133,7 @@ extern "C" {
 #define FT_ATOMIC_LOAD_SSIZE_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_SSIZE_RELAXED(value) value
 #define FT_ATOMIC_LOAD_PTR_ACQUIRE(value) value
+#define FT_ATOMIC_LOAD_PTR_CONSUME(value) value
 #define FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(value) value
 #define FT_ATOMIC_LOAD_PTR_RELAXED(value) value
 #define FT_ATOMIC_LOAD_UINT8(value) value

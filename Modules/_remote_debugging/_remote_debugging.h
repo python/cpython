@@ -109,10 +109,11 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_TLBC_SIZE 2048
 
 /* Thread status flags */
-#define THREAD_STATUS_HAS_GIL        (1 << 0)
-#define THREAD_STATUS_ON_CPU         (1 << 1)
-#define THREAD_STATUS_UNKNOWN        (1 << 2)
-#define THREAD_STATUS_GIL_REQUESTED  (1 << 3)
+#define THREAD_STATUS_HAS_GIL             (1 << 0)
+#define THREAD_STATUS_ON_CPU              (1 << 1)
+#define THREAD_STATUS_UNKNOWN             (1 << 2)
+#define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
+#define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
 /* Exception cause macro */
 #define set_exception_cause(unwinder, exc_type, message) \
@@ -209,7 +210,8 @@ enum _ProfilingMode {
     PROFILING_MODE_WALL = 0,
     PROFILING_MODE_CPU = 1,
     PROFILING_MODE_GIL = 2,
-    PROFILING_MODE_ALL = 3
+    PROFILING_MODE_ALL = 3,
+    PROFILING_MODE_EXCEPTION = 4
 };
 
 typedef struct {

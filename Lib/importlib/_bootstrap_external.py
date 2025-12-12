@@ -1503,7 +1503,6 @@ def _fix_up_module(ns, name, pathname, cpathname=None):
         ns['__spec__'] = spec
         ns['__loader__'] = loader
         ns['__file__'] = pathname
-        ns['__cached__'] = cpathname
     except Exception:
         # Not important enough to report.
         pass
