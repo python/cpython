@@ -2231,18 +2231,16 @@ defdict_missing(PyObject *op, PyObject *key)
     value = _PyObject_CallNoArgs(factory);
     if (value == NULL)
         return value;
-    // if (PyObject_SetItem(op, key, value) < 0) {
-    //     Py_DECREF(value);
-    //     return NULL;
-    // }
     PyObject* result;
     int res = PyDict_SetDefaultRef(op, key, value, &result);
     if (res < 0) {
+        // set default ref with error
         PyObject *tup;
         tup = PyTuple_Pack(1, key);
         if (!tup) return NULL;
         PyErr_SetObject(PyExc_KeyError, tup);
         Py_DECREF(tup);
+        Py_DECREF(value);
     } else if (res > 0) {
         // Key was already in the dict
         Py_DECREF(value);
