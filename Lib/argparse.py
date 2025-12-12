@@ -688,6 +688,10 @@ class HelpFormatter(object):
                 params[name] = value.__name__
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
+        # Before interpolating, wrap the values with color codes
+        t = self._theme
+        for name, value in params.items():
+            params[name] = f"{t.interpolated_value}{value}{t.reset}"
         return help_string % params
 
     def _iter_indented_subactions(self, action):
@@ -769,8 +773,8 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
                 default_str = _(" (default: %(default)s)")
                 prefix, suffix = default_str.split("%(default)s")
                 help += (
-                    f" {t.default}{prefix.lstrip()}"
-                    f"{t.default_value}%(default)s"
+                    f" {t.default}{prefix.lstrip()}{t.reset}"
+                    f"%(default)s"
                     f"{t.default}{suffix}{t.reset}"
                 )
         return help
