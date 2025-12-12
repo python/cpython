@@ -750,6 +750,10 @@ class BaseFutureTests:
         self.assertIsNotNone(exc)
         self.assertListEqual(gc.get_referrers(exc), [])
 
+    def test_future_disallow_multiple_initialization(self):
+        f = self._new_future(loop=self.loop)
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            f.__init__(loop=self.loop)
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')

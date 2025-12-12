@@ -2776,6 +2776,18 @@ class BaseTaskTests:
         finally:
             loop.close()
 
+    def test_task_disallow_multiple_initialization(self):
+        async def foo():
+            pass
+
+        coro = foo()
+        self.addCleanup(coro.close)
+        task = self.new_task(self.loop, coro)
+        task._log_destroy_pending = False
+
+        with self.assertRaises(RuntimeError, msg="is already initialized"):
+            task.__init__(coro, loop=self.loop)
+
 def add_subclass_tests(cls):
     BaseTask = cls.Task
     BaseFuture = cls.Future
