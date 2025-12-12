@@ -3398,12 +3398,11 @@ class TestMutuallyExclusiveGroupErrors(TestCase):
               '''
         self.assertEqual(cmd_foo.format_help(), textwrap.dedent(expected))
 
-    def test_empty_group(self):
+    def test_usage_empty_group(self):
         # See issue 26952
-        parser = argparse.ArgumentParser()
+        parser = ErrorRaisingArgumentParser(prog='PROG')
         group = parser.add_mutually_exclusive_group()
-        with self.assertRaises(ValueError):
-            parser.parse_args(['-h'])
+        self.assertEqual(parser.format_usage(), 'usage: PROG [-h]\n')
 
     def test_nested_mutex_groups(self):
         parser = argparse.ArgumentParser(prog='PROG')
@@ -3671,25 +3670,29 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
         group.add_argument('-b', action='store_true', help='b help')
         parser.add_argument('-y', action='store_true', help='y help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['-a -b', '-b -c', '-a -c', '-a -b -c']
     successes = [
-        ('-a', NS(a=True, b=False, c=False, x=False, y=False)),
-        ('-b', NS(a=False, b=True, c=False, x=False, y=False)),
-        ('-c', NS(a=False, b=False, c=True, x=False, y=False)),
-        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False)),
-        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True)),
-        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True)),
+        ('-a', NS(a=True, b=False, c=False, x=False, y=False, z=False)),
+        ('-b', NS(a=False, b=True, c=False, x=False, y=False, z=False)),
+        ('-c', NS(a=False, b=False, c=True, x=False, y=False, z=False)),
+        ('-a -x', NS(a=True, b=False, c=False, x=True, y=False, z=False)),
+        ('-y -b', NS(a=False, b=True, c=False, x=False, y=True, z=False)),
+        ('-x -y -c', NS(a=False, b=False, c=True, x=True, y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('', NS(a=False, b=False, c=False, x=False, y=False)),
-        ('-x', NS(a=False, b=False, c=False, x=True, y=False)),
-        ('-y', NS(a=False, b=False, c=False, x=False, y=True)),
+        ('', NS(a=False, b=False, c=False, x=False, y=False, z=False)),
+        ('-x', NS(a=False, b=False, c=False, x=True, y=False, z=False)),
+        ('-y', NS(a=False, b=False, c=False, x=False, y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-x] [-a] [-b] [-y] [-c]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-x] [-a | -b | -c] [-y] [-z]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-x] (-a | -b | -c) [-y] [-z]
         '''
     help = '''\
 
@@ -3700,6 +3703,7 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
           -b          b help
           -y          y help
           -c          c help
+          -z          z help
         '''
 
 
@@ -3753,23 +3757,27 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         group.add_argument('a', nargs='?', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         group.add_argument('-c', action='store_true', help='c help')
+        parser.add_argument('-z', action='store_true', help='z help')
         return parser
 
     failures = ['X A -b', '-b -c', '-c X A']
     successes = [
-        ('X A', NS(a='A', b=False, c=False, x='X', y=False)),
-        ('X -b', NS(a=None, b=True, c=False, x='X', y=False)),
-        ('X -c', NS(a=None, b=False, c=True, x='X', y=False)),
-        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True)),
-        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True)),
+        ('X A', NS(a='A', b=False, c=False, x='X', y=False, z=False)),
+        ('X -b', NS(a=None, b=True, c=False, x='X', y=False, z=False)),
+        ('X -c', NS(a=None, b=False, c=True, x='X', y=False, z=False)),
+        ('X A -y', NS(a='A', b=False, c=False, x='X', y=True, z=False)),
+        ('X -y -b', NS(a=None, b=True, c=False, x='X', y=True, z=False)),
     ]
     successes_when_not_required = [
-        ('X', NS(a=None, b=False, c=False, x='X', y=False)),
-        ('X -y', NS(a=None, b=False, c=False, x='X', y=True)),
+        ('X', NS(a=None, b=False, c=False, x='X', y=False, z=False)),
+        ('X -y', NS(a=None, b=False, c=False, x='X', y=True, z=False)),
     ]
 
-    usage_when_required = usage_when_not_required = '''\
-        usage: PROG [-h] [-y] [-b] [-c] x [a]
+    usage_when_not_required = '''\
+        usage: PROG [-h] [-y] [-z] x [-b | -c | a]
+        '''
+    usage_when_required = '''\
+        usage: PROG [-h] [-y] [-z] x (-b | -c | a)
         '''
     help = '''\
 
@@ -3782,6 +3790,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
           -y          y help
           -b          b help
           -c          c help
+          -z          z help
         '''
 
 
@@ -4989,9 +4998,9 @@ class TestHelpUsageNoWhitespaceCrash(TestCase):
         g.add_argument('positional', nargs='?')
 
         usage = textwrap.dedent('''\
-        usage: PROG [-h] [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
-                    -y [YET_ANOTHER_LONG_OPTION] |
-                    positional]
+        usage: PROG [-h]
+                    [-v | -q | -x [EXTRA_LONG_OPTION_NAME] |
+                    -y [YET_ANOTHER_LONG_OPTION] | positional]
         ''')
         self.assertEqual(parser.format_usage(), usage)
 
@@ -5410,6 +5419,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
     argument_signatures = [
         Sig('--foo', help='foo help - oh and by the way, %(default)s'),
         Sig('--bar', action='store_true', help='bar help'),
+        Sig('--required', required=True, help='some help'),
         Sig('--taz', action=argparse.BooleanOptionalAction,
             help='Whether to taz it', default=True),
         Sig('--corge', action=argparse.BooleanOptionalAction,
@@ -5423,8 +5433,8 @@ class TestHelpArgumentDefaults(HelpTestCase):
          [Sig('--baz', type=int, default=42, help='baz help')]),
     ]
     usage = '''\
-        usage: PROG [-h] [--foo FOO] [--bar] [--taz | --no-taz] [--corge | --no-corge]
-                    [--quux QUUX] [--baz BAZ]
+        usage: PROG [-h] [--foo FOO] [--bar] --required REQUIRED [--taz | --no-taz]
+                    [--corge | --no-corge] [--quux QUUX] [--baz BAZ]
                     spam [badger]
         '''
     help = usage + '''\
@@ -5439,6 +5449,7 @@ class TestHelpArgumentDefaults(HelpTestCase):
           -h, --help           show this help message and exit
           --foo FOO            foo help - oh and by the way, None
           --bar                bar help (default: False)
+          --required REQUIRED  some help
           --taz, --no-taz      Whether to taz it (default: True)
           --corge, --no-corge  Whether to corge it
           --quux QUUX          Set the quux (default: 42)
@@ -5685,6 +5696,11 @@ class TestHelpCustomHelpFormatter(TestCase):
                 a-very-long-command  command that does something
         '''))
 
+    def test_direct_formatter_instantiation(self):
+        formatter = argparse.HelpFormatter(prog="program")
+        formatter.add_usage(usage=None, actions=[], groups=[])
+        help_text = formatter.format_help()
+        self.assertEqual(help_text, "usage: program\n")
 
 # =====================================
 # Optional/Positional constructor tests
@@ -7543,6 +7559,40 @@ class TestColorized(TestCase):
         warn = stderr.getvalue()
         self.assertNotIn('\x1b[', warn)
         self.assertIn('warning:', warn)
+
+    def test_print_help_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_help(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
+
+    def test_print_usage_uses_target_file_for_color_decision(self):
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--opt')
+        output = io.StringIO()
+        calls = []
+
+        def fake_can_colorize(*, file=None):
+            calls.append(file)
+            return file is None
+
+        with swap_attr(_colorize, 'can_colorize', fake_can_colorize):
+            parser.print_usage(file=output)
+
+        self.assertIs(calls[-1], output)
+        self.assertIn(output, calls)
+        self.assertNotIn('\x1b[', output.getvalue())
 
 
 class TestModule(unittest.TestCase):

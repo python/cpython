@@ -28,11 +28,28 @@ PyStructSequence_Desc TaskInfo_desc = {
     4
 };
 
+// LocationInfo structseq type
+static PyStructSequence_Field LocationInfo_fields[] = {
+    {"lineno", "Line number"},
+    {"end_lineno", "End line number"},
+    {"col_offset", "Column offset"},
+    {"end_col_offset", "End column offset"},
+    {NULL}
+};
+
+PyStructSequence_Desc LocationInfo_desc = {
+    "_remote_debugging.LocationInfo",
+    "Source location information: (lineno, end_lineno, col_offset, end_col_offset)",
+    LocationInfo_fields,
+    4
+};
+
 // FrameInfo structseq type
 static PyStructSequence_Field FrameInfo_fields[] = {
     {"filename", "Source code filename"},
-    {"lineno", "Line number"},
+    {"location", "LocationInfo structseq or None for synthetic frames"},
     {"funcname", "Function name"},
+    {"opcode", "Opcode being executed (None if not gathered)"},
     {NULL}
 };
 
@@ -40,7 +57,7 @@ PyStructSequence_Desc FrameInfo_desc = {
     "_remote_debugging.FrameInfo",
     "Information about a frame",
     FrameInfo_fields,
-    3
+    4
 };
 
 // CoroInfo structseq type
@@ -235,6 +252,7 @@ _remote_debugging.RemoteUnwinder.__init__
     skip_non_matching_threads: bool = True
     native: bool = False
     gc: bool = False
+    opcodes: bool = False
     cache_frames: bool = False
     stats: bool = False
 
@@ -255,6 +273,8 @@ Args:
             non-Python code.
     gc: If True, include artificial "<GC>" frames to denote active garbage
         collection.
+    opcodes: If True, gather bytecode opcode information for instruction-level
+             profiling.
     cache_frames: If True, enable frame caching optimization to avoid re-reading
                  unchanged parent frames between samples.
     stats: If True, collect statistics about cache hits, memory reads, etc.
@@ -277,8 +297,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int mode, int debug,
                                                int skip_non_matching_threads,
                                                int native, int gc,
-                                               int cache_frames, int stats)
-/*[clinic end generated code: output=b34ef8cce013c975 input=df2221ef114c3d6a]*/
+                                               int opcodes, int cache_frames,
+                                               int stats)
+/*[clinic end generated code: output=0031f743f4b9ad52 input=8fb61b24102dec6e]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -297,6 +318,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     self->native = native;
     self->gc = gc;
+    self->opcodes = opcodes;
     self->cache_frames = cache_frames;
     self->collect_stats = stats;
     self->stale_invalidation_counter = 0;
@@ -546,7 +568,8 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                                                            gc_frame);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
-                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL) && !PyErr_Occurred()) {
+                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
+                     self->mode == PROFILING_MODE_EXCEPTION) && !PyErr_Occurred()) {
                     // Thread was skipped due to mode filtering, continue to next thread
                     continue;
                 }
@@ -978,6 +1001,14 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
+    st->LocationInfo_Type = PyStructSequence_NewType(&LocationInfo_desc);
+    if (st->LocationInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->LocationInfo_Type) < 0) {
+        return -1;
+    }
+
     st->FrameInfo_Type = PyStructSequence_NewType(&FrameInfo_desc);
     if (st->FrameInfo_Type == NULL) {
         return -1;
@@ -1038,6 +1069,9 @@ _remote_debugging_exec(PyObject *m)
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_GIL_REQUESTED", THREAD_STATUS_GIL_REQUESTED) < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
 
     if (RemoteDebugging_InitState(st) < 0) {
         return -1;
@@ -1051,6 +1085,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_VISIT(state->RemoteDebugging_Type);
     Py_VISIT(state->TaskInfo_Type);
+    Py_VISIT(state->LocationInfo_Type);
     Py_VISIT(state->FrameInfo_Type);
     Py_VISIT(state->CoroInfo_Type);
     Py_VISIT(state->ThreadInfo_Type);
@@ -1065,6 +1100,7 @@ remote_debugging_clear(PyObject *mod)
     RemoteDebuggingState *state = RemoteDebugging_GetState(mod);
     Py_CLEAR(state->RemoteDebugging_Type);
     Py_CLEAR(state->TaskInfo_Type);
+    Py_CLEAR(state->LocationInfo_Type);
     Py_CLEAR(state->FrameInfo_Type);
     Py_CLEAR(state->CoroInfo_Type);
     Py_CLEAR(state->ThreadInfo_Type);

@@ -210,6 +210,19 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
     _PyFrame_GetStackPointer(frame);
 }
 
+#if defined(_Py_TIER2) && !defined(_Py_JIT) && defined(Py_DEBUG)
+static void
+dump_cache_item(_PyStackRef cache, int position, int depth)
+{
+    if (position < depth) {
+        dump_item(cache);
+    }
+    else {
+        printf("---");
+    }
+}
+#endif
+
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
                     _PyStackRef *stack_pointer,
@@ -1603,12 +1616,20 @@ _PyTier2Interpreter(
 ) {
     const _PyUOpInstruction *next_uop;
     int oparg;
+    /* Set up "jit" state after entry from tier 1.
+     * This mimics what the jit trampoline function does. */
+    tstate->jit_exit = NULL;
+    _PyStackRef _tos_cache0 = PyStackRef_ZERO_BITS;
+    _PyStackRef _tos_cache1 = PyStackRef_ZERO_BITS;
+    _PyStackRef _tos_cache2 = PyStackRef_ZERO_BITS;
+    int current_cached_values = 0;
+
 tier2_start:
 
     next_uop = current_executor->trace;
-    assert(next_uop->opcode == _START_EXECUTOR ||
-        next_uop->opcode == _COLD_EXIT ||
-        next_uop->opcode == _COLD_DYNAMIC_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR_r00 + current_cached_values ||
+        next_uop->opcode == _COLD_EXIT_r00 + current_cached_values ||
+        next_uop->opcode == _COLD_DYNAMIC_EXIT_r00 + current_cached_values);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1632,16 +1653,23 @@ tier2_start:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR ||
-        next_uop->opcode == _COLD_EXIT ||
-        next_uop->opcode == _COLD_DYNAMIC_EXIT);
+    assert(next_uop->opcode == _START_EXECUTOR_r00 ||
+        next_uop->opcode == _COLD_EXIT_r00 ||
+        next_uop->opcode == _COLD_DYNAMIC_EXIT_r00);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (frame->lltrace >= 3) {
             dump_stack(frame, stack_pointer);
-            if (next_uop->opcode == _START_EXECUTOR) {
+            printf("    cache=[");
+            dump_cache_item(_tos_cache0, 0, current_cached_values);
+            printf(", ");
+            dump_cache_item(_tos_cache1, 1, current_cached_values);
+            printf(", ");
+            dump_cache_item(_tos_cache2, 2, current_cached_values);
+            printf("]\n");
+            if (next_uop->opcode == _START_EXECUTOR_r00) {
                 printf("%4d uop: ", 0);
             }
             else {
@@ -1649,6 +1677,7 @@ tier2_dispatch:
             }
             _PyUOpPrint(next_uop);
             printf("\n");
+            fflush(stdout);
         }
 #endif
         next_uop++;
@@ -3352,6 +3381,9 @@ PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     _PyInterpreterFrame *current_frame = tstate->current_frame;
+    if (current_frame == tstate->base_frame) {
+        current_frame = NULL;
+    }
     int result = cf->cf_flags != 0;
 
     if (current_frame != NULL) {

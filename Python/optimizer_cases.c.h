@@ -1719,17 +1719,17 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef *attr;
+            JitOptRef attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
-            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            *attr = sym_new_not_null(ctx);
+            attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
             CHECK_STACK_BOUNDS((oparg&1));
+            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -1848,7 +1848,7 @@
             (void)descr;
             PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2495,7 +2495,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2516,7 +2516,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2536,7 +2536,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2551,7 +2551,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
             stack_pointer[-1] = attr;
@@ -2571,7 +2571,7 @@
             (void)descr;
             PyTypeObject *type = sym_get_type(owner);
             PyObject *name = get_co_name(ctx, oparg >> 1);
-            attr = lookup_attr(ctx, this_instr, type, name,
+            attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
             self = owner;
@@ -2999,8 +2999,12 @@
 
         case _CALL_LEN: {
             JitOptRef arg;
+            JitOptRef callable;
             JitOptRef res;
+            JitOptRef a;
+            JitOptRef c;
             arg = stack_pointer[-1];
+            callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
             Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
@@ -3020,10 +3024,11 @@
                 Py_DECREF(temp);
                 stack_pointer += 2;
             }
-            CHECK_STACK_BOUNDS(-2);
+            a = arg;
+            c = callable;
             stack_pointer[-3] = res;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-2] = a;
+            stack_pointer[-1] = c;
             break;
         }
 
@@ -3625,6 +3630,10 @@
         }
 
         case _ERROR_POP_N: {
+            break;
+        }
+
+        case _SPILL_OR_RELOAD: {
             break;
         }
 

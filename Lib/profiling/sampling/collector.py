@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from .constants import (
+    DEFAULT_LOCATION,
     THREAD_STATUS_HAS_GIL,
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_UNKNOWN,
+    THREAD_STATUS_HAS_EXCEPTION,
 )
 
 try:
@@ -11,6 +13,34 @@ try:
 except ImportError:
     # Fallback definition if _remote_debugging is not available
     FrameInfo = None
+
+
+def normalize_location(location):
+    """Normalize location to a 4-tuple format.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        tuple: (lineno, end_lineno, col_offset, end_col_offset)
+    """
+    if location is None:
+        return DEFAULT_LOCATION
+    return location
+
+
+def extract_lineno(location):
+    """Extract lineno from location.
+
+    Args:
+        location: tuple (lineno, end_lineno, col_offset, end_col_offset) or None
+
+    Returns:
+        int: The line number (0 for synthetic frames)
+    """
+    if location is None:
+        return 0
+    return location[0]
 
 class Collector(ABC):
     @abstractmethod
@@ -117,11 +147,11 @@ class Collector(ABC):
                     selected_parent, parent_count = parent_info
                     if parent_count > 1:
                         task_name = f"{task_name} ({parent_count} parents)"
-                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    frames.append(FrameInfo(("<task>", None, task_name, None)))
                     current_id = selected_parent
                 else:
                     # Root task - no parent
-                    frames.append(FrameInfo(("<task>", 0, task_name)))
+                    frames.append(FrameInfo(("<task>", None, task_name, None)))
                     current_id = None
 
             # Yield the complete stack if we collected any frames
@@ -141,7 +171,7 @@ class Collector(ABC):
 
         Returns:
             tuple: (aggregate_status_counts, has_gc_frame, per_thread_stats)
-                - aggregate_status_counts: dict with has_gil, on_cpu, etc.
+                - aggregate_status_counts: dict with has_gil, on_cpu, has_exception, etc.
                 - has_gc_frame: bool indicating if any thread has GC frames
                 - per_thread_stats: dict mapping thread_id to per-thread counts
         """
@@ -150,6 +180,7 @@ class Collector(ABC):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         has_gc_frame = False
@@ -171,6 +202,8 @@ class Collector(ABC):
                     status_counts["gil_requested"] += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     status_counts["unknown"] += 1
+                if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                    status_counts["has_exception"] += 1
 
                 # Track per-thread statistics
                 thread_id = getattr(thread_info, "thread_id", None)
@@ -181,6 +214,7 @@ class Collector(ABC):
                             "on_cpu": 0,
                             "gil_requested": 0,
                             "unknown": 0,
+                            "has_exception": 0,
                             "total": 0,
                             "gc_samples": 0,
                         }
@@ -196,6 +230,8 @@ class Collector(ABC):
                         thread_stats["gil_requested"] += 1
                     if status_flags & THREAD_STATUS_UNKNOWN:
                         thread_stats["unknown"] += 1
+                    if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                        thread_stats["has_exception"] += 1
 
                     # Check for GC frames in this thread
                     frames = getattr(thread_info, "frame_info", None)

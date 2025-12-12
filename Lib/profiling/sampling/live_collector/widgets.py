@@ -20,6 +20,7 @@ from .constants import (
     MIN_SAMPLE_RATE_FOR_SCALING,
     FOOTER_LINES,
     FINISHED_BANNER_EXTRA_LINES,
+    OPCODE_PANEL_HEIGHT,
 )
 from ..constants import (
     THREAD_STATUS_HAS_GIL,
@@ -388,12 +389,15 @@ class HeaderWidget(Widget):
         pct_on_gil = (status_counts["has_gil"] / total_threads) * 100
         pct_off_gil = 100.0 - pct_on_gil
         pct_gil_requested = (status_counts["gil_requested"] / total_threads) * 100
+        pct_exception = (status_counts.get("has_exception", 0) / total_threads) * 100
 
         # Get GC percentage based on view mode
         if thread_data:
             total_samples = max(1, thread_data.sample_count)
             pct_gc = (thread_data.gc_frame_samples / total_samples) * 100
         else:
+            # Use total_samples for GC percentage since gc_frame_samples is tracked
+            # across ALL samples (via thread status), not just successful ones
             total_samples = max(1, self.collector.total_samples)
             pct_gc = (self.collector.gc_frame_samples / total_samples) * 100
 
@@ -424,6 +428,17 @@ class HeaderWidget(Widget):
                 "waiting for gil",
                 self.colors["yellow"],
                 add_separator=True,
+            )
+
+        # Show exception stats
+        if col < width - 15:
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_exception,
+                "exc",
+                self.colors["red"],
+                add_separator=(col > 11),
             )
 
         # Always show GC stats
@@ -516,10 +531,7 @@ class HeaderWidget(Widget):
                 continue
 
             func_name = func_data["func"][2]
-            func_pct = (
-                func_data["direct_calls"]
-                / max(1, self.collector.total_samples)
-            ) * 100
+            func_pct = func_data["sample_pct"]
 
             # Medal emoji
             if col + 3 < width - 15:
@@ -730,8 +742,21 @@ class TableWidget(Widget):
         # Get trend tracker for color decisions
         trend_tracker = self.collector._trend_tracker
 
-        for stat in stats_list:
-            if line >= height - FOOTER_LINES:
+        # Check if opcode mode is enabled for row selection highlighting
+        show_opcodes = getattr(self.collector, 'show_opcodes', False)
+        selected_row = getattr(self.collector, 'selected_row', 0)
+        scroll_offset = getattr(self.collector, 'scroll_offset', 0) if show_opcodes else 0
+        A_REVERSE = self.display.get_attr("A_REVERSE")
+        A_BOLD = self.display.get_attr("A_BOLD")
+
+        # Reserve space for opcode panel when enabled
+        opcode_panel_height = OPCODE_PANEL_HEIGHT if show_opcodes else 0
+
+        # Apply scroll offset when in opcode mode
+        display_stats = stats_list[scroll_offset:] if show_opcodes else stats_list
+
+        for row_idx, stat in enumerate(display_stats):
+            if line >= height - FOOTER_LINES - opcode_panel_height:
                 break
 
             func = stat["func"]
@@ -739,21 +764,17 @@ class TableWidget(Widget):
             cumulative_calls = stat["cumulative_calls"]
             total_time = stat["total_time"]
             cumulative_time = stat["cumulative_time"]
+            sample_pct = stat["sample_pct"]
+            cum_pct = stat["cumul_pct"]
             trends = stat.get("trends", {})
 
-            sample_pct = (
-                (direct_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
-            cum_pct = (
-                (cumulative_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
+            # Check if this row is selected
+            is_selected = show_opcodes and row_idx == selected_row
 
             # Helper function to get trend color for a specific column
             def get_trend_color(column_name):
+                if is_selected:
+                    return A_REVERSE | A_BOLD
                 trend = trends.get(column_name, "stable")
                 if trend_tracker is not None:
                     return trend_tracker.get_color(trend)
@@ -763,33 +784,45 @@ class TableWidget(Widget):
             samples_str = f"{direct_calls}/{cumulative_calls}"
             col = 0
 
+            # Fill entire row with reverse video background for selected row
+            if is_selected:
+                self.add_str(line, 0, " " * (width - 1), A_REVERSE | A_BOLD)
+
+            # Show selection indicator when opcode panel is enabled
+            if show_opcodes:
+                if is_selected:
+                    self.add_str(line, col, "►", A_REVERSE | A_BOLD)
+                else:
+                    self.add_str(line, col, " ", curses.A_NORMAL)
+                col += 2
+
             # Samples column - apply trend color based on nsamples trend
             nsamples_color = get_trend_color("nsamples")
-            self.add_str(line, col, f"{samples_str:>13}", nsamples_color)
+            self.add_str(line, col, f"{samples_str:>13}  ", nsamples_color)
             col += 15
 
             # Sample % column
             if show_sample_pct:
                 sample_pct_color = get_trend_color("sample_pct")
-                self.add_str(line, col, f"{sample_pct:>5.1f}", sample_pct_color)
+                self.add_str(line, col, f"{sample_pct:>5.1f}  ", sample_pct_color)
                 col += 7
 
             # Total time column
             if show_tottime:
                 tottime_color = get_trend_color("tottime")
-                self.add_str(line, col, f"{total_time:>10.3f}", tottime_color)
+                self.add_str(line, col, f"{total_time:>10.3f}  ", tottime_color)
                 col += 12
 
             # Cumul % column
             if show_cumul_pct:
                 cumul_pct_color = get_trend_color("cumul_pct")
-                self.add_str(line, col, f"{cum_pct:>5.1f}", cumul_pct_color)
+                self.add_str(line, col, f"{cum_pct:>5.1f}  ", cumul_pct_color)
                 col += 7
 
             # Cumul time column
             if show_cumtime:
                 cumtime_color = get_trend_color("cumtime")
-                self.add_str(line, col, f"{cumulative_time:>10.3f}", cumtime_color)
+                self.add_str(line, col, f"{cumulative_time:>10.3f}  ", cumtime_color)
                 col += 12
 
             # Function name column
@@ -804,7 +837,8 @@ class TableWidget(Widget):
                 if len(funcname) > func_width:
                     func_display = funcname[: func_width - 3] + "..."
                 func_display = f"{func_display:<{func_width}}"
-                self.add_str(line, col, func_display, color_func)
+                func_color = A_REVERSE | A_BOLD if is_selected else color_func
+                self.add_str(line, col, func_display, func_color)
                 col += func_width + 2
 
                 # File:line column
@@ -812,8 +846,9 @@ class TableWidget(Widget):
                     simplified_path = self.collector.simplify_path(filename)
                     file_line = f"{simplified_path}:{lineno}"
                     remaining_width = width - col - 1
+                    file_color = A_REVERSE | A_BOLD if is_selected else color_file
                     self.add_str(
-                        line, col, file_line[:remaining_width], color_file
+                        line, col, file_line[:remaining_width], file_color
                     )
 
             line += 1
@@ -934,7 +969,8 @@ class HelpWidget(Widget):
             ("  S           - Cycle through sort modes (backward)", A_NORMAL),
             ("  t           - Toggle view mode (ALL / per-thread)", A_NORMAL),
             ("  x           - Toggle trend colors (on/off)", A_NORMAL),
-            ("  ← →  ↑ ↓   - Navigate threads (in per-thread mode)", A_NORMAL),
+            ("  j/k or ↑/↓  - Select next/previous function (--opcodes)", A_NORMAL),
+            ("  ← / →       - Cycle through threads", A_NORMAL),
             ("  +           - Faster display refresh rate", A_NORMAL),
             ("  -           - Slower display refresh rate", A_NORMAL),
             ("", A_NORMAL),
@@ -961,3 +997,99 @@ class HelpWidget(Widget):
                 self.add_str(start_line + i, col, text[: width - 3], attr)
 
         return line  # Not used for overlays
+
+
+class OpcodePanel(Widget):
+    """Widget for displaying opcode statistics for a selected function."""
+
+    def __init__(self, display, colors, collector):
+        super().__init__(display, colors)
+        self.collector = collector
+
+    def render(self, line, width, **kwargs):
+        """Render opcode statistics panel.
+
+        Args:
+            line: Starting line number
+            width: Available width
+            kwargs: Must contain 'stats_list', 'height'
+
+        Returns:
+            Next available line number
+        """
+        from ..opcode_utils import get_opcode_info, format_opcode
+
+        stats_list = kwargs.get("stats_list", [])
+        height = kwargs.get("height", 24)
+        selected_row = self.collector.selected_row
+        scroll_offset = getattr(self.collector, 'scroll_offset', 0)
+
+        A_BOLD = self.display.get_attr("A_BOLD")
+        A_NORMAL = self.display.get_attr("A_NORMAL")
+        color_cyan = self.colors.get("color_cyan", A_NORMAL)
+        color_yellow = self.colors.get("color_yellow", A_NORMAL)
+        color_magenta = self.colors.get("color_magenta", A_NORMAL)
+
+        # Get the selected function from stats_list (accounting for scroll)
+        actual_index = scroll_offset + selected_row
+        if not stats_list or actual_index >= len(stats_list):
+            self.add_str(line, 0, "No function selected (use j/k to select)", A_NORMAL)
+            return line + 1
+
+        selected_stat = stats_list[actual_index]
+        func = selected_stat["func"]
+        filename, lineno, funcname = func
+
+        # Get opcode stats for this function
+        opcode_stats = self.collector.opcode_stats.get(func, {})
+
+        if not opcode_stats:
+            self.add_str(line, 0, f"No opcode data for {funcname}() (requires --opcodes)", A_NORMAL)
+            return line + 1
+
+        # Sort opcodes by count
+        sorted_opcodes = sorted(opcode_stats.items(), key=lambda x: -x[1])
+        total_opcode_samples = sum(opcode_stats.values())
+
+        # Draw header
+        header = f"─── Opcodes for {funcname}() "
+        header += "─" * max(0, width - len(header) - 1)
+        self.add_str(line, 0, header[:width-1], color_cyan | A_BOLD)
+        line += 1
+
+        # Calculate max samples for bar scaling
+        max_count = sorted_opcodes[0][1] if sorted_opcodes else 1
+
+        # Draw opcode rows (limit to available space)
+        max_rows = min(8, height - line - 3)  # Leave room for footer
+        bar_width = 20
+
+        for i, (opcode_num, count) in enumerate(sorted_opcodes[:max_rows]):
+            if line >= height - 3:
+                break
+
+            opcode_info = get_opcode_info(opcode_num)
+            is_specialized = opcode_info["is_specialized"]
+            name_display = format_opcode(opcode_num)
+
+            pct = (count / total_opcode_samples * 100) if total_opcode_samples > 0 else 0
+
+            # Draw bar
+            bar_fill = int((count / max_count) * bar_width) if max_count > 0 else 0
+            bar = "█" * bar_fill + "░" * (bar_width - bar_fill)
+
+            # Format: [████████░░░░] LOAD_ATTR  45.2% (1234)
+            # Specialized opcodes shown in magenta, base opcodes in yellow
+            name_color = color_magenta if is_specialized else color_yellow
+
+            row_text = f"[{bar}] {name_display:<35} {pct:>5.1f}% ({count:>6})"
+            self.add_str(line, 2, row_text[:width-3], name_color)
+            line += 1
+
+        # Show "..." if more opcodes exist
+        if len(sorted_opcodes) > max_rows:
+            remaining = len(sorted_opcodes) - max_rows
+            self.add_str(line, 2, f"... and {remaining} more opcodes", A_NORMAL)
+            line += 1
+
+        return line
