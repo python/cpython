@@ -589,6 +589,16 @@ extern int process_thread_for_async_stack_trace(
     void *context
 );
 
+/* ============================================================================
+ * SUBPROCESS ENUMERATION FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/* Get all child PIDs of a process.
+ * Returns a new Python list of PIDs, or NULL on error with exception set.
+ * If recursive is true, includes all descendants (children, grandchildren, etc.)
+ */
+extern PyObject *enumerate_child_pids(pid_t target_pid, int recursive);
+
 #ifdef __cplusplus
 }
 #endif
