@@ -7308,6 +7308,13 @@ class TestColorized(TestCase):
             choices=("Aaaaa", "Bbbbb", "Ccccc", "Ddddd"),
             help="pick one",
         )
+        parser.add_argument(
+            "--optional8",
+            default="A",
+            metavar="X",
+            choices=("A", "B", "C"),
+            help="among %(choices)s, default is %(default)s",
+        )
 
         parser.add_argument("+f")
         parser.add_argument("++bar")
@@ -7334,7 +7341,7 @@ class TestColorized(TestCase):
         label_b = self.theme.label
         pos_b = self.theme.action
         default = self.theme.default
-        default_value = self.theme.default_value
+        interp = self.theme.interpolated_value
         reset = self.theme.reset
 
         # Act
@@ -7347,8 +7354,8 @@ class TestColorized(TestCase):
                 f"""\
                 {heading}usage: {reset}{prog}PROG{reset} [{short}-h{reset}] [{short}-v{reset} | {short}-q{reset}] [{short}-o{reset}] [{long}--optional2 {label}OPTIONAL2{reset}] [{long}--optional3 {label}{{X,Y,Z}}{reset}]
                             [{long}--optional4 {label}{{X,Y,Z}}{reset}] [{long}--optional5 {label}{{X,Y,Z}}{reset}] [{long}--optional6 {label}{{X,Y,Z}}{reset}]
-                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}] [{long}-+baz {label}BAZ{reset}]
-                            [{short}-c {label}COUNT{reset}]
+                            [{short}-p {label}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}] [{long}--optional8 {label}X{reset}] [{short}+f {label}F{reset}] [{long}++bar {label}BAR{reset}]
+                            [{long}-+baz {label}BAZ{reset}] [{short}-c {label}COUNT{reset}]
                             {pos}x{reset} {pos}y{reset} {pos}this_indeed_is_a_very_long_action_name{reset} {pos}{{sub1,sub2}} ...{reset}
 
                 Colorful help
@@ -7361,17 +7368,18 @@ class TestColorized(TestCase):
 
                 {heading}options:{reset}
                   {short_b}-h{reset}, {long_b}--help{reset}            show this help message and exit
-                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {default_value}False{default}){reset}
-                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {default_value}False{default}){reset}
+                  {short_b}-v{reset}, {long_b}--verbose{reset}         more spam {default}(default: {reset}{interp}False{reset}{default}){reset}
+                  {short_b}-q{reset}, {long_b}--quiet{reset}           less spam {default}(default: {reset}{interp}False{reset}{default}){reset}
                   {short_b}-o{reset}, {long_b}--optional1{reset}
                   {long_b}--optional2{reset} {label_b}OPTIONAL2{reset}
-                                        pick one {default}(default: {default_value}None{default}){reset}
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {long_b}--optional3{reset} {label_b}{{X,Y,Z}}{reset}
-                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
-                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
-                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {default_value}None{default}){reset}
+                  {long_b}--optional4{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional5{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional6{reset} {label_b}{{X,Y,Z}}{reset}   pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
                   {short_b}-p{reset}, {long_b}--optional7{reset} {label_b}{{Aaaaa,Bbbbb,Ccccc,Ddddd}}{reset}
-                                        pick one {default}(default: {default_value}None{default}){reset}
+                                        pick one {default}(default: {reset}{interp}None{reset}{default}){reset}
+                  {long_b}--optional8{reset} {label_b}X{reset}         among {interp}A, B, C{reset}, default is {interp}A{reset}
                   {short_b}+f{reset} {label_b}F{reset}
                   {long_b}++bar{reset} {label_b}BAR{reset}
                   {long_b}-+baz{reset} {label_b}BAZ{reset}
