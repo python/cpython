@@ -334,6 +334,16 @@ You should now be able to call the function:
 Note that our ``spam.system`` does not yet run the ``whoami`` command;
 it only returns ``None``.
 
+Check that the function accepts exactly one argument, as specified by
+the :c:data:`METH_O` flag:
+
+.. code-block:: pycon
+
+   >>> print(spam.system('too', 'many', 'arguments'))
+   Traceback (most recent call last):
+      ...
+   TypeError: spam.system() takes exactly one argument (3 given)
+
 
 Returning an integer
 ====================
@@ -494,11 +504,6 @@ You might also want to test error cases:
    Traceback (most recent call last):
       ...
    TypeError: bad argument type for built-in operation
-
-   >>> print(spam.system('too', 'many', 'arguments'))
-   Traceback (most recent call last):
-      ...
-   TypeError: spam.system() takes exactly one argument (3 given)
 
 
 The result
