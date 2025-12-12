@@ -337,8 +337,9 @@ process_frame_chain(
             extra_frame = &_Py_STR(native);
         }
         if (extra_frame) {
+            // Use "~" as file, None as location (synthetic frame), None as opcode
             PyObject *extra_frame_info = make_frame_info(
-                unwinder, _Py_LATIN1_CHR('~'), _PyLong_GetZero(), extra_frame);
+                unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
             if (extra_frame_info == NULL) {
                 return -1;
             }

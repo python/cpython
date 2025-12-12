@@ -842,8 +842,9 @@ LIBREADLINE_CFLAGS
 WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
-PLATLIBDIR
 BINLIBDEST
+LIBDEST
+PLATLIBDIR
 LIBPYTHON
 MODULE_DEPS_SHARED
 EXT_SUFFIX
@@ -23947,6 +23948,25 @@ printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
 fi
 
 
+ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
+
+fi
+
+
 # check for openpty, login_tty, and forkpty
 
 
@@ -26120,8 +26140,8 @@ main (void)
 {
 
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 
   ;
   return 0;
@@ -26923,15 +26943,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
 printf %s "checking for --with-platlibdir... " >&6; }
 
@@ -26948,7 +26963,6 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -26962,10 +26976,14 @@ fi
 
 
 
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+
+
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 

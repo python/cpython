@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tachyon Profiler - Flamegraph</title>
+    <title>Tachyon Profiler - Flamegraph Report</title>
     <!-- INLINE_VENDOR_D3_JS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->
     <!-- INLINE_VENDOR_FLAMEGRAPH_JS -->
@@ -15,9 +15,10 @@
       <!-- Top Bar -->
       <header class="top-bar">
         <div class="brand">
+          <div class="brand-logo" id="navbar-logo"></div>
           <span class="brand-text">Tachyon</span>
           <span class="brand-divider"></span>
-          <span class="brand-subtitle">Profiler</span>
+          <span class="brand-subtitle">Flamegraph Report</span>
         </div>
         <div class="search-wrapper">
           <input
@@ -74,6 +75,16 @@
             <div class="sidebar-logo">
               <div class="sidebar-logo-img"><!-- INLINE_LOGO --></div>
             </div>
+
+            <!-- View Mode Section -->
+            <section class="sidebar-section view-mode-section">
+              <h3 class="section-title">View Mode</h3>
+              <div class="toggle-switch" id="toggle-invert">
+                <span class="toggle-label active">Flamegraph</span>
+                <div class="toggle-track"></div>
+                <span class="toggle-label">Inverted Flamegraph</span>
+              </div>
+            </section>
 
             <!-- Profile Summary Section -->
             <section class="sidebar-section collapsible" id="summary-section">
@@ -160,6 +171,10 @@
                   <div class="stat-tile stat-tile--purple" id="gc-stat">
                     <div class="stat-tile-value" id="gc-pct">--</div>
                     <div class="stat-tile-label">GC</div>
+                  </div>
+                  <div class="stat-tile stat-tile--red" id="exc-stat">
+                    <div class="stat-tile-value" id="exc-pct">--</div>
+                    <div class="stat-tile-label">Exception</div>
                   </div>
                 </div>
               </div>
@@ -286,6 +301,12 @@
 
       <!-- Status Bar -->
       <footer class="status-bar">
+        <span class="status-item" id="status-brand">
+          <span class="status-value">Tachyon Profiler</span>
+        </span>
+        <span class="status-item" id="status-tagline">
+          <span class="status-label">Python Sampling Profiler</span>
+        </span>
         <span class="status-item" id="status-location" style="display: none;">
           <span class="status-label">File:</span>
           <span class="status-value" id="status-file">--</span>
