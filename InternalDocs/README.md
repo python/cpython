@@ -29,8 +29,6 @@ Runtime Objects
 
 - [Frames](frames.md)
 
-- [String Interning](string_interning.md)
-
 Program Execution
 ---
 
@@ -47,6 +45,14 @@ Program Execution
 - [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
 
 - [Stack protection](stack_protection.md)
+
+Built-in Types
+---
+
+- [String Interning](string_interning.md)
+
+- [List sort algorithm](../Objects/listsort.txt)
+  <!-- (kept at the original location outside this directory) -->
 
 Modules
 ---

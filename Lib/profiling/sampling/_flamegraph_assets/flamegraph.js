@@ -2,8 +2,10 @@ const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
 // Global string table for resolving string indices
 let stringTable = [];
-let originalData = null;
+let normalData = null;
+let invertedData = null;
 let currentThreadFilter = 'all';
+let isInverted = false;
 
 // Heat colors are now defined in CSS variables (--heat-1 through --heat-8)
 // and automatically switch with theme changes - no JS color arrays needed!
@@ -90,13 +92,15 @@ function toggleTheme() {
   // Update theme button icon
   const btn = document.getElementById('theme-btn');
   if (btn) {
-    btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
+    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
   }
 
   // Re-render flamegraph with new theme colors
-  if (window.flamegraphData && originalData) {
-    const tooltip = createPythonTooltip(originalData);
-    const chart = createFlamegraph(tooltip, originalData.value);
+  if (window.flamegraphData && normalData) {
+    const currentData = isInverted ? invertedData : normalData;
+    const tooltip = createPythonTooltip(currentData);
+    const chart = createFlamegraph(tooltip, currentData.value);
     renderFlamegraph(chart, window.flamegraphData);
   }
 }
@@ -157,7 +161,8 @@ function restoreUIState() {
     document.documentElement.setAttribute('data-theme', savedTheme);
     const btn = document.getElementById('theme-btn');
     if (btn) {
-      btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
+      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
     }
   }
 
@@ -188,6 +193,27 @@ function restoreUIState() {
 }
 
 // ============================================================================
+// Logo/Favicon Setup
+// ============================================================================
+
+function setupLogos() {
+    const logo = document.querySelector('.sidebar-logo-img img');
+    if (!logo) return;
+
+    const navbarLogoContainer = document.getElementById('navbar-logo');
+    if (navbarLogoContainer) {
+        const navbarLogo = logo.cloneNode(true);
+        navbarLogoContainer.appendChild(navbarLogo);
+    }
+
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.href = logo.src;
+    document.head.appendChild(favicon);
+}
+
+// ============================================================================
 // Status Bar
 // ============================================================================
 
@@ -197,6 +223,11 @@ function updateStatusBar(nodeData, rootValue) {
   const lineno = nodeData.lineno;
   const timeMs = (nodeData.value / 1000).toFixed(2);
   const percent = rootValue > 0 ? ((nodeData.value / rootValue) * 100).toFixed(1) : "0.0";
+
+  const brandEl = document.getElementById('status-brand');
+  const taglineEl = document.getElementById('status-tagline');
+  if (brandEl) brandEl.style.display = 'none';
+  if (taglineEl) taglineEl.style.display = 'none';
 
   const locationEl = document.getElementById('status-location');
   const funcItem = document.getElementById('status-func-item');
@@ -230,6 +261,11 @@ function clearStatusBar() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+
+  const brandEl = document.getElementById('status-brand');
+  const taglineEl = document.getElementById('status-tagline');
+  if (brandEl) brandEl.style.display = 'flex';
+  if (taglineEl) taglineEl.style.display = 'flex';
 }
 
 // ============================================================================
@@ -454,6 +490,9 @@ function createFlamegraph(tooltip, rootValue) {
     .tooltip(tooltip)
     .inverted(true)
     .setColorMapper(function (d) {
+      // Root node should be transparent
+      if (d.depth === 0) return 'transparent';
+
       const percentage = d.data.value / rootValue;
       const level = getHeatLevel(percentage);
       return heatColors[level];
@@ -717,6 +756,10 @@ function populateThreadStats(data, selectedThreadId = null) {
 
   const gcPctElem = document.getElementById('gc-pct');
   if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+
+  // Exception stats
+  const excPctElem = document.getElementById('exc-pct');
+  if (excPctElem) excPctElem.textContent = `${(threadStats.has_exception_pct || 0).toFixed(1)}%`;
 }
 
 // ============================================================================
@@ -761,16 +804,35 @@ function populateProfileSummary(data) {
   if (rateEl) rateEl.textContent = sampleRate > 0 ? formatNumber(Math.round(sampleRate)) : '--';
 
   // Count unique functions
-  let functionCount = 0;
-  function countFunctions(node) {
+  // Use normal (non-inverted) tree structure, but respect thread filtering
+  const uniqueFunctions = new Set();
+  function collectUniqueFunctions(node) {
     if (!node) return;
-    functionCount++;
-    if (node.children) node.children.forEach(countFunctions);
+    const filename = resolveString(node.filename) || 'unknown';
+    const funcname = resolveString(node.funcname) || resolveString(node.name) || 'unknown';
+    const lineno = node.lineno || 0;
+    const key = `${filename}|${lineno}|${funcname}`;
+    uniqueFunctions.add(key);
+    if (node.children) node.children.forEach(collectUniqueFunctions);
   }
-  countFunctions(data);
+  // In inverted mode, use normalData (with thread filter if active)
+  // In normal mode, use the passed data (already has thread filter applied if any)
+  let functionCountSource;
+  if (!normalData) {
+    functionCountSource = data;
+  } else if (isInverted) {
+    if (currentThreadFilter !== 'all') {
+      functionCountSource = filterDataByThread(normalData, parseInt(currentThreadFilter));
+    } else {
+      functionCountSource = normalData;
+    }
+  } else {
+    functionCountSource = data;
+  }
+  collectUniqueFunctions(functionCountSource);
 
   const functionsEl = document.getElementById('stat-functions');
-  if (functionsEl) functionsEl.textContent = formatNumber(functionCount);
+  if (functionsEl) functionsEl.textContent = formatNumber(uniqueFunctions.size);
 
   // Efficiency bar
   if (errorRate !== undefined && errorRate !== null) {
@@ -805,13 +867,30 @@ function populateProfileSummary(data) {
 // ============================================================================
 
 function populateStats(data) {
-  const totalSamples = data.value || 0;
-
   // Populate profile summary
   populateProfileSummary(data);
 
   // Populate thread statistics if available
   populateThreadStats(data);
+
+  // For hotspots: use normal (non-inverted) tree structure, but respect thread filtering.
+  // In inverted view, the tree structure changes but the hottest functions remain the same.
+  // However, if a thread filter is active, we need to show that thread's hotspots.
+  let hotspotSource;
+  if (!normalData) {
+    hotspotSource = data;
+  } else if (isInverted) {
+    // In inverted mode, use normalData (with thread filter if active)
+    if (currentThreadFilter !== 'all') {
+      hotspotSource = filterDataByThread(normalData, parseInt(currentThreadFilter));
+    } else {
+      hotspotSource = normalData;
+    }
+  } else {
+    // In normal mode, use the passed data (already has thread filter applied if any)
+    hotspotSource = data;
+  }
+  const totalSamples = hotspotSource.value || 0;
 
   const functionMap = new Map();
 
@@ -870,7 +949,7 @@ function populateStats(data) {
     }
   }
 
-  collectFunctions(data);
+  collectFunctions(hotspotSource);
 
   const hotSpots = Array.from(functionMap.values())
     .filter(f => f.directPercent > 0.5)
@@ -962,19 +1041,20 @@ function initThreadFilter(data) {
 
 function filterByThread() {
   const threadFilter = document.getElementById('thread-filter');
-  if (!threadFilter || !originalData) return;
+  if (!threadFilter || !normalData) return;
 
   const selectedThread = threadFilter.value;
   currentThreadFilter = selectedThread;
+  const baseData = isInverted ? invertedData : normalData;
 
   let filteredData;
   let selectedThreadId = null;
 
   if (selectedThread === 'all') {
-    filteredData = originalData;
+    filteredData = baseData;
   } else {
     selectedThreadId = parseInt(selectedThread, 10);
-    filteredData = filterDataByThread(originalData, selectedThreadId);
+    filteredData = filterDataByThread(baseData, selectedThreadId);
 
     if (filteredData.strings) {
       stringTable = filteredData.strings;
@@ -986,7 +1066,7 @@ function filterByThread() {
   const chart = createFlamegraph(tooltip, filteredData.value);
   renderFlamegraph(chart, filteredData);
 
-  populateThreadStats(originalData, selectedThreadId);
+  populateThreadStats(baseData, selectedThreadId);
 }
 
 function filterDataByThread(data, threadId) {
@@ -1055,32 +1135,183 @@ function exportSVG() {
 }
 
 // ============================================================================
+// Inverted Flamegraph
+// ============================================================================
+
+// Example: "file.py|10|foo" or "~|0|<GC>" for special frames
+function getInvertNodeKey(node) {
+  return `${node.filename || '~'}|${node.lineno || 0}|${node.funcname || node.name}`;
+}
+
+function accumulateInvertedNode(parent, stackFrame, leaf) {
+  const key = getInvertNodeKey(stackFrame);
+
+  if (!parent.children[key]) {
+    parent.children[key] = {
+      name: stackFrame.name,
+      value: 0,
+      children: {},
+      filename: stackFrame.filename,
+      lineno: stackFrame.lineno,
+      funcname: stackFrame.funcname,
+      source: stackFrame.source,
+      threads: new Set()
+    };
+  }
+
+  const node = parent.children[key];
+  node.value += leaf.value;
+  if (leaf.threads) {
+    leaf.threads.forEach(t => node.threads.add(t));
+  }
+
+  return node;
+}
+
+function processLeaf(invertedRoot, path, leafNode) {
+  if (!path || path.length === 0) {
+    return;
+  }
+
+  let invertedParent = accumulateInvertedNode(invertedRoot, leafNode, leafNode);
+
+  // Walk backwards through the call stack
+  for (let i = path.length - 2; i >= 0; i--) {
+    invertedParent = accumulateInvertedNode(invertedParent, path[i], leafNode);
+  }
+}
+
+function traverseInvert(path, currentNode, invertedRoot) {
+  const children = currentNode.children || [];
+  const childThreads = new Set(children.flatMap(c => c.threads || []));
+  const selfThreads = (currentNode.threads || []).filter(t => !childThreads.has(t));
+
+  if (selfThreads.length > 0) {
+    processLeaf(invertedRoot, path, { ...currentNode, threads: selfThreads });
+  }
+
+  children.forEach(child => traverseInvert(path.concat([child]), child, invertedRoot));
+}
+
+function convertInvertDictToArray(node) {
+  if (node.threads instanceof Set) {
+    node.threads = Array.from(node.threads).sort((a, b) => a - b);
+  }
+
+  const children = node.children;
+  if (children && typeof children === 'object' && !Array.isArray(children)) {
+    node.children = Object.values(children);
+    node.children.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+    node.children.forEach(convertInvertDictToArray);
+  }
+  return node;
+}
+
+function generateInvertedFlamegraph(data) {
+  const invertedRoot = {
+    name: data.name,
+    value: data.value,
+    children: {},
+    stats: data.stats,
+    threads: data.threads
+  };
+
+  const children = data.children || [];
+  if (children.length === 0) {
+    // Single-frame tree: the root is its own leaf
+    processLeaf(invertedRoot, [data], data);
+  } else {
+    children.forEach(child => traverseInvert([child], child, invertedRoot));
+  }
+
+  convertInvertDictToArray(invertedRoot);
+  return invertedRoot;
+}
+
+function updateToggleUI(toggleId, isOn) {
+  const toggle = document.getElementById(toggleId);
+  if (toggle) {
+    const track = toggle.querySelector('.toggle-track');
+    const labels = toggle.querySelectorAll('.toggle-label');
+    if (isOn) {
+      track.classList.add('on');
+      labels[0].classList.remove('active');
+      labels[1].classList.add('active');
+    } else {
+      track.classList.remove('on');
+      labels[0].classList.add('active');
+      labels[1].classList.remove('active');
+    }
+  }
+}
+
+function toggleInvert() {
+  isInverted = !isInverted;
+  updateToggleUI('toggle-invert', isInverted);
+
+  // Build inverted data on first use
+  if (isInverted && !invertedData) {
+    invertedData = generateInvertedFlamegraph(normalData);
+  }
+
+  let dataToRender = isInverted ? invertedData : normalData;
+
+  if (currentThreadFilter !== 'all') {
+    dataToRender = filterDataByThread(dataToRender, parseInt(currentThreadFilter));
+  }
+
+  const tooltip = createPythonTooltip(dataToRender);
+  const chart = createFlamegraph(tooltip, dataToRender.value);
+  renderFlamegraph(chart, dataToRender);
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 
 function initFlamegraph() {
   ensureLibraryLoaded();
   restoreUIState();
+  setupLogos();
 
-  let processedData = EMBEDDED_DATA;
   if (EMBEDDED_DATA.strings) {
     stringTable = EMBEDDED_DATA.strings;
-    processedData = resolveStringIndices(EMBEDDED_DATA);
+    normalData = resolveStringIndices(EMBEDDED_DATA);
+  } else {
+    normalData = EMBEDDED_DATA;
   }
 
   // Initialize opcode mapping from embedded data
   initOpcodeMapping(EMBEDDED_DATA);
 
-  originalData = processedData;
-  initThreadFilter(processedData);
+  // Inverted data will be built on first toggle
+  invertedData = null;
 
-  const tooltip = createPythonTooltip(processedData);
-  const chart = createFlamegraph(tooltip, processedData.value);
-  renderFlamegraph(chart, processedData);
+  initThreadFilter(normalData);
+
+  const tooltip = createPythonTooltip(normalData);
+  const chart = createFlamegraph(tooltip, normalData.value);
+  renderFlamegraph(chart, normalData);
   initSearchHandlers();
   initSidebarResize();
   handleResize();
+
+  const toggleInvertBtn = document.getElementById('toggle-invert');
+  if (toggleInvertBtn) {
+    toggleInvertBtn.addEventListener('click', toggleInvert);
+  }
 }
+
+// Keyboard shortcut: Enter/Space activates toggle switches
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('toggle-switch')) {
+        e.preventDefault();
+        e.target.click();
+    }
+});
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initFlamegraph);
