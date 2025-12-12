@@ -88,6 +88,12 @@ class TracebackCases(unittest.TestCase):
     def tokenizer_error_with_caret_range(self):
         compile("blech  (  ", "?", "exec")
 
+    def syntax_error_with_caret_wide_char(self):
+        compile("女女女=1; 女女女/", "?", "exec")
+
+    def syntax_error_with_caret_wide_char_range(self):
+        compile("f(x, 女女女 for 女女女 in range(30), z)", "?", "exec")
+
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
@@ -124,6 +130,20 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(err[2].count('\n'), 1)   # and no additional newline
         self.assertEqual(err[1].find("("), err[2].find("^"))  # in the right place
         self.assertEqual(err[2].count("^"), 1)
+
+    def test_caret_wide_char(self):
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        # "女女女=1; 女女女/" has display width 17
+        self.assertEqual(err[2].find("^"), 4 + 17)
+
+        err = self.get_exception_format(self.syntax_error_with_caret_wide_char_range,
+                                        SyntaxError)
+        self.assertIn("^", err[2])
+        self.assertEqual(err[2].find("^"), 4 + 5)
+        # "女女女 for 女女女 in range(30)" has display width 30
+        self.assertEqual(err[2].count("^"), 30)
 
     def test_nocaret(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
@@ -1783,6 +1803,23 @@ class TestKeywordTypoSuggestions(unittest.TestCase):
                 rc, stdout, stderr = assert_python_failure('-c', source)
                 stderr_text = stderr.decode('utf-8')
                 self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_no_keyword_suggestion_for_comma_errors(self):
+        # When the parser identifies a missing comma, don't suggest
+        # bogus keyword replacements like 'print' -> 'not'
+        code = '''\
+import sys
+print(
+    "line1"
+    "line2"
+    file=sys.stderr
+)
+'''
+        source = textwrap.dedent(code).strip()
+        rc, stdout, stderr = assert_python_failure('-c', source)
+        stderr_text = stderr.decode('utf-8')
+        self.assertIn("Perhaps you forgot a comma", stderr_text)
+        self.assertNotIn("Did you mean", stderr_text)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class
@@ -5051,7 +5088,7 @@ class MiscTest(unittest.TestCase):
              b"or to enable your virtual environment?"), stderr
         )
 
-    def test_missing_stdlib_package(self):
+    def test_missing_stdlib_module(self):
         code = """
             import sys
             sys.stdlib_module_names |= {'spam'}
@@ -5060,6 +5097,27 @@ class MiscTest(unittest.TestCase):
         _, _, stderr = assert_python_failure('-S', '-c', code)
 
         self.assertIn(b"Standard library module 'spam' was not found", stderr)
+
+        code = """
+            import sys
+            import traceback
+            traceback._MISSING_STDLIB_MODULE_MESSAGES = {'spam': "Install 'spam4life' for 'spam'"}
+            sys.stdlib_module_names |= {'spam'}
+            import spam
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertIn(b"Install 'spam4life' for 'spam'", stderr)
+
+    @unittest.skipIf(sys.platform == "win32", "Non-Windows test")
+    def test_windows_only_module_error(self):
+        try:
+            import msvcrt  # noqa: F401
+        except ModuleNotFoundError:
+            formatted = traceback.format_exc()
+            self.assertIn("Unsupported platform for Windows-only standard library module 'msvcrt'", formatted)
+        else:
+            self.fail("ModuleNotFoundError was not raised")
 
 
 class TestColorizedTraceback(unittest.TestCase):

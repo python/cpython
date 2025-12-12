@@ -143,27 +143,16 @@ def cpu_active_worker():
     while True:
         x += 1
 
-def main():
-    # Start both threads
-    idle_thread = threading.Thread(target=idle_worker)
-    cpu_thread = threading.Thread(target=cpu_active_worker)
-    idle_thread.start()
-    cpu_thread.start()
-
-    # Wait for CPU thread to be running, then signal test
-    cpu_ready.wait()
-    _test_sock.sendall(b"threads_ready")
-
-    idle_thread.join()
-    cpu_thread.join()
-
-main()
-
+idle_thread = threading.Thread(target=idle_worker)
+cpu_thread = threading.Thread(target=cpu_active_worker)
+idle_thread.start()
+cpu_thread.start()
+cpu_ready.wait()
+_test_sock.sendall(b"working")
+idle_thread.join()
+cpu_thread.join()
 """
-        with test_subprocess(cpu_vs_idle_script) as subproc:
-            # Wait for signal that threads are running
-            response = subproc.socket.recv(1024)
-            self.assertEqual(response, b"threads_ready")
+        with test_subprocess(cpu_vs_idle_script, wait_for_working=True) as subproc:
 
             with (
                 io.StringIO() as captured_output,
@@ -365,26 +354,16 @@ def gil_holding_work():
     while True:
         x += 1
 
-def main():
-    # Start both threads
-    idle_thread = threading.Thread(target=gil_releasing_work)
-    cpu_thread = threading.Thread(target=gil_holding_work)
-    idle_thread.start()
-    cpu_thread.start()
-
-    # Wait for GIL-holding thread to be running, then signal test
-    gil_ready.wait()
-    _test_sock.sendall(b"threads_ready")
-
-    idle_thread.join()
-    cpu_thread.join()
-
-main()
+idle_thread = threading.Thread(target=gil_releasing_work)
+cpu_thread = threading.Thread(target=gil_holding_work)
+idle_thread.start()
+cpu_thread.start()
+gil_ready.wait()
+_test_sock.sendall(b"working")
+idle_thread.join()
+cpu_thread.join()
 """
-        with test_subprocess(gil_test_script) as subproc:
-            # Wait for signal that threads are running
-            response = subproc.socket.recv(1024)
-            self.assertEqual(response, b"threads_ready")
+        with test_subprocess(gil_test_script, wait_for_working=True) as subproc:
 
             with (
                 io.StringIO() as captured_output,
@@ -448,7 +427,198 @@ main()
         self.assertEqual(_parse_mode("wall"), 0)
         self.assertEqual(_parse_mode("cpu"), 1)
         self.assertEqual(_parse_mode("gil"), 2)
+        self.assertEqual(_parse_mode("exception"), 4)
 
         # Test invalid mode raises KeyError
         with self.assertRaises(KeyError):
             _parse_mode("invalid")
+
+
+class TestExceptionModeFiltering(unittest.TestCase):
+    """Test exception mode filtering functionality (--mode=exception)."""
+
+    def test_exception_mode_validation(self):
+        """Test that CLI accepts exception mode choice correctly."""
+        from profiling.sampling.cli import main
+
+        test_args = [
+            "profiling.sampling.cli",
+            "attach",
+            "12345",
+            "--mode",
+            "exception",
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            try:
+                main()
+            except (SystemExit, OSError, RuntimeError):
+                pass  # Expected due to invalid PID
+
+        # Should have attempted to call sample with mode=4 (exception mode)
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args
+        # Check the mode parameter (should be in kwargs)
+        self.assertEqual(call_args.kwargs.get("mode"), 4)  # PROFILING_MODE_EXCEPTION
+
+    def test_exception_mode_sample_function_call(self):
+        """Test that sample() function correctly uses exception mode."""
+        with (
+            mock.patch(
+                "profiling.sampling.sample.SampleProfiler"
+            ) as mock_profiler,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Create a real collector instance
+            collector = PstatsCollector(sample_interval_usec=1000, skip_idle=True)
+
+            # Call sample with exception mode
+            profiling.sampling.sample.sample(
+                12345,
+                collector,
+                mode=4,  # PROFILING_MODE_EXCEPTION
+                duration_sec=1,
+            )
+
+            # Verify SampleProfiler was created with correct mode
+            mock_profiler.assert_called_once()
+            call_args = mock_profiler.call_args
+            self.assertEqual(call_args[1]["mode"], 4)  # mode parameter
+
+            # Verify profiler.sample was called
+            mock_instance.sample.assert_called_once()
+
+    def test_exception_mode_cli_argument_parsing(self):
+        """Test CLI argument parsing for exception mode with various options."""
+        from profiling.sampling.cli import main
+
+        test_args = [
+            "profiling.sampling.cli",
+            "attach",
+            "12345",
+            "--mode",
+            "exception",
+            "-i",
+            "500",
+            "-d",
+            "5",
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            try:
+                main()
+            except (SystemExit, OSError, RuntimeError):
+                pass  # Expected due to invalid PID
+
+        # Verify all arguments were parsed correctly
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args
+        self.assertEqual(call_args.kwargs.get("mode"), 4)  # exception mode
+        self.assertEqual(call_args.kwargs.get("duration_sec"), 5)
+
+    def test_exception_mode_constants_are_defined(self):
+        """Test that exception mode constant is properly defined."""
+        from profiling.sampling.constants import PROFILING_MODE_EXCEPTION
+        self.assertEqual(PROFILING_MODE_EXCEPTION, 4)
+
+    @requires_subprocess()
+    def test_exception_mode_integration_filtering(self):
+        """Integration test: Exception mode should only capture threads with active exceptions."""
+        # Script with one thread handling an exception and one normal thread
+        exception_vs_normal_script = """
+import time
+import threading
+
+exception_ready = threading.Event()
+
+def normal_worker():
+    x = 0
+    while True:
+        x += 1
+
+def exception_handling_worker():
+    try:
+        raise ValueError("test exception")
+    except ValueError:
+        # Signal AFTER entering except block, then do CPU work
+        exception_ready.set()
+        x = 0
+        while True:
+            x += 1
+
+normal_thread = threading.Thread(target=normal_worker)
+exception_thread = threading.Thread(target=exception_handling_worker)
+normal_thread.start()
+exception_thread.start()
+exception_ready.wait()
+_test_sock.sendall(b"working")
+normal_thread.join()
+exception_thread.join()
+"""
+        with test_subprocess(exception_vs_normal_script, wait_for_working=True) as subproc:
+
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
+                    profiling.sampling.sample.sample(
+                        subproc.process.pid,
+                        collector,
+                        duration_sec=2.0,
+                        mode=4,  # Exception mode
+                        all_threads=True,
+                    )
+                    collector.print_stats(show_summary=False, mode=4)
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest(
+                        "Insufficient permissions for remote profiling"
+                    )
+
+                exception_mode_output = captured_output.getvalue()
+
+            # Test wall-clock mode (mode=0) - should capture both functions
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+                    profiling.sampling.sample.sample(
+                        subproc.process.pid,
+                        collector,
+                        duration_sec=2.0,
+                        mode=0,  # Wall-clock mode
+                        all_threads=True,
+                    )
+                    collector.print_stats(show_summary=False)
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest(
+                        "Insufficient permissions for remote profiling"
+                    )
+
+                wall_mode_output = captured_output.getvalue()
+
+            # Verify both modes captured samples
+            self.assertIn("Captured", exception_mode_output)
+            self.assertIn("samples", exception_mode_output)
+            self.assertIn("Captured", wall_mode_output)
+            self.assertIn("samples", wall_mode_output)
+
+            # Exception mode should strongly favor exception_handling_worker over normal_worker
+            self.assertIn("exception_handling_worker", exception_mode_output)
+            self.assertNotIn("normal_worker", exception_mode_output)
+
+            # Wall-clock mode should capture both types of work
+            self.assertIn("exception_handling_worker", wall_mode_output)
+            self.assertIn("normal_worker", wall_mode_output)

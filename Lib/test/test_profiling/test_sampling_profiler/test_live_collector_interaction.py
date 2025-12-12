@@ -173,6 +173,19 @@ class TestLiveCollectorInteractiveControls(unittest.TestCase):
 
         self.assertTrue(self.collector.show_help)
 
+    def test_help_dismiss_with_q_does_not_quit(self):
+        """Test that pressing 'q' while help is shown only closes help, not quit"""
+        self.assertFalse(self.collector.show_help)
+        self.display.simulate_input(ord("h"))
+        self.collector._handle_input()
+        self.assertTrue(self.collector.show_help)
+
+        self.display.simulate_input(ord("q"))
+        self.collector._handle_input()
+
+        self.assertFalse(self.collector.show_help)
+        self.assertTrue(self.collector.running)
+
     def test_filter_clear(self):
         """Test clearing filter."""
         self.collector.filter_pattern = "test"

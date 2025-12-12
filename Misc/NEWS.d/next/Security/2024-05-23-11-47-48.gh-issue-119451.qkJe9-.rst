@@ -1,0 +1,5 @@
+Fix a potential memory denial of service in the :mod:`http.client` module.
+When connecting to a malicious server, it could cause
+an arbitrary amount of memory to be allocated.
+This could have led to symptoms including a :exc:`MemoryError`, swapping, out
+of memory (OOM) killed processes or containers, or even system crashes.

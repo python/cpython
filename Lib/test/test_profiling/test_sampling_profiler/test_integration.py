@@ -39,6 +39,9 @@ from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
 # Duration for profiling tests - long enough for process to complete naturally
 PROFILING_TIMEOUT = str(int(SHORT_TIMEOUT))
 
+# Duration for profiling in tests - short enough to complete quickly
+PROFILING_DURATION_SEC = 2
+
 
 @skip_if_not_supported
 @unittest.skipIf(
@@ -118,16 +121,17 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertIn(fib_key, collector.stats)
         self.assertIn(main_key, collector.stats)
 
-        # Fibonacci should have many calls due to recursion
+        # Fibonacci: counted once per sample, not per occurrence
         fib_stats = collector.stats[fib_key]
         direct_calls, cumulative_calls, tt, ct, callers = fib_stats
 
-        # Should have recorded multiple calls (9 total appearances in samples)
-        self.assertEqual(cumulative_calls, 9)
-        self.assertGreater(tt, 0)  # Should have some total time
-        self.assertGreater(ct, 0)  # Should have some cumulative time
+        # Should count 3 (present in 3 samples), not 9 (total occurrences)
+        self.assertEqual(cumulative_calls, 3)
+        self.assertEqual(direct_calls, 3)  # Top of stack in all samples
+        self.assertGreater(tt, 0)
+        self.assertGreater(ct, 0)
 
-        # Main should have fewer calls
+        # Main should also have 3 cumulative calls (in all 3 samples)
         main_stats = collector.stats[main_key]
         main_direct_calls, main_cumulative_calls = main_stats[0], main_stats[1]
         self.assertEqual(main_direct_calls, 0)  # Never directly executing
@@ -301,10 +305,10 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            ("factorial.py", 10, "factorial"),  # recursive
-                            ("factorial.py", 10, "factorial"),  # deeper
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # recursive
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # deeper
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
@@ -315,13 +319,9 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
                     MockThreadInfo(
                         1,
                         [
-                            ("factorial.py", 10, "factorial"),
-                            (
-                                "factorial.py",
-                                10,
-                                "factorial",
-                            ),  # different depth
-                            ("main.py", 5, "main"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),
+                            MockFrameInfo("factorial.py", 10, "factorial"),  # different depth
+                            MockFrameInfo("main.py", 5, "main"),
                         ],
                     )
                 ],
@@ -359,23 +359,14 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertEqual(total_occurrences(main_key), 2)
 
 
-@requires_subprocess()
-@skip_if_not_supported
-class TestSampleProfilerIntegration(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.test_script = '''
-import time
-import os
-
+# Shared workload functions for test scripts
+_WORKLOAD_FUNCTIONS = '''
 def slow_fibonacci(n):
-    """Recursive fibonacci - should show up prominently in profiler."""
     if n <= 1:
         return n
     return slow_fibonacci(n-1) + slow_fibonacci(n-2)
 
 def cpu_intensive_work():
-    """CPU intensive work that should show in profiler."""
     result = 0
     for i in range(10000):
         result += i * i
@@ -383,33 +374,48 @@ def cpu_intensive_work():
             result = result % 1000000
     return result
 
-def main_loop():
-    """Main test loop."""
-    max_iterations = 200
-
-    for iteration in range(max_iterations):
+def do_work():
+    iteration = 0
+    while True:
         if iteration % 2 == 0:
-            result = slow_fibonacci(15)
+            slow_fibonacci(15)
         else:
-            result = cpu_intensive_work()
+            cpu_intensive_work()
+        iteration += 1
+'''
 
-if __name__ == "__main__":
-    main_loop()
+
+@requires_subprocess()
+@skip_if_not_supported
+class TestSampleProfilerIntegration(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Test script for use with test_subprocess() - signals when work starts
+        cls.test_script = _WORKLOAD_FUNCTIONS + '''
+_test_sock.sendall(b"working")
+do_work()
+'''
+        # CLI test script - runs for fixed duration (no socket sync)
+        cls.cli_test_script = '''
+import time
+''' + _WORKLOAD_FUNCTIONS.replace(
+    'while True:', 'end_time = time.time() + 30\n    while time.time() < end_time:'
+) + '''
+do_work()
 '''
 
     def test_sampling_basic_functionality(self):
         with (
-            test_subprocess(self.test_script) as subproc,
+            test_subprocess(self.test_script, wait_for_working=True) as subproc,
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
             try:
-                # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
                 collector = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
                     collector,
-                    duration_sec=SHORT_TIMEOUT,
+                    duration_sec=PROFILING_DURATION_SEC,
                 )
                 collector.print_stats(show_summary=False)
             except PermissionError:
@@ -431,7 +437,7 @@ if __name__ == "__main__":
         )
         self.addCleanup(close_and_unlink, pstats_out)
 
-        with test_subprocess(self.test_script) as subproc:
+        with test_subprocess(self.test_script, wait_for_working=True) as subproc:
             # Suppress profiler output when testing file export
             with (
                 io.StringIO() as captured_output,
@@ -442,7 +448,7 @@ if __name__ == "__main__":
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
                         collector,
-                        duration_sec=1,
+                        duration_sec=PROFILING_DURATION_SEC,
                     )
                     collector.export(pstats_out.name)
                 except PermissionError:
@@ -476,7 +482,7 @@ if __name__ == "__main__":
         self.addCleanup(close_and_unlink, collapsed_file)
 
         with (
-            test_subprocess(self.test_script) as subproc,
+            test_subprocess(self.test_script, wait_for_working=True) as subproc,
         ):
             # Suppress profiler output when testing file export
             with (
@@ -488,7 +494,7 @@ if __name__ == "__main__":
                     profiling.sampling.sample.sample(
                         subproc.process.pid,
                         collector,
-                        duration_sec=1,
+                        duration_sec=PROFILING_DURATION_SEC,
                     )
                     collector.export(collapsed_file.name)
                 except PermissionError:
@@ -526,7 +532,7 @@ if __name__ == "__main__":
 
     def test_sampling_all_threads(self):
         with (
-            test_subprocess(self.test_script) as subproc,
+            test_subprocess(self.test_script, wait_for_working=True) as subproc,
             # Suppress profiler output
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
@@ -536,7 +542,7 @@ if __name__ == "__main__":
                 profiling.sampling.sample.sample(
                     subproc.process.pid,
                     collector,
-                    duration_sec=1,
+                    duration_sec=PROFILING_DURATION_SEC,
                     all_threads=True,
                 )
                 collector.print_stats(show_summary=False)
@@ -548,12 +554,16 @@ if __name__ == "__main__":
 
     def test_sample_target_script(self):
         script_file = tempfile.NamedTemporaryFile(delete=False)
-        script_file.write(self.test_script.encode("utf-8"))
+        script_file.write(self.cli_test_script.encode("utf-8"))
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        # Sample for up to SHORT_TIMEOUT seconds, but process exits after fixed iterations
-        test_args = ["profiling.sampling.sample", "run", "-d", PROFILING_TIMEOUT, script_file.name]
+        # Sample for PROFILING_DURATION_SEC seconds
+        test_args = [
+            "profiling.sampling.sample", "run",
+            "-d", str(PROFILING_DURATION_SEC),
+            script_file.name
+        ]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -583,13 +593,13 @@ if __name__ == "__main__":
         module_path = os.path.join(tempdir.name, "test_module.py")
 
         with open(module_path, "w") as f:
-            f.write(self.test_script)
+            f.write(self.cli_test_script)
 
         test_args = [
             "profiling.sampling.cli",
             "run",
             "-d",
-            PROFILING_TIMEOUT,
+            str(PROFILING_DURATION_SEC),
             "-m",
             "test_module",
         ]
@@ -630,8 +640,10 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             profiling.sampling.sample.sample(-1, collector, duration_sec=1)
 
     def test_process_dies_during_sampling(self):
+        # Use wait_for_working=False since this simple script doesn't send "working"
         with test_subprocess(
-            "import time; time.sleep(0.5); exit()"
+            "import time; time.sleep(0.5); exit()",
+            wait_for_working=False
         ) as subproc:
             with (
                 io.StringIO() as captured_output,
@@ -654,7 +666,11 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             self.assertIn("Error rate", output)
 
     def test_is_process_running(self):
-        with test_subprocess("import time; time.sleep(1000)") as subproc:
+        # Use wait_for_working=False since this simple script doesn't send "working"
+        with test_subprocess(
+            "import time; time.sleep(1000)",
+            wait_for_working=False
+        ) as subproc:
             try:
                 profiler = SampleProfiler(
                     pid=subproc.process.pid,
@@ -681,7 +697,11 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
-        with test_subprocess("import time; time.sleep(1000)") as subproc:
+        # Use wait_for_working=False since this simple script doesn't send "working"
+        with test_subprocess(
+            "import time; time.sleep(1000)",
+            wait_for_working=False
+        ) as subproc:
             try:
                 unwinder = _remote_debugging.RemoteUnwinder(
                     subproc.process.pid
@@ -780,3 +800,124 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 from profiling.sampling.cli import main
                 main()
             self.assertNotEqual(cm.exception.code, 0)
+
+
+@requires_subprocess()
+@skip_if_not_supported
+@unittest.skipIf(
+    sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+    "Test only runs on Linux with process_vm_readv support",
+)
+class TestAsyncAwareProfilingIntegration(unittest.TestCase):
+    """Integration tests for async-aware profiling mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        # Async test script that runs indefinitely until killed.
+        # Sends "working" signal AFTER tasks are created and scheduled.
+        cls.async_script = '''
+import asyncio
+
+async def sleeping_leaf():
+    while True:
+        await asyncio.sleep(0.02)
+
+async def cpu_leaf():
+    total = 0
+    while True:
+        for i in range(10000):
+            total += i * i
+        await asyncio.sleep(0)
+
+async def supervisor():
+    tasks = [
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-0"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-1"),
+        asyncio.create_task(sleeping_leaf(), name="Sleeper-2"),
+        asyncio.create_task(cpu_leaf(), name="Worker"),
+    ]
+    await asyncio.sleep(0)  # Let tasks get scheduled
+    _test_sock.sendall(b"working")
+    await asyncio.gather(*tasks)
+
+asyncio.run(supervisor())
+'''
+
+    def _collect_async_samples(self, async_aware_mode):
+        """Helper to collect samples and count function occurrences.
+
+        Returns a dict mapping function names to their sample counts.
+        """
+        with test_subprocess(self.async_script, wait_for_working=True) as subproc:
+            try:
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=PROFILING_DURATION_SEC,
+                    async_aware=async_aware_mode,
+                )
+            except PermissionError:
+                self.skipTest("Insufficient permissions for remote profiling")
+
+        # Count samples per function from collapsed stacks
+        # stack_counter keys are (call_tree, thread_id) where call_tree
+        # is a tuple of (file, line, func) tuples
+        func_samples = {}
+        total = 0
+        for (call_tree, _thread_id), count in collector.stack_counter.items():
+            total += count
+            for _file, _line, func in call_tree:
+                func_samples[func] = func_samples.get(func, 0) + count
+
+        func_samples["_total"] = total
+        return func_samples
+
+    def test_async_aware_all_sees_sleeping_and_running_tasks(self):
+        """Test that async_aware='all' captures both sleeping and CPU-running tasks.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf)
+                    ├── Sleeper-1 (sleeping_leaf)
+                    ├── Sleeper-2 (sleeping_leaf)
+                    └── Worker (cpu_leaf)
+
+        async_aware='all' should see ALL 4 leaf tasks in the output.
+        """
+        samples = self._collect_async_samples("all")
+
+        self.assertGreater(samples["_total"], 0, "Should have collected samples")
+        self.assertIn("sleeping_leaf", samples)
+        self.assertIn("cpu_leaf", samples)
+        self.assertIn("supervisor", samples)
+
+    def test_async_aware_running_sees_only_cpu_task(self):
+        """Test that async_aware='running' only captures the actively running task.
+
+        Task tree structure:
+            main
+              └── supervisor
+                    ├── Sleeper-0 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-1 (sleeping_leaf) - NOT visible in 'running'
+                    ├── Sleeper-2 (sleeping_leaf) - NOT visible in 'running'
+                    └── Worker (cpu_leaf) - VISIBLE in 'running'
+
+        async_aware='running' should only see the Worker task doing CPU work.
+        """
+        samples = self._collect_async_samples("running")
+
+        total = samples["_total"]
+        cpu_leaf_samples = samples.get("cpu_leaf", 0)
+
+        self.assertGreater(total, 0, "Should have collected some samples")
+        self.assertGreater(cpu_leaf_samples, 0, "cpu_leaf should appear in samples")
+
+        # cpu_leaf should have at least 90% of samples (typically 99%+)
+        # sleeping_leaf may occasionally appear with very few samples (< 1%)
+        # when tasks briefly wake up to check sleep timers
+        cpu_percentage = (cpu_leaf_samples / total) * 100
+        self.assertGreater(cpu_percentage, 90.0,
+            f"cpu_leaf should dominate samples in 'running' mode, "
+            f"got {cpu_percentage:.1f}% ({cpu_leaf_samples}/{total})")

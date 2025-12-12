@@ -1078,7 +1078,7 @@ compare_unicode_unicode(PyDictObject *mp, PyDictKeysObject *dk,
                         void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *ep_key = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key);
+    PyObject *ep_key = FT_ATOMIC_LOAD_PTR_CONSUME(ep->me_key);
     assert(ep_key != NULL);
     assert(PyUnicode_CheckExact(ep_key));
     if (ep_key == key ||
@@ -1371,7 +1371,7 @@ compare_unicode_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     assert(startkey == NULL || PyUnicode_CheckExact(ep->me_key));
     assert(!PyUnicode_CheckExact(key));
 
@@ -1414,7 +1414,7 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                                    void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     if (startkey == key) {
         assert(PyUnicode_CheckExact(startkey));
         return 1;
@@ -1450,7 +1450,7 @@ compare_generic_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
                            void *ep0, Py_ssize_t ix, PyObject *key, Py_hash_t hash)
 {
     PyDictKeyEntry *ep = &((PyDictKeyEntry *)ep0)[ix];
-    PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
+    PyObject *startkey = _Py_atomic_load_ptr_consume(&ep->me_key);
     if (startkey == key) {
         return 1;
     }
@@ -1914,10 +1914,14 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     if (old_value != value) {
         _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
         assert(old_value != NULL);
-        assert(!_PyDict_HasSplitTable(mp));
         if (DK_IS_UNICODE(mp->ma_keys)) {
-            PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
-            STORE_VALUE(ep, value);
+            if (_PyDict_HasSplitTable(mp)) {
+                STORE_SPLIT_VALUE(mp, ix, value);
+            }
+            else {
+                PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
+                STORE_VALUE(ep, value);
+            }
         }
         else {
             PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
@@ -2524,18 +2528,6 @@ _PyDict_GetItemWithError(PyObject *dp, PyObject *kv)
     if (hash == -1) {
         return NULL;
     }
-    return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
-}
-
-PyObject *
-_PyDict_GetItemIdWithError(PyObject *dp, _Py_Identifier *key)
-{
-    PyObject *kv;
-    kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return NULL;
-    Py_hash_t hash = unicode_get_hash(kv);
-    assert (hash != -1);  /* interned strings have their hash value initialised */
     return _PyDict_GetItem_KnownHash(dp, kv, hash);  // borrowed reference
 }
 
@@ -4845,16 +4837,6 @@ _PyDict_Contains_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
     return 0;
 }
 
-int
-_PyDict_ContainsId(PyObject *op, _Py_Identifier *key)
-{
-    PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL) {
-        return -1;
-    }
-    return PyDict_Contains(op, kv);
-}
-
 /* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
     0,                          /* sq_length */
@@ -5036,16 +5018,6 @@ PyDict_GetItemStringRef(PyObject *v, const char *key, PyObject **result)
 }
 
 int
-_PyDict_SetItemId(PyObject *v, _Py_Identifier *key, PyObject *item)
-{
-    PyObject *kv;
-    kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return -1;
-    return PyDict_SetItem(v, kv, item);
-}
-
-int
 PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 {
     PyObject *kv;
@@ -5058,15 +5030,6 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
     err = PyDict_SetItem(v, kv, item);
     Py_DECREF(kv);
     return err;
-}
-
-int
-_PyDict_DelItemId(PyObject *v, _Py_Identifier *key)
-{
-    PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
-        return -1;
-    return PyDict_DelItem(v, kv);
 }
 
 int
@@ -5563,7 +5526,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
-        PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
+        PyDictValues *values = _Py_atomic_load_ptr_consume(&d->ma_values);
         if (values == NULL) {
             goto concurrent_modification;
         }
@@ -7151,7 +7114,7 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
     Py_BEGIN_CRITICAL_SECTION(dict);
 
     if (dict->ma_values == values && FT_ATOMIC_LOAD_UINT8(values->valid)) {
-        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+        value = _Py_atomic_load_ptr_consume(&values->values[ix]);
         *attr = _Py_XNewRefWithLock(value);
         success = true;
     } else {

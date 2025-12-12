@@ -593,7 +593,7 @@ of treating them as a match.
 .. nonce: ONk9Na
 .. section: Library
 
-Fix ``--outfile`` for :mod:`cProfile` / :mod:`profile` not writing the
+Fix ``--outfile`` for :mod:`!cProfile` / :mod:`!profile` not writing the
 output file in the original directory when the program being profiled
 changes the working directory.  PR by Anthony Sottile.
 

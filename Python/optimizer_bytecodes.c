@@ -585,9 +585,9 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
-        *attr = sym_new_not_null(ctx);
+        attr = sym_new_not_null(ctx);
         if (oparg & 1) {
             self_or_null[0] = sym_new_unknown(ctx);
         }
@@ -607,7 +607,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = (PyTypeObject *)sym_get_const(ctx, owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
     }
@@ -616,7 +616,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
     }
@@ -625,7 +625,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _POP_TOP_LOAD_CONST_INLINE_BORROW,
                            _POP_TOP_LOAD_CONST_INLINE);
     }
@@ -634,7 +634,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
         self = owner;
@@ -644,7 +644,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
         self = owner;
@@ -654,7 +654,7 @@ dummy_func(void) {
         (void)descr;
         PyTypeObject *type = sym_get_type(owner);
         PyObject *name = get_co_name(ctx, oparg >> 1);
-        attr = lookup_attr(ctx, this_instr, type, name,
+        attr = lookup_attr(ctx, dependencies, this_instr, type, name,
                            _LOAD_CONST_UNDER_INLINE_BORROW,
                            _LOAD_CONST_UNDER_INLINE);
         self = owner;
@@ -1201,7 +1201,7 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (callable, null, arg -- res)) {
+    op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
         res = sym_new_type(ctx, &PyLong_Type);
         Py_ssize_t tuple_length = sym_tuple_length(arg);
         if (tuple_length >= 0) {
@@ -1216,6 +1216,8 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
         }
+        a = arg;
+        c = callable;
     }
 
     op(_GET_LEN, (obj -- obj, len)) {

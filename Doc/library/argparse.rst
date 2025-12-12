@@ -767,9 +767,9 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=42)
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
-  ``'store_const'`` used for storing the values ``True`` and ``False``
-  respectively.  In addition, they create default values of ``False`` and
-  ``True`` respectively::
+  ``'store_const'`` that respectively store the values ``True`` and ``False``
+  with default values of ``False`` and
+  ``True``::
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_true')
@@ -789,8 +789,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo 1 --foo 2'.split())
     Namespace(foo=['0', '1', '2'])
 
-* ``'append_const'`` - This stores a list, and appends the value specified by
-  the const_ keyword argument to the list; note that the const_ keyword
+* ``'append_const'`` - This appends the value specified by
+  the const_ keyword argument to a list; note that the const_ keyword
   argument defaults to ``None``. The ``'append_const'`` action is typically
   useful when multiple arguments need to store constants to the same list. For
   example::
@@ -801,8 +801,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--str --int'.split())
     Namespace(types=[<class 'str'>, <class 'int'>])
 
-* ``'extend'`` - This stores a list and appends each item from the multi-value
-  argument list to it.
+* ``'extend'`` - This appends each item from a multi-value
+  argument to a list.
   The ``'extend'`` action is typically used with the nargs_ keyword argument
   value ``'+'`` or ``'*'``.
   Note that when nargs_ is ``None`` (the default) or ``'?'``, each
@@ -816,7 +816,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
   .. versionadded:: 3.8
 
-* ``'count'`` - This counts the number of times a keyword argument occurs. For
+* ``'count'`` - This counts the number of times an argument occurs. For
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
@@ -1679,7 +1679,7 @@ The Namespace object
 Other utilities
 ---------------
 
-Sub-commands
+Subcommands
 ^^^^^^^^^^^^
 
 .. method:: ArgumentParser.add_subparsers(*, [title], [description], [prog], \
@@ -1708,7 +1708,7 @@ Sub-commands
    * *description* - description for the sub-parser group in help output, by
      default ``None``
 
-   * *prog* - usage information that will be displayed with sub-command help,
+   * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
@@ -1718,7 +1718,7 @@ Sub-commands
    * action_ - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest_ - name of the attribute under which subcommand name will be
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
