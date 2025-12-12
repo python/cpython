@@ -3185,7 +3185,7 @@ _PyXI_InitTypes(PyInterpreterState *interp)
                 "failed to initialize the cross-interpreter exception types");
     }
     // We would initialize heap types here too but that leads to ref leaks.
-    // Instead, we intialize them in _PyXI_Init().
+    // Instead, we initialize them in _PyXI_Init().
     return _PyStatus_OK();
 }
 
