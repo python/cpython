@@ -1,1 +1,1 @@
-Fix spurious :exc:`KeyError` when :mod:`concurrent.interpreters._queues` is reloaded after import.
+Fix spurious :exc:`KeyError` when :mod:`!concurrent.interpreters._queues` is reloaded after import.
