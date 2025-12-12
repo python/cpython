@@ -527,7 +527,7 @@ class _FuncBuilder:
                 if already_exists and (msg_extra := self.overwrite_errors.get(name)):
                     error_msg = (f'Cannot overwrite attribute {fn.__name__} '
                                  f'in class {cls.__name__}')
-                    if not msg_extra is True:
+                    if msg_extra is not True:
                         error_msg = f'{error_msg} {msg_extra}'
 
                     raise TypeError(error_msg)
