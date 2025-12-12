@@ -2068,7 +2068,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             def __index__(self):
                 self.ba.clear()
                 return 65
-        
+
         def make_case():
             ba = bytearray(b"A")
             return ba, Evil(ba)
