@@ -3561,6 +3561,13 @@ class TestCachedProperty(unittest.TestCase):
         self.assertEqual(item.cost, 2)
         self.assertEqual(item.cost, 2) # not 3
 
+        item.cost = 42
+        self.assertEqual(item.cost, 42)
+
+        del item.cost
+        self.assertEqual(item.cost, 3)
+        self.assertEqual(item.cost, 3) # not 4
+
     def test_cached_attribute_name_differs_from_func_name(self):
         item = OptionallyCachedCostItem()
         self.assertEqual(item.get_cost(), 2)
