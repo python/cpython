@@ -708,7 +708,10 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
         return null_error(tstate);
     }
 
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *callable = _PyObject_GetAttrId(obj, name);
+_Py_COMP_DIAG_POP
     if (callable == NULL) {
         return NULL;
     }
