@@ -5926,6 +5926,7 @@
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(STACK_LEVEL() == 0);
+            DTRACE_FUNCTION_RETURN();
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
@@ -6128,6 +6129,7 @@
             gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyStackRef temp = retval;
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            DTRACE_FUNCTION_RETURN();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
