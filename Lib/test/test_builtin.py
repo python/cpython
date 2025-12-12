@@ -1103,7 +1103,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as wlog:
             warnings.simplefilter('error')
-            warnings.filterwarnings('always', module=r'<string>\z')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
             exec(source, {'__name__': 'package.module', '__file__': filename})
         self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
         for wm in wlog:
