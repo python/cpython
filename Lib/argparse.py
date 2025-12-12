@@ -525,18 +525,17 @@ class HelpFormatter(object):
         """Apply color markup to text.
 
         Supported markup:
-          [cmd]...[/cmd] - command/shell example (single color)
+          `...` - inline code (rendered with prog_extra color)
 
-        When colors are disabled, no transformation is applied.
+        When colors are disabled, backticks are preserved as-is.
         """
         t = self._theme
         if not t.reset:
             return text
         text = _re.sub(
-            r'\[cmd\](.*?)\[/cmd\]',
+            r'`([^`]+)`',
             rf'{t.prog_extra}\1{t.reset}',
             text,
-            flags=_re.DOTALL
         )
         return text
 
