@@ -498,21 +498,14 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 static int
 future_init(FutureObj *fut, PyObject *loop)
 {
+    if (fut->fut_loop != NULL) {
+        PyErr_Format(PyExc_RuntimeError,
+                        "%T object is already initialized", fut);
+        return -1;
+    }
+
     PyObject *res;
     int is_true;
-
-    Py_CLEAR(fut->fut_loop);
-    Py_CLEAR(fut->fut_callback0);
-    Py_CLEAR(fut->fut_context0);
-    Py_CLEAR(fut->fut_callbacks);
-    Py_CLEAR(fut->fut_result);
-    Py_CLEAR(fut->fut_exception);
-    Py_CLEAR(fut->fut_exception_tb);
-    Py_CLEAR(fut->fut_source_tb);
-    Py_CLEAR(fut->fut_cancel_msg);
-    Py_CLEAR(fut->fut_cancelled_exc);
-    Py_CLEAR(fut->fut_awaited_by);
-
     fut->fut_state = STATE_PENDING;
     fut->fut_log_tb = 0;
     fut->fut_blocking = 0;
