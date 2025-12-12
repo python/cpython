@@ -2061,6 +2061,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
     def test_search_methods_reentrancy_raises_buffererror(self):
+        # gh-142560: Raise BufferError if buffer mutates during search arg conversion.
         ba = bytearray(b"A")
         class Evil:
             def __index__(self):
