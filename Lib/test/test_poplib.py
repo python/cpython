@@ -340,6 +340,33 @@ class TestPOP3Class(TestCase):
         with self.assertRaises(ValueError):
             self.client.auth("PLAIN", authobject=lambda c: b"x", initial_response=b"y")
 
+    def test_auth_unsupported_mechanism(self):
+        with self.assertRaises(poplib.error_proto):
+            self.client.auth("FOO")
+
+    def test_auth_cancel(self):
+        def authobject(_challenge):
+            return b"*"
+        with self.assertRaises(poplib.error_proto):
+            self.client.auth("PLAIN", authobject=authobject)
+
+    def test_auth_mechanism_case_insensitive(self):
+        secret = b"user\x00adminuser\x00password"
+        # use lowercase mechanism name to ensure server accepts
+        resp = self.client.auth("plain", initial_response=secret)
+        self.assertStartsWith(resp, b"+OK")
+
+    def test_auth_initial_response_str(self):
+        secret = "user\x00adminuser\x00password"  # str, not bytes
+        resp = self.client.auth("PLAIN", initial_response=secret)
+        self.assertStartsWith(resp, b"+OK")
+
+    def test_auth_authobject_returns_str(self):
+        def authobject(challenge):
+            return "user\x00adminuser\x00password"
+        resp = self.client.auth("PLAIN", authobject=authobject)
+        self.assertStartsWith(resp, b"+OK")
+
     def test_stat(self):
         self.assertEqual(self.client.stat(), (10, 100))
 
@@ -488,6 +515,9 @@ if SUPPORTS_SSL:
             self.push('+OK dummy pop3 server ready. <timestamp>')
             self.tls_active = True
             self.tls_starting = False
+            # Initialize AUTH state like DummyPOP3Handler to avoid AttributeError
+            self._auth_pending = False
+            self._auth_mech = None
 
 
 @requires_ssl
