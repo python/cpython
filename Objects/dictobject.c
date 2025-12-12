@@ -282,6 +282,11 @@ load_keys_nentries(PyDictObject *mp)
 
 #endif
 
+#define _PyAnyDict_CAST(op) \
+    (assert(PyAnyDict_Check(op)), _Py_CAST(PyDictObject*, op))
+
+#define GET_USED(ep) FT_ATOMIC_LOAD_SSIZE_RELAXED((ep)->ma_used)
+
 #define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_key, key)
 #define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_value, value)
 #define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
@@ -3476,7 +3481,7 @@ dict_repr(PyObject *self)
 static Py_ssize_t
 dict_length(PyObject *self)
 {
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(((PyDictObject *)self)->ma_used);
+    return GET_USED(_PyAnyDict_CAST(self));
 }
 
 static PyObject *
@@ -4250,7 +4255,7 @@ PyDict_Size(PyObject *mp)
         PyErr_BadInternalCall();
         return -1;
     }
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(((PyDictObject *)mp)->ma_used);
+    return GET_USED((PyDictObject *)mp);
 }
 
 /* Return 1 if dicts equal, 0 if not, -1 if error.
@@ -4795,6 +4800,18 @@ dict_or(PyObject *self, PyObject *other)
 }
 
 static PyObject *
+frozendict_or(PyObject *self, PyObject *other)
+{
+    if (PyAnyDict_CheckExact(self) || PyAnyDict_CheckExact(other)) {
+        if (GET_USED((PyDictObject *)other) == 0) {
+            return Py_NewRef(self);
+        }
+    }
+    return dict_or(self, other);
+}
+
+
+static PyObject *
 dict_ior(PyObject *self, PyObject *other)
 {
     if (dict_update_arg(self, other)) {
@@ -5153,7 +5170,7 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
         return NULL;
     }
     di->di_dict = (PyDictObject*)Py_NewRef(dict);
-    used = FT_ATOMIC_LOAD_SSIZE_RELAXED(dict->ma_used);
+    used = GET_USED(dict);
     di->di_used = used;
     di->len = used;
     if (itertype == &PyDictRevIterKey_Type ||
@@ -5209,7 +5226,7 @@ dictiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     dictiterobject *di = (dictiterobject *)self;
     Py_ssize_t len = 0;
-    if (di->di_dict != NULL && di->di_used == FT_ATOMIC_LOAD_SSIZE_RELAXED(di->di_dict->ma_used))
+    if (di->di_dict != NULL && di->di_used == GET_USED(di->di_dict))
         len = FT_ATOMIC_LOAD_SSIZE_RELAXED(di->len);
     return PyLong_FromSize_t(len);
 }
@@ -5995,7 +6012,7 @@ dictview_len(PyObject *self)
     _PyDictViewObject *dv = (_PyDictViewObject *)self;
     Py_ssize_t len = 0;
     if (dv->dv_dict != NULL)
-        len = FT_ATOMIC_LOAD_SSIZE_RELAXED(dv->dv_dict->ma_used);
+        len = GET_USED(dv->dv_dict);
     return len;
 }
 
@@ -7255,7 +7272,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
     if (dict == NULL) {
         return 1;
     }
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(((PyDictObject *)dict)->ma_used) == 0;
+    return GET_USED((PyDictObject *)dict) == 0;
 }
 
 int
@@ -7833,7 +7850,7 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 // --- frozendict implementation ---------------------------------------------
 
 static PyNumberMethods frozendict_as_number = {
-    .nb_or = dict_or,
+    .nb_or = frozendict_or,
 };
 
 static PyMappingMethods frozendict_as_mapping = {

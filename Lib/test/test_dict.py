@@ -1692,6 +1692,9 @@ class FrozenDictTests(unittest.TestCase):
                          frozendict({'x': 1, 'y': 2}))
         self.assertEqual(frozendict(x=1, y=2) | frozendict(y=5),
                          frozendict({'x': 1, 'y': 5}))
+        fd = frozendict(x=1, y=2)
+        self.assertIs(fd | frozendict(), fd)
+        self.assertIs(fd | {}, fd)
 
     def test_update(self):
         # test "a |= b" operator
