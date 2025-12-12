@@ -376,11 +376,13 @@ class LiveStatsCollector(Collector):
                     thread_data.gc_frame_samples += stats["gc_samples"]
 
         # Process frames using pre-selected iterator
+        frames_processed = False
         for frames, thread_id in self._get_frame_iterator(stack_frames):
             if not frames:
                 continue
 
             self.process_frames(frames, thread_id=thread_id)
+            frames_processed = True
 
             # Track thread IDs
             if thread_id is not None and thread_id not in self.thread_ids:
@@ -393,7 +395,11 @@ class LiveStatsCollector(Collector):
         if has_gc_frame:
             self.gc_frame_samples += 1
 
-        self.successful_samples += 1
+        # Only count as successful if we actually processed frames
+        # This is important for modes like --mode exception where most samples
+        # may be filtered out at the C level
+        if frames_processed:
+            self.successful_samples += 1
         self.total_samples += 1
 
         # Handle input on every sample for instant responsiveness
@@ -664,9 +670,11 @@ class LiveStatsCollector(Collector):
             total_time = direct_calls * self.sample_interval_sec
             cumulative_time = cumulative_calls * self.sample_interval_sec
 
-            # Calculate sample percentages
-            sample_pct = (direct_calls / self.total_samples * 100) if self.total_samples > 0 else 0
-            cumul_pct = (cumulative_calls / self.total_samples * 100) if self.total_samples > 0 else 0
+            # Calculate sample percentages using successful_samples as denominator
+            # This ensures percentages are relative to samples that actually had data,
+            # not all sampling attempts (important for filtered modes like --mode exception)
+            sample_pct = (direct_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
+            cumul_pct = (cumulative_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
 
             # Calculate trends for all columns using TrendTracker
             trends = {}
@@ -689,7 +697,9 @@ class LiveStatsCollector(Collector):
                     "cumulative_calls": cumulative_calls,
                     "total_time": total_time,
                     "cumulative_time": cumulative_time,
-                    "trends": trends,  # Dictionary of trends for all columns
+                    "sample_pct": sample_pct,
+                    "cumul_pct": cumul_pct,
+                    "trends": trends,
                 }
             )
 
@@ -701,21 +711,9 @@ class LiveStatsCollector(Collector):
         elif self.sort_by == "cumtime":
             stats_list.sort(key=lambda x: x["cumulative_time"], reverse=True)
         elif self.sort_by == "sample_pct":
-            stats_list.sort(
-                key=lambda x: (x["direct_calls"] / self.total_samples * 100)
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["sample_pct"], reverse=True)
         elif self.sort_by == "cumul_pct":
-            stats_list.sort(
-                key=lambda x: (
-                    x["cumulative_calls"] / self.total_samples * 100
-                )
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["cumul_pct"], reverse=True)
 
         return stats_list
 
