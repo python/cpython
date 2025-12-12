@@ -544,9 +544,9 @@ Configuration Options
 
 Visibility:
 
-* Public: Can by get by :c:func:`PyConfig_Get` and set by
+* Public: Can be get by :c:func:`PyConfig_Get` and set by
   :c:func:`PyConfig_Set`.
-* Read-only: Can by get by :c:func:`PyConfig_Get`, but cannot be set by
+* Read-only: Can be get by :c:func:`PyConfig_Get`, but cannot be set by
   :c:func:`PyConfig_Set`.
 
 
