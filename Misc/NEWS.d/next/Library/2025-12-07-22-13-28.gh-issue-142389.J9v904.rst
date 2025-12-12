@@ -1,1 +1,1 @@
-Add ``[cmd]...[/cmd]`` markup support in :mod:`argparse` description and epilog text to highlight command examples when color output is enabled.
+Add backtick markup support in :mod:`argparse` description and epilog text to highlight inline code when color output is enabled.
