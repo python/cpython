@@ -1644,7 +1644,7 @@ assess_work_to_do(GCState *gcstate)
         scale_factor = 2;
     }
     intptr_t new_objects = gcstate->young.count;
-    intptr_t max_heap_fraction = new_objects*2;
+    intptr_t max_heap_fraction = new_objects*3/2;
     intptr_t heap_fraction = gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     if (heap_fraction > max_heap_fraction) {
         heap_fraction = max_heap_fraction;
@@ -1659,9 +1659,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     GC_STAT_ADD(1, collections, 1);
     GCState *gcstate = &tstate->interp->gc;
     gcstate->work_to_do += assess_work_to_do(gcstate);
-    if (gcstate->work_to_do < 0) {
-        return;
-    }
     untrack_tuples(&gcstate->young.head);
     if (gcstate->phase == GC_PHASE_MARK) {
         Py_ssize_t objects_marked = mark_at_start(tstate);
@@ -1705,6 +1702,7 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     gc_collect_region(tstate, &increment, &survivors, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
+    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
 
     if (gc_list_is_empty(not_visited)) {
