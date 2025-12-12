@@ -1,0 +1,4 @@
+When calculating the digest of the JIT stencils input, sort the hashed files
+by filenames before adding their content to the hasher. This ensures
+deterministic hash input and hence deterministic hash, independent on
+filesystem order.

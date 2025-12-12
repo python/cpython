@@ -1,0 +1,85 @@
+.. date: 2025-12-01-09-36-45
+.. gh-issue: 142145
+.. nonce: tcAUhg
+.. release date: 2025-12-05
+.. section: Security
+
+Remove quadratic behavior in ``xml.minidom`` node ID cache clearing.
+
+..
+
+.. date: 2024-05-23-11-44-41
+.. gh-issue: 119452
+.. nonce: PRfsSv
+.. section: Security
+
+Fix a potential memory denial of service in the :mod:`http.server` module.
+When a malicious user is connected to the CGI server on Windows, it could
+cause an arbitrary amount of memory to be allocated. This could have led to
+symptoms including a :exc:`MemoryError`, swapping, out of memory (OOM)
+killed processes or containers, or even system crashes.
+
+..
+
+.. date: 2025-12-05-17-58-29
+.. gh-issue: 140797
+.. nonce: YxB27u
+.. section: Library
+
+Revert changes to the undocumented :class:`!re.Scanner` class. Capturing
+groups are still allowed for backward compatibility, although using them can
+lead to incorrect result. They will be forbidden in future Python versions.
+
+..
+
+.. date: 2025-12-03-09-36-29
+.. gh-issue: 142206
+.. nonce: ilwegH
+.. section: Library
+
+The resource tracker in the :mod:`multiprocessing` module now uses the
+original communication protocol, as in Python 3.14.0 and below, by default.
+This avoids issues with upgrading Python while it is running. (Note that
+such 'in-place' upgrades are not tested.) The tracker remains compatible
+with subprocesses that use new protocol (that is, subprocesses using Python
+3.13.10, 3.14.1 and 3.15).
+
+..
+
+.. date: 2025-12-03-06-12-39
+.. gh-issue: 142214
+.. nonce: appYNZ
+.. section: Library
+
+Fix two regressions in :mod:`dataclasses` in Python 3.14.1 related to
+annotations.
+
+* An exception is no longer raised if ``slots=True`` is used and the
+  ``__init__`` method does not have an ``__annotate__`` attribute
+  (likely because ``init=False`` was used).
+
+* An exception is no longer raised if annotations are requested on the
+  ``__init__`` method and one of the fields is not present in the class
+  annotations. This can occur in certain dynamic scenarios.
+
+Patch by Jelle Zijlstra.
+
+..
+
+.. date: 2025-12-03-11-03-35
+.. gh-issue: 142218
+.. nonce: 44Fq_J
+.. section: Core and Builtins
+
+Fix crash when inserting into a split table dictionary with a non
+:class:`str` key that matches an existing key.
+
+..
+
+.. date: 2025-12-01-10-03-08
+.. gh-issue: 116738
+.. nonce: 972YsG
+.. section: Core and Builtins
+
+Fix :mod:`cmath` data race when initializing trigonometric tables with
+subinterpreters.

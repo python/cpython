@@ -7447,7 +7447,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (argc < 1) {
         PyErr_Format(PyExc_ValueError,
                      "%s: argv must not be empty", func_name);
-        return NULL;
+        goto exit;
     }
 
     if (!PyMapping_Check(env) && env != Py_None) {

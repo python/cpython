@@ -323,7 +323,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref)) {
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsTaggedInt(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         return obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj);
     }
