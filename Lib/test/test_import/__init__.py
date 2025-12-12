@@ -1264,7 +1264,7 @@ os.does_not_exist
         spec.name = "builtins"
         self.assertIs(_imp.create_builtin(spec), builtins)
 
-        name = None
+        spec.name = None
         with self.assertRaisesRegex(TypeError, 'name must be string, not NoneType'):
             _imp.create_builtin(spec)
 
