@@ -43,6 +43,17 @@ Dictionary Objects
    prevent modification of the dictionary for non-dynamic class types.
 
 
+.. c:var:: PyTypeObject PyDictProxy_Type
+
+   The type object for mapping proxy objects created by
+   :c:func:`PyDictProxy_New` and for the read-only ``__dict__`` attribute
+   of many built-in types. A :c:type:`PyDictProxy_Type` instance provides a
+   dynamic, read-only view of an underlying dictionary: changes to the
+   underlying dictionary are reflected in the proxy, but the proxy itself
+   does not support mutation operations. This corresponds to
+   :class:`types.MappingProxyType` in Python.
+
+
 .. c:function:: void PyDict_Clear(PyObject *p)
 
    Empty an existing dictionary of all key-value pairs.

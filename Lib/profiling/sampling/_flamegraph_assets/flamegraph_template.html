@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tachyon Profiler - Flamegraph Report</title>
+    <!-- INLINE_VENDOR_D3_JS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_JS -->
+    <!-- INLINE_VENDOR_FLAMEGRAPH_TOOLTIP_JS -->
+    <!-- INLINE_CSS -->
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="brand">
+          <div class="brand-logo" id="navbar-logo"></div>
+          <span class="brand-text">Tachyon</span>
+          <span class="brand-divider"></span>
+          <span class="brand-subtitle">Flamegraph Report</span>
+        </div>
+        <div class="search-wrapper">
+          <input
+            type="text"
+            id="search-input"
+            class="search-input"
+            placeholder="Search functions..."
+          />
+          <button
+            class="search-clear"
+            id="search-clear"
+            onclick="clearSearch()"
+            title="Clear search"
+          >&times;</button>
+        </div>
+        <div class="toolbar">
+          <button
+            class="toolbar-btn"
+            onclick="resetZoom()"
+            title="Reset zoom"
+          >&#8962;</button>
+          <button
+            class="toolbar-btn"
+            onclick="exportSVG()"
+            title="Export SVG"
+          >&#8595;</button>
+          <button
+            class="toolbar-btn theme-toggle"
+            onclick="toggleTheme()"
+            title="Toggle theme"
+            id="theme-btn"
+          >&#9790;</button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+          <button
+            class="sidebar-toggle"
+            onclick="toggleSidebar()"
+            title="Toggle sidebar"
+            aria-label="Toggle sidebar"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+
+          <div class="sidebar-content">
+            <!-- Logo Section -->
+            <div class="sidebar-logo">
+              <div class="sidebar-logo-img"><!-- INLINE_LOGO --></div>
+            </div>
+
+            <!-- View Mode Section -->
+            <section class="sidebar-section view-mode-section">
+              <h3 class="section-title">View Mode</h3>
+              <div class="toggle-switch" id="toggle-invert">
+                <span class="toggle-label active">Flamegraph</span>
+                <div class="toggle-track"></div>
+                <span class="toggle-label">Inverted Flamegraph</span>
+              </div>
+            </section>
+
+            <!-- Profile Summary Section -->
+            <section class="sidebar-section collapsible" id="summary-section">
+              <button class="section-header" onclick="toggleSection('summary-section')">
+                <h3 class="section-title">Profile Summary</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+                <div class="summary-grid">
+                  <div class="summary-card" id="summary-samples">
+                    <div class="summary-icon">📊</div>
+                    <div class="summary-data">
+                      <div class="summary-value" id="stat-total-samples">--</div>
+                      <div class="summary-label">Total Samples</div>
+                    </div>
+                  </div>
+                  <div class="summary-card" id="summary-duration">
+                    <div class="summary-icon">⏱</div>
+                    <div class="summary-data">
+                      <div class="summary-value" id="stat-duration">--</div>
+                      <div class="summary-label">Duration</div>
+                    </div>
+                  </div>
+                  <div class="summary-card" id="summary-rate">
+                    <div class="summary-icon">⚡</div>
+                    <div class="summary-data">
+                      <div class="summary-value" id="stat-sample-rate">--</div>
+                      <div class="summary-label">Samples/sec</div>
+                    </div>
+                  </div>
+                  <div class="summary-card" id="summary-functions">
+                    <div class="summary-icon">λ</div>
+                    <div class="summary-data">
+                      <div class="summary-value" id="stat-functions">--</div>
+                      <div class="summary-label">Functions</div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Efficiency Bar -->
+                <div class="efficiency-section" id="efficiency-section" style="display: none;">
+                  <div class="efficiency-header">
+                    <span class="efficiency-label">Sampling Efficiency</span>
+                    <span class="efficiency-value" id="stat-efficiency">--</span>
+                  </div>
+                  <div class="efficiency-bar">
+                    <div class="efficiency-fill" id="efficiency-fill"></div>
+                  </div>
+                  <div class="missed-samples-header">
+                    <span class="efficiency-label">Missed samples</span>
+                    <span class="efficiency-value" id="stat-missed-samples">--</span>
+                  </div>
+                  <div class="efficiency-bar">
+                    <div class="efficiency-fill" id="missed-samples-fill"></div>
+                  </div>
+ 
+                </div>
+              </div>
+            </section>
+
+            <!-- Thread Stats Section (GIL/GC) -->
+            <section class="sidebar-section thread-stats-section collapsible" id="thread-stats-bar" style="display: none;">
+              <button class="section-header" onclick="toggleSection('thread-stats-bar')">
+                <h3 class="section-title">Runtime Stats</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+                <div class="stats-grid">
+                  <div class="stat-tile stat-tile--green" id="gil-held-stat">
+                    <div class="stat-tile-value" id="gil-held-pct">--</div>
+                    <div class="stat-tile-label">GIL Held</div>
+                  </div>
+                  <div class="stat-tile stat-tile--red" id="gil-released-stat">
+                    <div class="stat-tile-value" id="gil-released-pct">--</div>
+                    <div class="stat-tile-label">GIL Released</div>
+                  </div>
+                  <div class="stat-tile stat-tile--yellow" id="gil-waiting-stat">
+                    <div class="stat-tile-value" id="gil-waiting-pct">--</div>
+                    <div class="stat-tile-label">Waiting GIL</div>
+                  </div>
+                  <div class="stat-tile stat-tile--purple" id="gc-stat">
+                    <div class="stat-tile-value" id="gc-pct">--</div>
+                    <div class="stat-tile-label">GC</div>
+                  </div>
+                  <div class="stat-tile stat-tile--red" id="exc-stat">
+                    <div class="stat-tile-value" id="exc-pct">--</div>
+                    <div class="stat-tile-label">Exception</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Hotspots Section -->
+            <section class="sidebar-section collapsible" id="hotspots-section">
+              <button class="section-header" onclick="toggleSection('hotspots-section')">
+                <h3 class="section-title">Hotspots</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+              <div class="hotspot" id="hotspot-1">
+                <div class="hotspot-rank hotspot-rank--1">1</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-1">--</div>
+                  <div class="hotspot-file" id="hotspot-file-1">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-1">--</span>
+                    <span id="hotspot-samples-1"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hotspot" id="hotspot-2">
+                <div class="hotspot-rank hotspot-rank--2">2</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-2">--</div>
+                  <div class="hotspot-file" id="hotspot-file-2">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-2">--</span>
+                    <span id="hotspot-samples-2"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="hotspot" id="hotspot-3">
+                <div class="hotspot-rank hotspot-rank--3">3</div>
+                <div class="hotspot-info">
+                  <div class="hotspot-func" id="hotspot-func-3">--</div>
+                  <div class="hotspot-file" id="hotspot-file-3">--</div>
+                  <div class="hotspot-stats">
+                    <span class="hotspot-percent" id="hotspot-percent-3">--</span>
+                    <span id="hotspot-samples-3"></span>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </section>
+
+            <!-- Thread Filter Section -->
+            <section class="sidebar-section filter-section" id="thread-section" style="display: none;">
+              <label class="filter-label" for="thread-filter">Thread Filter</label>
+              <select
+                id="thread-filter"
+                class="filter-select"
+                onchange="filterByThread()"
+              >
+                <option value="all">All Threads</option>
+              </select>
+            </section>
+
+            <!-- Legend Section -->
+            <section class="sidebar-section legend-section collapsible" id="legend-section">
+              <button class="section-header" onclick="toggleSection('legend-section')">
+                <h3 class="section-title">Heat Map</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+              <div class="legend">
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-8)"></div>
+                  <span class="legend-label">Hottest</span>
+                  <span class="legend-range">&ge;60%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-7)"></div>
+                  <span class="legend-label">Very Hot</span>
+                  <span class="legend-range">35-60%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-6)"></div>
+                  <span class="legend-label">Hot</span>
+                  <span class="legend-range">18-35%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-5)"></div>
+                  <span class="legend-label">Warm</span>
+                  <span class="legend-range">12-18%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-4)"></div>
+                  <span class="legend-label">Medium</span>
+                  <span class="legend-range">6-12%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-3)"></div>
+                  <span class="legend-label">Cool</span>
+                  <span class="legend-range">3-6%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-2)"></div>
+                  <span class="legend-label">Cold</span>
+                  <span class="legend-range">1-3%</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: var(--heat-1)"></div>
+                  <span class="legend-label">Coldest</span>
+                  <span class="legend-range">&lt;1%</span>
+                </div>
+              </div>
+              </div>
+            </section>
+          </div>
+        </aside>
+
+        <!-- Chart Area -->
+        <main class="chart-area">
+          <div id="chart"></div>
+        </main>
+      </div>
+
+      <!-- Status Bar -->
+      <footer class="status-bar">
+        <span class="status-item" id="status-brand">
+          <span class="status-value">Tachyon Profiler</span>
+        </span>
+        <span class="status-item" id="status-tagline">
+          <span class="status-label">Python Sampling Profiler</span>
+        </span>
+        <span class="status-item" id="status-location" style="display: none;">
+          <span class="status-label">File:</span>
+          <span class="status-value" id="status-file">--</span>
+        </span>
+        <span class="status-item" id="status-func-item" style="display: none;">
+          <span class="status-label">Func:</span>
+          <span class="status-value" id="status-func">--</span>
+        </span>
+        <span class="status-item" id="status-time-item" style="display: none;">
+          <span class="status-label">Time:</span>
+          <span class="status-value" id="status-time">--</span>
+        </span>
+        <span class="status-item" id="status-percent-item" style="display: none;">
+          <span class="status-value accent" id="status-percent">--</span>
+        </span>
+      </footer>
+    </div>
+
+    <!-- INLINE_JS -->
+  </body>
+</html>

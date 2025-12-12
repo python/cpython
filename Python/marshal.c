@@ -310,7 +310,7 @@ w_PyLong(const PyLongObject *ob, char flag, WFILE *p)
     }
     if (!long_export.digits) {
         int8_t sign = long_export.value < 0 ? -1 : 1;
-        uint64_t abs_value = Py_ABS(long_export.value);
+        uint64_t abs_value = _Py_ABS_CAST(uint64_t, long_export.value);
         uint64_t d = abs_value;
         long l = 0;
 
