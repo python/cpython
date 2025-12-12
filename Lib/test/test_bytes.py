@@ -2062,21 +2062,21 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
     def test_search_methods_reentrancy_raises_buffererror(self):
         # gh-142560: Raise BufferError if buffer mutates during search arg conversion.
-        ba = bytearray(b"A")
         class Evil:
+            def __init__(self, ba):
+                self.ba = ba
             def __index__(self):
-                ba.clear()
-                return 65  # ord('A')
-        with self.assertRaises(BufferError):
-            ba.find(Evil())
-        with self.assertRaises(BufferError):
-            ba.count(Evil())
-        with self.assertRaises(BufferError):
-            ba.index(Evil())
-        with self.assertRaises(BufferError):
-            ba.rindex(Evil())
-        with self.assertRaises(BufferError):
-            ba.rfind(Evil())
+                self.ba.clear()
+                return 65
+        
+        def make_case():
+            ba = bytearray(b"A")
+            return ba, Evil(ba)
+
+        for name in ("find", "count", "index", "rindex", "rfind"):
+            ba, evil = make_case()
+            with self.assertRaises(BufferError):
+                getattr(ba, name)(evil)
 
 
 class AssortedBytesTest(unittest.TestCase):
