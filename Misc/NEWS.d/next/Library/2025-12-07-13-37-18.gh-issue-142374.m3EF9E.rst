@@ -1,0 +1,7 @@
+Fix cumulative percentage calculation for recursive functions in the new
+sampling profiler. When profiling recursive functions, cumulative statistics
+(cumul%, cumtime) could exceed 100% because each recursive frame in a stack
+was counted separately. For example, a function recursing 500 times in every
+sample would show 50000% cumulative presence. The fix deduplicates locations
+within each sample so cumulative stats correctly represent "percentage of
+samples where this function was on the stack". Patch by Pablo Galindo.

@@ -148,6 +148,7 @@ class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
     def test_stats_display_with_different_sort_modes(self):
         """Test that stats are displayed correctly with different sort modes."""
         self.collector.total_samples = 100
+        self.collector.successful_samples = 100  # For percentage calculations
         self.collector.result[("a.py", 1, "func_a")] = {
             "direct_calls": 10,
             "cumulative_calls": 20,

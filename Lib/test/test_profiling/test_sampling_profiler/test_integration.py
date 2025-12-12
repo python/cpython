@@ -121,16 +121,17 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         self.assertIn(fib_key, collector.stats)
         self.assertIn(main_key, collector.stats)
 
-        # Fibonacci should have many calls due to recursion
+        # Fibonacci: counted once per sample, not per occurrence
         fib_stats = collector.stats[fib_key]
         direct_calls, cumulative_calls, tt, ct, callers = fib_stats
 
-        # Should have recorded multiple calls (9 total appearances in samples)
-        self.assertEqual(cumulative_calls, 9)
-        self.assertGreater(tt, 0)  # Should have some total time
-        self.assertGreater(ct, 0)  # Should have some cumulative time
+        # Should count 3 (present in 3 samples), not 9 (total occurrences)
+        self.assertEqual(cumulative_calls, 3)
+        self.assertEqual(direct_calls, 3)  # Top of stack in all samples
+        self.assertGreater(tt, 0)
+        self.assertGreater(ct, 0)
 
-        # Main should have fewer calls
+        # Main should also have 3 cumulative calls (in all 3 samples)
         main_stats = collector.stats[main_key]
         main_direct_calls, main_cumulative_calls = main_stats[0], main_stats[1]
         self.assertEqual(main_direct_calls, 0)  # Never directly executing
