@@ -4802,7 +4802,7 @@ dict_or(PyObject *self, PyObject *other)
 static PyObject *
 frozendict_or(PyObject *self, PyObject *other)
 {
-    if (PyAnyDict_CheckExact(self) || PyAnyDict_CheckExact(other)) {
+    if (PyAnyDict_CheckExact(self) && PyAnyDict_CheckExact(other)) {
         if (GET_USED((PyDictObject *)other) == 0) {
             return Py_NewRef(self);
         }
