@@ -102,12 +102,19 @@
             </div>
 
             <!-- View Mode Section -->
-            <section class="sidebar-section view-mode-section">
-              <h3 class="section-title">View Mode</h3>
-              <div class="toggle-switch" id="toggle-invert">
-                <span class="toggle-label active">Flamegraph</span>
-                <div class="toggle-track"></div>
-                <span class="toggle-label">Inverted Flamegraph</span>
+            <section class="sidebar-section view-mode-section collapsible" id="view-mode-section">
+              <button class="section-header" onclick="toggleSection('view-mode-section')">
+                <h3 class="section-title">View Mode</h3>
+                <svg class="section-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="section-content">
+                <div class="toggle-switch" id="toggle-invert" title="Toggle between standard and inverted flamegraph view" tabindex="0">
+                  <span class="toggle-label active" data-text="Flamegraph">Flamegraph</span>
+                  <div class="toggle-track"></div>
+                  <span class="toggle-label" data-text="Inverted Flamegraph">Inverted Flamegraph</span>
+                </div>
               </div>
             </section>
 

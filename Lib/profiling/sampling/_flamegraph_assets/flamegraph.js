@@ -1302,6 +1302,17 @@ function initFlamegraph() {
   }
 }
 
+// Keyboard shortcut: Enter/Space activates toggle switches
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('toggle-switch')) {
+        e.preventDefault();
+        e.target.click();
+    }
+});
+
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initFlamegraph);
 } else {
