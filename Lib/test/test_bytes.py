@@ -2078,7 +2078,6 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             ba.rfind(Evil())
 
 
-
 class AssortedBytesTest(unittest.TestCase):
     #
     # Test various combinations of bytes and bytearray
