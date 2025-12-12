@@ -375,6 +375,19 @@ op_from_block(void *block, void *arg, bool include_frozen)
     return op;
 }
 
+// As above but returns untracked and frozen objects as well.
+static PyObject *
+op_from_block_all_gc(void *block, void *arg)
+{
+    struct visitor_args *a = arg;
+    if (block == NULL) {
+        return NULL;
+    }
+    PyObject *op = (PyObject *)((char*)block + a->offset);
+    assert(PyObject_IS_GC(op));
+    return op;
+}
+
 static int
 gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor,
                          struct visitor_args *arg)
@@ -1186,12 +1199,20 @@ static bool
 scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block_all_gc(block, args);
     if (op == NULL) {
         return true;
     }
-
     struct collection_state *state = (struct collection_state *)args;
+    // The free-threaded GC cost is proportional to the number of objects in
+    // the mimalloc GC heap and so we should include the counts for untracked
+    // and frozen objects as well.  This is especially important if many
+    // tuples have been untracked.
+    state->long_lived_total++;
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
+        return true;
+    }
+
     if (gc_is_unreachable(op)) {
         // Disable deferred refcounting for unreachable objects so that they
         // are collected immediately after finalization.
@@ -1209,6 +1230,9 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         else {
             worklist_push(&state->unreachable, op);
         }
+        // It is possible this object will be resurrected but
+        // for now we assume it will be deallocated.
+        state->long_lived_total--;
         return true;
     }
 
@@ -1222,7 +1246,6 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
     gc_clear_alive(op);
-    state->long_lived_total++;
     return true;
 }
 
@@ -1891,6 +1914,7 @@ handle_resurrected_objects(struct collection_state *state)
                 _PyObject_ASSERT(op, Py_REFCNT(op) > 1);
                 worklist_remove(&iter);
                 merge_refcount(op, -1);  // remove worklist reference
+                state->long_lived_total++;
             }
         }
     }
@@ -2303,9 +2327,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         }
     }
 
-    // Record the number of live GC objects
-    interp->gc.long_lived_total = state->long_lived_total;
-
     // Find weakref callbacks we will honor (but do not call them).
     find_weakref_callbacks(state);
     _PyEval_StartTheWorld(interp);
@@ -2326,7 +2347,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (err == 0) {
         clear_weakrefs(state);
     }
+    // Record the number of live GC objects
+    interp->gc.long_lived_total = state->long_lived_total;
     _PyEval_StartTheWorld(interp);
+
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
