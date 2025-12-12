@@ -491,6 +491,10 @@ class HeatmapCollector(StackTraceCollector):
         # File index (populated during export)
         self.file_index = {}
 
+        # Reusable set for deduplicating line locations within a single sample.
+        # This avoids over-counting recursive functions in cumulative stats.
+        self._seen_lines = set()
+
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None, missed_samples=None, **kwargs):
         """Set profiling statistics to include in heatmap output.
 
@@ -524,6 +528,7 @@ class HeatmapCollector(StackTraceCollector):
             thread_id: Thread ID for this stack trace
         """
         self._total_samples += 1
+        self._seen_lines.clear()
 
         for i, (filename, location, funcname, opcode) in enumerate(frames):
             # Normalize location to 4-tuple format
@@ -533,7 +538,14 @@ class HeatmapCollector(StackTraceCollector):
                 continue
 
             # frames[0] is the leaf - where execution is actually happening
-            self._record_line_sample(filename, lineno, funcname, is_leaf=(i == 0))
+            is_leaf = (i == 0)
+            line_key = (filename, lineno)
+            count_cumulative = line_key not in self._seen_lines
+            if count_cumulative:
+                self._seen_lines.add(line_key)
+
+            self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf,
+                                     count_cumulative=count_cumulative)
 
             if opcode is not None:
                 # Set opcodes_enabled flag when we first encounter opcode data
@@ -562,11 +574,13 @@ class HeatmapCollector(StackTraceCollector):
 
         return True
 
-    def _record_line_sample(self, filename, lineno, funcname, is_leaf=False):
+    def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
+                            count_cumulative=True):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
-        self.line_samples[(filename, lineno)] += 1
-        self.file_samples[filename][lineno] += 1
+        if count_cumulative:
+            self.line_samples[(filename, lineno)] += 1
+            self.file_samples[filename][lineno] += 1
 
         # Track self/leaf samples (only when at top of stack)
         if is_leaf:
