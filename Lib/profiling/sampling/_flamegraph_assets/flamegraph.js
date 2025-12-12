@@ -90,7 +90,8 @@ function toggleTheme() {
   // Update theme button icon
   const btn = document.getElementById('theme-btn');
   if (btn) {
-    btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
+    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
   }
 
   // Re-render flamegraph with new theme colors
@@ -157,7 +158,8 @@ function restoreUIState() {
     document.documentElement.setAttribute('data-theme', savedTheme);
     const btn = document.getElementById('theme-btn');
     if (btn) {
-      btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
+      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
     }
   }
 
