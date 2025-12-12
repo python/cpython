@@ -1719,17 +1719,17 @@
 
         case _LOAD_ATTR: {
             JitOptRef owner;
-            JitOptRef *attr;
+            JitOptRef attr;
             JitOptRef *self_or_null;
             owner = stack_pointer[-1];
-            attr = &stack_pointer[-1];
             self_or_null = &stack_pointer[0];
             (void)owner;
-            *attr = sym_new_not_null(ctx);
+            attr = sym_new_not_null(ctx);
             if (oparg & 1) {
                 self_or_null[0] = sym_new_unknown(ctx);
             }
             CHECK_STACK_BOUNDS((oparg&1));
+            stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -2882,6 +2882,7 @@
         case _CALL_TUPLE_1: {
             JitOptRef arg;
             JitOptRef res;
+            JitOptRef a;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyTuple_Type)) {
                 res = PyJitRef_StripReferenceInfo(arg);
@@ -2889,9 +2890,11 @@
             else {
                 res = sym_new_type(ctx, &PyTuple_Type);
             }
-            CHECK_STACK_BOUNDS(-2);
+            a = arg;
+            CHECK_STACK_BOUNDS(-1);
             stack_pointer[-3] = res;
-            stack_pointer += -2;
+            stack_pointer[-2] = a;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2999,8 +3002,12 @@
 
         case _CALL_LEN: {
             JitOptRef arg;
+            JitOptRef callable;
             JitOptRef res;
+            JitOptRef a;
+            JitOptRef c;
             arg = stack_pointer[-1];
+            callable = stack_pointer[-3];
             res = sym_new_type(ctx, &PyLong_Type);
             Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
@@ -3020,10 +3027,11 @@
                 Py_DECREF(temp);
                 stack_pointer += 2;
             }
-            CHECK_STACK_BOUNDS(-2);
+            a = arg;
+            c = callable;
             stack_pointer[-3] = res;
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            stack_pointer[-2] = a;
+            stack_pointer[-1] = c;
             break;
         }
 
@@ -3625,6 +3633,10 @@
         }
 
         case _ERROR_POP_N: {
+            break;
+        }
+
+        case _SPILL_OR_RELOAD: {
             break;
         }
 

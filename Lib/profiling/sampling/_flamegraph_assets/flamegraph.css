@@ -274,6 +274,20 @@ body.resizing-sidebar {
   flex: 1;
 }
 
+/* View Mode Section */
+.view-mode-section {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.view-mode-section .section-title {
+  margin-bottom: 12px;
+}
+
+.view-mode-section .toggle-switch {
+  justify-content: center;
+}
+
 /* Collapsible sections */
 .collapsible .section-header {
   display: flex;
@@ -329,34 +343,44 @@ body.resizing-sidebar {
   gap: 8px;
   padding: 8px 10px;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 8px;
   transition: all var(--transition-fast);
   animation: slideUp 0.4s ease-out backwards;
-  animation-delay: calc(var(--i, 0) * 0.05s);
+  animation-delay: calc(var(--i, 0) * 0.08s);
   overflow: hidden;
+  position: relative;
 }
 
-.summary-card:nth-child(1) { --i: 0; }
-.summary-card:nth-child(2) { --i: 1; }
-.summary-card:nth-child(3) { --i: 2; }
-.summary-card:nth-child(4) { --i: 3; }
+.summary-card:nth-child(1) { --i: 0; --card-color: 55, 118, 171; }
+.summary-card:nth-child(2) { --i: 1; --card-color: 40, 167, 69; }
+.summary-card:nth-child(3) { --i: 2; --card-color: 255, 193, 7; }
+.summary-card:nth-child(4) { --i: 3; --card-color: 111, 66, 193; }
 
 .summary-card:hover {
-  border-color: var(--accent);
-  background: var(--accent-glow);
+  border-color: rgba(var(--card-color), 0.6);
+  background: linear-gradient(135deg, rgba(var(--card-color), 0.08) 0%, var(--bg-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--card-color), 0.15);
 }
 
 .summary-icon {
-  font-size: 16px;
+  font-size: 14px;
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-tertiary);
+  background: linear-gradient(135deg, rgba(var(--card-color), 0.15) 0%, rgba(var(--card-color), 0.05) 100%);
+  border: 1px solid rgba(var(--card-color), 0.2);
   border-radius: 6px;
   flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.summary-card:hover .summary-icon {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(var(--card-color), 0.25) 0%, rgba(var(--card-color), 0.1) 100%);
 }
 
 .summary-data {
@@ -368,8 +392,8 @@ body.resizing-sidebar {
 .summary-value {
   font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 700;
-  color: var(--accent);
+  font-weight: 800;
+  color: rgb(var(--card-color));
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -863,6 +887,84 @@ body.resizing-sidebar {
 }
 
 /* --------------------------------------------------------------------------
+   Tooltip Bytecode/Opcode Section
+   -------------------------------------------------------------------------- */
+
+.tooltip-opcodes {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tooltip-opcodes-title {
+  color: var(--accent);
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.tooltip-opcodes-list {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.tooltip-opcode-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.tooltip-opcode-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-opcode-name.specialized {
+  color: var(--spec-high-text);
+}
+
+.tooltip-opcode-base-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.tooltip-opcode-badge {
+  background: var(--spec-high);
+  color: white;
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.tooltip-opcode-count {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tooltip-opcode-bar {
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.tooltip-opcode-bar-fill {
+  background: linear-gradient(90deg, var(--python-blue), var(--python-blue-light));
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
    Responsive (Flamegraph-specific)
    -------------------------------------------------------------------------- */
 
@@ -897,4 +999,27 @@ body.resizing-sidebar {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph Root Node Styling
+   -------------------------------------------------------------------------- */
+
+/* Style the root node - no border, themed text */
+.d3-flame-graph g:first-of-type rect {
+  stroke: none;
+}
+
+.d3-flame-graph g:first-of-type .d3-flame-graph-label {
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph-Specific Toggle Override
+   -------------------------------------------------------------------------- */
+
+#toggle-invert .toggle-track.on {
+  background: #8e44ad;
+  border-color: #8e44ad;
+  box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
 }
