@@ -80,8 +80,8 @@ class Future:
         the default event loop.
         """
         if self._loop is not None:
-            raise RuntimeError(f'{self.__class__.__name__} object is already '
-                               'initialized.')
+            raise RuntimeError(f"{self.__class__.__name__} object is already "
+                                "initialized")
 
         if loop is None:
             self._loop = events.get_event_loop()
