@@ -1,0 +1,3 @@
+Fix possible crashes when initializing :class:`asyncio.Task` or :class:`asyncio.Future` multiple times.
+These classes can now be initialized only once and any subsequent initialization attempt will raise a RuntimeError. 
+Patch by Kumar Aditya.
