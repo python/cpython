@@ -1157,6 +1157,24 @@ class GCTests(unittest.TestCase):
         assert_python_ok("-c", source)
 
 
+    @unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_tuple_untrack_counts(self):
+        # This ensures that the free-threaded GC is counting untracked tuples
+        # in the "long_lived_total" count.  This is required to avoid
+        # performance issues from running the GC too frequently.  See
+        # GH-142531 as an example.
+        gc.collect()
+        count = _testinternalcapi.get_long_lived_total()
+        n = 20_000
+        tuples = [(x,) for x in range(n)]
+        gc.collect()
+        new_count = _testinternalcapi.get_long_lived_total()
+        self.assertFalse(gc.is_tracked(tuples[0]))
+        # Use n // 2 just in case some other objects were collected.
+        self.assertTrue(new_count - count > (n // 2))
+
+
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
