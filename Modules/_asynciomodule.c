@@ -499,8 +499,7 @@ static int
 future_init(FutureObj *fut, PyObject *loop)
 {
     if (fut->fut_loop != NULL) {
-        PyErr_Format(PyExc_RuntimeError,
-                        "%T object is already initialized", fut);
+        PyErr_Format(PyExc_RuntimeError, "%T object is already initialized", fut);
         return -1;
     }
 
