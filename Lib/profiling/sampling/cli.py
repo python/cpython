@@ -5,6 +5,8 @@ import os
 import socket
 import subprocess
 import sys
+import time
+from contextlib import nullcontext
 
 from .sample import sample, sample_live
 from .pstats_collector import PstatsCollector
@@ -83,6 +85,81 @@ COLLECTOR_MAP = {
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
 }
+
+def _setup_child_monitor(args, parent_pid):
+    from ._child_monitor import ChildProcessMonitor
+
+    # Build CLI args for child profilers (excluding --children to avoid recursion)
+    child_cli_args = _build_child_profiler_args(args)
+
+    # Build output pattern
+    output_pattern = _build_output_pattern(args)
+
+    return ChildProcessMonitor(
+        pid=parent_pid,
+        cli_args=child_cli_args,
+        output_pattern=output_pattern,
+    )
+
+
+def _get_child_monitor_context(args, pid):
+    if getattr(args, 'children', False):
+        return _setup_child_monitor(args, pid)
+    return nullcontext()
+
+
+def _build_child_profiler_args(args):
+    child_args = []
+
+    # Sampling options
+    child_args.extend(["-i", str(args.interval)])
+    child_args.extend(["-d", str(args.duration)])
+
+    if args.all_threads:
+        child_args.append("-a")
+    if args.realtime_stats:
+        child_args.append("--realtime-stats")
+    if args.native:
+        child_args.append("--native")
+    if not args.gc:
+        child_args.append("--no-gc")
+    if args.opcodes:
+        child_args.append("--opcodes")
+    if args.async_aware:
+        child_args.append("--async-aware")
+        async_mode = getattr(args, 'async_mode', 'running')
+        if async_mode != "running":
+            child_args.extend(["--async-mode", async_mode])
+
+    # Mode options
+    mode = getattr(args, 'mode', 'wall')
+    if mode != "wall":
+        child_args.extend(["--mode", mode])
+
+    # Format options (skip pstats as it's the default)
+    if args.format != "pstats":
+        child_args.append(f"--{args.format}")
+
+    return child_args
+
+
+def _build_output_pattern(args):
+    if args.outfile:
+        # User specified output - add PID to filename
+        base, ext = os.path.splitext(args.outfile)
+        if ext:
+            return f"{base}_{{pid}}{ext}"
+        else:
+            return f"{args.outfile}_{{pid}}"
+    else:
+        # Use default pattern based on format
+        extension = FORMAT_EXTENSIONS.get(args.format, "txt")
+        if args.format == "heatmap":
+            return "heatmap_{pid}"
+        if args.format == "pstats":
+            # pstats defaults to stdout, but for children we need files
+            return "profile.{pid}.pstats"
+        return f"{args.format}.{{pid}}.{extension}"
 
 
 def _parse_mode(mode_string):
@@ -207,6 +284,11 @@ def _add_sampling_options(parser):
         "--async-aware",
         action="store_true",
         help="Enable async-aware profiling (uses task-based stack reconstruction)",
+    )
+    sampling_group.add_argument(
+        "--children",
+        action="store_true",
+        help="Also profile child processes. Each child gets its own profiler and output file.",
     )
 
 
@@ -407,6 +489,11 @@ def _validate_args(args, parser):
         parser.error(
             "Live mode requires the curses module, which is not available."
         )
+
+    # --children is incompatible with --live
+    if hasattr(args, 'children') and args.children:
+        if hasattr(args, 'live') and args.live:
+            parser.error("--children is incompatible with --live mode.")
 
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
     if args.async_aware:
@@ -616,22 +703,20 @@ def _handle_attach(args):
     # Create the appropriate collector
     collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
-    # Sample the process
-    collector = sample(
-        args.pid,
-        collector,
-        duration_sec=args.duration,
-        all_threads=args.all_threads,
-        realtime_stats=args.realtime_stats,
-        mode=mode,
-        async_aware=args.async_mode if args.async_aware else None,
-        native=args.native,
-        gc=args.gc,
-        opcodes=args.opcodes,
-    )
-
-    # Handle output
-    _handle_output(collector, args, args.pid, mode)
+    with _get_child_monitor_context(args, args.pid):
+        collector = sample(
+            args.pid,
+            collector,
+            duration_sec=args.duration,
+            all_threads=args.all_threads,
+            realtime_stats=args.realtime_stats,
+            mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
+            native=args.native,
+            gc=args.gc,
+            opcodes=args.opcodes,
+        )
+        _handle_output(collector, args, args.pid, mode)
 
 
 def _handle_run(args):
@@ -665,32 +750,31 @@ def _handle_run(args):
     # Create the appropriate collector
     collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
-    # Profile the subprocess
-    try:
-        collector = sample(
-            process.pid,
-            collector,
-            duration_sec=args.duration,
-            all_threads=args.all_threads,
-            realtime_stats=args.realtime_stats,
-            mode=mode,
-            async_aware=args.async_mode if args.async_aware else None,
-            native=args.native,
-            gc=args.gc,
-            opcodes=args.opcodes,
-        )
-
-        # Handle output
-        _handle_output(collector, args, process.pid, mode)
-    finally:
-        # Clean up the subprocess
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+    with _get_child_monitor_context(args, process.pid):
+        try:
+            collector = sample(
+                process.pid,
+                collector,
+                duration_sec=args.duration,
+                all_threads=args.all_threads,
+                realtime_stats=args.realtime_stats,
+                mode=mode,
+                async_aware=args.async_mode if args.async_aware else None,
+                native=args.native,
+                gc=args.gc,
+                opcodes=args.opcodes,
+            )
+            _handle_output(collector, args, process.pid, mode)
+        finally:
+            # Terminate the main subprocess - child profilers finish when their
+            # target processes exit
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
 
 
 def _handle_live_attach(args, pid):
