@@ -858,6 +858,7 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.index_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.index_js}\n</script>",
             "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
+            "<!-- PYTHON_VERSION -->": f"{sys.version_info.major}.{sys.version_info.minor}",
             "<!-- NUM_FILES -->": str(len(file_stats)),
             "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:,}",
             "<!-- DURATION -->": f"{self.stats.get('duration_sec', 0):.1f}s",
@@ -915,6 +916,7 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
             "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
+            "<!-- PYTHON_VERSION -->": f"{sys.version_info.major}.{sys.version_info.minor}",
         }
 
         html_content = self._template_loader.file_template
