@@ -486,13 +486,6 @@ def main():
     parser = argparse.ArgumentParser(
         description=_HELP_DESCRIPTION,
         formatter_class=CustomFormatter,
-        add_help=False,
-    )
-    parser.add_argument(
-        "-h", "--help",
-        action="help",
-        default=argparse.SUPPRESS,
-        help="Show this help message and exit",
     )
 
     # Create subparsers for commands
@@ -505,7 +498,6 @@ def main():
         "run",
         help="Run and profile a script or module",
         formatter_class=CustomFormatter,
-        add_help=False,
         description="""Run and profile a Python script or module
 
 Examples:
@@ -523,12 +515,6 @@ Examples:
 
   # Live interactive mode for a script
   `python -m profiling.sampling run --live script.py`""",
-    )
-    run_parser.add_argument(
-        "-h", "--help",
-        action="help",
-        default=argparse.SUPPRESS,
-        help="Show this help message and exit",
     )
     run_parser.add_argument(
         "-m",
@@ -560,7 +546,6 @@ Examples:
         "attach",
         help="Attach to and profile a running process",
         formatter_class=CustomFormatter,
-        add_help=False,
         description="""Attach to a running process and profile it
 
 Examples:
@@ -569,12 +554,6 @@ Examples:
 
   # Live interactive mode for a running process
   `python -m profiling.sampling attach --live 1234`""",
-    )
-    attach_parser.add_argument(
-        "-h", "--help",
-        action="help",
-        default=argparse.SUPPRESS,
-        help="Show this help message and exit",
     )
     attach_parser.add_argument(
         "pid",
