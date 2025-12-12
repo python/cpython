@@ -1,0 +1,4 @@
+Only raise a ``RecursionError`` or trigger a fatal error if the stack
+pointer is both below the limit pointer *and* above the stack base. If
+outside of these bounds assume that it is OK. This prevents false positives
+when user-space threads swap stacks.

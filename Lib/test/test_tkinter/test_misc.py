@@ -1,3 +1,4 @@
+import collections.abc
 import functools
 import unittest
 import tkinter
@@ -507,6 +508,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         widget.insert(0, '\u20ac\0')  # non-ASCII
         widget.selection_range(0, 'end')
         self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
+
+    def test_iterable_protocol(self):
+        widget = tkinter.Entry(self.root)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Iterable)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Container)
+        self.assertNotIsInstance(widget, collections.abc.Iterable)
+        self.assertNotIsInstance(widget, collections.abc.Container)
+        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+            iter(widget)
+        with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
+            widget in widget
 
 
 class WmTest(AbstractTkTest, unittest.TestCase):

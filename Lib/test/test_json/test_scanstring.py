@@ -144,7 +144,7 @@ class TestScanstring:
 
     def test_overflow(self):
         with self.assertRaises(OverflowError):
-            self.json.decoder.scanstring(b"xxx", sys.maxsize+1)
+            self.json.decoder.scanstring("xxx", sys.maxsize+1)
 
 
 class TestPyScanstring(TestScanstring, PyTest): pass

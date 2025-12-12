@@ -205,7 +205,7 @@ AC_SUBST([FREEZE_MODULE_DEPS])
 AC_SUBST([PYTHON_FOR_BUILD_DEPS])
 
 AC_CHECK_PROGS([PYTHON_FOR_REGEN],
-  [python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python],
+  [python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python],
   [python3])
 AC_SUBST([PYTHON_FOR_REGEN])
 
@@ -306,6 +306,15 @@ AS_CASE([$with_pkg_config],
 if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   AC_MSG_ERROR([pkg-config is required])]
 fi
+
+dnl Allow distributors to provide custom missing stdlib module error messages
+AC_ARG_WITH([missing-stdlib-config],
+  [AS_HELP_STRING([--with-missing-stdlib-config=FILE],
+                  [File with custom module error messages for missing stdlib modules])],
+  [MISSING_STDLIB_CONFIG="$withval"],
+  [MISSING_STDLIB_CONFIG=""]
+)
+AC_SUBST([MISSING_STDLIB_CONFIG])
 
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
@@ -1202,6 +1211,14 @@ if test x$MULTIARCH != x; then
 fi
 AC_SUBST([MULTIARCH_CPPFLAGS])
 
+# Guess C stack direction
+AS_CASE([$host],
+  [hppa*], [_Py_STACK_GROWS_DOWN=0],
+  [_Py_STACK_GROWS_DOWN=1])
+AC_DEFINE_UNQUOTED([_Py_STACK_GROWS_DOWN], [$_Py_STACK_GROWS_DOWN],
+  [Define to 1 if the machine stack grows down (default); 0 if it grows up.])
+AC_SUBST([_Py_STACK_GROWS_DOWN])
+
 dnl Support tiers according to https://peps.python.org/pep-0011/
 dnl
 dnl NOTE: Windows support tiers are defined in PC/pyconfig.h.
@@ -1306,11 +1323,11 @@ dnl See https://emscripten.org/docs/compiling/Dynamic-Linking.html
 AC_MSG_CHECKING([for --enable-wasm-dynamic-linking])
 AC_ARG_ENABLE([wasm-dynamic-linking],
   [AS_HELP_STRING([--enable-wasm-dynamic-linking],
-                  [Enable dynamic linking support for WebAssembly (default is no)])],
+                  [Enable dynamic linking support for WebAssembly (default is no); WASI requires an external dynamic loader to handle imports])],
 [
   AS_CASE([$ac_sys_system],
     [Emscripten], [],
-    [WASI], [AC_MSG_ERROR([WASI dynamic linking is not implemented yet.])],
+    [WASI], [],
     [AC_MSG_ERROR([--enable-wasm-dynamic-linking only applies to Emscripten and WASI])]
   )
 ], [
@@ -1621,10 +1638,6 @@ else # shared is disabled
   esac
 fi
 AC_MSG_RESULT([$LDLIBRARY])
-
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 AC_MSG_CHECKING([HOSTRUNNER])
@@ -2162,7 +2175,8 @@ then
       dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
       dnl Exclude functions containing computed gotos.
       dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
-      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
+      dnl GCC's LTO creates .lto_priv.0 clones of these functions.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
     ")]
   )
 fi
@@ -5226,7 +5240,8 @@ fi
 
 # checks for library functions
 AC_CHECK_FUNCS([ \
-  accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
+  accept4 alarm bind_textdomain_codeset chmod chown clearenv \
+  clock closefrom close_range confstr \
   copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
@@ -5255,6 +5270,12 @@ AC_CHECK_FUNCS([ \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
+
+# os.statx uses Linux's statx function.  AIX also has a function named statx,
+# but it's unrelated.  Check only on Linux (including Android).
+AS_CASE([$ac_sys_system],
+  [Linux*], [AC_CHECK_FUNCS([statx])]
+)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
 # links. Some libc implementations have a stub lchmod implementation that always
@@ -5423,7 +5444,7 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.2.1], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5561,6 +5582,13 @@ AC_CHECK_DECLS([UT_NAMESIZE],
                          [Define if you have the 'HAVE_UT_NAMESIZE' constant.])],
               [],
               [@%:@include <utmp.h>])
+
+AC_CHECK_DECLS([PR_SET_VMA_ANON_NAME],
+              [AC_DEFINE([HAVE_PR_SET_VMA_ANON_NAME], [1],
+                         [Define if you have the 'PR_SET_VMA_ANON_NAME' constant.])],
+              [],
+              [@%:@include <linux/prctl.h>
+               @%:@include <sys/prctl.h>])
 
 # check for openpty, login_tty, and forkpty
 
@@ -5817,6 +5845,24 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
 ]])
 # Issue #21085: In Cygwin, siginfo_t does not have si_band field.
 AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[@%:@include <signal.h>]])
+
+if test "$ac_cv_func_statx" = yes; then
+  # Some systems have the definitions of the mask bits without having the
+  # corresponding members in struct statx.  Check for members added after Linux
+  # 4.11 (when statx itself was added).
+  AC_CHECK_MEMBERS([struct statx.stx_mnt_id])
+  AC_CHECK_MEMBERS([struct statx.stx_dio_mem_align])
+  # stx_dio_offset_align was added together with stx_dio_mem_align
+  AC_CHECK_MEMBERS([struct statx.stx_subvol])
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_min])
+  # stx_atomic_write_unit_max and stx_atomic_write_segments_max were added
+  # together with stx_atomic_write_unit_min
+  AC_CHECK_MEMBERS([struct statx.stx_dio_read_offset_align])
+  # stx_atomic_write_unit_max_opt was added in Linux 6.16, but is controlled by
+  # the STATX_WRITE_ATOMIC mask bit added in Linux 6.11, so having the mask bit
+  # doesn't imply having the member.
+  AC_CHECK_MEMBERS([struct statx.stx_atomic_write_unit_max_opt])
+fi
 
 AC_CACHE_CHECK([for time.h that defines altzone], [ac_cv_header_time_altzone], [
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[@%:@include <time.h>]], [[return altzone;]])],
@@ -6087,8 +6133,8 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x87], [yes], [
 AC_CACHE_CHECK([whether we can use gcc inline assembler to get and set mc68881 fpcr], [ac_cv_gcc_asm_for_mc68881], [
 AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 ]])],[ac_cv_gcc_asm_for_mc68881=yes],[ac_cv_gcc_asm_for_mc68881=no])
 ])
 AS_VAR_IF([ac_cv_gcc_asm_for_mc68881], [yes], [
@@ -6374,15 +6420,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-AC_SUBST([BINLIBDEST])
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 AC_MSG_CHECKING([for --with-platlibdir])
 AC_ARG_WITH(
   [platlibdir],
@@ -6399,19 +6440,22 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
 [AC_MSG_RESULT([no])])
 
+AC_SUBST([LIBDEST])
+AC_SUBST([BINLIBDEST])
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 AC_SUBST([LIBPL])
 
@@ -7160,6 +7204,7 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -7855,6 +7900,7 @@ PY_STDLIB_MOD_SIMPLE([time], [], [$TIMEMODULE_LIB])
 
 dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
+PY_STDLIB_MOD_SIMPLE([_math_integer])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
 PY_STDLIB_MOD_SIMPLE([_csv])
@@ -8173,7 +8219,7 @@ PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_d
 
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
-AS_VAR_IF([enable_experimental_jit], [no], 
+AS_VAR_IF([enable_experimental_jit], [no],
   [],
   [case "$host" in
     aarch64-apple-darwin*)
@@ -8192,10 +8238,10 @@ AS_VAR_IF([enable_experimental_jit], [no],
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
       ;;
   esac])
 

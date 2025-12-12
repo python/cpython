@@ -68,7 +68,7 @@ __all__ = [
     "BrokenIter",
     "in_systemd_nspawn_sync_suppressed",
     "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
-    "reset_code",
+    "reset_code", "on_github_actions"
     ]
 
 
@@ -1369,6 +1369,7 @@ def reset_code(f: types.FunctionType) -> types.FunctionType:
     f.__code__ = f.__code__.replace()
     return f
 
+on_github_actions = "GITHUB_ACTIONS" in os.environ
 
 #=======================================================================
 # Check for the presence of docstrings.
