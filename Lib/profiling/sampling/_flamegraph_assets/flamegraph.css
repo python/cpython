@@ -274,6 +274,20 @@ body.resizing-sidebar {
   flex: 1;
 }
 
+/* View Mode Section */
+.view-mode-section {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.view-mode-section .section-title {
+  margin-bottom: 12px;
+}
+
+.view-mode-section .toggle-switch {
+  justify-content: center;
+}
+
 /* Collapsible sections */
 .collapsible .section-header {
   display: flex;
@@ -985,4 +999,27 @@ body.resizing-sidebar {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph Root Node Styling
+   -------------------------------------------------------------------------- */
+
+/* Style the root node - no border, themed text */
+.d3-flame-graph g:first-of-type rect {
+  stroke: none;
+}
+
+.d3-flame-graph g:first-of-type .d3-flame-graph-label {
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph-Specific Toggle Override
+   -------------------------------------------------------------------------- */
+
+#toggle-invert .toggle-track.on {
+  background: #8e44ad;
+  border-color: #8e44ad;
+  box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
 }
