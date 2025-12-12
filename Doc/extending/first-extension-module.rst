@@ -11,11 +11,15 @@ Your first C API extension module
 This tutorial will take you through creating a simple
 Python extension module written in C or C++.
 
-It assumes basic knowledge about Python: you should be able to
+We will use the low-level Python C API directly.
+For easier ways to create extension modules, see
+the :ref:`recommended third party tools <c-api-tools>`.
+
+The tutorial assumes basic knowledge about Python: you should be able to
 define functions in Python code before starting to write them in C.
 See :ref:`tutorial-index` for an introduction to Python itself.
 
-The tutorial should be useful for anyone who can write a basic C library.
+The tutorial should be approachable for anyone who can write a basic C library.
 While we will mention several concepts that a C beginner would not be expected
 to know, like ``static`` functions or linkage declarations, understanding these
 is not necessary for success.
@@ -24,14 +28,14 @@ We will focus on giving you a "feel" of what Python's C API is like.
 It will not teach you important concepts, like error handling
 and reference counting, which are covered in later chapters.
 
-As you write the code, you will need to compile it.
-Prepare to spend some time choosing, installing and configuring a build tool,
-since CPython itself does not include one.
-
 We will assume that you use a Unix-like system (including macOS and
 Linux), or Windows.
 On other systems, you might need to adjust some details -- for example,
 a system command name.
+
+You need to have suitable C compiler and Python development headers installed.
+On Linux, headers are often in a package like ``python3-dev``
+or ``python3-devel``.
 
 
 .. note::
@@ -84,9 +88,12 @@ We want this function to be callable from Python as follows:
 Start with the headers
 ======================
 
-Begin by creating a file named :file:`spammodule.c`. [#why-spammodule]_
+Begin by creating a directory for this tutorial, and switching to it
+on command line.
+Then, create a file named :file:`spammodule.c` in your directory.
+[#why-spammodule]_
 
-We'll start by including two headers: :file:`Python.h` to pull in
+In this file, we'll include two headers: :file:`Python.h` to pull in
 all declarations of the Python C API, and :file:`stdlib.h` for the
 :c:func:`system` function. [#stdlib-h]_
 
@@ -102,38 +109,76 @@ On some systems, Python may define some pre-processor definitions
 that affect the standard headers.
 
 
-Warming up your build tool
-==========================
+Running your build tool
+=======================
 
 With only the includes in place, your extension won't do anything.
 Still, it's a good time to try compiling and importing it.
 This will ensure that your build tool works, so that you can make
 and test incremental changes as you follow the rest of the text.
 
-Choose a build tool for native C extensions from
-`the list <https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`_
-of recommendations in the Python Packaging User Guide. [#compile-directly]_
-Follow the tool's documentation to compile and install :file:`spammodule.c`
-as a C extension module.
+CPython itself does not come with a tool to build extension modules;
+it is recommended to use a third-party project for this.
+In this tutorial, we'll use `meson-python`_.
+(If you want to use another one, see :ref:`first-extension-other-tools`.)
 
-.. note:: Workaround for missing ``PyInit``
+.. at the time of writing, meson-python has the least overhead for a
+   simple extension using PyModExport.
+   Change this if another tool makes things easier.
 
-   If your build tool output complains about missing ``PyInit_spam``,
-   add the following function to your module for now:
+``meson-python`` requires defining a "project" using two extra files.
 
-   .. code-block:: c
+First, add ``pyproject.toml`` with these contents:
 
-      // A workaround
-      void *PyInit_spam(void) { return NULL; }
+.. code-block:: toml
 
-   This is a shim for an old-style :ref:`initialization function <extension-export-hook>`,
-   which was required in extension modules for CPython 3.14 and below.
-   Current CPython will not call it, but some build tools may still assume that
-   all extension modules need to define it.
+   [build-system]
+   build-backend = 'mesonpy'
+   requires = ['meson-python']
 
-   If you use this workaround, you will get the exception
-   ``SystemError: initialization of spam failed without raising an exception``
-   instead of an :py:exc:`ImportError` in the next step.
+   [project]
+   name = 'spammodule'
+   version = '0'
+
+Then, create ``meson.build`` containing the following:
+
+.. code-block:: meson
+
+   project('purelib-and-platlib', 'c')
+
+   py = import('python').find_installation(pure: false)
+
+   py.extension_module(
+      'spam',          # name of the importable Python module
+      'spammodule.c',  # the C source file
+      install: true,
+   )
+
+.. note::
+
+   See `meson-python documentation <meson-python>`_ for details on
+   configuration.
+
+Now, build install the *project in the current directory* (``.``) via ``pip``:
+
+.. code-block:: sh
+
+   python -m pip install .
+
+.. tip::
+
+   If you don't have ``pip`` installed, run ``python -m ensurepip``,
+   preferably in a :mod:`virtual environment <venv>`.
+   You can also use another tool that can build and install
+   ``pyproject.toml``-based projects, like
+   `uv <https://docs.astral.sh/uv/>`_ (``uv pip install .``).
+
+.. _meson-python: https://mesonbuild.com/meson-python/
+.. _virtual environment: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments
+
+Note that you will need to run this command again every time you change your
+extension.
+Unlike Python, C has an explicit compilation step.
 
 When your extension is compiled and installed, start Python and try to
 import it.
@@ -522,6 +567,71 @@ Here is the entire source file, for your convenience:
    :start-at: ///
 
 
+.. _first-extension-other-tools:
+
+Appendix: Other build tools
+===========================
+
+You should be able to follow this tutorial -- except the
+*Running your build tool* section itself -- with a build tool other
+than ``meson-python``.
+
+The Python Packaging User Guide has a `list of recommended tools <https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`_;
+be sure to choose one for the C language.
+
+
+Workaround for missing PyInit function
+--------------------------------------
+
+If your build tool output complains about missing ``PyInit_spam``,
+add the following function to your module for now:
+
+.. code-block:: c
+
+   // A workaround
+   void *PyInit_spam(void) { return NULL; }
+
+This is a shim for an old-style :ref:`initialization function <extension-export-hook>`,
+which was required in extension modules for CPython 3.14 and below.
+Current CPython will not call it, but some build tools may still assume that
+all extension modules need to define it.
+
+If you use this workaround, you will get the exception
+``SystemError: initialization of spam failed without raising an exception``
+instead of
+``ImportError: dynamic module does not define module export function``.
+
+
+Compiling directly
+------------------
+
+Using a third-party build tool is heavily recommended,
+as it will take care of various details of your platform and Python
+installation, of naming the resulting extension, and, later, of distributing
+your work.
+
+If you are building an extension for as *specific* system, or for yourself
+only, you might instead want to run your compiler directly.
+The way to do this is system-specific; be prepared for issues you will need
+to solve yourself.
+
+Linux
+^^^^^
+
+On Linux, the Python development package may include a ``python3-config``
+command that prints out the required compiler flags.
+If you use it, check that it corresponds to the CPython interpreter you'll use
+to load the module.
+Then, start with the following command:
+
+.. code-block:: sh
+
+   gcc --shared $(python3-config --cflags --ldflags) spammodule.c -o spam.so
+
+This should generate a ``spam.so`` file that you need to put in a directory
+on :py:attr:`sys.path`.
+
+
 .. rubric:: Footnotes
 
 .. [#why-spam] ``spam`` is the favorite food of Monty Python fans...
@@ -537,22 +647,6 @@ Here is the entire source file, for your convenience:
    :ref:`several other standard headers <capi-system-includes>` for its own use
    or for backwards compatibility.
    However, it is good practice to explicitly include what you need.
-.. [#compile-directly] Using a third-party build tool is heavily recommended,
-   as it will take
-   care of various details of your platform and Python installation,
-   of naming the resulting extension, and, later, of distributing your work.
-
-   If you don't want to use a tool, you can try to run your compiler directly.
-   The following command should work on Linux systems that include a
-   correctly configured ``python-config`` command that corresponds to the
-   CPython interpreter you use.
-   It should generate a ``spam.so`` file that you need to put in a directory
-   on :py:attr:`sys.path`.
-
-   .. code-block:: sh
-
-      gcc --shared $(python-config --cflags --ldflags) spammodule.c -o spam.so
-
 .. [#why-pymethoddef] The :c:type:`!PyMethodDef` structure is also used
    to create methods of classes, so there's no separate
    ":c:type:`!PyFunctionDef`".
