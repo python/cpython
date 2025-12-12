@@ -1097,7 +1097,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
+    op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
             // Note: we must strip the reference information because it goes
@@ -1107,7 +1107,6 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
         }
-        a = arg;
     }
 
     op(_GUARD_TOS_LIST, (tos -- tos)) {
@@ -1202,7 +1201,7 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (callable, null, arg -- res)) {
+    op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
         res = sym_new_type(ctx, &PyLong_Type);
         Py_ssize_t tuple_length = sym_tuple_length(arg);
         if (tuple_length >= 0) {
@@ -1217,6 +1216,8 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
         }
+        a = arg;
+        c = callable;
     }
 
     op(_GET_LEN, (obj -- obj, len)) {

@@ -44,7 +44,6 @@ from importlib.machinery import BuiltinImporter
 _loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
-print('__cached__==%a' % __cached__)
 print('__package__==%r' % __package__)
 # Check PEP 451 details
 import os.path
@@ -58,8 +57,6 @@ if __package__ is not None:
     assertEqual(__spec__.parent, __package__)
     assertIdentical(__spec__.submodule_search_locations, None)
     assertEqual(__spec__.origin, __file__)
-    if __spec__.cached is not None:
-        assertEqual(__spec__.cached, __cached__)
 # Check the sys module
 import sys
 assertIdentical(globals(), sys.modules[__name__].__dict__)

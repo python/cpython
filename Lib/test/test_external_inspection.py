@@ -26,11 +26,13 @@ PROFILING_MODE_WALL = 0
 PROFILING_MODE_CPU = 1
 PROFILING_MODE_GIL = 2
 PROFILING_MODE_ALL = 3
+PROFILING_MODE_EXCEPTION = 4
 
 # Thread status flags
 THREAD_STATUS_HAS_GIL = 1 << 0
 THREAD_STATUS_ON_CPU = 1 << 1
 THREAD_STATUS_UNKNOWN = 1 << 2
+THREAD_STATUS_HAS_EXCEPTION = 1 << 4
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
@@ -2259,6 +2261,412 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                     )
             finally:
                 _cleanup_sockets(*client_sockets, server_socket)
+
+    def _make_exception_test_script(self, port):
+        """Create script with exception and normal threads for testing."""
+        return textwrap.dedent(
+            f"""\
+            import socket
+            import threading
+            import time
+
+            def exception_thread():
+                conn = socket.create_connection(("localhost", {port}))
+                conn.sendall(b"exception:" + str(threading.get_native_id()).encode())
+                try:
+                    raise ValueError("test exception")
+                except ValueError:
+                    while True:
+                        time.sleep(0.01)
+
+            def normal_thread():
+                conn = socket.create_connection(("localhost", {port}))
+                conn.sendall(b"normal:" + str(threading.get_native_id()).encode())
+                while True:
+                    sum(range(1000))
+
+            t1 = threading.Thread(target=exception_thread)
+            t2 = threading.Thread(target=normal_thread)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            """
+        )
+
+    @contextmanager
+    def _run_exception_test_process(self):
+        """Context manager to run exception test script and yield thread IDs and process."""
+        port = find_unused_port()
+        script = self._make_exception_test_script(port)
+
+        with os_helper.temp_dir() as tmp_dir:
+            script_file = make_script(tmp_dir, "script", script)
+            server_socket = _create_server_socket(port, backlog=2)
+            client_sockets = []
+
+            try:
+                with _managed_subprocess([sys.executable, script_file]) as p:
+                    exception_tid = None
+                    normal_tid = None
+
+                    for _ in range(2):
+                        client_socket, _ = server_socket.accept()
+                        client_sockets.append(client_socket)
+                        line = client_socket.recv(1024)
+                        if line:
+                            if line.startswith(b"exception:"):
+                                try:
+                                    exception_tid = int(line.split(b":")[-1])
+                                except (ValueError, IndexError):
+                                    pass
+                            elif line.startswith(b"normal:"):
+                                try:
+                                    normal_tid = int(line.split(b":")[-1])
+                                except (ValueError, IndexError):
+                                    pass
+
+                    server_socket.close()
+                    server_socket = None
+
+                    yield p, exception_tid, normal_tid
+            finally:
+                _cleanup_sockets(*client_sockets, server_socket)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_thread_status_exception_detection(self):
+        """Test that THREAD_STATUS_HAS_EXCEPTION is set when thread has an active exception."""
+        with self._run_exception_test_process() as (p, exception_tid, normal_tid):
+            self.assertIsNotNone(exception_tid, "Exception thread id not received")
+            self.assertIsNotNone(normal_tid, "Normal thread id not received")
+
+            statuses = {}
+            try:
+                unwinder = RemoteUnwinder(
+                    p.pid,
+                    all_threads=True,
+                    mode=PROFILING_MODE_ALL,
+                    skip_non_matching_threads=False,
+                )
+                for _ in range(MAX_TRIES):
+                    traces = unwinder.get_stack_trace()
+                    statuses = self._get_thread_statuses(traces)
+
+                    if (
+                        exception_tid in statuses
+                        and normal_tid in statuses
+                        and (statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                        and not (statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                    ):
+                        break
+                    time.sleep(0.5)
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+
+            self.assertIn(exception_tid, statuses)
+            self.assertIn(normal_tid, statuses)
+            self.assertTrue(
+                statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION,
+                "Exception thread should have HAS_EXCEPTION flag",
+            )
+            self.assertFalse(
+                statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION,
+                "Normal thread should not have HAS_EXCEPTION flag",
+            )
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_thread_status_exception_mode_filtering(self):
+        """Test that PROFILING_MODE_EXCEPTION correctly filters threads."""
+        with self._run_exception_test_process() as (p, exception_tid, normal_tid):
+            self.assertIsNotNone(exception_tid, "Exception thread id not received")
+            self.assertIsNotNone(normal_tid, "Normal thread id not received")
+
+            try:
+                unwinder = RemoteUnwinder(
+                    p.pid,
+                    all_threads=True,
+                    mode=PROFILING_MODE_EXCEPTION,
+                    skip_non_matching_threads=True,
+                )
+                for _ in range(MAX_TRIES):
+                    traces = unwinder.get_stack_trace()
+                    statuses = self._get_thread_statuses(traces)
+
+                    if exception_tid in statuses:
+                        self.assertNotIn(
+                            normal_tid,
+                            statuses,
+                            "Normal thread should be filtered out in exception mode",
+                        )
+                        return
+                    time.sleep(0.5)
+            except PermissionError:
+                self.skipTest("Insufficient permissions to read the stack trace")
+
+            self.fail("Never found exception thread in exception mode")
+
+class TestExceptionDetectionScenarios(RemoteInspectionTestBase):
+    """Test exception detection across all scenarios.
+
+    This class verifies the exact conditions under which THREAD_STATUS_HAS_EXCEPTION
+    is set. Each test covers a specific scenario:
+
+    1. except_block: Thread inside except block
+       -> SHOULD have HAS_EXCEPTION (exc_info->exc_value is set)
+
+    2. finally_propagating: Exception propagating through finally block
+       -> SHOULD have HAS_EXCEPTION (current_exception is set)
+
+    3. finally_after_except: Finally block after except handled exception
+       -> Should NOT have HAS_EXCEPTION (exc_info cleared after except)
+
+    4. finally_no_exception: Finally block with no exception raised
+       -> Should NOT have HAS_EXCEPTION (no exception state)
+    """
+
+    def _make_single_scenario_script(self, port, scenario):
+        """Create script for a single exception scenario."""
+        scenarios = {
+            "except_block": f"""\
+import socket
+import threading
+import time
+
+def target_thread():
+    '''Inside except block - exception info is present'''
+    conn = socket.create_connection(("localhost", {port}))
+    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
+    try:
+        raise ValueError("test")
+    except ValueError:
+        while True:
+            time.sleep(0.01)
+
+t = threading.Thread(target=target_thread)
+t.start()
+t.join()
+""",
+            "finally_propagating": f"""\
+import socket
+import threading
+import time
+
+def target_thread():
+    '''Exception propagating through finally - current_exception is set'''
+    conn = socket.create_connection(("localhost", {port}))
+    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
+    try:
+        try:
+            raise ValueError("propagating")
+        finally:
+            # Exception is propagating through here
+            while True:
+                time.sleep(0.01)
+    except:
+        pass  # Never reached due to infinite loop
+
+t = threading.Thread(target=target_thread)
+t.start()
+t.join()
+""",
+            "finally_after_except": f"""\
+import socket
+import threading
+import time
+
+def target_thread():
+    '''Finally runs after except handled - exc_info is cleared'''
+    conn = socket.create_connection(("localhost", {port}))
+    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
+    try:
+        raise ValueError("test")
+    except ValueError:
+        pass  # Exception caught and handled
+    finally:
+        while True:
+            time.sleep(0.01)
+
+t = threading.Thread(target=target_thread)
+t.start()
+t.join()
+""",
+            "finally_no_exception": f"""\
+import socket
+import threading
+import time
+
+def target_thread():
+    '''Finally with no exception at all'''
+    conn = socket.create_connection(("localhost", {port}))
+    conn.sendall(b"ready:" + str(threading.get_native_id()).encode())
+    try:
+        pass  # No exception
+    finally:
+        while True:
+            time.sleep(0.01)
+
+t = threading.Thread(target=target_thread)
+t.start()
+t.join()
+""",
+        }
+
+        return scenarios[scenario]
+
+    @contextmanager
+    def _run_scenario_process(self, scenario):
+        """Context manager to run a single scenario and yield thread ID and process."""
+        port = find_unused_port()
+        script = self._make_single_scenario_script(port, scenario)
+
+        with os_helper.temp_dir() as tmp_dir:
+            script_file = make_script(tmp_dir, "script", script)
+            server_socket = _create_server_socket(port, backlog=1)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_file]) as p:
+                    thread_tid = None
+
+                    client_socket, _ = server_socket.accept()
+                    line = client_socket.recv(1024)
+                    if line and line.startswith(b"ready:"):
+                        try:
+                            thread_tid = int(line.split(b":")[-1])
+                        except (ValueError, IndexError):
+                            pass
+
+                    server_socket.close()
+                    server_socket = None
+
+                    yield p, thread_tid
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+    def _check_exception_status(self, p, thread_tid, expect_exception):
+        """Helper to check if thread has expected exception status."""
+        try:
+            unwinder = RemoteUnwinder(
+                p.pid,
+                all_threads=True,
+                mode=PROFILING_MODE_ALL,
+                skip_non_matching_threads=False,
+            )
+
+            # Collect multiple samples for reliability
+            results = []
+            for _ in range(MAX_TRIES):
+                traces = unwinder.get_stack_trace()
+                statuses = self._get_thread_statuses(traces)
+
+                if thread_tid in statuses:
+                    has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                    results.append(has_exc)
+
+                    if len(results) >= 3:
+                        break
+
+                time.sleep(0.2)
+
+            # Check majority of samples match expected
+            if not results:
+                self.fail("Never found target thread in stack traces")
+
+            majority = sum(results) > len(results) // 2
+            if expect_exception:
+                self.assertTrue(
+                    majority,
+                    f"Thread should have HAS_EXCEPTION flag, got {results}"
+                )
+            else:
+                self.assertFalse(
+                    majority,
+                    f"Thread should NOT have HAS_EXCEPTION flag, got {results}"
+                )
+
+        except PermissionError:
+            self.skipTest("Insufficient permissions to read the stack trace")
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_except_block_has_exception(self):
+        """Test that thread inside except block has HAS_EXCEPTION flag.
+
+        When a thread is executing inside an except block, exc_info->exc_value
+        is set, so THREAD_STATUS_HAS_EXCEPTION should be True.
+        """
+        with self._run_scenario_process("except_block") as (p, thread_tid):
+            self.assertIsNotNone(thread_tid, "Thread ID not received")
+            self._check_exception_status(p, thread_tid, expect_exception=True)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_finally_propagating_has_exception(self):
+        """Test that finally block with propagating exception has HAS_EXCEPTION flag.
+
+        When an exception is propagating through a finally block (not yet caught),
+        current_exception is set, so THREAD_STATUS_HAS_EXCEPTION should be True.
+        """
+        with self._run_scenario_process("finally_propagating") as (p, thread_tid):
+            self.assertIsNotNone(thread_tid, "Thread ID not received")
+            self._check_exception_status(p, thread_tid, expect_exception=True)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_finally_after_except_no_exception(self):
+        """Test that finally block after except has NO HAS_EXCEPTION flag.
+
+        When a finally block runs after an except block has handled the exception,
+        Python clears exc_info before entering finally, so THREAD_STATUS_HAS_EXCEPTION
+        should be False.
+        """
+        with self._run_scenario_process("finally_after_except") as (p, thread_tid):
+            self.assertIsNotNone(thread_tid, "Thread ID not received")
+            self._check_exception_status(p, thread_tid, expect_exception=False)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on supported platforms (Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(
+        sys.platform == "android", "Android raises Linux-specific exception"
+    )
+    def test_finally_no_exception_no_flag(self):
+        """Test that finally block with no exception has NO HAS_EXCEPTION flag.
+
+        When a finally block runs during normal execution (no exception raised),
+        there is no exception state, so THREAD_STATUS_HAS_EXCEPTION should be False.
+        """
+        with self._run_scenario_process("finally_no_exception") as (p, thread_tid):
+            self.assertIsNotNone(thread_tid, "Thread ID not received")
+            self._check_exception_status(p, thread_tid, expect_exception=False)
 
 
 class TestFrameCaching(RemoteInspectionTestBase):

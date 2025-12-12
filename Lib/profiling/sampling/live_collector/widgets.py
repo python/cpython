@@ -389,12 +389,15 @@ class HeaderWidget(Widget):
         pct_on_gil = (status_counts["has_gil"] / total_threads) * 100
         pct_off_gil = 100.0 - pct_on_gil
         pct_gil_requested = (status_counts["gil_requested"] / total_threads) * 100
+        pct_exception = (status_counts.get("has_exception", 0) / total_threads) * 100
 
         # Get GC percentage based on view mode
         if thread_data:
             total_samples = max(1, thread_data.sample_count)
             pct_gc = (thread_data.gc_frame_samples / total_samples) * 100
         else:
+            # Use total_samples for GC percentage since gc_frame_samples is tracked
+            # across ALL samples (via thread status), not just successful ones
             total_samples = max(1, self.collector.total_samples)
             pct_gc = (self.collector.gc_frame_samples / total_samples) * 100
 
@@ -425,6 +428,17 @@ class HeaderWidget(Widget):
                 "waiting for gil",
                 self.colors["yellow"],
                 add_separator=True,
+            )
+
+        # Show exception stats
+        if col < width - 15:
+            col = self._add_percentage_stat(
+                line,
+                col,
+                pct_exception,
+                "exc",
+                self.colors["red"],
+                add_separator=(col > 11),
             )
 
         # Always show GC stats
@@ -517,10 +531,7 @@ class HeaderWidget(Widget):
                 continue
 
             func_name = func_data["func"][2]
-            func_pct = (
-                func_data["direct_calls"]
-                / max(1, self.collector.total_samples)
-            ) * 100
+            func_pct = func_data["sample_pct"]
 
             # Medal emoji
             if col + 3 < width - 15:
@@ -753,18 +764,9 @@ class TableWidget(Widget):
             cumulative_calls = stat["cumulative_calls"]
             total_time = stat["total_time"]
             cumulative_time = stat["cumulative_time"]
+            sample_pct = stat["sample_pct"]
+            cum_pct = stat["cumul_pct"]
             trends = stat.get("trends", {})
-
-            sample_pct = (
-                (direct_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
-            cum_pct = (
-                (cumulative_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
 
             # Check if this row is selected
             is_selected = show_opcodes and row_idx == selected_row

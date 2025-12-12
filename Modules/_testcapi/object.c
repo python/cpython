@@ -138,6 +138,15 @@ pyobject_is_unique_temporary(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+static PyObject *
+pyobject_is_unique_temporary_new_object(PyObject *self, PyObject *unused)
+{
+    PyObject *obj = PyList_New(0);
+    int result = PyUnstable_Object_IsUniqueReferencedTemporary(obj);
+    Py_DECREF(obj);
+    return PyLong_FromLong(result);
+}
+
 static int MyObject_dealloc_called = 0;
 
 static void
@@ -517,6 +526,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
     {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
+    {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},

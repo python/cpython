@@ -1938,7 +1938,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_TUPLE_1", uops)
-        self.assertIn("_POP_TOP_NOP", uops)
+        # Re-enable later gh-134584
+        # self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_str_1(self):
         def testfunc(n):
@@ -2066,6 +2067,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
