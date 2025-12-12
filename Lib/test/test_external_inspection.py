@@ -3534,5 +3534,89 @@ recurse({depth})
             client_socket.sendall(b"done")
 
 
+class TestNonCodeExecutable(RemoteInspectionTestBase):
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    def test_remote_stack_trace(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket, threading
+            import _testinternalcapi
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def bar():
+                for x in range(100):
+                    if x == 50:
+                        _testinternalcapi.call_with_jit_frame(baz, foo, ())
+
+            def baz():
+                pass
+
+            def foo():
+                sock.sendall(b"ready:thread\\n"); time.sleep(10_000)
+
+            t = threading.Thread(target=bar)
+            t.start()
+            sock.sendall(b"ready:main\\n"); t.join()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            server_socket = _create_server_socket(port)
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+
+            try:
+                with _managed_subprocess([sys.executable, script_name]) as p:
+                    client_socket, _ = server_socket.accept()
+                    server_socket.close()
+                    server_socket = None
+
+                    _wait_for_signal(
+                        client_socket, [b"ready:main", b"ready:thread"]
+                    )
+
+                    try:
+                        stack_trace = get_stack_trace(p.pid)
+                    except PermissionError:
+                        self.skipTest(
+                            "Insufficient permissions to read the stack trace"
+                        )
+
+                    # Find expected thread stack by funcname
+                    found_thread = self._find_thread_with_frame(
+                        stack_trace,
+                        lambda f: f.funcname == "foo" and f.location.lineno == 15,
+                    )
+                    self.assertIsNotNone(
+                        found_thread, "Expected thread stack trace not found"
+                    )
+                    # Check the funcnames in order
+                    funcnames = [f.funcname for f in found_thread.frame_info]
+                    self.assertEqual(
+                        funcnames[:6],
+                        ["foo", "baz", "bar", "Thread.run", "Thread._bootstrap_inner", "Thread._bootstrap"]
+                    )
+
+                    # Check main thread
+                    found_main = self._find_frame_in_trace(
+                        stack_trace,
+                        lambda f: f.funcname == "<module>" and f.location.lineno == 19,
+                    )
+                    self.assertIsNotNone(
+                        found_main, "Main thread stack trace not found"
+                    )
+            finally:
+                _cleanup_sockets(client_socket, server_socket)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -131,6 +131,10 @@ typedef struct _Py_DebugOffsets {
         uint64_t tlbc_index;
     } interpreter_frame;
 
+    struct _interpreter_frame_metadata {
+        uintptr_t executable_kinds;
+    } interpreter_frame_metadata;
+
     // Code object offset;
     struct _code_object {
         uint64_t size;
@@ -145,6 +149,10 @@ typedef struct _Py_DebugOffsets {
         uint64_t co_code_adaptive;
         uint64_t co_tlbc;
     } code_object;
+
+    struct _jit_executable {
+        uint64_t code;
+    } jit_executable;
 
     // PyObject offset;
     struct _pyobject {
@@ -305,6 +313,9 @@ typedef struct _Py_DebugOffsets {
         .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
         .tlbc_index = _Py_Debug_interpreter_frame_tlbc_index, \
     }, \
+    .interpreter_frame_metadata = { \
+        .executable_kinds = (uintptr_t)PyUnstable_ExecutableKinds, \
+    }, \
     .code_object = { \
         .size = sizeof(PyCodeObject), \
         .filename = offsetof(PyCodeObject, co_filename), \
@@ -317,6 +328,9 @@ typedef struct _Py_DebugOffsets {
         .localspluskinds = offsetof(PyCodeObject, co_localspluskinds), \
         .co_code_adaptive = offsetof(PyCodeObject, co_code_adaptive), \
         .co_tlbc = _Py_Debug_code_object_co_tlbc, \
+    }, \
+    .jit_executable = { \
+        .code = offsetof(PyUnstable_PyJitExecutable, je_code), \
     }, \
     .pyobject = { \
         .size = sizeof(PyObject), \

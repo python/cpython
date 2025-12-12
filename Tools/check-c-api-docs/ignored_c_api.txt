@@ -81,6 +81,7 @@ PyLong_SHIFT
 # cpython/pyerrors.h
 PyException_HEAD
 # cpython/pyframe.h
+PyUnstable_ExecutableKinds
 PyUnstable_EXECUTABLE_KINDS
 PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION
 PyUnstable_EXECUTABLE_KIND_JIT

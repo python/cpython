@@ -248,7 +248,7 @@ PyUnstable_MakeJITExecutable(_PyFrame_Reifier reifier, PyCodeObject *code, PyObj
     return (PyObject *)jit_exec;
 }
 
-const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
+PyTypeObject *PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
     [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
     [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
     [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,

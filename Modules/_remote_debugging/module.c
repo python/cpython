@@ -370,6 +370,12 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         return -1;
     }
 
+    if (populate_frame_executable_types(self) < 0)
+    {
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to populate initial state data");
+        return -1;
+    }
+
     self->code_object_cache = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
         _Py_hashtable_compare_direct,

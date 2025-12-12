@@ -325,6 +325,7 @@ Objects/sliceobject.c	-	_Py_EllipsisObject	-
 Objects/typevarobject.c	-	_Py_NoDefaultStruct	-
 Python/instrumentation.c	-	_PyInstrumentation_DISABLE	-
 Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
+Python/frame.c	-	PyUnstable_ExecutableKinds	-
 
 
 ##################################
