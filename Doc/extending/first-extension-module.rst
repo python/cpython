@@ -110,8 +110,10 @@ Still, it's a good time to try compiling and importing it.
 This will ensure that your build tool works, so that you can make
 and test incremental changes as you follow the rest of the text.
 
-Choose a build tool such as Setuptools or Meson [#compile-directly]_, and
-follow its instructions to compile and install :file:`spammodule.c`
+Choose a build tool for native C extensions from
+`the list <https://packaging.python.org/en/latest/guides/tool-recommendations/#build-backends-for-extension-modules>`_
+of recommendations in the Python Packaging User Guide. [#compile-directly]_
+Follow the tool's documentation to compile and install :file:`spammodule.c`
 as a C extension module.
 
 .. note:: Workaround for missing ``PyInit``
