@@ -48,7 +48,7 @@ class SampleProfiler:
                     opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
                     cache_frames=True, stats=collect_stats
                 )
-        except Exception as err:
+        except RuntimeError as err:
             raise SystemExit(err)
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
