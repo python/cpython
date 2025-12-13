@@ -2060,6 +2060,25 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
             self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
+    def test_search_methods_reentrancy_raises_buffererror(self):
+        # gh-142560: Raise BufferError if buffer mutates during search arg conversion.
+        class Evil:
+            def __init__(self, ba):
+                self.ba = ba
+            def __index__(self):
+                self.ba.clear()
+                return ord("A")
+
+        def make_case():
+            ba = bytearray(b"A")
+            return ba, Evil(ba)
+
+        for name in ("find", "count", "index", "rindex", "rfind"):
+            ba, evil = make_case()
+            with self.subTest(name):
+                with self.assertRaises(BufferError):
+                    getattr(ba, name)(evil)
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
@@ -2598,7 +2617,10 @@ class FreeThreadingTest(unittest.TestCase):
 
         def ass_subscript2(b, a, c):  # MODIFIES!
             b.wait()
-            a[:] = c
+            try:
+                a[:] = c
+            except BufferError:
+                return
             assert b'\xdd' not in a
 
         def mod(b, a):

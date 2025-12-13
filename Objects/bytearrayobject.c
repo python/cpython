@@ -90,6 +90,29 @@ bytearray_releasebuffer(PyObject *self, Py_buffer *view)
     Py_END_CRITICAL_SECTION();
 }
 
+typedef PyObject* (*_ba_bytes_op)(const char *buf, Py_ssize_t len,
+                                  PyObject *sub, Py_ssize_t start,
+                                  Py_ssize_t end);
+
+static PyObject *
+_bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
+                       Py_ssize_t start, Py_ssize_t end, _ba_bytes_op op)
+{
+    PyObject *res;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->ob_exports++;
+    Py_END_CRITICAL_SECTION();
+
+    res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    self->ob_exports--;
+    assert(self->ob_exports >= 0);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static int
 _canresize(PyByteArrayObject *self)
 {
@@ -1233,8 +1256,7 @@ bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
 /*[clinic end generated code: output=413e1cab2ae87da0 input=df3aa94840d893a7]*/
 {
-    return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                          sub, start, end);
+    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_find);
 }
 
 /*[clinic input]
@@ -1250,8 +1272,7 @@ bytearray_count_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=a21ee2692e4f1233 input=e8fcdca8272857e0]*/
 {
-    return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                           sub, start, end);
+    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_count);
 }
 
 /*[clinic input]
@@ -1299,8 +1320,7 @@ bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=067a1e78efc672a7 input=c37f177cfee19fe4]*/
 {
-    return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                           sub, start, end);
+    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_index);
 }
 
 /*[clinic input]
@@ -1318,8 +1338,7 @@ bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=51bf886f932b283c input=1265b11c437d2750]*/
 {
-    return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                           sub, start, end);
+    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_rfind);
 }
 
 /*[clinic input]
@@ -1337,19 +1356,19 @@ bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
                       Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=38e1cf66bafb08b9 input=7d198b3d6b0a62ce]*/
 {
-    return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                            sub, start, end);
+    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_rindex);
 }
 
 static int
 bytearray_contains(PyObject *self, PyObject *arg)
 {
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    ret = _Py_bytes_contains(PyByteArray_AS_STRING(self),
-                             PyByteArray_GET_SIZE(self),
-                             arg);
-    Py_END_CRITICAL_SECTION();
+    Py_buffer selfbuf;
+    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
+        return -1;
+    }
+    ret = _Py_bytes_contains((const char *)selfbuf.buf, selfbuf.len, arg);
+    PyBuffer_Release(&selfbuf);
     return ret;
 }
 
@@ -1375,8 +1394,7 @@ bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
                           Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=a3d9b6d44d3662a6 input=93f9ffee684f109a]*/
 {
-    return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                                subobj, start, end);
+    return _bytearray_with_buffer(self, subobj, start, end, _Py_bytes_startswith);
 }
 
 /*[clinic input]
@@ -1401,8 +1419,7 @@ bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
                         Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=e75ea8c227954caa input=d158b030a11d0b06]*/
 {
-    return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                              subobj, start, end);
+    return _bytearray_with_buffer(self, subobj, start, end, _Py_bytes_endswith);
 }
 
 /*[clinic input]
@@ -1767,26 +1784,34 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
                      Py_ssize_t maxsplit)
 /*[clinic end generated code: output=833e2cf385d9a04d input=dd9f6e2910cc3a34]*/
 {
-    Py_ssize_t len = PyByteArray_GET_SIZE(self), n;
-    const char *s = PyByteArray_AS_STRING(self), *sub;
     PyObject *list;
-    Py_buffer vsub;
+    Py_buffer selfbuf, vsub;
+    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
+        return NULL;
+    }
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
 
-    if (sep == Py_None)
-        return stringlib_split_whitespace((PyObject*) self, s, len, maxsplit);
+    if (sep == Py_None) {
+        list = stringlib_split_whitespace((PyObject*) self,
+                                          (const char *)selfbuf.buf, selfbuf.len,
+                                          maxsplit);
+        PyBuffer_Release(&selfbuf);
+        return list;
+    }
 
-    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
+    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0) {
+        PyBuffer_Release(&selfbuf);
         return NULL;
-    sub = vsub.buf;
-    n = vsub.len;
+    }
 
     list = stringlib_split(
-        (PyObject*) self, s, len, sub, n, maxsplit
+        (PyObject*) self, (const char *)selfbuf.buf, selfbuf.len,
+        (const char *)vsub.buf, vsub.len, maxsplit
         );
     PyBuffer_Release(&vsub);
+    PyBuffer_Release(&selfbuf);
     return list;
 }
 
@@ -1885,26 +1910,34 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
                       Py_ssize_t maxsplit)
 /*[clinic end generated code: output=a55e0b5a03cb6190 input=60e9abf305128ff4]*/
 {
-    Py_ssize_t len = PyByteArray_GET_SIZE(self), n;
-    const char *s = PyByteArray_AS_STRING(self), *sub;
     PyObject *list;
-    Py_buffer vsub;
+    Py_buffer selfbuf, vsub;
+    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
+        return NULL;
+    }
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
 
-    if (sep == Py_None)
-        return stringlib_rsplit_whitespace((PyObject*) self, s, len, maxsplit);
+    if (sep == Py_None) {
+        list = stringlib_rsplit_whitespace((PyObject*) self,
+                                           (const char *)selfbuf.buf, selfbuf.len,
+                                           maxsplit);
+        PyBuffer_Release(&selfbuf);
+        return list;
+    }
 
-    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0)
+    if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0) {
+        PyBuffer_Release(&selfbuf);
         return NULL;
-    sub = vsub.buf;
-    n = vsub.len;
+    }
 
     list = stringlib_rsplit(
-        (PyObject*) self, s, len, sub, n, maxsplit
+        (PyObject*) self, (const char *)selfbuf.buf, selfbuf.len,
+        (const char *)vsub.buf, vsub.len, maxsplit
         );
     PyBuffer_Release(&vsub);
+    PyBuffer_Release(&selfbuf);
     return list;
 }
 
