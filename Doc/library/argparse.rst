@@ -1716,24 +1716,37 @@ Subcommands
    :class:`ArgumentParser` supports the creation of such subcommands with the
    :meth:`!add_subparsers` method.  The :meth:`!add_subparsers` method is normally
    called with no arguments and returns a special action object.  This object
-   has a single method, :meth:`~_SubParsersAction.add_parser`, which takes a
-   command name and any :class:`!ArgumentParser` constructor arguments, and
-   returns an :class:`!ArgumentParser` object that can be modified as usual.
+   has a single method, :meth:`~_SubParsersAction.add_parser`:
+
+   .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
+
+      Creates and returns a new :class:`!ArgumentParser` object for the
+      subcommand *name*.
+
+      The *name* argument is the name of the subcommand.
+      The *help* argument provides a short description for this subcommand. If provided, it will be listed next to the command in the main parser's help message (e.g., ``PROG --help``).
+
+      The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this subcommand (e.g., ``aliases=['r']`` for a ``'run'`` command).
+
+      The *deprecated* argument, if :const:`True`, marks the subcommand as deprecated, which typically issues a warning when used.
+      All other keyword arguments are passed directly to the
+      :class:`!ArgumentParser` constructor.
+      This returned :class:`!ArgumentParser` object can be modified as usual.
 
    Description of parameters:
 
-   * *title* - title for the sub-parser group in help output; by default
+   * *title* - title for the subparser group in help output; by default
      "subcommands" if description is provided, otherwise uses title for
      positional arguments
 
-   * *description* - description for the sub-parser group in help output, by
+   * *description* - description for the subparser group in help output, by
      default ``None``
 
    * *prog* - usage information that will be displayed with subcommand help,
      by default the name of the program and any positional arguments before the
      subparser argument
 
-   * *parser_class* - class which will be used to create sub-parser instances, by
+   * *parser_class* - class which will be used to create subparser instances, by
      default the class of the current parser (e.g. :class:`ArgumentParser`)
 
    * action_ - the basic type of action to be taken when this argument is
@@ -1745,7 +1758,7 @@ Subcommands
    * required_ - Whether or not a subcommand must be provided, by default
      ``False`` (added in 3.7)
 
-   * help_ - help for sub-parser group in help output, by default ``None``
+   * help_ - help for subparser group in help output, by default ``None``
 
    * metavar_ - string presenting available subcommands in help; by default it
      is ``None`` and presents subcommands in form {cmd1, cmd2, ..}
@@ -1771,7 +1784,7 @@ Subcommands
      >>> parser.parse_args(['--foo', 'b', '--baz', 'Z'])
      Namespace(baz='Z', foo=True)
 
-   Note that the object returned by :meth:`parse_args` will only contain
+   Note that the object returned by :meth:`~ArgumentParser.parse_args` will only contain
    attributes for the main parser and the subparser that was selected by the
    command line (and not any other subparsers).  So in the example above, when
    the ``a`` command is specified, only the ``foo`` and ``bar`` attributes are
@@ -1782,7 +1795,7 @@ Subcommands
    for that particular parser will be printed.  The help message will not
    include parent parser or sibling parser messages.  (A help message for each
    subparser command, however, can be given by supplying the ``help=`` argument
-   to :meth:`~_SubParsersAction.add_parser` as above.)
+   to ``add_parser()`` as above.)
 
    ::
 
@@ -1814,7 +1827,7 @@ Subcommands
        -h, --help     show this help message and exit
        --baz {X,Y,Z}  baz help
 
-   The :meth:`add_subparsers` method also supports ``title`` and ``description``
+   The :meth:`~ArgumentParser.add_subparsers` method also supports ``title`` and ``description``
    keyword arguments.  When either is present, the subparser's commands will
    appear in their own group in the help output.  For example::
 
@@ -1862,7 +1875,7 @@ Subcommands
    .. versionadded:: 3.13
 
    One particularly effective way of handling subcommands is to combine the use
-   of the :meth:`add_subparsers` method with calls to :meth:`set_defaults` so
+   of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
    example::
 
@@ -1898,12 +1911,12 @@ Subcommands
      >>> args.func(args)
      ((XYZYX))
 
-   This way, you can let :meth:`parse_args` do the job of calling the
+   This way, you can let :meth:`~ArgumentParser.parse_args` do the job of calling the
    appropriate function after argument parsing is complete.  Associating
    functions with actions like this is typically the easiest way to handle the
    different actions for each of your subparsers.  However, if it is necessary
    to check the name of the subparser that was invoked, the ``dest`` keyword
-   argument to the :meth:`add_subparsers` call will work::
+   argument to the :meth:`~ArgumentParser.add_subparsers` call will work::
 
      >>> parser = argparse.ArgumentParser()
      >>> subparsers = parser.add_subparsers(dest='subparser_name')
@@ -2287,7 +2300,7 @@ Registering custom types or actions
 
    Sometimes it's desirable to use a custom string in error messages to provide
    more user-friendly output. In these cases, :meth:`!register` can be used to
-   register custom actions or types with a parser and allow you to reference the
+   register custom actions or types with a parser anto reference the
    type by their registered name instead of their callable name.
 
    The :meth:`!register` method accepts three arguments - a *registry_name*,
