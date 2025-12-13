@@ -1010,11 +1010,11 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``x not in s``           | ``False`` if an item of *s* is | \(1)     |
 |                          | equal to *x*, else ``True``    |          |
 +--------------------------+--------------------------------+----------+
-| ``s + t``                | the concatenation of *s* and   | (6)(7)   |
+| ``s + t`` or ``s += t``  | the concatenation of *s* and   | (6)(7)   |
 |                          | *t*                            |          |
 +--------------------------+--------------------------------+----------+
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
-| ``n * s``                | itself *n* times               |          |
+| ``n * s`` or ``s *= n``  | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
 | ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(8)   |
 +--------------------------+--------------------------------+----------+
