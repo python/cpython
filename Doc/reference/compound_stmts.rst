@@ -385,7 +385,7 @@ type of the target ``e`` is consistently :exc:`BaseExceptionGroup`::
    ... except* BlockingIOError as e:
    ...     print(repr(e))
    ...
-   ExceptionGroup('', (BlockingIOError()))
+   ExceptionGroup('', (BlockingIOError(),))
 
 :keyword:`break`, :keyword:`continue` and :keyword:`return`
 cannot appear in an :keyword:`!except*` clause.
