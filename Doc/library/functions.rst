@@ -334,8 +334,8 @@ are always available.  They are listed here in alphabetical order.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
-   This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   and :exc:`ValueError` if the source contains null bytes.
+   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
+   source is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
