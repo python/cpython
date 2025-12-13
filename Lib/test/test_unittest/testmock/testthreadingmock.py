@@ -3,7 +3,7 @@ import unittest
 import threading
 import concurrent.futures
 
-from test.support import threading_helper
+from test.support import requires_resource, threading_helper
 from unittest.mock import patch, ThreadingMock
 
 
@@ -197,6 +197,7 @@ class TestThreadingMock(unittest.TestCase):
         m.wait_until_any_call_with()
         m.assert_called_once()
 
+    @requires_resource('cpu')
     def test_call_count_thread_safe(self):
         m = ThreadingMock()
         # 3k loops reliably reproduces the issue while keeping runtime ~0.6s
