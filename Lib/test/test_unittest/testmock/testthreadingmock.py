@@ -204,15 +204,13 @@ class TestThreadingMockRaceCondition(unittest.TestCase):
 
     def setUp(self):
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+        self.addCleanup(self._executor.shutdown)
 
         # Store and restore original switch interval using addCleanup
         self.addCleanup(sys.setswitchinterval, sys.getswitchinterval())
 
         # Set switch interval to minimum to force frequent context switches
         sys.setswitchinterval(sys.float_info.min)
-
-    def tearDown(self):
-        self._executor.shutdown()
 
     def test_call_count_race_condition_with_fast_switching(self):
         """Force race condition by maximizing thread context switches.
