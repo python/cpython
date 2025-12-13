@@ -2232,12 +2232,12 @@ defdict_missing(PyObject *op, PyObject *key)
     if (value == NULL)
         return value;
     PyObject* result;
-    int res = PyDict_SetDefaultRef(op, key, value, &result);
-    if (res != 0) {
-        // when res < 0, result will be NULL
-        // when res > 0, result is a new reference to the existing value
-        Py_DECREF(value);
-    }
+    PyDict_SetDefaultRef(op, key, value, &result);
+    // when PyDict_SetDefaultRef() < 0, result will be NULL
+    // when PyDict_SetDefaultRef() == 0, result is a new reference of default value
+    // when PyDict_SetDefaultRef() > 0, result is a new reference to the existing value
+    // so the value reference must be decref'ed in all cases
+    Py_DECREF(value);
     return result;
 }
 

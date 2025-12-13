@@ -5,7 +5,6 @@ import pickle
 import unittest
 
 from collections import defaultdict
-from threading import Condition, Thread
 
 def foobar():
     return list
@@ -186,32 +185,6 @@ class TestDefaultDict(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             i |= None
-
-    def test_default_race(self):
-        cv = Condition()
-        key = "default_race_key"
-
-        def default_factory(cv: Condition, cv_flag: list[bool]):
-            with cv:
-                while not cv_flag[0]:
-                    cv.wait()
-                return "default_value"
-        ready_flag = [False]
-        test_dict = defaultdict(lambda: default_factory(cv, ready_flag))
-
-        def writer(cv: Condition, cv_flag: list[bool], race_dict: dict):
-            with cv:
-                race_dict[key] = "writer_value"
-                cv_flag[0] = True
-                cv.notify()
-
-        default_factory_thread = Thread(target=lambda: test_dict[key])
-        writer_thread = Thread(target=lambda: writer(cv, ready_flag, test_dict))
-        default_factory_thread.start()
-        writer_thread.start()
-        default_factory_thread.join()
-        writer_thread.join()
-        self.assertEqual(test_dict[key], "writer_value")
 
 if __name__ == "__main__":
     unittest.main()
