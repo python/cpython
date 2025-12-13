@@ -43,24 +43,20 @@ class CustomFormatter(
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 
-Commands:
-  run        Run and profile a script or module
-  attach     Attach to and profile a running process
-
 Examples:
   # Run and profile a script
-  python -m profiling.sampling run script.py arg1 arg2
+  `python -m profiling.sampling run script.py arg1 arg2`
 
   # Attach to a running process
-  python -m profiling.sampling attach 1234
+  `python -m profiling.sampling attach 1234`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py
+  `python -m profiling.sampling run --live script.py`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234
+  `python -m profiling.sampling attach --live 1234`
 
-Use 'python -m profiling.sampling <command> --help' for command-specific help."""
+Use `python -m profiling.sampling <command> --help` for command-specific help."""
 
 
 # Constants for socket synchronization
@@ -533,19 +529,19 @@ def main():
 
 Examples:
   # Run and profile a module
-  python -m profiling.sampling run -m mymodule arg1 arg2
+  `python -m profiling.sampling run -m mymodule arg1 arg2`
 
   # Generate flamegraph from a script
-  python -m profiling.sampling run --flamegraph -o output.html script.py
+  `python -m profiling.sampling run --flamegraph -o output.html script.py`
 
   # Profile with custom interval and duration
-  python -m profiling.sampling run -i 50 -d 30 script.py
+  `python -m profiling.sampling run -i 50 -d 30 script.py`
 
   # Save collapsed stacks to file
-  python -m profiling.sampling run --collapsed -o stacks.txt script.py
+  `python -m profiling.sampling run --collapsed -o stacks.txt script.py`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py""",
+  `python -m profiling.sampling run --live script.py`""",
     )
     run_parser.add_argument(
         "-m",
@@ -581,10 +577,10 @@ Examples:
 
 Examples:
   # Profile all threads, sort by total time
-  python -m profiling.sampling attach -a --sort tottime 1234
+  `python -m profiling.sampling attach -a --sort tottime 1234`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234""",
+  `python -m profiling.sampling attach --live 1234`""",
     )
     attach_parser.add_argument(
         "pid",

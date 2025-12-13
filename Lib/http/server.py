@@ -61,8 +61,6 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.6"
-
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer",
     "HTTPSServer", "ThreadingHTTPSServer",
@@ -280,7 +278,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # The server software version.  You may want to override this.
     # The format is multiple whitespace-separated strings,
     # where each string is of the form name[/version].
-    server_version = "BaseHTTP/" + __version__
+    server_version = "BaseHTTP"
 
     error_message_format = DEFAULT_ERROR_MESSAGE
     error_content_type = DEFAULT_ERROR_CONTENT_TYPE
@@ -690,7 +688,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     """
 
-    server_version = "SimpleHTTP/" + __version__
+    server_version = "SimpleHTTP"
     index_pages = ("index.html", "index.htm")
     extensions_map = _encodings_map_default = {
         '.gz': 'application/gzip',
@@ -1078,6 +1076,15 @@ def _main(args=None):
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.6"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == '__main__':
