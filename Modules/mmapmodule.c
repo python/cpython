@@ -1117,6 +1117,46 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
     return NULL;
 }
 
+/*clinic*/
+
+/*[clinic input]
+mmap.mmap.set_name
+
+    name: str
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_set_name_impl(mmap_object *self, const char *name)
+/*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
+{
+#if defined(MAP_ANONYMOUS) && defined(__linux__)
+    const char *prefix = "cpython:mmap:";
+    if (strlen(name) + strlen(prefix) > 80) {
+        PyErr_SetString(PyExc_ValueError, "name is too long");
+        return NULL;
+    }
+    if (self->flags & MAP_ANONYMOUS) {
+        char buf[81];
+        sprintf(buf, "%s%s", prefix, name);
+        _PyAnnotateMemoryMap(self->data, self->size, buf);
+        Py_RETURN_NONE;
+    }
+    else {
+        /* cannot name non-anonymous mappings */
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set annotation on non-anonymous mappings");
+        return NULL;
+    }
+#else
+    /* naming not supported on this platform */
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Annotation of mmap is not supported on this platform");
+    return NULL;
+#endif
+}
+
 /*[clinic input]
 mmap.mmap.seekable
 
@@ -1397,6 +1437,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     MMAP_MMAP_RESIZE_METHODDEF
     MMAP_MMAP_SEEK_METHODDEF
     MMAP_MMAP_SEEKABLE_METHODDEF
+    MMAP_MMAP_SET_NAME_METHODDEF
     MMAP_MMAP_SIZE_METHODDEF
     MMAP_MMAP_TELL_METHODDEF
     MMAP_MMAP_WRITE_METHODDEF
@@ -1952,7 +1993,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-    _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+#ifdef MAP_ANONYMOUS
+    if (m_obj->flags & MAP_ANONYMOUS) {
+        _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+    }
+#endif
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }
