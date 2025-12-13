@@ -311,10 +311,26 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
+typedef PyObject* (*PyUnstable_FrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
 
-PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
+PyAPI_FUNC(PyUnstable_FrameEvalFunction) PyUnstable_InterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
+PyAPI_FUNC(int) PyUnstable_InterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
-    _PyFrameEvalFunction eval_frame);
+    PyUnstable_FrameEvalFunction eval_frame);
+
+// Deprecated aliases kept for backward compatibility
+#define _PyFrameEvalFunction PyUnstable_FrameEvalFunction
+
+Py_DEPRECATED(3.15) static inline PyUnstable_FrameEvalFunction
+_PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+{
+    return PyUnstable_InterpreterState_GetEvalFrameFunc(interp);
+}
+
+Py_DEPRECATED(3.15) static inline void
+_PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
+                                     PyUnstable_FrameEvalFunction eval_frame)
+{
+    PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_frame);
+}
