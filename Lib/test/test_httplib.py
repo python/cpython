@@ -245,6 +245,8 @@ class HeaderTests(TestCase):
         self.assertIn(b'Authorization: Bearer mytoken', conn._buffer)
         conn.putheader('IterHeader', 'IterA', 'IterB')
         self.assertIn(b'IterHeader: IterA\r\n\tIterB', conn._buffer)
+        conn.putheader('EncodedWordHeader', 'مثل')
+        self.assertIn(b'EncodedWordHeader: =?utf-8?b?2YXYq9mE?=', conn._buffer)
         conn.putheader('LatinHeader', b'\xFF')
         self.assertIn(b'LatinHeader: \xFF', conn._buffer)
         conn.putheader('Utf8Header', b'\xc3\x80')
