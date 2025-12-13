@@ -643,6 +643,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_StackPush",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
+    "_PyGen_SetExecuting",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
     "_PyList_ITEMS",

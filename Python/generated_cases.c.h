@@ -5380,14 +5380,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
-                #ifdef Py_GIL_DISABLED
-                if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
-                    UPDATE_MISS_STATS(FOR_ITER);
-                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
-                }
-                #endif
-                if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
@@ -5395,7 +5388,6 @@
                 STAT_INC(FOR_ITER, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(pushed_frame, PyStackRef_None);
-                gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 pushed_frame->previous = frame;
@@ -7159,7 +7151,6 @@
                 PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
                 assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
                 assert(oparg == 0 || oparg == 1);
-                gen->gi_frame_state = FRAME_SUSPENDED + oparg;
                 _PyStackRef temp = retval;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -7170,6 +7161,11 @@
                 _PyInterpreterFrame *gen_frame = frame;
                 frame = tstate->current_frame = frame->previous;
                 gen_frame->previous = NULL;
+                FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
+                #ifdef Py_GIL_DISABLED
+                ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_SUSPENDED + oparg;
+                #endif
+
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE
                 assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
@@ -10126,14 +10122,13 @@
                 assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
-                    ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
+                    _PyGen_SetExecuting((PyGenObject *)receiver_o))
                 {
                     PyGenObject *gen = (PyGenObject *)receiver_o;
                     _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                     _PyFrame_StackPush(gen_frame, PyStackRef_MakeHeapSafe(v));
                     stack_pointer += -1;
                     ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                    gen->gi_frame_state = FRAME_EXECUTING;
                     gen->gi_exc_state.previous_item = tstate->exc_info;
                     tstate->exc_info = &gen->gi_exc_state;
                     assert( 2u + oparg <= UINT16_MAX);
@@ -10226,7 +10221,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
                     JUMP_TO_PREDICTED(SEND);
                 }
-                if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
                     JUMP_TO_PREDICTED(SEND);
@@ -10234,7 +10229,6 @@
                 STAT_INC(SEND, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(pushed_frame, PyStackRef_MakeHeapSafe(v));
-                gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 assert( 2u + oparg <= UINT16_MAX);
@@ -11807,7 +11801,6 @@
             PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
-            gen->gi_frame_state = FRAME_SUSPENDED + oparg;
             _PyStackRef temp = retval;
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -11818,6 +11811,11 @@
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
+            FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
+            #ifdef Py_GIL_DISABLED
+            ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_SUSPENDED + oparg;
+            #endif
+
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE
             assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
