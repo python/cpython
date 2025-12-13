@@ -2155,19 +2155,20 @@ expression support in the :mod:`re` module).
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   For example:
 
-   For example::
+   .. doctest::
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() #ARABIC-INDIC DIGIT ZERO TO NINE
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # Arabic-indic digit zero to nine
       True
-      >>> '⅕'.isnumeric() # VULGAR FRACTION ONE FIFTH
+      >>> '⅕'.isnumeric() # Vulgar fraction one fifth
       True
-      >>> '²'.isdigit(), '²'.isdecimal(), '²'.isnumeric()
-      (True, False, True)
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
 
-   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters is a
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
    decimal numbers superset.
 
 
