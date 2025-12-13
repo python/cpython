@@ -1208,6 +1208,20 @@ class ChannelTests(TestBase):
         with self.assertRaises(TypeError):
             _channels.list_interpreters(cid)
 
+    def test_channel_close_and_list_all(self):
+        # gh-140652
+        cid1 = _channels.create(REPLACE)
+        cid2 = _channels.create(REPLACE)
+        cid3 = _channels.create(REPLACE)
+
+        _channels.close(cid1)
+        _channels.close(cid2, force=True)
+
+        all_channels = [cid for cid, _, _ in _channels.list_all()]
+        self.assertNotIn(cid1, all_channels)
+        self.assertNotIn(cid2, all_channels)
+        self.assertIn(cid3, all_channels)
+
 
 class ChannelReleaseTests(TestBase):
 
