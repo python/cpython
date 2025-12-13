@@ -4074,8 +4074,9 @@ dummy_func(
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
-            DEAD(null);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             a = arg;
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -5453,12 +5454,6 @@ dummy_func(
                 frame->instr_ptr += IP_OFFSET_OF(RETURN_GENERATOR);
                 EXIT_IF(true);
             }
-        }
-
-        label(pop_3_error) {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
         }
 
         label(pop_2_error) {

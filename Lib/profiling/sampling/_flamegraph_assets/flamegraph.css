@@ -274,6 +274,12 @@ body.resizing-sidebar {
   flex: 1;
 }
 
+/* View Mode Section */
+.view-mode-section .section-content {
+  display: flex;
+  justify-content: center;
+}
+
 /* Collapsible sections */
 .collapsible .section-header {
   display: flex;
@@ -302,7 +308,7 @@ body.resizing-sidebar {
 }
 
 .section-content {
-  transition: max-height var(--transition-normal), opacity var(--transition-normal);
+  transition: max-height var(--transition-slow) ease-out, opacity var(--transition-normal) ease-out, padding var(--transition-normal) ease-out;
   max-height: 1000px;
   opacity: 1;
 }
@@ -310,7 +316,9 @@ body.resizing-sidebar {
 .collapsible.collapsed .section-content {
   max-height: 0;
   opacity: 0;
-  margin-bottom: -10px;
+  padding-top: 0;
+  pointer-events: none;
+  transition: max-height var(--transition-slow) ease-in, opacity var(--transition-normal) ease-in, padding var(--transition-normal) ease-in;
 }
 
 /* --------------------------------------------------------------------------
@@ -620,10 +628,6 @@ body.resizing-sidebar {
    Legend
    -------------------------------------------------------------------------- */
 
-.legend-section {
-  margin-top: auto;
-  padding-top: 12px;
-}
 
 .legend {
   display: flex;
@@ -985,4 +989,31 @@ body.resizing-sidebar {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph Root Node Styling
+   -------------------------------------------------------------------------- */
+
+/* Style the root node - no border, themed text */
+.d3-flame-graph g:first-of-type rect {
+  stroke: none;
+}
+
+.d3-flame-graph g:first-of-type .d3-flame-graph-label {
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Flamegraph-Specific Toggle Override
+   -------------------------------------------------------------------------- */
+
+#toggle-invert .toggle-track.on {
+  background: #8e44ad;
+  border-color: #8e44ad;
+  box-shadow: 0 0 8px rgba(142, 68, 173, 0.3);
+}
+
+.toggle-switch:focus-visible {
+  border-radius: 4px;
 }

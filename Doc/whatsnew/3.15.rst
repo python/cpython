@@ -423,6 +423,10 @@ argparse
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
 
+* Added backtick markup support in description and epilog text to highlight
+  inline code when color output is enabled.
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
+
 calendar
 --------
 
@@ -1209,6 +1213,13 @@ Deprecated C APIs
   and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
   use the :c:type:`PyBytesWriter` API instead.
   (Contributed by Victor Stinner in :gh:`129813`.)
+
+* :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
+  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
+  3.20. Instead, use :c:func:`PyUnicode_FromString()` and cache the result in
+  the module state, then call :c:func:`PyObject_CallMethod` or
+  :c:func:`PyObject_GetAttr`.
+  (Contributed by Victor Stinner in :gh:`141049`.)
 
 * Deprecate :c:member:`~PyComplexObject.cval` field of the
   :c:type:`PyComplexObject` type.
