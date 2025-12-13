@@ -34,19 +34,22 @@ class SampleProfiler:
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
-        if _FREE_THREADED_BUILD:
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
-        else:
-            only_active_threads = bool(self.all_threads)
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
+        try:
+            if _FREE_THREADED_BUILD:
+                self.unwinder = _remote_debugging.RemoteUnwinder(
+                    self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
+                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                    cache_frames=True, stats=collect_stats
+                )
+            else:
+                only_active_threads = bool(self.all_threads)
+                self.unwinder = _remote_debugging.RemoteUnwinder(
+                    self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
+                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                    cache_frames=True, stats=collect_stats
+                )
+        except Exception as err:
+            raise SystemExit(err)
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0

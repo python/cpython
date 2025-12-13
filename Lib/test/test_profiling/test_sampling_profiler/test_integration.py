@@ -635,7 +635,7 @@ do_work()
 )
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
-        with self.assertRaises((OSError, RuntimeError)):
+        with self.assertRaises(SystemExit):
             collector = PstatsCollector(sample_interval_usec=100, skip_idle=False)
             profiling.sampling.sample.sample(-1, collector, duration_sec=1)
 
