@@ -29,7 +29,7 @@ py_zoneinfo, c_zoneinfo = test_support.get_modules()
 
 try:
     importlib.metadata.metadata("tzdata")
-    HAS_TZDATA_PKG = (importlib.metadata.version("tzdata") == "2025.2")
+    HAS_TZDATA_PKG = (importlib.metadata.version("tzdata") == "2025.3")
 except importlib.metadata.PackageNotFoundError:
     HAS_TZDATA_PKG = False
 
