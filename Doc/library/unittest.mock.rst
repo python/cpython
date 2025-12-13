@@ -532,8 +532,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. attribute:: call_count
 
-        An integer telling you how many times the mock object has been called,
-        it is the length of call_args_list:
+        An integer telling you how many times the mock object has been called:
 
             >>> mock = Mock(return_value=None)
             >>> mock.call_count
@@ -542,8 +541,6 @@ the *new_callable* argument to :func:`patch`.
             >>> mock()
             >>> mock.call_count
             2
-            >>> mock.call_count == len(mock.call_args_list)
-            True
 
     .. attribute:: return_value
 
