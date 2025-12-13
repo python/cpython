@@ -611,6 +611,7 @@ class NonCallableMock(Base):
     call_args_list = _delegating_property('call_args_list')
     mock_calls = _delegating_property('mock_calls')
 
+
     def __get_side_effect(self):
         delegated = self._mock_delegate
         if delegated is None:
