@@ -1,0 +1,2 @@
+Support ``__annotate__`` for :class:`functools.partial`
+and :class:`functools.partialmethod`
