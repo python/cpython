@@ -1138,7 +1138,7 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
         return NULL;
     }
     if (self->flags & MAP_ANONYMOUS) {
-        char buf[81] = {0, };
+        char buf[81];
         sprintf(buf, "%s%s", prefix, name);
         _PyAnnotateMemoryMap(self->data, self->size, buf);
         Py_RETURN_NONE;
