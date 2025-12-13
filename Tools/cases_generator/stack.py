@@ -445,7 +445,6 @@ class Storage:
     peeks: int
     check_liveness: bool
     spilled: int = 0
-    tmp_defined: bool = False
 
     @staticmethod
     def needs_defining(var: Local) -> bool:
@@ -474,16 +473,6 @@ class Storage:
                     f"Input '{tos.name}' is still live {reason}"
                 )
             self.stack.drop(tos.item, self.check_liveness)
-
-    def clear_inputs_and_close_live_ones(self, out: CWriter) -> None:
-        while len(self.inputs) > self.peeks:
-            tos = self.inputs.pop()
-            if self.is_live(tos):
-                self.close_variable(out, tos, "PyStackRef_NULL")
-                tos.kill()
-            out.start_line()
-            self.stack.drop(tos.item, self.check_liveness)
-
 
     def clear_dead_inputs(self) -> None:
         live = ""
@@ -666,43 +655,43 @@ class Storage:
         if PRINT_STACKS:
             out.emit(self.as_comment() + "\n")
 
-    def close_named(self, out: CWriter, close: str, name: str, overwrite: str) -> None:
-        if overwrite:
-            if not self.tmp_defined:
-                out.emit("_PyStackRef ")
-                self.tmp_defined = True
-            out.emit(f"tmp = {name};\n")
-            out.emit(f"{name} = {overwrite};\n")
-            self.stack.save_variables(out)
-            out.emit(f"{close}(tmp);\n")
-        else:
-            out.emit(f"{close}({name});\n")
-
-    def close_variable(self, out: CWriter, var: Local, overwrite: str) -> None:
-        close = "PyStackRef_CLOSE"
-        if "null" in var.name:
-            close = "PyStackRef_XCLOSE"
-        var.memory_offset = None
-        self.save(out)
-        out.start_line()
-        if var.size:
-            if var.size == "1":
-                 self.close_named(out, close, f"{var.name}[0]", overwrite)
-            else:
-                if overwrite and not self.tmp_defined:
-                    out.emit("_PyStackRef tmp;\n")
-                    self.tmp_defined = True
-                out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                self.close_named(out, close, f"{var.name}[_i]", overwrite)
-                out.emit("}\n")
-        else:
-            self.close_named(out, close, var.name, overwrite)
-        self.reload(out)
-
-
     def close_inputs(self, out: CWriter) -> None:
 
         tmp_defined = False
+        def close_named(close: str, name: str, overwrite: str) -> None:
+            nonlocal tmp_defined
+            if overwrite:
+                if not tmp_defined:
+                    out.emit("_PyStackRef ")
+                    tmp_defined = True
+                out.emit(f"tmp = {name};\n")
+                out.emit(f"{name} = {overwrite};\n")
+                self.stack.save_variables(out)
+                out.emit(f"{close}(tmp);\n")
+            else:
+                out.emit(f"{close}({name});\n")
+
+        def close_variable(var: Local, overwrite: str) -> None:
+            nonlocal tmp_defined
+            close = "PyStackRef_CLOSE"
+            if "null" in var.name:
+                close = "PyStackRef_XCLOSE"
+            var.memory_offset = None
+            self.save(out)
+            out.start_line()
+            if var.size:
+                if var.size == "1":
+                    close_named(close, f"{var.name}[0]", overwrite)
+                else:
+                    if overwrite and not tmp_defined:
+                        out.emit("_PyStackRef tmp;\n")
+                        tmp_defined = True
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    close_named(close, f"{var.name}[_i]", overwrite)
+                    out.emit("}\n")
+            else:
+                close_named(close, var.name, overwrite)
+            self.reload(out)
 
         self.clear_dead_inputs()
         if not self.inputs:
@@ -724,7 +713,7 @@ class Storage:
                 self.stack.drop(self.inputs[0].item, False)
                 self.stack.push(output)
                 self.stack.flush(out)
-                self.close_variable(out, self.inputs[0], "")
+                close_variable(self.inputs[0], "")
                 self.stack.drop(output.item, self.check_liveness)
                 self.inputs = []
                 return
@@ -732,12 +721,12 @@ class Storage:
                 raise StackError("Cannot call DECREF_INPUTS with live output not matching first input size")
             self.stack.flush(out)
             lowest.in_local = True
-            self.close_variable(out, lowest, output.name)
+            close_variable(lowest, output.name)
             assert lowest.memory_offset is not None
         for input in reversed(self.inputs[1:]):
-            self.close_variable(out, input, "PyStackRef_NULL")
+            close_variable(input, "PyStackRef_NULL")
         if output is None:
-            self.close_variable(out, self.inputs[0], "PyStackRef_NULL")
+            close_variable(self.inputs[0], "PyStackRef_NULL")
         for input in reversed(self.inputs[1:]):
             input.kill()
             self.stack.drop(input.item, self.check_liveness)
