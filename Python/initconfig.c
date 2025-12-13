@@ -1274,6 +1274,10 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
             Py_UNREACHABLE();
         }
     }
+
+    config->init_callback = config2->init_callback;
+    config->init_callback_arg = config2->init_callback_arg;
+
     return _PyStatus_OK();
 }
 
@@ -4236,6 +4240,16 @@ Py_InitializeFromInitConfig(PyInitConfig *config)
         return -1;
     }
 
+    return 0;
+}
+
+
+int
+PyInitConfig_SetInitCallback(PyInitConfig *config,
+                             PyStatus (*callback)(void *arg), void *arg)
+{
+    config->config.init_callback = callback;
+    config->config.init_callback_arg = arg;
     return 0;
 }
 
