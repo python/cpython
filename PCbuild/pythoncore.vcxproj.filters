@@ -1280,6 +1280,9 @@
     <ClCompile Include="..\Objects\typeobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\unicode_codecs_utf.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\unicode_format.c">
       <Filter>Objects</Filter>
     </ClCompile>
