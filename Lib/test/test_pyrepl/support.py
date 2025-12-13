@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
-from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
+from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE, DEFAULT_PS1, DEFAULT_PS2
 
 
 class ScreenEqualMixin:
@@ -22,8 +22,8 @@ def multiline_input(reader: ReadlineAlikeReader, namespace: dict | None = None):
     saved = reader.more_lines
     try:
         reader.more_lines = partial(more_lines, namespace=namespace)
-        reader.ps1 = reader.ps2 = ">>> "
-        reader.ps3 = reader.ps4 = "... "
+        reader.ps1 = reader.ps2 = DEFAULT_PS1
+        reader.ps3 = reader.ps4 = DEFAULT_PS2
         return reader.readline()
     finally:
         reader.more_lines = saved
