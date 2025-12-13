@@ -1024,6 +1024,7 @@ New deprecations
 
     - :mod:`argparse`
     - :mod:`csv`
+    - :mod:`ctypes`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
     - :mod:`http.server`
