@@ -1,4 +1,3 @@
-import sys
 import time
 import unittest
 import threading
@@ -198,38 +197,14 @@ class TestThreadingMock(unittest.TestCase):
         m.wait_until_any_call_with()
         m.assert_called_once()
 
-
-class TestThreadingMockRaceCondition(unittest.TestCase):
-    """Test that exposes race conditions in ThreadingMock."""
-
-    def setUp(self):
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
-        self.addCleanup(self._executor.shutdown)
-
-        # Store and restore original switch interval using addCleanup
-        self.addCleanup(sys.setswitchinterval, sys.getswitchinterval())
-
-        # Set switch interval to minimum to force frequent context switches
-        sys.setswitchinterval(sys.float_info.min)
-
-    def test_call_count_race_condition_with_fast_switching(self):
-        """Force race condition by maximizing thread context switches.
-
-        This test reduces the thread switch interval to its minimum value,
-        which maximizes the likelihood of context switches during the critical
-        section of _increment_mock_call.
-        """
+    def test_call_count_thread_safe(self):
         m = ThreadingMock()
-
-        # Use fewer loops but with maximum context switching pressure
-        # Expected runtime is 0.2 second
-        LOOPS = 100
+        # 3k loops reliably reproduces the issue while keeping runtime ~0.6s
+        LOOPS = 3_000
         THREADS = 10
-
         def test_function():
             for _ in range(LOOPS):
                 m()
-
         threads = [threading.Thread(target=test_function) for _ in range(THREADS)]
         for thread in threads:
             thread.start()
