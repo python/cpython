@@ -2023,6 +2023,12 @@ static PyTypeObject _PyExc_ImportError = {
 PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
+ *    ImportCycleError extends ImportError
+ */
+
+MiddlingExtendsException(PyExc_ImportError, ImportCycleError, ImportError,
+                         "Import produces a cycle.");
+/*
  *    ModuleNotFoundError extends ImportError
  */
 
@@ -4455,6 +4461,7 @@ static struct static_exception static_exceptions[] = {
     {&_PyExc_IncompleteInputError, "_IncompleteInputError"}, // base: SyntaxError(Exception)
     ITEM(IndexError),  // base: LookupError(Exception)
     ITEM(KeyError),  // base: LookupError(Exception)
+    ITEM(ImportCycleError), // base: ImportError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
     ITEM(NotImplementedError),  // base: RuntimeError(Exception)
     ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
@@ -4650,4 +4657,3 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     Py_XDECREF(r);
     return res;
 }
-

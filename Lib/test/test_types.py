@@ -55,7 +55,7 @@ class TypesTests(unittest.TestCase):
             'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
             'FrameLocalsProxyType',
             'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
-            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
+            'LambdaType', 'LazyImportType', 'MappingProxyType', 'MemberDescriptorType',
             'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
             'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
             'TracebackType', 'UnionType', 'WrapperDescriptorType',

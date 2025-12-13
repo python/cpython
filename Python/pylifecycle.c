@@ -1330,6 +1330,21 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
+    // Initialize lazy imports based on configuration
+    // Do this after site module is imported to avoid circular imports during startup
+    if (config->lazy_imports != -1) {
+        PyImport_LazyImportsMode lazy_mode;
+        if (config->lazy_imports == 1) {
+            lazy_mode = PyImport_LAZY_ALL;
+        } else {
+            lazy_mode = PyImport_LAZY_NONE;
+        }
+        if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
+            return _PyStatus_ERR("failed to set lazy imports mode");
+        }
+    }
+    // If config->lazy_imports == -1, use the default mode (no change needed)
+
     if (is_main_interp) {
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);
@@ -1795,6 +1810,9 @@ finalize_modules(PyThreadState *tstate)
     // clear PyModuleDef.m_base.m_copy (of extensions not using the multi-phase
     // initialization API)
     _PyImport_ClearModulesByIndex(interp);
+
+    // Clear the dict of lazily loaded module nname to submodule names
+    _PyImport_ClearLazyModules(interp);
 
     // Clear and delete the modules directory.  Actual modules will
     // still be there only if imported during the execution of some
