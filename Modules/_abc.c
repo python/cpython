@@ -914,17 +914,6 @@ static int
 subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
                              PyObject **result)
 {
-    // Fast path: check subclass is in weakset directly.
-    int ret = _in_weak_set(impl, &impl->_abc_registry, subclass);
-    if (ret < 0) {
-        *result = NULL;
-        return -1;
-    }
-    if (ret > 0) {
-        *result = Py_True;
-        return 1;
-    }
-
     PyObject *registry_shared;
     Py_BEGIN_CRITICAL_SECTION(impl);
     registry_shared = impl->_abc_registry;
@@ -939,6 +928,7 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     if (registry == NULL) {
         return -1;
     }
+    int ret = 0;
     PyObject *key;
     Py_ssize_t pos = 0;
     Py_hash_t hash;
