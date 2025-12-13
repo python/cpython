@@ -54,19 +54,19 @@ class-based API instead.
 
 
 .. index:: single: _ (underscore); gettext
-.. function:: gettext(message)
+.. function:: gettext(message, /)
 
    Return the localized translation of *message*, based on the current global
    domain, language, and locale directory.  This function is usually aliased as
    :func:`!_` in the local namespace (see examples below).
 
 
-.. function:: dgettext(domain, message)
+.. function:: dgettext(domain, message, /)
 
    Like :func:`.gettext`, but look the message up in the specified *domain*.
 
 
-.. function:: ngettext(singular, plural, n)
+.. function:: ngettext(singular, plural, n, /)
 
    Like :func:`.gettext`, but consider plural forms. If a translation is found,
    apply the plural formula to *n*, and return the resulting message (some
@@ -81,15 +81,15 @@ class-based API instead.
    formulas for a variety of languages.
 
 
-.. function:: dngettext(domain, singular, plural, n)
+.. function:: dngettext(domain, singular, plural, n, /)
 
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
-.. function:: pgettext(context, message)
-.. function:: dpgettext(domain, context, message)
-.. function:: npgettext(context, singular, plural, n)
-.. function:: dnpgettext(domain, context, singular, plural, n)
+.. function:: pgettext(context, message, /)
+.. function:: dpgettext(domain, context, message, /)
+.. function:: npgettext(context, singular, plural, n, /)
+.. function:: dnpgettext(domain, context, singular, plural, n, /)
 
    Similar to the corresponding functions without the ``p`` in the prefix (that
    is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
@@ -226,20 +226,20 @@ are the methods of :class:`!NullTranslations`:
       translation for a given message.
 
 
-   .. method:: gettext(message)
+   .. method:: gettext(message, /)
 
       If a fallback has been set, forward :meth:`!gettext` to the fallback.
       Otherwise, return *message*.  Overridden in derived classes.
 
 
-   .. method:: ngettext(singular, plural, n)
+   .. method:: ngettext(singular, plural, n, /)
 
       If a fallback has been set, forward :meth:`!ngettext` to the fallback.
       Otherwise, return *singular* if *n* is 1; return *plural* otherwise.
       Overridden in derived classes.
 
 
-   .. method:: pgettext(context, message)
+   .. method:: pgettext(context, message, /)
 
       If a fallback has been set, forward :meth:`pgettext` to the fallback.
       Otherwise, return the translated message.  Overridden in derived classes.
@@ -247,7 +247,7 @@ are the methods of :class:`!NullTranslations`:
       .. versionadded:: 3.8
 
 
-   .. method:: npgettext(context, singular, plural, n)
+   .. method:: npgettext(context, singular, plural, n, /)
 
       If a fallback has been set, forward :meth:`npgettext` to the fallback.
       Otherwise, return the translated message.  Overridden in derived classes.
@@ -325,7 +325,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
    The following methods are overridden from the base class implementation:
 
-   .. method:: gettext(message)
+   .. method:: gettext(message, /)
 
       Look up the *message* id in the catalog and return the corresponding message
       string, as a Unicode string.  If there is no entry in the catalog for the
@@ -334,7 +334,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
       *message* id is returned.
 
 
-   .. method:: ngettext(singular, plural, n)
+   .. method:: ngettext(singular, plural, n, /)
 
       Do a plural-forms lookup of a message id.  *singular* is used as the message id
       for purposes of lookup in the catalog, while *n* is used to determine which
@@ -355,7 +355,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
              n) % {'num': n}
 
 
-   .. method:: pgettext(context, message)
+   .. method:: pgettext(context, message, /)
 
       Look up the *context* and *message* id in the catalog and return the
       corresponding message string, as a Unicode string.  If there is no
@@ -366,7 +366,7 @@ unexpected, or if other problems occur while reading the file, instantiating a
       .. versionadded:: 3.8
 
 
-   .. method:: npgettext(context, singular, plural, n)
+   .. method:: npgettext(context, singular, plural, n, /)
 
       Do a plural-forms lookup of a message id.  *singular* is used as the
       message id for purposes of lookup in the catalog, while *n* is used to
