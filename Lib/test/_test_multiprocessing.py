@@ -5967,6 +5967,13 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(ValueError, ctx.set_start_method, None)
             self.check_context(ctx)
 
+    def test_freeze_support_side_effect(self):
+        # GH-135726: freeze_support() should not set the start method
+        # as a side-feect,
+        multiprocessing.set_start_method(None, force=True)
+        multiprocessing.freeze_support()
+        self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
+
     def test_context_check_module_types(self):
         try:
             ctx = multiprocessing.get_context('forkserver')
