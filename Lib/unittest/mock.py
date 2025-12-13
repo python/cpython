@@ -256,6 +256,7 @@ def _setup_func(funcopy, mock, sig):
             ret.reset_mock()
 
     funcopy.called = False
+    funcopy.call_count = 0
     funcopy.call_args = None
     funcopy.call_args_list = _CallList()
     funcopy.method_calls = _CallList()
@@ -489,6 +490,7 @@ class NonCallableMock(Base):
 
         __dict__['_mock_called'] = False
         __dict__['_mock_call_args'] = None
+        __dict__['_mock_call_count'] = 0
         __dict__['_mock_call_args_list'] = _CallList()
         __dict__['_mock_mock_calls'] = _CallList()
 
@@ -605,16 +607,9 @@ class NonCallableMock(Base):
 
     called = _delegating_property('called')
     call_args = _delegating_property('call_args')
+    call_count = _delegating_property('call_count')
     call_args_list = _delegating_property('call_args_list')
     mock_calls = _delegating_property('mock_calls')
-
-    @property
-    def call_count(self):
-        sig = self._mock_delegate
-        if sig is None:
-            return len(self._mock_call_args_list)
-        return len(sig.call_args_list)
-
 
     def __get_side_effect(self):
         delegated = self._mock_delegate
@@ -650,6 +645,7 @@ class NonCallableMock(Base):
 
         self.called = False
         self.call_args = None
+        self.call_count = 0
         self.mock_calls = _CallList()
         self.call_args_list = _CallList()
         self.method_calls = _CallList()
@@ -1190,6 +1186,7 @@ class CallableMixin(Base):
         _call = _Call((args, kwargs), two=True)
         self.call_args = _call
         self.call_args_list.append(_call)
+        self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
