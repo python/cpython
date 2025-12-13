@@ -4040,6 +4040,8 @@
             _PyStackRef callable;
             _PyStackRef arg;
             _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _GUARD_NOS_NULL
@@ -4070,21 +4072,24 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PySequence_Tuple(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                a = arg;
+                res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            // _POP_TOP
+            {
+                value = a;
+                stack_pointer[-3] = res;
+                stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(arg);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
-                }
-                res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _CHECK_PERIODIC_AT_END
             {
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);

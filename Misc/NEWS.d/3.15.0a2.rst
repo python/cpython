@@ -583,7 +583,7 @@ would raise an error.
 .. nonce: peEgcr
 .. section: Library
 
-Deprecate ``__version__`` from a :mod:`imaplib`. Patch by Hugo van Kemenade.
+Deprecate ``__version__`` from :mod:`imaplib`. Patch by Hugo van Kemenade.
 
 ..
 
