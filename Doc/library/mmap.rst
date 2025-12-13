@@ -335,7 +335,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       to Python or if Python is built in :ref:`debug mode <debug-build>`
       The length of *name* must not exceed 67 bytes.
 
-      .. availability:: Linux >= 5.17 (kernel built with `CONFIG_ANON_VMA_NAME` option)
+      .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
 
       .. versionadded:: next
 
