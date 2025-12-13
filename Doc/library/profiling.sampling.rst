@@ -796,6 +796,7 @@ an interactive flame graph visualization::
    The flame graph visualization shows call stacks as nested rectangles, with
    width proportional to time spent. The sidebar displays runtime statistics,
    GIL metrics, and hotspot functions.
+   :download:`Try the interactive example </_static/tachyon-example-flamegraph.html>`.
 
 If no output file is specified, the profiler generates a filename based on
 the process ID (for example, ``flamegraph.12345.html``).
@@ -951,6 +952,7 @@ can be expanded to show which bytecode instructions consumed time:
    Expanding a hot line reveals the bytecode instructions executed, including
    specialized variants. The panel shows sample counts per instruction and the
    overall specialization percentage for the line.
+   :download:`Try the interactive example </_static/tachyon-example-heatmap.html>`.
 
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
