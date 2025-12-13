@@ -383,7 +383,7 @@ Functions
      doesn't have its own annotations dict, returns an empty dict.
    * All accesses to object members and dict values are done
      using ``getattr()`` and ``dict.get()`` for safety.
-   * Supports objects that provide their own :attr:`~object.__annotate__` attribute,
+   * Supports objects that provide their own :attr:`~object.__annotate__` descriptor,
      such as :class:`functools.partial` and :class:`functools.partialmethod`.
      See the :mod:`functools` module documentation for details on how these
      objects support annotations.
