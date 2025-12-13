@@ -543,11 +543,21 @@ def ignore_patterns(*patterns):
     return _ignore_patterns
 
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
-              ignore_dangling_symlinks, dirs_exist_ok=False):
+              ignore_dangling_symlinks, dirs_exist_ok=False, _seen=None):
     if ignore is not None:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
         ignored_names = ()
+
+    # Track visited directories to detect cycles (e.g., Windows junctions)
+    if _seen is None:
+        _seen = frozenset()
+    src_st = os.stat(src)
+    src_id = (src_st.st_dev, src_st.st_ino)
+    if src_id in _seen:
+        raise Error([(src, dst, "Infinite recursion detected")])
+
+    _seen = _seen | {src_id}
 
     os.makedirs(dst, exist_ok=dirs_exist_ok)
     errors = []
@@ -583,12 +593,12 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
                     if srcentry.is_dir():
                         copytree(srcobj, dstname, symlinks, ignore,
                                  copy_function, ignore_dangling_symlinks,
-                                 dirs_exist_ok)
+                                 dirs_exist_ok, _seen=_seen)
                     else:
                         copy_function(srcobj, dstname)
             elif srcentry.is_dir():
                 copytree(srcobj, dstname, symlinks, ignore, copy_function,
-                         ignore_dangling_symlinks, dirs_exist_ok)
+                         ignore_dangling_symlinks, dirs_exist_ok, _seen=_seen)
             else:
                 # Will raise a SpecialFileError for unsupported file types
                 copy_function(srcobj, dstname)
@@ -609,7 +619,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     return dst
 
 def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
-             ignore_dangling_symlinks=False, dirs_exist_ok=False):
+             ignore_dangling_symlinks=False, dirs_exist_ok=False, _seen=None):
     """Recursively copy a directory tree and return the destination directory.
 
     If exception(s) occur, an Error is raised with a list of reasons.
@@ -654,7 +664,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
                      ignore=ignore, copy_function=copy_function,
                      ignore_dangling_symlinks=ignore_dangling_symlinks,
-                     dirs_exist_ok=dirs_exist_ok)
+                     dirs_exist_ok=dirs_exist_ok, _seen=_seen)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     def _rmtree_islink(st):
