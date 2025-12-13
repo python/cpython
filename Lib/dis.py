@@ -470,7 +470,10 @@ class Formatter:
                     # Only show the fancy argrepr for a CACHE instruction when it's
                     # the first entry for a particular cache value:
                     if i == 0:
-                        argrepr = f"{name}: {int.from_bytes(data, sys.byteorder)}"
+                        data_int = int.from_bytes(data, sys.byteorder)
+                        argrepr = f"{name}: {data_int}"
+                        if name == "counter":
+                            argrepr += f" (value: {data_int >> 4}, backoff: {data_int & 15})"
                     else:
                         argrepr = ""
                     self.print_instruction_line(
