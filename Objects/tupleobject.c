@@ -666,18 +666,28 @@ tuple_richcompare(PyObject *v, PyObject *w, int op)
     if (!PyTuple_Check(v) || !PyTuple_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
 
+    /* Fast path based on identity: if both objects are the same tuple
+     * object, we return immediately without comparing items. Elements that
+     * are not equal to themselves are therefore treated as equal here.
+     */
+    if (v == w) {
+        Py_RETURN_RICHCOMPARE(0, 0, op);
+    }
+
     vt = (PyTupleObject *)v;
     wt = (PyTupleObject *)w;
 
     vlen = Py_SIZE(vt);
     wlen = Py_SIZE(wt);
 
-    /* Note:  the corresponding code for lists has an "early out" test
-     * here when op is EQ or NE and the lengths differ.  That pays there,
-     * but Tim was unable to find any real code where EQ/NE tuple
-     * compares don't have the same length, so testing for it here would
-     * have cost without benefit.
-     */
+    if (vlen != wlen) {
+        switch (op) {
+        case Py_EQ:
+            Py_RETURN_FALSE;
+        case Py_NE:
+            Py_RETURN_TRUE;
+        }
+    }
 
     /* Search for the first index where items are different.
      * Note that because tuples are immutable, it's safe to reuse
