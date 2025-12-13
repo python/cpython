@@ -569,7 +569,7 @@ Improve Zip file validation false positive rate in
 .. date: 2025-05-22-14-48-19
 .. gh-issue: 134381
 .. nonce: 2BXhth
-.. section: Core and Builtins
+.. section: Library
 
 Fix :exc:`RuntimeError` when using a not-started :class:`threading.Thread`
 after calling :func:`os.fork`

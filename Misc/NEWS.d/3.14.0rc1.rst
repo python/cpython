@@ -169,7 +169,7 @@ Contributed by Olga Matoula.
 .. date: 2025-07-12-09-59-14
 .. gh-issue: 136421
 .. nonce: ZD1rNj
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when initializing :mod:`datetime` concurrently.
 
@@ -231,7 +231,7 @@ f-string literals.
 .. date: 2025-06-12-00-03-34
 .. gh-issue: 116738
 .. nonce: iBBAdo
-.. section: Core and Builtins
+.. section: Library
 
 Make functions in :mod:`grp` thread-safe on the :term:`free threaded <free
 threading>` build.
