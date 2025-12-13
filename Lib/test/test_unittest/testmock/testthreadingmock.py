@@ -215,8 +215,7 @@ class TestThreadingMock(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-        self.assertEqual(m.call_count, LOOPS * THREADS,
-                        f"Expected {LOOPS * THREADS}, got {m.call_count}")
+        self.assertEqual(m.call_count, LOOPS * THREADS)
 
 
 if __name__ == "__main__":
