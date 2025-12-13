@@ -1805,6 +1805,8 @@ class _Unpickler:
     def load_appends(self):
         items = self.pop_mark()
         list_obj = self.stack[-1]
+        if len(items) == 0: # nothing to do
+            return
         try:
             extend = list_obj.extend
         except AttributeError:
@@ -1838,6 +1840,8 @@ class _Unpickler:
     def load_additems(self):
         items = self.pop_mark()
         set_obj = self.stack[-1]
+        if len(items) == 0: # nothing to do
+            return
         if isinstance(set_obj, set):
             set_obj.update(items)
         else:
