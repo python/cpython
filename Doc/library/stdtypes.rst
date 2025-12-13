@@ -1841,14 +1841,16 @@ expression support in the :mod:`re` module).
    intended to remove all case distinctions in a string. For example, the German
    lowercase letter ``'ß'`` is equivalent to ``"ss"``. Since it is already
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
-   converts it to ``"ss"``, as follows:
+   converts it to ``"ss"``. This is useful for case-insensitive string comparisons.
+   For example:
 
    .. doctest::
 
-      >>> 'ß'.casefold()
-      'ss'
-      >>> 'ß'.lower()
-      'ß'
+      >>> 'straße'.lower() == 'strasse'
+      False
+      >>> 'straße'.casefold() == 'strasse'
+      True
+
 
    The casefolding algorithm is `described in section 3.13.3 'Default Case
    Folding' of the Unicode Standard
