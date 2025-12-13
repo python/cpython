@@ -157,6 +157,14 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
+    def test_jsonlines_with_file(self):
+        infile = self._create_infile(self.jsonlines_raw)
+        args = sys.executable, '-m', self.module, '--json-lines', infile
+        process = subprocess.run(args, capture_output=True, text=True, check=True)
+        self.assertEqual(process.stdout, self.jsonlines_expect)
+        self.assertEqual(process.stderr, '')
+
     def test_help_flag(self):
         rc, out, err = assert_python_ok('-m', self.module, '-h',
                                         PYTHON_COLORS='0')
