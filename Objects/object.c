@@ -2679,6 +2679,12 @@ _Py_SetImmortalUntracked(PyObject *op)
             || PyUnicode_CHECK_INTERNED(op) == SSTATE_INTERNED_IMMORTAL_STATIC);
     }
 #endif
+#ifdef Py_GIL_DISABLED
+    // We set these bits for all immortals, even static one, to simplify
+    // further checks on hot path. In fact, if _Py_IsImmortal(op) == 1,
+    // then _PyObject_HasDeferredRefcount(op) == 1.
+    _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#endif
     // Check if already immortal to avoid degrading from static immortal to plain immortal
     if (_Py_IsImmortal(op)) {
         return;
@@ -2687,7 +2693,6 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
-    _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #elif SIZEOF_VOID_P > 4
     op->ob_flags = _Py_IMMORTAL_FLAGS;
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
