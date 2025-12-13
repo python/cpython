@@ -1627,6 +1627,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(certfile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(chain));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(check_same_thread));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cid));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(clamp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(clear));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(close));
@@ -1754,6 +1755,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(force));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format_spec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(frame_buffer));
@@ -1994,6 +1996,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(readline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(readonly));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(real));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(recv));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reducer_override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(registry));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rel_tol));

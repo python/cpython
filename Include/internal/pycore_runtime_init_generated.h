@@ -1625,6 +1625,7 @@ extern "C" {
     INIT_ID(certfile), \
     INIT_ID(chain), \
     INIT_ID(check_same_thread), \
+    INIT_ID(cid), \
     INIT_ID(clamp), \
     INIT_ID(clear), \
     INIT_ID(close), \
@@ -1752,6 +1753,7 @@ extern "C" {
     INIT_ID(flush), \
     INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
+    INIT_ID(force), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(frame_buffer), \
@@ -1992,6 +1994,7 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(recv), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
