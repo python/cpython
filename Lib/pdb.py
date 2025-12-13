@@ -2034,6 +2034,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     return
 
         self._user_requested_quit = True
+        # gh-139688 set _last_pdb_instance to None for remote debugging.
+        Pdb._last_pdb_instance = None
         self.set_quit()
         return 1
 
