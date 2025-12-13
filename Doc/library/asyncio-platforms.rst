@@ -16,7 +16,7 @@ due to the platforms' underlying architecture and capabilities.
 All Platforms
 =============
 
-* :meth:`loop.add_reader` and :meth:`loop.add_writer`
+* :meth:`~asyncio.loop.add_reader` and :meth:`~asyncio.loop.add_writer`
   cannot be used to monitor file I/O.
 
 
@@ -59,14 +59,19 @@ All event loops on Windows do not support the following methods:
 
 :class:`ProactorEventLoop` has the following limitations:
 
-* The :meth:`loop.add_reader` and :meth:`loop.add_writer`
-  methods are not supported.
+* :meth:`loop.add_reader` and :meth:`loop.add_writer` only accept
+  socket handles (for example, pipe file descriptors are not supported).
+  When called, :func:`select.select` is run in an additional thread.
 
 The resolution of the monotonic clock on Windows is usually around 15.6
 milliseconds.  The best resolution is 0.5 milliseconds. The resolution depends on the
 hardware (availability of `HPET
 <https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the
 Windows configuration.
+
+.. versionadded:: next
+
+   Support for :meth:`loop.add_reader`, :meth:`loop.add_writer` added to :class:`ProactorEventLoop`.
 
 
 .. _asyncio-windows-subprocess:
