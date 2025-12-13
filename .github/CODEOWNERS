@@ -322,7 +322,7 @@ Tools/build/generate_global_objects.py    @ericsnowcurrently
 # Remote Debugging
 Python/remote_debug.h               @pablogsal
 Python/remote_debugging.c           @pablogsal
-Modules/_remote_debugging_module.c  @pablogsal @ambv @1st1
+Modules/_remote_debugging/          @pablogsal
 
 # Sub-Interpreters
 **/*crossinterp*                          @ericsnowcurrently
@@ -536,6 +536,11 @@ Lib/test/test_remote_pdb.py   @gaogaotiantian
 Lib/pydoc.py                  @AA-Turner
 Lib/pydoc_data/               @AA-Turner
 Lib/test/test_pydoc/          @AA-Turner
+
+# Profiling (Sampling)
+Doc/library/profiling*.rst    @pablogsal
+Lib/profiling/                @pablogsal
+Lib/test/test_profiling/      @pablogsal
 
 # PyREPL
 Lib/_pyrepl/                  @pablogsal @lysnikolaou @ambv
