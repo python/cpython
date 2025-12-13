@@ -5922,10 +5922,14 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
-                                 "sign digits exponent"));
-
+    obj = PyObject_CallMethod(collections, "namedtuple", "(ss)", "DecimalTuple",
+                              "sign digits exponent");
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "type is expected from namedtuple call");
+        goto error;
+    }
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)obj);
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
