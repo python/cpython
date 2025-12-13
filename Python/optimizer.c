@@ -315,6 +315,8 @@ static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
 
+    // Object might be already untracked if we are in a GC cycle (via tp_clear).
+    // Avoid double-untracking.
     if (_PyObject_GC_IS_TRACKED(self)) {
         _PyObject_GC_UNTRACK(self);
     }
