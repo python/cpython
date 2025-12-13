@@ -185,12 +185,16 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
+    executor->vm_data.chain_depth = chain_depth;
+    assert(executor->vm_data.valid);
     _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
     if (exit != NULL) {
         exit->executor = executor;
+    } else {
+        // An executor inserted into the code object now has a strong reference
+        // to it from the code object. Thus, we don't need this reference anymore.
+        Py_DECREF(executor);
     }
-    executor->vm_data.chain_depth = chain_depth;
-    assert(executor->vm_data.valid);
     interp->compiling = false;
     return 1;
 #else
@@ -310,7 +314,11 @@ add_to_pending_deletion_list(_PyExecutorObject *self)
 static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
-    _PyObject_GC_UNTRACK(self);
+
+    if (_PyObject_GC_IS_TRACKED(self)) {
+        _PyObject_GC_UNTRACK(self);
+    }
+
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
     // Once unlinked it becomes impossible to invalidate an executor, so do it here.
