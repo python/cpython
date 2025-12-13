@@ -843,6 +843,7 @@ class HandlerTests(TestCase):
 class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
         from wsgiref import simple_server
+
         with self.assertWarnsRegex(
             DeprecationWarning,
             "'__version__' is deprecated and slated for removal in Python 3.20",
