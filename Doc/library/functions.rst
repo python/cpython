@@ -597,16 +597,16 @@ are always available.  They are listed here in alphabetical order.
       This function executes arbitrary code. Calling it with
       user-supplied input may lead to security vulnerabilities.
 
-   The *expression* argument is parsed and evaluated as a Python expression
+   The *source* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
    mappings as global and local namespace.  If the *globals* dictionary is
    present and does not contain a value for the key ``__builtins__``, a
    reference to the dictionary of the built-in module :mod:`builtins` is
-   inserted under that key before *expression* is parsed.  That way you can
+   inserted under that key before *source* is parsed.  That way you can
    control what builtins are available to the executed code by inserting your
    own ``__builtins__`` dictionary into *globals* before passing it to
    :func:`eval`.  If the *locals* mapping is omitted it defaults to the
-   *globals* dictionary.  If both mappings are omitted, the expression is
+   *globals* dictionary.  If both mappings are omitted, the source is
    executed with the *globals* and *locals* in the environment where
    :func:`eval` is called.  Note, *eval()* will only have access to the
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
