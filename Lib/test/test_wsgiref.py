@@ -503,6 +503,39 @@ class HeaderTests(TestCase):
             '\r\n'
         )
 
+    def test_crlf_rejection_in_setitem(self):
+        h = Headers()
+        for crlf in ('\r\n', '\r', '\n'):
+            with self.subTest(crlf_repr=repr(crlf)):
+                with self.assertRaises(ValueError) as ctx:
+                    h['X-Custom'] = f'value{crlf}Set-Cookie: test'
+                self.assertIn('CR or LF', str(ctx.exception))
+
+    def test_crlf_rejection_in_setdefault(self):
+        for crlf in ('\r\n', '\r', '\n'):
+            with self.subTest(crlf_repr=repr(crlf)):
+                h = Headers()
+                with self.assertRaises(ValueError) as ctx:
+                    h.setdefault('X-Custom', f'value{crlf}Set-Cookie: test')
+                self.assertIn('CR or LF', str(ctx.exception))
+
+    def test_crlf_rejection_in_add_header(self):
+        for crlf in ('\r\n', '\r', '\n'):
+            with self.subTest(location='value', crlf_repr=repr(crlf)):
+                h = Headers()
+                with self.assertRaises(ValueError) as ctx:
+                    h.add_header('X-Custom', f'value{crlf}Set-Cookie: test')
+                self.assertIn('CR or LF', str(ctx.exception))
+
+            with self.subTest(location='param', crlf_repr=repr(crlf)):
+                h = Headers()
+                with self.assertRaises(ValueError) as ctx:
+                    h.add_header('Content-Disposition',
+                                 'attachment',
+                                 filename=f'test{crlf}.txt')
+                self.assertIn('CR or LF', str(ctx.exception))
+
+
 class ErrorHandler(BaseCGIHandler):
     """Simple handler subclass for testing BaseHandler"""
 

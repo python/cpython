@@ -35,12 +35,14 @@ class Headers:
         self._headers = headers
         if __debug__:
             for k, v in headers:
-                self._convert_string_type(k)
-                self._convert_string_type(v)
+                self._validate_header_string(k)
+                self._validate_header_string(v)
 
-    def _convert_string_type(self, value):
-        """Convert/check value type."""
+    def _validate_header_string(self, value):
+        """Validate header type and value."""
         if type(value) is str:
+            if '\r' in value or '\n' in value:
+                raise ValueError('Invalid header name/value: contains CR or LF')
             return value
         raise AssertionError("Header names/values must be"
             " of type str (got {0})".format(repr(value)))
@@ -53,14 +55,15 @@ class Headers:
         """Set the value of a header."""
         del self[name]
         self._headers.append(
-            (self._convert_string_type(name), self._convert_string_type(val)))
+            (self._validate_header_string(name),
+             self._validate_header_string(val)))
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
 
         Does *not* raise an exception if the header is missing.
         """
-        name = self._convert_string_type(name.lower())
+        name = self._validate_header_string(name.lower())
         self._headers[:] = [kv for kv in self._headers if kv[0].lower() != name]
 
     def __getitem__(self,name):
@@ -87,13 +90,13 @@ class Headers:
         fields deleted and re-inserted are always appended to the header list.
         If no fields exist with the given name, returns an empty list.
         """
-        name = self._convert_string_type(name.lower())
+        name = self._validate_header_string(name.lower())
         return [kv[1] for kv in self._headers if kv[0].lower()==name]
 
 
     def get(self,name,default=None):
         """Get the first header value for 'name', or return 'default'"""
-        name = self._convert_string_type(name.lower())
+        name = self._validate_header_string(name.lower())
         for k,v in self._headers:
             if k.lower()==name:
                 return v
@@ -148,8 +151,8 @@ class Headers:
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((self._convert_string_type(name),
-                self._convert_string_type(value)))
+            self._headers.append((self._validate_header_string(name),
+                self._validate_header_string(value)))
             return value
         else:
             return result
@@ -172,13 +175,13 @@ class Headers:
         """
         parts = []
         if _value is not None:
-            _value = self._convert_string_type(_value)
+            _value = self._validate_header_string(_value)
             parts.append(_value)
         for k, v in _params.items():
-            k = self._convert_string_type(k)
+            k = self._validate_header_string(k)
             if v is None:
                 parts.append(k.replace('_', '-'))
             else:
-                v = self._convert_string_type(v)
+                v = self._validate_header_string(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
+        self._headers.append((self._validate_header_string(_name), "; ".join(parts)))
