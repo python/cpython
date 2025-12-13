@@ -290,7 +290,7 @@ _PyFrame_GetFrameObject(_PyInterpreterFrame *frame)
 {
 
     assert(!_PyFrame_IsIncomplete(frame));
-    PyFrameObject *res =  frame->frame_obj;
+    PyFrameObject *res = frame->frame_obj;
     if (res != NULL) {
         return res;
     }

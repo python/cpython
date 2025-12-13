@@ -4,6 +4,7 @@ from test.support import import_helper
 
 
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 class FrameTest(unittest.TestCase):
@@ -50,6 +51,35 @@ class FrameTest(unittest.TestCase):
         frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
         # The following line should not cause a segmentation fault.
         self.assertIsNone(frame.f_back)
+
+
+class InterpreterFrameTest(unittest.TestCase):
+
+    @staticmethod
+    def func():
+        return sys._getframe()
+
+    def test_code(self):
+        frame = self.func()
+        code = _testinternalcapi.iframe_getcode(frame)
+        self.assertIs(code, self.func.__code__)
+
+    def test_lasti(self):
+        frame = self.func()
+        lasti = _testinternalcapi.iframe_getlasti(frame)
+        self.assertGreater(lasti, 0)
+        self.assertLess(lasti, len(self.func.__code__.co_code))
+
+    def test_line(self):
+        frame = self.func()
+        line = _testinternalcapi.iframe_getline(frame)
+        firstline = self.func.__code__.co_firstlineno
+        self.assertEqual(line, firstline + 2)
+
+    def test_frame_object(self):
+        frame = sys._getframe()
+        obj = _testinternalcapi.iframe_getframeobject(frame)
+        self.assertIs(obj, frame)
 
 
 if __name__ == "__main__":
