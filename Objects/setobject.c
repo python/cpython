@@ -2950,7 +2950,9 @@ PySet_Contains(PyObject *anyset, PyObject *key)
         PyErr_BadInternalCall();
         return -1;
     }
-
+    if (PyFrozenSet_CheckExact(anyset)) {
+        return set_contains_key((PySetObject *)anyset, key);
+    }
     int rv;
     Py_BEGIN_CRITICAL_SECTION(anyset);
     rv = set_contains_key((PySetObject *)anyset, key);
@@ -2976,17 +2978,24 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
-    if (!PySet_Check(anyset) &&
-        (!PyFrozenSet_Check(anyset) || !_PyObject_IsUniquelyReferenced(anyset))) {
-        PyErr_BadInternalCall();
-        return -1;
+    if (PySet_Check(anyset)) {
+        int rv;
+        Py_BEGIN_CRITICAL_SECTION(anyset);
+        rv = set_add_key((PySetObject *)anyset, key);
+        Py_END_CRITICAL_SECTION();
+        return rv;
     }
 
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(anyset);
-    rv = set_add_key((PySetObject *)anyset, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    if (PyFrozenSet_Check(anyset) && _PyObject_IsUniquelyReferenced(anyset)) {
+        // We can only change frozensets if they are uniquely referenced. The
+        // API limits the usage of `PySet_Add` to "fill in the values of brand
+        // new frozensets before they are exposed to other code". In this case,
+        // this can be done without a lock.
+        return set_add_key((PySetObject *)anyset, key);
+    }
+
+    PyErr_BadInternalCall();
+    return -1;
 }
 
 int

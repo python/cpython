@@ -1028,14 +1028,24 @@ _Py_DumpWideString(int fd, wchar_t *str)
 
 /* Write a frame into the file fd: "File "xxx", line xxx in xxx".
 
-   This function is signal safe. */
+   This function is signal safe.
 
-static void
+   Return 0 on success. Return -1 if the frame is invalid. */
+
+static int
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
+    if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+        /* Ignore trampoline frames and base frame sentinel */
+        return 0;
+    }
 
-    PyCodeObject *code =_PyFrame_GetCode(frame);
+    PyCodeObject *code = _PyFrame_SafeGetCode(frame);
+    if (code == NULL) {
+        return -1;
+    }
+
+    int res = 0;
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -1043,29 +1053,36 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "\"");
         _Py_DumpASCII(fd, code->co_filename);
         PUTS(fd, "\"");
-    } else {
-        PUTS(fd, "???");
     }
-    int lasti = PyUnstable_InterpreterFrame_GetLasti(frame);
-    int lineno = _PyCode_Addr2LineNoTstate(code, lasti);
+    else {
+        PUTS(fd, "???");
+        res = -1;
+    }
+
     PUTS(fd, ", line ");
+    int lasti = _PyFrame_SafeGetLasti(frame);
+    int lineno = -1;
+    if (lasti >= 0) {
+        lineno = _PyCode_SafeAddr2Line(code, lasti);
+    }
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
     }
     else {
         PUTS(fd, "???");
+        res = -1;
     }
-    PUTS(fd, " in ");
 
-    if (code->co_name != NULL
-       && PyUnicode_Check(code->co_name)) {
+    PUTS(fd, " in ");
+    if (code->co_name != NULL && PyUnicode_Check(code->co_name)) {
         _Py_DumpASCII(fd, code->co_name);
     }
     else {
         PUTS(fd, "???");
+        res = -1;
     }
-
     PUTS(fd, "\n");
+    return res;
 }
 
 static int
@@ -1075,6 +1092,9 @@ tstate_is_freed(PyThreadState *tstate)
         return 1;
     }
     if (_PyMem_IsPtrFreed(tstate->interp)) {
+        return 1;
+    }
+    if (_PyMem_IsULongFreed(tstate->thread_id)) {
         return 1;
     }
     return 0;
@@ -1096,7 +1116,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 
     if (tstate_is_freed(tstate)) {
-        PUTS(fd, "  <tstate is freed>\n");
+        PUTS(fd, "  <freed thread state>\n");
         return;
     }
 
@@ -1108,17 +1128,6 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
 
     unsigned int depth = 0;
     while (1) {
-        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-            /* Trampoline frame */
-            frame = frame->previous;
-            if (frame == NULL) {
-                break;
-            }
-
-            /* Can't have more than one shim frame in a row */
-            assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-        }
-
         if (MAX_FRAME_DEPTH <= depth) {
             if (MAX_FRAME_DEPTH < depth) {
                 PUTS(fd, "plus ");
@@ -1128,8 +1137,20 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             break;
         }
 
-        dump_frame(fd, frame);
-        frame = frame->previous;
+        if (_PyMem_IsPtrFreed(frame)) {
+            PUTS(fd, "  <freed frame>\n");
+            break;
+        }
+        // Read frame->previous early since memory can be freed during
+        // dump_frame()
+        _PyInterpreterFrame *previous = frame->previous;
+
+        if (dump_frame(fd, frame) < 0) {
+            PUTS(fd, "  <invalid frame>\n");
+            break;
+        }
+
+        frame = previous;
         if (frame == NULL) {
             break;
         }
@@ -1226,7 +1247,9 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
 
-    write_thread_name(fd, tstate);
+    if (!_PyMem_IsULongFreed(tstate->thread_id)) {
+        write_thread_name(fd, tstate);
+    }
 
     PUTS(fd, " (most recent call first):\n");
 }
@@ -1284,7 +1307,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
     unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
@@ -1295,11 +1317,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             PUTS(fd, "...\n");
             break;
         }
+
+        if (tstate_is_freed(tstate)) {
+            PUTS(fd, "<freed thread state>\n");
+            break;
+        }
+
         write_thread_id(fd, tstate, tstate == current_tstate);
         if (tstate == current_tstate && tstate->interp->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);
+
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);

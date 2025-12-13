@@ -524,8 +524,8 @@ The :mod:`locale` module defines the following exception and functions:
    SSH connections.
 
    Python doesn't internally use locale-dependent character transformation functions
-   from ``ctype.h``. Instead, an internal ``pyctype.h`` provides locale-independent
-   equivalents like :c:macro:`!Py_TOLOWER`.
+   from ``ctype.h``. Instead, ``pyctype.h`` provides locale-independent
+   equivalents like :c:macro:`Py_TOLOWER`.
 
 
 .. data:: LC_COLLATE

@@ -63,6 +63,8 @@ PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
 PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber);
 PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, uint16_t flags, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
+PyAPI_FUNC(_PyStackRef) _Py_stackref_get_borrowed_from(_PyStackRef ref, const char *filename, int linenumber);
+PyAPI_FUNC(void) _Py_stackref_set_borrowed_from(_PyStackRef ref, _PyStackRef borrowed_from, const char *filename, int linenumber);
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
@@ -73,6 +75,8 @@ static const _PyStackRef PyStackRef_ERROR = { .index = (1 << Py_TAGGED_SHIFT) };
 #define PyStackRef_True ((_PyStackRef){ .index = (4 << Py_TAGGED_SHIFT) })
 
 #define INITIAL_STACKREF_INDEX (5 << Py_TAGGED_SHIFT)
+
+#define PyStackRef_ZERO_BITS PyStackRef_NULL
 
 static inline _PyStackRef
 PyStackRef_Wrap(void *ptr)
@@ -248,7 +252,12 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
     } else {
         flags = Py_TAG_REFCNT;
     }
-    return _Py_stackref_create(obj, flags, filename, linenumber);
+    _PyStackRef new_ref = _Py_stackref_create(obj, flags, filename, linenumber);
+    if (flags == Py_TAG_REFCNT && !_Py_IsImmortal(obj)) {
+        _PyStackRef borrowed_from = _Py_stackref_get_borrowed_from(ref, filename, linenumber);
+        _Py_stackref_set_borrowed_from(new_ref, borrowed_from, filename, linenumber);
+    }
+    return new_ref;
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
@@ -259,6 +268,7 @@ _PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *
     assert(!PyStackRef_IsNull(ref));
     assert(!PyStackRef_IsTaggedInt(ref));
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
+    assert(Py_REFCNT(obj) > 0);
     if (PyStackRef_RefcountOnObject(ref)) {
         _Py_DECREF_SPECIALIZED(obj, destruct);
     }
@@ -274,7 +284,11 @@ _PyStackRef_Borrow(_PyStackRef ref, const char *filename, int linenumber)
         return ref;
     }
     PyObject *obj = _Py_stackref_get_object(ref);
-    return _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
+    _PyStackRef new_ref = _Py_stackref_create(obj, Py_TAG_REFCNT, filename, linenumber);
+    if (!_Py_IsImmortal(obj)) {
+        _Py_stackref_set_borrowed_from(new_ref, ref, filename, linenumber);
+    }
+    return new_ref;
 }
 #define PyStackRef_Borrow(REF) _PyStackRef_Borrow((REF), __FILE__, __LINE__)
 
@@ -310,13 +324,22 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
 static inline _PyStackRef
 _PyStackRef_MakeHeapSafe(_PyStackRef ref, const char *filename, int linenumber)
 {
-    if (PyStackRef_IsHeapSafe(ref)) {
+    // Special references that can't be closed.
+    if (ref.index < INITIAL_STACKREF_INDEX) {
         return ref;
     }
 
+    bool heap_safe = PyStackRef_IsHeapSafe(ref);
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
-    Py_INCREF(obj);
-    return _Py_stackref_create(obj, 0, filename, linenumber);
+    uint16_t flags = 0;
+    if (heap_safe) {
+        // Close old ref and create a new one with the same flags.
+        // This is necessary for correct borrow checking.
+        flags = ref.index & Py_TAG_BITS;
+    } else {
+        Py_INCREF(obj);
+    }
+    return _Py_stackref_create(obj, flags, filename, linenumber);
 }
 #define PyStackRef_MakeHeapSafe(REF) _PyStackRef_MakeHeapSafe(REF, __FILE__, __LINE__)
 
@@ -347,6 +370,10 @@ PyStackRef_IsNullOrInt(_PyStackRef ref);
 #else
 
 static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
+
+/* For use in the JIT to clear an unused value.
+ * PyStackRef_ZERO_BITS has no meaning and should not be used other than by the JIT. */
+static const _PyStackRef PyStackRef_ZERO_BITS = { .bits = 0 };
 
 /* Wrap a pointer in a stack ref.
  * The resulting stack reference is not safe and should only be used
@@ -457,13 +484,6 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
 }
 
 #define PyStackRef_IsDeferred(ref) (((ref).bits & Py_TAG_BITS) == Py_TAG_DEFERRED)
-
-static inline PyObject *
-PyStackRef_NotDeferred_AsPyObject(_PyStackRef stackref)
-{
-    assert(!PyStackRef_IsDeferred(stackref));
-    return (PyObject *)stackref.bits;
-}
 
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef stackref)
@@ -906,6 +926,17 @@ _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
     tstate_impl->c_stack_refs = ref->next;
 #endif
     PyStackRef_XCLOSE(ref->ref);
+}
+
+static inline _PyStackRef
+_PyThreadState_PopCStackRefSteal(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    return ref->ref;
 }
 
 #ifdef Py_GIL_DISABLED
