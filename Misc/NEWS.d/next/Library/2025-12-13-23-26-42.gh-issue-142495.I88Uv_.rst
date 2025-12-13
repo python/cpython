@@ -1,0 +1,3 @@
+:class:`collections.defaultdict` now prioritizes :meth:`~object.__setitem__`
+when inserting default values from ``default_factory``. This prevents race
+conditions where a default value would overwrite a value set by another thread.
