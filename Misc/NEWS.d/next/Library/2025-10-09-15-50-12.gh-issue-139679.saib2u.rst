@@ -1,0 +1,1 @@
+The default behaviour of shutil.make_archive(), in relation to handling of symbolic links when creating zip files, now matches the default behaviour of command-line zip utilities on Linux/UNIX/Windows: symbolic links to both files and directories are resolved to their targets and included in the zip file.
