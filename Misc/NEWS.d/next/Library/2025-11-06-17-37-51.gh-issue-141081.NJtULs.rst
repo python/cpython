@@ -1,0 +1,2 @@
+When ``__pycache__`` directories are created, they now contain a
+``.gitignore`` file that ignores their contents.
