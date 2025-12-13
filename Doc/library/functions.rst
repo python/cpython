@@ -340,8 +340,8 @@ are always available.  They are listed here in alphabetical order.
    It is needed to unambiguous :ref:`filter <warning-filter>` syntax warnings
    by module name.
 
-   This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   and :exc:`ValueError` if the source contains null bytes.
+   This function raises :exc:`SyntaxError` or :exc:`ValueError` if the compiled
+   source is invalid.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
