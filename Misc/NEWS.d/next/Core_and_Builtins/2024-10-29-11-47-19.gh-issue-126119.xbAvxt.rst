@@ -1,0 +1,4 @@
+Fix a crash in DEBUG builds due to a lack of overflow checks when setting
+the :attr:`co_stacksize <codeobject.co_stacksize>` field of a :ref:`code
+object <code-objects>` via :meth:`~object.__replace__`.
+Reported by Valery Fedorenko. Patch by Bénédikt Tran.
