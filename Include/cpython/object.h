@@ -300,7 +300,7 @@ PyAPI_FUNC(void) PyUnstable_Object_Dump(PyObject *);
 // Alias for backward compatibility
 #define _PyObject_Dump PyUnstable_Object_Dump
 
-PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);

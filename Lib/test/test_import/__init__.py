@@ -1713,78 +1713,6 @@ class PycacheTests(unittest.TestCase):
         finally:
             os.remove(pyc_file)
 
-    def test___cached__(self):
-        # Modules now also have an __cached__ that points to the pyc file.
-        m = __import__(TESTFN)
-        pyc_file = importlib.util.cache_from_source(TESTFN + '.py')
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), pyc_file))
-
-    @skip_if_dont_write_bytecode
-    def test___cached___legacy_pyc(self):
-        # Like test___cached__() except that for backward compatibility,
-        # when the pyc file lives where the py file would have been (and named
-        # without the tag), it is importable.  The __cached__ of the imported
-        # module is the pyc location.
-        __import__(TESTFN)
-        # pyc_file gets removed in _clean() via tearDown().
-        pyc_file = make_legacy_pyc(self.source)
-        os.remove(self.source)
-        unload(TESTFN)
-        importlib.invalidate_caches()
-        m = __import__(TESTFN)
-        self.assertEqual(m.__cached__,
-                         os.path.join(os.getcwd(), os.path.relpath(pyc_file)))
-
-    @skip_if_dont_write_bytecode
-    def test_package___cached__(self):
-        # Like test___cached__ but for packages.
-        def cleanup():
-            rmtree('pep3147')
-            unload('pep3147.foo')
-            unload('pep3147')
-        os.mkdir('pep3147')
-        self.addCleanup(cleanup)
-        # Touch the __init__.py
-        with open(os.path.join('pep3147', '__init__.py'), 'wb'):
-            pass
-        with open(os.path.join('pep3147', 'foo.py'), 'wb'):
-            pass
-        importlib.invalidate_caches()
-        m = __import__('pep3147.foo')
-        init_pyc = importlib.util.cache_from_source(
-            os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), init_pyc))
-        foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
-        self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.getcwd(), foo_pyc))
-
-    def test_package___cached___from_pyc(self):
-        # Like test___cached__ but ensuring __cached__ when imported from a
-        # PEP 3147 pyc file.
-        def cleanup():
-            rmtree('pep3147')
-            unload('pep3147.foo')
-            unload('pep3147')
-        os.mkdir('pep3147')
-        self.addCleanup(cleanup)
-        # Touch the __init__.py
-        with open(os.path.join('pep3147', '__init__.py'), 'wb'):
-            pass
-        with open(os.path.join('pep3147', 'foo.py'), 'wb'):
-            pass
-        importlib.invalidate_caches()
-        m = __import__('pep3147.foo')
-        unload('pep3147.foo')
-        unload('pep3147')
-        importlib.invalidate_caches()
-        m = __import__('pep3147.foo')
-        init_pyc = importlib.util.cache_from_source(
-            os.path.join('pep3147', '__init__.py'))
-        self.assertEqual(m.__cached__, os.path.join(os.getcwd(), init_pyc))
-        foo_pyc = importlib.util.cache_from_source(os.path.join('pep3147', 'foo.py'))
-        self.assertEqual(sys.modules['pep3147.foo'].__cached__,
-                         os.path.join(os.getcwd(), foo_pyc))
-
     def test_recompute_pyc_same_second(self):
         # Even when the source file doesn't change timestamp, a change in
         # source size is enough to trigger recomputation of the pyc file.
@@ -2053,10 +1981,6 @@ class ImportTracebackTests(unittest.TestCase):
         # away from the traceback.
         self.create_module("foo", "")
         importlib = sys.modules['_frozen_importlib_external']
-        if 'load_module' in vars(importlib.SourceLoader):
-            old_exec_module = importlib.SourceLoader.exec_module
-        else:
-            old_exec_module = None
         try:
             def exec_module(*args):
                 1/0
@@ -2069,10 +1993,7 @@ class ImportTracebackTests(unittest.TestCase):
                 self.fail("ZeroDivisionError should have been raised")
             self.assert_traceback(tb, [__file__, '<frozen importlib', __file__])
         finally:
-            if old_exec_module is None:
-                del importlib.SourceLoader.exec_module
-            else:
-                importlib.SourceLoader.exec_module = old_exec_module
+            del importlib.SourceLoader.exec_module
 
     @unittest.skipUnless(TESTFN_UNENCODABLE, 'need TESTFN_UNENCODABLE')
     def test_unencodable_filename(self):
@@ -2792,9 +2713,6 @@ class SinglephaseInitTests(unittest.TestCase):
         # This is essentially copied from the old imp module.
         from importlib._bootstrap import _load
         loader = self.LOADER(name, path)
-
-        # Issue bpo-24748: Skip the sys.modules check in _load_module_shim;
-        # always load new extension.
         spec = importlib.util.spec_from_file_location(name, path,
                                                       loader=loader)
         return _load(spec)

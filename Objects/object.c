@@ -1263,7 +1263,10 @@ PyObject *
 _PyObject_GetAttrId(PyObject *v, _Py_Identifier *name)
 {
     PyObject *result;
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
     PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+_Py_COMP_DIAG_POP
     if (!oname)
         return NULL;
     result = PyObject_GetAttr(v, oname);
@@ -2759,8 +2762,12 @@ PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
     _PyStackRef *stackpointer = frame->stackpointer;
     while (stackpointer > base) {
         stackpointer--;
-        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            return PyStackRef_IsHeapSafe(*stackpointer);
+        _PyStackRef ref = *stackpointer;
+        if (PyStackRef_IsTaggedInt(ref)) {
+            continue;
+        }
+        if (op == PyStackRef_AsPyObjectBorrow(ref)) {
+            return PyStackRef_IsHeapSafe(ref);
         }
     }
     return 0;
