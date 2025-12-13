@@ -73,6 +73,35 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             LZMACompressor(filters=[{"id": lzma.FILTER_X86, "foo": 0}])
 
+    def test_bad_mt_options(self):
+        with self.assertRaises(TypeError):
+            LZMACompressor(format=lzma.FORMAT_XZ, mt_options=3)
+        with self.assertRaises(TypeError):
+            LZMACompressor(format=lzma.FORMAT_XZ, mt_options={"threads": 3.45})
+        with self.assertRaises(TypeError):
+            LZMACompressor(format=lzma.FORMAT_XZ, mt_options={"flags": "asdf"})
+        # Can only specify MT encoder with XZ
+        with self.assertRaises(ValueError):
+            LZMACompressor(format=lzma.FORMAT_AUTO, mt_options=MT_OPTIONS_1)
+        with self.assertRaises(ValueError):
+            LZMACompressor(format=lzma.FORMAT_RAW, mt_options=MT_OPTIONS_1)
+        with self.assertRaises(ValueError):
+            LZMACompressor(format=lzma.FORMAT_ALONE, mt_options=MT_OPTIONS_1)
+
+        with self.assertRaises(TypeError):
+            LZMADecompressor(format=lzma.FORMAT_XZ, mt_options=3)
+        with self.assertRaises(TypeError):
+            LZMADecompressor(format=lzma.FORMAT_XZ,
+                             mt_options={"threads": 3.45})
+        with self.assertRaises(TypeError):
+            LZMADecompressor(format=lzma.FORMAT_XZ,
+                             mt_options={"flags": "asdf"})
+        # Can only specify MT encoder with XZ
+        with self.assertRaises(ValueError):
+            LZMADecompressor(format=lzma.FORMAT_RAW, mt_options=MT_OPTIONS_1)
+        with self.assertRaises(ValueError):
+            LZMADecompressor(format=lzma.FORMAT_ALONE, mt_options=MT_OPTIONS_1)
+
     def test_decompressor_after_eof(self):
         lzd = LZMADecompressor()
         lzd.decompress(COMPRESSED_XZ)
@@ -83,6 +112,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_XZ)
 
         lzd = LZMADecompressor(lzma.FORMAT_XZ, memlimit=1024)
+        self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_XZ)
+
+        lzd = LZMADecompressor(lzma.FORMAT_XZ, memlimit=1024,
+                               mt_options=MT_OPTIONS_1)
         self.assertRaises(LZMAError, lzd.decompress, COMPRESSED_XZ)
 
         lzd = LZMADecompressor(lzma.FORMAT_ALONE, memlimit=1024)
@@ -107,6 +140,10 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     def test_decompressor_xz(self):
         lzd = LZMADecompressor(lzma.FORMAT_XZ)
+        self._test_decompressor(lzd, COMPRESSED_XZ, lzma.CHECK_CRC64)
+
+    def test_decompressor_xz_mt(self):
+        lzd = LZMADecompressor(lzma.FORMAT_XZ, mt_options=MT_OPTIONS_1)
         self._test_decompressor(lzd, COMPRESSED_XZ, lzma.CHECK_CRC64)
 
     def test_decompressor_alone(self):
@@ -277,6 +314,12 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
     def test_roundtrip_xz(self):
         lzc = LZMACompressor()
+        cdata = lzc.compress(INPUT) + lzc.flush()
+        lzd = LZMADecompressor()
+        self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
+
+    def test_roundtrip_xz_mt(self):
+        lzc = LZMACompressor(format=lzma.FORMAT_XZ, mt_options=MT_OPTIONS_1)
         cdata = lzc.compress(INPUT) + lzc.flush()
         lzd = LZMADecompressor()
         self._test_decompressor(lzd, cdata, lzma.CHECK_CRC64)
@@ -2091,6 +2134,8 @@ ISSUE_21872_DAT = (
     b'\xa91 \xc9c\xd8\xbf\x97\xcfp\xe6\x19-\xad\xff\xcc\xd1N(\xe8'
     b'\xeb#\x182\x96I\xf7l\xf3r\x00'
 )
+
+MT_OPTIONS_1 = {"threads": 4}
 
 
 if __name__ == "__main__":
