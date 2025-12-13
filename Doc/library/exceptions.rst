@@ -1048,7 +1048,7 @@ their subgroups based on the types of the contained exceptions.
          ...     def derive(self, excs):
          ...         return MyGroup(self.message, excs)
          ...
-         >>> e = MyGroup("eg", [ValueError(1), TypeError(2)])
+         >>> e = MyGroup("eg", (ValueError(1), TypeError(2)))
          >>> e.add_note("a note")
          >>> e.__context__ = Exception("context")
          >>> e.__cause__ = Exception("cause")
@@ -1059,7 +1059,7 @@ their subgroups based on the types of the contained exceptions.
          ...
          >>> match, rest = exc.split(ValueError)
          >>> exc, exc.__context__, exc.__cause__, exc.__notes__
-         (MyGroup('eg', [ValueError(1), TypeError(2)]), Exception('context'), Exception('cause'), ['a note'])
+         (MyGroup('eg', (ValueError(1), TypeError(2))), Exception('context'), Exception('cause'), ['a note'])
          >>> match, match.__context__, match.__cause__, match.__notes__
          (MyGroup('eg', [ValueError(1)]), Exception('context'), Exception('cause'), ['a note'])
          >>> rest, rest.__context__, rest.__cause__, rest.__notes__
