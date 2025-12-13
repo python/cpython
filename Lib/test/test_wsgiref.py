@@ -109,7 +109,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver +"\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -206,7 +206,7 @@ class IntegrationTests(TestCase):
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer "+ pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -838,6 +838,17 @@ class HandlerTests(TestCase):
         self.assertIsNotNone(h.headers)
         self.assertIsNotNone(h.status)
         self.assertIsNotNone(h.environ)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":
