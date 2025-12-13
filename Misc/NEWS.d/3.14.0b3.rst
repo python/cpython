@@ -366,7 +366,7 @@ context. Patch by Pablo Galindo.
 .. date: 2025-06-11-15-08-10
 .. gh-issue: 127319
 .. nonce: OVGFSZ
-.. section: Core and Builtins
+.. section: Library
 
 Set the ``allow_reuse_port`` class variable to ``False`` on the XMLRPC,
 logging, and HTTP servers. This matches the behavior in prior Python
@@ -411,7 +411,7 @@ additional check to ``FOR_ITER``.
 .. date: 2025-06-02-13-57-40
 .. gh-issue: 116738
 .. nonce: ycJsL8
-.. section: Core and Builtins
+.. section: Library
 
 Make methods in :mod:`heapq` thread-safe on the :term:`free threaded <free
 threading>` build.
@@ -441,7 +441,7 @@ optimizing ``LOAD_FAST``.
 .. date: 2025-05-30-15-56-19
 .. gh-issue: 134908
 .. nonce: 3a7PxM
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when iterating over lines in a text file on the :term:`free
 threaded <free threading>` build.
