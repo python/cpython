@@ -100,6 +100,7 @@ struct collection_state {
     int skip_deferred_objects;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
+    Py_ssize_t candidates;
     Py_ssize_t long_lived_total;
     struct worklist unreachable;
     struct worklist legacy_finalizers;
@@ -371,6 +372,19 @@ op_from_block(void *block, void *arg, bool include_frozen)
     if (!include_frozen && gc_is_frozen(op)) {
         return NULL;
     }
+    return op;
+}
+
+// As above but returns untracked and frozen objects as well.
+static PyObject *
+op_from_block_all_gc(void *block, void *arg)
+{
+    struct visitor_args *a = arg;
+    if (block == NULL) {
+        return NULL;
+    }
+    PyObject *op = (PyObject *)((char*)block + a->offset);
+    assert(PyObject_IS_GC(op));
     return op;
 }
 
@@ -675,10 +689,11 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
         else {
             ss->capacity *= 2;
         }
-        ss->stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
-        if (ss->stack == NULL) {
+        gc_span_t *new_stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
+        if (new_stack == NULL) {
             return -1;
         }
+        ss->stack = new_stack;
     }
     assert(end > start);
     ss->stack[ss->size].start = start;
@@ -974,12 +989,9 @@ static bool
 update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
             void *block, size_t block_size, void *args)
 {
+    struct collection_state *state = (struct collection_state *)args;
     PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
-        return true;
-    }
-
-    if (gc_is_alive(op)) {
         return true;
     }
 
@@ -988,6 +1000,11 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         op->ob_tid = 0;
         _PyObject_GC_UNTRACK(op);
         gc_clear_unreachable(op);
+        return true;
+    }
+    // Marked objects count as candidates, immortals don't:
+    state->candidates++;
+    if (gc_is_alive(op)) {
         return true;
     }
 
@@ -1182,12 +1199,20 @@ static bool
 scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block_all_gc(block, args);
     if (op == NULL) {
         return true;
     }
-
     struct collection_state *state = (struct collection_state *)args;
+    // The free-threaded GC cost is proportional to the number of objects in
+    // the mimalloc GC heap and so we should include the counts for untracked
+    // and frozen objects as well.  This is especially important if many
+    // tuples have been untracked.
+    state->long_lived_total++;
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
+        return true;
+    }
+
     if (gc_is_unreachable(op)) {
         // Disable deferred refcounting for unreachable objects so that they
         // are collected immediately after finalization.
@@ -1205,6 +1230,9 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         else {
             worklist_push(&state->unreachable, op);
         }
+        // It is possible this object will be resurrected but
+        // for now we assume it will be deallocated.
+        state->long_lived_total--;
         return true;
     }
 
@@ -1218,7 +1246,6 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
     gc_clear_alive(op);
-    state->long_lived_total++;
     return true;
 }
 
@@ -1887,6 +1914,7 @@ handle_resurrected_objects(struct collection_state *state)
                 _PyObject_ASSERT(op, Py_REFCNT(op) > 1);
                 worklist_remove(&iter);
                 merge_refcount(op, -1);  // remove worklist reference
+                state->long_lived_total++;
             }
         }
     }
@@ -1910,7 +1938,8 @@ handle_resurrected_objects(struct collection_state *state)
 static void
 invoke_gc_callback(PyThreadState *tstate, const char *phase,
                    int generation, Py_ssize_t collected,
-                   Py_ssize_t uncollectable)
+                   Py_ssize_t uncollectable, Py_ssize_t candidates,
+                   double duration)
 {
     assert(!_PyErr_Occurred(tstate));
 
@@ -1924,10 +1953,12 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsn}",
+        info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", collected,
-            "uncollectable", uncollectable);
+            "uncollectable", uncollectable,
+            "candidates", candidates,
+            "duration", duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "invoking gc callbacks");
@@ -2203,7 +2234,19 @@ record_deallocation(PyThreadState *tstate)
     gc->alloc_count--;
     if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+        int new_count;
+        do {
+            if (count == 0) {
+                break;
+            }
+            new_count = count + (int)gc->alloc_count;
+            if (new_count < 0) {
+                new_count = 0;
+            }
+        } while (!_Py_atomic_compare_exchange_int(&gcstate->young.count,
+                                                  &count,
+                                                  new_count));
         gc->alloc_count = 0;
     }
 }
@@ -2284,9 +2327,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         }
     }
 
-    // Record the number of live GC objects
-    interp->gc.long_lived_total = state->long_lived_total;
-
     // Find weakref callbacks we will honor (but do not call them).
     find_weakref_callbacks(state);
     _PyEval_StartTheWorld(interp);
@@ -2307,7 +2347,10 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     if (err == 0) {
         clear_weakrefs(state);
     }
+    // Record the number of live GC objects
+    interp->gc.long_lived_total = state->long_lived_total;
     _PyEval_StartTheWorld(interp);
+
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
@@ -2339,7 +2382,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
-    PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -2358,30 +2400,32 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
+    gcstate->frame = tstate->current_frame;
 
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
 #ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
+    PyStats *s = _PyStats_GET();
+    if (s) {
+        s->object_stats.object_visits = 0;
     }
 #endif
     GC_STAT_ADD(generation, collections, 1);
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "start", generation, 0, 0);
+        invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0.0);
     }
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        // ignore error: don't interrupt the GC if reading the clock fails
-        (void)PyTime_PerfCounterRaw(&t1);
     }
 
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
+    PyTime_t start, stop;
+    (void)PyTime_PerfCounterRaw(&start);
 
     PyInterpreterState *interp = tstate->interp;
 
@@ -2396,13 +2440,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     m = state.collected;
     n = state.uncollectable;
 
+    (void)PyTime_PerfCounterRaw(&stop);
+    double duration = PyTime_AsSecondsDouble(stop - start);
+
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        PyTime_t t2;
-        (void)PyTime_PerfCounterRaw(&t2);
-        double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            n+m, n, d);
+            n+m, n, duration);
     }
 
     // Clear the current thread's free-list again.
@@ -2423,13 +2467,18 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;
+    stats->duration += duration;
+    stats->candidates += state.candidates;
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
-    if (_Py_stats) {
-        GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+    {
+        PyStats *s = _PyStats_GET();
+        if (s) {
+            GC_STAT_ADD(generation, object_visits,
+                s->object_stats.object_visits);
+            s->object_stats.object_visits = 0;
+        }
     }
 #endif
 
@@ -2438,10 +2487,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "stop", generation, m, n);
+        invoke_gc_callback(tstate, "stop", generation, m, n, state.candidates, duration);
     }
 
     assert(!_PyErr_Occurred(tstate));
+    gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
     return n + m;
 }

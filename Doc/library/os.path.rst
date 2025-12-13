@@ -449,7 +449,7 @@ the :mod:`glob` module.)
    .. versionchanged:: 3.10
       The *strict* parameter was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The :data:`ALL_BUT_LAST` and :data:`ALLOW_MISSING` values for
       the *strict* parameter was added.
 
@@ -457,13 +457,13 @@ the :mod:`glob` module.)
 
    Special value used for the *strict* argument in :func:`realpath`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: ALLOW_MISSING
 
    Special value used for the *strict* argument in :func:`realpath`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: relpath(path, start=os.curdir)

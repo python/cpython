@@ -1,0 +1,1 @@
+Add backtick markup support in :mod:`argparse` description and epilog text to highlight inline code when color output is enabled.

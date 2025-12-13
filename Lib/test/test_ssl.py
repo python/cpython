@@ -4346,8 +4346,14 @@ class ThreadedTests(unittest.TestCase):
         client_context.set_client_sigalgs("rsa_pss_rsae_sha256")
         server_context.set_client_sigalgs("rsa_pss_rsae_sha384")
 
-        # Some systems return ConnectionResetError on handshake failures
-        with self.assertRaises((ssl.SSLError, ConnectionResetError)):
+        with self.assertRaises((
+            ssl.SSLError,
+            # On handshake failures, some systems raise a ConnectionResetError.
+            ConnectionResetError,
+            # On handshake failures, macOS may raise a BrokenPipeError.
+            # See https://github.com/python/cpython/issues/139504.
+            BrokenPipeError,
+        )):
             server_params_test(client_context, server_context,
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
@@ -5607,7 +5613,7 @@ class TestEnumerations(unittest.TestCase):
         class Checked_TLSAlertType(enum.IntEnum):
             """Alert types for TLSContentType.ALERT messages
 
-            See RFC 8466, section B.2
+            See RFC 8446, section B.2
             """
             CLOSE_NOTIFY = 0
             UNEXPECTED_MESSAGE = 10

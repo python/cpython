@@ -1,6 +1,8 @@
 """create and manipulate C data types in Python"""
 
-import os as _os, sys as _sys
+import os as _os
+import sys as _sys
+import sysconfig as _sysconfig
 import types as _types
 
 __version__ = "1.1.0"
@@ -550,10 +552,9 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform == "android":
-    pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
-elif _sys.platform == "cygwin":
-    pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
+elif _sys.platform in ["android", "cygwin"]:
+    # These are Unix-like platforms which use a dynamically-linked libpython.
+    pythonapi = PyDLL(_sysconfig.get_config_var("LDLIBRARY"))
 else:
     pythonapi = PyDLL(None)
 

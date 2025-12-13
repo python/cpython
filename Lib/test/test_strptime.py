@@ -570,7 +570,7 @@ class StrptimeTests(unittest.TestCase):
     def test_date_locale2(self):
         # Test %x directive
         loc = locale.getlocale(locale.LC_TIME)[0]
-        if sys.platform.startswith('sunos'):
+        if sys.platform.startswith(('sunos', 'aix')):
             if loc in ('en_US', 'de_DE', 'ar_AE'):
                 self.skipTest(f'locale {loc!r} may not work on this platform')
         self.roundtrip('%x', slice(0, 3), (1900, 1, 1, 0, 0, 0, 0, 1, 0))

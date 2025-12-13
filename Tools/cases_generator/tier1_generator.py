@@ -160,7 +160,7 @@ def generate_tier1(
 #if !_Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode)
+        switch (dispatch_code)
 #endif
         {{
 #endif /* _Py_TAIL_CALL_INTERP */

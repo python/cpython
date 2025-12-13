@@ -54,8 +54,6 @@ ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
 
 tsan            Utilities for building CPython with thread-sanitizer.
 
-tz              A script to dump timezone from /usr/share/zoneinfo.
-
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
                 and Martin von Loewis).

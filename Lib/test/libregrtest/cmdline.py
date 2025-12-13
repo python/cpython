@@ -464,7 +464,11 @@ def _parse_args(args, **kwargs):
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
-        ns.verbose3 = True
+        if not ns.verbose:
+            ns.verbose3 = True
+        else:
+            # --verbose has the priority over --verbose3
+            pass
     else:
         ns._add_python_opts = False
 

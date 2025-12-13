@@ -1,0 +1,1 @@
+Fixed an issue where pdb.line_prefix assignment was ignored if assigned after the module was imported.

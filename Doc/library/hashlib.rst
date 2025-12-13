@@ -310,7 +310,7 @@ a file or file-like object.
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.14
-      Now raises a :exc:`BlockingIOError` if the file is opened in blocking
+      Now raises a :exc:`BlockingIOError` if the file is opened in non-blocking
       mode. Previously, spurious null bytes were added to the digest.
 
 

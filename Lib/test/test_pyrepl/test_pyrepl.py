@@ -1406,6 +1406,9 @@ class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
+        # Ignore PYTHONSTARTUP to not pollute the output
+        # with an unrelated traceback. See GH-137568.
+        env.pop('PYTHONSTARTUP', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -1440,10 +1443,10 @@ class TestMain(ReplTestCase):
         case2 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+        case3 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+        case4 = f"{pre}, '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
@@ -1825,3 +1828,86 @@ class TestMain(ReplTestCase):
                     " outside of the Python REPL"
                 )
                 self.assertIn(hint, output)
+
+class TestPyReplCtrlD(TestCase):
+    """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
+
+    Ctrl+D should:
+    - Exit on empty buffer (raises EOFError)
+    - Delete character when cursor is in middle of line
+    - Perform no operation when cursor is at end of line without newline
+    - Exit multiline mode when cursor is at end with trailing newline
+    - Run code up to that point when pressed on blank line with preceding lines
+    """
+    def prepare_reader(self, events):
+        console = FakeConsole(events)
+        config = ReadlineConfig(readline_completer=None)
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_ctrl_d_empty_line(self):
+        """Test that pressing Ctrl+D on empty line exits the program"""
+        events = [
+            Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+        ]
+        reader = self.prepare_reader(events)
+        with self.assertRaises(EOFError):
+            multiline_input(reader)
+
+    def test_ctrl_d_multiline_with_new_line(self):
+        """Test that pressing Ctrl+D in multiline mode with trailing newline exits multiline mode"""
+        events = itertools.chain(
+            code_to_events("def f():\n    pass\n"),  # Enter multiline mode with trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04")),  # Ctrl+D
+            ],
+        )
+        reader, _ = handle_all_events(events)
+        self.assertTrue(reader.finished)
+        self.assertEqual("def f():\n    pass\n", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_middle_of_line(self):
+        """Test that pressing Ctrl+D in multiline mode with cursor in middle deletes character"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello world"),  # Enter multiline mode
+            [
+                Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))
+            ] * 5,  # move cursor to 'w' in "world"
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ], # Ctrl+D should delete 'w'
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello orld", "".join(reader.buffer))
+
+    def test_ctrl_d_multiline_end_of_line_no_newline(self):
+        """Test that pressing Ctrl+D at end of line without newline performs no operation"""
+        events = itertools.chain(
+            code_to_events("def f():\n    hello"),  # Enter multiline mode, no trailing newline
+            [
+                Event(evt="key", data="\x04", raw=bytearray(b"\x04"))
+            ],  # Ctrl+D should be no-op
+        )
+        reader, _ = handle_all_events(events)
+        self.assertFalse(reader.finished)
+        self.assertEqual("def f():\n    hello", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_middle_of_line(self):
+        """Test that pressing Ctrl+D in single line mode deletes current character"""
+        events = itertools.chain(
+            code_to_events("hello"),
+            [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))],  # move left
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],    # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hell", "".join(reader.buffer))
+
+    def test_ctrl_d_single_line_end_no_newline(self):
+        """Test that pressing Ctrl+D at end of single line without newline does nothing"""
+        events = itertools.chain(
+            code_to_events("hello"),  # cursor at end of line
+            [Event(evt="key", data="\x04", raw=bytearray(b"\x04"))],  # Ctrl+D
+        )
+        reader, _ = handle_all_events(events)
+        self.assertEqual("hello", "".join(reader.buffer))
