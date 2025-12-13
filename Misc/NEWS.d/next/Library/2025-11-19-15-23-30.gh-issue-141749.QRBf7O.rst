@@ -1,0 +1,1 @@
+Pure python pickle.py error handling is more consistent with the c implementation, raising UnpicklingError exceptions for invalid pickle data instead of KeyError or IndexError.
