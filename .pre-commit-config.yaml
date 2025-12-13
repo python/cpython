@@ -94,7 +94,7 @@ repos:
     hooks:
       - id: actionlint
 
-  - repo: https://github.com/woodruffw/zizmor-pre-commit
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
     rev: v1.14.1
     hooks:
       - id: zizmor
