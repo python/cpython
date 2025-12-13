@@ -1769,12 +1769,17 @@ executor_clear(PyObject *op)
      * free the executor unless we hold a strong reference to it
      */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
+    _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
     Py_INCREF(executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
         _PyExecutorObject *e = executor->exits[i].executor;
-        executor->exits[i].executor = cold;
-        Py_DECREF(e);
+        executor->exits[i].executor = NULL;
+        // Only clear side exit executors in the chain, not
+        // those that have progress (inserted into bytecode).
+        if (e != cold && e != cold_dynamic && e->vm_data.code != NULL) {
+            executor_clear((PyObject *)e);
+        }
     }
     _Py_ExecutorDetach(executor);
     Py_DECREF(executor);
