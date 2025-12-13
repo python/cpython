@@ -3,6 +3,8 @@ What's New in IDLE 3.14.0
 Released on 2025-10-07
 =========================
 
+gh-123369: IDLE now support for REPL-specific commands, like help, exit,
+license and quit, without the need to call them as functions.
 
 gh-129873: Simplify displaying the IDLE doc by only copying the text
 section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.

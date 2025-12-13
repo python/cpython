@@ -106,8 +106,12 @@ Print Window
 
 Close Window
    Close the current window (if an unsaved editor, ask to save; if an unsaved
-   Shell, ask to quit execution).  Calling ``exit()`` or ``close()`` in the Shell
-   window also closes Shell.  If this is the only window, also exit IDLE.
+   Shell, ask to quit execution).
+
+   You can call ``exit()`` or ``quit()`` to close the Shell.
+   If the :ref:`new interactive interpreter <tut-interac>` is enabled,
+   IDLE also supports using ``exit`` or ``quit`` without the need to call them
+   as functions. If this is the only window, closing it will also exit IDLE.
 
 Exit IDLE
    Close all windows and quit IDLE (ask to save unsaved edit windows).
