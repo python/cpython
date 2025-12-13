@@ -548,7 +548,7 @@ atomic operation. Patch by Donghee Na.
 .. date: 2024-12-23-11-14-07
 .. gh-issue: 128192
 .. nonce: 02mEhD
-.. section: Core and Builtins
+.. section: Library
 
 Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
 supporting SHA-256 digest authentication as specified in :rfc:`7616`.
@@ -613,7 +613,7 @@ object when importing a non-existent symbol from a non-module object.
 .. date: 2024-12-17-18-20-37
 .. gh-issue: 128035
 .. nonce: JwqHdB
-.. section: Core and Builtins
+.. section: Library
 
 Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
 TLSv1.3 post-handshake client authentication (PHA). Patch by Will

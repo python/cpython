@@ -1187,7 +1187,7 @@ Improve the experimental JIT's handling of returns to unknown callers.
 .. date: 2025-02-11-20-38-37
 .. gh-issue: 129983
 .. nonce: _1Fujo
-.. section: Core and Builtins
+.. section: Library
 
 Fix data race in compile_template in :file:`sre.c`.
 
@@ -1335,7 +1335,7 @@ interpreter state.
 .. date: 2022-12-21-14-28-01
 .. gh-issue: 100388
 .. nonce: vne8ky
-.. section: Core and Builtins
+.. section: Library
 
 Fix the ``platform._sys_version()`` method when ``__DATE__`` is undefined at
 buildtime by changing default buildtime datetime string to the UNIX epoch.
