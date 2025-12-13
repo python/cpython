@@ -1176,12 +1176,12 @@ class MmapTests(unittest.TestCase):
 
         # Test name length limit (80 chars including prefix "cpython:mmap:")
         # Prefix is 13 chars, so max name is 67 chars
-        long_name = 'x' * 30
+        long_name = 'x' * 67
         result = m.set_name(long_name)
         self.assertIsNone(result)
 
         # Test name too long
-        too_long_name = 'x' * 80
+        too_long_name = 'x' * 68
         with self.assertRaises(ValueError):
             m.set_name(too_long_name)
 
