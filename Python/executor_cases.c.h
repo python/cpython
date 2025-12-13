@@ -3759,17 +3759,12 @@
             ((PyFloatObject *)left_o)->ob_fval *
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-2] = res;
-                stack_pointer[-1] = l;
-                stack_pointer[0] = r;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3800,17 +3795,15 @@
             ((PyFloatObject *)left_o)->ob_fval *
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-1] = res;
-                stack_pointer[0] = l;
-                stack_pointer[1] = r;
-                stack_pointer += 2;
+                stack_pointer[0] = right;
+                stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3842,12 +3835,16 @@
             ((PyFloatObject *)left_o)->ob_fval *
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
+                stack_pointer[0] = left;
+                stack_pointer[1] = right;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3875,17 +3872,12 @@
             ((PyFloatObject *)left_o)->ob_fval +
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-2] = res;
-                stack_pointer[-1] = l;
-                stack_pointer[0] = r;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3916,17 +3908,15 @@
             ((PyFloatObject *)left_o)->ob_fval +
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-1] = res;
-                stack_pointer[0] = l;
-                stack_pointer[1] = r;
-                stack_pointer += 2;
+                stack_pointer[0] = right;
+                stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3958,12 +3948,16 @@
             ((PyFloatObject *)left_o)->ob_fval +
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
+                stack_pointer[0] = left;
+                stack_pointer[1] = right;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -3991,17 +3985,12 @@
             ((PyFloatObject *)left_o)->ob_fval -
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-2] = res;
-                stack_pointer[-1] = l;
-                stack_pointer[0] = r;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4032,17 +4021,15 @@
             ((PyFloatObject *)left_o)->ob_fval -
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
-                stack_pointer[-1] = res;
-                stack_pointer[0] = l;
-                stack_pointer[1] = r;
-                stack_pointer += 2;
+                stack_pointer[0] = right;
+                stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4074,12 +4061,16 @@
             ((PyFloatObject *)left_o)->ob_fval -
             ((PyFloatObject *)right_o)->ob_fval;
             res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
-            l = left;
-            r = right;
             if (PyStackRef_IsNull(res)) {
+                stack_pointer[0] = left;
+                stack_pointer[1] = right;
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            l = left;
+            r = right;
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;

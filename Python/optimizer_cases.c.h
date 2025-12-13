@@ -693,11 +693,11 @@
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsNull(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 l = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(l_stackref));
@@ -751,11 +751,11 @@
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsNull(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 l = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(l_stackref));
@@ -809,11 +809,11 @@
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
                 res_stackref = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l_stackref = left;
                 r_stackref = right;
-                if (PyStackRef_IsNull(res_stackref )) {
-                    goto error;
-                }
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 l = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(l_stackref));

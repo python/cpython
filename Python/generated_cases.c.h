@@ -131,11 +131,11 @@
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l = left;
                 r = right;
-                if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
-                }
             }
             // _POP_TOP_FLOAT
             {
@@ -472,11 +472,11 @@
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l = left;
                 r = right;
-                if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
-                }
             }
             // _POP_TOP_FLOAT
             {
@@ -1070,11 +1070,11 @@
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
+                if (PyStackRef_IsNull(res)) {
+                    JUMP_TO_LABEL(error);
+                }
                 l = left;
                 r = right;
-                if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
-                }
             }
             // _POP_TOP_FLOAT
             {
