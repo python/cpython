@@ -4681,6 +4681,20 @@ def bœr():
         stdout, stderr = self.run_pdb_script(script, commands)
         self.assertIn("The specified object 'C.foo' is not a function", stdout)
 
+    def test_break_function_with_file(self):
+        script = """
+            def foo():
+                pass
+        """
+        commands = """
+            break main:foo
+            clear main:foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:3")
+        self.assertRegex(stdout, r"Deleted breakpoint 1 at .*main\.py:3")
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
