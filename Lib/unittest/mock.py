@@ -606,8 +606,8 @@ class NonCallableMock(Base):
         return self._spec_class
 
     called = _delegating_property('called')
-    call_args = _delegating_property('call_args')
     call_count = _delegating_property('call_count')
+    call_args = _delegating_property('call_args')
     call_args_list = _delegating_property('call_args_list')
     mock_calls = _delegating_property('mock_calls')
 
