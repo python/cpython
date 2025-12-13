@@ -238,11 +238,7 @@ class TestThreadingMockRaceCondition(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-        # Without proper locking, this assertion will fail due to race condition
-        self.assertEqual(m.call_count, LOOPS * THREADS,
-                        f"Race condition detected: expected {LOOPS * THREADS}, "
-                        f"got {m.call_count}. call_args_list has "
-                        f"{len(m.call_args_list)} items.")
+        self.assertEqual(m.call_count, LOOPS * THREADS)
 
 
 if __name__ == "__main__":
