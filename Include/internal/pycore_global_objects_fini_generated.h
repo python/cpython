@@ -1994,6 +1994,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(readline));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(readonly));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(real));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(recursive));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reducer_override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(registry));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rel_tol));
