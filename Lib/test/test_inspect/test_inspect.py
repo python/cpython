@@ -334,6 +334,17 @@ class TestPredicates(IsTestBase):
         self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_classy))
         self.assertTrue(inspect.iscoroutinefunction(Cl3.do_something_static))
 
+        # Test markcoroutinefunction with functools.partial
+        async def _fn4():
+            pass
+
+        def fn4():
+            return _fn4()
+
+        partial_fn4 = functools.partial(fn4)
+        marked_partial_fn4 = inspect.markcoroutinefunction(partial_fn4)
+        self.assertTrue(inspect.iscoroutinefunction(marked_partial_fn4))
+
         self.assertFalse(
             inspect.iscoroutinefunction(unittest.mock.Mock()))
         self.assertTrue(
