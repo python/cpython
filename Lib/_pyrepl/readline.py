@@ -65,7 +65,6 @@ if TYPE_CHECKING:
 
 MoreLinesCallable = Callable[[str], bool]
 
-
 __all__ = [
     "add_history",
     "clear_history",
@@ -344,6 +343,10 @@ class backspace_dedent(commands.Command):
 # ____________________________________________________________
 
 
+def _is_vi_mode_enabled() -> bool:
+    return os.environ.get("PYREPL_VI_MODE", "").lower() in {"1", "true", "on", "yes"}
+
+
 @dataclass(slots=True)
 class _ReadlineWrapper:
     f_in: int = -1
@@ -362,7 +365,11 @@ class _ReadlineWrapper:
     def get_reader(self) -> ReadlineAlikeReader:
         if self.reader is None:
             console = Console(self.f_in, self.f_out, encoding=ENCODING)
-            self.reader = ReadlineAlikeReader(console=console, config=self.config)
+            self.reader = ReadlineAlikeReader(
+                console=console,
+                config=self.config,
+                use_vi_mode=_is_vi_mode_enabled()
+            )
         return self.reader
 
     def input(self, prompt: object = "") -> str:
