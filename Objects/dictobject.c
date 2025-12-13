@@ -1599,7 +1599,7 @@ lookup_threadsafe_unicode(PyDictKeysObject *dk, PyObject *key, Py_hash_t hash, _
             return DKIX_EMPTY;
         }
         if (_PyObject_HasDeferredRefcount(value)) {
-            *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
+            *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_REFCNT };
             return ix;
         }
         if (_Py_TryIncrefCompare(addr_of_value, value)) {
