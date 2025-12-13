@@ -402,7 +402,7 @@ Tracing events, with the correct line number, are generated for all lines of cod
 The :attr:`~frame.f_lineno` attribute of frame objects will always contain the
 expected line number.
 
-The :attr:`~codeobject.co_lnotab` attribute of
+The :attr:`!codeobject.co_lnotab` attribute of
 :ref:`code objects <code-objects>` is deprecated and
 will be removed in 3.12.
 Code that needs to convert from offset to line number should use the new
