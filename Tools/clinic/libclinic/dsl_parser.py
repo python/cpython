@@ -17,7 +17,7 @@ from libclinic import (
 from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
-    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
+    CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW, METHOD_GETATTR,
     GETTER, SETTER)
 from libclinic.converter import (
     converters, legacy_converters)
@@ -45,7 +45,6 @@ __eq__
 __float__
 __floordiv__
 __ge__
-__getattr__
 __getattribute__
 __getitem__
 __gt__
@@ -598,6 +597,8 @@ class DSLParser:
             self.kind = METHOD_NEW
         elif name == '__init__':
             self.kind = METHOD_INIT
+        elif name == '__getattr__':
+            self.kind = METHOD_GETATTR
 
     def resolve_return_converter(
         self, full_name: str, forced_converter: str
@@ -1533,7 +1534,7 @@ class DSLParser:
         assert self.function is not None
         f = self.function
         # For the following special cases, it does not make sense to render a docstring.
-        if f.kind in {METHOD_INIT, METHOD_NEW, GETTER, SETTER} and not f.docstring:
+        if f.kind in {METHOD_INIT, METHOD_NEW, METHOD_GETATTR, GETTER, SETTER} and not f.docstring:
             return f.docstring
 
         # Enforce the summary line!

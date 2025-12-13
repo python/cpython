@@ -2587,6 +2587,25 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=1)
 
+    def test_can_convert_module_getattr(self):
+        function = self.parse_function("""
+            module m
+            __getattr__
+                name: object
+                /
+        """)
+        self.assertEqual(function.kind, FunctionKind.METHOD_GETATTR)
+
+    def test_can_convert_class_getattr(self):
+        function = self.parse_function("""
+            module m
+            class m.T "PyObject *" ""
+            m.T.__getattr__
+                name: object
+                /
+        """, signatures_in_block=3, function_index=2)
+        self.assertEqual(function.kind, FunctionKind.METHOD_GETATTR)
+
     def test_cannot_specify_pydefault_without_default(self):
         err = "You can't specify py_default without specifying a default value!"
         block = """

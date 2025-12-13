@@ -2038,15 +2038,20 @@ zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
     return crc32_combine(crc1, crc2, len);
 }
 
-static PyObject *
-zlib_getattr(PyObject *self, PyObject *args)
-{
-    PyObject *name;
-    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
-        return NULL;
-    }
+/*[clinic input]
+zlib.__getattr__
 
-    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+    name: str
+    /
+
+Module __getattr__
+[clinic start generated code]*/
+
+static PyObject *
+zlib___getattr___impl(PyObject *module, const char *name)
+/*[clinic end generated code: output=5ec48f62426a4b95 input=59a69e9dcff70564]*/
+{
+    if (strcmp(name, "__version__") == 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                          "'__version__' is deprecated and slated for removal in Python 3.20",
                          1) < 0) {
@@ -2055,7 +2060,7 @@ zlib_getattr(PyObject *self, PyObject *args)
         return PyUnicode_FromString("1.0");
     }
 
-    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %R", name);
+    PyErr_Format(PyExc_AttributeError, "module 'zlib' has no attribute %s", name);
     return NULL;
 }
 
@@ -2069,7 +2074,7 @@ static PyMethodDef zlib_methods[] =
     ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
-    {"__getattr__", zlib_getattr, METH_VARARGS, "Module __getattr__"},
+    ZLIB___GETATTR___METHODDEF
     {NULL, NULL}
 };
 
