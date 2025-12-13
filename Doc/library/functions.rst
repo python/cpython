@@ -1553,7 +1553,6 @@ are always available.  They are listed here in alphabetical order.
    length 1, return its single byte value.
    For example, ``ord(b'a')`` returns the integer ``97``.
 
-
 .. function:: pow(base, exp, mod=None)
 
    Return *base* to the power *exp*; if *mod* is present, return *base* to the
@@ -1595,7 +1594,6 @@ are always available.  They are listed here in alphabetical order.
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
 
-
 .. function:: print(*objects, sep=' ', end='\n', file=None, flush=False)
 
    Print *objects* to the text stream *file*, separated by *sep* and followed
@@ -1613,13 +1611,38 @@ are always available.  They are listed here in alphabetical order.
    arguments are converted to text strings, :func:`print` cannot be used with
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
-   Output buffering is usually determined by *file*.
-   However, if *flush* is true, the stream is forcibly flushed.
+   Output buffering is usually determined by *file*.  However, if *flush* is
+   true, the stream is forcibly flushed.
 
+   .. note::
+
+      In Python, printing a string containing newline characters does not automatically
+      flush stdout. Python performs buffering at the write/operation level, so newlines
+      inside a single write do not necessarily trigger an immediate flush. The exact
+      timing of output may vary depending on the environment:
+
+      - When stdout is connected to a terminal (TTY), output is line-buffered and
+        typically flushes after the write completes.
+      - When stdout is redirected to a file or pipe, output may be fully buffered and
+        not flush until the buffer fills or flush is requested.
+
+      For guaranteed immediate output, use ``flush=True`` or call
+      ``sys.stdout.flush()`` explicitly. Running Python with the ``-u`` flag also
+      forces unbuffered output, which may be useful in scripts requiring immediate writes.
+
+      Example:
+
+      .. code-block:: python
+
+         from time import sleep
+         # This call performs one write operation, so the newline inside the string
+         # does not trigger an immediate flush by itself.
+         print("Hello\nWorld")
+         sleep(3)
+         print("Hi there!")
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
-
 
 .. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
