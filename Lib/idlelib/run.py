@@ -235,7 +235,15 @@ def get_message_lines(typ, exc, tb):
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
             sys.__excepthook__(typ, exc, tb)
-        return [err.getvalue().split("\n")[-2] + "\n"]
+        err_list = err.getvalue().split("\n")[1:]
+
+        for i in range(len(err_list)):
+            if err_list[i].startswith(" "):
+                continue
+            else:
+                err_list = err_list[i:-1]
+                break
+        return ["\n".join(err_list) + "\n"]
     else:
         return traceback.format_exception_only(typ, exc)
 
