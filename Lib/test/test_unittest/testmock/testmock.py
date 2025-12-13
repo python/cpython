@@ -668,6 +668,47 @@ class MockTest(unittest.TestCase):
                     getattr, mock, 'something_else'
                 )
 
+    def _check_autospeced_something(self, something):
+        for method_name in ['meth', 'cmeth', 'smeth']:
+            mock_method = getattr(something, method_name)
+
+            # check that the methods are callable with correct args.
+            mock_method(sentinel.a, sentinel.b, sentinel.c)
+            mock_method(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)
+            mock_method.assert_has_calls([
+                call(sentinel.a, sentinel.b, sentinel.c),
+                call(sentinel.a, sentinel.b, sentinel.c, d=sentinel.d)])
+
+            # assert that TypeError is raised if the method signature is not
+            # respected.
+            self.assertRaises(TypeError, mock_method)
+            self.assertRaises(TypeError, mock_method, sentinel.a)
+            self.assertRaises(TypeError, mock_method, a=sentinel.a)
+            self.assertRaises(TypeError, mock_method, sentinel.a, sentinel.b,
+                              sentinel.c, e=sentinel.e)
+
+        # assert that AttributeError is raised if the method does not exist.
+        self.assertRaises(AttributeError, getattr, something, 'foolish')
+
+
+    def test_mock_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock_something = Mock(autospec=spec)
+            self._check_autospeced_something(mock_something)
+
+
+    def test_mock_spec_function(self):
+        def foo(lish):
+            pass
+
+        mock_foo = Mock(spec=foo)
+
+        mock_foo(sentinel.lish)
+        mock_foo.assert_called_once_with(sentinel.lish)
+        self.assertRaises(TypeError, mock_foo)
+        self.assertRaises(TypeError, mock_foo, sentinel.foo, sentinel.lish)
+        self.assertRaises(TypeError, mock_foo, foo=sentinel.foo)
+
 
     def test_from_spec(self):
         class Something(object):
@@ -1965,6 +2006,13 @@ class MockTest(unittest.TestCase):
             mock.mock_add_spec(int)
             self.assertEqual(int(mock), 4)
             self.assertRaises(TypeError, lambda: mock['foo'])
+
+
+    def test_mock_add_spec_autospec_all_members(self):
+        for spec in [Something, Something()]:
+            mock_something = Mock()
+            mock_something.mock_add_spec(spec, autospec=True)
+            self._check_autospeced_something(mock_something)
 
 
     def test_adding_child_mock(self):
