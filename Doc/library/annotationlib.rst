@@ -448,7 +448,7 @@ Supporting annotations in custom objects
 -------------------------------------------
 
 Objects can support annotation introspection by implementing the :attr:`~object.__annotate__`
-protocol. When an object provides an :attr:`!__annotate__` attribute, :func:`get_annotations`
+protocol. When an object's class provides an :attr:`!__annotate__` descriptor, :func:`get_annotations`
 will call it to retrieve the annotations for that object. The :attr:`!__annotate__` function
 should accept a single argument, a member of the :class:`Format` enum, and return a dictionary
 mapping annotation names to their values in the requested format.
