@@ -843,7 +843,9 @@ def getfile(object):
     if ismodule(object):
         if getattr(object, '__file__', None):
             return object.__file__
-        raise TypeError('{!r} is a built-in module'.format(object))
+        if getattr(object, '__spec__', None) is not None:
+            raise TypeError(f'{object!r} is a built-in module')
+        raise TypeError(f'cannot get source from {object!r}')
     if isclass(object):
         if hasattr(object, '__module__'):
             module = sys.modules.get(object.__module__)
