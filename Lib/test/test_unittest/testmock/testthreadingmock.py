@@ -199,16 +199,17 @@ class TestThreadingMock(unittest.TestCase):
         m.assert_called_once()
 
     def test_call_count_thread_safe(self):
+        # See https://github.com/python/cpython/issues/142651.
+        m = ThreadingMock()
+        LOOPS = 100
+        THREADS = 10
+        def test_function():
+            for _ in range(LOOPS):
+                m()
+
         oldswitchinterval = sys.getswitchinterval()
         setswitchinterval(1e-6)
         try:
-            m = ThreadingMock()
-            # 100 loops with 10 threads reliably reproduces the issue while keeping runtime ~0.2s
-            LOOPS = 100
-            THREADS = 10
-            def test_function():
-                for _ in range(LOOPS):
-                    m()
             threads = [threading.Thread(target=test_function) for _ in range(THREADS)]
             for thread in threads:
                 thread.start()
