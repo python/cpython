@@ -1,0 +1,1 @@
+Fixed a thread safety issue in :mod:`unittest.mock` where :attr:`~unittest.mock.Mock.call_count` could return inaccurate values when a mock was called concurrently from multiple threads. The attribute now derives its value from the length of :attr:`~unittest.mock.Mock.call_args_list` to ensure consistency.
