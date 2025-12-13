@@ -275,12 +275,12 @@ make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *locati
 }
 
 int
-parse_code_object(RemoteUnwinderObject *unwinder,
-                  PyObject **result,
-                  uintptr_t address,
-                  uintptr_t instruction_pointer,
-                  uintptr_t *previous_frame,
-                  int32_t tlbc_index)
+parse_executable_object(RemoteUnwinderObject *unwinder,
+                        PyObject **result,
+                        uintptr_t address,
+                        uintptr_t instruction_pointer,
+                        uintptr_t *previous_frame,
+                        int32_t tlbc_index)
 {
     void *key = (void *)address;
     CachedCodeMetadata *meta = NULL;
@@ -313,6 +313,23 @@ parse_code_object(RemoteUnwinderObject *unwinder,
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
             goto error;
         }
+
+        // Check for non code type executables
+        uintptr_t code_type = GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.pyobject.ob_type);
+        if (code_type != unwinder->frame_executable_types[PyUnstable_EXECUTABLE_KIND_PY_FUNCTION]) {
+            if (code_type != unwinder->frame_executable_types[PyUnstable_EXECUTABLE_KIND_JIT]) {
+                // Unsupported executable type, report the frame as being invalid
+                return 0;
+            }
+            real_address = GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.jit_executable.code);
+            if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                    &unwinder->handle, real_address, SIZEOF_CODE_OBJ, code_object) < 0)
+            {
+                set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read code object");
+                goto error;
+            }
+        }
+
 
         func = read_py_str(unwinder,
             GET_MEMBER(uintptr_t, code_object, unwinder->debug_offsets.code_object.qualname), 1024);
@@ -364,6 +381,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
     ptrdiff_t addrq;
 
 #ifdef Py_GIL_DISABLED
+    real_address = meta->addr_code_adaptive - (uintptr_t)unwinder->debug_offsets.code_object.co_code_adaptive;
     // Handle thread-local bytecode (TLBC) in free threading builds
     if (tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
         // No TLBC or no unwinder - use main bytecode directly
