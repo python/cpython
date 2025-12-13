@@ -1,5 +1,6 @@
 import time
 import unittest
+import threading
 import concurrent.futures
 
 from test.support import threading_helper
@@ -195,6 +196,27 @@ class TestThreadingMock(unittest.TestCase):
         m.wait_until_called()
         m.wait_until_any_call_with()
         m.assert_called_once()
+
+    def test_call_count_thread_safe(self):
+        
+        m = ThreadingMock()
+        
+        # 3k loops reliably reproduces the issue while keeping runtime ~0.6s
+        LOOPS = 3_000
+        THREADS = 10
+        
+        def test_function():
+            for _ in range(LOOPS):
+                m()
+        
+        threads = [threading.Thread(target=test_function) for _ in range(THREADS)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        
+        self.assertEqual(m.call_count, LOOPS * THREADS,
+                        f"Expected {LOOPS * THREADS}, got {m.call_count}")
 
 
 if __name__ == "__main__":
