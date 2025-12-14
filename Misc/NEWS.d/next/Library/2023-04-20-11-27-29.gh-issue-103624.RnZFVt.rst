@@ -1,0 +1,2 @@
+Ignore :exc:`DeprecationWarning` when getting package metadata in
+:mod:`pydoc`.

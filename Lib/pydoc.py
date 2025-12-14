@@ -760,13 +760,15 @@ class HTMLDoc(Doc):
         except TypeError:
             filelink = '(built-in)'
         info = []
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
-            if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
-                version = version[11:-1].strip()
-            info.append('version %s' % self.escape(version))
-        if hasattr(object, '__date__'):
-            info.append(self.escape(str(object.__date__)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            if hasattr(object, '__version__'):
+                version = str(object.__version__)
+                if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
+                    version = version[11:-1].strip()
+                info.append('version %s' % self.escape(version))
+            if hasattr(object, '__date__'):
+                info.append(self.escape(str(object.__date__)))
         if info:
             head = head + ' (%s)' % ', '.join(info)
         docloc = self.getdocloc(object)
@@ -847,12 +849,14 @@ class HTMLDoc(Doc):
                 contents.append(self.document(value, key))
             result = result + self.bigsection(
                 'Data', 'data', '<br>\n'.join(contents))
-        if hasattr(object, '__author__'):
-            contents = self.markup(str(object.__author__), self.preformat)
-            result = result + self.bigsection('Author', 'author', contents)
-        if hasattr(object, '__credits__'):
-            contents = self.markup(str(object.__credits__), self.preformat)
-            result = result + self.bigsection('Credits', 'credits', contents)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            if hasattr(object, '__author__'):
+                contents = self.markup(str(object.__author__), self.preformat)
+                result = result + self.bigsection('Author', 'author', contents)
+            if hasattr(object, '__credits__'):
+                contents = self.markup(str(object.__credits__), self.preformat)
+                result = result + self.bigsection('Credits', 'credits', contents)
 
         return result
 
@@ -1296,17 +1300,19 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
-            if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
-                version = version[11:-1].strip()
-            result = result + self.section('VERSION', version)
-        if hasattr(object, '__date__'):
-            result = result + self.section('DATE', str(object.__date__))
-        if hasattr(object, '__author__'):
-            result = result + self.section('AUTHOR', str(object.__author__))
-        if hasattr(object, '__credits__'):
-            result = result + self.section('CREDITS', str(object.__credits__))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            if hasattr(object, '__version__'):
+                version = str(object.__version__)
+                if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
+                    version = version[11:-1].strip()
+                result = result + self.section('VERSION', version)
+            if hasattr(object, '__date__'):
+                result = result + self.section('DATE', str(object.__date__))
+            if hasattr(object, '__author__'):
+                result = result + self.section('AUTHOR', str(object.__author__))
+            if hasattr(object, '__credits__'):
+                result = result + self.section('CREDITS', str(object.__credits__))
         try:
             file = inspect.getabsfile(object)
         except TypeError:
