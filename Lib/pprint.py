@@ -609,6 +609,42 @@ class PrettyPrinter:
 
     _dispatch[_collections.UserString.__repr__] = _pprint_user_string
 
+    def _format_pprint(self, object, method, context, maxlevels, level):
+        """Format an object using its __pprint__ method.
+
+        The __pprint__ method should be a generator yielding values:
+           - yield value                  -> positional arg
+           - yield (name, value)          -> keyword arg, always shown
+           - yield (name, value, default) -> keyword arg, shown if value != default
+        """
+        cls_name = type(object).__name__
+        parts = []
+        readable = True
+
+        for item in method(object):
+            if isinstance(item, tuple):
+                if len(item) == 2:
+                    # (name, value) - always show
+                    name, value = item
+                    vrep, vreadable, _ = self.format(value, context, maxlevels, level + 1)
+                    parts.append(f"{name}={vrep}")
+                    readable = readable and vreadable
+                elif len(item) == 3:
+                    # (name, value, default) - show only if value != default
+                    name, value, default = item
+                    if value != default:
+                        vrep, vreadable, _ = self.format(value, context, maxlevels, level + 1)
+                        parts.append(f"{name}={vrep}")
+                        readable = readable and vreadable
+            else:
+                # Positional argument
+                vrep, vreadable, _ = self.format(item, context, maxlevels, level + 1)
+                parts.append(vrep)
+                readable = readable and vreadable
+
+        rep = f"{cls_name}({', '.join(parts)})"
+        return rep, readable, False
+
     def _safe_repr(self, object, context, maxlevels, level):
         # Return triple (repr_string, isreadable, isrecursive).
         typ = type(object)
@@ -616,7 +652,7 @@ class PrettyPrinter:
             return repr(object), True, False
 
         if (p := getattr(typ, "__pprint__", None)):
-            return p(object, context, maxlevels, level)
+            return self._format_pprint(object, p, context, maxlevels, level)
 
         r = getattr(typ, "__repr__", None)
 

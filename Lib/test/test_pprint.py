@@ -136,15 +136,19 @@ class Orderable:
 
 
 class CustomPrintable:
+    def __init__(self, name="my pprint", value=42):
+        self.name = name
+        self.value = value
+
     def __str__(self):
         return "my str"
 
     def __repr__(self):
         return "my str"
 
-    def __pprint__(self, context, maxlevels, level):
-        # The custom pretty repr, not-readable bool, no recursion detected.
-        return "my pprint", False, False
+    def __pprint__(self):
+        yield self.name
+        yield ("value", self.value)
 
 
 class QueryTestCase(unittest.TestCase):
@@ -1490,7 +1494,72 @@ ValuesView({'a': 6,
         pp = pprint.PrettyPrinter(stream=stream)
         custom_obj = CustomPrintable()
         pp.pprint(custom_obj)
-        self.assertEqual(stream.getvalue(), "my pprint\n")
+        self.assertEqual(stream.getvalue(), "CustomPrintable('my pprint', value=42)\n")
+
+    def test_pprint_protocol_positional(self):
+        # Test __pprint__ with positional arguments only
+        class Point:
+            def __init__(self, x, y):
+                self.x = x
+                self.y = y
+            def __pprint__(self):
+                yield self.x
+                yield self.y
+        self.assertEqual(pprint.pformat(Point(1, 2)), "Point(1, 2)")
+
+    def test_pprint_protocol_keyword(self):
+        # Test __pprint__ with keyword arguments
+        class Config:
+            def __init__(self, host, port):
+                self.host = host
+                self.port = port
+            def __pprint__(self):
+                yield ("host", self.host)
+                yield ("port", self.port)
+        self.assertEqual(pprint.pformat(Config("localhost", 8080)),
+                         "Config(host='localhost', port=8080)")
+
+    def test_pprint_protocol_default(self):
+        # Test __pprint__ with default values (3-tuple form)
+        class Bird:
+            def __init__(self, name, fly=True, extinct=False):
+                self.name = name
+                self.fly = fly
+                self.extinct = extinct
+            def __pprint__(self):
+                yield self.name
+                yield ("fly", self.fly, True)       # hide if True
+                yield ("extinct", self.extinct, False)  # hide if False
+
+        # Defaults should be hidden
+        self.assertEqual(pprint.pformat(Bird("sparrow")),
+                         "Bird('sparrow')")
+        # Non-defaults should be shown
+        self.assertEqual(pprint.pformat(Bird("dodo", fly=False, extinct=True)),
+                         "Bird('dodo', fly=False, extinct=True)")
+
+    def test_pprint_protocol_nested(self):
+        # Test __pprint__ with nested objects
+        class Container:
+            def __init__(self, items):
+                self.items = items
+            def __pprint__(self):
+                yield ("items", self.items)
+        c = Container([1, 2, 3])
+        self.assertEqual(pprint.pformat(c), "Container(items=[1, 2, 3])")
+        # Nested in a list
+        self.assertEqual(pprint.pformat([c]), "[Container(items=[1, 2, 3])]")
+
+    def test_pprint_protocol_isreadable(self):
+        # Test that isreadable works correctly with __pprint__
+        class Readable:
+            def __pprint__(self):
+                yield 42
+        class Unreadable:
+            def __pprint__(self):
+                yield open  # built-in function, not readable
+        self.assertTrue(pprint.isreadable(Readable()))
+        self.assertFalse(pprint.isreadable(Unreadable()))
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):

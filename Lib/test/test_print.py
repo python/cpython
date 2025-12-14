@@ -202,8 +202,8 @@ class TestPy2MigrationHint(unittest.TestCase):
 
 
 class PPrintable:
-    def __pprint__(self, context, maxlevels, level):
-        return 'I feel pretty', False, False
+    def __pprint__(self):
+        yield 'I feel pretty'
 
 
 class PrettySmart(PrettyPrinter):
@@ -229,11 +229,11 @@ class TestPrettyPrinting(unittest.TestCase):
 
     def test_pprint_magic(self):
         print('one', PPrintable(), 2, file=self.file, pretty=True)
-        self.assertEqual(self.file.getvalue(), "'one' I feel pretty 2\n")
+        self.assertEqual(self.file.getvalue(), "'one' PPrintable('I feel pretty') 2\n")
 
     def test_custom_pprinter(self):
         print('one', PPrintable(), 2, file=self.file, pretty=PrettySmart())
-        self.assertEqual(self.file.getvalue(), "one I feel pretty 2\n")
+        self.assertEqual(self.file.getvalue(), "one PPrintable('I feel pretty') 2\n")
 
     def test_bad_pprinter(self):
         with self.assertRaises(AttributeError):
