@@ -150,7 +150,7 @@ type stored.
 * ``db['key'] = True`` stored as ``b'1'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = False`` stored as ``b'0'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = memoryview(b'data')`` stored as ``b'data'`` (:mod:`dbm.sqlite3` only)
-* ``db['key'] = array.array('i', [1, 2, 3])`` stored as binary data (:mod:`dbm.sqlite3` only)
+* ``db['key'] = array.array('i', [1, 2, 3])`` stored as bytes (e.g. on little-endian: ``b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'``) (:mod:`dbm.sqlite3` only)
 * ``db['key'] = None`` fails on all backends
 * ``db['key'] = [1, 2, 3]`` fails on all backends
 
