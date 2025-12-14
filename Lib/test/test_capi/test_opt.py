@@ -2484,8 +2484,9 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_POP_TOP_INT", uops)
-        self.assertNotIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
