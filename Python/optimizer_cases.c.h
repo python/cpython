@@ -1123,8 +1123,14 @@
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
+            JitOptRef ss;
+            JitOptRef ls;
+            ss = sym_new_not_null(ctx);
+            ls = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-3] = ss;
+            stack_pointer[-2] = ls;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
