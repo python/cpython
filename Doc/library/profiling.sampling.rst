@@ -406,7 +406,7 @@ and the base instruction.
 
 Opcode information appears in several output formats:
 
-- **Flame graphs**: Hovering over a frame displays a tooltip with bytecode
+- **Flame graphs**: Hovering over a frame displays a tooltip with a bytecode
   instruction breakdown, showing which opcodes consumed time in that function
 - **Heatmap**: Expandable bytecode panels per source line show instruction
   breakdown with specialization percentages
@@ -799,7 +799,7 @@ an interactive flame graph visualization::
 
 .. only:: html
 
-   `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__.
+   `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__!
 
 If no output file is specified, the profiler generates a filename based on
 the process ID (for example, ``flamegraph.12345.html``).
@@ -958,7 +958,7 @@ can be expanded to show which bytecode instructions consumed time:
 
 .. only:: html
 
-   `Try the interactive example <../_static/tachyon-example-heatmap.html>`__.
+   `Try the interactive example <../_static/tachyon-example-heatmap.html>`__!
 
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
@@ -982,8 +982,8 @@ data, similar to the ``top`` command for system processes::
    :align: center
    :width: 100%
 
-   Live mode displays real-time profiling statistics showing combined
-   statistics from multiple threads in a multi-threaded application.
+   Live mode displays real-time profiling statistics, showing combined
+   data from multiple threads in a multi-threaded application.
 
 The display updates continuously as new samples arrive, showing the current
 hottest functions. This mode requires the :mod:`curses` module, which is
@@ -1005,7 +1005,7 @@ frequently, including specialized variants and their base opcodes.
    :align: center
    :width: 100%
 
-   Live mode with ``--opcodes`` enabled shows an opcode panel with bytecode
+   Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
    instruction breakdown for the selected function.
 
 
