@@ -33,6 +33,7 @@ extensions = [
     'issue_role',
     'lexers',
     'misc_news',
+    'profiling_trace',
     'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
