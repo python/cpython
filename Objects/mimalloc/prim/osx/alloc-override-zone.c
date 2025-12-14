@@ -83,7 +83,7 @@ static void zone_destroy(malloc_zone_t* zone) {
 }
 
 static unsigned zone_batch_malloc(malloc_zone_t* zone, size_t size, void** ps, unsigned count) {
-  size_t i;
+  unsigned i;
   for (i = 0; i < count; i++) {
     ps[i] = zone_malloc(zone, size);
     if (ps[i] == NULL) break;
