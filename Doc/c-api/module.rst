@@ -588,7 +588,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
      behave as if it was created from that :c:type:`PyModuleDef`.
      In particular, the module state must have matching layout and semantics.
 
-   Modules created from :c:type:`PyModuleDef` allways use the address of
+   Modules created from :c:type:`PyModuleDef` always use the address of
    the :c:type:`PyModuleDef` as the token.
    This means that :c:macro:`!Py_mod_token` cannot be used in
    :c:member:`PyModuleDef.m_slots`.
