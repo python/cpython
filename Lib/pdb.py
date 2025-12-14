@@ -1093,7 +1093,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _colorize_code(self, code):
         if self.colorize:
-            colors = list(_pyrepl.utils.gen_colors(code))
+            colors = list(_colorize._gen_colors(code))
             chars, _ = _pyrepl.utils.disp_str(code, colors=colors, force_color=True)
             code = "".join(chars)
         return code

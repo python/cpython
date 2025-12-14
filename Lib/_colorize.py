@@ -1,8 +1,16 @@
+import builtins
+import keyword
 import os
 import sys
+import token as T
+import tokenize
 
+from collections import deque
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field, Field
+from io import StringIO
+from tokenize import TokenInfo as TI
+from typing import Iterable, Match, NamedTuple
 
 COLORIZE = True
 
@@ -373,3 +381,238 @@ def set_theme(t: Theme) -> None:
 
 
 set_theme(default_theme)
+
+
+# --------------------------- Syntax colorizer ------------------------------- #
+
+IDENTIFIERS_AFTER = {"def", "class"}
+KEYWORD_CONSTANTS = {"True", "False", "None"}
+BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
+_keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
+_keyword_first_sets_case = {"False", "None", "True"}
+
+
+class _Span(NamedTuple):
+    """Span indexing that's inclusive on both ends."""
+
+    start: int
+    end: int
+
+    @classmethod
+    def from_re(cls, m: Match[str], group: int | str):
+        re_span = m.span(group)
+        return cls(re_span[0], re_span[1] - 1)
+
+    @classmethod
+    def from_token(cls, token: TI, line_len: list[int]):
+        end_offset = -1
+        if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
+            and token.string.endswith(("{", "}"))):
+            # gh-134158: a visible trailing brace comes from a double brace in input
+            end_offset += 1
+
+        return cls(
+            line_len[token.start[0] - 1] + token.start[1],
+            line_len[token.end[0] - 1] + token.end[1] + end_offset,
+        )
+
+
+class _ColorSpan(NamedTuple):
+    span: Span
+    tag: str
+
+
+def _prev_next_window[T](
+    iterable: Iterable[T]
+) -> Iterator[tuple[T | None, ...]]:
+    """Generates three-tuples of (previous, current, next) items.
+
+    On the first iteration previous is None. On the last iteration next
+    is None. In case of exception next is None and the exception is re-raised
+    on a subsequent next() call.
+
+    Inspired by `sliding_window` from `itertools` recipes.
+    """
+
+    iterator = iter(iterable)
+    window = deque((None, next(iterator)), maxlen=3)
+    try:
+        for x in iterator:
+            window.append(x)
+            yield tuple(window)
+    except Exception:
+        raise
+    finally:
+        window.append(None)
+        yield tuple(window)
+
+
+def _is_soft_keyword_used(*tokens: TI | None) -> bool:
+    """Returns True if the current token is a keyword in this context.
+
+    For the `*tokens` to match anything, they have to be a three-tuple of
+    (previous, current, next).
+    """
+    match tokens:
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
+            | TI(T.OP, string="(" | "*" | "[" | "{" | "~" | "...")
+        ):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in _keyword_first_sets_match
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
+            | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
+        ):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in _keyword_first_sets_case
+            return True
+        case (TI(string="case"), TI(string="_"), TI(string=":")):
+            return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(T.DEDENT) | TI(string=":"),
+            TI(string="type"),
+            TI(T.NAME, string=s)
+        ):
+            return not keyword.iskeyword(s)
+        case _:
+            return False
+
+
+def _gen_colors_from_token_stream(
+    token_generator: Iterator[TI],
+    line_lengths: list[int],
+) -> Iterator[_ColorSpan]:
+    token_window = _prev_next_window(token_generator)
+
+    is_def_name = False
+    bracket_level = 0
+    for prev_token, token, next_token in token_window:
+        assert token is not None
+        if token.start == token.end:
+            continue
+
+        match token.type:
+            case (
+                T.STRING
+                | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END
+                | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
+            ):
+                span = _Span.from_token(token, line_lengths)
+                yield _ColorSpan(span, "string")
+            case T.COMMENT:
+                span = _Span.from_token(token, line_lengths)
+                yield _ColorSpan(span, "comment")
+            case T.NUMBER:
+                span = _Span.from_token(token, line_lengths)
+                yield _ColorSpan(span, "number")
+            case T.OP:
+                if token.string in "([{":
+                    bracket_level += 1
+                elif token.string in ")]}":
+                    bracket_level -= 1
+                span = _Span.from_token(token, line_lengths)
+                yield _ColorSpan(span, "op")
+            case T.NAME:
+                if is_def_name:
+                    is_def_name = False
+                    span = _Span.from_token(token, line_lengths)
+                    yield _ColorSpan(span, "definition")
+                elif keyword.iskeyword(token.string):
+                    span_cls = "keyword"
+                    if token.string in KEYWORD_CONSTANTS:
+                        span_cls = "keyword_constant"
+                    span = _Span.from_token(token, line_lengths)
+                    yield _ColorSpan(span, span_cls)
+                    if token.string in IDENTIFIERS_AFTER:
+                        is_def_name = True
+                elif (
+                    keyword.issoftkeyword(token.string)
+                    and bracket_level == 0
+                    and _is_soft_keyword_used(prev_token, token, next_token)
+                ):
+                    span = _Span.from_token(token, line_lengths)
+                    yield _ColorSpan(span, "soft_keyword")
+                elif (
+                    token.string in BUILTINS
+                    and not (prev_token and prev_token.exact_type == T.DOT)
+                ):
+                    span = _Span.from_token(token, line_lengths)
+                    yield _ColorSpan(span, "builtin")
+
+
+def _recover_unterminated_string(
+    exc: tokenize.TokenError,
+    line_lengths: list[int],
+    last_emitted: _ColorSpan | None,
+    buffer: str,
+) -> Iterator[_ColorSpan]:
+    msg, loc = exc.args
+    if loc is None:
+        return
+
+    line_no, column = loc
+
+    if msg.startswith(
+        (
+            "unterminated string literal",
+            "unterminated f-string literal",
+            "unterminated t-string literal",
+            "EOF in multi-line string",
+            "unterminated triple-quoted f-string literal",
+            "unterminated triple-quoted t-string literal",
+        )
+    ):
+        start = line_lengths[line_no - 1] + column - 1
+        end = line_lengths[-1] - 1
+
+        # in case FSTRING_START was already emitted
+        if last_emitted and start <= last_emitted.span.start:
+            start = last_emitted.span.end + 1
+
+        span = _Span(start, end)
+        yield _ColorSpan(span, "string")
+
+
+def _gen_colors(buffer: str) -> Iterator[_ColorSpan]:
+    """Returns a list of index spans to color using the given color tag.
+
+    The input `buffer` should be a valid start of a Python code block, i.e.
+    it cannot be a block starting in the middle of a multiline string.
+    """
+    sio = StringIO(buffer)
+    line_lengths = [0] + [len(line) for line in sio.readlines()]
+    # make line_lengths cumulative
+    for i in range(1, len(line_lengths)):
+        line_lengths[i] += line_lengths[i-1]
+
+    sio.seek(0)
+    gen = tokenize.generate_tokens(sio.readline)
+    last_emitted: _ColorSpan | None = None
+    try:
+        for color in _gen_colors_from_token_stream(gen, line_lengths):
+            yield color
+            last_emitted = color
+    except SyntaxError:
+        return
+    except tokenize.TokenError as te:
+        yield from _recover_unterminated_string(
+            te, line_lengths, last_emitted, buffer
+        )
