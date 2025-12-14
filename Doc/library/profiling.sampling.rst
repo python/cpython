@@ -886,8 +886,7 @@ all relevant data is captured automatically.
    :width: 100%
 
    The Flame Graph visualization shows call stacks as nested rectangles.
-   Functions like ``worker_a``, ``level_1_analyze``, ``level_2_process``,
-   and ``level_4_compute`` are visible in the call hierarchy.
+   Functions names are visible in the call hierarchy.
 
 .. figure:: tachyon-gecko-opcodes.png
    :alt: Firefox Profiler Marker Chart with opcodes
