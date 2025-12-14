@@ -2293,13 +2293,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-                a = arg;
-                c = callable;
                 if (res_o == NULL) {
-                    stack_pointer += -2 - oparg;
-                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                     JUMP_TO_LABEL(error);
                 }
+                a = arg;
+                c = callable;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP

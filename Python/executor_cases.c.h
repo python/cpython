@@ -13155,14 +13155,12 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            a = arg;
-            c = callable;
             if (res_o == NULL) {
-                stack_pointer += -2 - oparg;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            a = arg;
+            c = callable;
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = c;
             _tos_cache1 = a;
