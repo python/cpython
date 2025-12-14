@@ -9,13 +9,14 @@ import time
 from .collector import Collector
 from .opcode_utils import get_opcode_info, format_opcode
 try:
-    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED
+    from _remote_debugging import THREAD_STATUS_HAS_GIL, THREAD_STATUS_ON_CPU, THREAD_STATUS_UNKNOWN, THREAD_STATUS_GIL_REQUESTED, THREAD_STATUS_HAS_EXCEPTION
 except ImportError:
     # Fallback if module not available (shouldn't happen in normal use)
     THREAD_STATUS_HAS_GIL = (1 << 0)
     THREAD_STATUS_ON_CPU = (1 << 1)
     THREAD_STATUS_UNKNOWN = (1 << 2)
     THREAD_STATUS_GIL_REQUESTED = (1 << 3)
+    THREAD_STATUS_HAS_EXCEPTION = (1 << 4)
 
 
 # Categories matching Firefox Profiler expectations
@@ -28,6 +29,7 @@ GECKO_CATEGORIES = [
     {"name": "CPU", "color": "purple", "subcategories": ["Other"]},
     {"name": "Code Type", "color": "red", "subcategories": ["Other"]},
     {"name": "Opcodes", "color": "magenta", "subcategories": ["Other"]},
+    {"name": "Exception", "color": "lightblue", "subcategories": ["Other"]},
 ]
 
 # Category indices
@@ -39,6 +41,7 @@ CATEGORY_GIL = 4
 CATEGORY_CPU = 5
 CATEGORY_CODE_TYPE = 6
 CATEGORY_OPCODES = 7
+CATEGORY_EXCEPTION = 8
 
 # Subcategory indices
 DEFAULT_SUBCATEGORY = 0
@@ -88,6 +91,8 @@ class GeckoCollector(Collector):
         self.python_code_start = {}       # Thread running Python code (has GIL)
         self.native_code_start = {}       # Thread running native code (on CPU without GIL)
         self.gil_wait_start = {}          # Thread waiting for GIL
+        self.exception_start = {}         # Thread has an exception set
+        self.no_exception_start = {}      # Thread has no exception set
 
         # GC event tracking: track GC start time per thread
         self.gc_start_per_thread = {}  # tid -> start_time
@@ -203,6 +208,13 @@ class GeckoCollector(Collector):
                 elif tid in self.gil_wait_start:
                     self._add_marker(tid, "Waiting for GIL", self.gil_wait_start.pop(tid),
                                    current_time, CATEGORY_GIL)
+
+                # Track exception state (Has Exception / No Exception)
+                has_exception = bool(status_flags & THREAD_STATUS_HAS_EXCEPTION)
+                self._track_state_transition(
+                    tid, has_exception, self.exception_start, self.no_exception_start,
+                    "Has Exception", "No Exception", CATEGORY_EXCEPTION, current_time
+                )
 
                 # Track GC events by detecting <GC> frames in the stack trace
                 # This leverages the improved GC frame tracking from commit 336366fd7ca
@@ -622,6 +634,8 @@ class GeckoCollector(Collector):
             (self.native_code_start, "Native Code", CATEGORY_CODE_TYPE),
             (self.gil_wait_start, "Waiting for GIL", CATEGORY_GIL),
             (self.gc_start_per_thread, "GC Collecting", CATEGORY_GC),
+            (self.exception_start, "Has Exception", CATEGORY_EXCEPTION),
+            (self.no_exception_start, "No Exception", CATEGORY_EXCEPTION),
         ]
 
         for state_dict, marker_name, category in marker_states:

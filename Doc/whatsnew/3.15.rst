@@ -146,6 +146,8 @@ Key features include:
     and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
   * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
     Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+  * **Exception handling time** (``--mode exception``): Captures samples only from threads with
+    an active exception. Use this to analyze exception handling overhead.
 
 * **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
   essential for understanding multi-threaded application behavior.
@@ -174,6 +176,10 @@ Key features include:
 * **Async-aware profiling**: Profile async/await code with task-based stack reconstruction
   (``--async-aware``). See which coroutines are consuming time, with options to show only
   running tasks or all tasks including those waiting.
+
+* **Opcode-level profiling**: Gather bytecode opcode information for instruction-level
+  profiling (``--opcodes``). Shows which bytecode instructions are executing, including
+  specializations from the adaptive interpreter.
 
 See :mod:`profiling.sampling` for the complete documentation, including all
 available output formats, profiling modes, and configuration options.
@@ -416,6 +422,10 @@ argparse
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
+
+* Added backtick markup support in description and epilog text to highlight
+  inline code when color output is enabled.
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
 calendar
 --------
@@ -1016,6 +1026,7 @@ New deprecations
     - :mod:`csv`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+    - :mod:`http.server`
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
@@ -1203,6 +1214,13 @@ Deprecated C APIs
   and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
   use the :c:type:`PyBytesWriter` API instead.
   (Contributed by Victor Stinner in :gh:`129813`.)
+
+* :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
+  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
+  3.20. Instead, use :c:func:`PyUnicode_FromString()` and cache the result in
+  the module state, then call :c:func:`PyObject_CallMethod` or
+  :c:func:`PyObject_GetAttr`.
+  (Contributed by Victor Stinner in :gh:`141049`.)
 
 * Deprecate :c:member:`~PyComplexObject.cval` field of the
   :c:type:`PyComplexObject` type.

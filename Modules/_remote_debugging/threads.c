@@ -344,6 +344,33 @@ unwind_stack_for_thread(
         gil_requested = 0;
     }
 
+    // Check exception state (both raised and handled exceptions)
+    int has_exception = 0;
+
+    // Check current_exception (exception being raised/propagated)
+    uintptr_t current_exception = GET_MEMBER(uintptr_t, ts,
+        unwinder->debug_offsets.thread_state.current_exception);
+    if (current_exception != 0) {
+        has_exception = 1;
+    }
+
+    // Check exc_state.exc_value (exception being handled in except block)
+    // exc_state is embedded in PyThreadState, so we read it directly from
+    // the thread state buffer. This catches most cases; nested exception
+    // handlers where exc_info points elsewhere are rare.
+    if (!has_exception) {
+        uintptr_t exc_value = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.exc_state +
+            unwinder->debug_offsets.err_stackitem.exc_value);
+        if (exc_value != 0) {
+            has_exception = 1;
+        }
+    }
+
+    if (has_exception) {
+        status_flags |= THREAD_STATUS_HAS_EXCEPTION;
+    }
+
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
 
@@ -368,6 +395,9 @@ unwind_stack_for_thread(
         } else if (unwinder->mode == PROFILING_MODE_GIL) {
             // Skip if doesn't have GIL
             should_skip = !(status_flags & THREAD_STATUS_HAS_GIL);
+        } else if (unwinder->mode == PROFILING_MODE_EXCEPTION) {
+            // Skip if thread doesn't have an exception active
+            should_skip = !(status_flags & THREAD_STATUS_HAS_EXCEPTION);
         }
         // PROFILING_MODE_WALL and PROFILING_MODE_ALL never skip
     }

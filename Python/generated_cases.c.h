@@ -4075,10 +4075,10 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PySequence_Tuple(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                a = arg;
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_3_error);
+                    JUMP_TO_LABEL(error);
                 }
+                a = arg;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
@@ -11865,13 +11865,6 @@ JUMP_TO_LABEL(error);
         Py_UNREACHABLE();
 #endif /* _Py_TAIL_CALL_INTERP */
         /* BEGIN LABELS */
-
-        LABEL(pop_3_error)
-        {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            JUMP_TO_LABEL(error);
-        }
 
         LABEL(pop_2_error)
         {
