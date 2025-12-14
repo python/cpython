@@ -630,6 +630,14 @@ shelve
   (Contributed by Andrea Oliveri in :gh:`134004`.)
 
 
+shutil
+------
+
+* :func:`shutil.copyfile` now also raises :exc:`~shutil.SpecialFileError` for
+  sockets and device files.
+  (Contributed by Savannah Ostrowski in :gh:`81881`.)
+
+
 socket
 ------
 
