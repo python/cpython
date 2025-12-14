@@ -2585,7 +2585,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_CALL_BUILTIN_O] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _CALL_BUILTIN_O_r01 },
+            { 3, 0, _CALL_BUILTIN_O_r03 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -3744,7 +3744,7 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_CREATE_INIT_FRAME_r01] = _CREATE_INIT_FRAME,
     [_EXIT_INIT_CHECK_r10] = _EXIT_INIT_CHECK,
     [_CALL_BUILTIN_CLASS_r01] = _CALL_BUILTIN_CLASS,
-    [_CALL_BUILTIN_O_r01] = _CALL_BUILTIN_O,
+    [_CALL_BUILTIN_O_r03] = _CALL_BUILTIN_O,
     [_CALL_BUILTIN_FAST_r01] = _CALL_BUILTIN_FAST,
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = _CALL_BUILTIN_FAST_WITH_KEYWORDS,
     [_GUARD_CALLABLE_LEN_r03] = _GUARD_CALLABLE_LEN,
@@ -4032,7 +4032,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS",
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01] = "_CALL_BUILTIN_FAST_WITH_KEYWORDS_r01",
     [_CALL_BUILTIN_O] = "_CALL_BUILTIN_O",
-    [_CALL_BUILTIN_O_r01] = "_CALL_BUILTIN_O_r01",
+    [_CALL_BUILTIN_O_r03] = "_CALL_BUILTIN_O_r03",
     [_CALL_INTRINSIC_1] = "_CALL_INTRINSIC_1",
     [_CALL_INTRINSIC_1_r11] = "_CALL_INTRINSIC_1_r11",
     [_CALL_INTRINSIC_2] = "_CALL_INTRINSIC_2",
