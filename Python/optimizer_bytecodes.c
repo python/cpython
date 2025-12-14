@@ -535,7 +535,7 @@ dummy_func(void) {
         }
     }
 
-    op(_POP_TOP_INT, (value -- )) {
+    op(_POP_TOP_INT, (value --)) {
         if (PyJitRef_IsBorrowed(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
