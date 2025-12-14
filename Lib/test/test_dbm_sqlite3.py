@@ -216,6 +216,10 @@ class DataTypes(_SQLiteDbmTests):
         (3.14, b"3.14"),
         ("string", b"string"),
         (b"bytes", b"bytes"),
+        (True, b"1"),
+        (False, b"0"),
+        (bytearray(b"bytearray"), b"bytearray"),
+        (memoryview(b"memoryview"), b"memoryview"),
     )
 
     def setUp(self):

@@ -127,26 +127,16 @@ will automatically close them when done.
 Key and Value Types
 -------------------
 
-The accepted types for keys and values vary by backend:
+The accepted types for keys and values vary by backend. Keys and values are
+handled identically:
 
-**Keys:**
+* **Traditional backends**:
 
-* **All backends**: Accept :class:`str` and :class:`bytes` objects
-* **String keys** are automatically converted to bytes using the default
-  encoding
-* **Bytes keys** are stored as-is
-
-**Values:**
-
-* **Traditional backends** (``dbm.gnu``, ``dbm.ndbm``, ``dbm.dumb``): Only
-  accept :class:`str` and :class:`bytes` objects
-* **SQLite backend** (``dbm.sqlite3``): Accepts any object that can be
-  converted to bytes:
-
-  * **Accepted**: :class:`str`, :class:`bytes`, :class:`int`,
-    :class:`float`, :class:`bool`
-  * **Rejected**: :class:`None`, :class:`list`, :class:`dict`,
-    :class:`tuple`, custom objects
+  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes` objects
+  * :mod:`dbm.dumb`: Accepts :class:`str`, :class:`bytes`, and :class:`bytearray` objects
+* **SQLite backend** (:mod:`dbm.sqlite3`): Accepts :class:`str`, :class:`bytes`,
+  :class:`int`, :class:`float`, :class:`bool`, :class:`bytearray`,
+  :class:`memoryview`, and :class:`array.array` objects
 
 **Storage Format:**
 
@@ -157,9 +147,13 @@ type stored.
 **Type Conversion Examples:**
 
 * ``db['key'] = 'string'`` stored as ``b'string'``
-* ``db['key'] = 42`` stored as ``b'42'`` (sqlite3 only)
-* ``db['key'] = 3.14`` stored as ``b'3.14'`` (sqlite3 only)
-* ``db['key'] = True`` stored as ``b'True'`` (sqlite3 only)
+* ``db['key'] = bytearray(b'data')`` stored as ``b'data'`` (:mod:`dbm.dumb` and :mod:`dbm.sqlite3` only)
+* ``db['key'] = 42`` stored as ``b'42'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = 3.14`` stored as ``b'3.14'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = True`` stored as ``b'1'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = False`` stored as ``b'0'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = memoryview(b'data')`` stored as ``b'data'`` (:mod:`dbm.sqlite3` only)
+* ``db['key'] = array.array('i', [1, 2, 3])`` stored as binary data (:mod:`dbm.sqlite3` only)
 * ``db['key'] = None`` fails on all backends
 * ``db['key'] = [1, 2, 3]`` fails on all backends
 
