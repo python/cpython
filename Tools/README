@@ -16,6 +16,8 @@ clinic          A preprocessor for CPython C files in order to automate
 
 freeze          Create a stand-alone executable from a Python program.
 
+ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
+
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
 
@@ -25,6 +27,12 @@ i18n            Tools for internationalization. pygettext.py
                 from a catalog in text format.
 
 importbench     A set of micro-benchmarks for various import scenarios.
+
+inspection      Tooling for PEP-678 "Safe external debugger interface for CPython".
+
+jit             Tooling for building the JIT.
+
+lockbench       Benchmarks for PyMutex and critical sections.
 
 msi             Support for packaging Python as an MSI package on Windows.
 
@@ -41,7 +49,7 @@ scripts         A number of useful single-file programs, e.g. run_tests.py
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
 
-tz              A script to dump timezone from /usr/share/zoneinfo.
+tsan            Utilities for building CPython with thread-sanitizer.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg

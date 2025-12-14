@@ -4,6 +4,9 @@ Released on 2025-10-07
 =========================
 
 
+gh-129873: Simplify displaying the IDLE doc by only copying the text
+section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
+
 gh-112936: IDLE - Include Shell menu in single-process mode,
 though with Restart Shell and View Last Restart disabled.
 Patch by Zhikang Yan.
@@ -25,9 +28,6 @@ Released on 2024-10-07
 =========================
 
 gh-120104: Fix padding in config and search dialog windows in IDLE.
-
-gh-129873: Simplify displaying the IDLE doc by only copying the text
-section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
 
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
 recent macOS. Fixes Sonoma showing unreadable white on pale yellow.

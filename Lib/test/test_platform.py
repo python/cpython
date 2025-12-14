@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -465,7 +465,7 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec
@@ -532,8 +532,10 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(override.model, "Whiz")
             self.assertTrue(override.is_simulator)
 
-    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
+        if support.is_emscripten:
+            assert platform.libc_ver() == ("emscripten", "4.0.12")
+            return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
@@ -565,6 +567,10 @@ class PlatformTest(unittest.TestCase):
                 # musl uses semver, but we accept some variations anyway:
                 (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
+                (b'libc.musl.so.1', ('musl', '1')),
+                (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -583,6 +589,14 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0', ('glibc', '1.23.4')),
                 (b'libc.so.2.4\0libc.so.9\0libc.so.23.1\0', ('libc', '23.1')),
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
+                (
+                    b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
             ):
             with open(filename, 'wb') as f:
@@ -762,13 +776,14 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
-            output = io.StringIO()
             # suppress argparse error message
             with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
-            self.assertStartsWith(output, "usage: ")
+        self.assertStartsWith(output.getvalue(), "usage: ")
 
     def test_invocation(self):
         flags = (

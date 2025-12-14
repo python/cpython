@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
 #include "pycore_obmalloc_init.h"
@@ -467,6 +468,7 @@ _PyMem_ArenaAlloc(void *Py_UNUSED(ctx), size_t size)
     if (ptr == MAP_FAILED)
         return NULL;
     assert(ptr != NULL);
+    _PyAnnotateMemoryMap(ptr, size, "cpython:pymalloc");
     return ptr;
 #else
     return malloc(size);
@@ -1523,9 +1525,9 @@ PyObject_Free(void *ptr)
 }
 
 
-/* If we're using GCC, use __builtin_expect() to reduce overhead of
+/* Use __builtin_expect() where available to reduce overhead of
    the valgrind checks */
-#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#if (defined(__clang__) || (defined(__GNUC__) && (__GNUC__ > 2))) && defined(__OPTIMIZE__)
 #  define UNLIKELY(value) __builtin_expect((value), 0)
 #  define LIKELY(value) __builtin_expect((value), 1)
 #else

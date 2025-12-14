@@ -119,7 +119,7 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 } Py_AsyncioModuleDebugOffsets;
 
-GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _AsyncioDebug)
+GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _Py_AsyncioDebug)
     = {.asyncio_task_object = {
            .size = sizeof(TaskObj),
            .task_name = offsetof(TaskObj, task_name),
@@ -2990,16 +2990,12 @@ static PyType_Spec Task_spec = {
 static void
 TaskObj_dealloc(PyObject *self)
 {
-    _PyObject_ResurrectStart(self);
-    // Unregister the task here so that even if any subclass of Task
-    // which doesn't end up calling TaskObj_finalize not crashes.
-    unregister_task((TaskObj *)self);
-
-    PyObject_CallFinalizer(self);
-
-    if (_PyObject_ResurrectEnd(self)) {
-        return;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return; // resurrected
     }
+    // unregister the task after finalization so that
+    // if the task gets resurrected, it remains registered
+    unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -4079,30 +4075,44 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    // Stop the world and traverse the per-thread linked list
-    // of asyncio tasks for every thread, as well as the
-    // interpreter's linked list, and add them to `tasks`.
-    // The interpreter linked list is used for any lingering tasks
-    // whose thread state has been deallocated while the task was
-    // still alive. This can happen if a task is referenced by
-    // a different thread, in which case the task is moved to
-    // the interpreter's linked list from the thread's linked
-    // list before deallocation. See PyThreadState_Clear.
-    //
-    // The stop-the-world pause is required so that no thread
-    // modifies its linked list while being iterated here
-    // in parallel. This design allows for lock-free
-    // register_task/unregister_task for loops running in parallel
-    // in different threads (the general case).
-    _PyEval_StopTheWorld(interp);
-    int ret = add_tasks_interp(interp, (PyListObject *)tasks);
-    _PyEval_StartTheWorld(interp);
-    if (ret < 0) {
-        // call any escaping calls after starting the world to avoid any deadlocks.
-        Py_DECREF(tasks);
-        Py_DECREF(loop);
-        return NULL;
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    if (ts->asyncio_running_loop == loop) {
+        // Fast path for the current running loop of current thread
+        // no locking or stop the world pause is required
+        struct llist_node *head = &ts->asyncio_tasks_head;
+        if (add_tasks_llist(head, (PyListObject *)tasks) < 0) {
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            return NULL;
+        }
+    }
+    else {
+        // Slow path for loop running in different thread
+        PyInterpreterState *interp = ts->base.interp;
+        // Stop the world and traverse the per-thread linked list
+        // of asyncio tasks for every thread, as well as the
+        // interpreter's linked list, and add them to `tasks`.
+        // The interpreter linked list is used for any lingering tasks
+        // whose thread state has been deallocated while the task was
+        // still alive. This can happen if a task is referenced by
+        // a different thread, in which case the task is moved to
+        // the interpreter's linked list from the thread's linked
+        // list before deallocation. See PyThreadState_Clear.
+        //
+        // The stop-the-world pause is required so that no thread
+        // modifies its linked list while being iterated here
+        // in parallel. This design allows for lock-free
+        // register_task/unregister_task for loops running in parallel
+        // in different threads (the general case).
+        _PyEval_StopTheWorld(interp);
+        int ret = add_tasks_interp(interp, (PyListObject *)tasks);
+        _PyEval_StartTheWorld(interp);
+        if (ret < 0) {
+            // call any escaping calls after starting the world to avoid any deadlocks.
+            Py_DECREF(tasks);
+            Py_DECREF(loop);
+            return NULL;
+        }
     }
 
     // All the tasks are now in the list, now filter the tasks which are done
@@ -4324,7 +4334,7 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->debug_offsets = &_AsyncioDebug;
+    state->debug_offsets = &_Py_AsyncioDebug;
 
     Py_DECREF(module);
     return 0;
