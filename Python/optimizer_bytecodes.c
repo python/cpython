@@ -109,9 +109,10 @@ dummy_func(void) {
         ss = sub_st;
     }
 
-    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st, sb)) {
         (void)value;
         st = dict_st;
+        sb = sub;
     }
 
     op(_PUSH_NULL, (-- res)) {

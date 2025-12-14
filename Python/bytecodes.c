@@ -1158,9 +1158,9 @@ dummy_func(
         }
 
         macro(STORE_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
+            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP + POP_TOP;
 
-        op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st, sb)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
             assert(PyDict_CheckExact(dict));
@@ -1173,6 +1173,7 @@ dummy_func(
             }
             INPUTS_DEAD();
             st = dict_st;
+            sb = sub;
         }
 
         inst(DELETE_SUBSCR, (container, sub --)) {

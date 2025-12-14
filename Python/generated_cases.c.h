@@ -10974,6 +10974,7 @@
             _PyStackRef dict_st;
             _PyStackRef sub;
             _PyStackRef st;
+            _PyStackRef sb;
             // _GUARD_NOS_DICT
             {
                 nos = stack_pointer[-2];
@@ -11002,11 +11003,22 @@
                     JUMP_TO_LABEL(error);
                 }
                 st = dict_st;
+                sb = sub;
+            }
+            // _POP_TOP
+            {
+                value = sb;
+                stack_pointer[-3] = st;
+                stack_pointer += -2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _POP_TOP
             {
                 value = st;
-                stack_pointer += -3;
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
