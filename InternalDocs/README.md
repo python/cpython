@@ -29,12 +29,12 @@ Runtime Objects
 
 - [Frames](frames.md)
 
-- [String Interning](string_interning.md)
-
 Program Execution
 ---
 
 - [The Bytecode Interpreter](interpreter.md)
+
+- [Stack references (_PyStackRef)](stackrefs.md)
 
 - [The JIT](jit.md)
 
@@ -43,6 +43,16 @@ Program Execution
 - [Exception Handling](exception_handling.md)
 
 - [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
+
+- [Stack protection](stack_protection.md)
+
+Built-in Types
+---
+
+- [String Interning](string_interning.md)
+
+- [List sort algorithm](../Objects/listsort.txt)
+  <!-- (kept at the original location outside this directory) -->
 
 Modules
 ---

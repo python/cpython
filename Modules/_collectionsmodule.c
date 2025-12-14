@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>
 
@@ -1532,9 +1533,7 @@ deque_dealloc(PyObject *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(deque);
-    if (deque->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, deque->weakreflist);
     if (deque->leftblock != NULL) {
         (void)deque_clear(self);
         assert(deque->leftblock != NULL);

@@ -31,6 +31,7 @@ from operator import neg
 from test import support
 from test.support import cpython_only, swap_attr
 from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -436,7 +437,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -624,7 +625,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         for opt in [opt1, opt2]:
             opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, True)
+            self.assertEqual(opt_right.value, __debug__)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1087,6 +1088,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__globals__,
             closure=my_closure)
 
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
@@ -1182,6 +1206,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -1373,6 +1407,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           map(pack, (1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
+
+        # gh-140517: Testing refleaks with mortal objects.
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
 
     def test_map_strict_iterators(self):
         x = iter(range(5))
@@ -2545,6 +2595,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
@@ -2991,7 +3042,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

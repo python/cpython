@@ -1,0 +1,1 @@
+Fix :mod:`doctest` to correctly report line numbers for doctests in ``__test__`` dictionary when formatted as triple-quoted strings by finding unique lines in the string and matching them in the source file.
