@@ -3117,8 +3117,8 @@
             arg = stack_pointer[-1];
             self = stack_pointer[-2];
             callable = stack_pointer[-3];
-            (void)(callable);
-            c = arg;
+            (void)(arg);
+            c = callable;
             s = self;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-3] = c;

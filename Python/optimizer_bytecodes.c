@@ -1006,8 +1006,8 @@ dummy_func(void) {
     }
 
     op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
-        (void)(callable);
-        c = arg;
+        (void)(arg);
+        c = callable;
         s = self;
     }
 
