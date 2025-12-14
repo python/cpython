@@ -395,11 +395,9 @@ class LiveStatsCollector(Collector):
         if has_gc_frame:
             self.gc_frame_samples += 1
 
-        # Only count as successful if we actually processed frames
-        # This is important for modes like --mode exception where most samples
-        # may be filtered out at the C level
-        if frames_processed:
-            self.successful_samples += 1
+        # Count as successful - the sample worked even if no frames matched the filter
+        # (e.g., in --mode exception when no thread has an active exception)
+        self.successful_samples += 1
         self.total_samples += 1
 
         # Handle input on every sample for instant responsiveness
