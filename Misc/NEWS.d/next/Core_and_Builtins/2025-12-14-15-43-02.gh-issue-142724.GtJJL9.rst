@@ -1,0 +1,1 @@
+Fixed error that would have prevented tuples from being checked.
