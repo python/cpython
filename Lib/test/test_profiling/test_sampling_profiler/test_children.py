@@ -11,29 +11,16 @@ import threading
 import time
 import unittest
 
-from test.support import SHORT_TIMEOUT, reap_children, requires_subprocess
-
-from .helpers import (
-    skip_if_not_supported,
-    PROCESS_VM_READV_SUPPORTED,
-    _cleanup_process,
+from test.support import (
+    SHORT_TIMEOUT,
+    reap_children,
+    requires_remote_subprocess_debugging,
 )
+
+from .helpers import _cleanup_process
 
 # String to check for in stderr when profiler lacks permissions (e.g., macOS)
 _PERMISSION_ERROR_MSG = "Permission Error"
-_SKIP_PERMISSION_MSG = "Insufficient permissions for remote profiling"
-
-
-def _check_remote_debugging_permissions():
-    """Check if we have permissions for remote debugging.
-
-    Returns True if we have permissions, False if we don't.
-    On macOS without proper entitlements, this will return False.
-    """
-    # If is_python_process returns False for the current process,
-    # we don't have permissions (since we ARE a Python process)
-    import _remote_debugging
-    return _remote_debugging.is_python_process(os.getpid())
 
 
 def _readline_with_timeout(file_obj, timeout):
@@ -87,8 +74,7 @@ def _wait_for_process_ready(proc, timeout):
     return proc.poll() is None
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestGetChildPids(unittest.TestCase):
     """Tests for the get_child_pids function."""
 
@@ -277,8 +263,7 @@ if grandchild.poll() is None:
         self.assertEqual(result, [])
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestChildProcessMonitor(unittest.TestCase):
     """Tests for the ChildProcessMonitor class."""
 
@@ -347,8 +332,7 @@ class TestChildProcessMonitor(unittest.TestCase):
         self.assertFalse(monitor._monitor_thread.is_alive())
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestCLIChildrenFlag(unittest.TestCase):
     """Tests for the --subprocesses CLI flag."""
 
@@ -509,12 +493,7 @@ class TestCLIChildrenFlag(unittest.TestCase):
         self.assertEqual(pattern, "heatmap_{pid}")
 
 
-@skip_if_not_supported
-@requires_subprocess()
-@unittest.skipUnless(
-    sys.platform != "linux" or PROCESS_VM_READV_SUPPORTED,
-    "Test requires process_vm_readv support on Linux",
-)
+@requires_remote_subprocess_debugging()
 class TestChildrenIntegration(unittest.TestCase):
     """Integration tests for --subprocesses functionality."""
 
@@ -555,8 +534,7 @@ class TestChildrenIntegration(unittest.TestCase):
         )
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestIsPythonProcess(unittest.TestCase):
     """Tests for the is_python_process function."""
 
@@ -570,9 +548,6 @@ class TestIsPythonProcess(unittest.TestCase):
         """Test that current process is detected as Python."""
         from profiling.sampling._child_monitor import is_python_process
 
-        if not _check_remote_debugging_permissions():
-            self.skipTest(_SKIP_PERMISSION_MSG)
-
         # Current process should be Python
         result = is_python_process(os.getpid())
         self.assertTrue(
@@ -583,9 +558,6 @@ class TestIsPythonProcess(unittest.TestCase):
     def test_is_python_process_python_subprocess(self):
         """Test that a Python subprocess is detected as Python."""
         from profiling.sampling._child_monitor import is_python_process
-
-        if not _check_remote_debugging_permissions():
-            self.skipTest(_SKIP_PERMISSION_MSG)
 
         # Start a Python subprocess
         proc = subprocess.Popen(
@@ -675,8 +647,7 @@ class TestIsPythonProcess(unittest.TestCase):
         )
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestMaxChildProfilersLimit(unittest.TestCase):
     """Tests for the _MAX_CHILD_PROFILERS limit."""
 
@@ -754,8 +725,7 @@ class TestMaxChildProfilersLimit(unittest.TestCase):
         )
 
 
-@skip_if_not_supported
-@requires_subprocess()
+@requires_remote_subprocess_debugging()
 class TestWaitForProfilers(unittest.TestCase):
     """Tests for the wait_for_profilers method."""
 
@@ -908,12 +878,7 @@ class TestWaitForProfilers(unittest.TestCase):
                 _cleanup_process(proc)
 
 
-@skip_if_not_supported
-@requires_subprocess()
-@unittest.skipUnless(
-    sys.platform != "linux" or PROCESS_VM_READV_SUPPORTED,
-    "Test requires process_vm_readv support on Linux",
-)
+@requires_remote_subprocess_debugging()
 class TestEndToEndChildrenCLI(unittest.TestCase):
     """End-to-end tests for --subprocesses CLI flag."""
 
@@ -970,9 +935,6 @@ child.wait()
                 text=True,
                 timeout=SHORT_TIMEOUT,
             )
-
-            if _PERMISSION_ERROR_MSG in result.stderr:
-                self.skipTest(_SKIP_PERMISSION_MSG)
 
             # Check that parent output file was created
             self.assertTrue(
@@ -1037,9 +999,6 @@ child.wait()
                 timeout=SHORT_TIMEOUT,
             )
 
-            if _PERMISSION_ERROR_MSG in result.stderr:
-                self.skipTest(_SKIP_PERMISSION_MSG)
-
             self.assertTrue(
                 os.path.exists(output_file),
                 f"Flamegraph output not created. stderr: {result.stderr}",
@@ -1092,9 +1051,6 @@ time.sleep(1)
                 text=True,
                 timeout=SHORT_TIMEOUT,
             )
-
-            if _PERMISSION_ERROR_MSG in result.stderr:
-                self.skipTest(_SKIP_PERMISSION_MSG)
 
             # Should not crash - exit code 0
             self.assertEqual(
