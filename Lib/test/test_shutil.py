@@ -1563,7 +1563,11 @@ class TestCopy(BaseTest, unittest.TestCase):
         sock_path = os.path.join(self.mkdtemp(), 'sock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
-        socket_helper.bind_unix_socket(sock, sock_path)
+        try:
+            socket_helper.bind_unix_socket(sock, sock_path)
+        except OSError as e:
+            # AF_UNIX path too long (e.g. on iOS)
+            self.skipTest(f'cannot bind AF_UNIX socket: {e}')
         self.addCleanup(os_helper.unlink, sock_path)
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
                                shutil.copyfile, sock_path, sock_path + '.copy')
