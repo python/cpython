@@ -406,12 +406,12 @@ and the base instruction.
 
 Opcode information appears in several output formats:
 
-- **Live mode**: An opcode panel shows instruction-level statistics for the
-  selected function, accessible via keyboard navigation
-- **Flame graphs**: Nodes display opcode information when available, helping
-  identify which instructions consume the most time
+- **Flame graphs**: Hovering over a frame displays a tooltip with a bytecode
+  instruction breakdown, showing which opcodes consumed time in that function
 - **Heatmap**: Expandable bytecode panels per source line show instruction
   breakdown with specialization percentages
+- **Live mode**: An opcode panel shows instruction-level statistics for the
+  selected function, accessible via keyboard navigation
 - **Gecko format**: Opcode transitions are emitted as interval markers in the
   Firefox Profiler timeline
 
@@ -679,6 +679,14 @@ deterministic profilers generate. This is the default output format::
    python -m profiling.sampling run script.py
    python -m profiling.sampling run --pstats script.py
 
+.. figure:: tachyon-pstats.png
+   :alt: Tachyon pstats terminal output
+   :align: center
+   :width: 100%
+
+   The pstats format displays profiling results in a color-coded table showing
+   function hotspots, sample counts, and timing estimates.
+
 Output appears on stdout by default::
 
    Profile Stats (Mode: wall):
@@ -780,6 +788,19 @@ an interactive flame graph visualization::
    python -m profiling.sampling run --flamegraph script.py
    python -m profiling.sampling run --flamegraph -o profile.html script.py
 
+.. figure:: tachyon-flamegraph.png
+   :alt: Tachyon interactive flame graph
+   :align: center
+   :width: 100%
+
+   The flame graph visualization shows call stacks as nested rectangles, with
+   width proportional to time spent. The sidebar displays runtime statistics,
+   GIL metrics, and hotspot functions.
+
+.. only:: html
+
+   `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__!
+
 If no output file is specified, the profiler generates a filename based on
 the process ID (for example, ``flamegraph.12345.html``).
 
@@ -850,6 +871,33 @@ Firefox Profiler timeline:
 For this reason, the :option:`--mode` option is not available with Gecko format;
 all relevant data is captured automatically.
 
+.. figure:: tachyon-gecko-calltree.png
+   :alt: Firefox Profiler Call Tree view
+   :align: center
+   :width: 100%
+
+   The Call Tree view shows the complete call hierarchy with sample counts
+   and percentages. The sidebar displays detailed statistics for the
+   selected function including running time and sample distribution.
+
+.. figure:: tachyon-gecko-flamegraph.png
+   :alt: Firefox Profiler Flame Graph view
+   :align: center
+   :width: 100%
+
+   The Flame Graph visualization shows call stacks as nested rectangles.
+   Functions names are visible in the call hierarchy.
+
+.. figure:: tachyon-gecko-opcodes.png
+   :alt: Firefox Profiler Marker Chart with opcodes
+   :align: center
+   :width: 100%
+
+   The Marker Chart displays interval markers including CPU state, GIL
+   status, and opcodes. With ``--opcodes`` enabled, bytecode instructions
+   like ``BINARY_OP_ADD_FLOAT``, ``CALL_PY_EXACT_ARGS``, and
+   ``CALL_LIST_APPEND`` appear as markers showing execution over time.
+
 
 Heatmap format
 --------------
@@ -859,6 +907,15 @@ showing sample counts at the source line level::
 
    python -m profiling.sampling run --heatmap script.py
    python -m profiling.sampling run --heatmap -o my_heatmap script.py
+
+.. figure:: tachyon-heatmap.png
+   :alt: Tachyon heatmap visualization
+   :align: center
+   :width: 100%
+
+   The heatmap overlays sample counts directly on your source code. Lines are
+   color-coded from cool (few samples) to hot (many samples). Navigation
+   buttons (▲▼) let you jump between callers and callees.
 
 Unlike other formats that produce a single file, heatmap output creates a
 directory containing HTML files for each profiled source file. If no output
@@ -886,6 +943,22 @@ The heatmap interface provides several interactive features:
 - **Dark/light theme**: toggle with preference saved across sessions
 - **Line linking**: click line numbers to create shareable URLs
 
+When opcode-level profiling is enabled with :option:`--opcodes`, each hot line
+can be expanded to show which bytecode instructions consumed time:
+
+.. figure:: tachyon-heatmap-with-opcodes.png
+   :alt: Heatmap with expanded bytecode panel
+   :align: center
+   :width: 100%
+
+   Expanding a hot line reveals the bytecode instructions executed, including
+   specialized variants. The panel shows sample counts per instruction and the
+   overall specialization percentage for the line.
+
+.. only:: html
+
+   `Try the interactive example <../_static/tachyon-example-heatmap.html>`__!
+
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
 format because it maps directly to their source code, making it easy to read
@@ -903,6 +976,14 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
+.. figure:: tachyon-live-mode-2.gif
+   :alt: Tachyon live mode showing all threads
+   :align: center
+   :width: 100%
+
+   Live mode displays real-time profiling statistics, showing combined
+   data from multiple threads in a multi-threaded application.
+
 The display updates continuously as new samples arrive, showing the current
 hottest functions. This mode requires the :mod:`curses` module, which is
 available on Unix-like systems but not on Windows. The terminal must be at
@@ -917,6 +998,14 @@ When :option:`--opcodes` is enabled, an additional opcode panel appears below th
 main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
+
+.. figure:: tachyon-live-mode-1.gif
+   :alt: Tachyon live mode with opcode panel
+   :align: center
+   :width: 100%
+
+   Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
+   instruction breakdown for the selected function.
 
 
 Keyboard commands
