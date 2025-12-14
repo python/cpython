@@ -3183,10 +3183,31 @@ sock.connect(('localhost', {port}))
         funcs_no_cache = [f.funcname for f in frames_no_cache]
         self.assertEqual(funcs_cached, funcs_no_cache)
 
-        # Same locations
-        locations_cached = [f.location for f in frames_cached]
-        locations_no_cache = [f.location for f in frames_no_cache]
-        self.assertEqual(locations_cached, locations_no_cache)
+        # For level3 (leaf frame), due to timing races we can be at either
+        # sock.sendall() or sock.recv() - both are valid. For parent frames,
+        # the locations should match exactly.
+        # Valid locations for level3: line 3 has two statements
+        #   sock.sendall(b"ready") -> col 4-26
+        #   sock.recv(16) -> col 28-41
+        level3_valid_cols = {(4, 26), (28, 41)}
+
+        for i in range(len(frames_cached)):
+            loc_cached = frames_cached[i].location
+            loc_no_cache = frames_no_cache[i].location
+
+            if frames_cached[i].funcname == "level3":
+                # Leaf frame: can be at either statement
+                self.assertIn(
+                    (loc_cached.col_offset, loc_cached.end_col_offset),
+                    level3_valid_cols,
+                )
+                self.assertIn(
+                    (loc_no_cache.col_offset, loc_no_cache.end_col_offset),
+                    level3_valid_cols,
+                )
+            else:
+                # Parent frames: must match exactly
+                self.assertEqual(loc_cached, loc_no_cache)
 
     @skip_if_not_supported
     @unittest.skipIf(
