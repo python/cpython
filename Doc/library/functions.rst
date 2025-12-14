@@ -1494,6 +1494,12 @@ are always available.  They are listed here in alphabetical order.
    disabled, the raw stream, a subclass of :class:`io.RawIOBase`,
    :class:`io.FileIO`, is returned.
 
+   The *file* argument is saved as the :attr:`~io.IOBase.name` attribute of
+   the returned file object. If *file* is given as a string or bytes object,
+   it will be saved as-is. If it is given as an integer file descriptor,
+   the :attr:`~io.IOBase.name` attribute will contain the file descriptor value.
+   For other object types, the representation of the object will be stored.
+
    .. index::
       single: line-buffered I/O
       single: unbuffered I/O
@@ -1539,6 +1545,10 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
+
+   .. versionchanged:: 3.13
+      Clarified that the *file* argument is saved as the :attr:`~io.IOBase.name`
+      attribute.
 
 .. function:: ord(character, /)
 
