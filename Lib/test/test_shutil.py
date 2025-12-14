@@ -1570,7 +1570,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a socket',
                                shutil.copyfile, __file__, sock_path)
 
-    @unittest.skipIf(os.name == 'nt', 'requires /dev/null')
+    @unittest.skipUnless(os.path.exists('/dev/null'), 'requires /dev/null')
     def test_copyfile_character_device(self):
         self.assertRaisesRegex(shutil.SpecialFileError, 'is a character device',
                                shutil.copyfile, '/dev/null', TESTFN)
