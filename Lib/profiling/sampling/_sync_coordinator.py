@@ -5,6 +5,7 @@ This module is used internally by the sample profiler to coordinate
 the startup of target processes. It should not be called directly by users.
 """
 
+import importlib.util
 import os
 import sys
 import socket
@@ -223,13 +224,14 @@ def main() -> NoReturn:
             module_name = target_args[1]
             module_args = target_args[2:]
 
-            import importlib.util
             if importlib.util.find_spec(module_name) is None:
                 raise TargetError(f"Module not found: {module_name}")
         else:
             script_path = target_args[0]
             script_args = target_args[1:]
-            if not os.path.isfile(os.path.join(cwd, script_path)):
+            # Match the path resolution logic in _execute_script
+            check_path = script_path if os.path.isabs(script_path) else os.path.join(cwd, script_path)
+            if not os.path.isfile(check_path):
                 raise TargetError(f"Script not found: {script_path}")
 
         # Signal readiness to profiler

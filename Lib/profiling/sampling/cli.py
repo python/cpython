@@ -1,8 +1,9 @@
 """Command-line interface for the sampling profiler."""
 
 import argparse
+import importlib.util
 import os
-import select
+import selectors
 import socket
 import subprocess
 import sys
@@ -94,6 +95,54 @@ def _parse_mode(mode_string):
     return mode_map[mode_string]
 
 
+def _check_process_died(process):
+    """Check if process died and raise an error with stderr if available."""
+    if process.poll() is None:
+        return  # Process still running
+
+    # Process died - try to get stderr for error message
+    stderr_msg = ""
+    if process.stderr:
+        try:
+            stderr_msg = process.stderr.read().decode().strip()
+        except (OSError, UnicodeDecodeError):
+            pass
+
+    if stderr_msg:
+        raise RuntimeError(stderr_msg)
+    raise RuntimeError(f"Process exited with code {process.returncode}")
+
+
+def _wait_for_ready_signal(sync_sock, process, timeout):
+    """Wait for the ready signal from the subprocess, checking for early death."""
+    deadline = time.monotonic() + timeout
+    sel = selectors.DefaultSelector()
+    sel.register(sync_sock, selectors.EVENT_READ)
+
+    try:
+        while True:
+            _check_process_died(process)
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("timed out")
+
+            if not sel.select(timeout=min(0.1, remaining)):
+                continue
+
+            conn, _ = sync_sock.accept()
+            try:
+                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+            finally:
+                conn.close()
+
+            if ready_signal != _READY_MESSAGE:
+                raise RuntimeError(f"Invalid ready signal received: {ready_signal!r}")
+            return
+    finally:
+        sel.close()
+
+
 def _run_with_sync(original_cmd, suppress_output=False):
     """Run a command with socket-based synchronization and return the process."""
     # Create a TCP socket for synchronization with better socket options
@@ -119,8 +168,10 @@ def _run_with_sync(original_cmd, suppress_output=False):
         ) + tuple(target_args)
 
         # Start the process with coordinator
-        # Suppress stdout if requested (for live mode), but capture stderr
-        # so we can report errors if the process fails to start
+        # When suppress_output=True (live mode), capture stderr so we can
+        # report errors if the process dies before signaling ready.
+        # When suppress_output=False (normal mode), let stderr inherit so
+        # script errors print to the terminal.
         popen_kwargs = {}
         if suppress_output:
             popen_kwargs["stdin"] = subprocess.DEVNULL
@@ -130,38 +181,11 @@ def _run_with_sync(original_cmd, suppress_output=False):
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            # Wait for ready signal, but also check if process dies early
-            deadline = time.monotonic() + _SYNC_TIMEOUT
-            while True:
-                # Check if process died
-                if process.poll() is not None:
-                    stderr_msg = ""
-                    if process.stderr:
-                        try:
-                            stderr_msg = process.stderr.read().decode().strip()
-                        except (OSError, UnicodeDecodeError):
-                            pass
-                    if stderr_msg:
-                        raise RuntimeError(stderr_msg)
-                    raise RuntimeError(
-                        f"Process exited with code {process.returncode}"
-                    )
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
 
-                # Check remaining timeout
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    raise socket.timeout("timed out")
-
-                # Wait for socket with short timeout to allow process checks
-                ready, _, _ = select.select([sync_sock], [], [], min(0.1, remaining))
-                if ready:
-                    with sync_sock.accept()[0] as conn:
-                        ready_signal = conn.recv(_RECV_BUFFER_SIZE)
-                        if ready_signal != _READY_MESSAGE:
-                            raise RuntimeError(
-                                f"Invalid ready signal received: {ready_signal!r}"
-                            )
-                        break
+            # Close stderr pipe if we were capturing it
+            if process.stderr:
+                process.stderr.close()
 
         except socket.timeout:
             # If we timeout, kill the process and raise an error
@@ -659,6 +683,25 @@ def _handle_attach(args):
 
 def _handle_run(args):
     """Handle the 'run' command."""
+    # Validate target exists before launching subprocess
+    if args.module:
+        # Temporarily add cwd to sys.path so we can find modules in the
+        # current directory, matching the coordinator's behavior
+        cwd = os.getcwd()
+        added_cwd = False
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+            added_cwd = True
+        try:
+            if importlib.util.find_spec(args.target) is None:
+                sys.exit(f"Error: Module not found: {args.target}")
+        finally:
+            if added_cwd:
+                sys.path.remove(cwd)
+    else:
+        if not os.path.exists(args.target):
+            sys.exit(f"Error: Script not found: {args.target}")
+
     # Check if live mode is requested
     if args.live:
         _handle_live_run(args)
@@ -671,7 +714,10 @@ def _handle_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization
-    process = _run_with_sync(cmd, suppress_output=False)
+    try:
+        process = _run_with_sync(cmd, suppress_output=False)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     # Use PROFILING_MODE_ALL for gecko format
     mode = (
@@ -718,14 +764,6 @@ def _handle_run(args):
 
 def _handle_live_attach(args, pid):
     """Handle live mode for an existing process."""
-    # Check if process exists
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        sys.exit(f"Error: process not found: {pid}")
-    except PermissionError:
-        pass  # Process exists, permission error will be handled later
-
     mode = _parse_mode(args.mode)
 
     # Determine skip_idle based on mode
@@ -767,8 +805,10 @@ def _handle_live_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization, suppressing output for live mode
-    # Note: _run_with_sync will raise if the process dies before signaling ready
-    process = _run_with_sync(cmd, suppress_output=True)
+    try:
+        process = _run_with_sync(cmd, suppress_output=True)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     mode = _parse_mode(args.mode)
 
