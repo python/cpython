@@ -25,6 +25,7 @@ _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
         return;
     }
 #endif
+    // The name length cannot exceed 80 (including the '\0').
     assert(strlen(name) < 80);
     int old_errno = errno;
     prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);

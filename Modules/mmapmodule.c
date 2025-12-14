@@ -1133,12 +1133,12 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
 {
 #if defined(MAP_ANONYMOUS) && defined(__linux__)
     const char *prefix = "cpython:mmap:";
-    if (strlen(name) + strlen(prefix) > 80) {
+    if (strlen(name) + strlen(prefix) > 79) {
         PyErr_SetString(PyExc_ValueError, "name is too long");
         return NULL;
     }
     if (self->flags & MAP_ANONYMOUS) {
-        char buf[81];
+        char buf[80];
         sprintf(buf, "%s%s", prefix, name);
         _PyAnnotateMemoryMap(self->data, self->size, buf);
         Py_RETURN_NONE;
