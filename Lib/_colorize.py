@@ -399,12 +399,12 @@ class _Span(NamedTuple):
     end: int
 
     @classmethod
-    def from_re(cls, m: Match[str], group: int | str):
+    def from_re(cls, m: Match[str], group: int | str) -> "_Span":
         re_span = m.span(group)
         return cls(re_span[0], re_span[1] - 1)
 
     @classmethod
-    def from_token(cls, token: TI, line_len: list[int]):
+    def from_token(cls, token: TI, line_len: list[int]) -> "_Span":
         end_offset = -1
         if (token.type in {T.FSTRING_MIDDLE, T.TSTRING_MIDDLE}
             and token.string.endswith(("{", "}"))):
@@ -418,7 +418,7 @@ class _Span(NamedTuple):
 
 
 class _ColorSpan(NamedTuple):
-    span: Span
+    span: _Span
     tag: str
 
 

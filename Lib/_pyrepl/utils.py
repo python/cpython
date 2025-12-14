@@ -15,7 +15,7 @@ ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 
 # Re-export from _colorize for backward compatibility
 gen_colors = _colorize._gen_colors
-ColorSpam = _colorize._ColorSpan
+ColorSpan = _colorize._ColorSpan
 Span = _colorize._Span
 
 
