@@ -4362,7 +4362,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        op(_CALL_LIST_APPEND, (callable, self, arg -- s, c)) {
+        op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
 
