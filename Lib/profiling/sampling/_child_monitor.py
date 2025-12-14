@@ -157,9 +157,9 @@ class ChildProcessMonitor:
             file=sys.stderr,
         )
 
-        deadline = time.time() + timeout
+        deadline = time.monotonic() + timeout
         for proc in profilers:
-            remaining = deadline - time.time()
+            remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
             try:
