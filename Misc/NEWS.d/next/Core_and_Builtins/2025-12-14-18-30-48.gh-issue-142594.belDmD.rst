@@ -1,0 +1,2 @@
+Fix crash in :meth:`io.TextIOWrapper.close` when the underlying buffer's
+``closed`` property calls :meth:`~io.TextIOWrapper.detach`.
