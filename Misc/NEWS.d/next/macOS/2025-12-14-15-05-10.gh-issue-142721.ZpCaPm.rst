@@ -1,0 +1,1 @@
+Corrected the macro names for conditional Apple targets.

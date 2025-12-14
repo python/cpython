@@ -39,7 +39,7 @@ terms of the MIT license. A copy of the license can be found in the file
   #endif
 #elif defined(__APPLE__)
   #include <TargetConditionals.h>
-  #if !TARGET_IOS_IPHONE && !TARGET_IOS_SIMULATOR
+  #if !TARGET_OS_IPHONE && !TARGET_OS_SIMULATOR
   #include <mach/vm_statistics.h>
   #endif
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
