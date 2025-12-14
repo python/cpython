@@ -1680,6 +1680,23 @@ class LargeArrayTest(unittest.TestCase):
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
 
+    def test_gh_142555(self):
+        # Test for null pointer dereference in array.__setitem__
+        # via re-entrant __index__.
+        victim = array.array('b', [0] * 64)
+
+        class EvilIndex:
+            def __index__(self):
+                # Re-entrant mutation: shrink the array while __setitem__
+                # still holds a pointer to the pre-clear buffer.
+                victim.clear()
+                return 0
+
+        with self.assertRaises(IndexError):
+            victim[1] = EvilIndex()
+
+        self.assertEqual(len(victim), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

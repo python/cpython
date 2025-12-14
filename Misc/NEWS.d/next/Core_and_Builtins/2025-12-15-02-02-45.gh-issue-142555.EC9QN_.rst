@@ -1,0 +1,3 @@
+Fix null pointer dereference in :class:`array.array.__setitem__` via
+an user-defined ``__index__`` method which modify the array during index
+conversion.

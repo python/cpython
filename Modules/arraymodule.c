@@ -221,7 +221,17 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
        the overflow checking */
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
-    else if (x < -128) {
+
+    /* Check buffer validity after PyArg_Parse which may call user-defined
+     * __index__ on v, which might modify the array buffer. See gh-142555.
+     */
+    if (i >= 0 && ap->ob_item == NULL) {
+        PyErr_SetString(PyExc_IndexError,
+            "array assignment index out of range");
+        return -1;
+    }
+
+    if (x < -128) {
         PyErr_SetString(PyExc_OverflowError,
             "signed char is less than minimum");
         return -1;
