@@ -3109,13 +3109,20 @@
         }
 
         case _CALL_LIST_APPEND: {
-            JitOptRef s;
+            JitOptRef arg;
+            JitOptRef self;
+            JitOptRef callable;
             JitOptRef c;
-            s = sym_new_not_null(ctx);
-            c = sym_new_not_null(ctx);
+            JitOptRef s;
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            (void)(callable);
+            c = arg;
+            s = self;
             CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-3] = s;
-            stack_pointer[-2] = c;
+            stack_pointer[-3] = c;
+            stack_pointer[-2] = s;
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;

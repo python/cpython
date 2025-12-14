@@ -7,7 +7,6 @@
 // See Tools/cases_generator/README.md for more information.
 
 #include "Python.h"
-#include "opcode_ids.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
@@ -4373,8 +4372,8 @@ dummy_func(
             if (err) {
                 ERROR_NO_POP();
             }
-            s = self;
             c = callable;
+            s = self;
             INPUTS_DEAD();
         #if TIER_ONE
             // Skip the following POP_TOP. This is done here in tier one, and

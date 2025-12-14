@@ -3241,8 +3241,8 @@
             _PyStackRef nos;
             _PyStackRef self;
             _PyStackRef arg;
-            _PyStackRef s;
             _PyStackRef c;
+            _PyStackRef s;
             _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -3293,8 +3293,8 @@
                 if (err) {
                     JUMP_TO_LABEL(error);
                 }
-                s = self;
                 c = callable;
+                s = self;
                 #if TIER_ONE
 
                 assert(next_instr->op.code == POP_TOP);
@@ -3303,8 +3303,8 @@
             }
             // _POP_TOP
             {
-                value = c;
-                stack_pointer[-3] = s;
+                value = s;
+                stack_pointer[-3] = c;
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3313,7 +3313,7 @@
             }
             // _POP_TOP
             {
-                value = s;
+                value = c;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);

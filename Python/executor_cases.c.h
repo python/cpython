@@ -13659,8 +13659,8 @@
             _PyStackRef arg;
             _PyStackRef self;
             _PyStackRef callable;
-            _PyStackRef s;
             _PyStackRef c;
+            _PyStackRef s;
             oparg = CURRENT_OPARG();
             arg = stack_pointer[-1];
             self = stack_pointer[-2];
@@ -13679,15 +13679,15 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            s = self;
             c = callable;
+            s = self;
             #if TIER_ONE
 
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
-            _tos_cache1 = c;
-            _tos_cache0 = s;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13701,8 +13701,8 @@
             _PyStackRef arg;
             _PyStackRef self;
             _PyStackRef callable;
-            _PyStackRef s;
             _PyStackRef c;
+            _PyStackRef s;
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             arg = _stack_item_0;
@@ -13724,15 +13724,15 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            s = self;
             c = callable;
+            s = self;
             #if TIER_ONE
 
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
-            _tos_cache1 = c;
-            _tos_cache0 = s;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13746,8 +13746,8 @@
             _PyStackRef arg;
             _PyStackRef self;
             _PyStackRef callable;
-            _PyStackRef s;
             _PyStackRef c;
+            _PyStackRef s;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
@@ -13771,15 +13771,15 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            s = self;
             c = callable;
+            s = self;
             #if TIER_ONE
 
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
-            _tos_cache1 = c;
-            _tos_cache0 = s;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(2);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -13793,8 +13793,8 @@
             _PyStackRef arg;
             _PyStackRef self;
             _PyStackRef callable;
-            _PyStackRef s;
             _PyStackRef c;
+            _PyStackRef s;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
@@ -13820,15 +13820,15 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            s = self;
             c = callable;
+            s = self;
             #if TIER_ONE
 
             assert(next_instr->op.code == POP_TOP);
             SKIP_OVER(1);
             #endif
-            _tos_cache1 = c;
-            _tos_cache0 = s;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
             break;

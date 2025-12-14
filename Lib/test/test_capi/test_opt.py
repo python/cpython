@@ -2255,7 +2255,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         uops = get_opnames(ex)
         self.assertIn("_CALL_LIST_APPEND", uops)
-        self.assertIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_isinstance_is_true(self):
         def testfunc(n):
