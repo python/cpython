@@ -66,16 +66,7 @@ def is_python_process(pid):
             # Can't read exe link, fall through to full probe
             pass
 
-    try:
-        # Full probe: Attempt to create a RemoteUnwinder - this will:
-        # 1. Search for the PyRuntime section in process memory maps
-        # 2. Read and validate debug offsets
-        # 3. Check Python version compatibility
-        _remote_debugging.RemoteUnwinder(pid)
-        return True
-    except (OSError, RuntimeError, PermissionError, ValueError):
-        # Not a Python process or not accessible
-        return False
+    return _remote_debugging.is_python_process(pid)
 
 
 class ChildProcessMonitor:
