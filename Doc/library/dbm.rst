@@ -130,7 +130,10 @@ Key and Value Types
 The accepted types for keys and values vary by backend. Keys and values are
 handled identically:
 
-* **Traditional backends**: :mod:`dbm.gnu`, :mod:`dbm.ndbm`, and :mod:`dbm.dumb` accept :class:`str` and :class:`bytes` objects.
+* **Traditional backends**:
+
+  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes` objects.
+  * :mod:`dbm.dumb`: Accepts :class:`str` and :class:`bytes` objects; :class:`bytearray` is acceptable as a value, but not as a key.
 * **SQLite backend** (:mod:`dbm.sqlite3`): Accepts :class:`str`, :class:`bytes`,
   :class:`int`, :class:`float`, :class:`bool`, :class:`bytearray`,
   :class:`memoryview`, and :class:`array.array` objects.
@@ -151,8 +154,6 @@ type stored.
 * ``db['key'] = False`` stored as ``b'0'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = memoryview(b'data')`` stored as ``b'data'`` (:mod:`dbm.sqlite3` only)
 * ``db['key'] = array.array('i', [1, 2, 3])`` stored as bytes (e.g. on little-endian: ``b'\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00'``) (:mod:`dbm.sqlite3` only)
-* ``db['key'] = None`` fails on all backends
-* ``db['key'] = [1, 2, 3]`` fails on all backends
 
 
 The following example records some hostnames and a corresponding title,  and
