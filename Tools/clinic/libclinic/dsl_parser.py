@@ -246,6 +246,7 @@ class IndentStack:
 class DSLParser:
     function: Function | None
     state: StateKeeper
+    expecting_parameters: bool
     keyword_only: bool
     positional_only: bool
     deprecated_positional: VersionTuple | None
@@ -285,6 +286,7 @@ class DSLParser:
     def reset(self) -> None:
         self.function = None
         self.state = self.state_dsl_start
+        self.expecting_parameters = True
         self.keyword_only = False
         self.positional_only = False
         self.deprecated_positional = None
@@ -876,6 +878,10 @@ class DSLParser:
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
 
+        if not self.expecting_parameters:
+            fail('Encountered parameter line when not expecting '
+                 f'parameters: {line}')
+
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
                 self.to_required()
@@ -909,27 +915,40 @@ class DSLParser:
         if len(function_args.args) > 1:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (comma?): {line!r}")
-        if function_args.kwarg:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (**kwargs?): {line!r}")
 
+        is_vararg = is_var_keyword = False
         if function_args.vararg:
             self.check_previous_star()
             self.check_remaining_star()
             is_vararg = True
             parameter = function_args.vararg
+        elif function_args.kwarg:
+            # If the existing parameters are all positional only or ``*args``
+            # (var-positional), then we allow ``**kwds`` (var-keyword).
+            # Currently, pos-or-keyword or keyword-only arguments are not
+            # allowed with the ``**kwds`` converter.
+            has_non_positional_param = any(
+                p.is_positional_or_keyword() or p.is_keyword_only()
+                for p in self.function.parameters.values()
+            )
+            if has_non_positional_param:
+                fail(f"Function {self.function.name!r} has an "
+                     f"invalid parameter declaration (**kwargs?): {line!r}")
+            is_var_keyword = True
+            parameter = function_args.kwarg
         else:
-            is_vararg = False
             parameter = function_args.args[0]
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
         if is_vararg:
-            name = 'varpos_' + name
+            name = f'varpos_{name}'
+        elif is_var_keyword:
+            name = f'var_keyword_{name}'
 
         value: object
         if not function_args.defaults:
-            if is_vararg:
+            if is_vararg or is_var_keyword:
                 value = NULL
             else:
                 if self.parameter_state is ParamState.OPTIONAL:
@@ -1065,6 +1084,8 @@ class DSLParser:
         kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
+        elif is_var_keyword:
+            kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
         else:
@@ -1118,6 +1139,8 @@ class DSLParser:
 
         if is_vararg:
             self.keyword_only = True
+        if is_var_keyword:
+            self.expecting_parameters = False
 
     @staticmethod
     def parse_converter(
@@ -1159,6 +1182,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '*' when not expecting parameters")
+
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1214,6 +1240,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '/' when not expecting parameters")
+
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
@@ -1450,11 +1479,13 @@ class DSLParser:
                 if p.is_vararg():
                     p_lines.append("*")
                     added_star = True
+                if p.is_var_keyword():
+                    p_lines.append("**")
 
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
 
-                if not p.is_vararg() and p.converter.is_optional():
+                if not p.is_variable_length() and p.converter.is_optional():
                     p_lines.append('=')
                     value = p.converter.py_default
                     if not value:
@@ -1583,8 +1614,11 @@ class DSLParser:
 
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
-                if (p.kind == inspect.Parameter.KEYWORD_ONLY or
-                    p.kind == inspect.Parameter.VAR_POSITIONAL):
+                if p.kind in {
+                    inspect.Parameter.KEYWORD_ONLY,
+                    inspect.Parameter.VAR_POSITIONAL,
+                    inspect.Parameter.VAR_KEYWORD
+                }:
                     return
             elif self.deprecated_positional:
                 if p.deprecated_positional == self.deprecated_positional:

@@ -320,9 +320,9 @@ effort will be made to add such support.
 PEP 562: Customization of Access to Module Attributes
 -----------------------------------------------------
 
-Python 3.7 allows defining :meth:`__getattr__` on modules and will call
+Python 3.7 allows defining :meth:`~module.__getattr__` on modules and will call
 it whenever a module attribute is otherwise not found.  Defining
-:meth:`__dir__` on modules is now also allowed.
+:meth:`~module.__dir__` on modules is now also allowed.
 
 A typical example of where this may be useful is module attribute deprecation
 and lazy loading.
@@ -409,8 +409,8 @@ PEP 560: Core Support for ``typing`` module and Generic Types
 Initially :pep:`484` was designed in such way that it would not introduce *any*
 changes to the core CPython interpreter. Now type hints and the :mod:`typing`
 module are extensively used by the community, so this restriction is removed.
-The PEP introduces two special methods :meth:`__class_getitem__` and
-``__mro_entries__``, these methods are now used by most classes and special
+The PEP introduces two special methods :meth:`~object.__class_getitem__` and
+:meth:`~object.__mro_entries__`, these methods are now used by most classes and special
 constructs in :mod:`typing`. As a result, the speed of various operations
 with types increased up to 7 times, the generic types can be used without
 metaclass conflicts, and several long standing bugs in :mod:`typing` module are
@@ -603,7 +603,7 @@ The new :mod:`importlib.resources` module provides several new APIs and one
 new ABC for access to, opening, and reading *resources* inside packages.
 Resources are roughly similar to files inside packages, but they needn't
 be actual files on the physical file system.  Module loaders can provide a
-:meth:`get_resource_reader` function which returns
+:meth:`!get_resource_reader` function which returns
 a :class:`importlib.abc.ResourceReader` instance to support this
 new API.  Built-in file path loaders and zip file loaders both support this.
 
@@ -841,7 +841,7 @@ and by Alexander Mohr and Ilya Kulakov in :issue:`29302`.)
 cProfile
 --------
 
-The :mod:`cProfile` command line now accepts ``-m module_name`` as an
+The :mod:`!cProfile` command line now accepts ``-m module_name`` as an
 alternative to script path.  (Contributed by Sanyam Khurana in :issue:`21862`.)
 
 
@@ -910,9 +910,9 @@ which allows listing the names of properties which should not become
 enum members.
 (Contributed by Ethan Furman in :issue:`31801`.)
 
-In Python 3.8, attempting to check for non-Enum objects in :class:`Enum`
+In Python 3.8, attempting to check for non-Enum objects in :class:`~enum.Enum`
 classes will raise a :exc:`TypeError` (e.g. ``1 in Color``); similarly,
-attempting to check for non-Flag objects in a :class:`Flag` member will
+attempting to check for non-Flag objects in a :class:`~enum.Flag` member will
 raise :exc:`TypeError` (e.g. ``1 in Perm.RW``); currently, both operations
 return :const:`False` instead and are deprecated.
 (Contributed by Ethan Furman in :issue:`33217`.)
@@ -969,7 +969,7 @@ uses the current working directory.
 (Contributed by Stéphane Wirtel and Julien Palard in :issue:`28707`.)
 
 The new :class:`ThreadingHTTPServer <http.server.ThreadingHTTPServer>` class
-uses threads to handle requests using :class:`~socketserver.ThreadingMixin`.
+uses threads to handle requests using :class:`~socketserver.ThreadingMixIn`.
 It is used when ``http.server`` is run with ``-m``.
 (Contributed by Julien Palard in :issue:`31639`.)
 
@@ -1052,12 +1052,12 @@ support the loading of resources from packages.  See also
 lacks a spec.
 (Contributed by Garvit Khatri in :issue:`29851`.)
 
-:func:`importlib.find_spec` now raises :exc:`ModuleNotFoundError` instead of
+:func:`importlib.util.find_spec` now raises :exc:`ModuleNotFoundError` instead of
 :exc:`AttributeError` if the specified parent module is not a package (i.e.
 lacks a ``__path__`` attribute).
 (Contributed by Milan Oberkirch in :issue:`30436`.)
 
-The new :func:`importlib.source_hash` can be used to compute the hash of
+The new :func:`importlib.util.source_hash` can be used to compute the hash of
 the passed source.  A :ref:`hash-based .pyc file <whatsnew37-pep552>`
 embeds the value returned by this function.
 
@@ -1148,7 +1148,7 @@ running.
 (Contributed by Antoine Pitrou in :issue:`30596`.)
 
 The new :meth:`Process.kill() <multiprocessing.Process.kill>` method can
-be used to terminate the process using the :data:`SIGKILL` signal on Unix.
+be used to terminate the process using the :data:`~signal.SIGKILL` signal on Unix.
 (Contributed by Vitor Pereira in :issue:`30794`.)
 
 Non-daemonic threads created by :class:`~multiprocessing.Process` are now
@@ -1280,9 +1280,10 @@ This function should be used instead of :func:`os.close` for better
 compatibility across platforms.
 (Contributed by Christian Heimes in :issue:`32454`.)
 
-The :mod:`socket` module now exposes the :const:`socket.TCP_CONGESTION`
-(Linux 2.6.13), :const:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37), and
-:const:`socket.TCP_NOTSENT_LOWAT` (Linux 3.12) constants.
+The :mod:`socket` module now exposes the :ref:`socket.TCP_CONGESTION
+<socket-unix-constants>` (Linux 2.6.13), :ref:`socket.TCP_USER_TIMEOUT
+<socket-unix-constants>` (Linux 2.6.37), and :ref:`socket.TCP_NOTSENT_LOWAT
+<socket-unix-constants>` (Linux 3.12) constants.
 (Contributed by Omar Sandoval in :issue:`26273` and
 Nathaniel J. Smith in :issue:`29728`.)
 
@@ -1298,11 +1299,14 @@ by default.
 socketserver
 ------------
 
-:meth:`socketserver.ThreadingMixIn.server_close` now waits until all non-daemon
-threads complete. :meth:`socketserver.ForkingMixIn.server_close` now waits
+:meth:`socketserver.ThreadingMixIn.server_close
+<socketserver.BaseServer.server_close>` now waits until all non-daemon
+threads complete. :meth:`socketserver.ForkingMixIn.server_close
+<socketserver.BaseServer.server_close>` now waits
 until all child processes complete.
 
-Add a new :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to
+Add a new :attr:`socketserver.ForkingMixIn.block_on_close
+<socketserver.ThreadingMixIn.block_on_close>` class attribute to
 :class:`socketserver.ForkingMixIn` and :class:`socketserver.ThreadingMixIn`
 classes. Set the class attribute to ``False`` to get the pre-3.7 behaviour.
 
@@ -1323,7 +1327,7 @@ ssl
 ---
 
 The :mod:`ssl` module now uses OpenSSL's builtin API instead of
-:func:`~ssl.match_hostname` to check a host name or an IP address.  Values
+:func:`!match_hostname` to check a host name or an IP address.  Values
 are validated during TLS handshake.  Any certificate validation error
 including failing the host name check now raises
 :exc:`~ssl.SSLCertVerificationError` and aborts the handshake with a proper
@@ -1341,7 +1345,7 @@ Host name validation can be customized with
 The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
 
-:func:`~ssl.match_hostname` no longer supports partial wildcards like
+:func:`!match_hostname` no longer supports partial wildcards like
 ``www*.example.org``.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
@@ -1438,7 +1442,7 @@ The new :func:`sys.get_coroutine_origin_tracking_depth` function returns
 the current coroutine origin tracking depth, as set by
 the new :func:`sys.set_coroutine_origin_tracking_depth`.  :mod:`asyncio`
 has been converted to use this new API instead of
-the deprecated :func:`sys.set_coroutine_wrapper`.
+the deprecated :func:`!sys.set_coroutine_wrapper`.
 (Contributed by Nathaniel J. Smith in :issue:`32591`.)
 
 
@@ -1615,7 +1619,7 @@ external entities by default.
 xml.etree
 ---------
 
-:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`find`
+:ref:`ElementPath <elementtree-xpath>` predicates in the :meth:`!find`
 methods can now compare text of the current node with ``[. = "text"]``,
 not only text in children.  Predicates also allow adding spaces for
 better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
@@ -1624,7 +1628,7 @@ better readability.  (Contributed by Stefan Behnel in :issue:`31648`.)
 xmlrpc.server
 -------------
 
-:meth:`SimpleXMLRPCDispatcher.register_function <xmlrpc.server.SimpleXMLRPCDispatcher>`
+:meth:`!SimpleXMLRPCDispatcher.register_function`
 can now be used as a decorator.  (Contributed by Xiang Zhang in
 :issue:`7769`.)
 
@@ -1682,15 +1686,15 @@ The :mod:`tracemalloc` now exposes a C API through the new
 functions.
 (Contributed by Victor Stinner in :issue:`30054`.)
 
-The new :c:func:`import__find__load__start` and
-:c:func:`import__find__load__done` static markers can be used to trace
-module imports.
+The new :ref:`import__find__load__start <static-markers>` and
+:ref:`import__find__load__done <static-markers>` static markers can be used
+to trace module imports.
 (Contributed by Christian Heimes in :issue:`31574`.)
 
 The fields :c:member:`!name` and :c:member:`!doc` of structures
 :c:type:`PyMemberDef`, :c:type:`PyGetSetDef`,
 :c:type:`PyStructSequence_Field`, :c:type:`PyStructSequence_Desc`,
-and :c:struct:`wrapperbase` are now of type ``const char *`` rather of
+and :c:struct:`!wrapperbase` are now of type ``const char *`` rather of
 ``char *``.  (Contributed by Serhiy Storchaka in :issue:`28761`.)
 
 The result of :c:func:`PyUnicode_AsUTF8AndSize` and :c:func:`PyUnicode_AsUTF8`
@@ -1719,8 +1723,8 @@ Added C API support for timezones with timezone constructors
 and access to the UTC singleton with :c:data:`PyDateTime_TimeZone_UTC`.
 Contributed by Paul Ganssle in :issue:`10381`.
 
-The type of results of :c:func:`PyThread_start_new_thread` and
-:c:func:`PyThread_get_thread_ident`, and the *id* parameter of
+The type of results of :c:func:`!PyThread_start_new_thread` and
+:c:func:`!PyThread_get_thread_ident`, and the *id* parameter of
 :c:func:`PyThreadState_SetAsyncExc` changed from :c:expr:`long` to
 :c:expr:`unsigned long`.
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
@@ -1847,8 +1851,8 @@ make the creation of named tuples 4 to 6 times faster.
 (Contributed by Jelle Zijlstra with further improvements by INADA Naoki,
 Serhiy Storchaka, and Raymond Hettinger in :issue:`28638`.)
 
-:meth:`date.fromordinal` and :meth:`date.fromtimestamp` are now up to
-30% faster in the common case.
+:meth:`datetime.date.fromordinal` and :meth:`datetime.date.fromtimestamp`
+are now up to 30% faster in the common case.
 (Contributed by Paul Ganssle in :issue:`32403`.)
 
 The :func:`os.fwalk` function is now up to 2 times faster thanks to
@@ -1997,9 +2001,9 @@ modes (this will be an error in future Python releases).
 enum
 ----
 
-In Python 3.8, attempting to check for non-Enum objects in :class:`Enum`
+In Python 3.8, attempting to check for non-Enum objects in :class:`~enum.Enum`
 classes will raise a :exc:`TypeError` (e.g. ``1 in Color``); similarly,
-attempting to check for non-Flag objects in a :class:`Flag` member will
+attempting to check for non-Flag objects in a :class:`~enum.Flag` member will
 raise :exc:`TypeError` (e.g. ``1 in Perm.RW``); currently, both operations
 return :const:`False` instead.
 (Contributed by Ethan Furman in :issue:`33217`.)
@@ -2034,14 +2038,14 @@ favour of :class:`importlib.abc.ResourceReader`.
 locale
 ------
 
-:func:`locale.format` has been deprecated, use :meth:`locale.format_string`
+:func:`!locale.format` has been deprecated, use :meth:`locale.format_string`
 instead.  (Contributed by Garvit in :issue:`10379`.)
 
 
 macpath
 -------
 
-The :mod:`macpath` is now deprecated and will be removed in Python 3.8.
+The :mod:`!macpath` is now deprecated and will be removed in Python 3.8.
 (Contributed by Chi Hsuan Yen in :issue:`9850`.)
 
 
@@ -2066,7 +2070,7 @@ if the passed argument is larger than 16 bits, an exception will be raised.
 ssl
 ---
 
-:func:`ssl.wrap_socket` is deprecated.  Use
+:func:`!ssl.wrap_socket` is deprecated.  Use
 :meth:`ssl.SSLContext.wrap_socket` instead.
 (Contributed by Christian Heimes in :issue:`28124`.)
 
@@ -2082,8 +2086,8 @@ Use :func:`!sunau.open` instead.
 sys
 ---
 
-Deprecated :func:`sys.set_coroutine_wrapper` and
-:func:`sys.get_coroutine_wrapper`.
+Deprecated :func:`!sys.set_coroutine_wrapper` and
+:func:`!sys.get_coroutine_wrapper`.
 
 The undocumented ``sys.callstats()`` function has been deprecated and
 will be removed in a future Python version.
@@ -2093,7 +2097,7 @@ will be removed in a future Python version.
 wave
 ----
 
-:func:`wave.openfp` has been deprecated and will be removed in Python 3.9.
+:func:`!wave.openfp` has been deprecated and will be removed in Python 3.9.
 Use :func:`wave.open` instead.
 (Contributed by Brian Curtin in :issue:`31985`.)
 
@@ -2173,8 +2177,8 @@ The following features and APIs have been removed from Python 3.7:
 
 * Removed previously deprecated in Python 2.4 classes ``Plist``, ``Dict`` and
   ``_InternalDict`` in the :mod:`plistlib` module.  Dict values in the result
-  of functions :func:`~plistlib.readPlist` and
-  :func:`~plistlib.readPlistFromBytes` are now normal dicts.  You no longer
+  of functions :func:`!readPlist` and
+  :func:`!readPlistFromBytes` are now normal dicts.  You no longer
   can use attribute access to access items of these dictionaries.
 
 * The ``asyncio.windows_utils.socketpair()`` function has been
@@ -2191,7 +2195,7 @@ The following features and APIs have been removed from Python 3.7:
 * Direct instantiation of :class:`ssl.SSLSocket` and :class:`ssl.SSLObject`
   objects is now prohibited. The constructors were never documented, tested,
   or designed as public constructors.  Users were supposed to use
-  :func:`ssl.wrap_socket` or :class:`ssl.SSLContext`.
+  :func:`!ssl.wrap_socket` or :class:`ssl.SSLContext`.
   (Contributed by Christian Heimes in :issue:`32951`.)
 
 * The unused ``distutils`` ``install_misc`` command has been removed.
@@ -2275,15 +2279,18 @@ Changes in Python Behavior
 Changes in the Python API
 -------------------------
 
-* :meth:`socketserver.ThreadingMixIn.server_close` now waits until all
+* :meth:`socketserver.ThreadingMixIn.server_close
+  <socketserver.BaseServer.server_close>` now waits until all
   non-daemon threads complete.  Set the new
   :attr:`socketserver.ThreadingMixIn.block_on_close` class attribute to
   ``False`` to get the pre-3.7 behaviour.
   (Contributed by Victor Stinner in :issue:`31233` and :issue:`33540`.)
 
-* :meth:`socketserver.ForkingMixIn.server_close` now waits until all
+* :meth:`socketserver.ForkingMixIn.server_close
+  <socketserver.BaseServer.server_close>` now waits until all
   child processes complete. Set the new
-  :attr:`socketserver.ForkingMixIn.block_on_close` class attribute to ``False``
+  :attr:`socketserver.ForkingMixIn.block_on_close
+  <socketserver.ThreadingMixIn.block_on_close>` class attribute to ``False``
   to get the pre-3.7 behaviour.
   (Contributed by Victor Stinner in :issue:`31151` and :issue:`33540`.)
 
@@ -2476,7 +2483,7 @@ avoiding possible problems use new functions :c:func:`PySlice_Unpack` and
 CPython bytecode changes
 ------------------------
 
-There are two new opcodes: :opcode:`LOAD_METHOD` and :opcode:`!CALL_METHOD`.
+There are two new opcodes: :opcode:`!LOAD_METHOD` and :opcode:`!CALL_METHOD`.
 (Contributed by Yury Selivanov and INADA Naoki in :issue:`26110`.)
 
 The :opcode:`!STORE_ANNOTATION` opcode has been removed.

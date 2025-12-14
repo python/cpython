@@ -3,9 +3,9 @@ Pending removal in Python 3.15
 
 * The import system:
 
-  * Setting :attr:`~module.__cached__` on a module while
+  * Setting ``__cached__`` on a module while
     failing to set :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>`
-    is deprecated. In Python 3.15, :attr:`!__cached__` will cease to be set or
+    is deprecated. In Python 3.15, ``__cached__`` will cease to be set or
     take into consideration by the import system or standard library. (:gh:`97879`)
 
   * Setting :attr:`~module.__package__` on a module while
@@ -92,7 +92,7 @@ Pending removal in Python 3.15
     Use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``
     to create a TypedDict with zero field.
 
-  * The :func:`typing.no_type_check_decorator` decorator function
+  * The :func:`!typing.no_type_check_decorator` decorator function
     has been deprecated since Python 3.13.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
@@ -107,6 +107,6 @@ Pending removal in Python 3.15
 
 * :mod:`zipimport`:
 
-  * :meth:`~zipimport.zipimporter.load_module` has been deprecated since
+  * :meth:`!zipimport.zipimporter.load_module` has been deprecated since
     Python 3.10. Use :meth:`~zipimport.zipimporter.exec_module` instead.
-    (Contributed by Jiahao Li in :gh:`125746`.)
+    (:gh:`125746`.)
