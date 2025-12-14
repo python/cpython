@@ -2169,7 +2169,7 @@ expression support in the :mod:`re` module).
       (False, True, True)
 
    See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
-   decimal numbers superset.
+   a superset of decimal numbers.
 
 
 .. method:: str.isprintable()
