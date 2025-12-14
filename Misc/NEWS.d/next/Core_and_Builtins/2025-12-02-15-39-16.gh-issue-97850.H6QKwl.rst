@@ -1,0 +1,3 @@
+Remove all ``*.load_module()`` usage and definitions from the import system
+and importlib. The method has been deprecated in favor of
+``importlib.abc.Loader.exec_module()`` since Python 3.4.

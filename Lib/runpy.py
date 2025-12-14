@@ -80,7 +80,6 @@ def _run_code(code, run_globals, init_globals=None,
             pkg_name = mod_spec.parent
     run_globals.update(__name__ = mod_name,
                        __file__ = fname,
-                       __cached__ = cached,
                        __doc__ = None,
                        __loader__ = loader,
                        __package__ = pkg_name,
@@ -180,7 +179,6 @@ def _run_module_as_main(mod_name, alter_argv=True):
        At the very least, these variables in __main__ will be overwritten:
            __name__
            __file__
-           __cached__
            __loader__
            __package__
     """
