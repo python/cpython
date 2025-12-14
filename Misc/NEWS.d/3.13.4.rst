@@ -655,7 +655,7 @@ docstring to the official docs.
 .. date: 2025-05-30-15-56-19
 .. gh-issue: 134908
 .. nonce: 3a7PxM
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when iterating over lines in a text file on the :term:`free
 threaded <free threading>` build.
@@ -675,7 +675,7 @@ behavior of list comprehensions in line with other forms of iteration
 .. date: 2025-05-22-14-48-19
 .. gh-issue: 134381
 .. nonce: 2BXhth
-.. section: Core and Builtins
+.. section: Library
 
 Fix :exc:`RuntimeError` when using a not-started :class:`threading.Thread`
 after calling :func:`os.fork`
