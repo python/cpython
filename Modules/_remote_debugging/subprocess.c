@@ -400,37 +400,39 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         return -1;
     }
 
-    /* First pass: count processes */
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(PROCESSENTRY32);
+    /* Use dynamic arrays for single-pass collection */
+    pid_array_t all_pids;
+    pid_array_t ppids;
 
-    size_t count = 0;
-    if (Process32First(snapshot, &pe)) {
-        do {
-            count++;
-        } while (Process32Next(snapshot, &pe));
-    }
-
-    /* Allocate arrays for PIDs and PPIDs */
-    pid_t *pid_list = (pid_t *)PyMem_Malloc(count * sizeof(pid_t));
-    pid_t *ppids = (pid_t *)PyMem_Malloc(count * sizeof(pid_t));
-    if (!pid_list || !ppids) {
+    if (pid_array_init(&all_pids) < 0) {
         CloseHandle(snapshot);
-        PyMem_Free(pid_list);
-        PyMem_Free(ppids);
-        PyErr_NoMemory();
         return -1;
     }
 
-    /* Second pass: collect PIDs and PPIDs */
+    if (pid_array_init(&ppids) < 0) {
+        CloseHandle(snapshot);
+        pid_array_cleanup(&all_pids);
+        return -1;
+    }
+
+    /* Single pass: collect PIDs and PPIDs together */
+    PROCESSENTRY32 pe;
     pe.dwSize = sizeof(PROCESSENTRY32);
-    size_t idx = 0;
     if (Process32First(snapshot, &pe)) {
         do {
-            pid_list[idx] = (pid_t)pe.th32ProcessID;
-            ppids[idx] = (pid_t)pe.th32ParentProcessID;
-            idx++;
-        } while (Process32Next(snapshot, &pe) && idx < count);
+            if (pid_array_append(&all_pids, (pid_t)pe.th32ProcessID) < 0) {
+                CloseHandle(snapshot);
+                pid_array_cleanup(&all_pids);
+                pid_array_cleanup(&ppids);
+                return -1;
+            }
+            if (pid_array_append(&ppids, (pid_t)pe.th32ParentProcessID) < 0) {
+                CloseHandle(snapshot);
+                pid_array_cleanup(&all_pids);
+                pid_array_cleanup(&ppids);
+                return -1;
+            }
+        } while (Process32Next(snapshot, &pe));
     }
 
     CloseHandle(snapshot);
@@ -438,14 +440,14 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     /* Find children using BFS */
     pid_array_t to_process;
     if (pid_array_init(&to_process) < 0) {
-        PyMem_Free(pid_list);
-        PyMem_Free(ppids);
+        pid_array_cleanup(&all_pids);
+        pid_array_cleanup(&ppids);
         return -1;
     }
 
     if (pid_array_append(&to_process, target_pid) < 0) {
-        PyMem_Free(pid_list);
-        PyMem_Free(ppids);
+        pid_array_cleanup(&all_pids);
+        pid_array_cleanup(&ppids);
         pid_array_cleanup(&to_process);
         return -1;
     }
@@ -454,22 +456,22 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
     while (process_idx < to_process.count) {
         pid_t current_pid = to_process.pids[process_idx++];
 
-        for (size_t i = 0; i < idx; i++) {
-            if (ppids[i] == current_pid) {
-                pid_t child_pid = pid_list[i];
+        for (size_t i = 0; i < all_pids.count; i++) {
+            if (ppids.pids[i] == current_pid) {
+                pid_t child_pid = all_pids.pids[i];
 
                 if (!pid_array_contains(result, child_pid)) {
                     if (pid_array_append(result, child_pid) < 0) {
-                        PyMem_Free(pid_list);
-                        PyMem_Free(ppids);
+                        pid_array_cleanup(&all_pids);
+                        pid_array_cleanup(&ppids);
                         pid_array_cleanup(&to_process);
                         return -1;
                     }
 
                     if (recursive) {
                         if (pid_array_append(&to_process, child_pid) < 0) {
-                            PyMem_Free(pid_list);
-                            PyMem_Free(ppids);
+                            pid_array_cleanup(&all_pids);
+                            pid_array_cleanup(&ppids);
                             pid_array_cleanup(&to_process);
                             return -1;
                         }
@@ -483,8 +485,8 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         }
     }
 
-    PyMem_Free(pid_list);
-    PyMem_Free(ppids);
+    pid_array_cleanup(&all_pids);
+    pid_array_cleanup(&ppids);
     pid_array_cleanup(&to_process);
     return 0;
 }

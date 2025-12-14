@@ -144,6 +144,11 @@ def _build_child_profiler_args(args):
 
 
 def _build_output_pattern(args):
+    """Build output filename pattern for child profilers.
+
+    The pattern uses {pid} as a placeholder which will be replaced with the
+    actual child PID using str.replace(), so user filenames with braces are safe.
+    """
     if args.outfile:
         # User specified output - add PID to filename
         base, ext = os.path.splitext(args.outfile)
@@ -152,14 +157,14 @@ def _build_output_pattern(args):
         else:
             return f"{args.outfile}_{{pid}}"
     else:
-        # Use default pattern based on format
+        # Use default pattern based on format (consistent _ separator)
         extension = FORMAT_EXTENSIONS.get(args.format, "txt")
         if args.format == "heatmap":
             return "heatmap_{pid}"
         if args.format == "pstats":
             # pstats defaults to stdout, but for subprocesses we need files
-            return "profile.{pid}.pstats"
-        return f"{args.format}.{{pid}}.{extension}"
+            return "profile_{pid}.pstats"
+        return f"{args.format}_{{pid}}.{extension}"
 
 
 def _parse_mode(mode_string):

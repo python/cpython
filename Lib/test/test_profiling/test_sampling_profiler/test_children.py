@@ -24,6 +24,18 @@ _PERMISSION_ERROR_MSG = "Permission Error"
 _SKIP_PERMISSION_MSG = "Insufficient permissions for remote profiling"
 
 
+def _check_remote_debugging_permissions():
+    """Check if we have permissions for remote debugging.
+
+    Returns True if we have permissions, False if we don't.
+    On macOS without proper entitlements, this will return False.
+    """
+    # If is_python_process returns False for the current process,
+    # we don't have permissions (since we ARE a Python process)
+    import _remote_debugging
+    return _remote_debugging.is_python_process(os.getpid())
+
+
 def _readline_with_timeout(file_obj, timeout):
     # Thread-based readline with timeout - works across all platforms
     # including Windows where select() doesn't work with pipes.
@@ -558,15 +570,22 @@ class TestIsPythonProcess(unittest.TestCase):
         """Test that current process is detected as Python."""
         from profiling.sampling._child_monitor import is_python_process
 
+        if not _check_remote_debugging_permissions():
+            self.skipTest(_SKIP_PERMISSION_MSG)
+
         # Current process should be Python
+        result = is_python_process(os.getpid())
         self.assertTrue(
-            is_python_process(os.getpid()),
+            result,
             f"Current process (PID {os.getpid()}) should be detected as Python",
         )
 
     def test_is_python_process_python_subprocess(self):
         """Test that a Python subprocess is detected as Python."""
         from profiling.sampling._child_monitor import is_python_process
+
+        if not _check_remote_debugging_permissions():
+            self.skipTest(_SKIP_PERMISSION_MSG)
 
         # Start a Python subprocess
         proc = subprocess.Popen(
@@ -584,12 +603,9 @@ class TestIsPythonProcess(unittest.TestCase):
             while time.time() < deadline:
                 if proc.poll() is not None:
                     self.fail(f"Process {proc.pid} exited unexpectedly")
-                try:
-                    if is_python_process(proc.pid):
-                        detected = True
-                        break
-                except PermissionError:
-                    self.skipTest(_SKIP_PERMISSION_MSG)
+                if is_python_process(proc.pid):
+                    detected = True
+                    break
                 time.sleep(0.05)
 
             self.assertTrue(
@@ -632,8 +648,9 @@ class TestIsPythonProcess(unittest.TestCase):
         from profiling.sampling._child_monitor import is_python_process
 
         # Use a very high PID that's unlikely to exist
+        result = is_python_process(999999999)
         self.assertFalse(
-            is_python_process(999999999),
+            result,
             "Nonexistent PID 999999999 should return False",
         )
 

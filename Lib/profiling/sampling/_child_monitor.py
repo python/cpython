@@ -5,9 +5,8 @@ This module monitors a target process for child process creation and spawns
 separate profiler instances for each discovered child.
 """
 
-import os
-import sys
 import subprocess
+import sys
 import threading
 import time
 
@@ -42,11 +41,7 @@ def get_child_pids(pid, recursive=True):
 
 def is_python_process(pid):
     """
-    Quickly check if a process is a Python process.
-
-    This performs a two-stage check:
-    1. Fast path: Check /proc/{pid}/exe symlink for 'python' (Linux only)
-    2. Full probe: Attempt to locate Python runtime structures in memory
+    Check if a process is a Python process.
 
     Args:
         pid: Process ID to check
@@ -54,18 +49,6 @@ def is_python_process(pid):
     Returns:
         bool: True if the process appears to be a Python process, False otherwise
     """
-    # Fast path: Check executable name on Linux (much faster than full probe)
-    if sys.platform == "linux":
-        try:
-            exe_path = os.readlink(f"/proc/{pid}/exe")
-            # Check if executable name contains 'python'
-            exe_name = os.path.basename(exe_path).lower()
-            if "python" not in exe_name:
-                return False
-        except (OSError, PermissionError):
-            # Can't read exe link, fall through to full probe
-            pass
-
     return _remote_debugging.is_python_process(pid)
 
 
@@ -282,7 +265,8 @@ class ChildProcessMonitor:
         args = list(self.cli_args)
 
         if self.output_pattern:
-            output_file = self.output_pattern.format(pid=child_pid)
+            # Use replace() instead of format() to handle user filenames with braces
+            output_file = self.output_pattern.replace("{pid}", str(child_pid))
             found_output = False
             for i, arg in enumerate(args):
                 if arg in ("-o", "--output") and i + 1 < len(args):

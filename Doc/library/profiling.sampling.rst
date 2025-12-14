@@ -461,8 +461,8 @@ applications that use :mod:`multiprocessing`, :mod:`subprocess`,
 or other process spawning mechanisms.
 
 .. code-block:: python
+   :caption: worker_pool.py
 
-   # worker_pool.py
    from concurrent.futures import ProcessPoolExecutor
    import math
 
@@ -483,7 +483,7 @@ or other process spawning mechanisms.
    python -m profiling.sampling run --subprocesses --flamegraph worker_pool.py
 
 This produces separate flame graphs for the main process and each worker
-process: ``flamegraph.<main_pid>.html``, ``flamegraph.<worker1_pid>.html``,
+process: ``flamegraph_<main_pid>.html``, ``flamegraph_<worker1_pid>.html``,
 and so on.
 
 Each subprocess receives its own output file. The filename is derived from
@@ -492,10 +492,10 @@ appended:
 
 - If you specify ``-o profile.html``, subprocesses produce ``profile_12345.html``,
   ``profile_12346.html``, and so on
-- With default output, subprocesses produce files like ``flamegraph.12345.html``
+- With default output, subprocesses produce files like ``flamegraph_12345.html``
   or directories like ``heatmap_12345``
 - For pstats format (which defaults to stdout), subprocesses produce files like
-  ``profile.12345.pstats``
+  ``profile_12345.pstats``
 
 The subprocess profilers inherit most sampling options from the parent (interval,
 duration, thread selection, native frames, GC frames, async-aware mode, and
@@ -503,10 +503,9 @@ output format). All Python descendant processes are profiled recursively,
 including grandchildren and further descendants.
 
 Subprocess detection works by periodically scanning for new descendants of
-the target process and checking whether each new process is a Python process.
-On Linux, this uses a fast check of the executable name followed by a full
-probe of the process memory if needed. Non-Python subprocesses (such as
-shell commands or external tools) are ignored.
+the target process and checking whether each new process is a Python process
+by probing the process memory for Python runtime structures. Non-Python
+subprocesses (such as shell commands or external tools) are ignored.
 
 There is a limit of 100 concurrent subprocess profilers to prevent resource
 exhaustion in programs that spawn many processes. If this limit is reached,
