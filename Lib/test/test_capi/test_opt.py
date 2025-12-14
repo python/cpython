@@ -2132,7 +2132,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_O", uops)
-        self.assertIn("_POP_TWO", uops)
+        self.assertIn("_POP_TOP", uops)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
