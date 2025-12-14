@@ -1427,7 +1427,6 @@ def parse_http_list(s):
         if quote:
             if cur == '\\':
                 escape = True
-                continue
             elif cur == '"':
                 quote = False
             part += cur
