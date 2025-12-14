@@ -1158,9 +1158,9 @@ dummy_func(
         }
 
         macro(STORE_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT;
+            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT + POP_TOP;
 
-        op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- )) {
+        op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
             assert(PyDict_CheckExact(dict));
@@ -1168,8 +1168,11 @@ dummy_func(
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
                                             PyStackRef_AsPyObjectSteal(value));
-            PyStackRef_CLOSE(dict_st);
-            ERROR_IF(err);
+            if (err) {
+                ERROR_NO_POP();
+            }
+            INPUTS_DEAD();
+            st = dict_st;
         }
 
         inst(DELETE_SUBSCR, (container, sub --)) {
@@ -5456,6 +5459,12 @@ dummy_func(
                 frame->instr_ptr += IP_OFFSET_OF(RETURN_GENERATOR);
                 EXIT_IF(true);
             }
+        }
+
+        label(pop_3_error) {
+            stack_pointer -= 3;
+            assert(WITHIN_STACK_BOUNDS());
+            goto error;
         }
 
         label(pop_2_error) {

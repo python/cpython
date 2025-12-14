@@ -2513,8 +2513,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_LIST_INT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_store_susbscr_dict(self):
+        def testfunc(n):
+            d = {}
+            for _ in range(n):
+                d['a'] = 1
+                d['b'] = 2
+                d['c'] = 3
+                d['d'] = 4
+            return sum(d.values())
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_attr_promotion_failure(self):
