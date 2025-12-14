@@ -3109,8 +3109,14 @@
         }
 
         case _CALL_LIST_APPEND: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
+            JitOptRef s;
+            JitOptRef c;
+            s = sym_new_not_null(ctx);
+            c = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-3] = s;
+            stack_pointer[-2] = c;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

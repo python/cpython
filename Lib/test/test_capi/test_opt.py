@@ -2245,6 +2245,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_NOS_LIST", uops)
         self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
+    def test_call_list_append_pop_top(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(1)
+            return sum(a)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        self.assertIn("_POP_TOP", uops)
+
     def test_call_isinstance_is_true(self):
         def testfunc(n):
             x = 0

@@ -7,6 +7,7 @@
 // See Tools/cases_generator/README.md for more information.
 
 #include "Python.h"
+#include "opcode_ids.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
@@ -4350,7 +4351,9 @@ dummy_func(
             _GUARD_CALLABLE_LIST_APPEND +
             _GUARD_NOS_NOT_NULL +
             _GUARD_NOS_LIST +
-            _CALL_LIST_APPEND;
+            _CALL_LIST_APPEND +
+            POP_TOP +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_LIST_APPEND, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4359,7 +4362,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        op(_CALL_LIST_APPEND, (callable, self, arg -- )) {
+        op(_CALL_LIST_APPEND, (callable, self, arg -- s, c)) {
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
 
@@ -4367,9 +4370,12 @@ dummy_func(
             STAT_INC(CALL, hit);
             int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
             UNLOCK_OBJECT(self_o);
-            PyStackRef_CLOSE(self);
-            PyStackRef_CLOSE(callable);
-            ERROR_IF(err);
+            if (err) {
+                ERROR_NO_POP();
+            }
+            s = self;
+            c = callable;
+            INPUTS_DEAD();
         #if TIER_ONE
             // Skip the following POP_TOP. This is done here in tier one, and
             // during trace projection in tier two:
