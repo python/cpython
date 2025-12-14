@@ -103,6 +103,12 @@ dummy_func(void) {
         GETLOCAL(oparg) = value;
     }
 
+    op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
+        (void)value;
+        ls = list_st;
+        ss = sub_st;
+    }
+
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }
@@ -526,6 +532,12 @@ dummy_func(void) {
         }
         else if (typ == &PyUnicode_Type) {
             REPLACE_OP(this_instr, _POP_TOP_UNICODE, 0, 0);
+        }
+    }
+
+    op(_POP_TOP_INT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
     }
 
