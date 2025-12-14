@@ -1,5 +1,17 @@
-#if defined (__SVR4) && defined (__sun)
+/* Get a definition of alloca(). */
+#if (defined (__SVR4) && defined (__sun)) || defined(HAVE_ALLOCA_H)
 #   include <alloca.h>
+#elif defined(MS_WIN32)
+#   include <malloc.h>
+#endif
+
+/* If the system does not define alloca(), we have to hope for a compiler builtin. */
+#ifndef alloca
+#   if defined __GNUC__ || (__clang_major__ >= 4)
+#      define alloca __builtin_alloca
+#   else
+#     error "Could not define alloca() on your platform."
+#   endif
 #endif
 
 #include <stdbool.h>
@@ -11,8 +23,7 @@
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#   include "../_complex.h"       // complex
+#if defined(_Py_FFI_SUPPORT_C_COMPLEX)
 #   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
 #       if __has_builtin(__builtin_available)
 #           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
@@ -83,8 +94,6 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    /* This dict maps ctypes types to POINTER types */
-    PyObject *_ctypes_ptrtype_cache;
     /* a callable object used for unpickling:
        strong reference to _ctypes._unpickle() function */
     PyObject *_unpickle;
@@ -390,6 +399,8 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;     /* __pointer_type__ attribute;
+                                   arbitrary object or NULL */
     PyObject *module;
     int flags;                  /* calling convention and such */
 #ifdef Py_GIL_DISABLED
@@ -420,7 +431,7 @@ typedef struct {
     visible to other threads before the `dict_final` bit is set.
 */
 
-#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUTEX(&(stginfo)->mutex)
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 
 static inline uint8_t
@@ -452,6 +463,7 @@ stginfo_set_dict_final(StgInfo *info)
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
+extern void ctype_free_stginfo_members(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -493,11 +505,9 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
-#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex D;
-        float complex F;
-        long double complex G;
-#endif
+        double D[2];
+        float F[2];
+        long double G[2];
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
@@ -598,7 +608,8 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
-/* A variant of PyStgInfo_FromType that doesn't need the state,
+/* A variant of PyStgInfo_FromType that doesn't need the state
+ * and doesn't modify any refcounts,
  * so it can be called from finalization functions when the module
  * state is torn down.
  */
@@ -606,17 +617,12 @@ static inline StgInfo *
 _PyStgInfo_FromType_NoState(PyObject *type)
 {
     PyTypeObject *PyCType_Type;
-    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
-        return NULL;
-    }
-    if (PyCType_Type == NULL) {
-        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+    if (_PyType_GetBaseByToken_Borrow(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0 ||
+        PyCType_Type == NULL) {
         return NULL;
     }
 
-    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
-    Py_DECREF(PyCType_Type);
-    return info;
+    return PyObject_GetTypeData(type, PyCType_Type);
 }
 
 // Initialize StgInfo on a newly created type
@@ -640,6 +646,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
+    info->pointer_type = NULL;
     info->module = Py_NewRef(module);
 
     info->initialized = 1;

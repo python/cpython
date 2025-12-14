@@ -110,6 +110,10 @@ def run_multiline_interactive_console(
     more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
+    _is_x_showrefcount_set = sys._xoptions.get("showrefcount")
+    _is_pydebug_build = hasattr(sys, "gettotalrefcount")
+    show_ref_count = _is_x_showrefcount_set and _is_pydebug_build
+
     def maybe_run_command(statement: str) -> bool:
         statement = statement.strip()
         if statement in console.locals or statement not in REPL_COMMANDS:
@@ -149,17 +153,28 @@ def run_multiline_interactive_console(
                 append_history_file()
             except (FileNotFoundError, PermissionError, OSError) as e:
                 warnings.warn(f"failed to open the history file for writing: {e}")
+
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
+            r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
             r.dirty = True
             r.refresh()
-            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
             console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
+            console.resetbuffer()
+        if show_ref_count:
+            console.write(
+                f"[{sys.gettotalrefcount()} refs,"
+                f" {sys.getallocatedblocks()} blocks]\n"
+            )

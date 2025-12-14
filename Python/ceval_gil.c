@@ -207,6 +207,7 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
     if (tstate != NULL) {
         tstate->holds_gil = 0;
+        tstate->gil_requested = 0;
     }
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
@@ -320,6 +321,8 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
+    tstate->gil_requested = 1;
+
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
@@ -407,6 +410,7 @@ take_gil(PyThreadState *tstate)
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
+    tstate->gil_requested = 0;
     tstate->holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
@@ -907,13 +911,9 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 static void
 clear_pending_handling_thread(struct _pending_calls *pending)
 {
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&pending->mutex);
+    FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
-    PyMutex_Unlock(&pending->mutex);
-#else
-    pending->handling_thread = NULL;
-#endif
+    FT_MUTEX_UNLOCK(&pending->mutex);
 }
 
 static int
@@ -1218,30 +1218,30 @@ static inline int run_remote_debugger_source(PyObject *source)
 
 // Note that this function is inline to avoid creating a PLT entry
 // that would be an easy target for a ROP gadget.
-static inline void run_remote_debugger_script(const char *path)
+static inline void run_remote_debugger_script(PyObject *path)
 {
-    if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
+    if (0 != PySys_Audit("cpython.remote_debugger_script", "O", path)) {
         PyErr_FormatUnraisable(
-            "Audit hook failed for remote debugger script %s", path);
+            "Audit hook failed for remote debugger script %U", path);
         return;
     }
 
     // Open the debugger script with the open code hook, and reopen the
     // resulting file object to get a C FILE* object.
-    PyObject* fileobj = PyFile_OpenCode(path);
+    PyObject* fileobj = PyFile_OpenCodeObject(path);
     if (!fileobj) {
-        PyErr_FormatUnraisable("Can't open debugger script %s", path);
+        PyErr_FormatUnraisable("Can't open debugger script %U", path);
         return;
     }
 
     PyObject* source = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(read));
     if (!source) {
-        PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        PyErr_FormatUnraisable("Error reading debugger script %U", path);
     }
 
     PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
     if (!res) {
-        PyErr_FormatUnraisable("Error closing debugger script %s", path);
+        PyErr_FormatUnraisable("Error closing debugger script %U", path);
     } else {
         Py_DECREF(res);
     }
@@ -1249,7 +1249,7 @@ static inline void run_remote_debugger_script(const char *path)
 
     if (source) {
         if (0 != run_remote_debugger_source(source)) {
-            PyErr_FormatUnraisable("Error executing debugger script %s", path);
+            PyErr_FormatUnraisable("Error executing debugger script %U", path);
         }
         Py_DECREF(source);
     }
@@ -1278,7 +1278,14 @@ int _PyRunRemoteDebugger(PyThreadState *tstate)
                 pathsz);
             path[pathsz - 1] = '\0';
             if (*path) {
-                run_remote_debugger_script(path);
+                PyObject *path_obj = PyUnicode_DecodeFSDefault(path);
+                if (path_obj == NULL) {
+                    PyErr_FormatUnraisable("Can't decode debugger script");
+                }
+                else {
+                    run_remote_debugger_script(path_obj);
+                    Py_DECREF(path_obj);
+                }
             }
             PyMem_Free(path);
         }
@@ -1380,6 +1387,10 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
         _Py_brc_merge_refcounts(tstate);
     }
+    /* Process deferred memory frees held by QSBR */
+    if (_Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr)) {
+        _PyMem_ProcessDelayed(tstate);
+    }
 #endif
 
     /* GC scheduled to run */
@@ -1391,7 +1402,7 @@ _Py_HandlePending(PyThreadState *tstate)
     if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
         _Py_Executors_InvalidateCold(tstate->interp);
-        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+        tstate->interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     }
 
     /* GIL drop request */

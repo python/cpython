@@ -1,2 +1,0 @@
-Fix compiler crash in certain circumstances where multiple module-level
-annotations include comprehensions and other nested scopes.

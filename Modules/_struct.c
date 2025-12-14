@@ -9,12 +9,11 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
-#ifdef Py_HAVE_C_COMPLEX
-#  include "_complex.h"           // complex
-#endif
 #include <stddef.h>               // offsetof()
 
 /*[clinic input]
@@ -495,25 +494,23 @@ nu_double(_structmodulestate *state, const char *p, const formatdef *f)
     return PyFloat_FromDouble(x);
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static PyObject *
 nu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    float complex x;
+    float x[2];
 
     memcpy(&x, p, sizeof(x));
-    return PyComplex_FromDoubles(creal(x), cimag(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
 }
 
 static PyObject *
 nu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double complex x;
+    double x[2];
 
     memcpy(&x, p, sizeof(x));
-    return PyComplex_FromDoubles(creal(x), cimag(x));
+    return PyComplex_FromDoubles(x[0], x[1]);
 }
-#endif
 
 static PyObject *
 nu_void_p(_structmodulestate *state, const char *p, const formatdef *f)
@@ -788,13 +785,12 @@ np_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return 0;
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static int
 np_float_complex(_structmodulestate *state, char *p, PyObject *v,
                  const formatdef *f)
 {
     Py_complex c = PyComplex_AsCComplex(v);
-    float complex x = CMPLXF((float)c.real, (float)c.imag);
+    float x[2] = {(float)c.real, (float)c.imag};
 
     if (c.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
@@ -810,7 +806,7 @@ np_double_complex(_structmodulestate *state, char *p, PyObject *v,
                   const formatdef *f)
 {
     Py_complex c = PyComplex_AsCComplex(v);
-    double complex x = CMPLX(c.real, c.imag);
+    double x[2] = {c.real, c.imag};
 
     if (c.real == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
@@ -820,25 +816,6 @@ np_double_complex(_structmodulestate *state, char *p, PyObject *v,
     memcpy(p, &x, sizeof(x));
     return 0;
 }
-#else
-static int
-np_complex_stub(_structmodulestate *state, char *p, PyObject *v,
-                const formatdef *f)
-{
-    PyErr_Format(state->StructError,
-                 "'%c' format not supported on this system",
-                 f->format);
-    return -1;
-}
-static PyObject *
-nu_complex_stub(_structmodulestate *state, const char *p, const formatdef *f)
-{
-    PyErr_Format(state->StructError,
-                 "'%c' format not supported on this system",
-                 f->format);
-    return NULL;
-}
-#endif
 
 static int
 np_void_p(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
@@ -878,13 +855,8 @@ static const formatdef native_table[] = {
     {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
     {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
-#ifdef Py_HAVE_C_COMPLEX
-    {'F',       sizeof(float complex), _Alignof(float complex), nu_float_complex, np_float_complex},
-    {'D',       sizeof(double complex), _Alignof(double complex), nu_double_complex, np_double_complex},
-#else
-    {'F',       1, 0, nu_complex_stub, np_complex_stub},
-    {'D',       1, 0, nu_complex_stub, np_complex_stub},
-#endif
+    {'F',       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {'D',       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
     {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };
@@ -985,7 +957,6 @@ bu_double(_structmodulestate *state, const char *p, const formatdef *f)
     return unpack_double(p, 0);
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static PyObject *
 bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
@@ -1015,7 +986,6 @@ bu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
     }
     return PyComplex_FromDoubles(x, y);
 }
-#endif
 
 static PyObject *
 bu_bool(_structmodulestate *state, const char *p, const formatdef *f)
@@ -1156,7 +1126,6 @@ bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return PyFloat_Pack8(x, p, 0);
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static int
 bp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
@@ -1186,7 +1155,6 @@ bp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatd
     }
     return PyFloat_Pack8(x.imag, p + 8, 0);
 }
-#endif
 
 static int
 bp_bool(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
@@ -1218,13 +1186,8 @@ static formatdef bigendian_table[] = {
     {'e',       2,              0,              bu_halffloat,   bp_halffloat},
     {'f',       4,              0,              bu_float,       bp_float},
     {'d',       8,              0,              bu_double,      bp_double},
-#ifdef Py_HAVE_C_COMPLEX
     {'F',       8,              0,              bu_float_complex, bp_float_complex},
     {'D',       16,             0,              bu_double_complex, bp_double_complex},
-#else
-    {'F',       1,              0,              nu_complex_stub, np_complex_stub},
-    {'D',       1,              0,              nu_complex_stub, np_complex_stub},
-#endif
     {0}
 };
 
@@ -1324,7 +1287,6 @@ lu_double(_structmodulestate *state, const char *p, const formatdef *f)
     return unpack_double(p, 1);
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static PyObject *
 lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
@@ -1354,7 +1316,6 @@ lu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
     }
     return PyComplex_FromDoubles(x, y);
 }
-#endif
 
 static int
 lp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
@@ -1489,7 +1450,6 @@ lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     return PyFloat_Pack8(x, p, 1);
 }
 
-#ifdef Py_HAVE_C_COMPLEX
 static int
 lp_float_complex(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
@@ -1520,7 +1480,6 @@ lp_double_complex(_structmodulestate *state, char *p, PyObject *v, const formatd
     }
     return PyFloat_Pack8(x.imag, p + 8, 1);
 }
-#endif
 
 static formatdef lilendian_table[] = {
     {'x',       1,              0,              NULL},
@@ -1542,15 +1501,57 @@ static formatdef lilendian_table[] = {
     {'e',       2,              0,              lu_halffloat,   lp_halffloat},
     {'f',       4,              0,              lu_float,       lp_float},
     {'d',       8,              0,              lu_double,      lp_double},
-#ifdef Py_HAVE_C_COMPLEX
     {'F',       8,              0,              lu_float_complex, lp_float_complex},
     {'D',       16,             0,              lu_double_complex, lp_double_complex},
-#else
-    {'F',       1,              0,              nu_complex_stub, np_complex_stub},
-    {'D',       1,              0,              nu_complex_stub, np_complex_stub},
-#endif
     {0}
 };
+
+/* Ensure endian table optimization happens exactly once across all interpreters */
+static _PyOnceFlag endian_tables_init_once = {0};
+
+static int
+init_endian_tables(void *Py_UNUSED(arg))
+{
+    const formatdef *native = native_table;
+    formatdef *other, *ptr;
+#if PY_LITTLE_ENDIAN
+    other = lilendian_table;
+#else
+    other = bigendian_table;
+#endif
+    /* Scan through the native table, find a matching
+        entry in the endian table and swap in the
+        native implementations whenever possible
+        (64-bit platforms may not have "standard" sizes) */
+    while (native->format != '\0' && other->format != '\0') {
+        ptr = other;
+        while (ptr->format != '\0') {
+            if (ptr->format == native->format) {
+                /* Match faster when formats are
+                    listed in the same order */
+                if (ptr == other)
+                    other++;
+                /* Only use the trick if the
+                    size matches */
+                if (ptr->size != native->size)
+                    break;
+                /* Skip float and double, could be
+                    "unknown" float format */
+                if (ptr->format == 'd' || ptr->format == 'f')
+                    break;
+                /* Skip _Bool, semantics are different for standard size */
+                if (ptr->format == '?')
+                    break;
+                ptr->pack = native->pack;
+                ptr->unpack = native->unpack;
+                break;
+            }
+            ptr++;
+        }
+        native++;
+    }
+    return 0;
+}
 
 
 static const formatdef *
@@ -1842,9 +1843,7 @@ s_dealloc(PyObject *op)
     PyStructObject *s = PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, s->weakreflist);
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }
@@ -2238,7 +2237,6 @@ strings.");
 static PyObject *
 s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    char *buf;
     PyStructObject *soself;
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2254,21 +2252,19 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Allocate a new string */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
-    if (buf == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter *writer = PyBytesWriter_Create(soself->s_size);
+    if (writer == NULL) {
         return NULL;
     }
+    char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        _PyBytesWriter_Dealloc(&writer);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
 
-    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
+    return PyBytesWriter_FinishWithSize(writer, soself->s_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
@@ -2762,47 +2758,8 @@ _structmodule_exec(PyObject *m)
         return -1;
     }
 
-    /* Check endian and swap in faster functions */
-    {
-        const formatdef *native = native_table;
-        formatdef *other, *ptr;
-#if PY_LITTLE_ENDIAN
-        other = lilendian_table;
-#else
-        other = bigendian_table;
-#endif
-        /* Scan through the native table, find a matching
-           entry in the endian table and swap in the
-           native implementations whenever possible
-           (64-bit platforms may not have "standard" sizes) */
-        while (native->format != '\0' && other->format != '\0') {
-            ptr = other;
-            while (ptr->format != '\0') {
-                if (ptr->format == native->format) {
-                    /* Match faster when formats are
-                       listed in the same order */
-                    if (ptr == other)
-                        other++;
-                    /* Only use the trick if the
-                       size matches */
-                    if (ptr->size != native->size)
-                        break;
-                    /* Skip float and double, could be
-                       "unknown" float format */
-                    if (ptr->format == 'd' || ptr->format == 'f')
-                        break;
-                    /* Skip _Bool, semantics are different for standard size */
-                    if (ptr->format == '?')
-                        break;
-                    ptr->pack = native->pack;
-                    ptr->unpack = native->unpack;
-                    break;
-                }
-                ptr++;
-            }
-            native++;
-        }
-    }
+    /* init cannot fail */
+    (void)_PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL);
 
     /* Add some symbolic constants to the module */
     state->StructError = PyErr_NewException("struct.error", NULL, NULL);

@@ -288,16 +288,16 @@ PyFloat_AsDouble(PyObject *op)
     if (!PyFloat_CheckExact(res)) {
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name);
+                         "%T.__float__() must return a float, not %T",
+                         op, res);
             Py_DECREF(res);
             return -1;
         }
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
+                "%T.__float__() must return a float, not %T.  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name)) {
+                op, res)) {
             Py_DECREF(res);
             return -1;
         }
@@ -1484,6 +1484,7 @@ float_fromhex_impl(PyTypeObject *type, PyObject *string)
 }
 
 /*[clinic input]
+@permit_long_summary
 float.as_integer_ratio
 
 Return a pair of integers, whose ratio is exactly equal to the original float.
@@ -1501,7 +1502,7 @@ OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=75ae9be7cecd82a3]*/
 {
     double self_double;
     double float_part;
@@ -1698,6 +1699,7 @@ typedef enum _py_float_format_type float_format_type;
 
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1716,7 +1718,7 @@ C type named by typestr.
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=d2735823bfe8e81e]*/
 {
     float_format_type r;
 
@@ -2021,14 +2023,17 @@ PyFloat_Pack2(double x, char *data, int le)
         bits = 0;
     }
     else if (isnan(x)) {
-        /* There are 2046 distinct half-precision NaNs (1022 signaling and
-           1024 quiet), but there are only two quiet NaNs that don't arise by
-           quieting a signaling NaN; we get those by setting the topmost bit
-           of the fraction field and clearing all other fraction bits. We
-           choose the one with the appropriate sign. */
         sign = (copysign(1.0, x) == -1.0);
         e = 0x1f;
-        bits = 512;
+
+        uint64_t v;
+        memcpy(&v, &x, sizeof(v));
+        v &= 0xffc0000000000ULL;
+        bits = (unsigned short)(v >> 42); /* NaN's type & payload */
+        /* set qNaN if no payload */
+        if (!bits) {
+            bits |= (1<<9);
+        }
     }
     else {
         sign = (x < 0.0);
@@ -2192,6 +2197,44 @@ PyFloat_Pack4(double x, char *data, int le)
         if (isinf(y) && !isinf(x))
             goto Overflow;
 
+        /* correct y if x was a sNaN, transformed to qNaN by conversion */
+        if (isnan(x)) {
+            uint64_t v;
+
+            memcpy(&v, &x, 8);
+#ifndef __riscv
+            if ((v & (1ULL << 51)) == 0) {
+                uint32_t u32;
+                memcpy(&u32, &y, 4);
+                /* if have payload, make sNaN */
+                if (u32 & 0x3fffff) {
+                    u32 &= ~(1 << 22);
+                }
+                memcpy(&y, &u32, 4);
+            }
+#else
+            uint32_t u32;
+
+            memcpy(&u32, &y, 4);
+            /* Workaround RISC-V: "If a NaN value is converted to a
+             * different floating-point type, the result is the
+             * canonical NaN of the new type".  The canonical NaN here
+             * is a positive qNaN with zero payload. */
+            if (v & (1ULL << 63)) {
+                u32 |= (1 << 31); /* set sign */
+            }
+            /* add payload */
+            u32 -= (u32 & 0x3fffff);
+            u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
+            /* if have payload, make sNaN */
+            if ((v & (1ULL << 51)) == 0 && (u32 & 0x3fffff)) {
+                u32 &= ~(1 << 22);
+            }
+
+            memcpy(&y, &u32, 4);
+#endif
+        }
+
         unsigned char s[sizeof(float)];
         memcpy(s, &y, sizeof(float));
 
@@ -2326,7 +2369,9 @@ PyFloat_Pack8(double x, char *data, int le)
         return -1;
     }
     else {
-        const unsigned char *s = (unsigned char*)&x;
+        unsigned char as_bytes[8];
+        memcpy(as_bytes, &x, 8);
+        const unsigned char *s = as_bytes;
         int i, incr = 1;
 
         if ((double_format == ieee_little_endian_format && !le)
@@ -2370,11 +2415,15 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_INFINITY : Py_INFINITY;
+            return sign ? -INFINITY : INFINITY;
         }
         else {
             /* NaN */
-            return sign ? -fabs(Py_NAN) : fabs(Py_NAN);
+            uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
+
+            v += (uint64_t)f << 42; /* add NaN's type & payload */
+            memcpy(&x, &v, sizeof(v));
+            return x;
         }
     }
 
@@ -2468,6 +2517,41 @@ PyFloat_Unpack4(const char *data, int le)
         }
         else {
             memcpy(&x, p, 4);
+        }
+
+        /* return sNaN double if x was sNaN float */
+        if (isnan(x)) {
+            uint32_t v;
+            memcpy(&v, &x, 4);
+
+#ifndef __riscv
+            if ((v & (1 << 22)) == 0) {
+                double y = x; /* will make qNaN double */
+                uint64_t u64;
+                memcpy(&u64, &y, 8);
+                u64 &= ~(1ULL << 51); /* make sNaN */
+                memcpy(&y, &u64, 8);
+                return y;
+            }
+#else
+            double y = x;
+            uint64_t u64;
+
+            memcpy(&u64, &y, 8);
+            if ((v & (1 << 22)) == 0) {
+                u64 &= ~(1ULL << 51);
+            }
+            /* Workaround RISC-V, see PyFloat_Pack4() */
+            if (v & (1 << 31)) {
+                u64 |= (1ULL << 63); /* set sign */
+            }
+            /* add payload */
+            u64 -= (u64 & 0x7ffffffffffffULL);
+            u64 += ((v & 0x3fffffULL) << 29);
+
+            memcpy(&y, &u64, 8);
+            return y;
+#endif
         }
 
         return x;

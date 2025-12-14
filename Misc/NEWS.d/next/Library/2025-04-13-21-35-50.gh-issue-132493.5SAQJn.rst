@@ -1,2 +1,0 @@
-Support creation of :class:`typing.Protocol` classes with annotations that
-cannot be resolved at class creation time.

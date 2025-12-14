@@ -619,9 +619,14 @@ def stdev(data, xbar=None):
     if n < 2:
         raise StatisticsError('stdev requires at least two data points')
     mss = ss / (n - 1)
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 def pstdev(data, mu=None):
@@ -637,9 +642,14 @@ def pstdev(data, mu=None):
     if n < 1:
         raise StatisticsError('pstdev requires at least one data point')
     mss = ss / n
+    try:
+        mss_numerator = mss.numerator
+        mss_denominator = mss.denominator
+    except AttributeError:
+        raise ValueError('inf or nan encountered in data')
     if issubclass(T, Decimal):
-        return _decimal_sqrt_of_frac(mss.numerator, mss.denominator)
-    return _float_sqrt_of_frac(mss.numerator, mss.denominator)
+        return _decimal_sqrt_of_frac(mss_numerator, mss_denominator)
+    return _float_sqrt_of_frac(mss_numerator, mss_denominator)
 
 
 ## Statistics for relations between two inputs #############################
@@ -810,8 +820,7 @@ def register(*kernels):
 @register('normal', 'gauss')
 def normal_kernel():
     sqrt2pi = sqrt(2 * pi)
-    sqrt2 = sqrt(2)
-    neg_sqrt2 = -sqrt2
+    neg_sqrt2 = -sqrt(2)
     pdf = lambda t: exp(-1/2 * t * t) / sqrt2pi
     cdf = lambda t: 1/2 * erfc(t / neg_sqrt2)
     invcdf = lambda t: _normal_dist_inv_cdf(t, 0.0, 1.0)

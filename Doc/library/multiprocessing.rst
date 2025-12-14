@@ -22,8 +22,7 @@ to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both POSIX and
 Windows.
 
-The :mod:`multiprocessing` module also introduces APIs which do not have
-analogs in the :mod:`threading` module.  A prime example of this is the
+The :mod:`multiprocessing` module also introduces the
 :class:`~multiprocessing.pool.Pool` object which offers a convenient means of
 parallelizing the execution of a function across multiple input values,
 distributing the input data across processes (data parallelism).  The following
@@ -44,6 +43,10 @@ will print to standard output ::
 
    [1, 4, 9]
 
+The :mod:`multiprocessing` module also introduces APIs which do not have
+analogs in the :mod:`threading` module, like the ability to :meth:`terminate
+<Process.terminate>`, :meth:`interrupt <Process.interrupt>` or :meth:`kill
+<Process.kill>` a running process.
 
 .. seealso::
 
@@ -97,6 +100,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
+The arguments to :class:`Process` usually need to be unpickleable from within
+the child process. If you tried typing the above example directly into a REPL it
+could lead to an :exc:`AttributeError` in the child process trying to locate the
+*f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -233,9 +240,12 @@ processes for a different context.  In particular, locks created using
 the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
-A library which wants to use a particular start method should probably
-use :func:`get_context` to avoid interfering with the choice of the
-library user.
+Libraries using :mod:`multiprocessing` or
+:class:`~concurrent.futures.ProcessPoolExecutor` should be designed to allow
+their users to provide their own multiprocessing context.  Using a specific
+context of your own within a library can lead to incompatibilities with the
+rest of the library user's application.  Always document if your library
+requires a specific start method.
 
 .. warning::
 
@@ -538,8 +548,41 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
-   base class constructor (:meth:`Process.__init__`) before doing anything else
+   base class constructor (``super().__init__()``) before doing anything else
    to the process.
+
+   .. note::
+
+      In general, all arguments to :class:`Process` must be picklable.  This is
+      frequently observed when trying to create a :class:`Process` or use a
+      :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
+
+      Passing a callable object defined in the current REPL session causes the
+      child process to die via an uncaught :exc:`AttributeError` exception when
+      starting as *target* must have been defined within an importable module
+      in order to be loaded during unpickling.
+
+      Example of this uncatchable error from the child::
+
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("Ni!")
+         ...
+         >>> process = mp.Process(target=knigit)
+         >>> process.start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
+         >>> process
+         <SpawnProcess name='SpawnProcess-1' pid=379473 parent=378707 stopped exitcode=1>
+
+      See :ref:`multiprocessing-programming-spawn`.  While this restriction is
+      not true if using the ``"fork"`` start method, as of Python ``3.14`` that
+      is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
+      See also :gh:`132898`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
@@ -687,7 +730,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
       ``exit(your_code)``.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: terminate()
 
@@ -789,8 +832,8 @@ raising an exception.
 
 One difference from other Python queue implementations, is that :mod:`multiprocessing`
 queues serializes all objects that are put into them using :mod:`pickle`.
-The object return by the get method is a re-created object that does not share memory
-with the original object.
+The object returned by the get method is a re-created object that does not share
+memory with the original object.
 
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
@@ -847,7 +890,7 @@ For an example of the usage of queues for interprocess communication see
 :ref:`multiprocessing-examples`.
 
 
-.. function:: Pipe([duplex])
+.. function:: Pipe(duplex=True)
 
    Returns a pair ``(conn1, conn2)`` of
    :class:`~multiprocessing.connection.Connection` objects representing the
@@ -936,8 +979,13 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: close()
 
-      Indicate that no more data will be put on this queue by the current
-      process.  The background thread will quit once it has flushed all buffered
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`~Queue.get`, :meth:`~Queue.put` and :meth:`~Queue.empty`
+      methods must no longer be called.
+
+      The background thread will quit once it has flushed all buffered
       data to the pipe.  This is called automatically when the queue is garbage
       collected.
 
@@ -1081,7 +1129,7 @@ Miscellaneous
 .. function:: freeze_support()
 
    Add support for when a program which uses :mod:`multiprocessing` has been
-   frozen to produce a Windows executable.  (Has been tested with **py2exe**,
+   frozen to produce an executable.  (Has been tested with **py2exe**,
    **PyInstaller** and **cx_Freeze**.)
 
    One needs to call this function straight after the ``if __name__ ==
@@ -1099,10 +1147,10 @@ Miscellaneous
    If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
-   Calling ``freeze_support()`` has no effect when invoked on any operating
-   system other than Windows.  In addition, if the module is being run
-   normally by the Python interpreter on Windows (the program has not been
-   frozen), then ``freeze_support()`` has no effect.
+   Calling ``freeze_support()`` has no effect when the start method is not
+   *spawn*. In addition, if the module is being run normally by the Python
+   interpreter (the program has not been frozen), then ``freeze_support()``
+   has no effect.
 
 .. function:: get_all_start_methods()
 
@@ -1118,7 +1166,9 @@ Miscellaneous
    Return a context object which has the same attributes as the
    :mod:`multiprocessing` module.
 
-   If *method* is ``None`` then the default context is returned.
+   If *method* is ``None`` then the default context is returned. Note that if
+   the global start method has not been set, this will set it to the
+   default method.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.  See :ref:`multiprocessing-start-methods`.
@@ -1129,10 +1179,10 @@ Miscellaneous
 
    Return the name of start method used for starting processes.
 
-   If the start method has not been fixed and *allow_none* is false,
-   then the start method is fixed to the default and the name is
-   returned.  If the start method has not been fixed and *allow_none*
-   is true then ``None`` is returned.
+   If the global start method has not been set and *allow_none* is
+   ``False``, then the start method is set to the default and the name
+   is returned. If the start method has not been set and *allow_none* is
+   ``True`` then ``None`` is returned.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
@@ -1369,6 +1419,12 @@ object -- see :ref:`multiprocessing-managers`.
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. note::
       On macOS, this is indistinguishable from :class:`Semaphore` because
       ``sem_getvalue()`` is not implemented on that platform.
@@ -1520,6 +1576,22 @@ object -- see :ref:`multiprocessing-managers`.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
+
+
+   .. method:: get_value()
+
+      Return the current value of semaphore.
+
+      Note that this may raise :exc:`NotImplementedError` on platforms like
+      macOS where ``sem_getvalue()`` is not implemented.
+
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
 
 .. note::
 
@@ -3051,10 +3123,10 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.
-    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
-    instances will be picklable when the :meth:`Process.start
-    <multiprocessing.Process.start>` method is called.
+    Ensure that all arguments to :class:`~multiprocessing.Process` are
+    picklable.  Also, if you subclass ``Process.__init__``, you must make sure
+    that instances will be picklable when the
+    :meth:`Process.start <multiprocessing.Process.start>` method is called.
 
 Global variables
 

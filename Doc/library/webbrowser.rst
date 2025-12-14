@@ -29,7 +29,7 @@ already registered browsers this browser is added to the front of the search lis
 if the part does not contain ``%s``, it is simply interpreted as the name of the
 browser to launch. [1]_
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
 
    The :envvar:`BROWSER` variable can now also be used to reorder the list of
    platform defaults. This is particularly useful on macOS where the platform
@@ -48,6 +48,11 @@ ignored. Web pages will *always* be opened in the user's preferred browser, in
 a new tab, with the browser being brought to the foreground. The use of the
 :mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
+
+.. _webbrowser-cli:
+
+Command-line interface
+----------------------
 
 .. program:: webbrowser
 
@@ -232,7 +237,7 @@ Here are some simple examples::
 
 .. _browser-controllers:
 
-Browser Controller Objects
+Browser controller objects
 --------------------------
 
 Browser controllers provide the :attr:`~controller.name` attribute,

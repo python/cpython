@@ -380,8 +380,8 @@ static void dump_symtable(PySTEntryObject* ste)
 }
 #endif
 
-#define DUPLICATE_ARGUMENT \
-"duplicate argument '%U' in function definition"
+#define DUPLICATE_PARAMETER \
+"duplicate parameter '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
@@ -1494,7 +1494,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         }
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
-            PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_PARAMETER, name);
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
@@ -2413,7 +2413,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, &_Py_ID(lambda),
+        if (!symtable_enter_block(st, &_Py_STR(anon_lambda),
                                   FunctionBlock, (void *)e, LOCATION(e))) {
             return 0;
         }
@@ -2510,8 +2510,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.FormattedValue.format_spec)
             VISIT(st, expr, e->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        VISIT(st, expr, e->v.Interpolation.value);
+        if (e->v.Interpolation.format_spec)
+            VISIT(st, expr, e->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        VISIT_SEQ(st, expr, e->v.TemplateStr.values);
         break;
     case Constant_kind:
         /* Nothing to do here. */
@@ -2749,8 +2757,10 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     // Annotations in local scopes are not executed and should not affect the symtable
     bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
 
-    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-            && st->st_cur->ste_in_conditional_block
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;
@@ -3045,7 +3055,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(genexpr),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_genexpr),
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
 }
@@ -3053,7 +3063,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(listcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_listcomp),
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
 }
@@ -3061,7 +3071,7 @@ symtable_visit_listcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(setcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_setcomp),
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
 }
@@ -3069,7 +3079,7 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(dictcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
@@ -3127,7 +3137,7 @@ symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_Source
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
-                              int start, PyCompilerFlags *flags)
+                              int start, PyCompilerFlags *flags, PyObject *module)
 {
     struct symtable *st;
     mod_ty mod;
@@ -3137,7 +3147,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;

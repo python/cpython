@@ -14,7 +14,11 @@ from analyzer import (
     analyze_files,
     StackItem,
     analysis_error,
+    get_uop_cache_depths,
+    is_large,
+    MAX_CACHED_REGISTER,
 )
+
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
@@ -60,38 +64,22 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], exit_cache_depth: int):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
+        self._replacers["IP_OFFSET_OF"] = self.ip_offset_of
+        self.exit_cache_depth = exit_cache_depth
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+    def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
         if offset != 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_ERROR();"
+        else:
+            storage.stack.copy().flush(self.out)
+        self.emit("SET_CURRENT_CACHED_VALUES(0);\n")
+        return "JUMP_TO_ERROR();"
 
-    def deopt_if(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit_at("if ", tkn)
-        lparen = next(tkn_iter)
-        self.emit(lparen)
-        assert lparen.kind == "LPAREN"
-        first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
-        next(tkn_iter)  # Semi colon
-        self.emit(") {\n")
-        self.emit("UOP_STAT_INC(uopcode, miss);\n")
-        self.emit("JUMP_TO_JUMP_TARGET();\n")
-        self.emit("}\n")
-        return not always_true(first_tkn)
-
-    def exit_if(  # type: ignore[override]
+    def exit_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
@@ -107,9 +95,12 @@ class Tier2Emitter(Emitter):
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        self.emit(f"SET_CURRENT_CACHED_VALUES({self.exit_cache_depth});\n")
         self.emit("JUMP_TO_JUMP_TARGET();\n")
         self.emit("}\n")
         return not always_true(first_tkn)
+
+    periodic_if = deopt_if = exit_if
 
     def oparg(
         self,
@@ -132,10 +123,94 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
+    def ip_offset_of(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert uop.name.startswith("_GUARD_IP")
+        # LPAREN
+        next(tkn_iter)
+        tok = next(tkn_iter)
+        self.emit(f" OFFSET_OF_{tok.text};\n")
+        # RPAREN
+        next(tkn_iter)
+        # SEMI
+        next(tkn_iter)
+        return True
 
-def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
+    def tier2_to_tier2(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        assert self.exit_cache_depth == 0, uop.name
+        cache_items(self, storage.stack, self.exit_cache_depth, False)
+        storage.flush(self.out)
+        self.out.emit(tkn)
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        self.emit(lparen)
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.out.emit(")")
+        return False
+
+    goto_tier_one = tier2_to_tier2
+
+    def exit_if_after(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit_at("if ", tkn)
+        lparen = next(tkn_iter)
+        self.emit(lparen)
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        next(tkn_iter)  # Semi colon
+        self.emit(") {\n")
+        self.emit("UOP_STAT_INC(uopcode, miss);\n")
+        storage = storage.copy()
+        storage.clear_inputs("in AT_END_EXIT_IF")
+        cache_items(self, storage.stack, self.exit_cache_depth, False)
+        storage.flush(self.out)
+        self.emit("JUMP_TO_JUMP_TARGET();\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+
+def cache_items(emitter: Emitter, stack: Stack, cached_items: int, zero_regs: bool) -> None:
+    emitter.out.start_line()
+    i = cached_items
+    while i > 0:
+        emitter.out.start_line()
+        item = StackItem(f"_tos_cache{i-1}", "", False, True)
+        stack.pop(item, emitter.out)
+        i -= 1
+    if zero_regs:
+        # TO DO -- For compilers that support it,
+        # replace this with a "clobber" to tell
+        # the compiler that these values are unused
+        # without having to emit any code.
+        for i in range(cached_items, MAX_CACHED_REGISTER):
+            emitter.out.emit(f"_tos_cache{i} = PyStackRef_ZERO_BITS;\n")
+    emitter.emit(f"SET_CURRENT_CACHED_VALUES({cached_items});\n")
+
+def write_uop(uop: Uop, emitter: Emitter, stack: Stack, offset_strs: dict[str, tuple[str, str]], cached_items: int = 0) -> tuple[bool, Stack]:
     locals: dict[str, Local] = {}
+    zero_regs = is_large(uop) or uop.properties.escapes
     try:
+        if name_offset_pair := offset_strs.get(uop.name):
+            emitter.emit(f"#define OFFSET_OF_{name_offset_pair[0]} ({name_offset_pair[1]})\n")
         emitter.out.start_line()
         if uop.properties.oparg:
             emitter.emit("oparg = CURRENT_OPARG();\n")
@@ -147,21 +222,55 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         idx = 0
         for cache in uop.caches:
             if cache.name != "unused":
+                bits = cache.size*16
                 if cache.size == 4:
                     type = cast = "PyObject *"
                 else:
-                    type = f"uint{cache.size*16}_t "
-                    cast = f"uint{cache.size*16}_t"
-                emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+                    type = f"uint{bits}_t "
+                    cast = f"uint{bits}_t"
+                emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}_{bits}();\n")
                 idx += 1
-        _, storage = emitter.emit_tokens(uop, storage, None, False)
-        storage.flush(emitter.out)
+        reachable, storage = emitter.emit_tokens(uop, storage, None, False)
+        if reachable:
+            storage.stack._print(emitter.out)
+            cache_items(emitter, storage.stack, cached_items, zero_regs)
+            storage.flush(emitter.out)
+        if name_offset_pair:
+            emitter.emit(f"#undef OFFSET_OF_{name_offset_pair[0]}\n")
+        return reachable, storage.stack
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body.open) from None
-    return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
 
+def is_for_iter_test(uop: Uop) -> bool:
+    return uop.name in (
+        "_GUARD_NOT_EXHAUSTED_RANGE", "_GUARD_NOT_EXHAUSTED_LIST",
+        "_GUARD_NOT_EXHAUSTED_TUPLE", "_FOR_ITER_TIER_TWO"
+    )
+
+def populate_offset_strs(analysis: Analysis) -> dict[str, tuple[str, str]]:
+    offset_strs: dict[str, tuple[str, str]] = {}
+    for name, uop in analysis.uops.items():
+        if not f"_GUARD_IP_{name}" in analysis.uops:
+            continue
+        tkn_iter = uop.body.tokens()
+        found = False
+        offset_str = ""
+        for token in tkn_iter:
+            if token.kind == "IDENTIFIER" and token.text == "LOAD_IP":
+                if found:
+                    raise analysis_error("Cannot have two LOAD_IP in a guarded single uop.", uop.body.open)
+                offset = []
+                while token.kind != "SEMI":
+                    offset.append(token.text)
+                    token = next(tkn_iter)
+                # 1: to remove the LOAD_IP text
+                offset_str = "".join(offset[1:])
+                found = True
+        assert offset_str
+        offset_strs[f"_GUARD_IP_{name}"] = (name, offset_str)
+    return offset_strs
 
 def generate_tier2(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
@@ -176,8 +285,9 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out, analysis.labels)
+    offset_strs = populate_offset_strs(analysis)
     out.emit("\n")
+
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
             continue
@@ -189,16 +299,25 @@ def generate_tier2(
                 f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n"
             )
             continue
-        out.emit(f"case {uop.name}: {{\n")
-        declare_variables(uop, out)
-        stack = Stack()
-        stack = write_uop(uop, emitter, stack)
-        out.start_line()
-        if not uop.properties.always_exits:
-            out.emit("break;\n")
-        out.start_line()
-        out.emit("}")
-        out.emit("\n\n")
+        for inputs, outputs, exit_depth in get_uop_cache_depths(uop):
+            emitter = Tier2Emitter(out, analysis.labels, exit_depth)
+            out.emit(f"case {uop.name}_r{inputs}{outputs}: {{\n")
+            out.emit(f"CHECK_CURRENT_CACHED_VALUES({inputs});\n")
+            out.emit("assert(WITHIN_STACK_BOUNDS_WITH_CACHE());\n")
+            declare_variables(uop, out)
+            stack = Stack()
+            stack.push_cache([f"_tos_cache{i}" for i in range(inputs)], out)
+            stack._print(out)
+            reachable, stack = write_uop(uop, emitter, stack, offset_strs, outputs)
+            out.start_line()
+            if reachable:
+                out.emit("assert(WITHIN_STACK_BOUNDS_WITH_CACHE());\n")
+                if not uop.properties.always_exits:
+                    out.emit("break;\n")
+            out.start_line()
+            out.emit("}")
+            out.emit("\n\n")
+    out.emit("\n")
     outfile.write("#undef TIER_TWO\n")
 
 

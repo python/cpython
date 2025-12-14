@@ -351,22 +351,19 @@ def _set_concurrent_future_state(concurrent, source):
 def _copy_future_state(source, dest):
     """Internal helper to copy state from another Future.
 
-    The other Future may be a concurrent.futures.Future.
+    The other Future must be a concurrent.futures.Future.
     """
-    assert source.done()
     if dest.cancelled():
         return
     assert not dest.done()
-    if source.cancelled():
+    done, cancelled, result, exception = source._get_snapshot()
+    assert done
+    if cancelled:
         dest.cancel()
+    elif exception is not None:
+        dest.set_exception(_convert_future_exc(exception))
     else:
-        exception = source.exception()
-        if exception is not None:
-            dest.set_exception(_convert_future_exc(exception))
-        else:
-            result = source.result()
-            dest.set_result(result)
-
+        dest.set_result(result)
 
 def _chain_future(source, destination):
     """Chain two futures so that when one completes, so does the other.
@@ -392,7 +389,7 @@ def _chain_future(source, destination):
 
     def _call_check_cancel(destination):
         if destination.cancelled():
-            if source_loop is None or source_loop is dest_loop:
+            if source_loop is None or source_loop is events._get_running_loop():
                 source.cancel()
             else:
                 source_loop.call_soon_threadsafe(source.cancel)
@@ -401,7 +398,7 @@ def _chain_future(source, destination):
         if (destination.cancelled() and
                 dest_loop is not None and dest_loop.is_closed()):
             return
-        if dest_loop is None or dest_loop is source_loop:
+        if dest_loop is None or dest_loop is events._get_running_loop():
             _set_state(destination, source)
         else:
             if dest_loop.is_closed():

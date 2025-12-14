@@ -33,8 +33,14 @@ Python:
 
 .. c:var:: PyTypeObject PyUnicode_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as :py:class:`str`.
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
 
 
 .. c:type:: Py_UCS4
@@ -185,6 +191,22 @@ access to internal read-only data of Unicode objects:
    .. versionadded:: 3.2
 
 
+.. c:function:: Py_hash_t PyUnstable_Unicode_GET_CACHED_HASH(PyObject *str)
+
+   If the hash of *str*, as returned by :c:func:`PyObject_Hash`, has been
+   cached and is immediately available, return it.
+   Otherwise, return ``-1`` *without* setting an exception.
+
+   If *str* is not a string (that is, if ``PyUnicode_Check(obj)``
+   is false), the behavior is undefined.
+
+   This function never fails with an exception.
+
+   Note that there are no guarantees on when an object's hash is cached,
+   and the (non-)existence of a cached hash does not imply that the string has
+   any other properties.
+
+
 Unicode Character Properties
 """"""""""""""""""""""""""""
 
@@ -299,12 +321,22 @@ These APIs can be used to work with surrogates:
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
+.. c:function:: Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch)
+
+    Return the high UTF-16 surrogate (``0xD800`` to ``0xDBFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
+.. c:function:: Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch)
+
+    Return the low UTF-16 surrogate (``0xDC00`` to ``0xDFFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
    Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
-   be in the range [0xDC00; 0xDFFF].
+   surrogate pair. *high* must be in the range ``[0xD800; 0xDBFF]`` and *low* must
+   be in the range ``[0xDC00; 0xDFFF]``.
 
 
 Creating and accessing Unicode strings
@@ -639,6 +671,17 @@ APIs:
    difference being that it decrements the reference count of *right* by one.
 
 
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
    Return the name of the default string encoding, ``"utf-8"``.
@@ -714,7 +757,7 @@ APIs:
    Return ``0`` on success, ``-1`` on error with an exception set.
 
    This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object's reference count is one).
+   not out of bounds, and that the object's reference count is one.
    See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
    making them your responsibility.
 
@@ -1444,10 +1487,6 @@ the user settings on the machine running the codec.
    .. versionadded:: 3.3
 
 
-Methods & Slots
-"""""""""""""""
-
-
 .. _unicodemethodsandslots:
 
 Methods and Slot Functions
@@ -1709,10 +1748,6 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    from user input, prefer calling :c:func:`PyUnicode_FromString` and
    :c:func:`PyUnicode_InternInPlace` directly.
 
-   .. impl-detail::
-
-      Strings interned this way are made :term:`immortal`.
-
 
 .. c:function:: unsigned int PyUnicode_CHECK_INTERNED(PyObject *str)
 
@@ -1789,9 +1824,24 @@ object.
 
    See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
 
+.. c:function:: int PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Write the ASCII string *str* into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *str* must only contain ASCII characters. The behavior is undefined if
+   *str* contains non-ASCII characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionadded:: 3.14
+
 .. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
 
-   Writer the wide string *str* into *writer*.
+   Write the wide string *str* into *writer*.
 
    *size* is a number of wide characters. If *size* is equal to ``-1``, call
    ``wcslen(str)`` to get the string length.

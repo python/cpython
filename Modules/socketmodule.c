@@ -109,9 +109,9 @@ Local naming conventions:
 #include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
+#include "pycore_object.h"        // _PyObject_VisitType()
 #include "pycore_time.h"          // _PyTime_AsMilliseconds()
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
-#include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
@@ -344,12 +344,6 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     {14393, "TCP_FASTOPEN"}
 };
 
-/*[clinic input]
-module _socket
-class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
-
 static int
 remove_unusable_flags(PyObject *m)
 {
@@ -571,7 +565,6 @@ static int sock_cloexec_works = -1;
 static inline void
 set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     _Py_atomic_store_int_relaxed((int *)&s->sock_fd, (int)fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -581,15 +574,11 @@ set_sock_fd(PySocketSockObject *s, SOCKET_T fd)
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
 #endif
-#else
-    s->sock_fd = fd;
-#endif
 }
 
 static inline SOCKET_T
 get_sock_fd(PySocketSockObject *s)
 {
-#ifdef Py_GIL_DISABLED
 #if SIZEOF_SOCKET_T == SIZEOF_INT
     return (SOCKET_T)_Py_atomic_load_int_relaxed((int *)&s->sock_fd);
 #elif SIZEOF_SOCKET_T == SIZEOF_LONG
@@ -598,9 +587,6 @@ get_sock_fd(PySocketSockObject *s)
     return (SOCKET_T)_Py_atomic_load_llong_relaxed((long long *)&s->sock_fd);
 #else
     #error "Unsupported SIZEOF_SOCKET_T"
-#endif
-#else
-    return s->sock_fd;
 #endif
 }
 
@@ -623,6 +609,49 @@ find_module_state_by_def(PyTypeObject *type)
     assert(mod != NULL);
     return get_module_state(mod);
 }
+
+#define UNSIGNED_INT_CONVERTER(NAME, TYPE)                          \
+static int                                                          \
+_PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C " #TYPE);       \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
+}
+
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+# ifdef MS_WINDOWS
+    UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
+# else
+#   define _PyLong_NetIfindex_Converter _PyLong_UnsignedInt_Converter
+#   define NET_IFINDEX unsigned int
+# endif
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+
+/*[python input]
+class NET_IFINDEX_converter(CConverter):
+    type = "NET_IFINDEX"
+    converter = '_PyLong_NetIfindex_Converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=1cf809c40a407c34]*/
+
+/*[clinic input]
+module _socket
+class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
 #define clinic_state() (find_module_state_by_def(type))
 #include "clinic/socketmodule.c.h"
@@ -686,12 +715,6 @@ select_error(void)
 #  define SET_SOCK_ERROR(err) do { errno = err; } while (0)
 #  define SOCK_TIMEOUT_ERR EWOULDBLOCK
 #  define SOCK_INPROGRESS_ERR EINPROGRESS
-#endif
-
-#ifdef _MSC_VER
-#  define SUPPRESS_DEPRECATED_CALL __pragma(warning(suppress: 4996))
-#else
-#  define SUPPRESS_DEPRECATED_CALL
 #endif
 
 /* Convenience function to raise an error according to errno
@@ -2157,7 +2180,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
             unsigned short dev;
             unsigned short channel = HCI_CHANNEL_RAW;
-            if (PyLong_Check(args)) {
+            if (PyIndex_Check(args)) {
                 if (!PyArg_Parse(args, "H", &dev)) {
                     return 0;
                 }
@@ -3310,35 +3333,62 @@ sock_setsockopt(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
+    Py_ssize_t arglen;
     int level;
     int optname;
     int res;
-    Py_buffer optval;
+    Py_buffer buffer;
     int flag;
     unsigned int optlen;
-    PyObject *none;
+    PyObject *optval;
+
+    if (!PyArg_ParseTuple(args, "iiO|I:setsockopt",
+                          &level, &optname, &optval, &optlen))
+    {
+        return NULL;
+    }
+
+    arglen = PyTuple_Size(args);
+    if (arglen == 3 && optval == Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "setsockopt() requires 4 arguments when the third argument is None",
+                     arglen);
+        return NULL;
+    }
+    if (arglen == 4 && optval != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
+                     optval);
+        return NULL;
+    }
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
+        if (!PyIndex_Check(optval)) {
+            PyErr_Format(PyExc_TypeError,
+                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
+                         optval);
+        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
-        if (PyArg_ParseTuple(args, "iiK:setsockopt",
-                         &level, &optname, &vflag)) {
-            // level should always be set to AF_VSOCK
-            res = setsockopt(get_sock_fd(s), level, optname,
-                         (void*)&vflag, sizeof vflag);
-            goto done;
+        if (!PyArg_Parse(optval, "K", &vflag)) {
+            return NULL;
         }
-        return NULL;
+        // level should always be set to AF_VSOCK
+        res = setsockopt(get_sock_fd(s), level, optname,
+                         (void*)&vflag, sizeof vflag);
+        goto done;
     }
 #endif
 
     /* setsockopt(level, opt, flag) */
-    if (PyArg_ParseTuple(args, "iii:setsockopt",
-                         &level, &optname, &flag)) {
+    if (PyIndex_Check(optval)) {
+        if (!PyArg_Parse(optval, "i", &flag)) {
+            return NULL;
+        }
 #ifdef MS_WINDOWS
         if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
-            int dummy;
+            DWORD dummy;
             res = WSAIoctl(get_sock_fd(s), SIO_TCP_SET_ACK_FREQUENCY, &flag,
                            sizeof(flag), NULL, 0, &dummy, NULL, NULL);
             if (res >= 0) {
@@ -3352,36 +3402,40 @@ sock_setsockopt(PyObject *self, PyObject *args)
         goto done;
     }
 
-    PyErr_Clear();
-    /* setsockopt(level, opt, None, flag) */
-    if (PyArg_ParseTuple(args, "iiO!I:setsockopt",
-                         &level, &optname, Py_TYPE(Py_None), &none, &optlen)) {
+    /* setsockopt(level, opt, None, optlen) */
+    if (optval == Py_None) {
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
         goto done;
     }
 
-    PyErr_Clear();
     /* setsockopt(level, opt, buffer) */
-    if (!PyArg_ParseTuple(args, "iiy*:setsockopt",
-                            &level, &optname, &optval))
-        return NULL;
-
+    if (PyObject_CheckBuffer(optval)) {
+        if (!PyArg_Parse(optval, "y*", &buffer)) {
+            return NULL;
+        }
 #ifdef MS_WINDOWS
-    if (optval.len > INT_MAX) {
-        PyBuffer_Release(&optval);
-        PyErr_Format(PyExc_OverflowError,
-                        "socket option is larger than %i bytes",
-                        INT_MAX);
-        return NULL;
-    }
-    res = setsockopt(get_sock_fd(s), level, optname,
-                        optval.buf, (int)optval.len);
+        if (buffer.len > INT_MAX) {
+            PyBuffer_Release(&buffer);
+            PyErr_Format(PyExc_OverflowError,
+                         "socket option is larger than %i bytes",
+                         INT_MAX);
+            return NULL;
+        }
+        res = setsockopt(get_sock_fd(s), level, optname,
+                         buffer.buf, (int)buffer.len);
 #else
-    res = setsockopt(get_sock_fd(s), level, optname, optval.buf, optval.len);
+        res = setsockopt(get_sock_fd(s), level, optname, buffer.buf, buffer.len);
 #endif
-    PyBuffer_Release(&optval);
+        PyBuffer_Release(&buffer);
+        goto done;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "socket option should be int, bytes-like object or None (got %T)",
+                 optval);
+    return NULL;
 
 done:
     if (res < 0) {
@@ -3414,7 +3468,6 @@ sock_getsockopt(PyObject *self, PyObject *args)
     int level;
     int optname;
     int res;
-    PyObject *buf;
     socklen_t buflen = 0;
     int flag = 0;
     socklen_t flagsize;
@@ -3459,17 +3512,17 @@ sock_getsockopt(PyObject *self, PyObject *args)
                         "getsockopt buflen out of range");
         return NULL;
     }
-    buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(buflen);
+    if (writer == NULL) {
         return NULL;
+    }
     res = getsockopt(get_sock_fd(s), level, optname,
-                     (void *)PyBytes_AS_STRING(buf), &buflen);
+                     PyBytesWriter_GetData(writer), &buflen);
     if (res < 0) {
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return s->errorhandler();
     }
-    _PyBytes_Resize(&buf, buflen);
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, buflen);
 }
 
 PyDoc_STRVAR(getsockopt_doc,
@@ -3926,7 +3979,6 @@ sock_recv(PyObject *self, PyObject *args)
 
     Py_ssize_t recvlen, outlen;
     int flags = 0;
-    PyObject *buf;
 
     if (!PyArg_ParseTuple(args, "n|i:recv", &recvlen, &flags))
         return NULL;
@@ -3938,25 +3990,21 @@ sock_recv(PyObject *self, PyObject *args)
     }
 
     /* Allocate a new string. */
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
     /* Call the guts */
-    outlen = sock_recv_guts(s, PyBytes_AS_STRING(buf), recvlen, flags);
+    outlen = sock_recv_guts(s, PyBytesWriter_GetData(writer), recvlen, flags);
     if (outlen < 0) {
         /* An error occurred, release the string and return an
            error. */
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        _PyBytes_Resize(&buf, outlen);
-    }
 
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, outlen);
 }
 
 PyDoc_STRVAR(recv_doc,
@@ -4112,7 +4160,6 @@ sock_recvfrom(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
-    PyObject *buf = NULL;
     PyObject *addr = NULL;
     PyObject *ret = NULL;
     int flags = 0;
@@ -4127,28 +4174,27 @@ sock_recvfrom(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
-    outlen = sock_recvfrom_guts(s, PyBytes_AS_STRING(buf),
+    outlen = sock_recvfrom_guts(s, PyBytesWriter_GetData(writer),
                                 recvlen, flags, &addr);
     if (outlen < 0) {
+        PyBytesWriter_Discard(writer);
         goto finally;
     }
 
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        if (_PyBytes_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so successful after all. */
-            goto finally;
+    PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
+    if (buf == NULL) {
+        goto finally;
     }
 
     ret = PyTuple_Pack(2, buf, addr);
+    Py_DECREF(buf);
 
 finally:
-    Py_XDECREF(buf);
     Py_XDECREF(addr);
     return ret;
 }
@@ -4381,11 +4427,10 @@ err_closefds:
 static PyObject *
 makeval_recvmsg(ssize_t received, void *data)
 {
-    PyObject **buf = data;
-
-    if (received < PyBytes_GET_SIZE(*buf))
-        _PyBytes_Resize(buf, received);
-    return Py_XNewRef(*buf);
+    PyBytesWriter **writer = data;
+    PyObject *buf = PyBytesWriter_FinishWithSize(*writer, received);
+    *writer = NULL;
+    return buf;
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -4393,13 +4438,8 @@ makeval_recvmsg(ssize_t received, void *data)
 static PyObject *
 sock_recvmsg(PyObject *self, PyObject *args)
 {
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
-
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
-    struct iovec iov;
-    PyObject *buf = NULL, *retval = NULL;
-
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
         return NULL;
 
@@ -4407,17 +4447,23 @@ sock_recvmsg(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "negative buffer size in recvmsg()");
         return NULL;
     }
-    if ((buf = PyBytes_FromStringAndSize(NULL, bufsize)) == NULL)
+
+    PyBytesWriter *writer = PyBytesWriter_Create(bufsize);
+    if (writer == NULL) {
         return NULL;
-    iov.iov_base = PyBytes_AS_STRING(buf);
+    }
+    struct iovec iov;
+    iov.iov_base = PyBytesWriter_GetData(writer);
     iov.iov_len = bufsize;
 
     /* Note that we're passing a pointer to *our pointer* to the bytes
-       object here (&buf); makeval_recvmsg() may incref the object, or
-       deallocate it and set our pointer to NULL. */
+       writer (&writer); makeval_recvmsg() finish it and set our pointer to
+       NULL. */
+    PyObject *retval;
+    PySocketSockObject *s = _PySocketSockObject_CAST(self);
     retval = sock_recvmsg_guts(s, &iov, 1, flags, ancbufsize,
-                               &makeval_recvmsg, &buf);
-    Py_XDECREF(buf);
+                               &makeval_recvmsg, &writer);
+    PyBytesWriter_Discard(writer);
     return retval;
 }
 
@@ -4570,55 +4616,63 @@ sock_send_impl(PySocketSockObject *s, void *data)
     return (ctx->result >= 0);
 }
 
-/* s.send(data [,flags]) method */
+/*[clinic input]
+@permit_long_docstring_body
+_socket.socket.send
+    self as s: self(type="PySocketSockObject *")
+    data as pbuf: Py_buffer
+    flags: int = 0
+    /
+
+Send a data string to the socket.
+
+For the optional flags argument, see the Unix manual.
+Return the number of bytes sent; this may be less than len(data) if the network is busy.
+[clinic start generated code]*/
 
 static PyObject *
-sock_send(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
+/*[clinic end generated code: output=3ddf83f17d0c875b input=e776a48af2e3d615]*/
 
-    int flags = 0;
-    Py_buffer pbuf;
+{
     struct sock_send ctx;
 
-    if (!PyArg_ParseTuple(args, "y*|i:send", &pbuf, &flags))
-        return NULL;
-
     if (!IS_SELECTABLE(s)) {
-        PyBuffer_Release(&pbuf);
         return select_error();
     }
-    ctx.buf = pbuf.buf;
-    ctx.len = pbuf.len;
+    ctx.buf = pbuf->buf;
+    ctx.len = pbuf->len;
     ctx.flags = flags;
     if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
-        PyBuffer_Release(&pbuf);
         return NULL;
     }
-    PyBuffer_Release(&pbuf);
 
     return PyLong_FromSsize_t(ctx.result);
 }
 
-PyDoc_STRVAR(send_doc,
-"send(data[, flags]) -> count\n\
-\n\
-Send a data string to the socket.  For the optional flags\n\
-argument, see the Unix manual.  Return the number of bytes\n\
-sent; this may be less than len(data) if the network is busy.");
 
+/*[clinic input]
+_socket.socket.sendall
+    self as s: self(type="PySocketSockObject *")
+    data as pbuf: Py_buffer
+    flags: int = 0
+    /
 
-/* s.sendall(data [,flags]) method */
+Send a data string to the socket.
+
+For the optional flags argument, see the Unix manual.
+This calls send() repeatedly until all data is sent.
+If an error occurs, it's impossible to tell how much data has been sent.
+[clinic start generated code]*/
 
 static PyObject *
-sock_sendall(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
+                            int flags)
+/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
 
+{
     char *buf;
     Py_ssize_t len, n;
-    int flags = 0;
-    Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
     PyTime_t timeout = s->sock_timeout;
@@ -4626,13 +4680,10 @@ sock_sendall(PyObject *self, PyObject *args)
     int deadline_initialized = 0;
     PyObject *res = NULL;
 
-    if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
-        return NULL;
-    buf = pbuf.buf;
-    len = pbuf.len;
+    buf = pbuf->buf;
+    len = pbuf->len;
 
     if (!IS_SELECTABLE(s)) {
-        PyBuffer_Release(&pbuf);
         return select_error();
     }
 
@@ -4670,22 +4721,12 @@ sock_sendall(PyObject *self, PyObject *args)
         if (PyErr_CheckSignals())
             goto done;
     } while (len > 0);
-    PyBuffer_Release(&pbuf);
 
     res = Py_NewRef(Py_None);
 
 done:
-    PyBuffer_Release(&pbuf);
     return res;
 }
-
-PyDoc_STRVAR(sendall_doc,
-"sendall(data[, flags])\n\
-\n\
-Send a data string to the socket.  For the optional flags\n\
-argument, see the Unix manual.  This calls send() repeatedly\n\
-until all data is sent.  If an error occurs, it's impossible\n\
-to tell how much data has been sent.");
 
 
 #ifdef HAVE_SENDTO
@@ -4836,10 +4877,8 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
-                         "y*;sendmsg() argument 1 must be an iterable of "
-                         "bytes-like objects",
-                         &databufs[ndatabufs]))
+        if (PyObject_GetBuffer(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+            &databufs[ndatabufs], PyBUF_SIMPLE) < 0)
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
         iovs[ndatabufs].iov_len = databufs[ndatabufs].len;
@@ -4861,13 +4900,39 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
     return (ctx->result >= 0);
 }
 
-/* s.sendmsg(buffers[, ancdata[, flags[, address]]]) method */
+/*[clinic input]
+_socket.socket.sendmsg
+    self as s: self(type="PySocketSockObject *")
+    buffers as data_arg: object
+    ancdata as cmsg_arg: object = NULL
+    flags: int = 0
+    address as addr_arg: object = NULL
+    /
+
+Send normal and ancillary data to the socket.
+
+It gathering the non-ancillary data from a series of buffers
+and concatenating it into a single message.
+The buffers argument specifies the non-ancillary
+data as an iterable of bytes-like objects (e.g. bytes objects).
+The ancdata argument specifies the ancillary data (control messages)
+as an iterable of zero or more tuples (cmsg_level, cmsg_type,
+cmsg_data), where cmsg_level and cmsg_type are integers specifying the
+protocol level and protocol-specific type respectively, and cmsg_data
+is a bytes-like object holding the associated data.  The flags
+argument defaults to 0 and has the same meaning as for send().  If
+address is supplied and not None, it sets a destination address for
+the message.  The return value is the number of bytes of non-ancillary
+data sent.
+[clinic start generated code]*/
 
 static PyObject *
-sock_sendmsg(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
+                            PyObject *cmsg_arg, int flags,
+                            PyObject *addr_arg)
+/*[clinic end generated code: output=3b4cb1110644ce39 input=479c13d90bd2f88b]*/
 
+{
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
     Py_buffer *databufs = NULL;
     sock_addr_t addrbuf;
@@ -4879,15 +4944,9 @@ sock_sendmsg(PyObject *self, PyObject *args)
     } *cmsgs = NULL;
     void *controlbuf = NULL;
     size_t controllen, controllen_last;
-    int addrlen, flags = 0;
-    PyObject *data_arg, *cmsg_arg = NULL, *addr_arg = NULL,
-        *cmsg_fast = NULL, *retval = NULL;
+    int addrlen;
+    PyObject *cmsg_fast = NULL, *retval = NULL;
     struct sock_sendmsg ctx;
-
-    if (!PyArg_ParseTuple(args, "O|OiO:sendmsg",
-                          &data_arg, &cmsg_arg, &flags, &addr_arg)) {
-        return NULL;
-    }
 
     memset(&msg, 0, sizeof(msg));
 
@@ -5050,22 +5109,6 @@ finally:
     return retval;
 }
 
-PyDoc_STRVAR(sendmsg_doc,
-"sendmsg(buffers[, ancdata[, flags[, address]]]) -> count\n\
-\n\
-Send normal and ancillary data to the socket, gathering the\n\
-non-ancillary data from a series of buffers and concatenating it into\n\
-a single message.  The buffers argument specifies the non-ancillary\n\
-data as an iterable of bytes-like objects (e.g. bytes objects).\n\
-The ancdata argument specifies the ancillary data (control messages)\n\
-as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n\
-cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n\
-protocol level and protocol-specific type respectively, and cmsg_data\n\
-is a bytes-like object holding the associated data.  The flags\n\
-argument defaults to 0 and has the same meaning as for send().  If\n\
-address is supplied and not None, it sets a destination address for\n\
-the message.  The return value is the number of bytes of non-ancillary\n\
-data sent.");
 #endif    /* CMSG_LEN */
 
 #ifdef HAVE_SOCKADDR_ALG
@@ -5402,8 +5445,8 @@ static PyMethodDef sock_methods[] = {
         recvfrom_into_doc
     },
 #endif
-    {"send", sock_send, METH_VARARGS, send_doc},
-    {"sendall", sock_sendall, METH_VARARGS, sendall_doc},
+    _SOCKET_SOCKET_SEND_METHODDEF
+    _SOCKET_SOCKET_SENDALL_METHODDEF
 #ifdef HAVE_SENDTO
     {"sendto", sock_sendto, METH_VARARGS, sendto_doc},
 #endif
@@ -5423,7 +5466,7 @@ static PyMethodDef sock_methods[] = {
 #ifdef CMSG_LEN
     {"recvmsg", sock_recvmsg, METH_VARARGS, recvmsg_doc},
     {"recvmsg_into", sock_recvmsg_into, METH_VARARGS, recvmsg_into_doc},
-    {"sendmsg", sock_sendmsg, METH_VARARGS, sendmsg_doc},
+    _SOCKET_SOCKET_SENDMSG_METHODDEF
 #endif
 #ifdef HAVE_SOCKADDR_ALG
     {
@@ -5486,13 +5529,6 @@ sock_finalize(PyObject *self)
 
     /* Restore the saved exception. */
     PyErr_SetRaisedException(exc);
-}
-
-static int
-sock_traverse(PyObject *s, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(s));
-    return 0;
 }
 
 static void
@@ -5793,7 +5829,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 static PyType_Slot sock_slots[] = {
     {Py_tp_dealloc, sock_dealloc},
-    {Py_tp_traverse, sock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, sock_repr},
     {Py_tp_doc, (void *)sock_doc},
     {Py_tp_methods, sock_methods},
@@ -6167,8 +6203,10 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_acquire_lock(netdb_lock, 1);
 #endif
-    SUPPRESS_DEPRECATED_CALL
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     h = gethostbyname(name);
+    _Py_COMP_DIAG_POP
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
     /* Some C libraries would require addr.__ss_family instead of
@@ -6272,8 +6310,10 @@ socket_gethostbyaddr(PyObject *self, PyObject *args)
 #ifdef USE_GETHOSTBYNAME_LOCK
     PyThread_acquire_lock(netdb_lock, 1);
 #endif
-    SUPPRESS_DEPRECATED_CALL
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     h = gethostbyaddr(ap, al, af);
+    _Py_COMP_DIAG_POP
 #endif /* HAVE_GETHOSTBYNAME_R */
     Py_END_ALLOW_THREADS
     ret = gethost_common(state, h, SAS2SA(&addr), sizeof(addr), af);
@@ -6575,132 +6615,73 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 
 
 /*[clinic input]
-_socket.socket.ntohs
-    x: int
+_socket.ntohs
+    integer as x: uint16
     /
 
 Convert a 16-bit unsigned integer from network to host byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+_socket_ntohs_impl(PyObject *module, uint16_t x)
+/*[clinic end generated code: output=8e991859ddcedcc9 input=a702372437396511]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "ntohs: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    if (x > 0xffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "ntohs: Python int too large to convert to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
+    return PyLong_FromUnsignedLong(ntohs(x));
 }
-
-
-static PyObject *
-socket_ntohl(PyObject *self, PyObject *arg)
-{
-    unsigned long x;
-
-    if (PyLong_Check(arg)) {
-        x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return NULL;
-#if SIZEOF_LONG > 4
-        {
-            unsigned long y;
-            /* only want the trailing 32 bits */
-            y = x & 0xFFFFFFFFUL;
-            if (y ^ x)
-                return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
-            x = y;
-        }
-#endif
-    }
-    else
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(ntohl(x));
-}
-
-PyDoc_STRVAR(ntohl_doc,
-"ntohl(integer) -> integer\n\
-\n\
-Convert a 32-bit integer from network to host byte order.");
 
 
 /*[clinic input]
-_socket.socket.htons
-    x: int
+_socket.ntohl
+    integer as x: uint32
+    /
+
+Convert a 32-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_ntohl_impl(PyObject *module, uint32_t x)
+/*[clinic end generated code: output=158bcc5ba449f795 input=a0406faf2236bd1f]*/
+{
+    return PyLong_FromUnsignedLong(ntohl(x));
+}
+
+
+/*[clinic input]
+_socket.htons
+    integer as x: uint16
     /
 
 Convert a 16-bit unsigned integer from host to network byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_htons_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+_socket_htons_impl(PyObject *module, uint16_t x)
+/*[clinic end generated code: output=35aa2bcc370fd80b input=78047a26d51866d1]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "htons: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    if (x > 0xffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "htons: Python int too large to convert to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    return PyLong_FromUnsignedLong(htons((unsigned short)x));
+    return PyLong_FromUnsignedLong(htons(x));
 }
 
+
+/*[clinic input]
+_socket.htonl
+    integer as x: uint32
+    /
+
+Convert a 32-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
 
 static PyObject *
-socket_htonl(PyObject *self, PyObject *arg)
+_socket_htonl_impl(PyObject *module, uint32_t x)
+/*[clinic end generated code: output=283eb6857d5f7e0d input=89a9077647082806]*/
 {
-    unsigned long x;
-
-    if (PyLong_Check(arg)) {
-        x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return NULL;
-#if SIZEOF_LONG > 4
-        {
-            unsigned long y;
-            /* only want the trailing 32 bits */
-            y = x & 0xFFFFFFFFUL;
-            if (y ^ x)
-                return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
-            x = y;
-        }
-#endif
-    }
-    else
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(htonl((unsigned long)x));
+    return PyLong_FromUnsignedLong(htonl(x));
 }
-
-PyDoc_STRVAR(htonl_doc,
-"htonl(integer) -> integer\n\
-\n\
-Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
 /*[clinic input]
-_socket.socket.inet_aton
+@permit_long_summary
+_socket.inet_aton
     ip_addr: str
     /
 
@@ -6708,8 +6689,8 @@ Convert an IP address in string format (123.45.67.89) to the 32-bit packed binar
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
-/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
+_socket_inet_aton_impl(PyObject *module, const char *ip_addr)
+/*[clinic end generated code: output=f2c2f772eb721b6e input=0bd9e5ee400fafd6]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6750,8 +6731,10 @@ _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
         packed_addr = INADDR_BROADCAST;
     } else {
 
-        SUPPRESS_DEPRECATED_CALL
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         packed_addr = inet_addr(ip_addr);
+        _Py_COMP_DIAG_POP
 
         if (packed_addr == INADDR_NONE) {               /* invalid address */
             PyErr_SetString(PyExc_OSError,
@@ -6771,7 +6754,7 @@ _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
 
 #ifdef HAVE_INET_NTOA
 /*[clinic input]
-_socket.socket.inet_ntoa
+_socket.inet_ntoa
     packed_ip: Py_buffer
     /
 
@@ -6779,8 +6762,8 @@ Convert an IP address from 32-bit packed binary format to string format.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
-/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
+_socket_inet_ntoa_impl(PyObject *module, Py_buffer *packed_ip)
+/*[clinic end generated code: output=3077324c50af0935 input=2850d4f57e4db345]*/
 {
     struct in_addr packed_addr;
 
@@ -6794,8 +6777,10 @@ _socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
     memcpy(&packed_addr, packed_ip->buf, packed_ip->len);
     PyBuffer_Release(packed_ip);
 
-    SUPPRESS_DEPRECATED_CALL
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     return PyUnicode_FromString(inet_ntoa(packed_addr));
+    _Py_COMP_DIAG_POP
 }
 #endif // HAVE_INET_NTOA
 
@@ -6952,8 +6937,12 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
     }
-    if (PyLong_CheckExact(pobj)) {
-        pstr = PyObject_Str(pobj);
+    if (PyIndex_Check(pobj)) {
+        pstr = PyNumber_Index(pobj);
+        if (pstr == NULL)
+            goto err;
+        assert(PyLong_CheckExact(pstr));
+        Py_SETREF(pstr, PyObject_Str(pstr));
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
@@ -7194,7 +7183,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(setdefaulttimeout_doc,
 "setdefaulttimeout(timeout)\n\
 \n\
-Set the default timeout in seconds (float) for new socket objects.\n\
+Set the default timeout in seconds (real number) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 
@@ -7288,16 +7277,16 @@ PyDoc_STRVAR(if_nameindex_doc,
 Returns a list of network interface information (index, name) tuples.");
 
 /*[clinic input]
-_socket.socket.if_nametoindex
-    oname: object(converter="PyUnicode_FSConverter")
+_socket.if_nametoindex
+    oname: unicode_fs_encoded
     /
 
 Returns the interface index corresponding to the interface name if_name.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
-/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
+_socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
+/*[clinic end generated code: output=289a411614f30244 input=6125dc20683560cf]*/
 {
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
@@ -7305,11 +7294,10 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
     unsigned long index;
 #endif
 
+    errno = ENODEV;  // in case 'if_nametoindex' does not set errno
     index = if_nametoindex(PyBytes_AS_STRING(oname));
-    Py_DECREF(oname);
     if (index == 0) {
-        /* if_nametoindex() doesn't set errno */
-        PyErr_SetString(PyExc_OSError, "no interface with this name");
+        PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
 
@@ -7317,25 +7305,19 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
 }
 
 
+/*[clinic input]
+_socket.if_indextoname
+    if_index as index: NET_IFINDEX
+    /
+
+Returns the interface name corresponding to the interface index if_index.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_indextoname(PyObject *self, PyObject *arg)
+_socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
+/*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
 {
-    unsigned long index_long = PyLong_AsUnsignedLong(arg);
-    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    NET_IFINDEX index = (NET_IFINDEX)index_long;
-#else
-    unsigned int index = (unsigned int)index_long;
-#endif
-
-    if ((unsigned long)index != index_long) {
-        PyErr_SetString(PyExc_OverflowError, "index is too large");
-        return NULL;
-    }
-
+    errno = ENXIO;  // in case 'if_indextoname' does not set errno
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -7344,11 +7326,6 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
 
     return PyUnicode_DecodeFSDefault(name);
 }
-
-PyDoc_STRVAR(if_indextoname_doc,
-"if_indextoname(if_index)\n\
-\n\
-Returns the interface name corresponding to the interface index if_index.");
 
 #endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
@@ -7460,15 +7437,13 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    _SOCKET_SOCKET_NTOHS_METHODDEF
-    {"ntohl",                   socket_ntohl,
-     METH_O, ntohl_doc},
-    _SOCKET_SOCKET_HTONS_METHODDEF
-    {"htonl",                   socket_htonl,
-     METH_O, htonl_doc},
-    _SOCKET_SOCKET_INET_ATON_METHODDEF
+    _SOCKET_NTOHS_METHODDEF
+    _SOCKET_NTOHL_METHODDEF
+    _SOCKET_HTONS_METHODDEF
+    _SOCKET_HTONL_METHODDEF
+    _SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    _SOCKET_SOCKET_INET_NTOA_METHODDEF
+    _SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
@@ -7491,9 +7466,8 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
-    {"if_indextoname", socket_if_indextoname,
-     METH_O, if_indextoname_doc},
+    _SOCKET_IF_NAMETOINDEX_METHODDEF
+    _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif
 #ifdef CMSG_LEN
     {"CMSG_LEN",                socket_CMSG_LEN,
@@ -8548,6 +8522,43 @@ socket_exec(PyObject *m)
 
     ADD_INT_MACRO(m, J1939_FILTER_MAX);
 #endif
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+    ADD_INT_MACRO(m, SOL_CAN_ISOTP);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_OPTS);
+    ADD_INT_MACRO(m, CAN_ISOTP_RECV_FC);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_LL_OPTS);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_LISTEN_MODE);
+    ADD_INT_MACRO(m, CAN_ISOTP_EXTEND_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_LEN);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_DATA);
+    ADD_INT_MACRO(m, CAN_ISOTP_HALF_DUPLEX);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_TXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_RXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_EXT_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_WAIT_TX_DONE);
+#ifdef CAN_ISOTP_SF_BROADCAST
+    ADD_INT_MACRO(m, CAN_ISOTP_SF_BROADCAST);
+#endif
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FLAGS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_EXT_ADDRESS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_PAD_CONTENT);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FRAME_TXTIME);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_BS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_WFTMAX);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_MTU);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_DL);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_FLAGS);
+#endif
 #ifdef SOL_RDS
     ADD_INT_MACRO(m, SOL_RDS);
 #endif
@@ -8889,6 +8900,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef IPV6_HOPLIMIT
     ADD_INT_MACRO(m, IPV6_HOPLIMIT);
+#endif
+#ifdef IPV6_HDRINCL
+    ADD_INT_MACRO(m, IPV6_HDRINCL);
 #endif
 #ifdef IPV6_HOPOPTS
     ADD_INT_MACRO(m, IPV6_HOPOPTS);

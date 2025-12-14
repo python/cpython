@@ -55,6 +55,7 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
+Objects/interpolationobject.c	-	_PyInterpolation_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
@@ -86,6 +87,8 @@ Objects/setobject.c	-	PySetIter_Type	-
 Objects/setobject.c	-	PySet_Type	-
 Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
+Objects/templateobject.c	-	_PyTemplateIter_Type	-
+Objects/templateobject.c	-	_PyTemplate_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
 Objects/tupleobject.c	-	PyTuple_Type	-
 Objects/typeobject.c	-	_PyBufferWrapper_Type	-
@@ -397,6 +400,7 @@ Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
+Modules/socketmodule.c 	- 	netdb_lock 	-
 
 
 ##################################

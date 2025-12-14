@@ -71,16 +71,15 @@ Lib/test/data/*
 /Makefile
 /Makefile.pre
 /iOSTestbed.*
-iOS/Frameworks/
-iOS/Resources/Info.plist
-iOS/testbed/build
-iOS/testbed/Python.xcframework/ios-*/bin
-iOS/testbed/Python.xcframework/ios-*/include
-iOS/testbed/Python.xcframework/ios-*/lib
-iOS/testbed/Python.xcframework/ios-*/Python.framework
-iOS/testbed/iOSTestbed.xcodeproj/project.xcworkspace
-iOS/testbed/iOSTestbed.xcodeproj/xcuserdata
-iOS/testbed/iOSTestbed.xcodeproj/xcshareddata
+Apple/iOS/Frameworks/
+Apple/iOS/Resources/Info.plist
+Apple/testbed/build
+Apple/testbed/Python.xcframework/*/bin
+Apple/testbed/Python.xcframework/*/include
+Apple/testbed/Python.xcframework/*/lib
+Apple/testbed/Python.xcframework/*/Python.framework
+Apple/testbed/*Testbed.xcodeproj/project.xcworkspace
+Apple/testbed/*Testbed.xcodeproj/xcuserdata
 Mac/Makefile
 Mac/PythonLauncher/Info.plist
 Mac/PythonLauncher/Makefile
@@ -131,18 +130,19 @@ Tools/unicode/data/
 /autom4te.cache
 /build/
 /builddir/
+/compile_commands.json
 /config.cache
 /config.log
 /config.status
 /config.status.lineno
-# hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
-/jit_stencils.h
+/jit_stencils*.h
 /platform
 /profile-clean-stamp
 /profile-run-stamp
 /profile-bolt-stamp
+/profile-gen-stamp
 /pybuilddir.txt
 /pyconfig.h
 /python-config
@@ -170,5 +170,10 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
+# People's custom https://docs.anthropic.com/en/docs/claude-code/memory configs.
+/.claude/
+CLAUDE.local.md
+
+#### main branch only stuff below this line, things to backport go above. ####
 # main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi

@@ -156,6 +156,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
+#_math_integer mathintegermodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
 #_sysconfig _sysconfig.c
@@ -201,6 +202,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
 #_uuid _uuidmodule.c -luuid
+#_zstd _zstd/_zstdmodule.c -lzstd -I$(srcdir)/Modules/_zstd
 #zlib  zlibmodule.c -lz
 
 # The readline module also supports libeditline (-leditline).
@@ -283,10 +285,10 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #*shared*
 #_ctypes_test _ctypes/_ctypes_test.c
+#_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/threads.c _remote_debugging/asyncio.c
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
-#_testexternalinspection _testexternalinspection.c
 #_testsinglephase _testsinglephase.c
 
 # ---

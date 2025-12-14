@@ -140,6 +140,7 @@ def parse_openssl_error_text(args):
         if "_F_" in reason:  # ignore function codes
             # FEAT(picnixz): in the future, we may want to also check
             # the consistency of the OpenSSL files with an external tool.
+            # See https://github.com/python/cpython/issues/132745.
             continue
         yield reason, libname, errname, int(num)
 

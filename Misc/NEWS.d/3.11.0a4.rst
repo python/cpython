@@ -1161,7 +1161,7 @@ no-op now.
 .. nonce: Lq2_gR
 .. section: C API
 
-Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with
+Replaced deprecated usage of :c:func:`!PyImport_ImportModuleNoBlock` with
 :c:func:`PyImport_ImportModule` in stdlib modules. Patch by Kumar Aditya.
 
 ..

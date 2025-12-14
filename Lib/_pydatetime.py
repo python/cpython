@@ -213,17 +213,6 @@ def _need_normalize_century():
             _normalize_century = True
     return _normalize_century
 
-_supports_c99 = None
-def _can_support_c99():
-    global _supports_c99
-    if _supports_c99 is None:
-        try:
-            _supports_c99 = (
-                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
-        except ValueError:
-            _supports_c99 = False
-    return _supports_c99
-
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -283,7 +272,7 @@ def _wrap_strftime(object, format, timetuple):
                     newformat.append(Zreplace)
                 # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
                 # year 1000 for %G can go on the fast path.
-                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
+                elif ((ch in 'YG' or ch in 'FC') and
                         object.year < 1000 and _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
@@ -467,6 +456,7 @@ def _parse_isoformat_time(tstr):
     hour, minute, second, microsecond = time_comps
     became_next_day = False
     error_from_components = False
+    error_from_tz = None
     if (hour == 24):
         if all(time_comp == 0 for time_comp in time_comps[1:]):
             hour = 0
@@ -500,14 +490,22 @@ def _parse_isoformat_time(tstr):
         else:
             tzsign = -1 if tstr[tz_pos - 1] == '-' else 1
 
-            td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
-                           seconds=tz_comps[2], microseconds=tz_comps[3])
-
-            tzi = timezone(tzsign * td)
+            try:
+                # This function is intended to validate datetimes, but because
+                # we restrict time zones to ±24h, it serves here as well.
+                _check_time_fields(hour=tz_comps[0], minute=tz_comps[1],
+                                   second=tz_comps[2], microsecond=tz_comps[3],
+                                   fold=0)
+            except ValueError as e:
+                error_from_tz = e
+            else:
+                td = timedelta(hours=tz_comps[0], minutes=tz_comps[1],
+                               seconds=tz_comps[2], microseconds=tz_comps[3])
+                tzi = timezone(tzsign * td)
 
     time_comps.append(tzi)
 
-    return time_comps, became_next_day, error_from_components
+    return time_comps, became_next_day, error_from_components, error_from_tz
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -1074,7 +1072,11 @@ class date:
 
     @classmethod
     def strptime(cls, date_string, format):
-        """Parse a date string according to the given format (like time.strptime())."""
+        """Parse string according to the given date format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
@@ -1111,6 +1113,8 @@ class date:
         Format using strftime().
 
         Example: "%d/%m/%Y, %H:%M:%S"
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         return _wrap_strftime(self, format, self.timetuple())
 
@@ -1127,8 +1131,8 @@ class date:
         This is 'YYYY-MM-DD'.
 
         References:
-        - http://www.w3.org/TR/NOTE-datetime
-        - http://www.cl.cam.ac.uk/~mgk25/iso-time.html
+        - https://www.w3.org/TR/NOTE-datetime
+        - https://www.cl.cam.ac.uk/~mgk25/iso-time.html
         """
         return "%04d-%02d-%02d" % (self._year, self._month, self._day)
 
@@ -1262,7 +1266,7 @@ class date:
         The first week is 1; Monday is 1 ... Sunday is 7.
 
         ISO calendar algorithm taken from
-        http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
+        https://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
         (used with permission)
         """
         year = self._year
@@ -1301,7 +1305,7 @@ date.resolution = timedelta(days=1)
 
 
 class tzinfo:
-    """Abstract base class for time zone info classes.
+    """Abstract base class for time zone info objects.
 
     Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
@@ -1458,8 +1462,13 @@ class time:
         return self
 
     @classmethod
+
     def strptime(cls, date_string, format):
-        """string, format -> new time parsed from a string (like time.strptime())."""
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 
@@ -1633,13 +1642,28 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string)[0])
-        except Exception:
-            raise ValueError(f'Invalid isoformat string: {time_string!r}')
+            time_components, _, error_from_components, error_from_tz = (
+                _parse_isoformat_time(time_string)
+            )
+        except ValueError:
+            raise ValueError(
+                f'Invalid isoformat string: {time_string!r}') from None
+        else:
+            if error_from_tz:
+                raise error_from_tz
+            if error_from_components:
+                raise ValueError(
+                    "Minute, second, and microsecond must be 0 when hour is 24"
+                )
+
+            return cls(*time_components)
 
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
@@ -1755,7 +1779,7 @@ time.resolution = timedelta(microseconds=1)
 
 
 class datetime(date):
-    """datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])
+    """A combination of a date and a time.
 
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
@@ -1947,11 +1971,16 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
+                (time_components,
+                 became_next_day,
+                 error_from_components,
+                 error_from_tz) = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
             else:
+                if error_from_tz:
+                    raise error_from_tz
                 if error_from_components:
                     raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
 
@@ -2089,7 +2118,6 @@ class datetime(date):
         else:
             ts = (self - _EPOCH) // timedelta(seconds=1)
         localtm = _time.localtime(ts)
-        local = datetime(*localtm[:6])
         # Extract TZ data
         gmtoff = localtm.tm_gmtoff
         zone = localtm.tm_zone
@@ -2139,7 +2167,7 @@ class datetime(date):
         By default, the fractional part is omitted if self.microsecond == 0.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
-        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
+        a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
 
         Optional argument sep specifies the separator between date and
         time, default 'T'.
@@ -2184,7 +2212,11 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
@@ -2410,6 +2442,8 @@ def _isoweek1monday(year):
 
 
 class timezone(tzinfo):
+    """Fixed offset from UTC implementation of tzinfo."""
+
     __slots__ = '_offset', '_name'
 
     # Sentinel value to disallow None

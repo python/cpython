@@ -13,6 +13,16 @@ If you need to add a new function ensure that is declared 'static'.
 extern "C" {
 #endif
 
+#ifdef __clang__
+    #define UNUSED __attribute__((unused))
+#elif defined(__GNUC__)
+    #define UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+    #define UNUSED __pragma(warning(suppress: 4505))
+#else
+    #define UNUSED
+#endif
+
 #if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_MODULE define"
 #endif
@@ -35,14 +45,16 @@ extern "C" {
 #    include <sys/mman.h>
 #endif
 
-#if defined(__APPLE__) && TARGET_OS_OSX
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 #  include <libproc.h>
 #  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
 #  include <mach-o/nlist.h>
+#  include <mach/error.h>
 #  include <mach/mach.h>
 #  include <mach/mach_vm.h>
 #  include <mach/machine.h>
+#  include <mach/task_info.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
 #  include <sys/sysctl.h>
@@ -73,43 +85,127 @@ extern "C" {
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
+#define _set_debug_exception_cause(exception, format, ...) \
+    do { \
+        if (!PyErr_ExceptionMatches(PyExc_PermissionError)) { \
+            PyThreadState *tstate = _PyThreadState_GET(); \
+            if (!_PyErr_Occurred(tstate)) { \
+                _PyErr_Format(tstate, exception, format, ##__VA_ARGS__); \
+            } else { \
+                _PyErr_FormatFromCause(exception, format, ##__VA_ARGS__); \
+            } \
+        } \
+    } while (0)
+
+static inline size_t
+get_page_size(void) {
+    size_t page_size = 0;
+    if (page_size == 0) {
+#ifdef MS_WINDOWS
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        page_size = si.dwPageSize;
+#else
+        page_size = (size_t)getpagesize();
+#endif
+    }
+    return page_size;
+}
+
+typedef struct page_cache_entry {
+    uintptr_t page_addr; // page-aligned base address
+    char *data;
+    int valid;
+    struct page_cache_entry *next;
+} page_cache_entry_t;
+
+#define MAX_PAGES 1024
+
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
-#ifdef MS_WINDOWS
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    mach_port_t task;
+#elif defined(MS_WINDOWS)
     HANDLE hProcess;
+#elif defined(__linux__)
+    int memfd;
 #endif
+    page_cache_entry_t pages[MAX_PAGES];
+    Py_ssize_t page_size;
 } proc_handle_t;
 
+static void
+_Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
+{
+    for (int i = 0; i < MAX_PAGES; i++) {
+        PyMem_RawFree(handle->pages[i].data);
+        handle->pages[i].data = NULL;
+        handle->pages[i].valid = 0;
+    }
+}
+
+UNUSED static void
+_Py_RemoteDebug_ClearCache(proc_handle_t *handle)
+{
+    for (int i = 0; i < MAX_PAGES; i++) {
+        handle->pages[i].valid = 0;
+    }
+}
+
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+static mach_port_t pid_to_task(pid_t pid);
+#endif
+
 // Initialize the process handle
-static int
+UNUSED static int
 _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
-#ifdef MS_WINDOWS
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    handle->task = pid_to_task(handle->pid);
+    if (handle->task == 0) {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize macOS process handle");
+        return -1;
+    }
+#elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
         PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION,
         FALSE, pid);
     if (handle->hProcess == NULL) {
         PyErr_SetFromWindowsErr(0);
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to initialize Windows process handle");
         return -1;
     }
+#elif defined(__linux__)
+    handle->memfd = -1;
 #endif
+    handle->page_size = get_page_size();
+    for (int i = 0; i < MAX_PAGES; i++) {
+        handle->pages[i].data = NULL;
+        handle->pages[i].valid = 0;
+    }
     return 0;
 }
 
 // Clean up the process handle
-static void
+UNUSED static void
 _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 #ifdef MS_WINDOWS
     if (handle->hProcess != NULL) {
         CloseHandle(handle->hProcess);
         handle->hProcess = NULL;
     }
+#elif defined(__linux__)
+    if (handle->memfd != -1) {
+        close(handle->memfd);
+        handle->memfd = -1;
+    }
 #endif
     handle->pid = 0;
+    _Py_RemoteDebug_FreePageCache(handle);
 }
 
-#if defined(__APPLE__) && TARGET_OS_OSX
+#if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
 
 static uintptr_t
 return_section_address64(
@@ -148,8 +244,10 @@ return_section_address64(
                     &object_name
                 );
                 if (ret != KERN_SUCCESS) {
-                    PyErr_SetString(
-                        PyExc_RuntimeError, "Cannot get any more VM maps.\n");
+                    PyErr_Format(PyExc_RuntimeError,
+                        "mach_vm_region failed while parsing 64-bit Mach-O binary "
+                        "at base address 0x%lx (kern_return_t: %d)",
+                        base, ret);
                     return 0;
                 }
             }
@@ -169,9 +267,6 @@ return_section_address64(
         cmd = (struct segment_command_64*)((void*)cmd + cmd->cmdsize);
     }
 
-    // We should not be here, but if we are there, we should say about this
-    PyErr_SetString(
-        PyExc_RuntimeError, "Cannot find section address.\n");
     return 0;
 }
 
@@ -212,8 +307,10 @@ return_section_address32(
                     &object_name
                 );
                 if (ret != KERN_SUCCESS) {
-                    PyErr_SetString(
-                        PyExc_RuntimeError, "Cannot get any more VM maps.\n");
+                    PyErr_Format(PyExc_RuntimeError,
+                        "mach_vm_region failed while parsing 32-bit Mach-O binary "
+                        "at base address 0x%lx (kern_return_t: %d)",
+                        base, ret);
                     return 0;
                 }
             }
@@ -233,9 +330,6 @@ return_section_address32(
         cmd = (struct segment_command*)((void*)cmd + cmd->cmdsize);
     }
 
-    // We should not be here, but if we are there, we should say about this
-    PyErr_SetString(
-        PyExc_RuntimeError, "Cannot find section address.\n");
     return 0;
 }
 
@@ -253,8 +347,20 @@ return_section_address_fat(
     int is_abi64;
     size_t cpu_size = sizeof(cpu), abi64_size = sizeof(is_abi64);
 
-    sysctlbyname("hw.cputype", &cpu, &cpu_size, NULL, 0);
-    sysctlbyname("hw.cpu64bit_capable", &is_abi64, &abi64_size, NULL, 0);
+    if (sysctlbyname("hw.cputype", &cpu, &cpu_size, NULL, 0) != 0) {
+        PyErr_Format(PyExc_OSError,
+            "Failed to determine CPU type via sysctlbyname "
+            "for fat binary analysis at 0x%lx: %s",
+            base, strerror(errno));
+        return 0;
+    }
+    if (sysctlbyname("hw.cpu64bit_capable", &is_abi64, &abi64_size, NULL, 0) != 0) {
+        PyErr_Format(PyExc_OSError,
+            "Failed to determine CPU ABI capability via sysctlbyname "
+            "for fat binary analysis at 0x%lx: %s",
+            base, strerror(errno));
+        return 0;
+    }
 
     cpu |= is_abi64 * CPU_ARCH_ABI64;
 
@@ -285,13 +391,18 @@ return_section_address_fat(
                     return return_section_address64(section, proc_ref, base, (void*)hdr);
 
                 default:
-                    PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic in fat binary.\n");
+                    PyErr_Format(PyExc_RuntimeError,
+                        "Unknown Mach-O magic number 0x%x in fat binary architecture %u at base 0x%lx",
+                        hdr->magic, i, base);
                     return 0;
             }
         }
     }
 
-    PyErr_SetString(PyExc_RuntimeError, "No matching architecture found in fat binary.\n");
+    PyErr_Format(PyExc_RuntimeError,
+        "No matching architecture found for CPU type 0x%x "
+        "in fat binary at base 0x%lx (%u architectures examined)",
+        cpu, base, nfat_arch);
     return 0;
 }
 
@@ -300,20 +411,26 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
 {
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
-        PyErr_Format(PyExc_RuntimeError, "Cannot open binary %s\n", path);
+        PyErr_Format(PyExc_OSError,
+            "Cannot open binary file '%s' for section '%s' search: %s",
+            path, secname, strerror(errno));
         return 0;
     }
 
     struct stat fs;
     if (fstat(fd, &fs) == -1) {
-        PyErr_Format(PyExc_RuntimeError, "Cannot get size of binary %s\n", path);
+        PyErr_Format(PyExc_OSError,
+            "Cannot get file size for binary '%s' during section '%s' search: %s",
+            path, secname, strerror(errno));
         close(fd);
         return 0;
     }
 
     void* map = mmap(0, fs.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (map == MAP_FAILED) {
-        PyErr_Format(PyExc_RuntimeError, "Cannot map binary %s\n", path);
+        PyErr_Format(PyExc_OSError,
+            "Cannot memory map binary file '%s' (size: %lld bytes) for section '%s' search: %s",
+            path, (long long)fs.st_size, secname, strerror(errno));
         close(fd);
         return 0;
     }
@@ -335,13 +452,23 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
         result = return_section_address_fat(secname, proc_ref, base, map);
         break;
     default:
-        PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic");
+        PyErr_Format(PyExc_RuntimeError,
+            "Unrecognized Mach-O magic number 0x%x in binary file '%s' for section '%s' search",
+            magic, path, secname);
         break;
     }
 
-    munmap(map, fs.st_size);
+    if (munmap(map, fs.st_size) != 0) {
+        PyErr_Format(PyExc_OSError,
+            "Failed to unmap binary file '%s' (size: %lld bytes): %s",
+            path, (long long)fs.st_size, strerror(errno));
+        result = 0;
+    }
     if (close(fd) != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Failed to close binary file '%s': %s",
+            path, strerror(errno));
+        result = 0;
     }
     return result;
 }
@@ -355,7 +482,10 @@ pid_to_task(pid_t pid)
 
     result = task_for_pid(mach_task_self(), pid, &task);
     if (result != KERN_SUCCESS) {
-        PyErr_Format(PyExc_PermissionError, "Cannot get task for PID %d", pid);
+        PyErr_Format(PyExc_PermissionError,
+            "Cannot get task port for PID %d (kern_return_t: %d). "
+            "This typically requires running as root or having the 'com.apple.system-task-ports' entitlement.",
+            pid, result);
         return 0;
     }
     return task;
@@ -371,12 +501,16 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
 
     mach_port_t proc_ref = pid_to_task(handle->pid);
     if (proc_ref == 0) {
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        if (!PyErr_Occurred()) {
+            PyErr_Format(PyExc_PermissionError,
+                "Cannot get task port for PID %d during section search",
+                handle->pid);
+        }
         return 0;
     }
 
-    int match_found = 0;
     char map_filename[MAXPATHLEN + 1];
+
     while (mach_vm_region(
         proc_ref,
         &address,
@@ -386,6 +520,7 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
         &count,
         &object_name) == KERN_SUCCESS)
     {
+
         if ((region_info.protection & VM_PROT_READ) == 0
             || (region_info.protection & VM_PROT_EXECUTE) == 0) {
             address += size;
@@ -406,21 +541,21 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
             filename = map_filename;  // No path, use the whole string
         }
 
-        if (!match_found && strncmp(filename, substr, strlen(substr)) == 0) {
-            match_found = 1;
-            return search_section_in_file(
+        if (strncmp(filename, substr, strlen(substr)) == 0) {
+            uintptr_t result = search_section_in_file(
                 secname, map_filename, address, size, proc_ref);
+            if (result != 0) {
+                return result;
+            }
         }
 
         address += size;
     }
 
-    PyErr_SetString(PyExc_RuntimeError,
-        "mach_vm_region failed to find the section");
     return 0;
 }
 
-#endif // (__APPLE__ && TARGET_OS_OSX)
+#endif // (__APPLE__ && defined(TARGET_OS_OSX) && TARGET_OS_OSX)
 
 #if defined(__linux__) && HAVE_PROCESS_VM_READV
 static uintptr_t
@@ -439,23 +574,37 @@ search_elf_file_for_section(
 
     int fd = open(elf_file, O_RDONLY);
     if (fd < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Cannot open ELF file '%s' for section '%s' search: %s",
+            elf_file, secname, strerror(errno));
         goto exit;
     }
 
     struct stat file_stats;
     if (fstat(fd, &file_stats) != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Cannot get file size for ELF file '%s' during section '%s' search: %s",
+            elf_file, secname, strerror(errno));
         goto exit;
     }
 
     file_memory = mmap(NULL, file_stats.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (file_memory == MAP_FAILED) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Cannot memory map ELF file '%s' (size: %lld bytes) for section '%s' search: %s",
+            elf_file, (long long)file_stats.st_size, secname, strerror(errno));
         goto exit;
     }
 
     Elf_Ehdr* elf_header = (Elf_Ehdr*)file_memory;
+
+    // Validate ELF header
+    if (elf_header->e_shstrndx >= elf_header->e_shnum) {
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid ELF file '%s': string table index %u >= section count %u",
+            elf_file, elf_header->e_shstrndx, elf_header->e_shnum);
+        goto exit;
+    }
 
     Elf_Shdr* section_header_table = (Elf_Shdr*)(file_memory + elf_header->e_shoff);
 
@@ -473,6 +622,10 @@ search_elf_file_for_section(
         }
     }
 
+    if (section == NULL) {
+        goto exit;
+    }
+
     Elf_Phdr* program_header_table = (Elf_Phdr*)(file_memory + elf_header->e_phoff);
     // Find the first PT_LOAD segment
     Elf_Phdr* first_load_segment = NULL;
@@ -483,18 +636,26 @@ search_elf_file_for_section(
         }
     }
 
-    if (section != NULL && first_load_segment != NULL) {
-        uintptr_t elf_load_addr = first_load_segment->p_vaddr
-            - (first_load_segment->p_vaddr % first_load_segment->p_align);
-        result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
+    if (first_load_segment == NULL) {
+        PyErr_Format(PyExc_RuntimeError,
+            "No PT_LOAD segment found in ELF file '%s' (%u program headers examined)",
+            elf_file, elf_header->e_phnum);
+        goto exit;
     }
+
+    uintptr_t elf_load_addr = first_load_segment->p_vaddr
+        - (first_load_segment->p_vaddr % first_load_segment->p_align);
+    result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
 
 exit:
     if (file_memory != NULL) {
         munmap(file_memory, file_stats.st_size);
     }
     if (fd >= 0 && close(fd) != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Failed to close ELF file '%s': %s",
+            elf_file, strerror(errno));
+        result = 0;
     }
     return result;
 }
@@ -507,7 +668,9 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
 
     FILE* maps_file = fopen(maps_file_path, "r");
     if (maps_file == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_Format(PyExc_OSError,
+            "Cannot open process memory map file '%s' for PID %d section search: %s",
+            maps_file_path, handle->pid, strerror(errno));
         return 0;
     }
 
@@ -516,11 +679,14 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     char *line = PyMem_Malloc(linesz);
     if (!line) {
         fclose(maps_file);
-        PyErr_NoMemory();
+        _set_debug_exception_cause(PyExc_MemoryError,
+            "Cannot allocate memory for reading process map file '%s'",
+            maps_file_path);
         return 0;
     }
 
     uintptr_t retval = 0;
+
     while (fgets(line + linelen, linesz - linelen, maps_file) != NULL) {
         linelen = strlen(line);
         if (line[linelen - 1] != '\n') {
@@ -531,7 +697,9 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
             if (!biggerline) {
                 PyMem_Free(line);
                 fclose(maps_file);
-                PyErr_NoMemory();
+                _set_debug_exception_cause(PyExc_MemoryError,
+                    "Cannot reallocate memory while reading process map file '%s' (attempted size: %zu)",
+                    maps_file_path, linesz);
                 return 0;
             }
             line = biggerline;
@@ -554,6 +722,11 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '[' && path[strlen(path)-1] == ']') {
+            // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
+            continue;
+        }
+
         const char *filename = strrchr(path, '/');
         if (filename) {
             filename++;  // Move past the '/'
@@ -570,7 +743,12 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     }
 
     PyMem_Free(line);
-    fclose(maps_file);
+    if (fclose(maps_file) != 0) {
+        PyErr_Format(PyExc_OSError,
+            "Failed to close process map file '%s': %s",
+            maps_file_path, strerror(errno));
+        retval = 0;
+    }
 
     return retval;
 }
@@ -580,15 +758,32 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
 
 #ifdef MS_WINDOWS
 
+static int is_process_alive(HANDLE hProcess) {
+    DWORD exitCode;
+    if (GetExitCodeProcess(hProcess, &exitCode)) {
+        return exitCode == STILL_ACTIVE;
+    }
+    return 0;
+}
+
 static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* secname) {
     HANDLE hFile = CreateFileW(mod_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
+        PyErr_Format(PyExc_OSError,
+            "Cannot open PE file for section '%s' analysis (error %lu)",
+            secname, error);
         return NULL;
     }
+
     HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, 0);
     if (!hMap) {
         PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
+        PyErr_Format(PyExc_OSError,
+            "Cannot create file mapping for PE file section '%s' analysis (error %lu)",
+            secname, error);
         CloseHandle(hFile);
         return NULL;
     }
@@ -596,6 +791,10 @@ static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* 
     BYTE* mapView = (BYTE*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
     if (!mapView) {
         PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
+        PyErr_Format(PyExc_OSError,
+            "Cannot map view of PE file for section '%s' analysis (error %lu)",
+            secname, error);
         CloseHandle(hMap);
         CloseHandle(hFile);
         return NULL;
@@ -603,7 +802,9 @@ static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* 
 
     IMAGE_DOS_HEADER* pDOSHeader = (IMAGE_DOS_HEADER*)mapView;
     if (pDOSHeader->e_magic != IMAGE_DOS_SIGNATURE) {
-        PyErr_SetString(PyExc_RuntimeError, "Invalid DOS signature.");
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid DOS signature (0x%x) in PE file for section '%s' analysis (expected 0x%x)",
+            pDOSHeader->e_magic, secname, IMAGE_DOS_SIGNATURE);
         UnmapViewOfFile(mapView);
         CloseHandle(hMap);
         CloseHandle(hFile);
@@ -612,7 +813,9 @@ static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* 
 
     IMAGE_NT_HEADERS* pNTHeaders = (IMAGE_NT_HEADERS*)(mapView + pDOSHeader->e_lfanew);
     if (pNTHeaders->Signature != IMAGE_NT_SIGNATURE) {
-        PyErr_SetString(PyExc_RuntimeError, "Invalid NT signature.");
+        PyErr_Format(PyExc_RuntimeError,
+            "Invalid NT signature (0x%lx) in PE file for section '%s' analysis (expected 0x%lx)",
+            pNTHeaders->Signature, secname, IMAGE_NT_SIGNATURE);
         UnmapViewOfFile(mapView);
         CloseHandle(hMap);
         CloseHandle(hFile);
@@ -646,7 +849,12 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
     } while (hProcSnap == INVALID_HANDLE_VALUE && GetLastError() == ERROR_BAD_LENGTH);
 
     if (hProcSnap == INVALID_HANDLE_VALUE) {
-        PyErr_SetString(PyExc_PermissionError, "Unable to create module snapshot. Check permissions or PID.");
+        PyErr_SetFromWindowsErr(0);
+        DWORD error = GetLastError();
+        PyErr_Format(PyExc_PermissionError,
+            "Unable to create module snapshot for PID %d section '%s' "
+            "search (error %lu). Check permissions or PID validity",
+            handle->pid, secname, error);
         return 0;
     }
 
@@ -665,13 +873,14 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
     }
 
     CloseHandle(hProcSnap);
+
     return (uintptr_t)runtime_addr;
 }
 
 #endif // MS_WINDOWS
 
 // Get the PyRuntime section address for any platform
-static uintptr_t
+UNUSED static uintptr_t
 _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
 {
     uintptr_t address;
@@ -681,29 +890,104 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "PyRuntime", L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_Format(PyExc_RuntimeError,
+            "Failed to find the PyRuntime section in process %d on Windows platform",
+            handle->pid);
+        _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__linux__)
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_Format(PyExc_RuntimeError,
+            "Failed to find the PyRuntime section in process %d on Linux platform",
+            handle->pid);
+        _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__APPLE__) && TARGET_OS_OSX
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "PyRuntime", "libpython");
-    if (address == 0) {
-        // TODO: Differentiate between not found and error
+    const char* candidates[] = {"libpython", "python", "Python", NULL};
+    for (const char** candidate = candidates; *candidate; candidate++) {
         PyErr_Clear();
-        address = search_map_for_section(handle, "PyRuntime", "python");
+        address = search_map_for_section(handle, "PyRuntime", *candidate);
+        if (address != 0) {
+            break;
+        }
+    }
+    if (address == 0) {
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_Format(PyExc_RuntimeError,
+            "Failed to find the PyRuntime section in process %d "
+            "on macOS platform (tried both libpython and python)",
+            handle->pid);
+        _PyErr_ChainExceptions1(exc);
     }
 #else
-    address = 0;
+    _set_debug_exception_cause(PyExc_RuntimeError,
+        "Reading the PyRuntime section is not supported on this platform");
+    return 0;
 #endif
 
     return address;
 }
+
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+
+static int
+open_proc_mem_fd(proc_handle_t *handle)
+{
+    char mem_file_path[64];
+    sprintf(mem_file_path, "/proc/%d/mem", handle->pid);
+
+    handle->memfd = open(mem_file_path, O_RDWR);
+    if (handle->memfd == -1) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        _set_debug_exception_cause(PyExc_OSError,
+            "failed to open file %s: %s", mem_file_path, strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
+// Why is pwritev not guarded? Except on Android API level 23 (no longer
+// supported), HAVE_PROCESS_VM_READV is sufficient.
+static int
+read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t read_bytes = 0;
+
+    do {
+        local[0].iov_base = (char*)dst + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        read_bytes = preadv(handle->memfd, local, 1, offset);
+        if (read_bytes < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "preadv failed for PID %d at address 0x%lx "
+                "(size %zu, partial read %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
+            return -1;
+        }
+
+        result += read_bytes;
+    } while ((size_t)read_bytes != local[0].iov_len);
+    return 0;
+}
+
+#endif // __linux__
 
 // Platform-independent memory read function
 static int
@@ -714,13 +998,28 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
     SIZE_T result = 0;
     do {
         if (!ReadProcessMemory(handle->hProcess, (LPCVOID)(remote_address + result), (char*)dst + result, len - result, &read_bytes)) {
+            // Check if the process is still alive: we need to be able to tell our caller
+            // that the process is dead and not just that the read failed.
+            if (!is_process_alive(handle->hProcess)) {
+                _set_errno(ESRCH);
+                PyErr_SetFromErrno(PyExc_OSError);
+                return -1;
+            }
             PyErr_SetFromWindowsErr(0);
+            DWORD error = GetLastError();
+            _set_debug_exception_cause(PyExc_OSError,
+                "ReadProcessMemory failed for PID %d at address 0x%lx "
+                "(size %zu, partial read %zu bytes): Windows error %lu",
+                handle->pid, remote_address + result, len - result, result, error);
             return -1;
         }
         result += read_bytes;
     } while (result < len);
     return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return read_remote_memory_fallback(handle, remote_address, len, dst);
+    }
     struct iovec local[1];
     struct iovec remote[1];
     Py_ssize_t result = 0;
@@ -734,32 +1033,71 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 
         read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
         if (read_bytes < 0) {
+            if (errno == ENOSYS) {
+                return read_remote_memory_fallback(handle, remote_address, len, dst);
+            }
             PyErr_SetFromErrno(PyExc_OSError);
+            if (errno == ESRCH) {
+                return -1;
+            }
+            _set_debug_exception_cause(PyExc_OSError,
+                "process_vm_readv failed for PID %d at address 0x%lx "
+                "(size %zu, partial read %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
             return -1;
         }
 
         result += read_bytes;
     } while ((size_t)read_bytes != local[0].iov_len);
     return 0;
-#elif defined(__APPLE__) && TARGET_OS_OSX
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
-        pid_to_task(handle->pid),
+        handle->task,
         (mach_vm_address_t)remote_address,
         len,
         (mach_vm_address_t)dst,
         (mach_vm_size_t*)&result);
 
     if (kr != KERN_SUCCESS) {
-        switch (kr) {
+        switch (err_get_code(kr)) {
         case KERN_PROTECTION_FAILURE:
-            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to read memory");
+            PyErr_Format(PyExc_PermissionError,
+                "Memory protection failure reading from PID %d at address "
+                "0x%lx (size %zu): insufficient permissions",
+                handle->pid, remote_address, len);
             break;
-        case KERN_INVALID_ARGUMENT:
-            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_read_overwrite");
+        case KERN_INVALID_ARGUMENT: {
+            // Perform a task_info check to see if the invalid argument is due
+            // to the process being terminated
+            task_basic_info_data_t task_basic_info;
+            mach_msg_type_number_t task_info_count = TASK_BASIC_INFO_COUNT;
+            kern_return_t task_valid_check = task_info(handle->task, TASK_BASIC_INFO,
+                                                        (task_info_t)&task_basic_info,
+                                                        &task_info_count);
+            if (task_valid_check == KERN_INVALID_ARGUMENT) {
+                PyErr_Format(PyExc_ProcessLookupError,
+                    "Process %d is no longer accessible (process terminated)",
+                    handle->pid);
+            } else {
+                PyErr_Format(PyExc_ValueError,
+                    "Invalid argument to mach_vm_read_overwrite for PID %d at "
+                    "address 0x%lx (size %zu) - check memory permissions",
+                    handle->pid, remote_address, len);
+            }
+            break;
+        }
+        case KERN_NO_SPACE:
+        case KERN_MEMORY_ERROR:
+            PyErr_Format(PyExc_ProcessLookupError,
+                "Process %d memory space no longer available (process terminated)",
+                handle->pid);
             break;
         default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown error reading memory");
+            PyErr_Format(PyExc_RuntimeError,
+                "mach_vm_read_overwrite failed for PID %d at address 0x%lx "
+                "(size %zu): kern_return_t %d",
+                handle->pid, remote_address, len, kr);
         }
         return -1;
     }
@@ -769,7 +1107,172 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 #endif
 }
 
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
+// Fallback write using /proc/pid/mem
 static int
+_Py_RemoteDebug_WriteRemoteMemoryFallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+    if (handle->memfd == -1) {
+        if (open_proc_mem_fd(handle) < 0) {
+            return -1;
+        }
+    }
+
+    struct iovec local[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (char*)src + result;
+        local[0].iov_len = len - result;
+        off_t offset = remote_address + result;
+
+        written = pwritev(handle->memfd, local, 1, offset);
+        if (written < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+}
+#endif // __linux__
+
+// Platform-independent memory write function
+UNUSED static int
+_Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+#ifdef MS_WINDOWS
+    SIZE_T written = 0;
+    SIZE_T result = 0;
+    do {
+        if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
+            PyErr_SetFromWindowsErr(0);
+            DWORD error = GetLastError();
+            _set_debug_exception_cause(PyExc_OSError,
+                "WriteProcessMemory failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zu bytes): Windows error %lu",
+                handle->pid, remote_address + result, len - result, result, error);
+            return -1;
+        }
+        result += written;
+    } while (result < len);
+    return 0;
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    if (handle->memfd != -1) {
+        return _Py_RemoteDebug_WriteRemoteMemoryFallback(handle, remote_address, len, src);
+    }
+    struct iovec local[1];
+    struct iovec remote[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (void*)((char*)src + result);
+        local[0].iov_len = len - result;
+        remote[0].iov_base = (void*)((char*)remote_address + result);
+        remote[0].iov_len = len - result;
+
+        written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
+        if (written < 0) {
+            if (errno == ENOSYS) {
+                return _Py_RemoteDebug_WriteRemoteMemoryFallback(handle, remote_address, len, src);
+            }
+            PyErr_SetFromErrno(PyExc_OSError);
+            _set_debug_exception_cause(PyExc_OSError,
+                "process_vm_writev failed for PID %d at address 0x%lx "
+                "(size %zu, partial write %zd bytes): %s",
+                handle->pid, remote_address + result, len - result, result, strerror(errno));
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+#elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
+    kern_return_t kr = mach_vm_write(
+        handle->task,
+        (mach_vm_address_t)remote_address,
+        (vm_offset_t)src,
+        (mach_msg_type_number_t)len);
+
+    if (kr != KERN_SUCCESS) {
+        switch (kr) {
+        case KERN_PROTECTION_FAILURE:
+            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
+            break;
+        case KERN_INVALID_ARGUMENT:
+            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
+        }
+        return -1;
+    }
+    return 0;
+#else
+    Py_UNREACHABLE();
+#endif
+}
+
+UNUSED static int
+_Py_RemoteDebug_PagedReadRemoteMemory(proc_handle_t *handle,
+                                      uintptr_t addr,
+                                      size_t size,
+                                      void *out)
+{
+    size_t page_size = handle->page_size;
+    uintptr_t page_base = addr & ~(page_size - 1);
+    size_t offset_in_page = addr - page_base;
+
+    if (offset_in_page + size > page_size) {
+        return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
+    }
+
+    // Search for valid cached page
+    for (int i = 0; i < MAX_PAGES; i++) {
+        page_cache_entry_t *entry = &handle->pages[i];
+        if (entry->valid && entry->page_addr == page_base) {
+            memcpy(out, entry->data + offset_in_page, size);
+            return 0;
+        }
+    }
+
+    // Find reusable slot
+    for (int i = 0; i < MAX_PAGES; i++) {
+        page_cache_entry_t *entry = &handle->pages[i];
+        if (!entry->valid) {
+            if (entry->data == NULL) {
+                entry->data = PyMem_RawMalloc(page_size);
+                if (entry->data == NULL) {
+                    _set_debug_exception_cause(PyExc_MemoryError,
+                        "Cannot allocate %zu bytes for page cache entry "
+                        "during read from PID %d at address 0x%lx",
+                        page_size, handle->pid, addr);
+                    return -1;
+                }
+            }
+
+            if (_Py_RemoteDebug_ReadRemoteMemory(handle, page_base, page_size, entry->data) < 0) {
+                // Try to just copy the exact ammount as a fallback
+                PyErr_Clear();
+                goto fallback;
+            }
+
+            entry->page_addr = page_base;
+            entry->valid = 1;
+            memcpy(out, entry->data + offset_in_page, size);
+            return 0;
+        }
+    }
+
+fallback:
+    // Cache full — fallback to uncached read
+    return _Py_RemoteDebug_ReadRemoteMemory(handle, addr, size, out);
+}
+
+UNUSED static int
 _Py_RemoteDebug_ReadDebugOffsets(
     proc_handle_t *handle,
     uintptr_t *runtime_start_address,
@@ -778,13 +1281,16 @@ _Py_RemoteDebug_ReadDebugOffsets(
     *runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(handle);
     if (!*runtime_start_address) {
         if (!PyErr_Occurred()) {
-            PyErr_SetString(
-                PyExc_RuntimeError, "Failed to get PyRuntime address");
+            PyErr_Format(PyExc_RuntimeError,
+                "Failed to locate PyRuntime address for PID %d",
+                handle->pid);
         }
+        _set_debug_exception_cause(PyExc_RuntimeError, "PyRuntime address lookup failed during debug offsets initialization");
         return -1;
     }
     size_t size = sizeof(struct _Py_DebugOffsets);
     if (0 != _Py_RemoteDebug_ReadRemoteMemory(handle, *runtime_start_address, size, debug_offsets)) {
+        _set_debug_exception_cause(PyExc_RuntimeError, "Failed to read debug offsets structure from remote process");
         return -1;
     }
     return 0;

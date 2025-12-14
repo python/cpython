@@ -1,4 +1,0 @@
-The internal storage for annotations and annotate functions on classes now
-uses different keys in the class dictionary. This eliminates various edge
-cases where access to the ``__annotate__`` and ``__annotations__``
-attributes would behave unpredictably.
