@@ -9,6 +9,7 @@ Pending removal in Python 3.20
   - :mod:`csv`
   - :mod:`!ctypes.macholib`
   - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+  - :mod:`http.server`
   - :mod:`imaplib`
   - :mod:`ipaddress`
   - :mod:`json`

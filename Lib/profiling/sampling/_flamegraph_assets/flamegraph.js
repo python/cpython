@@ -92,7 +92,8 @@ function toggleTheme() {
   // Update theme button icon
   const btn = document.getElementById('theme-btn');
   if (btn) {
-    btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
+    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
   }
 
   // Re-render flamegraph with new theme colors
@@ -160,7 +161,8 @@ function restoreUIState() {
     document.documentElement.setAttribute('data-theme', savedTheme);
     const btn = document.getElementById('theme-btn');
     if (btn) {
-      btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
+      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
     }
   }
 
@@ -1299,6 +1301,17 @@ function initFlamegraph() {
     toggleInvertBtn.addEventListener('click', toggleInvert);
   }
 }
+
+// Keyboard shortcut: Enter/Space activates toggle switches
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('toggle-switch')) {
+        e.preventDefault();
+        e.target.click();
+    }
+});
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initFlamegraph);
