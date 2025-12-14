@@ -211,10 +211,8 @@ class TestThreadingMock(unittest.TestCase):
         setswitchinterval(1e-6)
         try:
             threads = [threading.Thread(target=test_function) for _ in range(THREADS)]
-            for thread in threads:
-                thread.start()
-            for thread in threads:
-                thread.join()
+            with threading_helper.start_threads(threads):
+                pass
         finally:
             sys.setswitchinterval(oldswitchinterval)
 
