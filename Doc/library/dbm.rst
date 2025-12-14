@@ -130,13 +130,10 @@ Key and Value Types
 The accepted types for keys and values vary by backend. Keys and values are
 handled identically:
 
-* **Traditional backends**:
-
-  * :mod:`dbm.gnu` and :mod:`dbm.ndbm`: Accept :class:`str` and :class:`bytes` objects
-  * :mod:`dbm.dumb`: Accepts :class:`str`, :class:`bytes`, and :class:`bytearray` objects
+* **Traditional backends**: :mod:`dbm.gnu`, :mod:`dbm.ndbm`, and :mod:`dbm.dumb` accept :class:`str` and :class:`bytes` objects.
 * **SQLite backend** (:mod:`dbm.sqlite3`): Accepts :class:`str`, :class:`bytes`,
   :class:`int`, :class:`float`, :class:`bool`, :class:`bytearray`,
-  :class:`memoryview`, and :class:`array.array` objects
+  :class:`memoryview`, and :class:`array.array` objects.
 
 **Storage Format:**
 

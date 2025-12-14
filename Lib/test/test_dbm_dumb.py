@@ -130,13 +130,6 @@ class DumbDBMTestCase(unittest.TestCase):
                              self._dict['\u00fc'.encode('utf-8')])
             self.assertEqual(f[b'1'], b'a')
 
-    def test_bytearray(self):
-        with contextlib.closing(dumbdbm.open(_fname, 'n')) as f:
-            f['key'] = bytearray(b'bytearray_value')
-            self.assertEqual(f[b'key'], b'bytearray_value')
-            f[bytearray(b'bytearray_key')] = b'value'
-            self.assertEqual(f[b'bytearray_key'], b'value')
-
     def test_line_endings(self):
         # test for bug #1172763: dumbdbm would die if the line endings
         # weren't what was expected.
