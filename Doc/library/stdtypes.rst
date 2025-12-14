@@ -2161,9 +2161,9 @@ expression support in the :mod:`re` module).
 
       >>> '0123456789'.isnumeric()
       True
-      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric() # Arabic-indic digit zero to nine
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
       True
-      >>> '⅕'.isnumeric() # Vulgar fraction one fifth
+      >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
       True
       >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
       (False, True, True)
