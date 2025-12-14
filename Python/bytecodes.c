@@ -4046,9 +4046,11 @@ dummy_func(
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             a = arg;
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

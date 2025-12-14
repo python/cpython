@@ -12777,13 +12777,11 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = PyObject_Str(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            a = arg;
             if (res_o == NULL) {
-                stack_pointer += -3;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            a = arg;
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache1 = a;
             _tos_cache0 = res;

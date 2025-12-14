@@ -4000,10 +4000,10 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Str(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                a = arg;
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_3_error);
+                    JUMP_TO_LABEL(error);
                 }
+                a = arg;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
