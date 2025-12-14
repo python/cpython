@@ -107,7 +107,6 @@ find_children_bfs(pid_t target_pid, int recursive,
     if (pid_array_init(&to_process) < 0) {
         goto done;
     }
-
     if (pid_array_append(&to_process, target_pid) < 0) {
         goto done;
     }
@@ -117,20 +116,18 @@ find_children_bfs(pid_t target_pid, int recursive,
         pid_t current_pid = to_process.pids[process_idx++];
 
         for (size_t i = 0; i < pid_count; i++) {
-            if (ppids[i] == current_pid) {
-                pid_t child_pid = all_pids[i];
-
-                if (!pid_array_contains(result, child_pid)) {
-                    if (pid_array_append(result, child_pid) < 0) {
-                        goto done;
-                    }
-
-                    if (recursive) {
-                        if (pid_array_append(&to_process, child_pid) < 0) {
-                            goto done;
-                        }
-                    }
-                }
+            if (ppids[i] != current_pid) {
+                continue;
+            }
+            pid_t child_pid = all_pids[i];
+            if (pid_array_contains(result, child_pid)) {
+                continue;
+            }
+            if (pid_array_append(result, child_pid) < 0) {
+                goto done;
+            }
+            if (recursive && pid_array_append(&to_process, child_pid) < 0) {
+                goto done;
             }
         }
 
@@ -232,7 +229,6 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         if (entry->d_name[0] < '1' || entry->d_name[0] > '9') {
             continue;
         }
-
         char *endptr;
         long pid_long = strtol(entry->d_name, &endptr, 10);
         if (*endptr != '\0' || pid_long <= 0) {
@@ -240,12 +236,12 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         }
         pid_t pid = (pid_t)pid_long;
         pid_t ppid = get_ppid_linux(pid);
-
-        if (ppid >= 0) {
-            if (pid_array_append(&all_pids, pid) < 0 ||
-                pid_array_append(&ppids, ppid) < 0) {
-                goto done;
-            }
+        if (ppid < 0) {
+            continue;
+        }
+        if (pid_array_append(&all_pids, pid) < 0 ||
+            pid_array_append(&ppids, ppid) < 0) {
+            goto done;
         }
     }
 
@@ -321,11 +317,12 @@ get_child_pids_platform(pid_t target_pid, int recursive, pid_array_t *result)
         struct proc_bsdinfo proc_info;
         int ret = proc_pidinfo(pid_list[i], PROC_PIDTBSDINFO, 0,
                               &proc_info, sizeof(proc_info));
-        if (ret == sizeof(proc_info)) {
-            pid_list[valid_count] = pid_list[i];
-            ppids[valid_count] = proc_info.pbi_ppid;
-            valid_count++;
+        if (ret != sizeof(proc_info)) {
+            continue;
         }
+        pid_list[valid_count] = pid_list[i];
+        ppids[valid_count] = proc_info.pbi_ppid;
+        valid_count++;
     }
 
     if (find_children_bfs(target_pid, recursive,
