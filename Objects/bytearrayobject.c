@@ -102,6 +102,7 @@ _bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
 
+    /* Increase exports to prevent bytearray storage from changing during op. */
     self->ob_exports++;
     res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
     self->ob_exports--;
@@ -1358,10 +1359,9 @@ bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
 static int
 bytearray_contains(PyObject *self, PyObject *arg)
 {
-    int ret;
+    int ret = -1;
     Py_buffer selfbuf;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = -1;
     if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) == 0) {
         ret = _Py_bytes_contains((const char *)selfbuf.buf, selfbuf.len, arg);
         PyBuffer_Release(&selfbuf);
