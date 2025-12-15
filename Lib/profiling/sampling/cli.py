@@ -499,7 +499,7 @@ def _generate_output_filename(format_type, pid):
     # For heatmap, use cleaner directory name without extension
     if format_type == "heatmap":
         return f"heatmap_{pid}"
-    return f"{format_type}.{pid}.{extension}"
+    return f"{format_type}_{pid}.{extension}"
 
 
 def _handle_output(collector, args, pid, mode):
@@ -513,7 +513,12 @@ def _handle_output(collector, args, pid, mode):
     """
     if args.format == "pstats":
         if args.outfile:
-            collector.export(args.outfile)
+            # If outfile is a directory, generate filename inside it
+            if os.path.isdir(args.outfile):
+                filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+                collector.export(filename)
+            else:
+                collector.export(args.outfile)
         else:
             # Print to stdout with defaults applied
             sort_choice = args.sort if args.sort is not None else "nsamples"
@@ -524,7 +529,11 @@ def _handle_output(collector, args, pid, mode):
             )
     else:
         # Export to file
-        filename = args.outfile or _generate_output_filename(args.format, pid)
+        if args.outfile and os.path.isdir(args.outfile):
+            # If outfile is a directory, generate filename inside it
+            filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+        else:
+            filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
 
 

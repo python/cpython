@@ -295,23 +295,23 @@ The default configuration works well for most use cases:
    :widths: 25 75
 
    * - Option
-     - Default behavior
+     - Default
    * - ``--interval`` / ``-i``
      - 100 µs between samples (~10,000 samples/sec)
    * - ``--duration`` / ``-d``
-     - Profile for 10 seconds
+     - 10 seconds
    * - ``--all-threads`` / ``-a``
-     - Sample main thread only
+     - Main thread only
    * - ``--native``
      - No ``<native>`` frames (C code time attributed to caller)
    * - ``--no-gc``
-     - Include ``<GC>`` frames when garbage collection is active
+     - ``<GC>`` frames included when garbage collection is active
    * - ``--mode``
      - Wall-clock mode (all samples recorded)
    * - ``--realtime-stats``
-     - No live statistics display during profiling
+     - Disabled
    * - ``--subprocesses``
-     - Profile only the target process (no subprocess monitoring)
+     - Disabled
 
 
 Sampling interval and duration
