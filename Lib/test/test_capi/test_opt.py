@@ -2467,6 +2467,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_POP_TOP_NOP", uops)
+    
+    def test_load_attr_instance_value(self):
+        def testfunc(n):
+            class C():
+                pass
+            c = C()
+            c.x = n
+            x = 0
+            for _ in range(n):
+                x = c.x
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):

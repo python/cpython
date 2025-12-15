@@ -563,9 +563,10 @@ dummy_func(void) {
         assert(oparg >= 2);
     }
 
-    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
+    op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)offset;
+        o = owner;
     }
 
     op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {

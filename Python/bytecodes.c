@@ -2356,7 +2356,7 @@ dummy_func(
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
-        op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr)) {
+        op(_LOAD_ATTR_INSTANCE_VALUE, (offset/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             PyObject **value_ptr = (PyObject**)(((char *)owner_o) + offset);
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
@@ -2370,7 +2370,8 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
-            PyStackRef_CLOSE(owner);
+            o = owner;
+            DEAD(owner);
         }
 
         macro(LOAD_ATTR_INSTANCE_VALUE) =
@@ -2378,6 +2379,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _CHECK_MANAGED_OBJECT_HAS_VALUES +
             _LOAD_ATTR_INSTANCE_VALUE +
+            POP_TOP +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
