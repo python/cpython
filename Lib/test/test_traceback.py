@@ -545,7 +545,7 @@ class TracebackCases(unittest.TestCase):
         self.assertEqual(rc, 1)  # Make sure it's not a crash
 
         expected = [b'Traceback (most recent call last):',
-                    f'  File "{script}", line 5, in <module>'.encode(),
+                    f'  File "{script}", line 6, in <module>'.encode(),
                     b'RuntimeError: should not crash']
         self.assertEqual(stderr.splitlines(), expected)
 
