@@ -660,13 +660,13 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_MULTIPLY_INT + _POP_TOP_INT  + _POP_TOP_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_MULTIPLY_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(BINARY_OP_ADD_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_ADD_INT + _POP_TOP_INT  + _POP_TOP_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_ADD_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT  + _POP_TOP_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
