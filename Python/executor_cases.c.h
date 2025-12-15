@@ -8768,11 +8768,12 @@
             break;
         }
 
-        case _STORE_ATTR_WITH_HINT_r20: {
+        case _STORE_ATTR_WITH_HINT_r21: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef owner;
             _PyStackRef value;
+            _PyStackRef o;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             oparg = CURRENT_OPARG();
@@ -8841,16 +8842,19 @@
             FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(dict);
             STAT_INC(STORE_ATTR, hit);
-            stack_pointer += -2;
+            o = owner;
+            stack_pointer[-2] = o;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(owner);
             Py_XDECREF(old_value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            _tos_cache0 = PyStackRef_ZERO_BITS;
+            _tos_cache0 = o;
             _tos_cache1 = PyStackRef_ZERO_BITS;
             _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(0);
+            SET_CURRENT_CACHED_VALUES(1);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }

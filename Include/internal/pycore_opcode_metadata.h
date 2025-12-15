@@ -1484,7 +1484,7 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_ATTR] = { .nuops = 1, .uops = { { _STORE_ATTR, OPARG_SIMPLE, 3 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION_AND_LOCK, 2, 1 }, { _GUARD_DORV_NO_DICT, OPARG_SIMPLE, 3 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
-    [STORE_ATTR_WITH_HINT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_WITH_HINT, 1, 3 } } },
+    [STORE_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_WITH_HINT, 1, 3 }, { _POP_TOP, OPARG_SIMPLE, 4 } } },
     [STORE_DEREF] = { .nuops = 1, .uops = { { _STORE_DEREF, OPARG_SIMPLE, 0 } } },
     [STORE_FAST] = { .nuops = 1, .uops = { { _STORE_FAST, OPARG_SIMPLE, 0 } } },
     [STORE_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _STORE_FAST, OPARG_TOP, 0 }, { _LOAD_FAST, OPARG_BOTTOM, 0 } } },

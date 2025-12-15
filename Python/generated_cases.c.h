@@ -10673,6 +10673,7 @@
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef value;
+            _PyStackRef o;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -10738,11 +10739,21 @@
                 FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
                 UNLOCK_OBJECT(dict);
                 STAT_INC(STORE_ATTR, hit);
-                stack_pointer += -2;
+                o = owner;
+                stack_pointer[-2] = o;
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(owner);
                 Py_XDECREF(old_value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = o;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
