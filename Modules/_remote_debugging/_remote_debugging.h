@@ -12,10 +12,14 @@
 extern "C" {
 #endif
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifndef Py_BUILD_CORE_BUILTIN
+#  ifndef Py_BUILD_CORE_MODULE
 #    define Py_BUILD_CORE_MODULE 1
+#  endif
 #endif
 
 #include "Python.h"
@@ -197,6 +201,8 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *BinaryWriter_Type;
+    PyTypeObject *BinaryReader_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {
