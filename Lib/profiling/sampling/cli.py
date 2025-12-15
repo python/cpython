@@ -14,6 +14,8 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
+from .binary_collector import BinaryCollector
+from .binary_reader import BinaryReader, convert_binary_to_format
 from .constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_WALL,
@@ -73,6 +75,7 @@ FORMAT_EXTENSIONS = {
     "flamegraph": "html",
     "gecko": "json",
     "heatmap": "html",
+    "binary": "bin",
 }
 
 COLLECTOR_MAP = {
@@ -81,6 +84,7 @@ COLLECTOR_MAP = {
     "flamegraph": FlamegraphCollector,
     "gecko": GeckoCollector,
     "heatmap": HeatmapCollector,
+    "binary": BinaryCollector,
 }
 
 
@@ -278,7 +282,7 @@ def _add_mode_options(parser):
     )
 
 
-def _add_format_options(parser):
+def _add_format_options(parser, include_compression=True):
     """Add output format options to a parser."""
     output_group = parser.add_argument_group("Output options")
     format_group = output_group.add_mutually_exclusive_group()
@@ -317,7 +321,22 @@ def _add_format_options(parser):
         dest="format",
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
+    format_group.add_argument(
+        "--binary",
+        action="store_const",
+        const="binary",
+        dest="format",
+        help="Generate high-performance binary format (use 'replay' command to convert)",
+    )
     parser.set_defaults(format="pstats")
+
+    if include_compression:
+        output_group.add_argument(
+            "--compression",
+            choices=["auto", "zstd", "none"],
+            default="auto",
+            help="Compression for binary format: auto (use zstd if available), zstd, none",
+        )
 
     output_group.add_argument(
         "-o",
@@ -373,15 +392,18 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 
-def _create_collector(format_type, interval, skip_idle, opcodes=False):
+def _create_collector(format_type, interval, skip_idle, opcodes=False,
+                      output_file=None, compression='auto'):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary')
         interval: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
+        output_file: Output file path (required for binary format)
+        compression: Compression type for binary format ('auto', 'zstd', 'none')
 
     Returns:
         A collector instance of the appropriate type
@@ -389,6 +411,13 @@ def _create_collector(format_type, interval, skip_idle, opcodes=False):
     collector_class = COLLECTOR_MAP.get(format_type)
     if collector_class is None:
         raise ValueError(f"Unknown format: {format_type}")
+
+    # Binary format requires output file and compression
+    if format_type == "binary":
+        if output_file is None:
+            raise ValueError("Binary format requires an output file")
+        return collector_class(output_file, interval, skip_idle=skip_idle,
+                              compression=compression)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
     # and is the only format that uses opcodes for interval markers
@@ -425,7 +454,12 @@ def _handle_output(collector, args, pid, mode):
         pid: Process ID (for generating filenames)
         mode: Profiling mode used
     """
-    if args.format == "pstats":
+    if args.format == "binary":
+        # Binary format already wrote to file incrementally, just finalize
+        collector.export(None)
+        filename = collector.filename
+        print(f"Binary profile written to {filename} ({collector.total_samples} samples)")
+    elif args.format == "pstats":
         if args.outfile:
             collector.export(args.outfile)
         else:
@@ -449,6 +483,13 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
+    # Replay command has minimal validation
+    if args.command == "replay":
+        # Can't replay to binary format
+        if args.format == "binary":
+            parser.error("Cannot replay to binary format. Use a different output format.")
+        return
+
     # Check if live mode is available
     if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
         parser.error(
@@ -456,7 +497,7 @@ def _validate_args(args, parser):
         )
 
     # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
-    if args.async_aware:
+    if getattr(args, 'async_aware', False):
         issues = []
         if args.native:
             issues.append("--native")
@@ -473,7 +514,7 @@ def _validate_args(args, parser):
             )
 
     # --async-mode requires --async-aware
-    if hasattr(args, 'async_mode') and args.async_mode != "running" and not args.async_aware:
+    if hasattr(args, 'async_mode') and args.async_mode != "running" and not getattr(args, 'async_aware', False):
         parser.error("--async-mode requires --async-aware to be enabled.")
 
     # Live mode is incompatible with format options
@@ -501,7 +542,7 @@ def _validate_args(args, parser):
         return
 
     # Validate gecko mode doesn't use non-wall mode
-    if args.format == "gecko" and args.mode != "wall":
+    if args.format == "gecko" and getattr(args, 'mode', 'wall') != "wall":
         parser.error(
             "--mode option is incompatible with --gecko. "
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
@@ -509,7 +550,7 @@ def _validate_args(args, parser):
 
     # Validate --opcodes is only used with compatible formats
     opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
-    if args.opcodes and args.format not in opcodes_compatible_formats:
+    if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
         )
@@ -621,6 +662,30 @@ Examples:
     _add_format_options(attach_parser)
     _add_pstats_options(attach_parser)
 
+    # === REPLAY COMMAND ===
+    replay_parser = subparsers.add_parser(
+        "replay",
+        help="Replay a binary profile and convert to another format",
+        formatter_class=CustomFormatter,
+        description="""Replay a binary profile file and convert to another format
+
+Examples:
+  # Convert binary to flamegraph
+  `python -m profiling.sampling replay --flamegraph -o output.html profile.bin`
+
+  # Convert binary to pstats and print to stdout
+  `python -m profiling.sampling replay profile.bin`
+
+  # Convert binary to gecko format
+  `python -m profiling.sampling replay --gecko -o profile.json profile.bin`""",
+    )
+    replay_parser.add_argument(
+        "input_file",
+        help="Binary profile file to replay",
+    )
+    _add_format_options(replay_parser, include_compression=False)
+    _add_pstats_options(replay_parser)
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -631,6 +696,7 @@ Examples:
     command_handlers = {
         "run": _handle_run,
         "attach": _handle_attach,
+        "replay": _handle_replay,
     }
 
     # Execute the appropriate command
@@ -660,8 +726,17 @@ def _handle_attach(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
+    # For binary format, determine output file before creating collector
+    output_file = None
+    if args.format == "binary":
+        output_file = args.outfile or _generate_output_filename(args.format, args.pid)
+
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
+    collector = _create_collector(
+        args.format, args.interval, skip_idle, args.opcodes,
+        output_file=output_file,
+        compression=getattr(args, 'compression', 'auto')
+    )
 
     # Sample the process
     collector = sample(
@@ -731,8 +806,17 @@ def _handle_run(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
+    # For binary format, determine output file before creating collector
+    output_file = None
+    if args.format == "binary":
+        output_file = args.outfile or _generate_output_filename(args.format, process.pid)
+
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
+    collector = _create_collector(
+        args.format, args.interval, skip_idle, args.opcodes,
+        output_file=output_file,
+        compression=getattr(args, 'compression', 'auto')
+    )
 
     # Profile the subprocess
     try:
@@ -850,6 +934,59 @@ def _handle_live_run(args):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
+
+
+def _handle_replay(args):
+    """Handle the 'replay' command - convert binary profile to another format."""
+    import os
+
+    # Check input file exists
+    if not os.path.exists(args.input_file):
+        sys.exit(f"Error: Input file not found: {args.input_file}")
+
+    # Can't replay to binary format
+    if args.format == "binary":
+        sys.exit("Error: Cannot replay to binary format. Use a different output format.")
+
+    with BinaryReader(args.input_file) as reader:
+        info = reader.get_info()
+        interval = info['sample_interval_us']
+
+        print(f"Replaying {info['sample_count']} samples from {args.input_file}")
+        print(f"  Sample interval: {interval} us")
+        print(f"  Compression: {'zstd' if info.get('compression_type', 0) == 1 else 'none'}")
+
+        # Create appropriate collector
+        collector = _create_collector(args.format, interval, skip_idle=False)
+
+        # Replay with progress bar
+        def progress_callback(current, total):
+            if total > 0:
+                pct = current / total
+                bar_width = 40
+                filled = int(bar_width * pct)
+                bar = '█' * filled + '░' * (bar_width - filled)
+                print(f"\r  [{bar}] {pct*100:5.1f}% ({current:,}/{total:,})", end="", flush=True)
+
+        count = reader.replay_samples(collector, progress_callback)
+        print()  # Newline after progress bar
+
+        # Handle output similar to other formats
+        if args.format == "pstats":
+            if args.outfile:
+                collector.export(args.outfile)
+            else:
+                # Print to stdout with defaults applied
+                sort_choice = args.sort if args.sort is not None else "nsamples"
+                limit = args.limit if args.limit is not None else 15
+                sort_mode = _sort_to_mode(sort_choice)
+                collector.print_stats(sort_mode, limit, not args.no_summary, PROFILING_MODE_WALL)
+        else:
+            # Export to file
+            filename = args.outfile or _generate_output_filename(args.format, os.getpid())
+            collector.export(filename)
+
+        print(f"Replayed {count} samples")
 
 
 if __name__ == "__main__":
