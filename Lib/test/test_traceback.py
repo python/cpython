@@ -18,6 +18,8 @@ import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
+from test.support import script_helper
+from test.support import os_helper
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
@@ -524,7 +526,7 @@ class TracebackCases(unittest.TestCase):
                     b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected)
 
-    def test_when_io_is_lost(self):
+    def test_lost_io_open(self):
         # GH-142737: Display the traceback even if io.open is lost
         code = textwrap.dedent("""\
             import io
@@ -533,10 +535,13 @@ class TracebackCases(unittest.TestCase):
             del io.open
             raise RuntimeError("should not crash")
         """)
-        rc, stdout, stderr = assert_python_failure('-c', code)
-        self.assertEqual(rc, 1)
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(
+                script_dir=temp_dir, script_basename='tb_test_no_io_open', source=code)
+            rc, stdout, stderr = assert_python_failure(script)
+        self.assertEqual(rc, 1)  # Make sure it's not a crash
         expected = [b'Traceback (most recent call last):',
-                    b'  File "<string>", line 5, in <module>',
+                    f'  File "{script}", line 5, in <module>'.encode(),
                     b'RuntimeError: should not crash']
         self.assertEqual(stderr.splitlines(), expected)
 
