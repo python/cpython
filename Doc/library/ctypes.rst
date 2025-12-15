@@ -1388,6 +1388,9 @@ On Linux, :func:`~ctypes.util.find_library` tries to run external programs
 (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
 It returns the filename of the library file.
 
+Note that if the output of these programs does not correspond to the dynamic
+linker used by Python, the result of this function may be misleading.
+
 .. versionchanged:: 3.6
    On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
    when searching for libraries, if a library cannot be found by any other means.
@@ -2131,6 +2134,8 @@ Utility functions
    no library can be found, returns ``None``.
 
    The exact functionality is system dependent.
+
+   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
 
 
 .. function:: find_msvcrt()
