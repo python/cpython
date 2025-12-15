@@ -2340,6 +2340,47 @@ channel_id_converter(PyObject *arg, void *ptr)
     return 1;
 }
 
+/*[clinic input]
+module _interpchannels
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10a1a1ec55663e0b]*/
+
+
+/*[python input]
+
+class channel_id_arg_converter(CConverter):
+    type = 'int64_t'
+    converter = 'channel_id_arg_converter'
+    broken_limited_capi = True
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
+            if (!{converter}(module, {argname}, &{paramname})) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname,
+            converter=self.converter)
+
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=78e17eef989afa6b]*/
+
+static int
+channel_id_arg_converter(PyObject *module, PyObject *arg, void *ptr)
+{
+    int64_t *cid_ptr = ptr;
+    struct channel_id_converter_data cid_data = {
+        .module = module,
+    };
+    int res = channel_id_converter(arg, &cid_data);
+    *cid_ptr = cid_data.cid;
+    return res;
+}
+
+#include "clinic/_interpchannelsmodule.c.h"
+
 static int
 newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
              int force, int resolve, channelid **res)
@@ -2907,17 +2948,19 @@ clear_interpreter(void *data)
 }
 
 
+/*[clinic input]
+_interpchannels.create
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+
+Create a new cross-interpreter channel and return a unique generated ID.
+[clinic start generated code]*/
+
 static PyObject *
-channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_create_impl(PyObject *module, int unboundarg,
+                            int fallbackarg)
+/*[clinic end generated code: output=88ba00ef117e17ef input=94bb97f4c661517e]*/
 {
-    static char *kwlist[] = {"unboundop", "fallback", NULL};
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii:create", kwlist,
-                                     &unboundarg, &fallbackarg))
-    {
-        return NULL;
-    }
     struct _channeldefaults defaults = {0};
     if (resolve_unboundop(unboundarg, UNBOUND_REPLACE,
                           &defaults.unboundop) < 0)
@@ -2932,10 +2975,10 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t cid = channel_create(&_globals.channels, defaults);
     if (cid < 0) {
-        (void)handle_channel_error(-1, self, cid);
+        (void)handle_channel_error(-1, module, cid);
         return NULL;
     }
-    module_state *state = get_module_state(self);
+    module_state *state = get_module_state(module);
     if (state == NULL) {
         return NULL;
     }
@@ -2943,10 +2986,10 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     int err = newchannelid(state->ChannelIDType, cid, 0,
                            &_globals.channels, 0, 0,
                            &cidobj);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         assert(cidobj == NULL);
         err = channel_destroy(&_globals.channels, cid);
-        if (handle_channel_error(err, self, cid)) {
+        if (handle_channel_error(err, module, cid)) {
             // XXX issue a warning?
         }
         return NULL;
@@ -2956,40 +2999,36 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     return (PyObject *)cidobj;
 }
 
-PyDoc_STRVAR(channelsmod_create_doc,
-"channel_create(unboundop) -> cid\n\
-\n\
-Create a new cross-interpreter channel and return a unique generated ID.");
+/*[clinic input]
+_interpchannels.destroy
+    cid: channel_id_arg
+
+Close and finalize the channel.
+
+Afterward attempts to use the channel will behave as though it
+never existed.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_destroy_impl(PyObject *module, int64_t cid)
+/*[clinic end generated code: output=2f92ece8ec3d22f7 input=b4850ab65379a8c9]*/
 {
-    static char *kwlist[] = {"cid", NULL};
-    int64_t cid;
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_destroy", kwlist,
-                                     channel_id_converter, &cid_data)) {
-        return NULL;
-    }
-    cid = cid_data.cid;
-
     int err = channel_destroy(&_globals.channels, cid);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channelsmod_destroy_doc,
-"channel_destroy(cid)\n\
-\n\
-Close and finalize the channel.  Afterward attempts to use the channel\n\
-will behave as though it never existed.");
+/*[clinic input]
+_interpchannels.list_all
+
+Return the list of all IDs for active channels.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
+_interpchannels_list_all_impl(PyObject *module)
+/*[clinic end generated code: output=3e646332445200da input=045b11b5ca08573a]*/
 {
     int64_t count = 0;
     struct channel_id_and_info *cids =
@@ -3004,7 +3043,7 @@ channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (ids == NULL) {
         goto finally;
     }
-    module_state *state = get_module_state(self);
+    module_state *state = get_module_state(module);
     if (state == NULL) {
         Py_DECREF(ids);
         ids = NULL;
@@ -3016,7 +3055,7 @@ channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
         int err = newchannelid(state->ChannelIDType, cur->id, 0,
                                &_globals.channels, 0, 0,
                                (channelid **)&cidobj);
-        if (handle_channel_error(err, self, cur->id)) {
+        if (handle_channel_error(err, module, cur->id)) {
             assert(cidobj == NULL);
             Py_SETREF(ids, NULL);
             break;
@@ -3039,30 +3078,26 @@ finally:
     return ids;
 }
 
-PyDoc_STRVAR(channelsmod_list_all_doc,
-"channel_list_all() -> [cid]\n\
-\n\
-Return the list of all IDs for active channels.");
+/*[clinic input]
+_interpchannels.list_interpreters
+    cid: channel_id_arg
+    *
+    send: bool
+
+Return all interpreter IDs associated with an end of the channel.
+
+The 'send' argument should be a boolean indicating whether to use
+the send or receive end.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_list_interpreters_impl(PyObject *module, int64_t cid,
+                                       int send)
+/*[clinic end generated code: output=0b23e8b2eaa81c07 input=7b32414cb68934f8]*/
 {
-    static char *kwlist[] = {"cid", "send", NULL};
-    int64_t cid;            /* Channel ID */
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    int send = 0;           /* Send or receive end? */
     int64_t interpid;
     PyObject *ids, *interpid_obj;
     PyInterpreterState *interp;
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "O&$p:channel_list_interpreters",
-            kwlist, channel_id_converter, &cid_data, &send)) {
-        return NULL;
-    }
-    cid = cid_data.cid;
 
     ids = PyList_New(0);
     if (ids == NULL) {
@@ -3075,7 +3110,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
         assert(interpid >= 0);
         int res = channel_is_associated(&_globals.channels, cid, interpid, send);
         if (res < 0) {
-            (void)handle_channel_error(res, self, cid);
+            (void)handle_channel_error(res, module, cid);
             goto except;
         }
         if (res) {
@@ -3101,37 +3136,27 @@ finally:
     return ids;
 }
 
-PyDoc_STRVAR(channelsmod_list_interpreters_doc,
-"channel_list_interpreters(cid, *, send) -> [id]\n\
-\n\
-Return the list of all interpreter IDs associated with an end of the channel.\n\
-\n\
-The 'send' argument should be a boolean indicating whether to use the send or\n\
-receive end.");
+/*[clinic input]
+_interpchannels.send
+    cid: channel_id_arg
+    obj: object
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+    *
+    blocking: bool = True
+    timeout as timeout_obj: object = None
 
+Add the object's data to the channel's queue.
+
+By default, this waits for the object to be received.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_send_impl(PyObject *module, int64_t cid, PyObject *obj,
+                          int unboundarg, int fallbackarg, int blocking,
+                          PyObject *timeout_obj)
+/*[clinic end generated code: output=85962ea2f04dbe70 input=a385e5dd91f5f1bb]*/
 {
-    static char *kwlist[] = {"cid", "obj", "unboundop", "fallback",
-                             "blocking", "timeout", NULL};
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    PyObject *obj;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    int blocking = 1;
-    PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&O|ii$pO:channel_send", kwlist,
-                                     channel_id_converter, &cid_data, &obj,
-                                     &unboundarg, &fallbackarg,
-                                     &blocking, &timeout_obj))
-    {
-        return NULL;
-    }
-    int64_t cid = cid_data.cid;
     PY_TIMEOUT_T timeout;
     if (PyThread_ParseTimeoutArg(timeout_obj, blocking, &timeout) < 0) {
         return NULL;
@@ -3139,7 +3164,7 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
     struct _channeldefaults defaults = {-1, -1};
     if (unboundarg < 0 || fallbackarg < 0) {
         int err = channel_get_defaults(&_globals.channels, cid, &defaults);
-        if (handle_channel_error(err, self, cid)) {
+        if (handle_channel_error(err, module, cid)) {
             return NULL;
         }
     }
@@ -3162,41 +3187,35 @@ channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
         err = channel_send(
                 &_globals.channels, cid, obj, NULL, unboundop, fallback);
     }
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channelsmod_send_doc,
-"channel_send(cid, obj, *, blocking=True, timeout=None)\n\
-\n\
-Add the object's data to the channel's queue.\n\
-By default this waits for the object to be received.");
+/*[clinic input]
+_interpchannels.send_buffer
+    cid: channel_id_arg
+    obj: object
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+    *
+    blocking: bool = True
+    timeout as timeout_obj: object = None
+
+Add the object's buffer to the channel's queue.
+
+By default, this waits for the object to be received.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_send_buffer_impl(PyObject *module, int64_t cid,
+                                 PyObject *obj, int unboundarg,
+                                 int fallbackarg, int blocking,
+                                 PyObject *timeout_obj)
+/*[clinic end generated code: output=f9937d0202c3972f input=c4fa2fcfa2ea07d6]*/
 {
-    static char *kwlist[] = {"cid", "obj", "unboundop", "fallback",
-                             "blocking", "timeout", NULL};
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    PyObject *obj;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    int blocking = -1;
-    PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&O|ii$pO:channel_send_buffer", kwlist,
-                                     channel_id_converter, &cid_data, &obj,
-                                     &unboundarg, &fallbackarg,
-                                     &blocking, &timeout_obj))
-    {
-        return NULL;
-    }
-    int64_t cid = cid_data.cid;
     PY_TIMEOUT_T timeout;
     if (PyThread_ParseTimeoutArg(timeout_obj, blocking, &timeout) < 0) {
         return NULL;
@@ -3204,7 +3223,7 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
     struct _channeldefaults defaults = {-1, -1};
     if (unboundarg < 0 || fallbackarg < 0) {
         int err = channel_get_defaults(&_globals.channels, cid, &defaults);
-        if (handle_channel_error(err, self, cid)) {
+        if (handle_channel_error(err, module, cid)) {
             return NULL;
         }
     }
@@ -3233,43 +3252,40 @@ channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
                 &_globals.channels, cid, tempobj, NULL, unboundop, fallback);
     }
     Py_DECREF(tempobj);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channelsmod_send_buffer_doc,
-"channel_send_buffer(cid, obj, *, blocking=True, timeout=None)\n\
-\n\
-Add the object's buffer to the channel's queue.\n\
-By default this waits for the object to be received.");
+/*[clinic input]
+_interpchannels.recv
+    cid: channel_id_arg
+    default: object = NULL
+
+Return a new object pair from the front of the channel's queue.
+
+If there is nothing to receive then raise ChannelEmptyError, unless
+a default value is provided, in which case it is returned.
+
+Each object pair consists of (received object, None) or (None, unbound op).
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_recv(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_recv_impl(PyObject *module, int64_t cid,
+                          PyObject *default_value)
+/*[clinic end generated code: output=2d3e0234570fe29a input=8b64249faa60273e]*/
 {
-    static char *kwlist[] = {"cid", "default", NULL};
-    int64_t cid;
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    PyObject *dflt = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:channel_recv", kwlist,
-                                     channel_id_converter, &cid_data, &dflt)) {
-        return NULL;
-    }
-    cid = cid_data.cid;
-
     PyObject *obj = NULL;
     unboundop_t unboundop = 0;
     int err = channel_recv(&_globals.channels, cid, &obj, &unboundop);
-    if (err == ERR_CHANNEL_EMPTY && dflt != NULL) {
+    if (err == ERR_CHANNEL_EMPTY && default_value != NULL) {
         // Use the default.
-        obj = Py_NewRef(dflt);
+        obj = Py_NewRef(default_value);
         err = 0;
     }
-    else if (handle_channel_error(err, self, cid)) {
+    else if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
     else if (obj == NULL) {
@@ -3282,86 +3298,75 @@ channelsmod_recv(PyObject *self, PyObject *args, PyObject *kwds)
     return res;
 }
 
-PyDoc_STRVAR(channelsmod_recv_doc,
-"channel_recv(cid, [default]) -> (obj, unboundop)\n\
-\n\
-Return a new object from the data at the front of the channel's queue.\n\
-\n\
-If there is nothing to receive then raise ChannelEmptyError, unless\n\
-a default value is provided.  In that case return it.");
+/*[clinic input]
+_interpchannels.close
+    cid: channel_id_arg
+    *
+    send: bool = False
+    recv: bool = False
+    force: bool = False
+
+(cid, *, send=None, recv=None, force=False)
+
+Close the channel for all interpreters.
+
+If the channel is empty then the keyword args are ignored and both
+ends are immediately closed.  Otherwise, if 'force' is True then
+all queued items are released and both ends are immediately
+closed.
+
+If the channel is not empty *and* 'force' is False then following
+happens:
+
+ * recv is True (regardless of send):
+   - raise ChannelNotEmptyError
+ * recv is None and send is None:
+   - raise ChannelNotEmptyError
+ * send is True and recv is not True:
+   - fully close the 'send' end
+   - close the 'recv' end to interpreters not already receiving
+   - fully close it once empty
+
+Closing an already closed channel results in a ChannelClosedError.
+
+Once the channel's ID has no more ref counts in any interpreter,
+the channel will be destroyed.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_close(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_close_impl(PyObject *module, int64_t cid, int send, int recv,
+                           int force)
+/*[clinic end generated code: output=2b36729ca7155614 input=07f5283cc943d51e]*/
 {
-    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    int64_t cid;
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    int send = 0;
-    int recv = 0;
-    int force = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&|$ppp:channel_close", kwlist,
-                                     channel_id_converter, &cid_data,
-                                     &send, &recv, &force)) {
-        return NULL;
-    }
-    cid = cid_data.cid;
-
     int err = channel_close(&_globals.channels, cid, send-recv, force);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channelsmod_close_doc,
-"channel_close(cid, *, send=None, recv=None, force=False)\n\
-\n\
-Close the channel for all interpreters.\n\
-\n\
-If the channel is empty then the keyword args are ignored and both\n\
-ends are immediately closed.  Otherwise, if 'force' is True then\n\
-all queued items are released and both ends are immediately\n\
-closed.\n\
-\n\
-If the channel is not empty *and* 'force' is False then following\n\
-happens:\n\
-\n\
- * recv is True (regardless of send):\n\
-   - raise ChannelNotEmptyError\n\
- * recv is None and send is None:\n\
-   - raise ChannelNotEmptyError\n\
- * send is True and recv is not True:\n\
-   - fully close the 'send' end\n\
-   - close the 'recv' end to interpreters not already receiving\n\
-   - fully close it once empty\n\
-\n\
-Closing an already closed channel results in a ChannelClosedError.\n\
-\n\
-Once the channel's ID has no more ref counts in any interpreter\n\
-the channel will be destroyed.");
+/*[clinic input]
+_interpchannels.release
+    cid: channel_id_arg
+    *
+    send: bool = False
+    recv: bool = False
+    force: bool = False
+
+Close the channel for the current interpreter.
+
+The Boolean 'send' and 'recv' parameters may be used to indicate the
+ends to close. By default, both ends are closed. Closing an already
+closed end is a noop.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_release(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_release_impl(PyObject *module, int64_t cid, int send,
+                             int recv, int force)
+/*[clinic end generated code: output=867c031d85007973 input=5e043832dd2d5973]*/
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    int64_t cid;
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    int send = 0;
-    int recv = 0;
-    int force = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&|$ppp:channel_release", kwlist,
-                                     channel_id_converter, &cid_data,
-                                     &send, &recv, &force)) {
-        return NULL;
-    }
-    cid = cid_data.cid;
+
     if (send == 0 && recv == 0) {
         send = 1;
         recv = 1;
@@ -3371,91 +3376,65 @@ channelsmod_release(PyObject *self, PyObject *args, PyObject *kwds)
     // XXX Fix implicit release.
 
     int err = channel_release(&_globals.channels, cid, send, recv);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channelsmod_release_doc,
-"channel_release(cid, *, send=None, recv=None, force=True)\n\
-\n\
-Close the channel for the current interpreter.  'send' and 'recv'\n\
-(bool) may be used to indicate the ends to close.  By default both\n\
-ends are closed.  Closing an already closed end is a noop.");
+/*[clinic input]
+_interpchannels.get_count
+    cid: channel_id_arg
+
+Return the number of items in the channel.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_get_count_impl(PyObject *module, int64_t cid)
+/*[clinic end generated code: output=34fd5f7fc7ee3100 input=bdb9433d617dffae]*/
 {
-    static char *kwlist[] = {"cid", NULL};
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_count", kwlist,
-                                     channel_id_converter, &cid_data)) {
-        return NULL;
-    }
-    int64_t cid = cid_data.cid;
-
     Py_ssize_t count = -1;
     int err = _channel_get_count(&_globals.channels, cid, &count);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
     assert(count >= 0);
     return PyLong_FromSsize_t(count);
 }
 
-PyDoc_STRVAR(channelsmod_get_count_doc,
-"get_count(cid)\n\
-\n\
-Return the number of items in the channel.");
+/*[clinic input]
+_interpchannels.get_info
+    cid: channel_id_arg
+
+Return details about the channel.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_get_info(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_get_info_impl(PyObject *module, int64_t cid)
+/*[clinic end generated code: output=a8240bf1a49a90f7 input=ed3b2ece344aba41]*/
 {
-    static char *kwlist[] = {"cid", NULL};
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:_get_info", kwlist,
-                                     channel_id_converter, &cid_data)) {
-        return NULL;
-    }
-    int64_t cid = cid_data.cid;
-
     struct channel_info info;
     int err = _channel_get_info(&_globals.channels, cid, &info);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
-    return new_channel_info(self, &info);
+    return new_channel_info(module, &info);
 }
 
-PyDoc_STRVAR(channelsmod_get_info_doc,
-"get_info(cid)\n\
-\n\
-Return details about the channel.");
+/*[clinic input]
+_interpchannels.get_channel_defaults
+    cid: channel_id_arg
+
+Return the channel's default values, set when it was created.
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod_get_channel_defaults(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels_get_channel_defaults_impl(PyObject *module, int64_t cid)
+/*[clinic end generated code: output=a9d3424d251747b7 input=c7566d6823c9c97d]*/
 {
-    static char *kwlist[] = {"cid", NULL};
-    struct channel_id_converter_data cid_data = {
-        .module = self,
-    };
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_channel_defaults", kwlist,
-                                     channel_id_converter, &cid_data)) {
-        return NULL;
-    }
-    int64_t cid = cid_data.cid;
-
     struct _channeldefaults defaults = {0};
     int err = channel_get_defaults(&_globals.channels, cid, &defaults);
-    if (handle_channel_error(err, self, cid)) {
+    if (handle_channel_error(err, module, cid)) {
         return NULL;
     }
 
@@ -3463,85 +3442,63 @@ channelsmod_get_channel_defaults(PyObject *self, PyObject *args, PyObject *kwds)
     return res;
 }
 
-PyDoc_STRVAR(channelsmod_get_channel_defaults_doc,
-"get_channel_defaults(cid)\n\
-\n\
-Return the channel's default values, set when it was created.");
+/*[clinic input]
+_interpchannels._channel_id
+    *args: tuple
+    **kwds: dict
+[clinic start generated code]*/
 
 static PyObject *
-channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels__channel_id_impl(PyObject *module, PyObject *args,
+                                 PyObject *kwds)
+/*[clinic end generated code: output=0c5e8f860b217cf8 input=2a26155a66c51e57]*/
 {
-    module_state *state = get_module_state(self);
+    module_state *state = get_module_state(module);
     if (state == NULL) {
         return NULL;
     }
     PyTypeObject *cls = state->ChannelIDType;
 
     PyObject *mod = get_module_from_owned_type(cls);
-    assert(mod == self);
+    assert(mod == module);
     Py_DECREF(mod);
 
-    return _channelid_new(self, cls, args, kwds);
+    return _channelid_new(module, cls, args, kwds);
 }
 
+/*[clinic input]
+_interpchannels._register_end_types
+    send: object(subclass_of='&PyType_Type', type='PyTypeObject *')
+    recv: object(subclass_of='&PyType_Type', type='PyTypeObject *')
+[clinic start generated code]*/
+
 static PyObject *
-channelsmod__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
+_interpchannels__register_end_types_impl(PyObject *module,
+                                         PyTypeObject *send,
+                                         PyTypeObject *recv)
+/*[clinic end generated code: output=0960fb89d7ed270f input=bf16ebee1965cff6]*/
 {
-    static char *kwlist[] = {"send", "recv", NULL};
-    PyObject *send;
-    PyObject *recv;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO:_register_end_types", kwlist,
-                                     &send, &recv)) {
+    if (set_channelend_types(module, send, recv) < 0) {
         return NULL;
     }
-    if (!PyType_Check(send)) {
-        PyErr_SetString(PyExc_TypeError, "expected a type for 'send'");
-        return NULL;
-    }
-    if (!PyType_Check(recv)) {
-        PyErr_SetString(PyExc_TypeError, "expected a type for 'recv'");
-        return NULL;
-    }
-    PyTypeObject *cls_send = (PyTypeObject *)send;
-    PyTypeObject *cls_recv = (PyTypeObject *)recv;
-
-    if (set_channelend_types(self, cls_send, cls_recv) < 0) {
-        return NULL;
-    }
-
     Py_RETURN_NONE;
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                     _PyCFunction_CAST(channelsmod_create),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_create_doc},
-    {"destroy",                    _PyCFunction_CAST(channelsmod_destroy),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_destroy_doc},
-    {"list_all",                   channelsmod_list_all,
-     METH_NOARGS,                  channelsmod_list_all_doc},
-    {"list_interpreters",          _PyCFunction_CAST(channelsmod_list_interpreters),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_list_interpreters_doc},
-    {"send",                       _PyCFunction_CAST(channelsmod_send),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_send_doc},
-    {"send_buffer",                _PyCFunction_CAST(channelsmod_send_buffer),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_send_buffer_doc},
-    {"recv",                       _PyCFunction_CAST(channelsmod_recv),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_recv_doc},
-    {"close",                      _PyCFunction_CAST(channelsmod_close),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_close_doc},
-    {"release",                    _PyCFunction_CAST(channelsmod_release),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
-    {"get_count",                   _PyCFunction_CAST(channelsmod_get_count),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_get_count_doc},
-    {"get_info",                   _PyCFunction_CAST(channelsmod_get_info),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_get_info_doc},
-    {"get_channel_defaults",       _PyCFunction_CAST(channelsmod_get_channel_defaults),
-     METH_VARARGS | METH_KEYWORDS, channelsmod_get_channel_defaults_doc},
-    {"_channel_id",                _PyCFunction_CAST(channelsmod__channel_id),
-     METH_VARARGS | METH_KEYWORDS, NULL},
-    {"_register_end_types",        _PyCFunction_CAST(channelsmod__register_end_types),
-     METH_VARARGS | METH_KEYWORDS, NULL},
+    _INTERPCHANNELS_CREATE_METHODDEF
+    _INTERPCHANNELS_DESTROY_METHODDEF
+    _INTERPCHANNELS_LIST_ALL_METHODDEF
+    _INTERPCHANNELS_LIST_INTERPRETERS_METHODDEF
+    _INTERPCHANNELS_SEND_METHODDEF
+    _INTERPCHANNELS_SEND_BUFFER_METHODDEF
+    _INTERPCHANNELS_RECV_METHODDEF
+    _INTERPCHANNELS_CLOSE_METHODDEF
+    _INTERPCHANNELS_RELEASE_METHODDEF
+    _INTERPCHANNELS_GET_COUNT_METHODDEF
+    _INTERPCHANNELS_GET_INFO_METHODDEF
+    _INTERPCHANNELS_GET_CHANNEL_DEFAULTS_METHODDEF
+    _INTERPCHANNELS__CHANNEL_ID_METHODDEF
+    _INTERPCHANNELS__REGISTER_END_TYPES_METHODDEF
 
     {NULL,                        NULL}           /* sentinel */
 };
