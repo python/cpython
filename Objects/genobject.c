@@ -518,9 +518,9 @@ gen_set_exception(PyObject *typ, PyObject *val, PyObject *tb)
     Py_XINCREF(val);
     Py_XINCREF(tb);
 
-    if (PyExceptionClass_Check(typ))
+    if (PyExceptionClass_Check(typ)) {
         PyErr_NormalizeException(&typ, &val, &tb);
-
+    }
     else if (PyExceptionInstance_Check(typ)) {
         /* Raising an instance.  The value should be a dummy. */
         if (val && val != Py_None) {
