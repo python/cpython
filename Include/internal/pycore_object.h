@@ -496,6 +496,9 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
 #define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL_SPECIALIZED(_PyObject_CAST(op), destruct)
 
 #endif
+#else  // Py_GIL_DISABLED
+# define Py_DECREF_MORTAL(op) Py_DECREF(op)
+# define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF(op)
 #endif
 
 /* Inline functions trading binary compatibility for speed:
@@ -1045,6 +1048,8 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
     }
 #endif
 }
+#else
+# define _Py_INCREF_MORTAL(op) Py_INCREF(op)
 #endif
 
 /* Utility for the tp_traverse slot of mutable heap types that have no other
