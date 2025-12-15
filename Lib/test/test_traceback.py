@@ -538,6 +538,7 @@ class TracebackCases(unittest.TestCase):
             raise RuntimeError("should not crash")
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
+        self.assertEqual(rc, 1)
         expected = [b'Exception ignored in the internal traceback machinery:',
                     b'AttributeError: \'int\' object has no attribute \'_print_exception_bltin\'',
                     b'Traceback (most recent call last):',
