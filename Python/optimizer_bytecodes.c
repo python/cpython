@@ -99,6 +99,11 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
+    op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        (void)value;
+        o = owner;
+    }
+
     op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
@@ -113,6 +118,11 @@ dummy_func(void) {
         (void)index;
         (void)value;
         o = owner;
+    }
+    
+    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        (void)value;
+        st = dict_st;
     }
 
     op(_PUSH_NULL, (-- res)) {
@@ -262,31 +272,25 @@ dummy_func(void) {
         res = sym_new_compact_int(ctx);
     }
 
-    op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
@@ -542,6 +546,12 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_INT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
+    op(_POP_TOP_FLOAT, (value --)) {
         if (PyJitRef_IsBorrowed(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
@@ -1009,6 +1019,12 @@ dummy_func(void) {
             eliminate_pop_guard(this_instr, value != Py_True);
         }
         sym_set_const(flag, Py_True);
+    }
+
+    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+        (void)(arg);
+        c = callable;
+        s = self;
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {

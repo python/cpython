@@ -666,7 +666,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_float_subtract_constant_propagation(self):
         def testfunc(n):
@@ -688,7 +688,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_float_multiply_constant_propagation(self):
         def testfunc(n):
@@ -710,7 +710,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_add_unicode_propagation(self):
         def testfunc(n):
@@ -2245,6 +2245,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_NOS_LIST", uops)
         self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
+    def test_call_list_append_pop_top(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(1)
+            return sum(a)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_isinstance_is_true(self):
         def testfunc(n):
             x = 0
@@ -2454,7 +2466,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, TIER2_THRESHOLD * (0.1 + 0.1))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
@@ -2499,6 +2511,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_store_attr_instance_value(self):
+        def testfunc(n):
+            class C:
+                pass
+            c = C()
+            for i in range(n):
+                c.a = i
+            return c.a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_STORE_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_store_subscr_int(self):
         def testfunc(n):
             l = [0, 0, 0, 0]
@@ -2513,6 +2542,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_LIST_INT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
@@ -2534,6 +2564,23 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_STORE_ATTR_SLOT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_store_subscr_dict(self):
+        def testfunc(n):
+            d = {}
+            for _ in range(n):
+                d['a'] = 1
+                d['b'] = 2
+                d['c'] = 3
+                d['d'] = 4
+            return sum(d.values())
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertNotIn("_POP_TOP", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
@@ -2798,6 +2845,28 @@ class TestUopsOptimization(unittest.TestCase):
                         pool.submit(read, (1,))
                         pool.submit(write, (1,))
         """))
+
+    def test_handling_of_tos_cache_with_side_exits(self):
+        # https://github.com/python/cpython/issues/142718
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                try:
+                    del self.d['attr']
+                except Exception:
+                    pass
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+
+        for _ in range(TIER2_THRESHOLD+1):
+            obj.attr = EvilAttr(obj.__dict__)
+
 
 def global_identity(x):
     return x
