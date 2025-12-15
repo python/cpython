@@ -1,12 +1,3 @@
-What's New in IDLE 3.14.0
-(since 3.13.0)
-Released on 2025-10-xx
-=========================
-
-
-gh-67407: Improve the Find, Replace and Find in Files dialogs.
-
-
 What's New in IDLE 3.13.0
 (since 3.12.0)
 Released on 2024-10-xx
