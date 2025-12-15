@@ -15,6 +15,7 @@ from test.support import (
     SHORT_TIMEOUT,
     busy_retry,
     requires_gil_enabled,
+    requires_remote_subprocess_debugging,
 )
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
@@ -303,12 +304,7 @@ class RemoteInspectionTestBase(unittest.TestCase):
                     if wait_for_signals:
                         _wait_for_signal(client_socket, wait_for_signals)
 
-                    try:
-                        trace = trace_func(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    trace = trace_func(p.pid)
                     return trace, script_name
             finally:
                 _cleanup_sockets(client_socket, server_socket)
@@ -412,6 +408,7 @@ class RemoteInspectionTestBase(unittest.TestCase):
 # ============================================================================
 
 
+@requires_remote_subprocess_debugging()
 class TestGetStackTrace(RemoteInspectionTestBase):
     @skip_if_not_supported
     @unittest.skipIf(
@@ -462,12 +459,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         client_socket, [b"ready:main", b"ready:thread"]
                     )
 
-                    try:
-                        stack_trace = get_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_stack_trace(p.pid)
 
                     # Find expected thread stack by funcname
                     found_thread = self._find_thread_with_frame(
@@ -572,12 +564,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         response = _wait_for_signal(client_socket, b"ready")
                         self.assertIn(b"ready", response)
 
-                        try:
-                            stack_trace = get_async_stack_trace(p.pid)
-                        except PermissionError:
-                            self.skipTest(
-                                "Insufficient permissions to read the stack trace"
-                            )
+                        stack_trace = get_async_stack_trace(p.pid)
 
                         # Check all tasks are present
                         tasks_names = [
@@ -755,12 +742,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     response = _wait_for_signal(client_socket, b"ready")
                     self.assertIn(b"ready", response)
 
-                    try:
-                        stack_trace = get_async_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_async_stack_trace(p.pid)
 
                     # For this simple asyncgen test, we only expect one task
                     self.assertEqual(len(stack_trace[0].awaited_by), 1)
@@ -842,12 +824,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     response = _wait_for_signal(client_socket, b"ready")
                     self.assertIn(b"ready", response)
 
-                    try:
-                        stack_trace = get_async_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_async_stack_trace(p.pid)
 
                     # Check all tasks are present
                     tasks_names = [
@@ -968,12 +945,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     response = _wait_for_signal(client_socket, b"ready")
                     self.assertIn(b"ready", response)
 
-                    try:
-                        stack_trace = get_async_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_async_stack_trace(p.pid)
 
                     # Check all tasks are present
                     tasks_names = [
@@ -1143,12 +1115,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     except RuntimeError as e:
                         self.fail(str(e))
 
-                    try:
-                        all_awaited_by = get_all_awaited_by(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    all_awaited_by = get_all_awaited_by(p.pid)
 
                     # Expected: a list of two elements: 1 thread, 1 interp
                     self.assertEqual(len(all_awaited_by), 2)
@@ -1442,12 +1409,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     server_socket.close()
                     server_socket = None
 
-                    try:
-                        stack_trace = get_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_stack_trace(p.pid)
 
                     # Verify we have at least one interpreter
                     self.assertGreaterEqual(len(stack_trace), 1)
@@ -1637,12 +1599,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     server_socket.close()
                     server_socket = None
 
-                    try:
-                        stack_trace = get_stack_trace(p.pid)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    stack_trace = get_stack_trace(p.pid)
 
                     # Verify we have multiple interpreters
                     self.assertGreaterEqual(len(stack_trace), 2)
@@ -1745,33 +1702,28 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     # Wait for ready and working signals
                     _wait_for_signal(client_socket, [b"ready", b"working"])
 
-                    try:
-                        # Get stack trace with all threads
-                        unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
-                        for _ in range(MAX_TRIES):
-                            all_traces = unwinder_all.get_stack_trace()
-                            found = self._find_frame_in_trace(
-                                all_traces,
-                                lambda f: f.funcname == "main_work"
-                                and f.location.lineno > 12,
-                            )
-                            if found:
-                                break
-                            time.sleep(0.1)
-                        else:
-                            self.fail(
-                                "Main thread did not start its busy work on time"
-                            )
+                    # Get stack trace with all threads
+                    unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
+                    for _ in range(MAX_TRIES):
+                        all_traces = unwinder_all.get_stack_trace()
+                        found = self._find_frame_in_trace(
+                            all_traces,
+                            lambda f: f.funcname == "main_work"
+                            and f.location.lineno > 12,
+                        )
+                        if found:
+                            break
+                        time.sleep(0.1)
+                    else:
+                        self.fail(
+                            "Main thread did not start its busy work on time"
+                        )
 
-                        # Get stack trace with only GIL holder
-                        unwinder_gil = RemoteUnwinder(
-                            p.pid, only_active_thread=True
-                        )
-                        gil_traces = unwinder_gil.get_stack_trace()
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                    # Get stack trace with only GIL holder
+                    unwinder_gil = RemoteUnwinder(
+                        p.pid, only_active_thread=True
+                    )
+                    gil_traces = unwinder_gil.get_stack_trace()
 
                     # Count threads
                     total_threads = sum(
@@ -1952,6 +1904,7 @@ class TestUnsupportedPlatformHandling(unittest.TestCase):
         )
 
 
+@requires_remote_subprocess_debugging()
 class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
     def _run_thread_status_test(self, mode, check_condition):
         """
@@ -2039,26 +1992,21 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
 
                     # Sample until we see expected thread states
                     statuses = {}
-                    try:
-                        unwinder = RemoteUnwinder(
-                            p.pid,
-                            all_threads=True,
-                            mode=mode,
-                            skip_non_matching_threads=False,
-                        )
-                        for _ in range(MAX_TRIES):
-                            traces = unwinder.get_stack_trace()
-                            statuses = self._get_thread_statuses(traces)
+                    unwinder = RemoteUnwinder(
+                        p.pid,
+                        all_threads=True,
+                        mode=mode,
+                        skip_non_matching_threads=False,
+                    )
+                    for _ in range(MAX_TRIES):
+                        traces = unwinder.get_stack_trace()
+                        statuses = self._get_thread_statuses(traces)
 
-                            if check_condition(
-                                statuses, sleeper_tid, busy_tid
-                            ):
-                                break
-                            time.sleep(0.5)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                        if check_condition(
+                            statuses, sleeper_tid, busy_tid
+                        ):
+                            break
+                        time.sleep(0.5)
 
                     return statuses, sleeper_tid, busy_tid
             finally:
@@ -2196,40 +2144,35 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                     server_socket = None
 
                     statuses = {}
-                    try:
-                        unwinder = RemoteUnwinder(
-                            p.pid,
-                            all_threads=True,
-                            mode=PROFILING_MODE_ALL,
-                            skip_non_matching_threads=False,
-                        )
-                        for _ in range(MAX_TRIES):
-                            traces = unwinder.get_stack_trace()
-                            statuses = self._get_thread_statuses(traces)
+                    unwinder = RemoteUnwinder(
+                        p.pid,
+                        all_threads=True,
+                        mode=PROFILING_MODE_ALL,
+                        skip_non_matching_threads=False,
+                    )
+                    for _ in range(MAX_TRIES):
+                        traces = unwinder.get_stack_trace()
+                        statuses = self._get_thread_statuses(traces)
 
-                            # Check ALL mode provides both GIL and CPU info
-                            if (
-                                sleeper_tid in statuses
-                                and busy_tid in statuses
-                                and not (
-                                    statuses[sleeper_tid]
-                                    & THREAD_STATUS_ON_CPU
-                                )
-                                and not (
-                                    statuses[sleeper_tid]
-                                    & THREAD_STATUS_HAS_GIL
-                                )
-                                and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
-                                and (
-                                    statuses[busy_tid] & THREAD_STATUS_HAS_GIL
-                                )
-                            ):
-                                break
-                            time.sleep(0.5)
-                    except PermissionError:
-                        self.skipTest(
-                            "Insufficient permissions to read the stack trace"
-                        )
+                        # Check ALL mode provides both GIL and CPU info
+                        if (
+                            sleeper_tid in statuses
+                            and busy_tid in statuses
+                            and not (
+                                statuses[sleeper_tid]
+                                & THREAD_STATUS_ON_CPU
+                            )
+                            and not (
+                                statuses[sleeper_tid]
+                                & THREAD_STATUS_HAS_GIL
+                            )
+                            and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
+                            and (
+                                statuses[busy_tid] & THREAD_STATUS_HAS_GIL
+                            )
+                        ):
+                            break
+                        time.sleep(0.5)
 
                     self.assertIsNotNone(
                         sleeper_tid, "Sleeper thread id not received"
@@ -2347,27 +2290,24 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
             self.assertIsNotNone(normal_tid, "Normal thread id not received")
 
             statuses = {}
-            try:
-                unwinder = RemoteUnwinder(
-                    p.pid,
-                    all_threads=True,
-                    mode=PROFILING_MODE_ALL,
-                    skip_non_matching_threads=False,
-                )
-                for _ in range(MAX_TRIES):
-                    traces = unwinder.get_stack_trace()
-                    statuses = self._get_thread_statuses(traces)
+            unwinder = RemoteUnwinder(
+                p.pid,
+                all_threads=True,
+                mode=PROFILING_MODE_ALL,
+                skip_non_matching_threads=False,
+            )
+            for _ in range(MAX_TRIES):
+                traces = unwinder.get_stack_trace()
+                statuses = self._get_thread_statuses(traces)
 
-                    if (
-                        exception_tid in statuses
-                        and normal_tid in statuses
-                        and (statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                        and not (statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                    ):
-                        break
-                    time.sleep(0.5)
-            except PermissionError:
-                self.skipTest("Insufficient permissions to read the stack trace")
+                if (
+                    exception_tid in statuses
+                    and normal_tid in statuses
+                    and (statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                    and not (statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                ):
+                    break
+                time.sleep(0.5)
 
             self.assertIn(exception_tid, statuses)
             self.assertIn(normal_tid, statuses)
@@ -2393,30 +2333,28 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
             self.assertIsNotNone(exception_tid, "Exception thread id not received")
             self.assertIsNotNone(normal_tid, "Normal thread id not received")
 
-            try:
-                unwinder = RemoteUnwinder(
-                    p.pid,
-                    all_threads=True,
-                    mode=PROFILING_MODE_EXCEPTION,
-                    skip_non_matching_threads=True,
-                )
-                for _ in range(MAX_TRIES):
-                    traces = unwinder.get_stack_trace()
-                    statuses = self._get_thread_statuses(traces)
+            unwinder = RemoteUnwinder(
+                p.pid,
+                all_threads=True,
+                mode=PROFILING_MODE_EXCEPTION,
+                skip_non_matching_threads=True,
+            )
+            for _ in range(MAX_TRIES):
+                traces = unwinder.get_stack_trace()
+                statuses = self._get_thread_statuses(traces)
 
-                    if exception_tid in statuses:
-                        self.assertNotIn(
-                            normal_tid,
-                            statuses,
-                            "Normal thread should be filtered out in exception mode",
-                        )
-                        return
-                    time.sleep(0.5)
-            except PermissionError:
-                self.skipTest("Insufficient permissions to read the stack trace")
+                if exception_tid in statuses:
+                    self.assertNotIn(
+                        normal_tid,
+                        statuses,
+                        "Normal thread should be filtered out in exception mode",
+                    )
+                    return
+                time.sleep(0.5)
 
             self.fail("Never found exception thread in exception mode")
 
+@requires_remote_subprocess_debugging()
 class TestExceptionDetectionScenarios(RemoteInspectionTestBase):
     """Test exception detection across all scenarios.
 
@@ -2557,47 +2495,43 @@ t.join()
 
     def _check_exception_status(self, p, thread_tid, expect_exception):
         """Helper to check if thread has expected exception status."""
-        try:
-            unwinder = RemoteUnwinder(
-                p.pid,
-                all_threads=True,
-                mode=PROFILING_MODE_ALL,
-                skip_non_matching_threads=False,
+        unwinder = RemoteUnwinder(
+            p.pid,
+            all_threads=True,
+            mode=PROFILING_MODE_ALL,
+            skip_non_matching_threads=False,
+        )
+
+        # Collect multiple samples for reliability
+        results = []
+        for _ in range(MAX_TRIES):
+            traces = unwinder.get_stack_trace()
+            statuses = self._get_thread_statuses(traces)
+
+            if thread_tid in statuses:
+                has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                results.append(has_exc)
+
+                if len(results) >= 3:
+                    break
+
+            time.sleep(0.2)
+
+        # Check majority of samples match expected
+        if not results:
+            self.fail("Never found target thread in stack traces")
+
+        majority = sum(results) > len(results) // 2
+        if expect_exception:
+            self.assertTrue(
+                majority,
+                f"Thread should have HAS_EXCEPTION flag, got {results}"
             )
-
-            # Collect multiple samples for reliability
-            results = []
-            for _ in range(MAX_TRIES):
-                traces = unwinder.get_stack_trace()
-                statuses = self._get_thread_statuses(traces)
-
-                if thread_tid in statuses:
-                    has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                    results.append(has_exc)
-
-                    if len(results) >= 3:
-                        break
-
-                time.sleep(0.2)
-
-            # Check majority of samples match expected
-            if not results:
-                self.fail("Never found target thread in stack traces")
-
-            majority = sum(results) > len(results) // 2
-            if expect_exception:
-                self.assertTrue(
-                    majority,
-                    f"Thread should have HAS_EXCEPTION flag, got {results}"
-                )
-            else:
-                self.assertFalse(
-                    majority,
-                    f"Thread should NOT have HAS_EXCEPTION flag, got {results}"
-                )
-
-        except PermissionError:
-            self.skipTest("Insufficient permissions to read the stack trace")
+        else:
+            self.assertFalse(
+                majority,
+                f"Thread should NOT have HAS_EXCEPTION flag, got {results}"
+            )
 
     @unittest.skipIf(
         sys.platform not in ("linux", "darwin", "win32"),
@@ -2669,6 +2603,7 @@ t.join()
             self._check_exception_status(p, thread_tid, expect_exception=False)
 
 
+@requires_remote_subprocess_debugging()
 class TestFrameCaching(RemoteInspectionTestBase):
     """Test that frame caching produces correct results.
 
@@ -2707,11 +2642,6 @@ sock.connect(('localhost', {port}))
                         )
 
                     yield p, client_socket, make_unwinder
-
-            except PermissionError:
-                self.skipTest(
-                    "Insufficient permissions to read the stack trace"
-                )
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
