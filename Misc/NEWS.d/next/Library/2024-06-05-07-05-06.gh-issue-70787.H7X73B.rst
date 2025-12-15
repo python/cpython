@@ -1,0 +1,1 @@
+Fixed a possible race condition between threads that could occur between the time of creation of a child mock for a magic method and the time the calculated return value of the child mock is set.
