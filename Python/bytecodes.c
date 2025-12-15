@@ -5467,12 +5467,6 @@ dummy_func(
             }
         }
 
-        label(pop_3_error) {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
-        }
-
         label(pop_2_error) {
             stack_pointer -= 2;
             assert(WITHIN_STACK_BOUNDS());

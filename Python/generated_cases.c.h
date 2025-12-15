@@ -11924,13 +11924,6 @@ JUMP_TO_LABEL(error);
 #endif /* _Py_TAIL_CALL_INTERP */
         /* BEGIN LABELS */
 
-        LABEL(pop_3_error)
-        {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            JUMP_TO_LABEL(error);
-        }
-
         LABEL(pop_2_error)
         {
             stack_pointer -= 2;
