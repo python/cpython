@@ -334,7 +334,7 @@ bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
     PyByteArrayObject *self = _PyByteArray_CAST(op);
 
     // optimization: Avoid copying the bytes coming in when possible.
-    if (self->ob_alloc == 0 && _PyObject_IsUniquelyReferenced(other)) {
+    if (self->ob_alloc == 0 && PyUnstable_Object_IsUniqueReferencedTemporary(other)) {
         assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
         if (!_canresize(self)) {
             return NULL;
