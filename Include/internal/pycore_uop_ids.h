@@ -477,7 +477,7 @@ extern "C" {
 #define _COMPARE_OP_FLOAT_r11 670
 #define _COMPARE_OP_FLOAT_r21 671
 #define _COMPARE_OP_FLOAT_r32 672
-#define _COMPARE_OP_INT_r21 673
+#define _COMPARE_OP_INT_r23 673
 #define _COMPARE_OP_STR_r21 674
 #define _CONTAINS_OP_r21 675
 #define _CONTAINS_OP_DICT_r21 676
