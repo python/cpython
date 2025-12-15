@@ -71,6 +71,7 @@ class XXLimitedTests(unittest.TestCase):
         xxo = module.Xxo()
         self.assertEqual(xxo.demo("abc"), "abc")
         self.assertEqual(xxo.demo(0), None)
+        self.assertEqual(xxo.__module__, module.__name__)
 
     @test_with_xxlimited_modules(since=(3, 13))
     def test_xxo_demo_extra(self, module):

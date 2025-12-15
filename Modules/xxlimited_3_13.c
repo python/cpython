@@ -313,7 +313,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 };
 
 static PyType_Spec Xxo_Type_spec = {
-    .name = "xxlimited.Xxo",
+    .name = "xxlimited_3_13.Xxo",
     .basicsize = sizeof(XxoObject),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = Xxo_Type_slots,
@@ -328,7 +328,7 @@ static PyType_Slot Str_Type_slots[] = {
 };
 
 static PyType_Spec Str_Type_spec = {
-    .name = "xxlimited.Str",
+    .name = "xxlimited_3_13.Str",
     .basicsize = 0,
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .slots = Str_Type_slots,
@@ -390,7 +390,7 @@ xx_modexec(PyObject *m)
 {
     xx_state *state = PyModule_GetState(m);
 
-    state->Error_Type = PyErr_NewException("xxlimited.Error", NULL, NULL);
+    state->Error_Type = PyErr_NewException("xxlimited_3_13.Error", NULL, NULL);
     if (state->Error_Type == NULL) {
         return -1;
     }
@@ -477,7 +477,7 @@ xx_free(void *module)
 
 static struct PyModuleDef xxmodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "xxlimited",
+    .m_name = "xxlimited_3_13",
     .m_doc = module_doc,
     .m_size = sizeof(xx_state),
     .m_methods = xx_methods,
