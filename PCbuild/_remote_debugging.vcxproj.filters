@@ -33,6 +33,9 @@
     <ClCompile Include="..\Modules\_remote_debugging\asyncio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_remote_debugging\subprocess.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h">

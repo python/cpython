@@ -13,7 +13,7 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import is_emscripten, requires_subprocess
+from test.support import is_emscripten, requires_remote_subprocess_debugging
 
 from profiling.sampling.cli import main
 
@@ -64,7 +64,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertEqual(coordinator_cmd[5:], expected_target_args)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_argument_parsing(self):
         test_args = ["profiling.sampling.cli", "run", "-m", "mymodule"]
 
@@ -84,7 +84,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_sample.assert_called_once()
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_arguments(self):
         test_args = [
             "profiling.sampling.cli",
@@ -226,7 +226,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("invalid choice", error_msg)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_profiler_options(self):
         test_args = [
             "profiling.sampling.cli",
@@ -307,7 +307,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("required: target", error_msg)  # argparse error for missing positional arg
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
-    @requires_subprocess()
+    @requires_remote_subprocess_debugging()
     def test_cli_long_module_option(self):
         test_args = [
             "profiling.sampling.cli",

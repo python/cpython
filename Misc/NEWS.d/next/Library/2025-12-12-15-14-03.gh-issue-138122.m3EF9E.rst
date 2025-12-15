@@ -1,0 +1,6 @@
+Add ``--subprocesses`` flag to :mod:`profiling.sampling` CLI to automatically
+profile subprocesses spawned by the target. When enabled, the profiler
+monitors for new Python subprocesses and profiles each one separately,
+writing results to individual output files. This is useful for profiling
+applications that use :mod:`multiprocessing`, :class:`~concurrent.futures.ProcessPoolExecutor`,
+or other subprocess-based parallelism. Patch by Pablo Galindo.

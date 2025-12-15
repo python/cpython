@@ -20,15 +20,14 @@ from test.support import (
     SHORT_TIMEOUT,
     SuppressCrashReport,
     os_helper,
-    requires_subprocess,
+    requires_remote_subprocess_debugging,
     script_helper,
 )
 
-from .helpers import close_and_unlink, skip_if_not_supported, test_subprocess
+from .helpers import close_and_unlink, test_subprocess
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestGCFrameTracking(unittest.TestCase):
     """Tests for GC frame tracking in the sampling profiler."""
 
@@ -62,19 +61,16 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                from profiling.sampling.pstats_collector import PstatsCollector
-                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=1,
-                    native=False,
-                    gc=True,
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            from profiling.sampling.pstats_collector import PstatsCollector
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+                native=False,
+                gc=True,
+            )
+            collector.print_stats(show_summary=False)
 
             output = captured_output.getvalue()
 
@@ -92,19 +88,16 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                from profiling.sampling.pstats_collector import PstatsCollector
-                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=1,
-                    native=False,
-                    gc=False,
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            from profiling.sampling.pstats_collector import PstatsCollector
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+                native=False,
+                gc=False,
+            )
+            collector.print_stats(show_summary=False)
 
             output = captured_output.getvalue()
 
@@ -116,8 +109,7 @@ while True:
         self.assertNotIn("<GC>", output)
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestNativeFrameTracking(unittest.TestCase):
     """Tests for native frame tracking in the sampling profiler."""
 
@@ -148,20 +140,15 @@ while True:
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    from profiling.sampling.stack_collector import CollapsedStackCollector
-                    collector = CollapsedStackCollector(1000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=1,
-                        native=True,
-                    )
-                    collector.export(collapsed_file.name)
-                except PermissionError:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                from profiling.sampling.stack_collector import CollapsedStackCollector
+                collector = CollapsedStackCollector(1000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=1,
+                    native=True,
+                )
+                collector.export(collapsed_file.name)
 
             # Verify file was created and contains valid data
             self.assertTrue(os.path.exists(collapsed_file.name))
@@ -189,24 +176,20 @@ while True:
             io.StringIO() as captured_output,
             mock.patch("sys.stdout", captured_output),
         ):
-            try:
-                from profiling.sampling.pstats_collector import PstatsCollector
-                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                profiling.sampling.sample.sample(
-                    subproc.process.pid,
-                    collector,
-                    duration_sec=1,
-                )
-                collector.print_stats(show_summary=False)
-            except PermissionError:
-                self.skipTest("Insufficient permissions for remote profiling")
+            from profiling.sampling.pstats_collector import PstatsCollector
+            collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+            profiling.sampling.sample.sample(
+                subproc.process.pid,
+                collector,
+                duration_sec=1,
+            )
+            collector.print_stats(show_summary=False)
             output = captured_output.getvalue()
         # Native frames should NOT be present:
         self.assertNotIn("<native>", output)
 
 
-@requires_subprocess()
-@skip_if_not_supported
+@requires_remote_subprocess_debugging()
 class TestProcessPoolExecutorSupport(unittest.TestCase):
     """
     Test that ProcessPoolExecutor works correctly with profiling.sampling.
@@ -250,9 +233,6 @@ if __name__ == "__main__":
                     except subprocess.TimeoutExpired:
                         proc.kill()
                         stdout, stderr = proc.communicate()
-
-        if "Permission Error" in stderr:
-            self.skipTest("Insufficient permissions for remote profiling")
 
         self.assertIn("Results: [2, 4, 6]", stdout)
         self.assertNotIn("Can't pickle", stderr)
