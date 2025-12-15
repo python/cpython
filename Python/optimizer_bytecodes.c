@@ -1010,6 +1010,12 @@ dummy_func(void) {
         sym_set_const(flag, Py_True);
     }
 
+    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+        (void)(arg);
+        c = callable;
+        s = self;
+    }
+
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
