@@ -2557,6 +2557,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_store_attr_instance_value(self):
+        def testfunc(n):
+            class C:
+                pass
+            c = C()
+            for i in range(n):
+                c.a = i
+            return c.a
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_STORE_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_store_subscr_int(self):
         def testfunc(n):
             l = [0, 0, 0, 0]
