@@ -74,6 +74,8 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+* :ref:`__pycache__ directories now contain a .gitignore file
+  <whatsnew315-pycache-gitignore>`
 
 
 New features
@@ -396,6 +398,12 @@ Other language changes
 * Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
   for any class.
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
+.. _whatsnew315-pycache-gitignore:
+
+* :file:`__pycache__` directories now contain a :file:`.gitignore` file for Git
+  that ignores their contents.
+  (Contributed by Stan Ulbrych in :gh:`141081`.)
 
 
 New modules
@@ -1024,6 +1032,7 @@ New deprecations
 
     - :mod:`argparse`
     - :mod:`csv`
+    - :mod:`ctypes`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
     - :mod:`http.server`
@@ -1217,7 +1226,7 @@ Deprecated C APIs
 
 * :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
   :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
-  3.20. Instead, use :c:func:`PyUnicode_FromString()` and cache the result in
+  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
   the module state, then call :c:func:`PyObject_CallMethod` or
   :c:func:`PyObject_GetAttr`.
   (Contributed by Victor Stinner in :gh:`141049`.)

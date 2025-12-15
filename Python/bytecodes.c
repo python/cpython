@@ -1126,9 +1126,9 @@ dummy_func(
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
         macro(STORE_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- )) {
+        op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -1151,9 +1151,9 @@ dummy_func(
                                         PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);  // unlock before decrefs!
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(list_st);
+            INPUTS_DEAD();
+            ls = list_st;
+            ss = sub_st;
             Py_DECREF(old_value);
         }
 
@@ -4040,18 +4040,17 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
         }
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        op(_CALL_STR_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
-            PyStackRef_CLOSE(arg);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a = arg;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4061,6 +4060,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
@@ -4186,7 +4186,7 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, a, c)) {
             /* Builtin METH_O functions */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4206,12 +4206,12 @@ dummy_func(
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-            PyStackRef_CLOSE(arg);
-            DEAD(args);
-            DEAD(self_or_null);
-            PyStackRef_CLOSE(callable);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4219,6 +4219,8 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
+            POP_TOP +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {

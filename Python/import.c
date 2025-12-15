@@ -2383,12 +2383,12 @@ is_builtin(PyObject *name)
     return 0;
 }
 
-static PyModInitFunction
-lookup_inittab_initfunc(const struct _Py_ext_module_loader_info* info)
+static struct _inittab*
+lookup_inittab_entry(const struct _Py_ext_module_loader_info* info)
 {
     for (struct _inittab *p = INITTAB; p->name != NULL; p++) {
         if (_PyUnicode_EqualToASCIIString(info->name, p->name)) {
-            return (PyModInitFunction)p->initfunc;
+            return p;
         }
     }
     // not found
@@ -2430,16 +2430,28 @@ create_builtin(
         _extensions_cache_delete(info.path, info.name);
     }
 
-    PyModInitFunction p0 = initfunc;
-    if (p0 == NULL) {
-        p0 = lookup_inittab_initfunc(&info);
-        if (p0 == NULL) {
-            /* Cannot re-init internal module ("sys" or "builtins") */
-            assert(is_core_module(tstate->interp, info.name, info.path));
-            mod = import_add_module(tstate, info.name);
+    PyModInitFunction p0 = NULL;
+    if (initfunc == NULL) {
+        struct _inittab *entry = lookup_inittab_entry(&info);
+        if (entry == NULL) {
+            mod = NULL;
+            _PyErr_SetModuleNotFoundError(name);
             goto finally;
         }
+
+        p0 = (PyModInitFunction)entry->initfunc;
     }
+    else {
+        p0 = initfunc;
+    }
+
+    if (p0 == NULL) {
+        /* Cannot re-init internal module ("sys" or "builtins") */
+        assert(is_core_module(tstate->interp, info.name, info.path));
+        mod = import_add_module(tstate, info.name);
+        goto finally;
+    }
+
 
 #ifdef Py_GIL_DISABLED
     // This call (and the corresponding call to _PyImport_CheckGILForModule())
@@ -3827,7 +3839,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
-    PyObject *package = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
@@ -3956,7 +3967,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
   error:
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
-    Py_XDECREF(package);
     if (final_mod == NULL) {
         remove_importlib_frames(tstate);
     }
