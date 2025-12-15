@@ -100,16 +100,10 @@ _bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
 {
     PyObject *res;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     self->ob_exports++;
-    Py_END_CRITICAL_SECTION();
-
     res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
-
-    Py_BEGIN_CRITICAL_SECTION(self);
     self->ob_exports--;
-    assert(self->ob_exports >= 0);
-    Py_END_CRITICAL_SECTION();
+
     return res;
 }
 

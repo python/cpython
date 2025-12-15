@@ -2617,10 +2617,7 @@ class FreeThreadingTest(unittest.TestCase):
 
         def ass_subscript2(b, a, c):  # MODIFIES!
             b.wait()
-            try:
-                a[:] = c
-            except BufferError:
-                return
+            a[:] = c
             assert b'\xdd' not in a
 
         def mod(b, a):
