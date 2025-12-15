@@ -6,7 +6,7 @@ import socket
 import subprocess
 import sys
 
-from .sample import sample, sample_live
+from .sample import sample, sample_live, _is_process_running
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
@@ -596,6 +596,8 @@ Examples:
 
 def _handle_attach(args):
     """Handle the 'attach' command."""
+    if not _is_process_running(args.pid):
+        raise sys.exit(f"Process with PID {args.pid} is not running.")
     # Check if live mode is requested
     if args.live:
         _handle_live_attach(args, args.pid)

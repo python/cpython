@@ -89,7 +89,7 @@ class SampleProfiler:
                         collector.collect_failed_sample()
                         errors += 1
                     except Exception as e:
-                        if not self._is_process_running():
+                        if not _is_process_running(self.pid):
                             break
                         raise e from None
 
@@ -150,22 +150,6 @@ class SampleProfiler:
                 f"from the expected total of {expected_samples} "
                 f"({(expected_samples - num_samples) / expected_samples * 100:.2f}%)"
             )
-
-    def _is_process_running(self):
-        if sys.platform == "linux" or sys.platform == "darwin":
-            try:
-                os.kill(self.pid, 0)
-                return True
-            except ProcessLookupError:
-                return False
-        elif sys.platform == "win32":
-            try:
-                _remote_debugging.RemoteUnwinder(self.pid)
-            except Exception:
-                return False
-            return True
-        else:
-            raise ValueError(f"Unsupported platform: {sys.platform}")
 
     def _print_realtime_stats(self):
         """Print real-time sampling statistics."""
@@ -280,6 +264,25 @@ class SampleProfiler:
         stale_invalidations = stats.get('stale_cache_invalidations', 0)
         if stale_invalidations > 0:
             print(f"  {ANSIColors.YELLOW}Stale cache invalidations: {stale_invalidations}{ANSIColors.RESET}")
+
+
+def _is_process_running(pid):
+    if pid <= 0:
+        return False
+    if sys.platform == "linux" or sys.platform == "darwin":
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+    elif sys.platform == "win32":
+        try:
+            _remote_debugging.RemoteUnwinder(pid)
+        except Exception:
+            return False
+        return True
+    else:
+        raise ValueError(f"Unsupported platform: {sys.platform}")
 
 
 def sample(

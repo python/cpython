@@ -434,6 +434,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             from profiling.sampling.cli import main
@@ -476,6 +477,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         for test_args, expected_filename, expected_format in test_cases:
             with (
                 mock.patch("sys.argv", test_args),
+                mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
                 mock.patch("profiling.sampling.cli.sample") as mock_sample,
             ):
                 main()
@@ -516,6 +518,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             from profiling.sampling.cli import main
@@ -540,6 +543,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             with (
                 mock.patch("sys.argv", test_args),
+                mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
                 mock.patch("profiling.sampling.cli.sample") as mock_sample,
             ):
                 from profiling.sampling.cli import main
@@ -554,6 +558,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             from profiling.sampling.cli import main
@@ -570,6 +575,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             from profiling.sampling.cli import main
@@ -585,6 +591,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             from profiling.sampling.cli import main
