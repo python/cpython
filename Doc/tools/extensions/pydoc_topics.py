@@ -136,9 +136,7 @@ class PydocTopicsBuilder(TextBuilder):
             docname = module_info[0]
             if docname.startswith('library/'):
                 doc_file = docname.replace('library/', '')
-                self.module_docs[module_name] = (
-                    doc_file + f"#module-{module_name}"
-                )
+                self.module_docs[module_name] = f"{doc_file}#module-{module_name}"
 
         for docname, label_ids in status_iterator(
             doc_labels.items(),
