@@ -726,6 +726,7 @@ _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
 PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
                                       const char *format, ...)
 {
+    assert(callable != NULL);
     va_list va;
     va_start(va, format);
     PyObject *retval = callmethod(tstate, callable, format, va);
