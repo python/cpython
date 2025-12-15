@@ -1,0 +1,2 @@
+Fix quadratically increasing garbage collection delays in free-threaded
+build.

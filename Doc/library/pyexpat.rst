@@ -223,10 +223,10 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
-   prior releases of CPython as a security fix.  Check for availability of
-   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
-   running across a variety of Python versions.
+   :meth:`!SetReparseDeferralEnabled`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
 
    .. versionadded:: 3.13
 
@@ -238,23 +238,93 @@ XMLParser Objects
    .. versionadded:: 3.13
 
 
-:class:`!xmlparser` objects have the following methods to mitigate some
-common XML vulnerabilities.
+:class:`!xmlparser` objects have the following methods to tune protections
+against some common XML vulnerabilities.
 
-.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
+.. method:: xmlparser.SetBillionLaughsAttackProtectionActivationThreshold(threshold, /)
 
-   Sets the number of allocated bytes of dynamic memory needed to activate
-   protection against disproportionate use of RAM.
+   Sets the number of output bytes needed to activate protection against
+   `billion laughs`_ attacks.
 
-   By default, parser objects have an allocation activation threshold of 64 MiB,
-   or equivalently 67,108,864 bytes.
+   The number of output bytes includes amplification from entity expansion
+   and reading DTD files.
+
+   Parser objects usually have a protection activation threshold of 8 MiB,
+   but the actual default value depends on the underlying Expat library.
 
    An :exc:`ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
 
-   .. versionadded:: next
+   :meth:`!SetBillionLaughsAttackProtectionActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. note::
+
+      Activation thresholds below 4 MiB are known to break support for DITA 1.3
+      payload and are hence not recommended.
+
+   .. versionadded:: 3.15
+
+.. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
+
+   Sets the maximum tolerated amplification factor for protection against
+   `billion laughs`_ attacks.
+
+   The amplification factor is calculated as ``(direct + indirect) / direct``
+   while parsing, where ``direct`` is the number of bytes read from
+   the primary document in parsing and ``indirect`` is the number of
+   bytes added by expanding entities and reading of external DTD files.
+
+   The *max_factor* value must be a non-NaN :class:`float` value greater than
+   or equal to 1.0. Peak amplifications of factor 15,000 for the entire payload
+   and of factor 30,000 in the middle of parsing have been observed with small
+   benign files in practice. In particular, the activation threshold should be
+   carefully chosen to avoid false positives.
+
+   Parser objects usually have a maximum amplification factor of 100,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetBillionLaughsAttackProtectionMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. note::
+
+      The maximum amplification factor is only considered if the threshold
+      that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
+      is exceeded.
+
+   .. versionadded:: 3.15
+
+.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
+
+   Sets the number of allocated bytes of dynamic memory needed to activate
+   protection against disproportionate use of RAM.
+
+   Parser objects usually have an allocation activation threshold of 64 MiB,
+   but the actual default value depends on the underlying Expat library.
+
+   An :exc:`ExpatError` is raised if this method is called on a
+   |xml-non-root-parser| parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   :meth:`!SetAllocTrackerActivationThreshold`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
+
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
@@ -271,12 +341,18 @@ common XML vulnerabilities.
    near the start of parsing even with benign files in practice. In particular,
    the activation threshold should be carefully chosen to avoid false positives.
 
-   By default, parser objects have a maximum amplification factor of 100.0.
+   Parser objects usually have a maximum amplification factor of 100,
+   but the actual default value depends on the underlying Expat library.
 
    An :exc:`ExpatError` is raised if this method is called on a
    |xml-non-root-parser| parser or if *max_factor* is outside the valid range.
    The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
    should not be used as they may have no special meaning.
+
+   :meth:`!SetAllocTrackerMaximumAmplification`
+   has been backported to some prior releases of CPython as a security fix.
+   Check for availability using :func:`hasattr` if used in code running
+   across a variety of Python versions.
 
    .. note::
 
@@ -284,7 +360,7 @@ common XML vulnerabilities.
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 :class:`xmlparser` objects have the following attributes:
@@ -557,6 +633,15 @@ otherwise stated.
 
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
+
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
 
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
@@ -1010,4 +1095,6 @@ The ``errors`` module has the following attributes:
    not. See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
    and https://www.iana.org/assignments/character-sets/character-sets.xhtml.
 
+
+.. _billion laughs: https://en.wikipedia.org/wiki/Billion_laughs_attack
 .. |xml-non-root-parser| replace:: :ref:`non-root <xmlparser-non-root>`

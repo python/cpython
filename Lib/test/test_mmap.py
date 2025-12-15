@@ -871,6 +871,10 @@ class MmapTests(unittest.TestCase):
         size = 2 * PAGESIZE
         m = mmap.mmap(-1, size)
 
+        class Number:
+            def __index__(self):
+                return 2
+
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
             m.madvise(mmap.MADV_NORMAL, size)
         with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
@@ -879,10 +883,14 @@ class MmapTests(unittest.TestCase):
             m.madvise(mmap.MADV_NORMAL, 0, -1)
         with self.assertRaisesRegex(OverflowError, "madvise length too large"):
             m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        with self.assertRaisesRegex(
+                TypeError, "'str' object cannot be interpreted as an integer"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, "Not a Number")
         self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, Number()), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
@@ -1144,6 +1152,18 @@ class MmapTests(unittest.TestCase):
         rt, stdout, stderr = assert_python_ok("-c", code, TESTFN)
         self.assertEqual(stdout.strip(), b'')
         self.assertEqual(stderr.strip(), b'')
+
+    def test_flush_parameters(self):
+        with open(TESTFN, 'wb+') as f:
+            f.write(b'x' * PAGESIZE * 3)
+            f.flush()
+
+            m = mmap.mmap(f.fileno(), PAGESIZE * 3)
+            self.addCleanup(m.close)
+
+            m.flush()
+            m.flush(PAGESIZE)
+            m.flush(PAGESIZE, PAGESIZE)
 
 
 class LargeMmapTests(unittest.TestCase):

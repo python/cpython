@@ -144,7 +144,7 @@ class _sqlite3.Connection "pysqlite_Connection *" "clinic_state()->ConnectionTyp
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=67369db2faf80891]*/
 
-static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
+static int _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
@@ -561,7 +561,10 @@ pysqlite_connection_cursor_impl(pysqlite_Connection *self, PyObject *factory)
         return NULL;
     }
 
-    _pysqlite_drop_unused_cursor_references(self);
+    if (_pysqlite_drop_unused_cursor_references(self) < 0) {
+        Py_DECREF(cursor);
+        return NULL;
+    }
 
     if (cursor && self->row_factory != Py_None) {
         Py_INCREF(self->row_factory);
@@ -1060,32 +1063,36 @@ error:
     PyGILState_Release(threadstate);
 }
 
-static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
+static int
+_pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
 {
     /* we only need to do this once in a while */
     if (self->created_cursors++ < 200) {
-        return;
+        return 0;
     }
 
     self->created_cursors = 0;
 
     PyObject* new_list = PyList_New(0);
     if (!new_list) {
-        return;
+        return -1;
     }
 
-    for (Py_ssize_t i = 0; i < PyList_Size(self->cursors); i++) {
-        PyObject* weakref = PyList_GetItem(self->cursors, i);
+    assert(PyList_CheckExact(self->cursors));
+    Py_ssize_t imax = PyList_GET_SIZE(self->cursors);
+    for (Py_ssize_t i = 0; i < imax; i++) {
+        PyObject* weakref = PyList_GET_ITEM(self->cursors, i);
         if (_PyWeakref_IsDead(weakref)) {
             continue;
         }
         if (PyList_Append(new_list, weakref) != 0) {
             Py_DECREF(new_list);
-            return;
+            return -1;
         }
     }
 
     Py_SETREF(self->cursors, new_list);
+    return 0;
 }
 
 /* Allocate a UDF/callback context structure. In order to ensure that the state

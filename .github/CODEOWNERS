@@ -86,6 +86,10 @@ Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
 Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
 Tools/build/regen-configure.sh   @AA-Turner
 
+# generate-build-details
+Tools/build/generate-build-details.py   @FFY00
+Lib/test/test_build_details.py          @FFY00
+
 
 # ----------------------------------------------------------------------------
 # Documentation
@@ -121,6 +125,9 @@ Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
 
 # C Analyser
 Tools/c-analyzer/             @ericsnowcurrently
+
+# C API Documentation Checks
+Tools/check-c-api-docs/       @ZeroIntensity
 
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
@@ -241,10 +248,10 @@ Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
 # Hashing / ``hash()`` and related
-Include/cpython/pyhash.h         @gpshead @picnixz @tiran
-Include/internal/pycore_pyhash.h @gpshead @picnixz @tiran
-Include/pyhash.h                 @gpshead @picnixz @tiran
-Python/pyhash.c                  @gpshead @picnixz @tiran
+Include/cpython/pyhash.h         @gpshead @picnixz
+Include/internal/pycore_pyhash.h @gpshead @picnixz
+Include/pyhash.h                 @gpshead @picnixz
+Python/pyhash.c                  @gpshead @picnixz
 
 # The import system (including importlib)
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
@@ -315,7 +322,7 @@ Tools/build/generate_global_objects.py    @ericsnowcurrently
 # Remote Debugging
 Python/remote_debug.h               @pablogsal
 Python/remote_debugging.c           @pablogsal
-Modules/_remote_debugging_module.c  @pablogsal @ambv @1st1
+Modules/_remote_debugging/          @pablogsal
 
 # Sub-Interpreters
 **/*crossinterp*                          @ericsnowcurrently
@@ -371,14 +378,14 @@ Lib/calendar.py               @AA-Turner
 Lib/test/test_calendar.py     @AA-Turner
 
 # Cryptographic Primitives and Applications
-**/*hashlib*                  @gpshead @picnixz @tiran
-**/*hashopenssl*              @gpshead @picnixz @tiran
+**/*hashlib*                  @gpshead @picnixz
+**/*hashopenssl*              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
 **/*ssl*                      @gpshead @picnixz
 Modules/_hacl/                @gpshead @picnixz
-Modules/*blake*               @gpshead @picnixz @tiran
-Modules/*md5*                 @gpshead @picnixz @tiran
-Modules/*sha*                 @gpshead @picnixz @tiran
+Modules/*blake*               @gpshead @picnixz
+Modules/*md5*                 @gpshead @picnixz
+Modules/*sha*                 @gpshead @picnixz
 
 # Codecs
 Modules/cjkcodecs/            @corona10
@@ -529,6 +536,11 @@ Lib/test/test_remote_pdb.py   @gaogaotiantian
 Lib/pydoc.py                  @AA-Turner
 Lib/pydoc_data/               @AA-Turner
 Lib/test/test_pydoc/          @AA-Turner
+
+# Profiling (Sampling)
+Doc/library/profiling*.rst    @pablogsal
+Lib/profiling/                @pablogsal
+Lib/test/test_profiling/      @pablogsal
 
 # PyREPL
 Lib/_pyrepl/                  @pablogsal @lysnikolaou @ambv

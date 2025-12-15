@@ -79,11 +79,6 @@ writer_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static int
 writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
 {
-    WriterObject *self = (WriterObject *)self_raw;
-    if (self->writer) {
-        PyBytesWriter_Discard(self->writer);
-    }
-
     if (kwargs && PyDict_GET_SIZE(kwargs)) {
         PyErr_Format(PyExc_TypeError,
                      "PyBytesWriter() takes exactly no keyword arguments");
@@ -99,6 +94,10 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
         return -1;
     }
 
+    WriterObject *self = (WriterObject *)self_raw;
+    if (self->writer) {
+        PyBytesWriter_Discard(self->writer);
+    }
     if (use_bytearray) {
         self->writer = _PyBytesWriter_CreateByteArray(alloc);
     }

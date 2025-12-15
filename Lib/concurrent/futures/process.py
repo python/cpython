@@ -474,9 +474,23 @@ class _ExecutorManagerThread(threading.Thread):
         bpe = BrokenProcessPool("A process in the process pool was "
                                 "terminated abruptly while the future was "
                                 "running or pending.")
+        cause_str = None
         if cause is not None:
-            bpe.__cause__ = _RemoteTraceback(
-                f"\n'''\n{''.join(cause)}'''")
+            cause_str = ''.join(cause)
+        else:
+            # No cause known, so report any processes that have
+            # terminated with nonzero exit codes, e.g. from a
+            # segfault. Multiple may terminate simultaneously,
+            # so include all of them in the traceback.
+            errors = []
+            for p in self.processes.values():
+                if p.exitcode is not None and p.exitcode != 0:
+                    errors.append(f"Process {p.pid} terminated abruptly "
+                                  f"with exit code {p.exitcode}")
+            if errors:
+                cause_str = "\n".join(errors)
+        if cause_str:
+            bpe.__cause__ = _RemoteTraceback(f"\n'''\n{cause_str}'''")
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():

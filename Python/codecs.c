@@ -83,8 +83,6 @@ PyCodec_Unregister(PyObject *search_function)
     return 0;
 }
 
-extern int _Py_normalize_encoding(const char *, char *, size_t);
-
 /* Convert a string to a normalized Python string: all ASCII letters are
    converted to lower case, spaces are replaced with hyphens. */
 

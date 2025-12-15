@@ -110,8 +110,6 @@ __copyright__ = """
 
 """
 
-__version__ = '1.1.0'
-
 import collections
 import os
 import re
@@ -199,7 +197,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         | (GLIBC_([0-9.]+))
         | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
         | (musl-([0-9.]+))
-        | (libc.musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
+        | ((?:libc\.|ld-)musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
         """,
         re.ASCII | re.VERBOSE)
 
@@ -238,7 +236,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 elif V(glibcversion) > V(ver):
                     ver = glibcversion
             elif so:
-                if lib != 'glibc':
+                if lib not in ('glibc', 'musl'):
                     lib = 'libc'
                     if soversion and (not ver or V(soversion) > V(ver)):
                         ver = soversion
@@ -307,8 +305,7 @@ def _syscmd_ver(system='', release='', version='',
                                            text=True,
                                            encoding="locale",
                                            shell=True)
-        except (OSError, subprocess.CalledProcessError) as why:
-            #print('Command %s failed: %s' % (cmd, why))
+        except (OSError, subprocess.CalledProcessError):
             continue
         else:
             break
@@ -1434,6 +1431,15 @@ def _main(args: list[str] | None = None):
     aliased = args.aliased and ('nonaliased' not in args.args)
 
     print(platform(aliased, terse))
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":
