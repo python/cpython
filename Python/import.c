@@ -1561,31 +1561,39 @@ _PyImport_CheckGILForModule(PyObject* module, PyObject *module_name)
     if (!PyModule_Check(module) ||
         ((PyModuleObject *)module)->md_requires_gil)
     {
-        if (_PyEval_EnableGILPermanent(tstate)) {
-            int warn_result = PyErr_WarnFormat(
-                PyExc_RuntimeWarning,
-                1,
-                "The global interpreter lock (GIL) has been enabled to load "
-                "module '%U', which has not declared that it can run safely "
-                "without the GIL. To override this behavior and keep the GIL "
-                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
-                module_name
-            );
-            if (warn_result < 0) {
-                return warn_result;
-            }
+        if (PyModule_Check(module)) {
+            assert(((PyModuleObject *)module)->md_token_is_def);
         }
-
-        const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-        if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
-            PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
-                               module_name);
+        if (_PyImport_EnableGILAndWarn(tstate, module_name) < 0) {
+            return -1;
         }
     }
     else {
         _PyEval_DisableGIL(tstate);
     }
 
+    return 0;
+}
+
+int
+_PyImport_EnableGILAndWarn(PyThreadState *tstate, PyObject *module_name)
+{
+    if (_PyEval_EnableGILPermanent(tstate)) {
+        return PyErr_WarnFormat(
+            PyExc_RuntimeWarning,
+            1,
+            "The global interpreter lock (GIL) has been enabled to load "
+            "module '%U', which has not declared that it can run safely "
+            "without the GIL. To override this behavior and keep the GIL "
+            "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+            module_name
+        );
+    }
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT && config->verbose) {
+        PySys_FormatStderr("# loading module '%U', which requires the GIL\n",
+                            module_name);
+    }
     return 0;
 }
 #endif
@@ -1995,7 +2003,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
         if (!PyErr_Occurred()) {
             PyErr_Format(
                 PyExc_SystemError,
-                "slot export function for module %s failed without setting an exception",
+                "module export hook for module %R failed without setting an exception",
                 info->name);
         }
         return NULL;
@@ -2003,7 +2011,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     if (PyErr_Occurred()) {
         PyErr_Format(
             PyExc_SystemError,
-            "slot export function for module %s raised unreported exception",
+            "module export hook for module %R raised unreported exception",
             info->name);
     }
     PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
@@ -3819,7 +3827,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
-    PyObject *package = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
@@ -3948,7 +3955,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
   error:
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
-    Py_XDECREF(package);
     if (final_mod == NULL) {
         remove_importlib_frames(tstate);
     }
@@ -4412,6 +4418,12 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         return NULL;
     }
 
+    if (PyUnicode_GetLength(name) == 0) {
+        PyErr_Format(PyExc_ValueError, "name must not be empty");
+        Py_DECREF(name);
+        return NULL;
+    }
+
     PyObject *mod = create_builtin(tstate, name, spec, NULL);
     Py_DECREF(name);
     return mod;
@@ -4796,6 +4808,8 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
     _PyImport_GetModuleExportHooks(&info, fp, &p0, &ex0);
     if (ex0) {
         mod = import_run_modexport(tstate, ex0, &info, spec);
+        // Modules created from slots handle GIL enablement (Py_mod_gil slot)
+        // when they're created.
         goto cleanup;
     }
     if (p0 == NULL) {

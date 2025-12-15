@@ -1925,6 +1925,21 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
+    def test_call_tuple_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = tuple(())
+                x += len(t) == 0
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TUPLE_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_str_1(self):
         def testfunc(n):
             x = 0
@@ -1941,6 +1956,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_STR_1", uops)
         self.assertNotIn("_GUARD_NOS_NULL", uops)
         self.assertNotIn("_GUARD_CALLABLE_STR_1", uops)
+
+    def test_call_str_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = str("")
+                x += 1 if len(t) == 0 else 0
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_STR_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_str_1_result_is_str(self):
         def testfunc(n):
@@ -2051,6 +2080,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
@@ -2102,6 +2132,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_LEN", uops)
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_builtin_o(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = abs(1)
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_BUILTIN_O", uops)
+        self.assertIn("_POP_TOP", uops)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
@@ -2454,6 +2499,24 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertNotIn("_GUARD_NOS_INT", uops)
 
+    def test_store_subscr_int(self):
+        def testfunc(n):
+            l = [0, 0, 0, 0]
+            for _ in range(n):
+                l[0] = 1
+                l[1] = 2
+                l[2] = 3
+                l[3] = 4
+            return sum(l)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
         # testing it doesn't crash.
@@ -2662,7 +2725,61 @@ class TestUopsOptimization(unittest.TestCase):
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
 
+    def test_enter_executor_valid_op_arg(self):
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            import sys
+            sys.setrecursionlimit(30) # reduce time of the run
 
+            str_v1 = ''
+            tuple_v2 = (None, None, None, None, None)
+            small_int_v3 = 4
+
+            def f1():
+
+                for _ in range(10):
+                    abs(0)
+
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+                tuple_v2[small_int_v3]
+
+                def recursive_wrapper_4569():
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    str_v1 > str_v1
+                    recursive_wrapper_4569()
+
+                recursive_wrapper_4569()
+
+            for i_f1 in range(19000):
+                try:
+                    f1()
+                except RecursionError:
+                    pass
+        """))
+
+    def test_attribute_changes_are_watched(self):
+        # Just running to make sure it doesn't crash.
+        script_helper.assert_python_ok("-c", textwrap.dedent("""
+            from concurrent.futures import ThreadPoolExecutor
+            from unittest import TestCase
+            NTHREADS = 6
+            BOTTOM = 0
+            TOP = 1250000
+            class A:
+                attr = 10**1000
+            class TestType(TestCase):
+                def read(id0):
+                    for _ in range(BOTTOM, TOP):
+                        A.attr
+                def write(id0):
+                    x = A.attr
+                    x += 1
+                    A.attr = x
+                    with ThreadPoolExecutor(NTHREADS) as pool:
+                        pool.submit(read, (1,))
+                        pool.submit(write, (1,))
+        """))
 
 def global_identity(x):
     return x

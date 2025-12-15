@@ -81,7 +81,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(Py_DEBUG)
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -5877,21 +5877,13 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 int
-PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    assert(token != NULL);
+    assert(PyType_Check(type));
+
     if (result != NULL) {
         *result = NULL;
-    }
-
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        return -1;
-    }
-    if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a type, got a '%T' object", type);
-        return -1;
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -5902,7 +5894,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     if (((PyHeapTypeObject*)type)->ht_token == token) {
 found:
         if (result != NULL) {
-            *result = (PyTypeObject *)Py_NewRef(type);
+            *result = type;
         }
         return 1;
     }
@@ -5934,6 +5926,30 @@ found:
         }
     }
     return 0;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (result != NULL) {
+         *result = NULL;
+    }
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
+    int res = _PyType_GetBaseByToken_Borrow(type, token, result);
+    if (res > 0 && result) {
+        Py_INCREF(*result);
+    }
+    return res;
 }
 
 

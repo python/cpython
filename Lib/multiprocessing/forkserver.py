@@ -326,7 +326,6 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
                                     len(fds)))
                         child_r, child_w, *fds = fds
                         s.close()
-                        util._flush_std_streams()
                         pid = os.fork()
                         if pid == 0:
                             # Child

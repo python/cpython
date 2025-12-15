@@ -1036,7 +1036,7 @@ static int
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-        /* Ignore trampoline frame */
+        /* Ignore trampoline frames and base frame sentinel */
         return 0;
     }
 
@@ -1094,6 +1094,9 @@ tstate_is_freed(PyThreadState *tstate)
     if (_PyMem_IsPtrFreed(tstate->interp)) {
         return 1;
     }
+    if (_PyMem_IsULongFreed(tstate->thread_id)) {
+        return 1;
+    }
     return 0;
 }
 
@@ -1113,7 +1116,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 
     if (tstate_is_freed(tstate)) {
-        PUTS(fd, "  <tstate is freed>\n");
+        PUTS(fd, "  <freed thread state>\n");
         return;
     }
 
@@ -1138,12 +1141,16 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
             PUTS(fd, "  <freed frame>\n");
             break;
         }
+        // Read frame->previous early since memory can be freed during
+        // dump_frame()
+        _PyInterpreterFrame *previous = frame->previous;
+
         if (dump_frame(fd, frame) < 0) {
             PUTS(fd, "  <invalid frame>\n");
             break;
         }
 
-        frame = frame->previous;
+        frame = previous;
         if (frame == NULL) {
             break;
         }
@@ -1240,7 +1247,9 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
 
-    write_thread_name(fd, tstate);
+    if (!_PyMem_IsULongFreed(tstate->thread_id)) {
+        write_thread_name(fd, tstate);
+    }
 
     PUTS(fd, " (most recent call first):\n");
 }
@@ -1298,7 +1307,6 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
     unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
@@ -1309,11 +1317,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             PUTS(fd, "...\n");
             break;
         }
+
+        if (tstate_is_freed(tstate)) {
+            PUTS(fd, "<freed thread state>\n");
+            break;
+        }
+
         write_thread_id(fd, tstate, tstate == current_tstate);
         if (tstate == current_tstate && tstate->interp->gc.collecting) {
             PUTS(fd, "  Garbage-collecting\n");
         }
         dump_traceback(fd, tstate, 0);
+
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);

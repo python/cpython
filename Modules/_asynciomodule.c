@@ -2990,16 +2990,12 @@ static PyType_Spec Task_spec = {
 static void
 TaskObj_dealloc(PyObject *self)
 {
-    _PyObject_ResurrectStart(self);
-    // Unregister the task here so that even if any subclass of Task
-    // which doesn't end up calling TaskObj_finalize not crashes.
-    unregister_task((TaskObj *)self);
-
-    PyObject_CallFinalizer(self);
-
-    if (_PyObject_ResurrectEnd(self)) {
-        return;
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return; // resurrected
     }
+    // unregister the task after finalization so that
+    // if the task gets resurrected, it remains registered
+    unregister_task((TaskObj *)self);
 
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
