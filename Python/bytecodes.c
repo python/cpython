@@ -2624,7 +2624,7 @@ dummy_func(
             }
             UNLOCK_OBJECT(owner_o);
             o = owner;
-            DEAD(owner);            
+            DEAD(owner);
             Py_XDECREF(old_value);
         }
 
