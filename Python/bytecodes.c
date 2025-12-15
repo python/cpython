@@ -2575,7 +2575,7 @@ dummy_func(
             }
         }
 
-        op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner --)) {
+        op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             STAT_INC(STORE_ATTR, hit);
@@ -2589,7 +2589,8 @@ dummy_func(
                 _PyDictValues_AddToInsertionOrder(values, index);
             }
             UNLOCK_OBJECT(owner_o);
-            PyStackRef_CLOSE(owner);
+            o = owner;
+            DEAD(owner);
             Py_XDECREF(old_value);
         }
 
@@ -2597,7 +2598,8 @@ dummy_func(
             unused/1 +
             _GUARD_TYPE_VERSION_AND_LOCK +
             _GUARD_DORV_NO_DICT +
-            _STORE_ATTR_INSTANCE_VALUE;
+            _STORE_ATTR_INSTANCE_VALUE +
+            POP_TOP;
 
         op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner --)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
