@@ -495,8 +495,6 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
-
-
 // Mark the generator as executing. Returns true if the state was changed,
 // false if it was already executing or finished.
 static inline bool
