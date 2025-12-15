@@ -2581,6 +2581,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_STORE_SUBSCR_DICT", uops)
         self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_attr_promotion_failure(self):
         # We're not testing for any specific uops here, just
