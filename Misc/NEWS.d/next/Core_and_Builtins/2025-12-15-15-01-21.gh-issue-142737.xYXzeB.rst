@@ -1,0 +1,2 @@
+Tracebacks will be displayed in fallback mode even if :func:`io.open` is lost.
+Patch by Bartosz Sławecki.
