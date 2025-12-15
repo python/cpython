@@ -1,8 +1,10 @@
+import sys
 import time
 import unittest
+import threading
 import concurrent.futures
 
-from test.support import threading_helper
+from test.support import setswitchinterval, threading_helper
 from unittest.mock import patch, ThreadingMock
 
 
@@ -195,6 +197,26 @@ class TestThreadingMock(unittest.TestCase):
         m.wait_until_called()
         m.wait_until_any_call_with()
         m.assert_called_once()
+
+    def test_call_count_thread_safe(self):
+        # See https://github.com/python/cpython/issues/142651.
+        m = ThreadingMock()
+        LOOPS = 100
+        THREADS = 10
+        def test_function():
+            for _ in range(LOOPS):
+                m()
+
+        oldswitchinterval = sys.getswitchinterval()
+        setswitchinterval(1e-6)
+        try:
+            threads = [threading.Thread(target=test_function) for _ in range(THREADS)]
+            with threading_helper.start_threads(threads):
+                pass
+        finally:
+            sys.setswitchinterval(oldswitchinterval)
+
+        self.assertEqual(m.call_count, LOOPS * THREADS)
 
 
 if __name__ == "__main__":
