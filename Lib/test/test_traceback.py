@@ -2285,11 +2285,17 @@ class TestFallbackFormatWhenPrinterRaises(unittest.TestCase, TracebackFormatMixi
 @cpython_only
 @force_not_colorized_test_class
 class TestFallbackFormatWhenIOUnavailable(unittest.TestCase, TracebackFormatMixin):
+    """See GH-142737."""
+
     def setUp(self) -> None:
         import io
         self.original_io = io
         self.original_hook = traceback._print_exception_bltin
+
+        # Triggers fallback path
         traceback._print_exception_bltin = object()
+
+        # StringIO is still needed for test.support.captured_output() to work
         sys.modules['io'] = types.SimpleNamespace(StringIO=io.StringIO)
         return super().setUp()
 
@@ -2300,6 +2306,7 @@ class TestFallbackFormatWhenIOUnavailable(unittest.TestCase, TracebackFormatMixi
     def test_traceback_format_with_cleared_frames(self):
         raise unittest.SkipTest(
             "io unavailable (test requires source lines to be captured in tracebacks)")
+
     def test_traceback_format(self):
         raise unittest.SkipTest(
             "io unavailable (test requires source lines to be captured in tracebacks)")
