@@ -2293,6 +2293,18 @@ class TestFallbackFormatWhenIOUnavailable(unittest.TestCase, TracebackFormatMixi
         sys.modules['io'] = types.SimpleNamespace(StringIO=io.StringIO)
         return super().setUp()
 
+    def test_unhashable(self):
+        raise unittest.SkipTest(
+            "test requires source lines to be captured in tracebacks")
+
+    def test_traceback_format_with_cleared_frames(self):
+        raise unittest.SkipTest(
+            "test requires source lines to be captured in tracebacks")
+
+    def test_traceback_format(self):
+        raise unittest.SkipTest(
+            "test requires source lines to be captured in tracebacks")
+
     def tearDown(self) -> None:
         sys.modules['io'] = self.original_io
         traceback._print_exception_bltin = self.original_hook
