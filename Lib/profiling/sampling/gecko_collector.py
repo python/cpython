@@ -66,7 +66,7 @@ class GeckoCollector(Collector):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
         self.opcodes_enabled = opcodes
-        self.start_time = time.time() * 1000  # milliseconds since epoch
+        self.start_time = time.monotonic() * 1000  # milliseconds since start
 
         # Global string table (shared across all threads)
         self.global_strings = ["(root)"]  # Start with root
@@ -103,6 +103,9 @@ class GeckoCollector(Collector):
         # Opcode state tracking per thread: tid -> (opcode, lineno, col_offset, funcname, filename, start_time)
         self.opcode_state = {}
 
+        # For binary replay: track base timestamp (first sample's timestamp)
+        self._replay_base_timestamp_us = None
+
     def _track_state_transition(self, tid, condition, active_dict, inactive_dict,
                                   active_name, inactive_name, category, current_time):
         """Track binary state transitions and emit markers.
@@ -138,9 +141,18 @@ class GeckoCollector(Collector):
                 self._add_marker(tid, active_name, active_dict.pop(tid),
                                current_time, category)
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         """Collect a sample from stack frames."""
-        current_time = (time.time() * 1000) - self.start_time
+        if timestamp_us is not None:
+            # Use provided timestamp (from binary replay)
+            # Track first timestamp as base for relative time calculation
+            if self._replay_base_timestamp_us is None:
+                self._replay_base_timestamp_us = timestamp_us
+            # Convert to milliseconds relative to first sample
+            current_time = (timestamp_us - self._replay_base_timestamp_us) / 1000
+        else:
+            # Live sampling - use monotonic clock
+            current_time = (time.monotonic() * 1000) - self.start_time
 
         # Update interval calculation
         if self.sample_count > 0 and self.last_sample_time > 0:

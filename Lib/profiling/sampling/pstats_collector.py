@@ -51,7 +51,7 @@ class PstatsCollector(Collector):
 
             self.callers[callee][caller] += 1
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         if stack_frames and hasattr(stack_frames[0], "awaited_by"):
             # Async frame processing
             for frames, thread_id, task_id in self._iter_async_frames(stack_frames):

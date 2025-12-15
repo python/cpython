@@ -18,7 +18,7 @@ class StackTraceCollector(Collector):
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle
 
-    def collect(self, stack_frames, skip_idle=False):
+    def collect(self, stack_frames, timestamp_us=None, skip_idle=False):
         if stack_frames and hasattr(stack_frames[0], "awaited_by"):
             # Async-aware mode: process async task frames
             for frames, thread_id, task_id in self._iter_async_frames(stack_frames):
@@ -96,7 +96,7 @@ class FlamegraphCollector(StackTraceCollector):
         # Per-thread statistics
         self.per_thread_stats = {}  # {thread_id: {has_gil, on_cpu, gil_requested, unknown, has_exception, total, gc_samples}}
 
-    def collect(self, stack_frames, skip_idle=False):
+    def collect(self, stack_frames, timestamp_us=None, skip_idle=False):
         """Override to track thread status statistics before processing frames."""
         # Increment sample count once per sample
         self._sample_count += 1
@@ -128,7 +128,7 @@ class FlamegraphCollector(StackTraceCollector):
                 self.per_thread_stats[thread_id][key] += value
 
         # Call parent collect to process frames
-        super().collect(stack_frames, skip_idle=skip_idle)
+        super().collect(stack_frames, timestamp_us=timestamp_us, skip_idle=skip_idle)
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate,
                   error_rate=None, missed_samples=None, mode=None):
