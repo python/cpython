@@ -166,9 +166,8 @@ code that needs to detect lazy imports programmatically.
 There are some restrictions on where the ``lazy`` keyword can be used. Lazy
 imports are only permitted at module scope; using ``lazy`` inside a function,
 class body, or ``try``/``except``/``finally`` block raises a :exc:`SyntaxError`.
-Star imports cannot be lazy (``lazy from module import *`` is a syntax error),
-and future imports cannot be lazy either (``lazy from __future__ import ...``
-raises :exc:`SyntaxError`).
+Neither star imports nor future imports can be lazy (``lazy from module import *``
+and ``lazy from __future__ import ...`` both raise :exc:`SyntaxError`).
 
 .. seealso:: :pep:`810` for the full specification and rationale.
 
