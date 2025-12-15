@@ -16,7 +16,8 @@ clinic          A preprocessor for CPython C files in order to automate
 
 freeze          Create a stand-alone executable from a Python program.
 
-ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
+ftscalingbench  Runs a set of small benchmarks to help identify scaling
+                bottlenecks in the free-threaded interpreter.
 
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
@@ -28,11 +29,13 @@ i18n            Tools for internationalization. pygettext.py
 
 importbench     A set of micro-benchmarks for various import scenarios.
 
-inspection      Tooling for PEP-678 "Safe external debugger interface for CPython".
+inspection      A set of benchmarks to measure get_stack_trace() performance.
 
-jit             Tooling for building the JIT.
+jit             Documentation and tools for building the JIT compiler. See
+                jit/README.md for more information.
 
-lockbench       Benchmarks for PyMutex and critical sections.
+lockbench       Benchmarks to measure the performance of PyMutex and
+                PyThread_type_lock locks with short critical sections.
 
 msi             Support for packaging Python as an MSI package on Windows.
 
@@ -43,8 +46,8 @@ patchcheck      Tools for checking and applying patches to the Python source cod
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-scripts         A number of useful single-file programs, e.g. run_tests.py
-                which runs the Python test suite.
+scripts         A number of useful single-file programs. See scripts/README for
+                more information.
 
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
