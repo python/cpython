@@ -18,9 +18,7 @@ import shutil
 from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
-from test.support import script_helper
-from test.support import os_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, temp_dir, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
 from test.support import force_not_colorized, force_not_colorized_test_class
@@ -528,18 +526,23 @@ class TracebackCases(unittest.TestCase):
 
     def test_lost_io_open(self):
         # GH-142737: Display the traceback even if io.open is lost
-        code = textwrap.dedent("""\
+        crasher = textwrap.dedent("""\
             import io
             import traceback
             traceback._print_exception_bltin = None
             del io.open
             raise RuntimeError("should not crash")
         """)
-        with os_helper.temp_dir() as temp_dir:
-            script = script_helper.make_script(
-                script_dir=temp_dir, script_basename='tb_test_no_io_open', source=code)
+
+        with temp_dir() as script_dir:
+            script = make_script(
+                script_dir=script_dir,
+                script_basename='tb_test_no_io_open',
+                source=crasher)
             rc, stdout, stderr = assert_python_failure(script)
+
         self.assertEqual(rc, 1)  # Make sure it's not a crash
+
         expected = [b'Traceback (most recent call last):',
                     f'  File "{script}", line 5, in <module>'.encode(),
                     b'RuntimeError: should not crash']
