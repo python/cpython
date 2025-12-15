@@ -527,22 +527,16 @@ class TracebackCases(unittest.TestCase):
     def test_when_io_is_lost(self):
         # GH-142737: Display the traceback even if io.open is lost
         code = textwrap.dedent("""\
-            import builtins
-            import sys
-
-            def bad_import(name, *args, **kwargs):
-                sys.modules[name] = 42
-                return sys.modules[name]
-
-            builtins.__import__ = bad_import
+            import io
+            import traceback
+            traceback._print_exception_bltin = None
+            del io.open
             raise RuntimeError("should not crash")
         """)
         rc, stdout, stderr = assert_python_failure('-c', code)
         self.assertEqual(rc, 1)
-        expected = [b'Exception ignored in the internal traceback machinery:',
-                    b'AttributeError: \'int\' object has no attribute \'_print_exception_bltin\'',
-                    b'Traceback (most recent call last):',
-                    b'  File "<string>", line 9, in <module>',
+        expected = [b'Traceback (most recent call last):',
+                    b'  File "<string>", line 5, in <module>',
                     b'RuntimeError: should not crash']
         self.assertEqual(stderr.splitlines(), expected)
 
