@@ -188,20 +188,18 @@ class TestDefaultDict(unittest.TestCase):
 
     def test_factory_conflict_with_set_value(self):
         key = "conflict_test"
-        class Factory:
-            def __init__(self):
-                self.count = 0
-                self.test_dict = None
+        count = 0
+        test_dict = None
 
-            def __call__(self):
-                self.count += 1
-                if self.count == 1:
-                    self.test_dict[key] = "set_value"
-                return "default_factory_value"
+        def default_factory():
+            nonlocal count
+            nonlocal test_dict
+            count += 1
+            if count == 1:
+                test_dict[key] = "set_value"
+            return "default_factory_value"
 
-        factory = Factory()
-        test_dict = defaultdict(factory)
-        factory.test_dict = test_dict
+        test_dict = defaultdict(default_factory)
 
         self.assertEqual(test_dict[key], "set_value")
 
