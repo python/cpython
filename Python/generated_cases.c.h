@@ -96,6 +96,8 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
             // _GUARD_TOS_FLOAT
             {
                 value = stack_pointer[-1];
@@ -128,10 +130,24 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval +
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    JUMP_TO_LABEL(error);
                 }
+                l = left;
+                r = right;
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = r;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = l;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -421,6 +437,8 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
             // _GUARD_TOS_FLOAT
             {
                 value = stack_pointer[-1];
@@ -453,10 +471,24 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval *
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    JUMP_TO_LABEL(error);
                 }
+                l = left;
+                r = right;
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = r;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = l;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1003,6 +1035,8 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
             // _GUARD_TOS_FLOAT
             {
                 value = stack_pointer[-1];
@@ -1035,10 +1069,24 @@
                 double dres =
                 ((PyFloatObject *)left_o)->ob_fval -
                 ((PyFloatObject *)right_o)->ob_fval;
-                res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
+                res = PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(dres));
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    JUMP_TO_LABEL(error);
                 }
+                l = left;
+                r = right;
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = r;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = l;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;

@@ -666,7 +666,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_float_subtract_constant_propagation(self):
         def testfunc(n):
@@ -688,7 +688,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_float_multiply_constant_propagation(self):
         def testfunc(n):
@@ -710,7 +710,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_nos_float_count), 1)
         # TODO gh-115506: this assertion may change after propagating constants.
         # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_add_unicode_propagation(self):
         def testfunc(n):
@@ -2466,7 +2466,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertAlmostEqual(res, TIER2_THRESHOLD * (0.1 + 0.1))
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_remove_guard_for_slice_list(self):
         def f(n):
