@@ -529,6 +529,7 @@ class TracebackCases(unittest.TestCase):
         crasher = textwrap.dedent("""\
             import io
             import traceback
+            # Trigger fallback mode
             traceback._print_exception_bltin = None
             del io.open
             raise RuntimeError("should not crash")
