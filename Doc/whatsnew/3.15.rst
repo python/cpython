@@ -125,10 +125,11 @@ at the top level but may only use a subset of them in any given run. The deferre
 loading reduces startup latency without requiring code restructuring or conditional
 imports scattered throughout the codebase.
 
-When a lazy import eventually fails (for example, if the module does not exist),
-Python raises the exception at the point of first use rather than at import time.
-The traceback includes both the location where the name was accessed and the
-original import statement, making it straightforward to diagnose the problem.
+In the case where loading a lazily imported module fails (for example, if the
+module does not exist), Python raises the exception at the point of first use
+rather than at import time. The associated traceback includes both the location
+where the name was accessed and the original import statement, making it
+straightforward to diagnose & debug the failure.
 
 For cases where you want to enable lazy loading globally without modifying source
 code, Python provides the :option:`-X lazy_imports <-X>` command-line option and
@@ -162,12 +163,12 @@ containing the names of all modules that have been lazily imported but not yet
 loaded. The proxy type itself is available as :data:`types.LazyImportType` for
 code that needs to detect lazy imports programmatically.
 
-There are some restrictions on where ``lazy`` can appear. Lazy imports are only
-permitted at module scope; using ``lazy`` inside a function, class body, or
-``try``/``except``/``finally`` block raises a :exc:`SyntaxError`. Star imports
-cannot be lazy (``lazy from module import *`` is a syntax error), and future
-imports cannot be lazy either (``lazy from __future__ import ...`` raises
-:exc:`SyntaxError`).
+There are some restrictions on where the ``lazy`` keyword can be used. Lazy
+imports are only permitted at module scope; using ``lazy`` inside a function,
+class body, or ``try``/``except``/``finally`` block raises a :exc:`SyntaxError`.
+Star imports cannot be lazy (``lazy from module import *`` is a syntax error),
+and future imports cannot be lazy either (``lazy from __future__ import ...``
+raises :exc:`SyntaxError`).
 
 .. seealso:: :pep:`810` for the full specification and rationale.
 

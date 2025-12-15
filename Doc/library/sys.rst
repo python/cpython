@@ -922,7 +922,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. function:: get_lazy_imports_filter()
@@ -934,7 +934,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    whether it should actually be lazy. See :func:`set_lazy_imports_filter` for
    details on the filter function signature.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. function:: get_lazy_modules()
@@ -945,7 +945,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Note that modules are removed from this set when they are reified (actually
    loaded on first use).
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. function:: getrefcount(object)
@@ -1775,7 +1775,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports` and :pep:`810`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. function:: set_lazy_imports_filter(filter)
@@ -1804,7 +1804,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    See also :func:`get_lazy_imports_filter` and :pep:`810`.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 
 .. function:: setprofile(profilefunc)

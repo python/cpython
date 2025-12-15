@@ -271,7 +271,7 @@ The following exceptions are the exceptions that are usually raised.
    A subclass of :exc:`ImportError` which is raised when a lazy import fails
    because it (directly or indirectly) tries to import itself.
 
-   .. versionadded:: 3.15
+   .. versionadded:: next
 
 .. exception:: IndexError
 
