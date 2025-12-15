@@ -186,5 +186,20 @@ class TestDefaultDict(unittest.TestCase):
         with self.assertRaises(TypeError):
             i |= None
 
+    def test_factory_conflict_with_setted_value(self):
+        test_dict = None
+        count = 0
+        key = "conflict_test"
+        def default_factory():
+            nonlocal count
+            nonlocal test_dict
+            nonlocal key
+            count += 1
+            if count == 1:
+                test_dict[key] = "setted_value"
+            return "default_factory_value"
+        test_dict = defaultdict(default_factory)
+        self.assertEqual(test_dict[key], "setted_value")
+
 if __name__ == "__main__":
     unittest.main()
