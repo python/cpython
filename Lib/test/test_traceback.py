@@ -2268,7 +2268,7 @@ class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
 
 @cpython_only
 @force_not_colorized_test_class
-class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
+class TestFallbackTracebackFormat1(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
         self.original_unraisable_hook = sys.unraisablehook
@@ -2280,6 +2280,22 @@ class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     def tearDown(self) -> None:
         traceback._print_exception_bltin = self.original_hook
         sys.unraisablehook = self.original_unraisable_hook
+        return super().tearDown()
+
+@cpython_only
+@force_not_colorized_test_class
+class TestFallbackTracebackFormat2(unittest.TestCase, TracebackFormatMixin):
+    def setUp(self) -> None:
+        import io
+        self.original_io = io
+        self.original_hook = traceback._print_exception_bltin
+        traceback._print_exception_bltin = object()
+        sys.modules['io'] = types.SimpleNamespace(StringIO=io.StringIO)
+        return super().setUp()
+
+    def tearDown(self) -> None:
+        sys.modules['io'] = self.original_io
+        traceback._print_exception_bltin = self.original_hook
         return super().tearDown()
 
 class BaseExceptionReportingTests:
