@@ -6334,7 +6334,6 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
     MOD_ADD("FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
     MOD_ADD("FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    MOD_ADD("__version__", PyUnicode_FromString("1.1.0"));
 
     MOD_ADD("_memmove_addr", PyLong_FromVoidPtr(memmove));
     MOD_ADD("_memset_addr", PyLong_FromVoidPtr(memset));

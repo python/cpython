@@ -1,0 +1,1 @@
+Deprecate ``__version__`` from :mod:`ctypes`. Patch by Hugo van Kemenade.
