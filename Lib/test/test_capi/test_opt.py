@@ -2612,7 +2612,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
-    def test_store_susbscr_dict(self):
+    def test_store_attr_slot(self):
+        class C:
+            __slots__ = ('x',)
+
+        def testfunc(n):
+            c = C()
+            for _ in range(n):
+                c.x = 42
+                y = c.x
+            return y
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_ATTR_SLOT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_store_subscr_dict(self):
         def testfunc(n):
             d = {}
             for _ in range(n):
