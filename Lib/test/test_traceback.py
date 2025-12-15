@@ -524,6 +524,7 @@ class TracebackCases(unittest.TestCase):
                     b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected)
 
+    @cpython_only
     def test_lost_io_open(self):
         # GH-142737: Display the traceback even if io.open is lost
         crasher = textwrap.dedent("""\
@@ -535,6 +536,7 @@ class TracebackCases(unittest.TestCase):
             raise RuntimeError("should not crash")
         """)
 
+        # Create a temporary script to go through _Py_FindSourceFile
         with temp_dir() as script_dir:
             script = make_script(
                 script_dir=script_dir,
