@@ -109,6 +109,11 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        (void)value;
+        st = dict_st;
+    }
+
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }

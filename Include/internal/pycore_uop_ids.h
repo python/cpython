@@ -1070,7 +1070,7 @@ extern "C" {
 #define _STORE_NAME_r10 1263
 #define _STORE_SLICE_r30 1264
 #define _STORE_SUBSCR_r30 1265
-#define _STORE_SUBSCR_DICT_r30 1266
+#define _STORE_SUBSCR_DICT_r31 1266
 #define _STORE_SUBSCR_LIST_INT_r32 1267
 #define _SWAP_r11 1268
 #define _SWAP_2_r02 1269

@@ -1148,8 +1148,16 @@
         }
 
         case _STORE_SUBSCR_DICT: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
+            JitOptRef dict_st;
+            JitOptRef value;
+            JitOptRef st;
+            dict_st = stack_pointer[-2];
+            value = stack_pointer[-3];
+            (void)value;
+            st = dict_st;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = st;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
