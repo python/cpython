@@ -390,7 +390,7 @@ by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
    ...             * See?
    ...         """)
    >>> parser.print_help()
-   usage: PROG [-h] option
+   usage: PROG [-h] argument
 
    The FlexiHelpFormatter will wrap text within paragraphs when required to in
    order to make the text fit.
