@@ -1904,8 +1904,15 @@
         }
 
         case _STORE_ATTR_SLOT: {
+            JitOptRef owner;
+            JitOptRef value;
             JitOptRef o;
-            o = sym_new_not_null(ctx);
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            uint16_t index = (uint16_t)this_instr->operand0;
+            (void)index;
+            (void)value;
+            o = owner;
             CHECK_STACK_BOUNDS(-1);
             stack_pointer[-2] = o;
             stack_pointer += -1;

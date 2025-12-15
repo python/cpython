@@ -109,6 +109,12 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
+        (void)index;
+        (void)value;
+        o = owner;
+    }
+
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }
