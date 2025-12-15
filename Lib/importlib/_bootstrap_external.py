@@ -969,17 +969,20 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 return
 
             if part == _PYCACHE:
-                gitignore = _path_join(parent, '.gitignore')
-                try:
-                    _path_stat(gitignore)
-                except FileNotFoundError:
-                    gitignore_content = b'# Created by CPython\n*\n'
+                # Don't create in site-packages as these are managed
+                # by package installers, not Git
+                if 'site-packages' not in parent:
+                    gitignore = _path_join(parent, '.gitignore')
                     try:
-                        _write_atomic(gitignore, gitignore_content, _mode)
+                        _path_stat(gitignore)
+                    except FileNotFoundError:
+                        gitignore_content = b'# Created by CPython\n*\n'
+                        try:
+                            _write_atomic(gitignore, gitignore_content, _mode)
+                        except OSError:
+                            pass
                     except OSError:
                         pass
-                except OSError:
-                    pass
         try:
             _write_atomic(path, data, _mode)
             _bootstrap._verbose_message('created {!r}', path)

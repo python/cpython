@@ -156,13 +156,16 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
         if dirname:
             os.makedirs(dirname)
             if os.path.basename(dirname) == '__pycache__':
-                gitignore = os.path.join(dirname, '.gitignore')
-                if not os.path.exists(gitignore):
-                    try:
-                        with open(gitignore, 'wb') as f:
-                            f.write(b'# Created by CPython\n*\n')
-                    except OSError:
-                        pass
+                # Don't create in site-packages as these are managed
+                # by package installers, not Git
+                if 'site-packages' not in dirname:
+                    gitignore = os.path.join(dirname, '.gitignore')
+                    if not os.path.exists(gitignore):
+                        try:
+                            with open(gitignore, 'wb') as f:
+                                f.write(b'# Created by CPython\n*\n')
+                        except OSError:
+                            pass
     except FileExistsError:
         pass
     if invalidation_mode == PycInvalidationMode.TIMESTAMP:
