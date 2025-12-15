@@ -1,0 +1,1 @@
+Add color to all interpolated values in :mod:`argparse` help, like ``%(default)s`` or ``%(choices)s``. Patch by Alex Prengère.

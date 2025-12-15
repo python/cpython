@@ -645,6 +645,27 @@ are set.
 
 .. versionadded:: 3.14
 
+To highlight inline code in your description or epilog text, you can use
+backticks::
+
+   >>> parser = argparse.ArgumentParser(
+   ...     formatter_class=argparse.RawDescriptionHelpFormatter,
+   ...     epilog='''Examples:
+   ...   `python -m myapp --verbose`
+   ...   `python -m myapp --config settings.json`
+   ... ''')
+
+When colors are enabled, the text inside backticks will be displayed in a
+distinct color to help examples stand out. When colors are disabled, backticks
+are preserved as-is, which is readable in plain text.
+
+.. note::
+
+   Backtick markup only applies to description and epilog text. It does not
+   apply to individual argument ``help`` strings.
+
+.. versionadded:: 3.15
+
 
 The add_argument() method
 -------------------------
