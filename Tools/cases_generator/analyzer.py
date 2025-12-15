@@ -1371,11 +1371,6 @@ def get_uop_cache_depths(uop: Uop) -> Iterator[tuple[int, int, int]]:
     if uop.name == "_ERROR_POP_N":
         yield 0, 0, 0
         return
-    non_decref_escape = False
-    for call in uop.properties.escaping_calls.values():
-        if "DECREF" in call.call.text or "CLOSE" in call.call.text:
-            continue
-        non_decref_escape = True
     ideal_inputs = 0
     has_array = False
     for item in reversed(uop.stack.inputs):
@@ -1393,9 +1388,6 @@ def get_uop_cache_depths(uop: Uop) -> Iterator[tuple[int, int, int]]:
         ideal_inputs = MAX_CACHED_REGISTER
     if ideal_outputs > MAX_CACHED_REGISTER:
         ideal_outputs = MAX_CACHED_REGISTER
-    if non_decref_escape:
-        yield ideal_inputs, ideal_outputs, 0
-        return
     at_end = uop.properties.sync_sp or uop.properties.side_exit_at_end
     exit_depth = ideal_outputs if at_end else ideal_inputs
     if uop.properties.escapes or uop.properties.sync_sp or has_array or is_large(uop):

@@ -402,11 +402,11 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_LOAD_FAST_CHECK] = {
-        .best = { 0, 0, 0, 0 },
+        .best = { 0, 1, 2, 2 },
         .entries = {
             { 1, 0, _LOAD_FAST_CHECK_r01 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 2, 1, _LOAD_FAST_CHECK_r12 },
+            { 3, 2, _LOAD_FAST_CHECK_r23 },
             { -1, -1, -1 },
         },
     },
@@ -810,7 +810,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _UNARY_NEGATIVE_r11 },
+            { 1, 1, _UNARY_NEGATIVE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -828,7 +828,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _TO_BOOL_r11 },
+            { 1, 1, _TO_BOOL_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -936,7 +936,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _UNARY_INVERT_r11 },
+            { 1, 1, _UNARY_INVERT_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1063,7 +1063,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _BINARY_OP_INPLACE_ADD_UNICODE_r20 },
+            { 0, 2, _BINARY_OP_INPLACE_ADD_UNICODE_r20 },
             { -1, -1, -1 },
         },
     },
@@ -1072,7 +1072,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _GUARD_BINARY_OP_EXTEND_r22 },
+            { 2, 2, _GUARD_BINARY_OP_EXTEND_r22 },
             { -1, -1, -1 },
         },
     },
@@ -1081,7 +1081,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_OP_EXTEND_r21 },
+            { 1, 2, _BINARY_OP_EXTEND_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1091,7 +1091,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_SLICE_r31 },
+            { 1, 3, _BINARY_SLICE_r31 },
         },
     },
     [_STORE_SLICE] = {
@@ -1100,7 +1100,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _STORE_SLICE_r30 },
+            { 0, 3, _STORE_SLICE_r30 },
         },
     },
     [_BINARY_OP_SUBSCR_LIST_INT] = {
@@ -1108,7 +1108,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_OP_SUBSCR_LIST_INT_r21 },
+            { 1, 2, _BINARY_OP_SUBSCR_LIST_INT_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1117,7 +1117,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_OP_SUBSCR_LIST_SLICE_r21 },
+            { 1, 2, _BINARY_OP_SUBSCR_LIST_SLICE_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1180,7 +1180,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_OP_SUBSCR_DICT_r21 },
+            { 1, 2, _BINARY_OP_SUBSCR_DICT_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1215,7 +1215,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _SET_ADD_r10 },
+            { 0, 1, _SET_ADD_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1226,7 +1226,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _STORE_SUBSCR_r30 },
+            { 0, 3, _STORE_SUBSCR_r30 },
         },
     },
     [_STORE_SUBSCR_LIST_INT] = {
@@ -1244,7 +1244,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _STORE_SUBSCR_DICT_r31 },
+            { 1, 3, _STORE_SUBSCR_DICT_r31 },
         },
     },
     [_DELETE_SUBSCR] = {
@@ -1252,7 +1252,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _DELETE_SUBSCR_r20 },
+            { 0, 2, _DELETE_SUBSCR_r20 },
             { -1, -1, -1 },
         },
     },
@@ -1260,7 +1260,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _CALL_INTRINSIC_1_r11 },
+            { 1, 1, _CALL_INTRINSIC_1_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1270,7 +1270,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _CALL_INTRINSIC_2_r21 },
+            { 1, 2, _CALL_INTRINSIC_2_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1278,7 +1278,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _RETURN_VALUE_r11 },
+            { 1, 1, _RETURN_VALUE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1287,7 +1287,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _GET_AITER_r11 },
+            { 1, 1, _GET_AITER_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1296,7 +1296,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 2, 0, _GET_ANEXT_r12 },
+            { 2, 1, _GET_ANEXT_r12 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1305,7 +1305,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _GET_AWAITABLE_r11 },
+            { 1, 1, _GET_AWAITABLE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1332,7 +1332,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _POP_EXCEPT_r10 },
+            { 0, 1, _POP_EXCEPT_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1359,7 +1359,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _STORE_NAME_r10 },
+            { 0, 1, _STORE_NAME_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1377,7 +1377,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _UNPACK_SEQUENCE_r10 },
+            { 0, 1, _UNPACK_SEQUENCE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1413,7 +1413,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _UNPACK_EX_r10 },
+            { 0, 1, _UNPACK_EX_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1423,7 +1423,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _STORE_ATTR_r20 },
+            { 0, 2, _STORE_ATTR_r20 },
             { -1, -1, -1 },
         },
     },
@@ -1431,7 +1431,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _DELETE_ATTR_r10 },
+            { 0, 1, _DELETE_ATTR_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1440,7 +1440,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _STORE_GLOBAL_r10 },
+            { 0, 1, _STORE_GLOBAL_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1455,11 +1455,11 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         },
     },
     [_LOAD_LOCALS] = {
-        .best = { 0, 0, 0, 0 },
+        .best = { 0, 1, 2, 2 },
         .entries = {
             { 1, 0, _LOAD_LOCALS_r01 },
-            { -1, -1, -1 },
-            { -1, -1, -1 },
+            { 2, 1, _LOAD_LOCALS_r12 },
+            { 3, 2, _LOAD_LOCALS_r23 },
             { -1, -1, -1 },
         },
     },
@@ -1548,7 +1548,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _LOAD_FROM_DICT_OR_DEREF_r11 },
+            { 1, 1, _LOAD_FROM_DICT_OR_DEREF_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1566,7 +1566,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _STORE_DEREF_r10 },
+            { 0, 1, _STORE_DEREF_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1603,7 +1603,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BUILD_TEMPLATE_r21 },
+            { 1, 2, _BUILD_TEMPLATE_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1629,7 +1629,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _LIST_EXTEND_r10 },
+            { 0, 1, _LIST_EXTEND_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1638,7 +1638,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _SET_UPDATE_r10 },
+            { 0, 1, _SET_UPDATE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1674,7 +1674,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _DICT_UPDATE_r10 },
+            { 0, 1, _DICT_UPDATE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1683,7 +1683,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _DICT_MERGE_r10 },
+            { 0, 1, _DICT_MERGE_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1693,7 +1693,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _MAP_ADD_r20 },
+            { 0, 2, _MAP_ADD_r20 },
             { -1, -1, -1 },
         },
     },
@@ -1703,7 +1703,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _LOAD_SUPER_ATTR_ATTR_r31 },
+            { 1, 3, _LOAD_SUPER_ATTR_ATTR_r31 },
         },
     },
     [_LOAD_SUPER_ATTR_METHOD] = {
@@ -1712,14 +1712,14 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _LOAD_SUPER_ATTR_METHOD_r32 },
+            { 2, 3, _LOAD_SUPER_ATTR_METHOD_r32 },
         },
     },
     [_LOAD_ATTR] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _LOAD_ATTR_r10 },
+            { 0, 1, _LOAD_ATTR_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1837,7 +1837,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 0, 0, _STORE_ATTR_WITH_HINT_r20 },
+            { 0, 2, _STORE_ATTR_WITH_HINT_r20 },
             { -1, -1, -1 },
         },
     },
@@ -1855,7 +1855,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _COMPARE_OP_r21 },
+            { 1, 2, _COMPARE_OP_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1900,7 +1900,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _CONTAINS_OP_r21 },
+            { 1, 2, _CONTAINS_OP_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1918,7 +1918,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _CONTAINS_OP_SET_r21 },
+            { 1, 2, _CONTAINS_OP_SET_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1927,7 +1927,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _CONTAINS_OP_DICT_r21 },
+            { 1, 2, _CONTAINS_OP_DICT_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1936,7 +1936,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _CHECK_EG_MATCH_r22 },
+            { 2, 2, _CHECK_EG_MATCH_r22 },
             { -1, -1, -1 },
         },
     },
@@ -1945,7 +1945,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _CHECK_EXC_MATCH_r22 },
+            { 2, 2, _CHECK_EXC_MATCH_r22 },
             { -1, -1, -1 },
         },
     },
@@ -1954,7 +1954,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _IMPORT_NAME_r21 },
+            { 1, 2, _IMPORT_NAME_r21 },
             { -1, -1, -1 },
         },
     },
@@ -1962,7 +1962,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 2, 0, _IMPORT_FROM_r12 },
+            { 2, 1, _IMPORT_FROM_r12 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1980,7 +1980,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 2, 0, _GET_LEN_r12 },
+            { 2, 1, _GET_LEN_r12 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -1991,7 +1991,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _MATCH_CLASS_r31 },
+            { 1, 3, _MATCH_CLASS_r31 },
         },
     },
     [_MATCH_MAPPING] = {
@@ -2017,7 +2017,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _MATCH_KEYS_r23 },
+            { 3, 2, _MATCH_KEYS_r23 },
             { -1, -1, -1 },
         },
     },
@@ -2025,7 +2025,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 2, 0, _GET_ITER_r12 },
+            { 2, 1, _GET_ITER_r12 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2034,7 +2034,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _GET_YIELD_FROM_ITER_r11 },
+            { 1, 1, _GET_YIELD_FROM_ITER_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2044,7 +2044,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _FOR_ITER_TIER_TWO_r23 },
+            { 3, 2, _FOR_ITER_TIER_TWO_r23 },
             { -1, -1, -1 },
         },
     },
@@ -2071,7 +2071,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _ITER_NEXT_LIST_TIER_TWO_r23 },
+            { 3, 2, _ITER_NEXT_LIST_TIER_TWO_r23 },
             { -1, -1, -1 },
         },
     },
@@ -2162,7 +2162,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _WITH_EXCEPT_START_r33 },
+            { 3, 3, _WITH_EXCEPT_START_r33 },
         },
     },
     [_PUSH_EXC_INFO] = {
@@ -2258,7 +2258,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_PY_FRAME_GENERAL] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _PY_FRAME_GENERAL_r01 },
+            { 1, 1, _PY_FRAME_GENERAL_r01 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -2495,7 +2495,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _CALL_STR_1_r32 },
+            { 2, 3, _CALL_STR_1_r32 },
         },
     },
     [_GUARD_CALLABLE_TUPLE_1] = {
@@ -2513,7 +2513,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 2, 0, _CALL_TUPLE_1_r32 },
+            { 2, 3, _CALL_TUPLE_1_r32 },
         },
     },
     [_CHECK_AND_ALLOCATE_OBJECT] = {
@@ -2528,7 +2528,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
     [_CREATE_INIT_FRAME] = {
         .best = { 0, 0, 0, 0 },
         .entries = {
-            { 1, 0, _CREATE_INIT_FRAME_r01 },
+            { 1, 1, _CREATE_INIT_FRAME_r01 },
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
@@ -2538,7 +2538,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 0, 0, _EXIT_INIT_CHECK_r10 },
+            { 0, 1, _EXIT_INIT_CHECK_r10 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2594,7 +2594,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _CALL_LEN_r33 },
+            { 3, 3, _CALL_LEN_r33 },
         },
     },
     [_GUARD_CALLABLE_ISINSTANCE] = {
@@ -2612,7 +2612,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _CALL_ISINSTANCE_r31 },
+            { 1, 3, _CALL_ISINSTANCE_r31 },
         },
     },
     [_GUARD_CALLABLE_LIST_APPEND] = {
@@ -2682,7 +2682,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _PY_FRAME_KW_r11 },
+            { 1, 1, _PY_FRAME_KW_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2727,7 +2727,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _CALL_KW_NON_PY_r11 },
+            { 1, 1, _CALL_KW_NON_PY_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2738,14 +2738,14 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { -1, -1, -1 },
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 3, 0, _MAKE_CALLARGS_A_TUPLE_r33 },
+            { 3, 3, _MAKE_CALLARGS_A_TUPLE_r33 },
         },
     },
     [_MAKE_FUNCTION] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _MAKE_FUNCTION_r11 },
+            { 1, 1, _MAKE_FUNCTION_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2781,7 +2781,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _CONVERT_VALUE_r11 },
+            { 1, 1, _CONVERT_VALUE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2790,7 +2790,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .best = { 1, 1, 1, 1 },
         .entries = {
             { -1, -1, -1 },
-            { 1, 0, _FORMAT_SIMPLE_r11 },
+            { 1, 1, _FORMAT_SIMPLE_r11 },
             { -1, -1, -1 },
             { -1, -1, -1 },
         },
@@ -2800,7 +2800,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _FORMAT_WITH_SPEC_r21 },
+            { 1, 2, _FORMAT_WITH_SPEC_r21 },
             { -1, -1, -1 },
         },
     },
@@ -2845,7 +2845,7 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
         .entries = {
             { -1, -1, -1 },
             { -1, -1, -1 },
-            { 1, 0, _BINARY_OP_r21 },
+            { 1, 2, _BINARY_OP_r21 },
             { -1, -1, -1 },
         },
     },
@@ -3223,6 +3223,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_RESUME_CHECK_r22] = _RESUME_CHECK,
     [_RESUME_CHECK_r33] = _RESUME_CHECK,
     [_LOAD_FAST_CHECK_r01] = _LOAD_FAST_CHECK,
+    [_LOAD_FAST_CHECK_r12] = _LOAD_FAST_CHECK,
+    [_LOAD_FAST_CHECK_r23] = _LOAD_FAST_CHECK,
     [_LOAD_FAST_0_r01] = _LOAD_FAST_0,
     [_LOAD_FAST_0_r12] = _LOAD_FAST_0,
     [_LOAD_FAST_0_r23] = _LOAD_FAST_0,
@@ -3481,6 +3483,8 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_STORE_GLOBAL_r10] = _STORE_GLOBAL,
     [_DELETE_GLOBAL_r00] = _DELETE_GLOBAL,
     [_LOAD_LOCALS_r01] = _LOAD_LOCALS,
+    [_LOAD_LOCALS_r12] = _LOAD_LOCALS,
+    [_LOAD_LOCALS_r23] = _LOAD_LOCALS,
     [_LOAD_NAME_r01] = _LOAD_NAME,
     [_LOAD_GLOBAL_r00] = _LOAD_GLOBAL,
     [_PUSH_NULL_CONDITIONAL_r00] = _PUSH_NULL_CONDITIONAL,
@@ -4590,6 +4594,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_FAST_BORROW_7_r23] = "_LOAD_FAST_BORROW_7_r23",
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
     [_LOAD_FAST_CHECK_r01] = "_LOAD_FAST_CHECK_r01",
+    [_LOAD_FAST_CHECK_r12] = "_LOAD_FAST_CHECK_r12",
+    [_LOAD_FAST_CHECK_r23] = "_LOAD_FAST_CHECK_r23",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
     [_LOAD_FROM_DICT_OR_DEREF_r11] = "_LOAD_FROM_DICT_OR_DEREF_r11",
     [_LOAD_GLOBAL] = "_LOAD_GLOBAL",
@@ -4600,6 +4606,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_LOAD_GLOBAL_MODULE_r01] = "_LOAD_GLOBAL_MODULE_r01",
     [_LOAD_LOCALS] = "_LOAD_LOCALS",
     [_LOAD_LOCALS_r01] = "_LOAD_LOCALS_r01",
+    [_LOAD_LOCALS_r12] = "_LOAD_LOCALS_r12",
+    [_LOAD_LOCALS_r23] = "_LOAD_LOCALS_r23",
     [_LOAD_NAME] = "_LOAD_NAME",
     [_LOAD_NAME_r01] = "_LOAD_NAME_r01",
     [_LOAD_SMALL_INT] = "_LOAD_SMALL_INT",
