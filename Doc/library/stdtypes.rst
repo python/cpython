@@ -2274,6 +2274,7 @@ expression support in the :mod:`re` module).
 
    See also :meth:`rjust`.
 
+
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
