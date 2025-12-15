@@ -645,6 +645,8 @@ ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
 JIT_STENCILS_H
+MODULE_XXLIMITED_3_13_FALSE
+MODULE_XXLIMITED_3_13_TRUE
 MODULE_XXLIMITED_35_FALSE
 MODULE_XXLIMITED_35_TRUE
 MODULE_XXLIMITED_FALSE
@@ -31290,6 +31292,7 @@ case $ac_sys_system in #(
     py_cv_module_termios=n/a
     py_cv_module_xxlimited=n/a
     py_cv_module_xxlimited_35=n/a
+    py_cv_module_xxlimited_3_13=n/a
     py_cv_module_=n/a
 
    ;; #(
@@ -34351,6 +34354,46 @@ fi
 printf "%s\n" "$py_cv_module_xxlimited_35" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxlimited_3_13" >&5
+printf %s "checking for stdlib extension module xxlimited_3_13... " >&6; }
+        if test "$py_cv_module_xxlimited_3_13" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if test "$ac_cv_func_dlopen" = yes
+then :
+  py_cv_module_xxlimited_3_13=yes
+else case e in #(
+  e) py_cv_module_xxlimited_3_13=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module_xxlimited_3_13=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE_XXLIMITED_3_13_STATE=$py_cv_module_xxlimited_3_13$as_nl"
+  if test "x$py_cv_module_xxlimited_3_13" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module_xxlimited_3_13" = yes; then
+  MODULE_XXLIMITED_3_13_TRUE=
+  MODULE_XXLIMITED_3_13_FALSE='#'
+else
+  MODULE_XXLIMITED_3_13_TRUE='#'
+  MODULE_XXLIMITED_3_13_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_3_13" >&5
+printf "%s\n" "$py_cv_module_xxlimited_3_13" >&6; }
+
+
 # Determine JIT stencils header files based on target platform
 JIT_STENCILS_H=""
 if test "x$enable_experimental_jit" = xno
@@ -34844,6 +34887,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_XXLIMITED_35\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE_XXLIMITED_3_13_TRUE}" && test -z "${MODULE_XXLIMITED_3_13_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE_XXLIMITED_3_13\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
