@@ -2781,6 +2781,28 @@ class TestUopsOptimization(unittest.TestCase):
                         pool.submit(write, (1,))
         """))
 
+    def test_handling_of_tos_cache_with_side_exits(self):
+        # https://github.com/python/cpython/issues/142718
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                try:
+                    del self.d['attr']
+                except Exception:
+                    pass
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+
+        for _ in range(TIER2_THRESHOLD+1):
+            obj.attr = EvilAttr(obj.__dict__)
+
+
 def global_identity(x):
     return x
 
