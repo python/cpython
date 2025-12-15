@@ -102,7 +102,7 @@ def _parse_mode(mode_string):
 def _check_process_died(process):
     """Check if process died and raise an error with stderr if available."""
     if process.poll() is None:
-        return  # Process still running
+        return
 
     # Process died - try to get stderr for error message
     stderr_msg = ""
@@ -471,7 +471,6 @@ def _handle_output(collector, args, pid, mode):
                 sort_mode, limit, not args.no_summary, mode
             )
     else:
-        # Export to file
         filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
 
@@ -726,7 +725,6 @@ def _handle_attach(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
-    # For binary format, determine output file before creating collector
     output_file = None
     if args.format == "binary":
         output_file = args.outfile or _generate_output_filename(args.format, args.pid)
@@ -806,7 +804,6 @@ def _handle_run(args):
         mode != PROFILING_MODE_WALL if mode != PROFILING_MODE_ALL else False
     )
 
-    # For binary format, determine output file before creating collector
     output_file = None
     if args.format == "binary":
         output_file = args.outfile or _generate_output_filename(args.format, process.pid)
@@ -940,7 +937,6 @@ def _handle_replay(args):
     """Handle the 'replay' command - convert binary profile to another format."""
     import os
 
-    # Check input file exists
     if not os.path.exists(args.input_file):
         sys.exit(f"Error: Input file not found: {args.input_file}")
 
@@ -956,10 +952,8 @@ def _handle_replay(args):
         print(f"  Sample interval: {interval} us")
         print(f"  Compression: {'zstd' if info.get('compression_type', 0) == 1 else 'none'}")
 
-        # Create appropriate collector
         collector = _create_collector(args.format, interval, skip_idle=False)
 
-        # Replay with progress bar
         def progress_callback(current, total):
             if total > 0:
                 pct = current / total
@@ -969,20 +963,17 @@ def _handle_replay(args):
                 print(f"\r  [{bar}] {pct*100:5.1f}% ({current:,}/{total:,})", end="", flush=True)
 
         count = reader.replay_samples(collector, progress_callback)
-        print()  # Newline after progress bar
+        print()
 
-        # Handle output similar to other formats
         if args.format == "pstats":
             if args.outfile:
                 collector.export(args.outfile)
             else:
-                # Print to stdout with defaults applied
                 sort_choice = args.sort if args.sort is not None else "nsamples"
                 limit = args.limit if args.limit is not None else 15
                 sort_mode = _sort_to_mode(sort_choice)
                 collector.print_stats(sort_mode, limit, not args.no_summary, PROFILING_MODE_WALL)
         else:
-            # Export to file
             filename = args.outfile or _generate_output_filename(args.format, os.getpid())
             collector.export(filename)
 

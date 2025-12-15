@@ -23,13 +23,11 @@ class BinaryReader:
         self._reader = None
 
     def __enter__(self):
-        """Open the binary file for reading."""
         import _remote_debugging
         self._reader = _remote_debugging.BinaryReader(self.filename)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Close the binary file."""
         if self._reader is not None:
             self._reader.close()
             self._reader = None
@@ -71,7 +69,6 @@ class BinaryReader:
 
     @property
     def sample_count(self):
-        """Number of samples in the file."""
         if self._reader is None:
             raise RuntimeError("Reader not open. Use as context manager.")
         return self._reader.get_info()['sample_count']

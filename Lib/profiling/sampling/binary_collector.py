@@ -98,7 +98,6 @@ class BinaryCollector(Collector):
 
     @property
     def total_samples(self):
-        """Total number of samples written."""
         return self._writer.total_samples
 
     def get_stats(self):
@@ -111,7 +110,6 @@ class BinaryCollector(Collector):
         return self._writer.get_stats()
 
     def __enter__(self):
-        """Context manager entry."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

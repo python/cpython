@@ -138,7 +138,6 @@ class SampleProfiler:
             if self.collect_stats:
                 self._print_unwinder_stats()
 
-            # Print binary I/O stats if using binary collector
             if isinstance(collector, BinaryCollector):
                 self._print_binary_stats(collector)
 
@@ -292,7 +291,6 @@ class SampleProfiler:
 
         print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
 
-        # Record type counts
         repeat_records = stats.get('repeat_records', 0)
         repeat_samples = stats.get('repeat_samples', 0)
         full_records = stats.get('full_records', 0)
@@ -314,7 +312,6 @@ class SampleProfiler:
         print(f"      Suffix match:   {suffix_records:,} ({suffix_pct:.1f}%)")
         print(f"      Pop-push:       {pop_push_records:,} ({pop_push_pct:.1f}%)")
 
-        # Frame efficiency
         frames_written = stats.get('total_frames_written', 0)
         frames_saved = stats.get('frames_saved', 0)
         compression_pct = stats.get('frame_compression_pct', 0)
@@ -323,7 +320,6 @@ class SampleProfiler:
         print(f"    Frames written:   {frames_written:,}")
         print(f"    Frames saved:     {frames_saved:,} ({ANSIColors.GREEN}{compression_pct:.1f}%{ANSIColors.RESET})")
 
-        # Bytes written
         bytes_written = stats.get('bytes_written', 0)
         if bytes_written >= 1024 * 1024:
             bytes_str = f"{bytes_written / (1024 * 1024):.1f} MB"

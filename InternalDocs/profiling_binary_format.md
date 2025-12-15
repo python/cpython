@@ -174,20 +174,6 @@ frames from the previous stack are kept, and new frames are prepended.
 Used when the code path changed: some frames were popped (function returns)
 and new frames were pushed (different function calls).
 
-### Compression Benefits
-
-This delta encoding provides massive savings for typical profiling workloads:
-
-- **CPU-bound code**: Hot loops produce many identical samples. RLE encoding
-  compresses 100 identical samples to just 2-3 bytes of overhead plus the
-  timestamp/status data.
-
-- **I/O-bound code**: Alternating between wait and work produces similar
-  stacks with small variations. SUFFIX encoding captures this efficiently.
-
-- **Call-heavy code**: Functions calling other functions share common stack
-  prefixes. POP_PUSH encoding only stores the changed frames.
-
 ### Thread and Interpreter Identification
 
 Thread IDs are 64-bit values that can be large (memory addresses on some

@@ -320,13 +320,11 @@ encode_varint_i32(uint8_t *buf, int32_t value)
     return encode_varint_u32(buf, zigzag);
 }
 
-/* Decode unsigned 64-bit varint. Updates offset only on success. Returns value.
+/* Decode unsigned 64-bit varint (LEB128). Updates offset only on success.
  * On error (overflow or incomplete), offset is NOT updated, allowing callers
- * to detect errors via (offset == prev_offset) check.
- * On success, sets *error to 0 if error is non-NULL.
- * On error, sets *error to 1 if error is non-NULL. */
+ * to detect errors via (offset == prev_offset) check. Sets PyErr on error. */
 static inline uint64_t
-decode_varint_u64_ex(const uint8_t *data, size_t *offset, size_t max_size, int *error)
+decode_varint_u64(const uint8_t *data, size_t *offset, size_t max_size)
 {
     size_t pos = *offset;
     uint64_t result = 0;
@@ -335,7 +333,6 @@ decode_varint_u64_ex(const uint8_t *data, size_t *offset, size_t max_size, int *
     /* Fast path for single-byte varints (0-127) - most common case */
     if (LIKELY(pos < max_size && (data[pos] & 0x80) == 0)) {
         *offset = pos + 1;
-        if (error) *error = 0;
         return data[pos];
     }
 
@@ -344,87 +341,45 @@ decode_varint_u64_ex(const uint8_t *data, size_t *offset, size_t max_size, int *
         result |= (uint64_t)(byte & 0x7F) << shift;
         if ((byte & 0x80) == 0) {
             *offset = pos;
-            if (error) *error = 0;
             return result;
         }
         shift += 7;
         if (UNLIKELY(shift >= 64)) {
-            /* Overflow - do NOT update offset so caller can detect error */
-            if (error) *error = 1;
+            PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
             return 0;
         }
     }
 
-    /* Incomplete varint - do NOT update offset so caller can detect error */
-    if (error) *error = 1;
+    PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
     return 0;
 }
 
-/* Backward-compatible wrapper that sets PyErr on error.
- * Callers should check PyErr_Occurred() after batch operations. */
-static inline uint64_t
-decode_varint_u64(const uint8_t *data, size_t *offset, size_t max_size)
-{
-    int error = 0;
-    uint64_t result = decode_varint_u64_ex(data, offset, max_size, &error);
-    if (UNLIKELY(error)) {
-        PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
-    }
-    return result;
-}
-
-/* Decode unsigned 32-bit varint with explicit error handling.
- * If value exceeds UINT32_MAX, treats as error: offset is NOT updated,
- * *error is set to 1, allowing callers to detect via (offset == prev_offset). */
+/* Decode unsigned 32-bit varint. If value exceeds UINT32_MAX, treats as error. */
 static inline uint32_t
-decode_varint_u32_ex(const uint8_t *data, size_t *offset, size_t max_size, int *error)
+decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
 {
     size_t saved_offset = *offset;
-    uint64_t value = decode_varint_u64_ex(data, offset, max_size, error);
-    if (error && *error) {
-        /* decode_varint_u64_ex already handled the error, offset unchanged */
+    uint64_t value = decode_varint_u64(data, offset, max_size);
+    if (PyErr_Occurred()) {
         return 0;
     }
     if (UNLIKELY(value > UINT32_MAX)) {
-        /* Value overflow - restore offset so caller can detect error */
         *offset = saved_offset;
-        if (error) *error = 1;
+        PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
         return 0;
     }
     return (uint32_t)value;
 }
 
-/* Backward-compatible wrapper that sets PyErr on error. */
-static inline uint32_t
-decode_varint_u32(const uint8_t *data, size_t *offset, size_t max_size)
-{
-    int error = 0;
-    uint32_t result = decode_varint_u32_ex(data, offset, max_size, &error);
-    if (UNLIKELY(error)) {
-        PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
-    }
-    return result;
-}
-
-/* Decode signed 32-bit varint (zigzag) with explicit error handling. */
-static inline int32_t
-decode_varint_i32_ex(const uint8_t *data, size_t *offset, size_t max_size, int *error)
-{
-    uint32_t zigzag = decode_varint_u32_ex(data, offset, max_size, error);
-    /* Zigzag decode */
-    return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
-}
-
-/* Backward-compatible wrapper that sets PyErr on error. */
+/* Decode signed 32-bit varint (zigzag encoding). */
 static inline int32_t
 decode_varint_i32(const uint8_t *data, size_t *offset, size_t max_size)
 {
-    int error = 0;
-    int32_t result = decode_varint_i32_ex(data, offset, max_size, &error);
-    if (UNLIKELY(error)) {
-        PyErr_SetString(PyExc_ValueError, "Invalid or incomplete varint in binary data");
+    uint32_t zigzag = decode_varint_u32(data, offset, max_size);
+    if (PyErr_Occurred()) {
+        return 0;
     }
-    return result;
+    return (int32_t)((zigzag >> 1) ^ -(int32_t)(zigzag & 1));
 }
 
 /* ============================================================================

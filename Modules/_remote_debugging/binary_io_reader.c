@@ -37,7 +37,6 @@
  * BINARY READER IMPLEMENTATION
  * ============================================================================ */
 
-/* Parse the file header and populate reader fields */
 static inline int
 reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
@@ -73,7 +72,6 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     return 0;
 }
 
-/* Parse the file footer */
 static inline int
 reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
@@ -94,7 +92,6 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
 /* Maximum decompression buffer size to prevent memory exhaustion (1GB) */
 #define MAX_DECOMPRESS_SIZE (1ULL << 30)
 
-/* Decompress zstd-compressed sample data */
 static inline int
 reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 {
@@ -204,7 +201,6 @@ reader_decompress_samples(BinaryReader *reader, const uint8_t *data)
 }
 #endif
 
-/* Parse the string table into Python unicode objects */
 static inline int
 reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
@@ -237,7 +233,6 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
     return 0;
 }
 
-/* Parse the frame table (function_id, filename_id, lineno for each frame) */
 static inline int
 reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
@@ -457,7 +452,6 @@ binary_reader_open(const char *filename)
         goto error;
 #endif
     } else {
-        /* Uncompressed data */
         reader->sample_data = data + FILE_HEADER_PLACEHOLDER_SIZE;
         reader->sample_data_size = reader->string_table_offset - FILE_HEADER_PLACEHOLDER_SIZE;
     }
@@ -490,7 +484,6 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         }
     }
 
-    /* Initial allocation or growth */
     if (!reader->thread_states) {
         reader->thread_state_capacity = 16;
         reader->thread_states = PyMem_Calloc(reader->thread_state_capacity, sizeof(ReaderThreadState));
@@ -507,7 +500,6 @@ reader_get_or_create_thread_state(BinaryReader *reader, uint64_t thread_id,
         }
     }
 
-    /* Initialize new thread state */
     ReaderThreadState *ts = &reader->thread_states[reader->thread_state_count++];
     memset(ts, 0, sizeof(ReaderThreadState));
     ts->thread_id = thread_id;
@@ -576,7 +568,7 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
         return -1;
     }
 
-    /* Move shared frames to make room for new frames at the top */
+    /* Move shared frames (from bottom of stack) to make room for new frames at the top */
     if (new_count > 0 && shared > 0) {
         size_t prev_shared_start = ts->current_stack_depth - shared;
         memmove(&ts->current_stack[new_count],
@@ -584,7 +576,6 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
                 shared * sizeof(uint32_t));
     }
 
-    /* Read new frames (at top of stack) */
     for (uint32_t i = 0; i < new_count; i++) {
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
     }
@@ -612,7 +603,7 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
         return -1;
     }
 
-    /* Move kept frames (from bottom of stack) to make room for new frames.
+    /* Move kept frames (from bottom of stack) to make room for new frames at the top.
      * Even when push == 0, we need to move kept frames to index 0 if pop > 0. */
     if (keep > 0) {
         memmove(&ts->current_stack[push],
@@ -620,7 +611,6 @@ decode_stack_pop_push(ReaderThreadState *ts, const uint8_t *data,
                 keep * sizeof(uint32_t));
     }
 
-    /* Read new frames (at top of stack) */
     for (uint32_t i = 0; i < push; i++) {
         ts->current_stack[i] = decode_varint_u32(data, offset, max_size);
     }
@@ -1063,7 +1053,6 @@ binary_reader_close(BinaryReader *reader)
 
     PyMem_Free(reader->frame_data);
 
-    /* Free per-thread reconstruction state */
     if (reader->thread_states) {
         for (size_t i = 0; i < reader->thread_state_count; i++) {
             PyMem_Free(reader->thread_states[i].current_stack);
