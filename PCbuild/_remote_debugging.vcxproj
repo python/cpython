@@ -107,6 +107,7 @@
     <ClCompile Include="..\Modules\_remote_debugging\asyncio.c" />
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_writer.c" />
     <ClCompile Include="..\Modules\_remote_debugging\binary_io_reader.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\subprocess.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h" />

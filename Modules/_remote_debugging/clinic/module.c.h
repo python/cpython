@@ -1087,4 +1087,153 @@ _remote_debugging_zstd_available(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _remote_debugging_zstd_available_impl(module);
 }
-/*[clinic end generated code: output=a02fee60448b86e2 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
+"get_child_pids($module, /, pid, *, recursive=True)\n"
+"--\n"
+"\n"
+"Get all child process IDs of the given process.\n"
+"\n"
+"  pid\n"
+"    Process ID of the parent process\n"
+"  recursive\n"
+"    If True, return all descendants (children, grandchildren, etc.).\n"
+"    If False, return only direct children.\n"
+"\n"
+"Returns a list of child process IDs. Returns an empty list if no children\n"
+"are found.\n"
+"\n"
+"This function provides a snapshot of child processes at a moment in time.\n"
+"Child processes may exit or new ones may be created after the list is returned.\n"
+"\n"
+"Raises:\n"
+"    OSError: If unable to enumerate processes\n"
+"    NotImplementedError: If not supported on this platform");
+
+#define _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF    \
+    {"get_child_pids", _PyCFunction_CAST(_remote_debugging_get_child_pids), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_get_child_pids__doc__},
+
+static PyObject *
+_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+                                      int recursive);
+
+static PyObject *
+_remote_debugging_get_child_pids(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(recursive), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "recursive", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_child_pids",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    int pid;
+    int recursive = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    recursive = PyObject_IsTrue(args[1]);
+    if (recursive < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _remote_debugging_get_child_pids_impl(module, pid, recursive);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_is_python_process__doc__,
+"is_python_process($module, /, pid)\n"
+"--\n"
+"\n"
+"Check if a process is a Python process.");
+
+#define _REMOTE_DEBUGGING_IS_PYTHON_PROCESS_METHODDEF    \
+    {"is_python_process", _PyCFunction_CAST(_remote_debugging_is_python_process), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_is_python_process__doc__},
+
+static PyObject *
+_remote_debugging_is_python_process_impl(PyObject *module, int pid);
+
+static PyObject *
+_remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_python_process",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int pid;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _remote_debugging_is_python_process_impl(module, pid);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=036de0b06d0e34cc input=a9049054013a1b77]*/

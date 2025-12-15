@@ -1997,6 +1997,7 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(recursive), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \

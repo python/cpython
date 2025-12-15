@@ -325,21 +325,23 @@ The default configuration works well for most use cases:
    :widths: 25 75
 
    * - Option
-     - Default behavior
-   * - ``--interval`` / ``-i``
+     - Default
+   * - Default for ``--interval`` / ``-i``
      - 100 µs between samples (~10,000 samples/sec)
-   * - ``--duration`` / ``-d``
-     - Profile for 10 seconds
-   * - ``--all-threads`` / ``-a``
-     - Sample main thread only
-   * - ``--native``
+   * - Default for ``--duration`` / ``-d``
+     - 10 seconds
+   * - Default for ``--all-threads`` / ``-a``
+     - Main thread only
+   * - Default for ``--native``
      - No ``<native>`` frames (C code time attributed to caller)
-   * - ``--no-gc``
-     - Include ``<GC>`` frames when garbage collection is active
-   * - ``--mode``
+   * - Default for ``--no-gc``
+     - ``<GC>`` frames included when garbage collection is active
+   * - Default for ``--mode``
      - Wall-clock mode (all samples recorded)
-   * - ``--realtime-stats``
-     - No live statistics display during profiling
+   * - Default for ``--realtime-stats``
+     - Disabled
+   * - Default for ``--subprocesses``
+     - Disabled
 
 
 Sampling interval and duration
@@ -470,6 +472,78 @@ This shows the actual achieved sampling rate, which may be lower than requested
 if the profiler cannot keep up. The statistics help verify that profiling is
 working correctly and that sufficient samples are being collected. See
 :ref:`sampling-efficiency` for details on interpreting these metrics.
+
+
+Subprocess profiling
+--------------------
+
+The :option:`--subprocesses` option enables automatic profiling of subprocesses
+spawned by the target::
+
+   python -m profiling.sampling run --subprocesses script.py
+   python -m profiling.sampling attach --subprocesses 12345
+
+When enabled, the profiler monitors the target process for child process
+creation. When a new Python child process is detected, a separate profiler
+instance is automatically spawned to profile it. This is useful for
+applications that use :mod:`multiprocessing`, :mod:`subprocess`,
+:mod:`concurrent.futures` with :class:`~concurrent.futures.ProcessPoolExecutor`,
+or other process spawning mechanisms.
+
+.. code-block:: python
+   :caption: worker_pool.py
+
+   from concurrent.futures import ProcessPoolExecutor
+   import math
+
+   def compute_factorial(n):
+       total = 0
+       for i in range(50):
+           total += math.factorial(n)
+       return total
+
+   if __name__ == "__main__":
+       numbers = [5000 + i * 100 for i in range(50)]
+       with ProcessPoolExecutor(max_workers=4) as executor:
+           results = list(executor.map(compute_factorial, numbers))
+       print(f"Computed {len(results)} factorials")
+
+::
+
+   python -m profiling.sampling run --subprocesses --flamegraph worker_pool.py
+
+This produces separate flame graphs for the main process and each worker
+process: ``flamegraph_<main_pid>.html``, ``flamegraph_<worker1_pid>.html``,
+and so on.
+
+Each subprocess receives its own output file. The filename is derived from
+the specified output path (or the default) with the subprocess's process ID
+appended:
+
+- If you specify ``-o profile.html``, subprocesses produce ``profile_12345.html``,
+  ``profile_12346.html``, and so on
+- With default output, subprocesses produce files like ``flamegraph_12345.html``
+  or directories like ``heatmap_12345``
+- For pstats format (which defaults to stdout), subprocesses produce files like
+  ``profile_12345.pstats``
+
+The subprocess profilers inherit most sampling options from the parent (interval,
+duration, thread selection, native frames, GC frames, async-aware mode, and
+output format). All Python descendant processes are profiled recursively,
+including grandchildren and further descendants.
+
+Subprocess detection works by periodically scanning for new descendants of
+the target process and checking whether each new process is a Python process
+by probing the process memory for Python runtime structures. Non-Python
+subprocesses (such as shell commands or external tools) are ignored.
+
+There is a limit of 100 concurrent subprocess profilers to prevent resource
+exhaustion in programs that spawn many processes. If this limit is reached,
+additional subprocesses are not profiled and a warning is printed.
+
+The :option:`--subprocesses` option is incompatible with :option:`--live` mode
+because live mode uses an interactive terminal interface that cannot
+accommodate multiple concurrent profiler displays.
 
 
 .. _sampling-efficiency:
@@ -1301,6 +1375,11 @@ Sampling options
    which bytecode instructions are executing, including specializations.
    Compatible with ``--live``, ``--flamegraph``, ``--heatmap``, and ``--gecko``
    formats only.
+
+.. option:: --subprocesses
+
+   Also profile subprocesses. Each subprocess gets its own profiler
+   instance and output file. Incompatible with ``--live``.
 
 
 Mode options
