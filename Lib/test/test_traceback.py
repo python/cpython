@@ -536,7 +536,7 @@ class TracebackCases(unittest.TestCase):
             raise RuntimeError("should not crash")
         """)
 
-        # Create a temporary script to go through _Py_FindSourceFile
+        # Create a temporary script to exercise _Py_FindSourceFile
         with temp_dir() as script_dir:
             script = make_script(
                 script_dir=script_dir,
