@@ -1,3 +1,0 @@
-Add missing ``keepends`` (default ``True``) parameter to
-:meth:`!codecs.StreamReaderWriter.readline` and
-:meth:`!codecs.StreamReaderWriter.readlines`.

@@ -1,0 +1,5 @@
+Fix a free-threaded GC performance regression.  If there are many untracked
+tuples, the GC will run too often, resulting in poor performance.  The fix
+is to include untracked tuples in the "long lived" object count. The number
+of frozen objects is also now included since the free-threaded GC must
+scan those too.
