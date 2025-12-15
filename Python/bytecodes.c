@@ -2668,7 +2668,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _STORE_ATTR_WITH_HINT;
 
-        op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
+        op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             DEOPT_IF(!LOCK_OBJECT(owner_o));
@@ -2677,14 +2677,16 @@ dummy_func(
             PyObject *old_value = *(PyObject **)addr;
             FT_ATOMIC_STORE_PTR_RELEASE(*(PyObject **)addr, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(owner_o);
-            PyStackRef_CLOSE(owner);
+            INPUTS_DEAD();
+            o = owner;
             Py_XDECREF(old_value);
         }
 
         macro(STORE_ATTR_SLOT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _STORE_ATTR_SLOT;
+            _STORE_ATTR_SLOT +
+            POP_TOP;
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,

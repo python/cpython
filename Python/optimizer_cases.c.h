@@ -1904,8 +1904,11 @@
         }
 
         case _STORE_ATTR_SLOT: {
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
+            JitOptRef o;
+            o = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = o;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
