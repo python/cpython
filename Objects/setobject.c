@@ -445,7 +445,7 @@ set_lookkey_threadsafe(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
     ensure_shared_on_read(so);
     setentry *table = FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table);
-    size_t mask = FT_ATOMIC_LOAD_SSIZE_RELAXED(so->mask);
+    size_t mask = FT_ATOMIC_LOAD_SSIZE_ACQUIRE(so->mask);
     if (table == NULL || table != FT_ATOMIC_LOAD_PTR_ACQUIRE(so->table)) {
         return set_lookkey(so, key, hash, &entry);
     }
@@ -532,7 +532,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     assert(newtable != oldtable);
     set_zero_table(newtable, newsize);
     FT_ATOMIC_STORE_PTR_RELEASE(so->table, NULL);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->mask, newsize - 1);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(so->mask, newsize - 1);
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
@@ -634,7 +634,7 @@ set_empty_to_minsize(PySetObject *so)
     set_zero_table(so->smalltable, PySet_MINSIZE);
     so->fill = 0;
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->mask, PySet_MINSIZE - 1);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(so->mask, PySet_MINSIZE - 1);
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, -1);
     FT_ATOMIC_STORE_PTR_RELEASE(so->table, so->smalltable);
 }
@@ -1449,8 +1449,8 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
     FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
     t = a->mask;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(a->mask, b->mask);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(b->mask, t);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(a->mask, b->mask);
+    FT_ATOMIC_STORE_SSIZE_RELEASE(b->mask, t);
 
     u = a_table;
     if (a_table == a->smalltable)
