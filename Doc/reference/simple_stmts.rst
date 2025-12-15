@@ -905,8 +905,9 @@ names remain as lazy proxies until they are accessed.
 Example::
 
    lazy import json
+   import sys
 
-   print('json' in sys.modules)  # False - module not loaded yet
+   print('json' in sys.modules)  # False - json module not yet loaded
 
    # First use triggers loading
    result = json.dumps({"hello": "world"})

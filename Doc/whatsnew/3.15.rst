@@ -99,11 +99,11 @@ unnecessary dependencies. These approaches work but make code harder to read
 and maintain, scatter import statements throughout the codebase, and require
 discipline to apply consistently.
 
-Python now provides a cleaner solution through explicit lazy imports using the
-new ``lazy`` soft keyword. When you mark an import as lazy, Python defers the
-actual module loading until the imported name is first used. This gives you
-the organizational benefits of declaring all imports at the top of the file
-while only paying the loading cost for modules you actually use.
+Python now provides a cleaner solution through explicit :keyword:`lazy` imports
+using the new ``lazy`` soft keyword. When you mark an import as lazy, Python
+defers the actual module loading until the imported name is first used. This
+gives you the organizational benefits of declaring all imports at the top of
+the file while only paying the loading cost for modules you actually use.
 
 The ``lazy`` keyword works with both ``import`` and ``from ... import`` statements.
 When you write ``lazy import heavy_module``, Python does not immediately load the
