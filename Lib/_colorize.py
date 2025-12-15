@@ -169,7 +169,7 @@ class Argparse(ThemeSection):
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
     default: str = ANSIColors.GREY
-    default_value: str = ANSIColors.YELLOW
+    interpolated_value: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
     error: str = ANSIColors.BOLD_MAGENTA
     warning: str = ANSIColors.BOLD_YELLOW

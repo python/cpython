@@ -63,6 +63,8 @@ extern "C" {
     _Py_atomic_store_int8_release(&value, new_value)
 #define FT_ATOMIC_STORE_SSIZE_RELAXED(value, new_value) \
     _Py_atomic_store_ssize_relaxed(&value, new_value)
+#define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) \
+    _Py_atomic_store_ssize_release(&value, new_value)
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) \
     _Py_atomic_store_uint8_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_UINT16_RELAXED(value, new_value) \
@@ -149,6 +151,7 @@ extern "C" {
 #define FT_ATOMIC_STORE_INT8_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_INT8_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_SSIZE_RELAXED(value, new_value) value = new_value
+#define FT_ATOMIC_STORE_SSIZE_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT16_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT32_RELAXED(value, new_value) value = new_value

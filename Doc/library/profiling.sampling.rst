@@ -295,21 +295,23 @@ The default configuration works well for most use cases:
    :widths: 25 75
 
    * - Option
-     - Default behavior
-   * - ``--interval`` / ``-i``
+     - Default
+   * - Default for ``--interval`` / ``-i``
      - 100 µs between samples (~10,000 samples/sec)
-   * - ``--duration`` / ``-d``
-     - Profile for 10 seconds
-   * - ``--all-threads`` / ``-a``
-     - Sample main thread only
-   * - ``--native``
+   * - Default for ``--duration`` / ``-d``
+     - 10 seconds
+   * - Default for ``--all-threads`` / ``-a``
+     - Main thread only
+   * - Default for ``--native``
      - No ``<native>`` frames (C code time attributed to caller)
-   * - ``--no-gc``
-     - Include ``<GC>`` frames when garbage collection is active
-   * - ``--mode``
+   * - Default for ``--no-gc``
+     - ``<GC>`` frames included when garbage collection is active
+   * - Default for ``--mode``
      - Wall-clock mode (all samples recorded)
-   * - ``--realtime-stats``
-     - No live statistics display during profiling
+   * - Default for ``--realtime-stats``
+     - Disabled
+   * - Default for ``--subprocesses``
+     - Disabled
 
 
 Sampling interval and duration
@@ -406,12 +408,12 @@ and the base instruction.
 
 Opcode information appears in several output formats:
 
-- **Live mode**: An opcode panel shows instruction-level statistics for the
-  selected function, accessible via keyboard navigation
-- **Flame graphs**: Nodes display opcode information when available, helping
-  identify which instructions consume the most time
+- **Flame graphs**: Hovering over a frame displays a tooltip with a bytecode
+  instruction breakdown, showing which opcodes consumed time in that function
 - **Heatmap**: Expandable bytecode panels per source line show instruction
   breakdown with specialization percentages
+- **Live mode**: An opcode panel shows instruction-level statistics for the
+  selected function, accessible via keyboard navigation
 - **Gecko format**: Opcode transitions are emitted as interval markers in the
   Firefox Profiler timeline
 
@@ -440,6 +442,78 @@ This shows the actual achieved sampling rate, which may be lower than requested
 if the profiler cannot keep up. The statistics help verify that profiling is
 working correctly and that sufficient samples are being collected. See
 :ref:`sampling-efficiency` for details on interpreting these metrics.
+
+
+Subprocess profiling
+--------------------
+
+The :option:`--subprocesses` option enables automatic profiling of subprocesses
+spawned by the target::
+
+   python -m profiling.sampling run --subprocesses script.py
+   python -m profiling.sampling attach --subprocesses 12345
+
+When enabled, the profiler monitors the target process for child process
+creation. When a new Python child process is detected, a separate profiler
+instance is automatically spawned to profile it. This is useful for
+applications that use :mod:`multiprocessing`, :mod:`subprocess`,
+:mod:`concurrent.futures` with :class:`~concurrent.futures.ProcessPoolExecutor`,
+or other process spawning mechanisms.
+
+.. code-block:: python
+   :caption: worker_pool.py
+
+   from concurrent.futures import ProcessPoolExecutor
+   import math
+
+   def compute_factorial(n):
+       total = 0
+       for i in range(50):
+           total += math.factorial(n)
+       return total
+
+   if __name__ == "__main__":
+       numbers = [5000 + i * 100 for i in range(50)]
+       with ProcessPoolExecutor(max_workers=4) as executor:
+           results = list(executor.map(compute_factorial, numbers))
+       print(f"Computed {len(results)} factorials")
+
+::
+
+   python -m profiling.sampling run --subprocesses --flamegraph worker_pool.py
+
+This produces separate flame graphs for the main process and each worker
+process: ``flamegraph_<main_pid>.html``, ``flamegraph_<worker1_pid>.html``,
+and so on.
+
+Each subprocess receives its own output file. The filename is derived from
+the specified output path (or the default) with the subprocess's process ID
+appended:
+
+- If you specify ``-o profile.html``, subprocesses produce ``profile_12345.html``,
+  ``profile_12346.html``, and so on
+- With default output, subprocesses produce files like ``flamegraph_12345.html``
+  or directories like ``heatmap_12345``
+- For pstats format (which defaults to stdout), subprocesses produce files like
+  ``profile_12345.pstats``
+
+The subprocess profilers inherit most sampling options from the parent (interval,
+duration, thread selection, native frames, GC frames, async-aware mode, and
+output format). All Python descendant processes are profiled recursively,
+including grandchildren and further descendants.
+
+Subprocess detection works by periodically scanning for new descendants of
+the target process and checking whether each new process is a Python process
+by probing the process memory for Python runtime structures. Non-Python
+subprocesses (such as shell commands or external tools) are ignored.
+
+There is a limit of 100 concurrent subprocess profilers to prevent resource
+exhaustion in programs that spawn many processes. If this limit is reached,
+additional subprocesses are not profiled and a warning is printed.
+
+The :option:`--subprocesses` option is incompatible with :option:`--live` mode
+because live mode uses an interactive terminal interface that cannot
+accommodate multiple concurrent profiler displays.
 
 
 .. _sampling-efficiency:
@@ -679,6 +753,14 @@ deterministic profilers generate. This is the default output format::
    python -m profiling.sampling run script.py
    python -m profiling.sampling run --pstats script.py
 
+.. figure:: tachyon-pstats.png
+   :alt: Tachyon pstats terminal output
+   :align: center
+   :width: 100%
+
+   The pstats format displays profiling results in a color-coded table showing
+   function hotspots, sample counts, and timing estimates.
+
 Output appears on stdout by default::
 
    Profile Stats (Mode: wall):
@@ -780,6 +862,19 @@ an interactive flame graph visualization::
    python -m profiling.sampling run --flamegraph script.py
    python -m profiling.sampling run --flamegraph -o profile.html script.py
 
+.. figure:: tachyon-flamegraph.png
+   :alt: Tachyon interactive flame graph
+   :align: center
+   :width: 100%
+
+   The flame graph visualization shows call stacks as nested rectangles, with
+   width proportional to time spent. The sidebar displays runtime statistics,
+   GIL metrics, and hotspot functions.
+
+.. only:: html
+
+   `Try the interactive example <../_static/tachyon-example-flamegraph.html>`__!
+
 If no output file is specified, the profiler generates a filename based on
 the process ID (for example, ``flamegraph.12345.html``).
 
@@ -850,6 +945,33 @@ Firefox Profiler timeline:
 For this reason, the :option:`--mode` option is not available with Gecko format;
 all relevant data is captured automatically.
 
+.. figure:: tachyon-gecko-calltree.png
+   :alt: Firefox Profiler Call Tree view
+   :align: center
+   :width: 100%
+
+   The Call Tree view shows the complete call hierarchy with sample counts
+   and percentages. The sidebar displays detailed statistics for the
+   selected function including running time and sample distribution.
+
+.. figure:: tachyon-gecko-flamegraph.png
+   :alt: Firefox Profiler Flame Graph view
+   :align: center
+   :width: 100%
+
+   The Flame Graph visualization shows call stacks as nested rectangles.
+   Functions names are visible in the call hierarchy.
+
+.. figure:: tachyon-gecko-opcodes.png
+   :alt: Firefox Profiler Marker Chart with opcodes
+   :align: center
+   :width: 100%
+
+   The Marker Chart displays interval markers including CPU state, GIL
+   status, and opcodes. With ``--opcodes`` enabled, bytecode instructions
+   like ``BINARY_OP_ADD_FLOAT``, ``CALL_PY_EXACT_ARGS``, and
+   ``CALL_LIST_APPEND`` appear as markers showing execution over time.
+
 
 Heatmap format
 --------------
@@ -859,6 +981,15 @@ showing sample counts at the source line level::
 
    python -m profiling.sampling run --heatmap script.py
    python -m profiling.sampling run --heatmap -o my_heatmap script.py
+
+.. figure:: tachyon-heatmap.png
+   :alt: Tachyon heatmap visualization
+   :align: center
+   :width: 100%
+
+   The heatmap overlays sample counts directly on your source code. Lines are
+   color-coded from cool (few samples) to hot (many samples). Navigation
+   buttons (▲▼) let you jump between callers and callees.
 
 Unlike other formats that produce a single file, heatmap output creates a
 directory containing HTML files for each profiled source file. If no output
@@ -886,6 +1017,22 @@ The heatmap interface provides several interactive features:
 - **Dark/light theme**: toggle with preference saved across sessions
 - **Line linking**: click line numbers to create shareable URLs
 
+When opcode-level profiling is enabled with :option:`--opcodes`, each hot line
+can be expanded to show which bytecode instructions consumed time:
+
+.. figure:: tachyon-heatmap-with-opcodes.png
+   :alt: Heatmap with expanded bytecode panel
+   :align: center
+   :width: 100%
+
+   Expanding a hot line reveals the bytecode instructions executed, including
+   specialized variants. The panel shows sample counts per instruction and the
+   overall specialization percentage for the line.
+
+.. only:: html
+
+   `Try the interactive example <../_static/tachyon-example-heatmap.html>`__!
+
 Heatmaps are especially useful when you know which file contains a performance
 issue but need to identify the specific lines. Many developers prefer this
 format because it maps directly to their source code, making it easy to read
@@ -903,6 +1050,14 @@ data, similar to the ``top`` command for system processes::
    python -m profiling.sampling run --live script.py
    python -m profiling.sampling attach --live 12345
 
+.. figure:: tachyon-live-mode-2.gif
+   :alt: Tachyon live mode showing all threads
+   :align: center
+   :width: 100%
+
+   Live mode displays real-time profiling statistics, showing combined
+   data from multiple threads in a multi-threaded application.
+
 The display updates continuously as new samples arrive, showing the current
 hottest functions. This mode requires the :mod:`curses` module, which is
 available on Unix-like systems but not on Windows. The terminal must be at
@@ -917,6 +1072,14 @@ When :option:`--opcodes` is enabled, an additional opcode panel appears below th
 main table, showing instruction-level statistics for the currently selected
 function. This panel displays which bytecode instructions are executing most
 frequently, including specialized variants and their base opcodes.
+
+.. figure:: tachyon-live-mode-1.gif
+   :alt: Tachyon live mode with opcode panel
+   :align: center
+   :width: 100%
+
+   Live mode with ``--opcodes`` enabled shows an opcode panel with a bytecode
+   instruction breakdown for the selected function.
 
 
 Keyboard commands
@@ -1127,6 +1290,11 @@ Sampling options
    which bytecode instructions are executing, including specializations.
    Compatible with ``--live``, ``--flamegraph``, ``--heatmap``, and ``--gecko``
    formats only.
+
+.. option:: --subprocesses
+
+   Also profile subprocesses. Each subprocess gets its own profiler
+   instance and output file. Incompatible with ``--live``.
 
 
 Mode options

@@ -103,6 +103,17 @@ dummy_func(void) {
         GETLOCAL(oparg) = value;
     }
 
+    op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
+        (void)value;
+        ls = list_st;
+        ss = sub_st;
+    }
+
+    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        (void)value;
+        st = dict_st;
+    }
+
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }
@@ -529,6 +540,12 @@ dummy_func(void) {
         }
     }
 
+    op(_POP_TOP_INT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -951,7 +968,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_STR_1, (unused, unused, arg -- res)) {
+    op(_CALL_STR_1, (unused, unused, arg -- res, a)) {
         if (sym_matches_type(arg, &PyUnicode_Type)) {
             // e.g. str('foo') or str(foo) where foo is known to be a string
             // Note: we must strip the reference information because it goes
@@ -961,6 +978,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
+        a = arg;
     }
 
     op(_CALL_ISINSTANCE, (unused, unused, instance, cls -- res)) {
@@ -990,6 +1008,12 @@ dummy_func(void) {
             eliminate_pop_guard(this_instr, value != Py_True);
         }
         sym_set_const(flag, Py_True);
+    }
+
+    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+        (void)(arg);
+        c = callable;
+        s = self;
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
@@ -1097,7 +1121,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+    op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
             // Note: we must strip the reference information because it goes
@@ -1107,6 +1131,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
         }
+        a = arg;
     }
 
     op(_GUARD_TOS_LIST, (tos -- tos)) {

@@ -282,7 +282,7 @@ Legacy single-phase initialization
    However, there are no plans to remove support for it.
 
 In single-phase initialization, the old-style
-:ref:`initializaton function <extension-pyinit>` (``PyInit_modulename``)
+:ref:`initialization function <extension-pyinit>` (``PyInit_modulename``)
 should create, populate and return a module object.
 This is typically done using :c:func:`PyModule_Create` and functions like
 :c:func:`PyModule_AddObjectRef`.

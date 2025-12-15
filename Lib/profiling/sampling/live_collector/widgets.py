@@ -308,31 +308,21 @@ class HeaderWidget(Widget):
 
     def draw_efficiency_bar(self, line, width):
         """Draw sample efficiency bar showing success/failure rates."""
-        success_pct = (
-            self.collector.successful_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
-        failed_pct = (
-            self.collector.failed_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
+        # total_samples = successful_samples + failed_samples, so percentages add to 100%
+        total = max(1, self.collector.total_samples)
+        success_pct = (self.collector.successful_samples / total) * 100
+        failed_pct = (self.collector.failed_samples / total) * 100
 
         col = 0
         self.add_str(line, col, "Efficiency:", curses.A_BOLD)
         col += 11
 
-        label = f" {success_pct:>5.2f}% good, {failed_pct:>4.2f}% failed"
+        label = f" {success_pct:>5.2f}% good, {failed_pct:>5.2f}% failed"
         available_width = width - col - len(label) - 3
 
         if available_width >= MIN_BAR_WIDTH:
             bar_width = min(MAX_EFFICIENCY_BAR_WIDTH, available_width)
-            success_fill = int(
-                (
-                    self.collector.successful_samples
-                    / max(1, self.collector.total_samples)
-                )
-                * bar_width
-            )
+            success_fill = int((self.collector.successful_samples / total) * bar_width)
             failed_fill = bar_width - success_fill
 
             self.add_str(line, col, "[", curses.A_NORMAL)

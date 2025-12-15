@@ -10,21 +10,8 @@ extern "C" {
 
 #include "pycore_interpframe_structs.h" // _PyGenObject
 
-#include <stdbool.h>              // bool
 #include <stddef.h>               // offsetof()
-#include "pycore_object.h"        // _PyObject_IsUniquelyReferenced()
 
-typedef enum _framestate {
-    FRAME_CREATED = -3,
-    FRAME_SUSPENDED = -2,
-    FRAME_SUSPENDED_YIELD_FROM = -1,
-    FRAME_EXECUTING = 0,
-    FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
-} PyFrameState;
-
-#define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
-#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
 
 static inline
 PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
@@ -34,6 +21,7 @@ PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
+PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
 extern void _PyGen_Finalize(PyObject *self);
 
 // Export for '_asyncio' shared extension
