@@ -1169,7 +1169,8 @@ dummy_func(
                                             PyStackRef_AsPyObjectSteal(sub),
                                             PyStackRef_AsPyObjectSteal(value));
             if (err) {
-                ERROR_NO_POP();
+                PyStackRef_CLOSE(dict_st);
+                ERROR_IF(1);
             }
             DEAD(dict_st);
             st = dict_st;
