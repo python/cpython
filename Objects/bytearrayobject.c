@@ -1374,14 +1374,13 @@ static int
 bytearray_contains(PyObject *self, PyObject *arg)
 {
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(self);
     Py_buffer selfbuf;
-    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
-        Py_END_CRITICAL_SECTION();
-        return -1;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    ret = -1;
+    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) == 0) {
+        ret = _Py_bytes_contains((const char *)selfbuf.buf, selfbuf.len, arg);
+        PyBuffer_Release(&selfbuf);
     }
-    ret = _Py_bytes_contains((const char *)selfbuf.buf, selfbuf.len, arg);
-    PyBuffer_Release(&selfbuf);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
