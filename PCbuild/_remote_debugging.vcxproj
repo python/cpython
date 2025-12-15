@@ -105,9 +105,12 @@
     <ClCompile Include="..\Modules\_remote_debugging\frame_cache.c" />
     <ClCompile Include="..\Modules\_remote_debugging\threads.c" />
     <ClCompile Include="..\Modules\_remote_debugging\asyncio.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\binary_io_writer.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\binary_io_reader.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h" />
+    <ClInclude Include="..\Modules\_remote_debugging\binary_io.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
