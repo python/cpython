@@ -64,11 +64,11 @@
           pass
    */
 
-// Need limited C API version 3.13 for Py_mod_gil
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
-#endif
+// Need limited C API version 3.15 for PyModExport
+#define Py_LIMITED_API 0x030f0000
+
+// experimental: free-threaded build compatibility
+#define _Py_OPAQUE_PYOBJECT 0x030f0000
 
 #include "Python.h"
 #include <string.h>
@@ -77,44 +77,76 @@
 
 // Module state
 typedef struct {
-    PyObject *Xxo_Type;    // Xxo class
+    PyTypeObject *Xxo_Type;    // Xxo class
     PyObject *Error_Type;       // Error class
 } xx_state;
 
 
 /* Xxo objects */
 
+static PyType_Spec Xxo_Type_spec;
+
 // Instance state
 typedef struct {
-    PyObject_HEAD
     PyObject            *x_attr;           /* Attributes dictionary.
                                             * May be NULL, which acts as an
                                             * empty dict.
                                             */
     char                x_buffer[BUFSIZE]; /* buffer for Py_buffer */
     Py_ssize_t          x_exports;         /* how many buffer are exported */
-} XxoObject;
+} XxoObject_Data;
 
-#define XxoObject_CAST(op)  ((XxoObject *)(op))
+#define XxoObject_CAST(self)  ((XxoObject *)(self))
 // TODO: full support for type-checking was added in 3.14 (Py_tp_token)
 // #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
-static XxoObject *
+static PyObject *
 newXxoObject(PyObject *module)
 {
     xx_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return NULL;
     }
-    XxoObject *self;
-    self = PyObject_GC_New(XxoObject, (PyTypeObject*)state->Xxo_Type);
+    allocfunc alloc = PyType_GetSlot(state->Xxo_Type, Py_tp_alloc);
+    PyObject *self = alloc(state->Xxo_Type, 0);
     if (self == NULL) {
         return NULL;
     }
-    self->x_attr = NULL;
-    memset(self->x_buffer, 0, BUFSIZE);
-    self->x_exports = 0;
+    XxoObject_Data *xxo_data = PyObject_GetTypeData(self, state->Xxo_Type);
+    if (xxo_data == NULL) {
+        return NULL;
+    }
+    xxo_data->x_attr = NULL;
+    memset(xxo_data->x_buffer, 0, BUFSIZE);
+    xxo_data->x_exports = 0;
     return self;
+}
+
+static xx_state *
+Xxo_state_from_type(PyTypeObject *type, void *token)
+{
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(type, &Xxo_Type_spec, &base) < 0) {
+        return NULL;
+    }
+    if (base == NULL) {
+        return NULL;
+    }
+    xx_state *state = PyType_GetModuleState(base);
+    return state;
+}
+
+#include <stdio.h>
+
+static XxoObject_Data *
+Xxo_get_data(PyObject *self)
+{
+    xx_state *state = Xxo_state_from_type(Py_TYPE(self), &Xxo_Type_spec);
+    if (!state) {
+        return NULL;
+    }
+    XxoObject_Data *data = PyObject_GetTypeData(self, state->Xxo_Type);
+    return data;
 }
 
 /* Xxo finalization.
@@ -125,33 +157,42 @@ newXxoObject(PyObject *module)
 
 // traverse: Visit all references from an object, including its type
 static int
-Xxo_traverse(PyObject *op, visitproc visit, void *arg)
+Xxo_traverse(PyObject *self, visitproc visit, void *arg)
 {
     // Visit the type
-    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(Py_TYPE(self));
 
     // Visit the attribute dict
-    XxoObject *self = XxoObject_CAST(op);
-    Py_VISIT(self->x_attr);
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return 0;
+    }
+    Py_VISIT(data->x_attr);
     return 0;
 }
 
 // clear: drop references in order to break all reference cycles
 static int
-Xxo_clear(PyObject *op)
+Xxo_clear(PyObject *self)
 {
-    XxoObject *self = XxoObject_CAST(op);
-    Py_CLEAR(self->x_attr);
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return 0;
+    }
+    Py_CLEAR(data->x_attr);
     return 0;
 }
 
 // finalize: like clear, but should leave the object in a consistent state.
 // Equivalent to `__del__` in Python.
 static void
-Xxo_finalize(PyObject *op)
+Xxo_finalize(PyObject *self)
 {
-    XxoObject *self = XxoObject_CAST(op);
-    Py_CLEAR(self->x_attr);
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return;
+    }
+    Py_CLEAR(data->x_attr);
 }
 
 // dealloc: drop all remaining references and free memory
@@ -171,11 +212,14 @@ Xxo_dealloc(PyObject *self)
 
 // Get an attribute.
 static PyObject *
-Xxo_getattro(PyObject *op, PyObject *name)
+Xxo_getattro(PyObject *self, PyObject *name)
 {
-    XxoObject *self = XxoObject_CAST(op);
-    if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return 0;
+    }
+    if (data->x_attr != NULL) {
+        PyObject *v = PyDict_GetItemWithError(data->x_attr, name);
         if (v != NULL) {
             return Py_NewRef(v);
         }
@@ -185,24 +229,27 @@ Xxo_getattro(PyObject *op, PyObject *name)
     }
     // Fall back to generic implementation (this handles special attributes,
     // raising AttributeError, etc.)
-    return PyObject_GenericGetAttr(op, name);
+    return PyObject_GenericGetAttr(self, name);
 }
 
 // Set or delete an attribute.
 static int
-Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
+Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
 {
-    XxoObject *self = XxoObject_CAST(op);
-    if (self->x_attr == NULL) {
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return -1;
+    }
+    if (data->x_attr == NULL) {
         // prepare the attribute dict
-        self->x_attr = PyDict_New();
-        if (self->x_attr == NULL) {
+        data->x_attr = PyDict_New();
+        if (data->x_attr == NULL) {
             return -1;
         }
     }
     if (v == NULL) {
         // delete an attribute
-        int rv = PyDict_DelItem(self->x_attr, name);
+        int rv = PyDict_DelItem(data->x_attr, name);
         if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Xxo attribute");
@@ -212,7 +259,7 @@ Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
     }
     else {
         // set an attribute
-        return PyDict_SetItem(self->x_attr, name, v);
+        return PyDict_SetItem(data->x_attr, name, v);
     }
 }
 
@@ -221,7 +268,7 @@ Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
  */
 
 static PyObject *
-Xxo_demo(PyObject *op, PyTypeObject *defining_class,
+Xxo_demo(PyObject *self, PyTypeObject *defining_class,
          PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (kwnames != NULL && PyObject_Length(kwnames)) {
@@ -260,30 +307,39 @@ static PyMethodDef Xxo_methods[] = {
  */
 
 static int
-Xxo_getbuffer(PyObject *op, Py_buffer *view, int flags)
+Xxo_getbuffer(PyObject *self, Py_buffer *view, int flags)
 {
-    XxoObject *self = XxoObject_CAST(op);
-    int res = PyBuffer_FillInfo(view, op,
-                               (void *)self->x_buffer, BUFSIZE,
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return -1;
+    }
+    int res = PyBuffer_FillInfo(view, self,
+                               (void *)data->x_buffer, BUFSIZE,
                                0, flags);
     if (res == 0) {
-        self->x_exports++;
+        data->x_exports++;
     }
     return res;
 }
 
 static void
-Xxo_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
+Xxo_releasebuffer(PyObject *self, Py_buffer *Py_UNUSED(view))
 {
-    XxoObject *self = XxoObject_CAST(op);
-    self->x_exports--;
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return;
+    }
+    data->x_exports--;
 }
 
 static PyObject *
-Xxo_get_x_exports(PyObject *op, void *Py_UNUSED(closure))
+Xxo_get_x_exports(PyObject *self, void *Py_UNUSED(closure))
 {
-    XxoObject *self = XxoObject_CAST(op);
-    return PyLong_FromSsize_t(self->x_exports);
+    XxoObject_Data *data = Xxo_get_data(self);
+    if (data == NULL) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(data->x_exports);
 }
 
 /* Xxo type definition */
@@ -309,12 +365,13 @@ static PyType_Slot Xxo_Type_slots[] = {
     {Py_bf_getbuffer, Xxo_getbuffer},
     {Py_bf_releasebuffer, Xxo_releasebuffer},
     {Py_tp_getset, Xxo_getsetlist},
+    {Py_tp_token, Py_TP_USE_SPEC},
     {0, 0},  /* sentinel */
 };
 
 static PyType_Spec Xxo_Type_spec = {
     .name = "xxlimited.Xxo",
-    .basicsize = sizeof(XxoObject),
+    .basicsize = -(Py_ssize_t)sizeof(XxoObject_Data),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .slots = Xxo_Type_slots,
 };
@@ -354,17 +411,15 @@ xx_foo(PyObject *module, PyObject *args)
 }
 
 
-/* Function of no arguments returning new Xxo object */
+/* Function of no arguments returning new Xxo object.
+ * Note that a function exposed to Python with METH_NOARGS requires an unused
+ * second argument, so we cannot use newXxoObject directly.
+ */
 
 static PyObject *
 xx_new(PyObject *module, PyObject *Py_UNUSED(unused))
 {
-    XxoObject *rv;
-
-    rv = newXxoObject(module);
-    if (rv == NULL)
-        return NULL;
-    return (PyObject *)rv;
+    return newXxoObject(module);
 }
 
 
@@ -398,11 +453,12 @@ xx_modexec(PyObject *m)
         return -1;
     }
 
-    state->Xxo_Type = PyType_FromModuleAndSpec(m, &Xxo_Type_spec, NULL);
+    state->Xxo_Type = (PyTypeObject*)PyType_FromModuleAndSpec(
+        m, &Xxo_Type_spec, NULL);
     if (state->Xxo_Type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, (PyTypeObject*)state->Xxo_Type) < 0) {
+    if (PyModule_AddType(m, state->Xxo_Type) < 0) {
         return -1;
     }
 
@@ -410,41 +466,18 @@ xx_modexec(PyObject *m)
     // added to the module dict.
     // It does not inherit from "object" (PyObject_Type), but from "str"
     // (PyUnincode_Type).
-    PyObject *Str_Type = PyType_FromModuleAndSpec(
+    PyTypeObject *Str_Type = (PyTypeObject*)PyType_FromModuleAndSpec(
         m, &Str_Type_spec, (PyObject *)&PyUnicode_Type);
     if (Str_Type == NULL) {
         return -1;
     }
-    if (PyModule_AddType(m, (PyTypeObject*)Str_Type) < 0) {
+    if (PyModule_AddType(m, Str_Type) < 0) {
         return -1;
     }
     Py_DECREF(Str_Type);
 
     return 0;
 }
-
-static PyModuleDef_Slot xx_slots[] = {
-
-    /* exec function to initialize the module (called as part of import
-     * after the object was added to sys.modules)
-     */
-    {Py_mod_exec, xx_modexec},
-
-    /* Signal that this module supports being loaded in multiple interpreters
-     * with separate GILs (global interpreter locks).
-     * See "Isolating Extension Modules" on how to prepare a module for this:
-     *   https://docs.python.org/3/howto/isolating-extensions.html
-     */
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-
-    /* Signal that this module does not rely on the GIL for its own needs.
-     * Without this slot, free-threaded builds of CPython will enable
-     * the GIL when this module is loaded.
-     */
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-
-    {0, NULL}
-};
 
 // Module finalization: modules that hold references in their module state
 // need to implement the fullowing GC hooks. They're similar to the ones for
@@ -475,16 +508,40 @@ xx_free(void *module)
     (void)xx_clear((PyObject *)module);
 }
 
-static struct PyModuleDef xxmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "xxlimited",
-    .m_doc = module_doc,
-    .m_size = sizeof(xx_state),
-    .m_methods = xx_methods,
-    .m_slots = xx_slots,
-    .m_traverse = xx_traverse,
-    .m_clear = xx_clear,
-    .m_free = xx_free,
+static PyModuleDef_Slot xx_slots[] = {
+    /* Basic metadata */
+    {Py_mod_name, "xxlimited"},
+    {Py_mod_doc, (void*)module_doc},
+
+    /* The method table */
+    {Py_mod_methods, xx_methods},
+
+    /* exec function to initialize the module (called as part of import
+     * after the object was added to sys.modules)
+     */
+    {Py_mod_exec, xx_modexec},
+
+    /* Module state and associated functions */
+    {Py_mod_state_size, (void*)sizeof(xx_state)},
+    {Py_mod_state_traverse, xx_traverse},
+    {Py_mod_state_clear, xx_clear},
+    {Py_mod_state_free, xx_free},
+
+    /* Signal that this module supports being loaded in multiple interpreters
+     * with separate GILs (global interpreter locks).
+     * See "Isolating Extension Modules" on how to prepare a module for this:
+     *   https://docs.python.org/3/howto/isolating-extensions.html
+     */
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+
+    /* Signal that this module does not rely on the GIL for its own needs.
+     * Without this slot, free-threaded builds of CPython will enable
+     * the GIL when this module is loaded.
+     */
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+
+
+    {0, NULL}
 };
 
 
@@ -492,8 +549,8 @@ static struct PyModuleDef xxmodule = {
  * the only non-`static` object in a module definition.
  */
 
-PyMODINIT_FUNC
-PyInit_xxlimited(void)
+PyMODEXPORT_FUNC
+PyModExport_xxlimited(void)
 {
-    return PyModuleDef_Init(&xxmodule);
+    return xx_slots;
 }
