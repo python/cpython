@@ -524,6 +524,27 @@ class TracebackCases(unittest.TestCase):
                     b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected)
 
+    def test_when_io_is_lost(self):
+        # GH-142737: Display the traceback even if io.open is lost
+        code = textwrap.dedent("""\
+            import builtins
+            import sys
+
+            def bad_import(name, *args, **kwargs):
+                sys.modules[name] = 42
+                return sys.modules[name]
+
+            builtins.__import__ = bad_import
+            raise RuntimeError("should not crash")
+        """)
+        rc, stdout, stderr = assert_python_failure('-c', code)
+        expected = [b'Exception ignored in the internal traceback machinery:',
+                    b'AttributeError: \'int\' object has no attribute \'_print_exception_bltin\'',
+                    b'Traceback (most recent call last):',
+                    b'  File "<string>", line 9, in <module>',
+                    b'RuntimeError: should not crash']
+        self.assertEqual(stderr.splitlines(), expected)
+
     def test_print_exception(self):
         output = StringIO()
         traceback.print_exception(
@@ -2268,7 +2289,7 @@ class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
 
 @cpython_only
 @force_not_colorized_test_class
-class TestFallbackFormatWhenPrinterRaises(unittest.TestCase, TracebackFormatMixin):
+class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
         self.original_unraisable_hook = sys.unraisablehook
@@ -2280,40 +2301,6 @@ class TestFallbackFormatWhenPrinterRaises(unittest.TestCase, TracebackFormatMixi
     def tearDown(self) -> None:
         traceback._print_exception_bltin = self.original_hook
         sys.unraisablehook = self.original_unraisable_hook
-        return super().tearDown()
-
-@cpython_only
-@force_not_colorized_test_class
-class TestFallbackFormatWhenIOUnavailable(unittest.TestCase, TracebackFormatMixin):
-    """See GH-142737."""
-
-    def setUp(self) -> None:
-        import io
-        self.original_io = io
-        self.original_hook = traceback._print_exception_bltin
-
-        # Triggers fallback path
-        traceback._print_exception_bltin = object()
-
-        # StringIO is still needed for test.support.captured_output() to work
-        sys.modules['io'] = types.SimpleNamespace(StringIO=io.StringIO)
-        return super().setUp()
-
-    def test_unhashable(self):
-        raise unittest.SkipTest(
-            "io unavailable (test requires source lines to be captured in tracebacks)")
-
-    def test_traceback_format_with_cleared_frames(self):
-        raise unittest.SkipTest(
-            "io unavailable (test requires source lines to be captured in tracebacks)")
-
-    def test_traceback_format(self):
-        raise unittest.SkipTest(
-            "io unavailable (test requires source lines to be captured in tracebacks)")
-
-    def tearDown(self) -> None:
-        sys.modules['io'] = self.original_io
-        traceback._print_exception_bltin = self.original_hook
         return super().tearDown()
 
 class BaseExceptionReportingTests:
