@@ -91,3 +91,23 @@ Py_FrozenMain
 # cpython/unicodeobject.h
 PyUnicode_IS_COMPACT
 PyUnicode_IS_COMPACT_ASCII
+# 3.13 only
+Py_TPFLAGS_PREHEADER
+Py_MEMCPY
+PyUnicode_Append
+PyUnicode_AppendAndDel
+PyUnicode_AsDecodedObject
+PyUnicode_AsDecodedUnicode
+PyUnicode_AsEncodedObject
+PyUnicode_AsEncodedUnicode
+PyUnicode_Resize
+Py_UNICODE_REPLACEMENT_CHARACTER
+PyObject_CallFinalizer
+PyObject_CallFinalizerFromDealloc
+Py_TRASHCAN_BEGIN
+Py_TRASHCAN_END
+Py_TRASHCAN_HEADROOM
+Py_C_RECURSION_LIMIT
+PyUnicode_CHECK_INTERNED
+PyUnicode_IS_ASCII
+PyUnicode_IS_READY
