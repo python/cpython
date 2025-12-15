@@ -407,7 +407,7 @@ by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
                  wrap:
                      * See?
 
-   optional arguments:
+   options:
      -h, --help  show this help message and exit
 
 
