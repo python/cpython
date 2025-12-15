@@ -677,16 +677,14 @@ error:
     return NULL;
 }
 
-/* Helper to build and emit a sample to the collector */
-static int
-emit_sample(RemoteDebuggingState *state, PyObject *collector,
-            uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
-            const uint32_t *frame_indices, size_t stack_depth,
-            BinaryReader *reader, uint64_t timestamp_us)
+/* Helper to build sample_list from frame indices (shared by emit functions) */
+static PyObject *
+build_sample_list(RemoteDebuggingState *state, BinaryReader *reader,
+                  uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
+                  const uint32_t *frame_indices, size_t stack_depth)
 {
     PyObject *frame_list = NULL, *thread_info = NULL, *thread_list = NULL;
-    PyObject *interp_info = NULL, *sample_list = NULL, *result = NULL;
-    int ret = -1;
+    PyObject *interp_info = NULL, *sample_list = NULL;
 
     frame_list = build_frame_list(state, reader, frame_indices, stack_depth);
     if (!frame_list) {
@@ -735,27 +733,54 @@ emit_sample(RemoteDebuggingState *state, PyObject *collector,
         goto error;
     }
     PyList_SET_ITEM(sample_list, 0, interp_info);
-    interp_info = NULL;
-
-    /* Pass timestamp_us to collector - collectors use it if provided */
-    PyObject *timestamp_obj = PyLong_FromUnsignedLongLong(timestamp_us);
-    if (!timestamp_obj) {
-        goto error;
-    }
-    result = PyObject_CallMethod(collector, "collect", "OO", sample_list, timestamp_obj);
-    Py_DECREF(timestamp_obj);
-    if (result) {
-        ret = 0;
-    }
+    return sample_list;
 
 error:
-    Py_XDECREF(result);
     Py_XDECREF(sample_list);
     Py_XDECREF(interp_info);
     Py_XDECREF(thread_list);
     Py_XDECREF(thread_info);
     Py_XDECREF(frame_list);
-    return ret;
+    return NULL;
+}
+
+/* Helper to emit a sample to the collector. timestamps_list is borrowed. */
+static int
+emit_sample(RemoteDebuggingState *state, PyObject *collector,
+            uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
+            const uint32_t *frame_indices, size_t stack_depth,
+            BinaryReader *reader, PyObject *timestamps_list)
+{
+    PyObject *sample_list = build_sample_list(state, reader, thread_id,
+                                               interpreter_id, status,
+                                               frame_indices, stack_depth);
+    if (!sample_list) {
+        return -1;
+    }
+
+    PyObject *result = PyObject_CallMethod(collector, "collect", "OO", sample_list, timestamps_list);
+    Py_DECREF(sample_list);
+
+    if (!result) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+/* Helper to trim timestamp list and emit batch. Returns 0 on success, -1 on error. */
+static int
+emit_batch(RemoteDebuggingState *state, PyObject *collector,
+           uint64_t thread_id, uint32_t interpreter_id, uint8_t status,
+           const uint32_t *frame_indices, size_t stack_depth,
+           BinaryReader *reader, PyObject *timestamps_list, Py_ssize_t actual_size)
+{
+    /* Trim list to actual size */
+    if (PyList_SetSlice(timestamps_list, actual_size, PyList_GET_SIZE(timestamps_list), NULL) < 0) {
+        return -1;
+    }
+    return emit_sample(state, collector, thread_id, interpreter_id, status,
+                       frame_indices, stack_depth, reader, timestamps_list);
 }
 
 /* Helper to invoke progress callback, clearing any errors */
@@ -849,35 +874,71 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             reader->stats.repeat_records++;
             reader->stats.repeat_samples += count;
 
+            /* Process RLE samples, batching by status */
+            PyObject *timestamps_list = NULL;
+            uint8_t batch_status = 0;
+            Py_ssize_t batch_idx = 0;
+
             for (uint32_t i = 0; i < count; i++) {
                 size_t delta_prev_offset = offset;
                 uint64_t delta = decode_varint_u64(reader->sample_data, &offset, reader->sample_data_size);
-                /* Detect varint decode failure: offset unchanged means error (overflow or truncated) */
                 if (offset == delta_prev_offset) {
+                    Py_XDECREF(timestamps_list);
                     PyErr_SetString(PyExc_ValueError, "Malformed varint in RLE sample data");
                     return -1;
                 }
                 if (offset >= reader->sample_data_size) {
+                    Py_XDECREF(timestamps_list);
                     PyErr_SetString(PyExc_ValueError, "Unexpected end of sample data in RLE");
                     return -1;
                 }
                 uint8_t status = reader->sample_data[offset++];
-
                 ts->prev_timestamp += delta;
 
-                /* Emit sample using cached stack */
-                if (emit_sample(state, collector, thread_id, interpreter_id, status,
-                               ts->current_stack, ts->current_stack_depth, reader,
-                               ts->prev_timestamp) < 0) {
+                /* Start new batch on first sample or status change */
+                if (i == 0 || status != batch_status) {
+                    if (timestamps_list) {
+                        int rc = emit_batch(state, collector, thread_id, interpreter_id,
+                                            batch_status, ts->current_stack, ts->current_stack_depth,
+                                            reader, timestamps_list, batch_idx);
+                        Py_DECREF(timestamps_list);
+                        if (rc < 0) {
+                            return -1;
+                        }
+                    }
+                    timestamps_list = PyList_New(count - i);
+                    if (!timestamps_list) {
+                        return -1;
+                    }
+                    batch_status = status;
+                    batch_idx = 0;
+                }
+
+                PyObject *ts_obj = PyLong_FromUnsignedLongLong(ts->prev_timestamp);
+                if (!ts_obj) {
+                    Py_DECREF(timestamps_list);
                     return -1;
                 }
-                replayed++;
-                reader->stats.total_samples++;
+                PyList_SET_ITEM(timestamps_list, batch_idx++, ts_obj);
+            }
 
-                /* Progress callback inside RLE loop for smooth updates */
-                if (replayed % PROGRESS_CALLBACK_INTERVAL == 0) {
-                    invoke_progress_callback(progress_callback, replayed, reader->sample_count);
+            /* Emit final batch */
+            if (timestamps_list) {
+                int rc = emit_batch(state, collector, thread_id, interpreter_id,
+                                    batch_status, ts->current_stack, ts->current_stack_depth,
+                                    reader, timestamps_list, batch_idx);
+                Py_DECREF(timestamps_list);
+                if (rc < 0) {
+                    return -1;
                 }
+            }
+
+            replayed += count;
+            reader->stats.total_samples += count;
+
+            /* Progress callback after batch */
+            if (replayed % PROGRESS_CALLBACK_INTERVAL < count) {
+                invoke_progress_callback(progress_callback, replayed, reader->sample_count);
             }
             break;
         }
@@ -918,11 +979,25 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             }
             reader->stats.stack_reconstructions++;
 
-            if (emit_sample(state, collector, thread_id, interpreter_id, status,
-                           ts->current_stack, ts->current_stack_depth, reader,
-                           ts->prev_timestamp) < 0) {
+            /* Build single-element timestamp list */
+            PyObject *ts_obj = PyLong_FromUnsignedLongLong(ts->prev_timestamp);
+            if (!ts_obj) {
                 return -1;
             }
+            PyObject *timestamps_list = PyList_New(1);
+            if (!timestamps_list) {
+                Py_DECREF(ts_obj);
+                return -1;
+            }
+            PyList_SET_ITEM(timestamps_list, 0, ts_obj);
+
+            if (emit_sample(state, collector, thread_id, interpreter_id, status,
+                           ts->current_stack, ts->current_stack_depth, reader,
+                           timestamps_list) < 0) {
+                Py_DECREF(timestamps_list);
+                return -1;
+            }
+            Py_DECREF(timestamps_list);
             replayed++;
             reader->stats.total_samples++;
             break;

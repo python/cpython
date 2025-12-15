@@ -518,7 +518,7 @@ class HeatmapCollector(StackTraceCollector):
         }
         self.stats.update(kwargs)
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         """Process stack frames and count samples per line.
 
         Args:
@@ -526,8 +526,9 @@ class HeatmapCollector(StackTraceCollector):
                     leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
                     opcode is None if not gathered.
             thread_id: Thread ID for this stack trace
+            weight: Number of samples this stack represents (for batched RLE)
         """
-        self._total_samples += 1
+        self._total_samples += weight
         self._seen_lines.clear()
 
         for i, (filename, location, funcname, opcode) in enumerate(frames):
@@ -545,15 +546,16 @@ class HeatmapCollector(StackTraceCollector):
                 self._seen_lines.add(line_key)
 
             self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf,
-                                     count_cumulative=count_cumulative)
+                                     count_cumulative=count_cumulative, weight=weight)
 
             if opcode is not None:
                 # Set opcodes_enabled flag when we first encounter opcode data
                 self.opcodes_enabled = True
                 self._record_bytecode_sample(filename, lineno, opcode,
-                                             end_lineno, col_offset, end_col_offset)
+                                             end_lineno, col_offset, end_col_offset,
+                                             weight=weight)
 
-            # Build call graph for adjacent frames
+            # Build call graph for adjacent frames (relationships are deduplicated anyway)
             if i + 1 < len(frames):
                 next_frame = frames[i + 1]
                 next_lineno = extract_lineno(next_frame[1])
@@ -575,24 +577,25 @@ class HeatmapCollector(StackTraceCollector):
         return True
 
     def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
-                            count_cumulative=True):
+                            count_cumulative=True, weight=1):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
         if count_cumulative:
-            self.line_samples[(filename, lineno)] += 1
-            self.file_samples[filename][lineno] += 1
+            self.line_samples[(filename, lineno)] += weight
+            self.file_samples[filename][lineno] += weight
 
         # Track self/leaf samples (only when at top of stack)
         if is_leaf:
-            self.line_self_samples[(filename, lineno)] += 1
-            self.file_self_samples[filename][lineno] += 1
+            self.line_self_samples[(filename, lineno)] += weight
+            self.file_self_samples[filename][lineno] += weight
 
         # Record function definition location
         if funcname and (filename, funcname) not in self.function_definitions:
             self.function_definitions[(filename, funcname)] = lineno
 
     def _record_bytecode_sample(self, filename, lineno, opcode,
-                                end_lineno=None, col_offset=None, end_col_offset=None):
+                                end_lineno=None, col_offset=None, end_col_offset=None,
+                                weight=1):
         """Record a sample for a specific bytecode instruction.
 
         Args:
@@ -602,6 +605,7 @@ class HeatmapCollector(StackTraceCollector):
             end_lineno: End line number (may be -1 if not available)
             col_offset: Column offset in UTF-8 bytes (may be -1 if not available)
             end_col_offset: End column offset in UTF-8 bytes (may be -1 if not available)
+            weight: Number of samples this represents (for batched RLE)
         """
         key = (filename, lineno)
 
@@ -609,7 +613,7 @@ class HeatmapCollector(StackTraceCollector):
         if opcode not in self.line_opcodes[key]:
             self.line_opcodes[key][opcode] = {'count': 0, 'locations': set()}
 
-        self.line_opcodes[key][opcode]['count'] += 1
+        self.line_opcodes[key][opcode]['count'] += weight
 
         # Store unique location info if column offset is available (not -1)
         if col_offset is not None and col_offset >= 0:

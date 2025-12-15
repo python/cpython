@@ -62,8 +62,10 @@ class RawCollector:
         self.by_thread = defaultdict(list)
         self.total_count = 0
 
-    def collect(self, stack_frames, timestamp_us=None):
+    def collect(self, stack_frames, timestamps_us):
         """Capture the raw sample data."""
+        # timestamps_us is a list; add one sample per timestamp
+        count = len(timestamps_us)
         for interp in stack_frames:
             for thread in interp.threads:
                 frames = []
@@ -76,13 +78,10 @@ class RawCollector:
                         }
                     )
                 key = (interp.interpreter_id, thread.thread_id)
-                self.by_thread[key].append(
-                    {
-                        "status": thread.status,
-                        "frames": frames,
-                    }
-                )
-                self.total_count += 1
+                sample = {"status": thread.status, "frames": frames}
+                for _ in range(count):
+                    self.by_thread[key].append(sample)
+                self.total_count += count
 
     def export(self, filename):
         pass

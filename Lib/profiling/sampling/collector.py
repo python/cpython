@@ -86,6 +86,17 @@ class Collector(ABC):
         # Phase 3: Build linear stacks from each leaf to root (optimized - no sorting!)
         yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parent)
 
+    def _iter_stacks(self, stack_frames, skip_idle=False):
+        """Yield (frames, thread_id) for all stacks, handling both sync and async modes."""
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                if frames:
+                    yield frames, thread_id
+        else:
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if frames:
+                    yield frames, thread_id
+
     def _build_task_graph(self, awaited_info_list):
         task_map = {}
         child_to_parent = {}  # Maps child_id -> (selected_parent_id, parent_count)
