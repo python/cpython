@@ -2304,10 +2304,7 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
-    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_CLEARED);
-#ifdef Py_GIL_DISABLED
-    ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_CLEARED;
-#endif
+    gen_set_frame_state(gen, tstate, FRAME_CLEARED);
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;

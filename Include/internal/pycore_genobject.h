@@ -34,30 +34,6 @@ PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
 
-// Mark the generator as executing. Returns true if the state was changed,
-// false if it was already executing or finished.
-static inline bool
-_PyGen_SetExecuting(PyGenObject *gen)
-{
-#ifdef Py_GIL_DISABLED
-    if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
-        int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
-        while (frame_state < FRAME_EXECUTING) {
-            if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
-                                                 &frame_state,
-                                                 FRAME_EXECUTING)) {
-                return true;
-            }
-        }
-    }
-#endif
-    if (gen->gi_frame_state < FRAME_EXECUTING) {
-        gen->gi_frame_state = FRAME_EXECUTING;
-        return true;
-    }
-    return false;
-}
-
 extern void _PyGen_Finalize(PyObject *self);
 
 // Export for '_asyncio' shared extension

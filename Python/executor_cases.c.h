@@ -6089,7 +6089,7 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+            if (!gen_try_set_executing((PyGenObject *)gen)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
@@ -6132,11 +6132,7 @@
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
-            #ifdef Py_GIL_DISABLED
-            ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_SUSPENDED + oparg;
-            #endif
-
+            gen_set_frame_state(gen, tstate, FRAME_SUSPENDED + oparg);
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE
             assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
@@ -10829,7 +10825,7 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+            if (!gen_try_set_executing((PyGenObject *)gen)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_JUMP_TARGET();
@@ -10866,7 +10862,7 @@
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+            if (!gen_try_set_executing((PyGenObject *)gen)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(1);
                 JUMP_TO_JUMP_TARGET();
@@ -10904,7 +10900,7 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+            if (!gen_try_set_executing((PyGenObject *)gen)) {
                 UOP_STAT_INC(uopcode, miss);
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();

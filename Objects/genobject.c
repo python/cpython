@@ -234,7 +234,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
         _PyErr_ChainStackItem();
     }
 
-#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#if defined(Py_GIL_DISABLED)
     ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_EXECUTING;
 #endif
 

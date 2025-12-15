@@ -5375,7 +5375,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
-                if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+                if (!gen_try_set_executing((PyGenObject *)gen)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
@@ -7156,11 +7156,7 @@
                 _PyInterpreterFrame *gen_frame = frame;
                 frame = tstate->current_frame = frame->previous;
                 gen_frame->previous = NULL;
-                FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
-                #ifdef Py_GIL_DISABLED
-                ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_SUSPENDED + oparg;
-                #endif
-
+                gen_set_frame_state(gen, tstate, FRAME_SUSPENDED + oparg);
                 assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
                 #if TIER_ONE
                 assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
@@ -10117,7 +10113,7 @@
                 assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
-                    _PyGen_SetExecuting((PyGenObject *)receiver_o))
+                    gen_try_set_executing((PyGenObject *)receiver_o))
                 {
                     PyGenObject *gen = (PyGenObject *)receiver_o;
                     _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
@@ -10216,7 +10212,7 @@
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
                     JUMP_TO_PREDICTED(SEND);
                 }
-                if (!_PyGen_SetExecuting((PyGenObject *)gen)) {
+                if (!gen_try_set_executing((PyGenObject *)gen)) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
                     JUMP_TO_PREDICTED(SEND);
@@ -11806,11 +11802,7 @@
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, FRAME_SUSPENDED + oparg);
-            #ifdef Py_GIL_DISABLED
-            ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_SUSPENDED + oparg;
-            #endif
-
+            gen_set_frame_state(gen, tstate, FRAME_SUSPENDED + oparg);
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             #if TIER_ONE
             assert(frame->instr_ptr->op.code == INSTRUMENTED_LINE ||
