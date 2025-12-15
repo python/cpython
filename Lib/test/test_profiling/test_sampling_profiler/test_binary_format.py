@@ -19,11 +19,7 @@ try:
         THREAD_STATUS_GIL_REQUESTED,
         THREAD_STATUS_HAS_EXCEPTION,
     )
-    from profiling.sampling.binary_collector import (
-        BinaryCollector,
-        COMPRESSION_NONE,
-        COMPRESSION_ZSTD,
-    )
+    from profiling.sampling.binary_collector import BinaryCollector
     from profiling.sampling.binary_reader import BinaryReader
 
     ZSTD_AVAILABLE = _remote_debugging.zstd_available()
