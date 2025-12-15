@@ -200,6 +200,36 @@ On most systems, attaching to another process requires appropriate permissions.
 See :ref:`profiling-permissions` for platform-specific requirements.
 
 
+.. _replay-command:
+
+The ``replay`` command
+----------------------
+
+The ``replay`` command converts binary profile files to other output formats::
+
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+
+This command is useful when you have captured profiling data in binary format
+and want to analyze it later or convert it to a visualization format. Binary
+profiles can be replayed multiple times to different formats without
+re-profiling.
+
+::
+
+   # Convert binary to pstats (default, prints to stdout)
+   python -m profiling.sampling replay profile.bin
+
+   # Convert binary to flame graph
+   python -m profiling.sampling replay --flamegraph -o output.html profile.bin
+
+   # Convert binary to gecko format for Firefox Profiler
+   python -m profiling.sampling replay --gecko -o profile.json profile.bin
+
+   # Convert binary to heatmap
+   python -m profiling.sampling replay --heatmap -o my_heatmap profile.bin
+
+
 Profiling in production
 -----------------------
 
@@ -967,6 +997,57 @@ intuitive view that shows exactly where time is spent without requiring
 interpretation of hierarchical visualizations.
 
 
+Binary format
+-------------
+
+Binary format (:option:`--binary`) produces a compact binary file for efficient
+storage of profiling data::
+
+   python -m profiling.sampling run --binary -o profile.bin script.py
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+The :option:`--compression` option controls data compression:
+
+- ``auto`` (default): Use zstd compression if available, otherwise no
+  compression
+- ``zstd``: Force zstd compression (requires zstd support)
+- ``none``: Disable compression
+
+::
+
+   python -m profiling.sampling run --binary --compression=zstd -o profile.bin script.py
+
+To analyze binary profiles, use the :ref:`replay-command` to convert them to
+other formats like flame graphs or pstats output.
+
+
+Record and replay workflow
+==========================
+
+The binary format combined with the replay command enables a record-and-replay
+workflow that separates data capture from analysis. Rather than generating
+visualizations during profiling, you capture raw data to a compact binary file
+and convert it to different formats later.
+
+This approach has three main benefits. First, sampling runs faster because the
+work of building data structures for visualization is deferred until replay.
+Second, a single binary capture can be converted to multiple output formats
+without re-profiling---pstats for a quick overview, flame graph for visual
+exploration, heatmap for line-level detail. Third, binary files are compact
+and easy to share with colleagues who can convert them to their preferred
+format.
+
+A typical workflow::
+
+   # Capture profile in production or during tests
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+   # Later, analyze with different formats
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+   python -m profiling.sampling replay --heatmap -o heatmap profile.bin
+
+
 Live mode
 =========
 
@@ -1178,6 +1259,10 @@ Global options
 
    Attach to and profile a running process by PID.
 
+.. option:: replay
+
+   Convert a binary profile file to another output format.
+
 
 Sampling options
 ----------------
@@ -1256,12 +1341,22 @@ Output options
 
    Generate HTML heatmap with line-level sample counts.
 
+.. option:: --binary
+
+   Generate high-performance binary format for later conversion with the
+   ``replay`` command.
+
+.. option:: --compression <type>
+
+   Compression for binary format: ``auto`` (use zstd if available, default),
+   ``zstd``, or ``none``.
+
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   ``--pstats`` writes to stdout, ``--flamegraph`` and ``--gecko`` generate
-   files like ``flamegraph.PID.html``, and ``--heatmap`` creates a directory
-   named ``heatmap_PID``.
+   ``--pstats`` writes to stdout, ``--flamegraph``, ``--gecko``, and
+   ``--binary`` generate files like ``flamegraph.PID.html``, and ``--heatmap``
+   creates a directory named ``heatmap_PID``.
 
 
 pstats display options
