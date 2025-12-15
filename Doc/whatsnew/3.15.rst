@@ -74,6 +74,8 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+* :ref:`__pycache__ directories now contain a .gitignore file
+  <whatsnew315-pycache-gitignore>`
 
 
 New features
@@ -396,6 +398,12 @@ Other language changes
 * Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
   for any class.
   (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
+.. _whatsnew315-pycache-gitignore:
+
+* :file:`__pycache__` directories now contain a :file:`.gitignore` file for Git
+  that ignores their contents.
+  (Contributed by Stan Ulbrych in :gh:`141081`.)
 
 
 New modules
