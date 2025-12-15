@@ -1,3 +1,4 @@
+pip install
 trigger: ['main', '3.*']
 
 jobs:
