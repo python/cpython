@@ -282,7 +282,7 @@
 
         case _LOAD_FAST_CHECK_r12: {
             CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
@@ -304,13 +304,13 @@
             _tos_cache1 = value;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
         case _LOAD_FAST_CHECK_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
@@ -335,7 +335,7 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
@@ -6507,7 +6507,7 @@
 
         case _LOAD_LOCALS_r12: {
             CHECK_CURRENT_CACHED_VALUES(1);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef locals;
             _PyStackRef _stack_item_0 = _tos_cache0;
             PyObject *l = LOCALS();
@@ -6526,13 +6526,13 @@
             _tos_cache1 = locals;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
         case _LOAD_LOCALS_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef locals;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
@@ -6554,7 +6554,7 @@
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(3);
-            assert(WITHIN_STACK_BOUNDS_WITH_CACHE());
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
 
