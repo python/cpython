@@ -1117,8 +1117,6 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
     return NULL;
 }
 
-/*clinic*/
-
 /*[clinic input]
 mmap.mmap.set_name
 
