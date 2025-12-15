@@ -967,19 +967,6 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             parent, exc)
                 return
-
-            if part == _PYCACHE:
-                gitignore = _path_join(parent, '.gitignore')
-                try:
-                    _path_stat(gitignore)
-                except FileNotFoundError:
-                    gitignore_content = b'# Created by CPython\n*\n'
-                    try:
-                        _write_atomic(gitignore, gitignore_content, _mode)
-                    except OSError:
-                        pass
-                except OSError:
-                    pass
         try:
             _write_atomic(path, data, _mode)
             _bootstrap._verbose_message('created {!r}', path)
