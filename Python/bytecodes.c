@@ -810,7 +810,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = (int)CURRENT_OPERAND0();
+            next_oparg = (int)CURRENT_OPERAND0_16();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -1126,9 +1126,9 @@ dummy_func(
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
         macro(STORE_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- )) {
+        op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -1151,9 +1151,9 @@ dummy_func(
                                         PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);  // unlock before decrefs!
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(list_st);
+            INPUTS_DEAD();
+            ls = list_st;
+            ss = sub_st;
             Py_DECREF(old_value);
         }
 
@@ -2318,20 +2318,22 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                *attr = PyStackRef_NULL;
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, attr);
+                _PyCStackRef method;
+                _PyThreadState_PushCStackRef(tstate, &method);
+                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
                 if (is_meth) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
+                    assert(!PyStackRef_IsNull(method.ref)); // No errors on this branch
                     self_or_null[0] = owner;  // Transfer ownership
                     DEAD(owner);
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -2341,8 +2343,9 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     PyStackRef_CLOSE(owner);
-                    ERROR_IF(PyStackRef_IsNull(*attr));
                     self_or_null[0] = PyStackRef_NULL;
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
+                    ERROR_IF(PyStackRef_IsNull(attr));
                 }
             }
             else {
@@ -2350,7 +2353,7 @@ dummy_func(
                 PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
                 ERROR_IF(attr_o == NULL);
-                *attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
         }
 
@@ -4037,18 +4040,17 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
         }
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        op(_CALL_STR_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
-            PyStackRef_CLOSE(arg);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a = arg;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4058,6 +4060,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
@@ -4065,18 +4068,17 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
         }
 
-        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+        op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
-            PyStackRef_CLOSE(arg);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a = arg;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4086,6 +4088,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -4183,7 +4186,7 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, a, c)) {
             /* Builtin METH_O functions */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4203,12 +4206,12 @@ dummy_func(
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
-            PyStackRef_CLOSE(arg);
-            DEAD(args);
-            DEAD(self_or_null);
-            PyStackRef_CLOSE(callable);
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4216,6 +4219,8 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
+            POP_TOP +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
@@ -4279,7 +4284,9 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_LEN +
-            _CALL_LEN;
+            _CALL_LEN +
+            POP_TOP +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4287,9 +4294,8 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.len);
         }
 
-        op(_CALL_LEN, (callable, null, arg -- res)) {
+        op(_CALL_LEN, (callable, null, arg -- res, a, c)) {
             /* len(o) */
-            (void)null;
             STAT_INC(CALL, hit);
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             Py_ssize_t len_i = PyObject_Length(arg_o);
@@ -4301,9 +4307,9 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(arg);
-            DEAD(null);
-            PyStackRef_CLOSE(callable);
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -5337,13 +5343,17 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
+            SYNC_SP();
             GOTO_TIER_ONE((frame->owner == FRAME_OWNED_BY_INTERPRETER)
                 ? _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
+            SYNC_SP();
             int err = _Py_HandlePending(tstate);
             GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
@@ -5351,6 +5361,10 @@ dummy_func(
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
             GOTO_TIER_ONE(NULL);
+            Py_UNREACHABLE();
+        }
+
+        tier2 op(_SPILL_OR_RELOAD, (--)) {
         }
 
         /* Progress is guaranteed if we DEOPT on the eval breaker, because
@@ -5381,6 +5395,7 @@ dummy_func(
                 TIER2_TO_TIER2(exit->executor);
             }
             else {
+                SYNC_SP();
                 if (!backoff_counter_triggers(temperature)) {
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target);
@@ -5399,13 +5414,16 @@ dummy_func(
                     GOTO_TIER_ONE_CONTINUE_TRACING(target);
                 }
                 GOTO_TIER_ONE(target);
+                Py_UNREACHABLE();
             }
         }
 
         tier2 op(_COLD_DYNAMIC_EXIT, ( -- )) {
+            SYNC_SP();
             // TODO (gh-139109): This should be similar to _COLD_EXIT in the future.
             _Py_CODEUNIT *target = frame->instr_ptr;
             GOTO_TIER_ONE(target);
+            Py_UNREACHABLE();
         }
 
         tier2 op(_GUARD_IP__PUSH_FRAME, (ip/4 --)) {

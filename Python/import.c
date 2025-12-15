@@ -2003,7 +2003,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
         if (!PyErr_Occurred()) {
             PyErr_Format(
                 PyExc_SystemError,
-                "slot export function for module %s failed without setting an exception",
+                "module export hook for module %R failed without setting an exception",
                 info->name);
         }
         return NULL;
@@ -2011,7 +2011,7 @@ import_run_modexport(PyThreadState *tstate, PyModExportFunction ex0,
     if (PyErr_Occurred()) {
         PyErr_Format(
             PyExc_SystemError,
-            "slot export function for module %s raised unreported exception",
+            "module export hook for module %R raised unreported exception",
             info->name);
     }
     PyObject *result = PyModule_FromSlotsAndSpec(slots, spec);
@@ -3827,7 +3827,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *abs_name = NULL;
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
-    PyObject *package = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
@@ -3956,7 +3955,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
   error:
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
-    Py_XDECREF(package);
     if (final_mod == NULL) {
         remove_importlib_frames(tstate);
     }
@@ -4416,6 +4414,12 @@ _imp_create_builtin(PyObject *module, PyObject *spec)
         PyErr_Format(PyExc_TypeError,
                      "name must be string, not %.200s",
                      Py_TYPE(name)->tp_name);
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    if (PyUnicode_GetLength(name) == 0) {
+        PyErr_Format(PyExc_ValueError, "name must not be empty");
         Py_DECREF(name);
         return NULL;
     }

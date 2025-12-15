@@ -1,10 +1,13 @@
 """Command-line interface for the sampling profiler."""
 
 import argparse
+import importlib.util
 import os
+import selectors
 import socket
 import subprocess
 import sys
+import time
 
 from .sample import sample, sample_live
 from .pstats_collector import PstatsCollector
@@ -16,6 +19,7 @@ from .constants import (
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
+    PROFILING_MODE_EXCEPTION,
     SORT_MODE_NSAMPLES,
     SORT_MODE_TOTTIME,
     SORT_MODE_CUMTIME,
@@ -40,24 +44,20 @@ class CustomFormatter(
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 
-Commands:
-  run        Run and profile a script or module
-  attach     Attach to and profile a running process
-
 Examples:
   # Run and profile a script
-  python -m profiling.sampling run script.py arg1 arg2
+  `python -m profiling.sampling run script.py arg1 arg2`
 
   # Attach to a running process
-  python -m profiling.sampling attach 1234
+  `python -m profiling.sampling attach 1234`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py
+  `python -m profiling.sampling run --live script.py`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234
+  `python -m profiling.sampling attach --live 1234`
 
-Use 'python -m profiling.sampling <command> --help' for command-specific help."""
+Use `python -m profiling.sampling <command> --help` for command-specific help."""
 
 
 # Constants for socket synchronization
@@ -90,8 +90,57 @@ def _parse_mode(mode_string):
         "wall": PROFILING_MODE_WALL,
         "cpu": PROFILING_MODE_CPU,
         "gil": PROFILING_MODE_GIL,
+        "exception": PROFILING_MODE_EXCEPTION,
     }
     return mode_map[mode_string]
+
+
+def _check_process_died(process):
+    """Check if process died and raise an error with stderr if available."""
+    if process.poll() is None:
+        return  # Process still running
+
+    # Process died - try to get stderr for error message
+    stderr_msg = ""
+    if process.stderr:
+        try:
+            stderr_msg = process.stderr.read().decode().strip()
+        except (OSError, UnicodeDecodeError):
+            pass
+
+    if stderr_msg:
+        raise RuntimeError(stderr_msg)
+    raise RuntimeError(f"Process exited with code {process.returncode}")
+
+
+def _wait_for_ready_signal(sync_sock, process, timeout):
+    """Wait for the ready signal from the subprocess, checking for early death."""
+    deadline = time.monotonic() + timeout
+    sel = selectors.DefaultSelector()
+    sel.register(sync_sock, selectors.EVENT_READ)
+
+    try:
+        while True:
+            _check_process_died(process)
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("timed out")
+
+            if not sel.select(timeout=min(0.1, remaining)):
+                continue
+
+            conn, _ = sync_sock.accept()
+            try:
+                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+            finally:
+                conn.close()
+
+            if ready_signal != _READY_MESSAGE:
+                raise RuntimeError(f"Invalid ready signal received: {ready_signal!r}")
+            return
+    finally:
+        sel.close()
 
 
 def _run_with_sync(original_cmd, suppress_output=False):
@@ -119,24 +168,24 @@ def _run_with_sync(original_cmd, suppress_output=False):
         ) + tuple(target_args)
 
         # Start the process with coordinator
-        # Suppress stdout/stderr if requested (for live mode)
+        # When suppress_output=True (live mode), capture stderr so we can
+        # report errors if the process dies before signaling ready.
+        # When suppress_output=False (normal mode), let stderr inherit so
+        # script errors print to the terminal.
         popen_kwargs = {}
         if suppress_output:
             popen_kwargs["stdin"] = subprocess.DEVNULL
             popen_kwargs["stdout"] = subprocess.DEVNULL
-            popen_kwargs["stderr"] = subprocess.DEVNULL
+            popen_kwargs["stderr"] = subprocess.PIPE
 
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            # Wait for ready signal with timeout
-            with sync_sock.accept()[0] as conn:
-                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
 
-                if ready_signal != _READY_MESSAGE:
-                    raise RuntimeError(
-                        f"Invalid ready signal received: {ready_signal!r}"
-                    )
+            # Close stderr pipe if we were capturing it
+            if process.stderr:
+                process.stderr.close()
 
         except socket.timeout:
             # If we timeout, kill the process and raise an error
@@ -196,6 +245,12 @@ def _add_sampling_options(parser):
         help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
     )
     sampling_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Gather bytecode opcode information for instruction-level profiling "
+        "(shows which bytecode instructions are executing, including specializations).",
+    )
+    sampling_group.add_argument(
         "--async-aware",
         action="store_true",
         help="Enable async-aware profiling (uses task-based stack reconstruction)",
@@ -207,10 +262,12 @@ def _add_mode_options(parser):
     mode_group = parser.add_argument_group("Mode options")
     mode_group.add_argument(
         "--mode",
-        choices=["wall", "cpu", "gil"],
+        choices=["wall", "cpu", "gil", "exception"],
         default="wall",
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
-        "gil (only samples when thread holds the GIL). Incompatible with --async-aware",
+        "gil (only samples when thread holds the GIL), "
+        "exception (only samples when thread has an active exception). "
+        "Incompatible with --async-aware",
     )
     mode_group.add_argument(
         "--async-mode",
@@ -316,13 +373,15 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 
-def _create_collector(format_type, interval, skip_idle):
+def _create_collector(format_type, interval, skip_idle, opcodes=False):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
         interval: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
+        opcodes: Whether to collect opcode information (only used by gecko format
+                 for creating interval markers in Firefox Profiler)
 
     Returns:
         A collector instance of the appropriate type
@@ -332,8 +391,10 @@ def _create_collector(format_type, interval, skip_idle):
         raise ValueError(f"Unknown format: {format_type}")
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
+    # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
+        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
 
     return collector_class(interval, skip_idle=skip_idle)
 
@@ -446,6 +507,13 @@ def _validate_args(args, parser):
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
         )
 
+    # Validate --opcodes is only used with compatible formats
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
+    if args.opcodes and args.format not in opcodes_compatible_formats:
+        parser.error(
+            f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
+        )
+
     # Validate pstats-specific options are only used with pstats format
     if args.format != "pstats":
         issues = []
@@ -485,19 +553,19 @@ def main():
 
 Examples:
   # Run and profile a module
-  python -m profiling.sampling run -m mymodule arg1 arg2
+  `python -m profiling.sampling run -m mymodule arg1 arg2`
 
   # Generate flamegraph from a script
-  python -m profiling.sampling run --flamegraph -o output.html script.py
+  `python -m profiling.sampling run --flamegraph -o output.html script.py`
 
   # Profile with custom interval and duration
-  python -m profiling.sampling run -i 50 -d 30 script.py
+  `python -m profiling.sampling run -i 50 -d 30 script.py`
 
   # Save collapsed stacks to file
-  python -m profiling.sampling run --collapsed -o stacks.txt script.py
+  `python -m profiling.sampling run --collapsed -o stacks.txt script.py`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py""",
+  `python -m profiling.sampling run --live script.py`""",
     )
     run_parser.add_argument(
         "-m",
@@ -533,10 +601,10 @@ Examples:
 
 Examples:
   # Profile all threads, sort by total time
-  python -m profiling.sampling attach -a --sort tottime 1234
+  `python -m profiling.sampling attach -a --sort tottime 1234`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234""",
+  `python -m profiling.sampling attach --live 1234`""",
     )
     attach_parser.add_argument(
         "pid",
@@ -593,7 +661,7 @@ def _handle_attach(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Sample the process
     collector = sample(
@@ -606,6 +674,7 @@ def _handle_attach(args):
         async_aware=args.async_mode if args.async_aware else None,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
     # Handle output
@@ -614,6 +683,25 @@ def _handle_attach(args):
 
 def _handle_run(args):
     """Handle the 'run' command."""
+    # Validate target exists before launching subprocess
+    if args.module:
+        # Temporarily add cwd to sys.path so we can find modules in the
+        # current directory, matching the coordinator's behavior
+        cwd = os.getcwd()
+        added_cwd = False
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+            added_cwd = True
+        try:
+            if importlib.util.find_spec(args.target) is None:
+                sys.exit(f"Error: Module not found: {args.target}")
+        finally:
+            if added_cwd:
+                sys.path.remove(cwd)
+    else:
+        if not os.path.exists(args.target):
+            sys.exit(f"Error: Script not found: {args.target}")
+
     # Check if live mode is requested
     if args.live:
         _handle_live_run(args)
@@ -626,7 +714,10 @@ def _handle_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization
-    process = _run_with_sync(cmd, suppress_output=False)
+    try:
+        process = _run_with_sync(cmd, suppress_output=False)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     # Use PROFILING_MODE_ALL for gecko format
     mode = (
@@ -641,7 +732,7 @@ def _handle_run(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
     # Profile the subprocess
     try:
@@ -655,6 +746,7 @@ def _handle_run(args):
             async_aware=args.async_mode if args.async_aware else None,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
 
         # Handle output
@@ -685,6 +777,7 @@ def _handle_live_attach(args, pid):
         limit=20,  # Default limit
         pid=pid,
         mode=mode,
+        opcodes=args.opcodes,
         async_aware=args.async_mode if args.async_aware else None,
     )
 
@@ -699,6 +792,7 @@ def _handle_live_attach(args, pid):
         async_aware=args.async_mode if args.async_aware else None,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
 
@@ -711,7 +805,10 @@ def _handle_live_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization, suppressing output for live mode
-    process = _run_with_sync(cmd, suppress_output=True)
+    try:
+        process = _run_with_sync(cmd, suppress_output=True)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     mode = _parse_mode(args.mode)
 
@@ -726,6 +823,7 @@ def _handle_live_run(args):
         limit=20,  # Default limit
         pid=process.pid,
         mode=mode,
+        opcodes=args.opcodes,
         async_aware=args.async_mode if args.async_aware else None,
     )
 
@@ -741,6 +839,7 @@ def _handle_live_run(args):
             async_aware=args.async_mode if args.async_aware else None,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
     finally:
         # Clean up the subprocess
