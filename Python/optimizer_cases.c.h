@@ -1148,8 +1148,16 @@
         }
 
         case _STORE_SUBSCR_DICT: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
+            JitOptRef dict_st;
+            JitOptRef value;
+            JitOptRef st;
+            dict_st = stack_pointer[-2];
+            value = stack_pointer[-3];
+            (void)value;
+            st = dict_st;
+            CHECK_STACK_BOUNDS(-2);
+            stack_pointer[-3] = st;
+            stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -3109,8 +3117,21 @@
         }
 
         case _CALL_LIST_APPEND: {
-            CHECK_STACK_BOUNDS(-3);
-            stack_pointer += -3;
+            JitOptRef arg;
+            JitOptRef self;
+            JitOptRef callable;
+            JitOptRef c;
+            JitOptRef s;
+            arg = stack_pointer[-1];
+            self = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            (void)(arg);
+            c = callable;
+            s = self;
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-3] = c;
+            stack_pointer[-2] = s;
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

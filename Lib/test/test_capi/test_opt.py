@@ -2245,6 +2245,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_GUARD_NOS_LIST", uops)
         self.assertIn("_GUARD_CALLABLE_LIST_APPEND", uops)
 
+    def test_call_list_append_pop_top(self):
+        def testfunc(n):
+            a = []
+            for i in range(n):
+                a.append(1)
+            return sum(a)
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_LIST_APPEND", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_call_isinstance_is_true(self):
         def testfunc(n):
             x = 0
@@ -2513,8 +2525,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 10)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_LIST_INT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_store_susbscr_dict(self):
+        def testfunc(n):
+            d = {}
+            for _ in range(n):
+                d['a'] = 1
+                d['b'] = 2
+                d['c'] = 3
+                d['d'] = 4
+            return sum(d.values())
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 10)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_STORE_SUBSCR_DICT", uops)
+        self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_attr_promotion_failure(self):

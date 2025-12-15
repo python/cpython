@@ -109,6 +109,11 @@ dummy_func(void) {
         ss = sub_st;
     }
 
+    op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
+        (void)value;
+        st = dict_st;
+    }
+
     op(_PUSH_NULL, (-- res)) {
         res = sym_new_null(ctx);
     }
@@ -1003,6 +1008,12 @@ dummy_func(void) {
             eliminate_pop_guard(this_instr, value != Py_True);
         }
         sym_set_const(flag, Py_True);
+    }
+
+    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+        (void)(arg);
+        c = callable;
+        s = self;
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
