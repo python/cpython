@@ -364,7 +364,7 @@ gen_send(PyObject *op, PyObject *arg)
 {
     PyObject *result;
     PyGenObject *gen = _PyGen_CAST(op);
-    if (gen_send_ex(_PyGen_CAST(op), arg, &result) == PYGEN_RETURN) {
+    if (gen_send_ex(gen, arg, &result) == PYGEN_RETURN) {
         return gen_set_stop_iteration(gen, result);
     }
     return result;
