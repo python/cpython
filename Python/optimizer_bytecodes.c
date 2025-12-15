@@ -99,6 +99,11 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
+    op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        (void)value;
+        o = owner;
+    }
+
     op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
