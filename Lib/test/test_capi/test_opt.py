@@ -2538,8 +2538,9 @@ class TestUopsOptimization(unittest.TestCase):
 
             for i in range(n):
                 c.x = i
+            return c.x
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, None)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
 
