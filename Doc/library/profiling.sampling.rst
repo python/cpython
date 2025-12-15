@@ -296,21 +296,21 @@ The default configuration works well for most use cases:
 
    * - Option
      - Default
-   * - ``--interval`` / ``-i``
+   * - Default for ``--interval`` / ``-i``
      - 100 µs between samples (~10,000 samples/sec)
-   * - ``--duration`` / ``-d``
+   * - Default for ``--duration`` / ``-d``
      - 10 seconds
-   * - ``--all-threads`` / ``-a``
+   * - Default for ``--all-threads`` / ``-a``
      - Main thread only
-   * - ``--native``
+   * - Default for ``--native``
      - No ``<native>`` frames (C code time attributed to caller)
-   * - ``--no-gc``
+   * - Default for ``--no-gc``
      - ``<GC>`` frames included when garbage collection is active
-   * - ``--mode``
+   * - Default for ``--mode``
      - Wall-clock mode (all samples recorded)
-   * - ``--realtime-stats``
+   * - Default for ``--realtime-stats``
      - Disabled
-   * - ``--subprocesses``
+   * - Default for ``--subprocesses``
      - Disabled
 
 
