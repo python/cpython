@@ -119,7 +119,7 @@ dummy_func(void) {
         (void)value;
         o = owner;
     }
-    
+
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
         (void)value;
         st = dict_st;
