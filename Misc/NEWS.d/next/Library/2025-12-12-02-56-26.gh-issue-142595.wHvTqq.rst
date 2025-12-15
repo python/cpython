@@ -1,0 +1,2 @@
+Added type check during initialization of the :mod:`decimal` module to
+prevent a crash in case of broken stdlib.  Patch by Sergey B Kirpichev.

@@ -350,7 +350,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 
     // Validate that the debug offsets are valid
-    if(validate_debug_offsets(&self->debug_offsets) == -1) {
+    if (validate_debug_offsets(&self->debug_offsets) == -1) {
         set_exception_cause(self, PyExc_RuntimeError, "Invalid debug offsets found");
         return -1;
     }
@@ -568,7 +568,8 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                                                            gc_frame);
             if (!frame_info) {
                 // Check if this was an intentional skip due to mode-based filtering
-                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL) && !PyErr_Occurred()) {
+                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
+                     self->mode == PROFILING_MODE_EXCEPTION) && !PyErr_Occurred()) {
                     // Thread was skipped due to mode filtering, continue to next thread
                     continue;
                 }
@@ -932,7 +933,7 @@ RemoteUnwinder_dealloc(PyObject *op)
         _Py_hashtable_destroy(self->code_object_cache);
     }
 #ifdef MS_WINDOWS
-    if(self->win_process_buffer != NULL) {
+    if (self->win_process_buffer != NULL) {
         PyMem_Free(self->win_process_buffer);
     }
 #endif
@@ -1068,6 +1069,9 @@ _remote_debugging_exec(PyObject *m)
     if (PyModule_AddIntConstant(m, "THREAD_STATUS_GIL_REQUESTED", THREAD_STATUS_GIL_REQUESTED) < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "THREAD_STATUS_HAS_EXCEPTION", THREAD_STATUS_HAS_EXCEPTION) < 0) {
+        return -1;
+    }
 
     if (RemoteDebugging_InitState(st) < 0) {
         return -1;
@@ -1118,7 +1122,74 @@ static PyModuleDef_Slot remote_debugging_slots[] = {
     {0, NULL},
 };
 
+/* ============================================================================
+ * MODULE-LEVEL FUNCTIONS
+ * ============================================================================ */
+
+/*[clinic input]
+_remote_debugging.get_child_pids
+
+    pid: int
+        Process ID of the parent process
+    *
+    recursive: bool = True
+        If True, return all descendants (children, grandchildren, etc.).
+        If False, return only direct children.
+
+Get all child process IDs of the given process.
+
+Returns a list of child process IDs. Returns an empty list if no children
+are found.
+
+This function provides a snapshot of child processes at a moment in time.
+Child processes may exit or new ones may be created after the list is returned.
+
+Raises:
+    OSError: If unable to enumerate processes
+    NotImplementedError: If not supported on this platform
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_get_child_pids_impl(PyObject *module, int pid,
+                                      int recursive)
+/*[clinic end generated code: output=1ae2289c6b953e4b input=3395cbe7f17066c9]*/
+{
+    return enumerate_child_pids((pid_t)pid, recursive);
+}
+
+/*[clinic input]
+_remote_debugging.is_python_process
+
+    pid: int
+
+Check if a process is a Python process.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_is_python_process_impl(PyObject *module, int pid)
+/*[clinic end generated code: output=22947dc8afcac362 input=13488e28c7295d84]*/
+{
+    proc_handle_t handle;
+
+    if (_Py_RemoteDebug_InitProcHandle(&handle, pid) < 0) {
+        PyErr_Clear();
+        Py_RETURN_FALSE;
+    }
+
+    uintptr_t runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(&handle);
+    _Py_RemoteDebug_CleanupProcHandle(&handle);
+
+    if (runtime_start_address == 0) {
+        PyErr_Clear();
+        Py_RETURN_FALSE;
+    }
+
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef remote_debugging_methods[] = {
+    _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF
+    _REMOTE_DEBUGGING_IS_PYTHON_PROCESS_METHODDEF
     {NULL, NULL, 0, NULL},
 };
 
