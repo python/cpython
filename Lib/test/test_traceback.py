@@ -2268,7 +2268,7 @@ class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
 
 @cpython_only
 @force_not_colorized_test_class
-class TestFallbackTracebackFormat1(unittest.TestCase, TracebackFormatMixin):
+class TestFallbackFormatWhenPrinterRaises(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
         self.original_unraisable_hook = sys.unraisablehook
@@ -2284,7 +2284,7 @@ class TestFallbackTracebackFormat1(unittest.TestCase, TracebackFormatMixin):
 
 @cpython_only
 @force_not_colorized_test_class
-class TestFallbackTracebackFormat2(unittest.TestCase, TracebackFormatMixin):
+class TestFallbackFormatWhenIOUnavailable(unittest.TestCase, TracebackFormatMixin):
     def setUp(self) -> None:
         import io
         self.original_io = io
