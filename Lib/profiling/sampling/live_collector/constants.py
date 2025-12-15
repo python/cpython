@@ -45,6 +45,9 @@ MIN_SAMPLE_RATE_FOR_SCALING = 100
 # Finished banner display
 FINISHED_BANNER_EXTRA_LINES = 3  # Blank line + banner + blank line
 
+# Opcode panel display
+OPCODE_PANEL_HEIGHT = 12  # Height reserved for opcode statistics panel
+
 # Color pair IDs
 COLOR_PAIR_HEADER_BG = 4
 COLOR_PAIR_CYAN = 5

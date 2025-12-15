@@ -1036,7 +1036,7 @@ static int
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-        /* Ignore trampoline frame */
+        /* Ignore trampoline frames and base frame sentinel */
         return 0;
     }
 

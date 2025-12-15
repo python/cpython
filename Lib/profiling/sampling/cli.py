@@ -1,20 +1,26 @@
 """Command-line interface for the sampling profiler."""
 
 import argparse
+import importlib.util
 import os
+import selectors
 import socket
 import subprocess
 import sys
+import time
+from contextlib import nullcontext
 
 from .sample import sample, sample_live
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
+from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
     PROFILING_MODE_GIL,
+    PROFILING_MODE_EXCEPTION,
     SORT_MODE_NSAMPLES,
     SORT_MODE_TOTTIME,
     SORT_MODE_CUMTIME,
@@ -39,24 +45,20 @@ class CustomFormatter(
 
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 
-Commands:
-  run        Run and profile a script or module
-  attach     Attach to and profile a running process
-
 Examples:
   # Run and profile a script
-  python -m profiling.sampling run script.py arg1 arg2
+  `python -m profiling.sampling run script.py arg1 arg2`
 
   # Attach to a running process
-  python -m profiling.sampling attach 1234
+  `python -m profiling.sampling attach 1234`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py
+  `python -m profiling.sampling run --live script.py`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234
+  `python -m profiling.sampling attach --live 1234`
 
-Use 'python -m profiling.sampling <command> --help' for command-specific help."""
+Use `python -m profiling.sampling <command> --help` for command-specific help."""
 
 
 # Constants for socket synchronization
@@ -71,6 +73,7 @@ FORMAT_EXTENSIONS = {
     "collapsed": "txt",
     "flamegraph": "html",
     "gecko": "json",
+    "heatmap": "html",
 }
 
 COLLECTOR_MAP = {
@@ -78,7 +81,88 @@ COLLECTOR_MAP = {
     "collapsed": CollapsedStackCollector,
     "flamegraph": FlamegraphCollector,
     "gecko": GeckoCollector,
+    "heatmap": HeatmapCollector,
 }
+
+def _setup_child_monitor(args, parent_pid):
+    from ._child_monitor import ChildProcessMonitor
+
+    # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
+    child_cli_args = _build_child_profiler_args(args)
+
+    # Build output pattern
+    output_pattern = _build_output_pattern(args)
+
+    return ChildProcessMonitor(
+        pid=parent_pid,
+        cli_args=child_cli_args,
+        output_pattern=output_pattern,
+    )
+
+
+def _get_child_monitor_context(args, pid):
+    if getattr(args, 'subprocesses', False):
+        return _setup_child_monitor(args, pid)
+    return nullcontext()
+
+
+def _build_child_profiler_args(args):
+    child_args = []
+
+    # Sampling options
+    child_args.extend(["-i", str(args.interval)])
+    child_args.extend(["-d", str(args.duration)])
+
+    if args.all_threads:
+        child_args.append("-a")
+    if args.realtime_stats:
+        child_args.append("--realtime-stats")
+    if args.native:
+        child_args.append("--native")
+    if not args.gc:
+        child_args.append("--no-gc")
+    if args.opcodes:
+        child_args.append("--opcodes")
+    if args.async_aware:
+        child_args.append("--async-aware")
+        async_mode = getattr(args, 'async_mode', 'running')
+        if async_mode != "running":
+            child_args.extend(["--async-mode", async_mode])
+
+    # Mode options
+    mode = getattr(args, 'mode', 'wall')
+    if mode != "wall":
+        child_args.extend(["--mode", mode])
+
+    # Format options (skip pstats as it's the default)
+    if args.format != "pstats":
+        child_args.append(f"--{args.format}")
+
+    return child_args
+
+
+def _build_output_pattern(args):
+    """Build output filename pattern for child profilers.
+
+    The pattern uses {pid} as a placeholder which will be replaced with the
+    actual child PID using str.replace(), so user filenames with braces are safe.
+    """
+    if args.outfile:
+        # User specified output - add PID to filename
+        base, ext = os.path.splitext(args.outfile)
+        if ext:
+            return f"{base}_{{pid}}{ext}"
+        else:
+            return f"{args.outfile}_{{pid}}"
+    else:
+        # Use default pattern based on format (consistent _ separator)
+        extension = FORMAT_EXTENSIONS.get(args.format, "txt")
+        if args.format == "heatmap":
+            return "heatmap_{pid}"
+        if args.format == "pstats":
+            # pstats defaults to stdout, but for subprocesses we need files
+            return "profile_{pid}.pstats"
+        return f"{args.format}_{{pid}}.{extension}"
 
 
 def _parse_mode(mode_string):
@@ -87,8 +171,57 @@ def _parse_mode(mode_string):
         "wall": PROFILING_MODE_WALL,
         "cpu": PROFILING_MODE_CPU,
         "gil": PROFILING_MODE_GIL,
+        "exception": PROFILING_MODE_EXCEPTION,
     }
     return mode_map[mode_string]
+
+
+def _check_process_died(process):
+    """Check if process died and raise an error with stderr if available."""
+    if process.poll() is None:
+        return  # Process still running
+
+    # Process died - try to get stderr for error message
+    stderr_msg = ""
+    if process.stderr:
+        try:
+            stderr_msg = process.stderr.read().decode().strip()
+        except (OSError, UnicodeDecodeError):
+            pass
+
+    if stderr_msg:
+        raise RuntimeError(stderr_msg)
+    raise RuntimeError(f"Process exited with code {process.returncode}")
+
+
+def _wait_for_ready_signal(sync_sock, process, timeout):
+    """Wait for the ready signal from the subprocess, checking for early death."""
+    deadline = time.monotonic() + timeout
+    sel = selectors.DefaultSelector()
+    sel.register(sync_sock, selectors.EVENT_READ)
+
+    try:
+        while True:
+            _check_process_died(process)
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise socket.timeout("timed out")
+
+            if not sel.select(timeout=min(0.1, remaining)):
+                continue
+
+            conn, _ = sync_sock.accept()
+            try:
+                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+            finally:
+                conn.close()
+
+            if ready_signal != _READY_MESSAGE:
+                raise RuntimeError(f"Invalid ready signal received: {ready_signal!r}")
+            return
+    finally:
+        sel.close()
 
 
 def _run_with_sync(original_cmd, suppress_output=False):
@@ -116,24 +249,24 @@ def _run_with_sync(original_cmd, suppress_output=False):
         ) + tuple(target_args)
 
         # Start the process with coordinator
-        # Suppress stdout/stderr if requested (for live mode)
+        # When suppress_output=True (live mode), capture stderr so we can
+        # report errors if the process dies before signaling ready.
+        # When suppress_output=False (normal mode), let stderr inherit so
+        # script errors print to the terminal.
         popen_kwargs = {}
         if suppress_output:
             popen_kwargs["stdin"] = subprocess.DEVNULL
             popen_kwargs["stdout"] = subprocess.DEVNULL
-            popen_kwargs["stderr"] = subprocess.DEVNULL
+            popen_kwargs["stderr"] = subprocess.PIPE
 
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            # Wait for ready signal with timeout
-            with sync_sock.accept()[0] as conn:
-                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
 
-                if ready_signal != _READY_MESSAGE:
-                    raise RuntimeError(
-                        f"Invalid ready signal received: {ready_signal!r}"
-                    )
+            # Close stderr pipe if we were capturing it
+            if process.stderr:
+                process.stderr.close()
 
         except socket.timeout:
             # If we timeout, kill the process and raise an error
@@ -192,6 +325,22 @@ def _add_sampling_options(parser):
         dest="gc",
         help='Don\'t include artificial "<GC>" frames to denote active garbage collection',
     )
+    sampling_group.add_argument(
+        "--opcodes",
+        action="store_true",
+        help="Gather bytecode opcode information for instruction-level profiling "
+        "(shows which bytecode instructions are executing, including specializations).",
+    )
+    sampling_group.add_argument(
+        "--async-aware",
+        action="store_true",
+        help="Enable async-aware profiling (uses task-based stack reconstruction)",
+    )
+    sampling_group.add_argument(
+        "--subprocesses",
+        action="store_true",
+        help="Also profile subprocesses. Each subprocess gets its own profiler and output file.",
+    )
 
 
 def _add_mode_options(parser):
@@ -199,10 +348,19 @@ def _add_mode_options(parser):
     mode_group = parser.add_argument_group("Mode options")
     mode_group.add_argument(
         "--mode",
-        choices=["wall", "cpu", "gil"],
+        choices=["wall", "cpu", "gil", "exception"],
         default="wall",
         help="Sampling mode: wall (all samples), cpu (only samples when thread is on CPU), "
-        "gil (only samples when thread holds the GIL)",
+        "gil (only samples when thread holds the GIL), "
+        "exception (only samples when thread has an active exception). "
+        "Incompatible with --async-aware",
+    )
+    mode_group.add_argument(
+        "--async-mode",
+        choices=["running", "all"],
+        default="running",
+        help='Async profiling mode: "running" (only running task) '
+        'or "all" (all tasks including waiting). Requires --async-aware',
     )
 
 
@@ -238,14 +396,21 @@ def _add_format_options(parser):
         dest="format",
         help="Generate Gecko format for Firefox Profiler",
     )
+    format_group.add_argument(
+        "--heatmap",
+        action="store_const",
+        const="heatmap",
+        dest="format",
+        help="Generate interactive HTML heatmap visualization with line-level sample counts",
+    )
     parser.set_defaults(format="pstats")
 
     output_group.add_argument(
         "-o",
         "--output",
         dest="outfile",
-        help="Save output to a file (default: stdout for pstats, "
-        "auto-generated filename for other formats)",
+        help="Output path (default: stdout for pstats, auto-generated for others). "
+        "For heatmap: directory name (default: heatmap_PID)",
     )
 
 
@@ -294,13 +459,15 @@ def _sort_to_mode(sort_choice):
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
 
-def _create_collector(format_type, interval, skip_idle):
+def _create_collector(format_type, interval, skip_idle, opcodes=False):
     """Create the appropriate collector based on format type.
 
     Args:
-        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko')
+        format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap')
         interval: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
+        opcodes: Whether to collect opcode information (only used by gecko format
+                 for creating interval markers in Firefox Profiler)
 
     Returns:
         A collector instance of the appropriate type
@@ -310,8 +477,10 @@ def _create_collector(format_type, interval, skip_idle):
         raise ValueError(f"Unknown format: {format_type}")
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
+    # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
+        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
 
     return collector_class(interval, skip_idle=skip_idle)
 
@@ -327,7 +496,10 @@ def _generate_output_filename(format_type, pid):
         Generated filename
     """
     extension = FORMAT_EXTENSIONS.get(format_type, "txt")
-    return f"{format_type}.{pid}.{extension}"
+    # For heatmap, use cleaner directory name without extension
+    if format_type == "heatmap":
+        return f"heatmap_{pid}"
+    return f"{format_type}_{pid}.{extension}"
 
 
 def _handle_output(collector, args, pid, mode):
@@ -341,7 +513,12 @@ def _handle_output(collector, args, pid, mode):
     """
     if args.format == "pstats":
         if args.outfile:
-            collector.export(args.outfile)
+            # If outfile is a directory, generate filename inside it
+            if os.path.isdir(args.outfile):
+                filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+                collector.export(filename)
+            else:
+                collector.export(args.outfile)
         else:
             # Print to stdout with defaults applied
             sort_choice = args.sort if args.sort is not None else "nsamples"
@@ -352,7 +529,11 @@ def _handle_output(collector, args, pid, mode):
             )
     else:
         # Export to file
-        filename = args.outfile or _generate_output_filename(args.format, pid)
+        if args.outfile and os.path.isdir(args.outfile):
+            # If outfile is a directory, generate filename inside it
+            filename = os.path.join(args.outfile, _generate_output_filename(args.format, pid))
+        else:
+            filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
 
 
@@ -368,6 +549,32 @@ def _validate_args(args, parser):
         parser.error(
             "Live mode requires the curses module, which is not available."
         )
+
+    # --subprocesses is incompatible with --live
+    if hasattr(args, 'subprocesses') and args.subprocesses:
+        if hasattr(args, 'live') and args.live:
+            parser.error("--subprocesses is incompatible with --live mode.")
+
+    # Async-aware mode is incompatible with --native, --no-gc, --mode, and --all-threads
+    if args.async_aware:
+        issues = []
+        if args.native:
+            issues.append("--native")
+        if not args.gc:
+            issues.append("--no-gc")
+        if hasattr(args, 'mode') and args.mode != "wall":
+            issues.append(f"--mode={args.mode}")
+        if hasattr(args, 'all_threads') and args.all_threads:
+            issues.append("--all-threads")
+        if issues:
+            parser.error(
+                f"Options {', '.join(issues)} are incompatible with --async-aware. "
+                "Async-aware profiling uses task-based stack reconstruction."
+            )
+
+    # --async-mode requires --async-aware
+    if hasattr(args, 'async_mode') and args.async_mode != "running" and not args.async_aware:
+        parser.error("--async-mode requires --async-aware to be enabled.")
 
     # Live mode is incompatible with format options
     if hasattr(args, 'live') and args.live:
@@ -398,6 +605,13 @@ def _validate_args(args, parser):
         parser.error(
             "--mode option is incompatible with --gecko. "
             "Gecko format automatically includes both GIL-holding and CPU status analysis."
+        )
+
+    # Validate --opcodes is only used with compatible formats
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
+    if args.opcodes and args.format not in opcodes_compatible_formats:
+        parser.error(
+            f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
         )
 
     # Validate pstats-specific options are only used with pstats format
@@ -439,19 +653,19 @@ def main():
 
 Examples:
   # Run and profile a module
-  python -m profiling.sampling run -m mymodule arg1 arg2
+  `python -m profiling.sampling run -m mymodule arg1 arg2`
 
   # Generate flamegraph from a script
-  python -m profiling.sampling run --flamegraph -o output.html script.py
+  `python -m profiling.sampling run --flamegraph -o output.html script.py`
 
   # Profile with custom interval and duration
-  python -m profiling.sampling run -i 50 -d 30 script.py
+  `python -m profiling.sampling run -i 50 -d 30 script.py`
 
   # Save collapsed stacks to file
-  python -m profiling.sampling run --collapsed -o stacks.txt script.py
+  `python -m profiling.sampling run --collapsed -o stacks.txt script.py`
 
   # Live interactive mode for a script
-  python -m profiling.sampling run --live script.py""",
+  `python -m profiling.sampling run --live script.py`""",
     )
     run_parser.add_argument(
         "-m",
@@ -487,10 +701,10 @@ Examples:
 
 Examples:
   # Profile all threads, sort by total time
-  python -m profiling.sampling attach -a --sort tottime 1234
+  `python -m profiling.sampling attach -a --sort tottime 1234`
 
   # Live interactive mode for a running process
-  python -m profiling.sampling attach --live 1234""",
+  `python -m profiling.sampling attach --live 1234`""",
     )
     attach_parser.add_argument(
         "pid",
@@ -547,26 +761,45 @@ def _handle_attach(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
-    # Sample the process
-    collector = sample(
-        args.pid,
-        collector,
-        duration_sec=args.duration,
-        all_threads=args.all_threads,
-        realtime_stats=args.realtime_stats,
-        mode=mode,
-        native=args.native,
-        gc=args.gc,
-    )
-
-    # Handle output
-    _handle_output(collector, args, args.pid, mode)
+    with _get_child_monitor_context(args, args.pid):
+        collector = sample(
+            args.pid,
+            collector,
+            duration_sec=args.duration,
+            all_threads=args.all_threads,
+            realtime_stats=args.realtime_stats,
+            mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
+            native=args.native,
+            gc=args.gc,
+            opcodes=args.opcodes,
+        )
+        _handle_output(collector, args, args.pid, mode)
 
 
 def _handle_run(args):
     """Handle the 'run' command."""
+    # Validate target exists before launching subprocess
+    if args.module:
+        # Temporarily add cwd to sys.path so we can find modules in the
+        # current directory, matching the coordinator's behavior
+        cwd = os.getcwd()
+        added_cwd = False
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+            added_cwd = True
+        try:
+            if importlib.util.find_spec(args.target) is None:
+                sys.exit(f"Error: Module not found: {args.target}")
+        finally:
+            if added_cwd:
+                sys.path.remove(cwd)
+    else:
+        if not os.path.exists(args.target):
+            sys.exit(f"Error: Script not found: {args.target}")
+
     # Check if live mode is requested
     if args.live:
         _handle_live_run(args)
@@ -579,7 +812,10 @@ def _handle_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization
-    process = _run_with_sync(cmd, suppress_output=False)
+    try:
+        process = _run_with_sync(cmd, suppress_output=False)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     # Use PROFILING_MODE_ALL for gecko format
     mode = (
@@ -594,32 +830,33 @@ def _handle_run(args):
     )
 
     # Create the appropriate collector
-    collector = _create_collector(args.format, args.interval, skip_idle)
+    collector = _create_collector(args.format, args.interval, skip_idle, args.opcodes)
 
-    # Profile the subprocess
-    try:
-        collector = sample(
-            process.pid,
-            collector,
-            duration_sec=args.duration,
-            all_threads=args.all_threads,
-            realtime_stats=args.realtime_stats,
-            mode=mode,
-            native=args.native,
-            gc=args.gc,
-        )
-
-        # Handle output
-        _handle_output(collector, args, process.pid, mode)
-    finally:
-        # Clean up the subprocess
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+    with _get_child_monitor_context(args, process.pid):
+        try:
+            collector = sample(
+                process.pid,
+                collector,
+                duration_sec=args.duration,
+                all_threads=args.all_threads,
+                realtime_stats=args.realtime_stats,
+                mode=mode,
+                async_aware=args.async_mode if args.async_aware else None,
+                native=args.native,
+                gc=args.gc,
+                opcodes=args.opcodes,
+            )
+            _handle_output(collector, args, process.pid, mode)
+        finally:
+            # Terminate the main subprocess - child profilers finish when their
+            # target processes exit
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
 
 
 def _handle_live_attach(args, pid):
@@ -637,6 +874,8 @@ def _handle_live_attach(args, pid):
         limit=20,  # Default limit
         pid=pid,
         mode=mode,
+        opcodes=args.opcodes,
+        async_aware=args.async_mode if args.async_aware else None,
     )
 
     # Sample in live mode
@@ -647,8 +886,10 @@ def _handle_live_attach(args, pid):
         all_threads=args.all_threads,
         realtime_stats=args.realtime_stats,
         mode=mode,
+        async_aware=args.async_mode if args.async_aware else None,
         native=args.native,
         gc=args.gc,
+        opcodes=args.opcodes,
     )
 
 
@@ -661,7 +902,10 @@ def _handle_live_run(args):
         cmd = (sys.executable, args.target, *args.args)
 
     # Run with synchronization, suppressing output for live mode
-    process = _run_with_sync(cmd, suppress_output=True)
+    try:
+        process = _run_with_sync(cmd, suppress_output=True)
+    except RuntimeError as e:
+        sys.exit(f"Error: {e}")
 
     mode = _parse_mode(args.mode)
 
@@ -676,6 +920,8 @@ def _handle_live_run(args):
         limit=20,  # Default limit
         pid=process.pid,
         mode=mode,
+        opcodes=args.opcodes,
+        async_aware=args.async_mode if args.async_aware else None,
     )
 
     # Profile the subprocess in live mode
@@ -687,8 +933,10 @@ def _handle_live_run(args):
             all_threads=args.all_threads,
             realtime_stats=args.realtime_stats,
             mode=mode,
+            async_aware=args.async_mode if args.async_aware else None,
             native=args.native,
             gc=args.gc,
+            opcodes=args.opcodes,
         )
     finally:
         # Clean up the subprocess

@@ -41,7 +41,7 @@
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
-@MODULE__REMOTE_DEBUGGING_TRUE@_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/threads.c _remote_debugging/asyncio.c
+@MODULE__REMOTE_DEBUGGING_TRUE@_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/frame_cache.c _remote_debugging/threads.c _remote_debugging/asyncio.c _remote_debugging/subprocess.c
 @MODULE__STRUCT_TRUE@_struct _struct.c
 
 # build supports subinterpreters

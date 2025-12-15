@@ -13,7 +13,9 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import is_emscripten
+from test.support import is_emscripten, requires_remote_subprocess_debugging
+
+from profiling.sampling.cli import main
 
 
 class TestSampleProfilerCLI(unittest.TestCase):
@@ -62,6 +64,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertEqual(coordinator_cmd[5:], expected_target_args)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
+    @requires_remote_subprocess_debugging()
     def test_cli_module_argument_parsing(self):
         test_args = ["profiling.sampling.cli", "run", "-m", "mymodule"]
 
@@ -70,8 +73,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("importlib.util.find_spec", return_value=True),
         ):
-            from profiling.sampling.cli import main
             self._setup_sync_mocks(mock_socket, mock_popen)
             main()
 
@@ -80,6 +84,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_sample.assert_called_once()
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_arguments(self):
         test_args = [
             "profiling.sampling.cli",
@@ -96,9 +101,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("importlib.util.find_spec", return_value=True),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            from profiling.sampling.cli import main
             main()
 
             self._verify_coordinator_command(
@@ -115,9 +121,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("os.path.exists", return_value=True),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            from profiling.sampling.cli import main
             main()
 
             self._verify_coordinator_command(mock_popen, ("myscript.py",))
@@ -139,6 +146,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("os.path.exists", return_value=True),
         ):
             # Use the helper to set up mocks consistently
             mock_process = self._setup_sync_mocks(mock_socket, mock_popen)
@@ -148,7 +157,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 None,
             ]
 
-            from profiling.sampling.cli import main
             main()
 
             # Verify the coordinator command was called
@@ -181,7 +189,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            from profiling.sampling.cli import main
             main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
@@ -196,18 +203,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
-            mock.patch("subprocess.Popen") as mock_popen,
-            mock.patch("socket.socket") as mock_socket,
-            self.assertRaises(FileNotFoundError) as cm,  # Expect FileNotFoundError, not SystemExit
+            self.assertRaises(SystemExit) as cm,
         ):
-            self._setup_sync_mocks(mock_socket, mock_popen)
-            # Override to raise FileNotFoundError for non-existent script
-            mock_popen.side_effect = FileNotFoundError("12345")
-            from profiling.sampling.cli import main
             main()
 
         # Verify the error is about the non-existent script
-        self.assertIn("12345", str(cm.exception))
+        self.assertIn("12345", str(cm.exception.code))
 
     def test_cli_no_target_specified(self):
         # In new CLI, must specify a subcommand
@@ -218,7 +219,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            from profiling.sampling.cli import main
             main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
@@ -226,6 +226,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("invalid choice", error_msg)
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
+    @requires_remote_subprocess_debugging()
     def test_cli_module_with_profiler_options(self):
         test_args = [
             "profiling.sampling.cli",
@@ -248,9 +249,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("importlib.util.find_spec", return_value=True),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            from profiling.sampling.cli import main
             main()
 
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
@@ -278,9 +280,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("os.path.exists", return_value=True),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            from profiling.sampling.cli import main
             main()
 
             self._verify_coordinator_command(
@@ -297,7 +300,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            from profiling.sampling.cli import main
             main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
@@ -305,6 +307,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         self.assertIn("required: target", error_msg)  # argparse error for missing positional arg
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
+    @requires_remote_subprocess_debugging()
     def test_cli_long_module_option(self):
         test_args = [
             "profiling.sampling.cli",
@@ -319,9 +322,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
+            mock.patch("profiling.sampling.cli._wait_for_ready_signal"),
+            mock.patch("importlib.util.find_spec", return_value=True),
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            from profiling.sampling.cli import main
             main()
 
             self._verify_coordinator_command(
@@ -346,6 +350,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch(
                 "profiling.sampling.cli._run_with_sync"
             ) as mock_run_with_sync,
+            mock.patch("os.path.exists", return_value=True),
         ):
             mock_process = mock.MagicMock()
             mock_process.pid = 12345
@@ -356,7 +361,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_process.poll.return_value = None
             mock_run_with_sync.return_value = mock_process
 
-            from profiling.sampling.cli import main
             main()
 
             mock_run_with_sync.assert_called_once_with(
@@ -412,8 +416,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             ),
         ]
 
-        from profiling.sampling.cli import main
-
         for test_args, expected_error_keyword in test_cases:
             with (
                 mock.patch("sys.argv", test_args),
@@ -436,7 +438,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
-            from profiling.sampling.cli import main
             main()
 
             # Check that sample was called (exact filename depends on implementation)
@@ -471,8 +472,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             ),
         ]
 
-        from profiling.sampling.cli import main
-
         for test_args, expected_filename, expected_format in test_cases:
             with (
                 mock.patch("sys.argv", test_args),
@@ -489,7 +488,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()),
         ):
             with self.assertRaises(SystemExit):
-                from profiling.sampling.cli import main
                 main()
 
     def test_cli_mutually_exclusive_format_options(self):
@@ -508,7 +506,6 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.stderr", io.StringIO()),
         ):
             with self.assertRaises(SystemExit):
-                from profiling.sampling.cli import main
                 main()
 
     def test_argument_parsing_basic(self):
@@ -518,14 +515,11 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
-            from profiling.sampling.cli import main
             main()
 
             mock_sample.assert_called_once()
 
     def test_sort_options(self):
-        from profiling.sampling.cli import main
-
         sort_options = [
             ("nsamples", 0),
             ("tottime", 1),
@@ -542,8 +536,175 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mock.patch("sys.argv", test_args),
                 mock.patch("profiling.sampling.cli.sample") as mock_sample,
             ):
-                from profiling.sampling.cli import main
                 main()
 
                 mock_sample.assert_called_once()
                 mock_sample.reset_mock()
+
+    def test_async_aware_flag_defaults_to_running(self):
+        """Test --async-aware flag enables async profiling with default 'running' mode."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            main()
+
+            mock_sample.assert_called_once()
+            # Verify async_aware was passed with default "running" mode
+            call_kwargs = mock_sample.call_args[1]
+            self.assertEqual(call_kwargs.get("async_aware"), "running")
+
+    def test_async_aware_with_async_mode_all(self):
+        """Test --async-aware with --async-mode all."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "all"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            main()
+
+            mock_sample.assert_called_once()
+            call_kwargs = mock_sample.call_args[1]
+            self.assertEqual(call_kwargs.get("async_aware"), "all")
+
+    def test_async_aware_default_is_none(self):
+        """Test async_aware defaults to None when --async-aware not specified."""
+        test_args = ["profiling.sampling.cli", "attach", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli.sample") as mock_sample,
+        ):
+            main()
+
+            mock_sample.assert_called_once()
+            call_kwargs = mock_sample.call_args[1]
+            self.assertIsNone(call_kwargs.get("async_aware"))
+
+    def test_async_mode_invalid_choice(self):
+        """Test --async-mode with invalid choice raises error."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--async-mode", "invalid"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()),
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+
+    def test_async_mode_requires_async_aware(self):
+        """Test --async-mode without --async-aware raises error."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-mode", "all"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--async-mode requires --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_native(self):
+        """Test --async-aware is incompatible with --native."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--native"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--native", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_no_gc(self):
+        """Test --async-aware is incompatible with --no-gc."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--no-gc"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--no-gc", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_both_native_and_no_gc(self):
+        """Test --async-aware is incompatible with both --native and --no-gc."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--native", "--no-gc"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--native", error_msg)
+        self.assertIn("--no-gc", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_mode(self):
+        """Test --async-aware is incompatible with --mode (non-wall)."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--mode", "cpu"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--mode=cpu", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    def test_async_aware_incompatible_with_all_threads(self):
+        """Test --async-aware is incompatible with --all-threads."""
+        test_args = ["profiling.sampling.cli", "attach", "12345", "--async-aware", "--all-threads"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("--all-threads", error_msg)
+        self.assertIn("incompatible with --async-aware", error_msg)
+
+    @unittest.skipIf(is_emscripten, "subprocess not available")
+    def test_run_nonexistent_script_exits_cleanly(self):
+        """Test that running a non-existent script exits with a clean error."""
+        with mock.patch("sys.argv", ["profiling.sampling.cli", "run", "/nonexistent/script.py"]):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+        self.assertIn("Script not found", str(cm.exception.code))
+
+    @unittest.skipIf(is_emscripten, "subprocess not available")
+    def test_run_nonexistent_module_exits_cleanly(self):
+        """Test that running a non-existent module exits with a clean error."""
+        with mock.patch("sys.argv", ["profiling.sampling.cli", "run", "-m", "nonexistent_module_xyz"]):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+        self.assertIn("Module not found", str(cm.exception.code))

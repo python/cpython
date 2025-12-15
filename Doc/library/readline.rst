@@ -246,6 +246,15 @@ Startup hooks
    if Python was compiled for a version of the library that supports it.
 
 
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: next
+
+
 .. _readline-completion:
 
 Completion

@@ -208,12 +208,8 @@ def _write_atomic(path, data, mode=0o666):
     try:
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
-        with _io.FileIO(fd, 'wb') as file:
-            bytes_written = file.write(data)
-        if bytes_written != len(data):
-            # Raise an OSError so the 'except' below cleans up the partially
-            # written file.
-            raise OSError("os.write() didn't write the full pyc file")
+        with _io.open(fd, 'wb') as file:
+            file.write(data)
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -240,7 +236,7 @@ BYTECODE_SUFFIXES = ['.pyc']
 # Deprecated.
 DEBUG_BYTECODE_SUFFIXES = OPTIMIZED_BYTECODE_SUFFIXES = BYTECODE_SUFFIXES
 
-def cache_from_source(path, debug_override=None, *, optimization=None):
+def cache_from_source(path, *, optimization=None):
     """Given the path to a .py file, return the path to its .pyc file.
 
     The .py file does not need to exist; this simply returns the path to the
@@ -251,20 +247,9 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
     of the argument is taken and verified to be alphanumeric (else ValueError
     is raised).
 
-    The debug_override parameter is deprecated. If debug_override is not None,
-    a True value is the same as setting 'optimization' to the empty string
-    while a False value is equivalent to setting 'optimization' to '1'.
-
     If sys.implementation.cache_tag is None then NotImplementedError is raised.
 
     """
-    if debug_override is not None:
-        _warnings.warn('the debug_override parameter is deprecated; use '
-                       "'optimization' instead", DeprecationWarning)
-        if optimization is not None:
-            message = 'debug_override or optimization must be set to None'
-            raise TypeError(message)
-        optimization = '' if debug_override else 1
     path = _os.fspath(path)
     head, tail = _path_split(path)
     base, sep, rest = tail.rpartition('.')
@@ -761,11 +746,6 @@ class _LoaderBasics:
                               'get_code() returns None')
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
-    def load_module(self, fullname):
-        """This method is deprecated."""
-        # Warning implemented in _load_module_shim().
-        return _bootstrap._load_module_shim(self, fullname)
-
 
 class SourceLoader(_LoaderBasics):
 
@@ -932,18 +912,6 @@ class FileLoader:
         return hash(self.name) ^ hash(self.path)
 
     @_check_name
-    def load_module(self, fullname):
-        """Load a module from a file.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # The only reason for this method is for the name check.
-        # Issue #14857: Avoid the zero-argument form of super so the implementation
-        # of that form can be updated without breaking the frozen module.
-        return super(FileLoader, self).load_module(fullname)
-
-    @_check_name
     def get_filename(self, fullname):
         """Return the path to the source file as found by the finder."""
         return self.path
@@ -999,6 +967,19 @@ class SourceFileLoader(FileLoader, SourceLoader):
                 _bootstrap._verbose_message('could not create {!r}: {!r}',
                                             parent, exc)
                 return
+
+            if part == _PYCACHE:
+                gitignore = _path_join(parent, '.gitignore')
+                try:
+                    _path_stat(gitignore)
+                except FileNotFoundError:
+                    gitignore_content = b'# Created by CPython\n*\n'
+                    try:
+                        _write_atomic(gitignore, gitignore_content, _mode)
+                    except OSError:
+                        pass
+                except OSError:
+                    pass
         try:
             _write_atomic(path, data, _mode)
             _bootstrap._verbose_message('created {!r}', path)
@@ -1193,18 +1174,6 @@ class NamespaceLoader:
 
     def exec_module(self, module):
         pass
-
-    def load_module(self, fullname):
-        """Load a namespace module.
-
-        This method is deprecated.  Use exec_module() instead.
-
-        """
-        # The import system never calls this method.
-        _bootstrap._verbose_message('namespace module loaded with path {!r}',
-                                    self._path)
-        # Warning implemented in _load_module_shim().
-        return _bootstrap._load_module_shim(self, fullname)
 
     def get_resource_reader(self, module):
         from importlib.readers import NamespaceReader
@@ -1547,7 +1516,6 @@ def _fix_up_module(ns, name, pathname, cpathname=None):
         ns['__spec__'] = spec
         ns['__loader__'] = loader
         ns['__file__'] = pathname
-        ns['__cached__'] = cpathname
     except Exception:
         # Not important enough to report.
         pass
