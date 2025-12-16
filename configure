@@ -19812,6 +19812,12 @@ then :
   printf "%s\n" "#define HAVE_POLL 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "ppoll" "ac_cv_func_ppoll"
+if test "x$ac_cv_func_ppoll" = xyes
+then :
+  printf "%s\n" "#define HAVE_PPOLL 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "posix_fadvise" "ac_cv_func_posix_fadvise"
 if test "x$ac_cv_func_posix_fadvise" = xyes
 then :
