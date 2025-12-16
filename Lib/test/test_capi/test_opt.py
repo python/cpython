@@ -2612,6 +2612,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_store_attr_with_hint(self):
+        def testfunc(n):
+            class C:
+                pass
+            c = C()
+            for i in range(_testinternalcapi.SHARED_KEYS_MAX_SIZE - 1):
+                setattr(c, f"_{i}", None)
+
+            for i in range(n):
+                c.x = i
+            return c.x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_STORE_ATTR_WITH_HINT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_store_subscr_int(self):
         def testfunc(n):
             l = [0, 0, 0, 0]
