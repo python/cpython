@@ -1,0 +1,2 @@
+The asyncio REPL now properly closes the loop upon the end of session.
+Contributed by Bartosz Sławecki.
