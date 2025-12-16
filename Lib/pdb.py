@@ -1319,7 +1319,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 if bdb.Breakpoint.bpbynumber[bnum] is not None:
                     break
                 if bnum == 0:
-                    self.error('no breakpoints setted')
+                    self.error('no breakpoints set')
                     return
         else:
             try:
