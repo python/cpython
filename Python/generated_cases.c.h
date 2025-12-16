@@ -967,23 +967,22 @@
                 i = sub_st;
                 res = PyStackRef_FromPyObjectBorrow(res_o);
             }
-            // _POP_TOP
+            // _POP_TOP_INT
             {
                 value = i;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            // _POP_TOP
+            {
+                value = s;
                 stack_pointer[-2] = res;
-                stack_pointer[-1] = s;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            // _POP_TOP_INT
-            {
-                value = s;
-                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
-                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
-            }
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
