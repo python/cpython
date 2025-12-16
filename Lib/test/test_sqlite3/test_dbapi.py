@@ -1380,9 +1380,8 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob[5:5], b"")
 
     def test_blob_get_empty_slice_oob_indices(self):
-        self.cx.execute("delete from test")
         self.cx.execute("insert into test(b) values (?)", (b"abc",))
-        with self.cx.blobopen("test", "b", 1) as blob:
+        with self.cx.blobopen("test", "b", 2) as blob:
             self.assertEqual(blob[5:-5], b"")
 
     def test_blob_get_slice_negative_index(self):
