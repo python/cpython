@@ -281,20 +281,20 @@
                 l = left;
                 r = right;
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP_UNICODE
             {
                 value = r;
-                assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
             // _POP_TOP_UNICODE
             {
                 value = l;
-                assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
                 PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
             stack_pointer[-2] = res;

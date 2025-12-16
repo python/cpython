@@ -365,7 +365,7 @@ dummy_func(
         }
 
         op(_POP_TOP_UNICODE, (value --)) {
-            assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
         }
 
@@ -753,7 +753,9 @@ dummy_func(
             l = left;
             r = right;
             INPUTS_DEAD();
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

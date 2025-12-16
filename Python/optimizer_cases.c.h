@@ -667,7 +667,7 @@
                 l_stackref = left;
                 r_stackref = right;
                 if (res_o == NULL) {
-                    goto error;
+                    JUMP_TO_LABEL(error);
                 }
                 res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */

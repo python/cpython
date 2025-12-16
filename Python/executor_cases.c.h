@@ -1926,7 +1926,7 @@
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef value;
             value = stack_pointer[-1];
-            assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             SET_CURRENT_CACHED_VALUES(0);
             stack_pointer += -1;
@@ -1941,7 +1941,7 @@
             _PyStackRef value;
             _PyStackRef _stack_item_0 = _tos_cache0;
             value = _stack_item_0;
-            assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             SET_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
@@ -1955,7 +1955,7 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             value = _stack_item_1;
-            assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             _tos_cache0 = _stack_item_0;
             SET_CURRENT_CACHED_VALUES(1);
@@ -1971,7 +1971,7 @@
             _PyStackRef _stack_item_1 = _tos_cache1;
             _PyStackRef _stack_item_2 = _tos_cache2;
             value = _stack_item_2;
-            assert(PyUnicode_Check(PyStackRef_AsPyObjectBorrow(value)));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
             PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             _tos_cache1 = _stack_item_1;
             _tos_cache0 = _stack_item_0;
@@ -4203,8 +4203,6 @@
             l = left;
             r = right;
             if (res_o == NULL) {
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
@@ -4239,7 +4237,7 @@
             l = left;
             r = right;
             if (res_o == NULL) {
-                stack_pointer += -1;
+                stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
@@ -4276,6 +4274,8 @@
             l = left;
             r = right;
             if (res_o == NULL) {
+                stack_pointer += 2;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
