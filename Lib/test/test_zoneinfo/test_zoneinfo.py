@@ -14,9 +14,9 @@ import shutil
 import struct
 import tempfile
 import unittest
-import zoneinfo
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
+from zoneinfo import ZoneInfo
 
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
@@ -1553,7 +1553,6 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
             pass
 
     def test_weak_cache_descriptor_use_after_free(self):
-        from zoneinfo import ZoneInfo
         class BombDescriptor:
             def __get__(self, obj, owner):
                 return {}
