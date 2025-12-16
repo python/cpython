@@ -1896,7 +1896,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertNotIn("_POP_TOP_INT", uops)
-    
+
     def test_call_type_1_guards_removed(self):
         def testfunc(n):
             x = 0
