@@ -994,7 +994,7 @@ full:
 }
 
 // Returns 0 for do not enter tracing, 1 on enter tracing.
-int
+Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
     _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth,
