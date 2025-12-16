@@ -1554,11 +1554,6 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
     def test_weak_cache_descriptor_use_after_free(self):
         from zoneinfo import ZoneInfo
-
-        available_zones = sorted(zoneinfo.available_timezones())
-        if "UTC" not in available_zones:
-            raise unittest.SkipTest("No time zone data available")
-
         class BombDescriptor:
             def __get__(self, obj, owner):
                 return {}
@@ -1568,16 +1563,16 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
         EvilZoneInfo._weak_cache = BombDescriptor()
 
-        zone1 = EvilZoneInfo("UTC")
+        zone1 = EvilZoneInfo("America/Los_Angeles")
 
         self.assertIsNotNone(zone1)
-        self.assertEqual(str(zone1), "UTC")
+        self.assertEqual(str(zone1), "America/Los_Angeles")
 
         EvilZoneInfo.clear_cache()
 
-        zone2 = EvilZoneInfo("UTC")
+        zone2 = EvilZoneInfo("America/Los_Angeles")
         self.assertIsNotNone(zone2)
-        self.assertEqual(str(zone2), "UTC")
+        self.assertEqual(str(zone2), "America/Los_Angeles")
 
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
