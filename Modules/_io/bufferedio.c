@@ -2537,7 +2537,7 @@ static PyType_Slot bufferediobase_slots[] = {
 };
 
 /* Do not set Py_TPFLAGS_HAVE_GC so that tp_traverse and tp_clear are inherited */
-PyType_Spec bufferediobase_spec = {
+PyType_Spec _Py_bufferediobase_spec = {
     .name = "_io._BufferedIOBase",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -2600,7 +2600,7 @@ static PyType_Slot bufferedreader_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedreader_spec = {
+PyType_Spec _Py_bufferedreader_spec = {
     .name = "_io.BufferedReader",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2658,7 +2658,7 @@ static PyType_Slot bufferedwriter_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedwriter_spec = {
+PyType_Spec _Py_bufferedwriter_spec = {
     .name = "_io.BufferedWriter",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2708,7 +2708,7 @@ static PyType_Slot bufferedrwpair_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrwpair_spec = {
+PyType_Spec _Py_bufferedrwpair_spec = {
     .name = "_io.BufferedRWPair",
     .basicsize = sizeof(rwpair),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -2776,7 +2776,7 @@ static PyType_Slot bufferedrandom_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec bufferedrandom_spec = {
+PyType_Spec _Py_bufferedrandom_spec = {
     .name = "_io.BufferedRandom",
     .basicsize = sizeof(buffered),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

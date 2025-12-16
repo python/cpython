@@ -40,7 +40,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    .. versionadded:: 3.4
       Add :c:macro:`!Py_HASH_FNV` and :c:macro:`!Py_HASH_SIPHASH24`.
 
-   .. versionadded:: 3.13
+   .. versionadded:: 3.11
       Add :c:macro:`!Py_HASH_SIPHASH13`.
 
 
@@ -56,6 +56,8 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    it is easier to create colliding strings. A cutoff of 7 on 64-bit platforms
    and 5 on 32-bit platforms should provide a decent safety margin.
 
+   This corresponds to the :data:`sys.hash_info.cutoff` constant.
+
    .. versionadded:: 3.4
 
 
@@ -63,6 +65,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
    The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``,
    used for numeric hash scheme.
+
    This corresponds to the :data:`sys.hash_info.modulus` constant.
 
    .. versionadded:: 3.13
@@ -71,7 +74,6 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 .. c:macro:: PyHASH_BITS
 
    The exponent ``n`` of ``P`` in :c:macro:`PyHASH_MODULUS`.
-   This corresponds to the :data:`sys.hash_info.hash_bits` constant.
 
    .. versionadded:: 3.13
 
@@ -86,6 +88,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 .. c:macro:: PyHASH_INF
 
    The hash value returned for a positive infinity.
+
    This corresponds to the :data:`sys.hash_info.inf` constant.
 
    .. versionadded:: 3.13
@@ -94,6 +97,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 .. c:macro:: PyHASH_IMAG
 
    The multiplier used for the imaginary part of a complex number.
+
    This corresponds to the :data:`sys.hash_info.imag` constant.
 
    .. versionadded:: 3.13
@@ -111,13 +115,19 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
       Hash function name (UTF-8 encoded string).
 
+      This corresponds to the :data:`sys.hash_info.algorithm` constant.
+
    .. c:member:: const int hash_bits
 
       Internal size of the hash value in bits.
 
+      This corresponds to the :data:`sys.hash_info.hash_bits` constant.
+
    .. c:member:: const int seed_bits
 
       Size of seed input in bits.
+
+      This corresponds to the :data:`sys.hash_info.seed_bits` constant.
 
    .. versionadded:: 3.4
 

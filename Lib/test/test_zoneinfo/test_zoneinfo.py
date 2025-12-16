@@ -29,7 +29,7 @@ py_zoneinfo, c_zoneinfo = test_support.get_modules()
 
 try:
     importlib.metadata.metadata("tzdata")
-    HAS_TZDATA_PKG = True
+    HAS_TZDATA_PKG = (importlib.metadata.version("tzdata") == "2025.3")
 except importlib.metadata.PackageNotFoundError:
     HAS_TZDATA_PKG = False
 
@@ -2207,8 +2207,8 @@ class ZoneDumpData:
             ]
 
         def _America_Santiago():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-16966), ZERO)
-            SMT = ZoneOffset("SMT", timedelta(seconds=-16966), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-16965), ZERO)
+            SMT = ZoneOffset("SMT", timedelta(seconds=-16965), ZERO)
             N05 = ZoneOffset("-05", timedelta(seconds=-18000), ZERO)
             N04 = ZoneOffset("-04", timedelta(seconds=-14400), ZERO)
             N03 = ZoneOffset("-03", timedelta(seconds=-10800), ONE_H)
@@ -2243,8 +2243,8 @@ class ZoneDumpData:
 
             return [
                 ZoneTransition(datetime(1895, 2, 1), LMT, AEST),
-                ZoneTransition(datetime(1917, 1, 1, 0, 1), AEST, AEDT),
-                ZoneTransition(datetime(1917, 3, 25, 2), AEDT, AEST),
+                ZoneTransition(datetime(1917, 1, 1, 2), AEST, AEDT),
+                ZoneTransition(datetime(1917, 3, 25, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 4, 1, 3), AEDT, AEST),
                 ZoneTransition(datetime(2012, 10, 7, 2), AEST, AEDT),
                 ZoneTransition(datetime(2040, 4, 1, 3), AEDT, AEST),
@@ -2252,7 +2252,7 @@ class ZoneDumpData:
             ]
 
         def _Europe_Dublin():
-            LMT = ZoneOffset("LMT", timedelta(seconds=-1500), ZERO)
+            LMT = ZoneOffset("LMT", timedelta(seconds=-1521), ZERO)
             DMT = ZoneOffset("DMT", timedelta(seconds=-1521), ZERO)
             IST_0 = ZoneOffset("IST", timedelta(seconds=2079), ONE_H)
             GMT_0 = ZoneOffset("GMT", ZERO, ZERO)
