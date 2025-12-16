@@ -356,7 +356,7 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
         default:
             printf(" (%d, Unknown format)", uop->oparg);
     }
-    if (_PyUop_Flags[uop->opcode] & HAS_ERROR_FLAG) {
+    if (_PyUop_Flags[_PyUop_Uncached[uop->opcode]] & HAS_ERROR_FLAG) {
         printf(", error_target=%d", uop->error_target);
     }
 
