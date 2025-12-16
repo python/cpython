@@ -1,0 +1,1 @@
+Fix: can not ``list_all`` after ``_interpchannels.close(cid)``
