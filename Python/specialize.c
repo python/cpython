@@ -355,6 +355,28 @@ static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
 
+#ifdef Py_GIL_DISABLED
+static void
+maybe_enable_deferred_ref_count(PyObject *dict, PyObject *name)
+{
+    PyObject *op;
+    if (PyDict_GetItemRef(dict, name, &op) != 1) {
+        return;
+    }
+    if (_Py_IsOwnedByCurrentThread(op) ||
+            !PyType_IS_GC(Py_TYPE(op)) ||
+            _PyObject_HasDeferredRefcount(op)) {
+        Py_DECREF(op);
+        return;
+    }
+    if (PyFrozenSet_Check(op) || PyTuple_Check(op) || PyType_Check(op)) {
+        PyUnstable_Object_EnableDeferredRefcount(op);
+    }
+    Py_DECREF(op);
+}
+#endif
+
+
 static int
 specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, PyObject *name)
 {
@@ -384,6 +406,9 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    maybe_enable_deferred_ref_count((PyObject *)dict, name);
+#endif
     write_u32(cache->version, keys_version);
     cache->index = (uint16_t)index;
     specialize(instr, LOAD_ATTR_MODULE);
@@ -1263,25 +1288,6 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     write_ptr(cache->descr, descr);
     return 1;
 }
-
-#ifdef Py_GIL_DISABLED
-static void
-maybe_enable_deferred_ref_count(PyObject *globals, PyObject *name)
-{
-    PyObject *value;
-    if (PyDict_GetItemRef(globals, name, &value) != 1) {
-        return;
-    }
-    if (!PyType_IS_GC(Py_TYPE(value)) || _PyObject_HasDeferredRefcount(value)) {
-        Py_DECREF(value);
-        return;
-    }
-    if (PyFrozenSet_Check(value)) {
-        PyUnstable_Object_EnableDeferredRefcount(value);
-    }
-    Py_DECREF(value);
-}
-#endif
 
 static void
 specialize_load_global_lock_held(
