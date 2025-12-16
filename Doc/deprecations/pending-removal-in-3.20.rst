@@ -1,8 +1,8 @@
 Pending removal in Python 3.20
 ------------------------------
 
-* The ``__version__`` attribute has been deprecated in these standard library
-  modules and will be removed in Python 3.20.
+* The ``__version__`` and ``VERSION`` attributes have been deprecated in these
+  standard library modules and will be removed in Python 3.20.
   Use :py:data:`sys.version_info` instead.
 
   - :mod:`argparse`
@@ -23,6 +23,7 @@ Pending removal in Python 3.20
   - :mod:`tabnanny`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
+  - :mod:`xml.etree.ElementTree`
   - :mod:`wsgiref.simple_server`
   - :mod:`zlib`
 

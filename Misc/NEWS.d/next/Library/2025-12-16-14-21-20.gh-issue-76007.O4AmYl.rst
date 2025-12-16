@@ -1,0 +1,2 @@
+Deprecate ``VERSION`` from :mod:`xml.etree.ElementTree`. Patch by Hugo van
+Kemenade.
