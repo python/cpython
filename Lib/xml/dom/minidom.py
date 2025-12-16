@@ -688,12 +688,16 @@ class Element(Node):
                          Node.ENTITY_REFERENCE_NODE)
 
     def __init__(self, tagName, namespaceURI=EMPTY_NAMESPACE, prefix=None,
-                 localName=None):
+                 localName=None, childNodes=None, attributes=None, attributesNS=None):
         self.parentNode = None
+        self.ownerDocument = None
         self.tagName = self.nodeName = tagName
         self.prefix = prefix
         self.namespaceURI = namespaceURI
         self.childNodes = NodeList()
+        if childNodes:
+            for child in childNodes:
+                self.appendChild(child)
         self.nextSibling = self.previousSibling = None
 
         # Attribute dictionaries are lazily created
@@ -706,6 +710,13 @@ class Element(Node):
         # namespaces.
         self._attrs = None
         self._attrsNS = None
+        if attributes:
+            for name, value in attributes.items():
+                self.setAttribute(name, value)
+
+        if attributesNS:
+            for (namespace, name), value in attributesNS.items():
+                self.setAttributeNS(namespace, name, value)
 
     def _ensure_attributes(self):
         if self._attrs is None:
