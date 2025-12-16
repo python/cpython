@@ -146,7 +146,7 @@ Then, create ``meson.build`` containing the following:
 
 .. code-block:: meson
 
-   project('purelib-and-platlib', 'c')
+   project('sampleproject', 'c')
 
    py = import('python').find_installation(pure: false)
 
@@ -309,9 +309,9 @@ To expose the ``system`` C function directly to Python,
 we'll need to write a layer of glue code to convert arguments from Python
 objects to C values, and the C return value back to Python.
 
-One of the simplest glue code is a ":c:data:`METH_O`" function,
+One of the simplest ways to write glue code is a ":c:data:`METH_O`" function,
 which takes two Python objects and returns one.
-All Pyton objects -- regardless of the Python type -- are represented in C
+All Python objects -- regardless of the Python type -- are represented in C
 as pointers to the ``PyObject`` structure.
 
 Add such a function above the slots array::
@@ -322,7 +322,7 @@ Add such a function above the slots array::
       Py_RETURN_NONE;
    }
 
-For now, we'll ignor the arguments, and use the :c:macro:`Py_RETURN_NONE`
+For now, we'll ignore the arguments, and use the :c:macro:`Py_RETURN_NONE`
 macro to properly ``return`` a Python :py:data:`None` object.
 
 Recompile your extension to make sure you don't have syntax errors.
@@ -366,7 +366,7 @@ Add a :c:data:`Py_mod_methods` slot to your a :c:type:`PyMethodDef` array:
 
 Recompile your extension again, and test it.
 Be sure to restart the Python interpreter, so that ``import spam`` picks
-up the new version if the module.
+up the new version of the module.
 
 You should now be able to call the function:
 
@@ -441,10 +441,10 @@ object.
 This isn't useful in our case, so we'll ignore it.
 
 The other one, ``PyObject *arg``, will be set to the object that the user
-called the Python with.
+passed from Python.
 We expect that it should be a Python string.
 In order to use the information in it, we will need
-to convert it to a C value --- in this case, a C string (``const char *``).
+to convert it to a C value -- in this case, a C string (``const char *``).
 
 There's a slight type mismatch here: Python's :py:class:`str` objects store
 Unicode text, but C strings are arrays of bytes.
