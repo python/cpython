@@ -4160,6 +4160,22 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         self.assertEqual([b"abcdef", b"middle", b"g"*chunk_size],
                          buf._write_stack)
 
+    def test_issue142594(self):
+        wrapper = None
+        detached = False
+        class ReentrantRawIO(self.RawIOBase):
+            @property
+            def closed(self):
+                nonlocal detached
+                if wrapper is not None and not detached:
+                    detached = True
+                    wrapper.detach()
+                return False
+
+        raw = ReentrantRawIO()
+        wrapper = self.TextIOWrapper(raw)
+        wrapper.close()  # should not crash
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
