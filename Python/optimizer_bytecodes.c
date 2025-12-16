@@ -99,6 +99,11 @@ dummy_func(void) {
         GETLOCAL(oparg) = temp;
     }
 
+    op(_STORE_ATTR_INSTANCE_VALUE, (offset/1, value, owner -- o)) {
+        (void)value;
+        o = owner;
+    }
+
     op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
@@ -107,6 +112,12 @@ dummy_func(void) {
         (void)value;
         ls = list_st;
         ss = sub_st;
+    }
+
+    op(_STORE_ATTR_SLOT, (index/1, value, owner -- o)) {
+        (void)index;
+        (void)value;
+        o = owner;
     }
 
     op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- st)) {
@@ -246,46 +257,40 @@ dummy_func(void) {
         }
     }
 
-    op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_ADD_INT, (left, right -- res, l, r)) {
         res = sym_new_compact_int(ctx);
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_SUBTRACT_INT, (left, right -- res, l, r)) {
         res = sym_new_compact_int(ctx);
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_MULTIPLY_INT, (left, right -- res, l, r)) {
         res = sym_new_compact_int(ctx);
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_ADD_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyFloat_Type);
-        // TODO (gh-134584): Refactor this to use another uop
-        if (PyJitRef_IsBorrowed(left) && PyJitRef_IsBorrowed(right)) {
-            REPLACE_OP(this_instr, op_without_decref_inputs[opcode], oparg, 0);
-        }
+        l = left;
+        r = right;
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
@@ -447,9 +452,10 @@ dummy_func(void) {
         }
     }
 
-    op(_COMPARE_OP_INT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_COMPARE_OP_INT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
@@ -541,6 +547,12 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_INT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
+    op(_POP_TOP_FLOAT, (value --)) {
         if (PyJitRef_IsBorrowed(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
