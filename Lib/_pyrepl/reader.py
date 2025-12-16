@@ -297,14 +297,8 @@ class Reader:
         if self.last_refresh_cache.valid(self):
             offset, num_common_lines = self.last_refresh_cache.get_cached_location(self)
 
-        screen = self.last_refresh_cache.screen
-        del screen[num_common_lines:]
-
-        screeninfo = self.last_refresh_cache.screeninfo
-        del screeninfo[num_common_lines:]
-
-        last_refresh_line_end_offsets = self.last_refresh_cache.line_end_offsets
-        del last_refresh_line_end_offsets[num_common_lines:]
+        screen = self.last_refresh_cache.screen[:num_common_lines]
+        screeninfo = self.last_refresh_cache.screeninfo[:num_common_lines]
 
         pos = self.pos
         pos -= offset
@@ -338,7 +332,6 @@ class Reader:
                 prompt = self.get_prompt(ln, line_len >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
-                last_refresh_line_end_offsets.append(offset)
                 screen.append(pre_prompt)
                 screeninfo.append((0, []))
             pos -= line_len + 1
@@ -347,7 +340,6 @@ class Reader:
             wrapcount = (sum(char_widths) + prompt_len) // self.console.width
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
-                last_refresh_line_end_offsets.append(offset)
                 screen.append(prompt + "".join(chars))
                 screeninfo.append((prompt_len, char_widths))
             else:
@@ -369,7 +361,6 @@ class Reader:
                         offset += index_to_wrap_before + 1  # Takes the newline
                         post = ""
                         after = []
-                    last_refresh_line_end_offsets.append(offset)
                     render = pre + "".join(chars[:index_to_wrap_before]) + post
                     render_widths = char_widths[:index_to_wrap_before] + after
                     screen.append(render)
