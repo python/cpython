@@ -2640,7 +2640,7 @@ Notes on using *__slots__*:
   of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Allowed defining the *__dict__* and *__weakref__* *__slots__* for any class.
 
 
