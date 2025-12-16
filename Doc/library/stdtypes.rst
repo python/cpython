@@ -5100,9 +5100,6 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.
-
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.  To illustrate dictionary creation and equality,
