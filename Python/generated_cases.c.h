@@ -912,6 +912,8 @@
             _PyStackRef str_st;
             _PyStackRef sub_st;
             _PyStackRef res;
+            _PyStackRef s;
+            _PyStackRef i;
             // _GUARD_TOS_INT
             {
                 value = stack_pointer[-1];
@@ -961,16 +963,26 @@
                 assert(c < 128);
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
-                PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(str_st);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                s = str_st;
+                i = sub_st;
                 res = PyStackRef_FromPyObjectBorrow(res_o);
             }
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            // _POP_TOP
+            {
+                value = i;
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = s;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP_INT
+            {
+                value = s;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
