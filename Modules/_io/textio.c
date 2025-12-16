@@ -3133,6 +3133,9 @@ _io_TextIOWrapper_close_impl(textio *self)
     if (r > 0) {
         Py_RETURN_NONE; /* stream already closed */
     }
+    if (self->detached) {
+        Py_RETURN_NONE; /* gh-142594 null pointer issue */
+    }
     else {
         PyObject *exc = NULL;
         if (self->finalizing) {
