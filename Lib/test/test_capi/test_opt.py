@@ -2533,6 +2533,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertNotIn("_POP_TOP", uops)
 
+    def test_unicode_add_op_refcount_elimination(self):
+        def testfunc(n):
+            c = "a"
+            res = ""
+            for _ in range(n):
+                res = c + c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, "aa")
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
     def test_remove_guard_for_slice_list(self):
         def f(n):
             for i in range(n):

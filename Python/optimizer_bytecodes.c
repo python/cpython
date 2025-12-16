@@ -293,12 +293,14 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+    op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyUnicode_Type);
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
         JitOptRef res;
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
@@ -553,6 +555,12 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_FLOAT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
+    op(_POP_TOP_UNICODE, (value --)) {
         if (PyJitRef_IsBorrowed(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
