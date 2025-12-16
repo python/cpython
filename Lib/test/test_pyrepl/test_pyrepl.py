@@ -26,7 +26,9 @@ from .support import (
     multiline_input,
     code_to_events,
 )
-from _pyrepl.console import Event
+from typing import IO
+
+from _pyrepl.console import Console, Event
 from _pyrepl._module_completer import (
     ImportParser,
     ModuleCompleter,
@@ -1415,6 +1417,95 @@ class TestDumbTerminal(ReplTestCase):
         self.assertIn("warning: can't use pyrepl", output)
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
+
+
+class TestConsoleRepr(TestCase):
+
+    class _StubConsole(Console):
+        def __init__(
+            self,
+            f_in: int | IO[bytes] = 0,
+            f_out: int | IO[bytes] = 1,
+            term: str = "",
+            encoding: str = "",
+        ) -> None:
+            super().__init__(f_in, f_out, term, encoding)
+            self.height = 25
+            self.width = 80
+            self.screen = []
+
+        def refresh(self, screen: list[str], xy: tuple[int, int]) -> None:
+            pass
+
+        def prepare(self) -> None:
+            pass
+
+        def restore(self) -> None:
+            pass
+
+        def move_cursor(self, x: int, y: int) -> None:
+            pass
+
+        def set_cursor_vis(self, visible: bool) -> None:
+            pass
+
+        def getheightwidth(self) -> tuple[int, int]:
+            return self.height, self.width
+
+        def get_event(self, block: bool = True) -> Event | None:
+            return None
+
+        def push_char(self, char: int | bytes) -> None:
+            pass
+
+        def beep(self) -> None:
+            pass
+
+        def clear(self) -> None:
+            pass
+
+        def finish(self) -> None:
+            pass
+
+        def flushoutput(self) -> None:
+            pass
+
+        def forgetinput(self) -> None:
+            pass
+
+        def getpending(self) -> Event:
+            return Event("key", "", b"")
+
+        def wait(self, timeout: float | None = None) -> bool:
+            return False
+
+        def repaint(self) -> None:
+            pass
+
+        @property
+        def input_hook(self):
+            return None
+
+    def test_reader_repr_avoids_console_field(self):
+        console = self._StubConsole()
+        config = ReadlineConfig(readline_completer=None)
+
+        reader = ReadlineAlikeReader(console=console, config=config)
+
+        repr_str = repr(reader)
+
+        self.assertIsInstance(repr_str, str)
+        self.assertNotIn("console=", repr_str)
+
+    def test_wrapper_reader_repr_before_prepare(self):
+        with patch("_pyrepl.readline.Console", self._StubConsole), patch(
+            "_pyrepl.readline.os.dup",
+            side_effect=lambda fd: fd,
+        ):
+            wrapper = _ReadlineWrapper()
+            reader = wrapper.get_reader()
+
+        self.assertIsInstance(repr(reader), str)
 
 
 @skipUnless(pty, "requires pty")
