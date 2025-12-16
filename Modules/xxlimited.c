@@ -11,7 +11,13 @@
    other files, you'll have to create a file "foobarobject.h"; see
    floatobject.h for an example.
 
-   This module roughly corresponds to::
+   This module uses Limited API 3.15.
+   See ``xxlimited_3_13.c`` if you want to support older CPython versions.
+
+   This module roughly corresponds to the following.
+   (All underscore-prefixed attributes are not accessible from Python.)
+
+   ::
 
       class Xxo:
          """A class that explicitly stores attributes in an internal dict
@@ -27,6 +33,8 @@
               return self._x_attr[name]
 
           def __setattr__(self, name, value):
+              if name == "reserved":
+                  raise AttributeError("cannot set 'reserved'")
               self._x_attr[name] = value
 
           def __delattr__(self, name):
@@ -68,7 +76,9 @@
 #define Py_LIMITED_API 0x030f0000
 
 // experimental: free-threaded build compatibility
+// (for internal tests; this should only appear here in CPython alpha builds)
 #define _Py_OPAQUE_PYOBJECT 0x030f0000
+
 
 #include "Python.h"
 #include <string.h>
@@ -82,11 +92,49 @@ typedef struct {
 } xx_state;
 
 
-/* Xxo objects */
+/* Xxo objects.
+ *
+ * A non-trivial extension type, intentionally showing a number of features
+ * that aren't easy to implement in the Limited API.
+ */
 
+// Forward declaration
 static PyType_Spec Xxo_Type_spec;
 
-// Instance state
+// Get the module state (xx_state*) from a given type object 'type', which
+// must be a subclass of Xxo (the type we're defining).
+// This is complicated by the fact that the Xxo type is dynamically allocated,
+// and there may be several such types in a given Python process -- for
+// example, in different subinterpreters, or through loading this
+// extension module several times.
+// So, we don't have a "global" pointer to the type, or to the module, etc.;
+// instead we search based on `Xxo_Type_spec` (which is static, immutable,
+// and process-global).
+//
+// When possible, it's better to avoid `PyType_GetBaseByToken` -- for an
+// example, see the `demo` method (Xxo_demo C function), which uses a
+// "defining class". But, in many cases it's the best solution.
+static xx_state *
+Xxo_state_from_type(PyTypeObject *type)
+{
+    PyTypeObject *base;
+    // Search all superclasses of 'type' for one that was defined using
+    // "Xxo_Type_spec". That must be our 'Xxo' class.
+    if (PyType_GetBaseByToken(type, &Xxo_Type_spec, &base) < 0) {
+        return NULL;
+    }
+    if (base == NULL) {
+        PyErr_SetString(PyExc_TypeError, "need Xxo subclass");
+        return NULL;
+    }
+    // From this type, get the associated module. That must be the
+    // relevant `xxlimited` module.
+    xx_state *state = PyType_GetModuleState(base);
+    Py_DECREF(base);
+    return state;
+}
+
+// Structure for data needed by the XxoObject type.
 typedef struct {
     PyObject            *x_attr;           /* Attributes dictionary.
                                             * May be NULL, which acts as an
@@ -96,23 +144,41 @@ typedef struct {
     Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject_Data;
 
-#define XxoObject_CAST(self)  ((XxoObject *)(self))
-// TODO: full support for type-checking was added in 3.14 (Py_tp_token)
-// #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
-
-static PyObject *
-newXxoObject(PyObject *module)
+// Get the `XxoObject_Data` structure for a given instance of our type.
+static XxoObject_Data *
+Xxo_get_data(PyObject *self)
 {
-    xx_state *state = PyModule_GetState(module);
-    if (state == NULL) {
+    xx_state *state = Xxo_state_from_type(Py_TYPE(self));
+    if (!state) {
         return NULL;
     }
-    allocfunc alloc = PyType_GetSlot(state->Xxo_Type, Py_tp_alloc);
-    PyObject *self = alloc(state->Xxo_Type, 0);
+    XxoObject_Data *data = PyObject_GetTypeData(self, state->Xxo_Type);
+    return data;
+}
+
+// Xxo initialization
+// This is the implementation of Xxo.__new__; it takes arbitrary positional
+// and keyword arguments.
+static PyObject *
+Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+    // Validate that we did not get any arguments.
+    if ((args != NULL && PyObject_Length(args))
+        || (kwargs != NULL && PyObject_Length(kwargs)))
+    {
+        PyErr_SetString(PyExc_TypeError, "Xxo.__new__() takes no arguments");
+        return NULL;
+    }
+    // Create an instance of *type* (which may be a subclass)
+    allocfunc alloc = PyType_GetSlot(type, Py_tp_alloc);
+    PyObject *self = alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-    XxoObject_Data *xxo_data = PyObject_GetTypeData(self, state->Xxo_Type);
+
+    // Initialize the C members on the instance.
+    // This is only included for the sake of example. The default alloc
+    // function zeroes instance memory; we don't need to do it again.
+    XxoObject_Data *xxo_data = Xxo_get_data(self);
     if (xxo_data == NULL) {
         return NULL;
     }
@@ -120,33 +186,6 @@ newXxoObject(PyObject *module)
     memset(xxo_data->x_buffer, 0, BUFSIZE);
     xxo_data->x_exports = 0;
     return self;
-}
-
-static xx_state *
-Xxo_state_from_type(PyTypeObject *type, void *token)
-{
-    PyTypeObject *base;
-    if (PyType_GetBaseByToken(type, &Xxo_Type_spec, &base) < 0) {
-        return NULL;
-    }
-    if (base == NULL) {
-        return NULL;
-    }
-    xx_state *state = PyType_GetModuleState(base);
-    return state;
-}
-
-#include <stdio.h>
-
-static XxoObject_Data *
-Xxo_get_data(PyObject *self)
-{
-    xx_state *state = Xxo_state_from_type(Py_TYPE(self), &Xxo_Type_spec);
-    if (!state) {
-        return NULL;
-    }
-    XxoObject_Data *data = PyObject_GetTypeData(self, state->Xxo_Type);
-    return data;
 }
 
 /* Xxo finalization.
@@ -236,6 +275,16 @@ Xxo_getattro(PyObject *self, PyObject *name)
 static int
 Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
 {
+    // filter a specific attribute name
+    int is_reserved = PyUnicode_EqualToUTF8(name, "reserved");
+    if (is_reserved < 0) {
+        return -1;
+    }
+    else if (is_reserved) {
+        PyErr_Format(PyExc_AttributeError, "cannot set %R", name);
+        return -1;
+    }
+
     XxoObject_Data *data = Xxo_get_data(self);
     if (data == NULL) {
         return -1;
@@ -355,6 +404,7 @@ static PyGetSetDef Xxo_getsetlist[] = {
 
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, (char *)Xxo_doc},
+    {Py_tp_new, Xxo_new},
     {Py_tp_traverse, Xxo_traverse},
     {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},
@@ -372,7 +422,7 @@ static PyType_Slot Xxo_Type_slots[] = {
 static PyType_Spec Xxo_Type_spec = {
     .name = "xxlimited.Xxo",
     .basicsize = -(Py_ssize_t)sizeof(XxoObject_Data),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
     .slots = Xxo_Type_slots,
 };
 
@@ -419,7 +469,9 @@ xx_foo(PyObject *module, PyObject *args)
 static PyObject *
 xx_new(PyObject *module, PyObject *Py_UNUSED(unused))
 {
-    return newXxoObject(module);
+    xx_state *state = PyModule_GetState(module);
+
+    return Xxo_new(state->Xxo_Type, NULL, NULL);
 }
 
 
@@ -537,6 +589,9 @@ static PyModuleDef_Slot xx_slots[] = {
     /* Signal that this module does not rely on the GIL for its own needs.
      * Without this slot, free-threaded builds of CPython will enable
      * the GIL when this module is loaded.
+     */
+    /* TODO: This is not quite true yet: there is a race in Xxo_setattro
+     * for example.
      */
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 

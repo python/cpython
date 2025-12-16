@@ -72,6 +72,10 @@ class XXLimitedTests(unittest.TestCase):
         self.assertEqual(xxo.demo("abc"), "abc")
         self.assertEqual(xxo.demo(0), None)
         self.assertEqual(xxo.__module__, module.__name__)
+        with self.assertRaises(TypeError):
+            module.Xxo('arg')
+        with self.assertRaises(TypeError):
+            module.Xxo(kwarg='arg')
 
     @test_with_xxlimited_modules(since=(3, 13))
     def test_xxo_demo_extra(self, module):
@@ -79,6 +83,16 @@ class XXLimitedTests(unittest.TestCase):
         other = module.Xxo()
         self.assertEqual(xxo.demo(xxo), xxo)
         self.assertEqual(xxo.demo(other), other)
+
+    @test_with_xxlimited_modules(since=(3, 15))
+    def test_xxo_subclass(self, module):
+        class Sub(module.Xxo):
+            pass
+        sub = Sub()
+        sub.a = 123
+        self.assertEqual(sub.a, 123)
+        with self.assertRaisesRegex(AttributeError, "cannot set 'reserved'"):
+            sub.reserved = 123
 
     @test_with_xxlimited_modules(since=(3, 13))
     def test_error(self, module):
