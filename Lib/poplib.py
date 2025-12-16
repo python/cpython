@@ -237,17 +237,26 @@ class POP3:
 
         self._putcmd(f'AUTH {mechanism}')
         while True:
-            resp = self._getresp()
-            if resp[:3] == b'+OK':
-                return resp
+            line, _ = self._getline()
+            if line.startswith(b'+OK'):
+                return line
+            if line.startswith(b'-ERR'):
+                while self._getline() != b'.\r\n':
+                    pass
+                raise error_proto(line.decode('ascii', 'replace'))
 
-            challenge_b64 = resp[1:].lstrip(b' ')
+            if not line.startswith(b'+ '):
+                raise error_proto(f'malformed challenge line: {line!r}')
+
+            challenge_b64 = line[2:]
+            challenge_b64 = challenge_b64.rstrip(b'\r\n')
+
             if challenge_b64:
                 try:
                     challenge = base64.b64decode(challenge_b64)
                 except Exception:
                     padded = challenge_b64 + b'=' * (-len(challenge_b64) % 4)
-                    challenge = base64.b64decode(padded, validate=False)
+                    challenge = base64.b64decode(padded)
             else:
                 challenge = b''
 
@@ -259,10 +268,10 @@ class POP3:
 
             if response == b'*':
                 self._putcmd('*')
-                return self._getresp()
+                err_line, _ = self._getline()
+                raise error_proto(err_line.decode('ascii', 'replace'))
 
             self._putcmd(base64.b64encode(response).decode('ascii'))
-
 
     def stat(self):
         """Get mailbox status.
