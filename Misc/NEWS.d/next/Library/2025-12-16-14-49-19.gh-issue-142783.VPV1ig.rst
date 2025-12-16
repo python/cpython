@@ -1,0 +1,3 @@
+Fix zoneinfo use-after-free with descriptor _weak_cache. Return new
+reference from get_weak_cache() instead of borrowed reference to prevent
+premature object free.
