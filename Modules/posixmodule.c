@@ -2471,7 +2471,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
-    "stat_result", /* name */
+    "os.stat_result", /* name; see issue gh-63408 */
     stat_result__doc__, /* doc */
     stat_result_fields,
     10
@@ -2501,7 +2501,7 @@ static PyStructSequence_Field statvfs_result_fields[] = {
 };
 
 static PyStructSequence_Desc statvfs_result_desc = {
-    "statvfs_result", /* name */
+    "os.statvfs_result", /* name; see issue gh-63408 */
     statvfs_result__doc__, /* doc */
     statvfs_result_fields,
     10
@@ -2526,7 +2526,7 @@ static PyStructSequence_Field waitid_result_fields[] = {
 };
 
 static PyStructSequence_Desc waitid_result_desc = {
-    "waitid_result", /* name */
+    MODNAME ".waitid_result", /* name */
     waitid_result__doc__, /* doc */
     waitid_result_fields,
     5
@@ -2634,11 +2634,15 @@ _posix_free(void *module)
 static PyObject *
 stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
 {
+#if SIZEOF_TIME_T == 4
+    return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+#else
     /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
     if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
         return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
     }
-    else {
+    else
+    {
         PyObject *ns_total = NULL;
         PyObject *s_in_ns = NULL;
         PyObject *s = _PyLong_FromTime_t(sec);
@@ -2660,6 +2664,7 @@ stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
         Py_XDECREF(s_in_ns);
         return ns_total;
     }
+#endif
 }
 
 static int
@@ -3314,10 +3319,11 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 #ifdef HAVE_STATX
 typedef struct {
     PyObject_HEAD
-    double atime_sec, btime_sec, ctime_sec, mtime_sec;
     dev_t rdev, dev;
     struct statx stx;
 } Py_statx_result;
+
+#define Py_statx_result_CAST(op) _Py_CAST(Py_statx_result*, (op))
 
 #define M(attr, type, offset, doc) \
     {attr, type, offset, Py_READONLY, PyDoc_STR(doc)}
@@ -3328,55 +3334,16 @@ typedef struct {
 
 static PyMemberDef pystatx_result_members[] = {
     MM(stx_mask, Py_T_UINT, mask, "member validity mask"),
-    MM(st_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
+    MM(stx_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
     MM(stx_attributes, Py_T_ULONGLONG, attributes, "Linux inode attribute bits"),
-    MM(st_nlink, Py_T_UINT, nlink, "number of hard links"),
-    MM(st_uid, Py_T_UINT, uid, "user ID of owner"),
-    MM(st_gid, Py_T_UINT, gid, "group ID of owner"),
-    MM(st_mode, Py_T_USHORT, mode, "protection bits"),
-    MM(st_ino, Py_T_ULONGLONG, ino, "inode"),
-    MM(st_size, Py_T_ULONGLONG, size, "total size, in bytes"),
-    MM(st_blocks, Py_T_ULONGLONG, blocks, "number of blocks allocated"),
     MM(stx_attributes_mask, Py_T_ULONGLONG, attributes_mask,
         "Mask of supported bits in stx_attributes"),
-    MX(st_atime, Py_T_DOUBLE, atime_sec, "time of last access"),
-    MX(st_birthtime, Py_T_DOUBLE, btime_sec, "time of creation"),
-    MX(st_ctime, Py_T_DOUBLE, ctime_sec, "time of last change"),
-    MX(st_mtime, Py_T_DOUBLE, mtime_sec, "time of last modification"),
     MM(stx_rdev_major, Py_T_UINT, rdev_major, "represented device major number"),
     MM(stx_rdev_minor, Py_T_UINT, rdev_minor, "represented device minor number"),
-    MX(st_rdev, Py_T_ULONGLONG, rdev, "device type (if inode device)"),
+    MX(stx_rdev, Py_T_ULONGLONG, rdev, "device type (if inode device)"),
     MM(stx_dev_major, Py_T_UINT, dev_major, "containing device major number"),
     MM(stx_dev_minor, Py_T_UINT, dev_minor, "containing device minor number"),
-    MX(st_dev, Py_T_ULONGLONG, dev, "device"),
-#ifdef STATX_MNT_ID
-    MM(stx_mnt_id, Py_T_ULONGLONG, mnt_id, "mount ID"),
-#endif
-#ifdef STATX_DIOALIGN
-    MM(stx_dio_mem_align, Py_T_UINT, dio_mem_align,
-        "direct I/O memory buffer alignment"),
-    MM(stx_dio_offset_align, Py_T_UINT, dio_offset_align,
-        "direct I/O file offset alignment"),
-#endif
-#ifdef STATX_SUBVOL
-    MM(stx_subvol, Py_T_ULONGLONG, subvol, "subvolume ID"),
-#endif
-#ifdef STATX_WRITE_ATOMIC
-    MM(stx_atomic_write_unit_min, Py_T_UINT, atomic_write_unit_min,
-        "minimum size for direct I/O with torn-write protection"),
-    MM(stx_atomic_write_unit_max, Py_T_UINT, atomic_write_unit_max,
-        "maximum size for direct I/O with torn-write protection"),
-    MM(stx_atomic_write_segments_max, Py_T_UINT, atomic_write_segments_max,
-        "maximum iovecs for direct I/O with torn-write protection"),
-#endif
-#if 0
-    MM(stx_atomic_write_unit_max_opt, Py_T_UINT, atomic_write_unit_max_opt,
-        "maximum optimized size for direct I/O with torn-write protection"),
-#endif
-#ifdef STATX_DIO_READ_ALIGN
-    MM(stx_dio_read_offset_align, Py_T_UINT, dio_read_offset_align,
-        "direct I/O file offset alignment for reads"),
-#endif
+    MX(stx_dev, Py_T_ULONGLONG, dev, "device"),
     {NULL},
 };
 
@@ -3384,31 +3351,158 @@ static PyMemberDef pystatx_result_members[] = {
 #undef MM
 #undef M
 
-static PyObject *
-pystatx_result_get_nsec(PyObject *op, void *context)
+
+#define STATX_GET_UINT(ATTR, MASK) \
+    static PyObject* \
+    pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
+    { \
+        Py_statx_result *self = Py_statx_result_CAST(op); \
+        if (!(self->stx.stx_mask & MASK)) { \
+            Py_RETURN_NONE; \
+        } \
+        unsigned long value = self->stx.ATTR; \
+        return PyLong_FromUnsignedLong(value); \
+    }
+
+STATX_GET_UINT(stx_uid, STATX_UID)
+STATX_GET_UINT(stx_gid, STATX_GID)
+STATX_GET_UINT(stx_nlink, STATX_NLINK)
+#ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
+STATX_GET_UINT(stx_dio_mem_align, STATX_DIOALIGN)
+STATX_GET_UINT(stx_dio_offset_align, STATX_DIOALIGN)
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
+STATX_GET_UINT(stx_dio_read_offset_align, STATX_DIO_READ_ALIGN)
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
+STATX_GET_UINT(stx_atomic_write_unit_min, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_unit_max, STATX_WRITE_ATOMIC)
+STATX_GET_UINT(stx_atomic_write_segments_max, STATX_WRITE_ATOMIC)
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
+STATX_GET_UINT(stx_atomic_write_unit_max_opt, STATX_WRITE_ATOMIC)
+#endif
+
+
+static PyObject*
+pystatx_result_get_stx_mode(PyObject *op, void *Py_UNUSED(context))
 {
-    uint16_t offset = (uintptr_t)context;
-    struct statx_timestamp *ts = (void*)op + offset;
-    _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
-    assert(state != NULL);
-    return stat_nanosecond_timestamp(state, ts->tv_sec, ts->tv_nsec);
+    Py_statx_result *self = Py_statx_result_CAST(op);
+    if (!(self->stx.stx_mask & (STATX_TYPE | STATX_MODE))) {
+        Py_RETURN_NONE;
+    }
+    return PyLong_FromUnsignedLong(self->stx.stx_mode);
 }
 
-/* The low 16 bits of the context pointer are the offset from the start of
-   Py_statx_result to the struct statx member. */
-#define GM(attr, type, member, doc) \
-    {#attr, pystatx_result_get_##type, NULL, PyDoc_STR(doc), \
-     (void *)(offsetof(Py_statx_result, stx.stx_##member))}
+
+#define STATX_GET_ULONGLONG(ATTR, MASK) \
+    static PyObject* \
+    pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
+    { \
+        Py_statx_result *self = Py_statx_result_CAST(op); \
+        if (!(self->stx.stx_mask & MASK)) { \
+            Py_RETURN_NONE; \
+        } \
+        unsigned long long value = self->stx.ATTR; \
+        return PyLong_FromUnsignedLongLong(value); \
+    }
+
+STATX_GET_ULONGLONG(stx_blocks, STATX_BLOCKS)
+STATX_GET_ULONGLONG(stx_ino, STATX_INO)
+STATX_GET_ULONGLONG(stx_size, STATX_SIZE)
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
+STATX_GET_ULONGLONG(stx_mnt_id, STATX_MNT_ID)
+#endif
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
+STATX_GET_ULONGLONG(stx_subvol, STATX_SUBVOL)
+#endif
+
+
+#define STATX_GET_DOUBLE(ATTR, MASK) \
+    static PyObject* \
+    pystatx_result_get_##ATTR(PyObject *op, void *Py_UNUSED(context)) \
+    { \
+        Py_statx_result *self = Py_statx_result_CAST(op); \
+        if (!(self->stx.stx_mask & MASK)) { \
+            Py_RETURN_NONE; \
+        } \
+        struct statx_timestamp *ts = &self->stx.ATTR; \
+        double sec = ((double)ts->tv_sec + ts->tv_nsec * 1e-9); \
+        return PyFloat_FromDouble(sec); \
+    }
+
+STATX_GET_DOUBLE(stx_atime, STATX_ATIME)
+STATX_GET_DOUBLE(stx_btime, STATX_BTIME)
+STATX_GET_DOUBLE(stx_ctime, STATX_CTIME)
+STATX_GET_DOUBLE(stx_mtime, STATX_MTIME)
+
+#define STATX_GET_NSEC(ATTR, MEMBER, MASK) \
+    static PyObject* \
+    pystatx_result_get_##ATTR(PyObject *op, void *context) \
+    { \
+        Py_statx_result *self = Py_statx_result_CAST(op); \
+        if (!(self->stx.stx_mask & MASK)) { \
+            Py_RETURN_NONE; \
+        } \
+        struct statx_timestamp *ts = &self->stx.MEMBER; \
+        _posixstate *state = PyType_GetModuleState(Py_TYPE(op)); \
+        assert(state != NULL); \
+        return stat_nanosecond_timestamp(state, ts->tv_sec, ts->tv_nsec); \
+    }
+
+STATX_GET_NSEC(stx_atime_ns, stx_atime, STATX_ATIME)
+STATX_GET_NSEC(stx_btime_ns, stx_btime, STATX_BTIME)
+STATX_GET_NSEC(stx_ctime_ns, stx_ctime, STATX_CTIME)
+STATX_GET_NSEC(stx_mtime_ns, stx_mtime, STATX_MTIME)
+
+#define G(attr, doc) \
+    {#attr, pystatx_result_get_##attr, NULL, PyDoc_STR(doc), NULL}
 
 static PyGetSetDef pystatx_result_getset[] = {
-    GM(st_atime_ns, nsec, atime, "time of last access in nanoseconds"),
-    GM(st_birthtime_ns, nsec, btime, "time of creation in nanoseconds"),
-    GM(st_ctime_ns, nsec, ctime, "time of last change in nanoseconds"),
-    GM(st_mtime_ns, nsec, mtime, "time of last modification in nanoseconds"),
+    G(stx_mode, "protection bits"),
+    G(stx_nlink, "number of hard links"),
+    G(stx_uid, "user ID of owner"),
+    G(stx_gid, "group ID of owner"),
+    G(stx_ino, "inode"),
+    G(stx_size, "total size, in bytes"),
+    G(stx_blocks, "number of blocks allocated"),
+    G(stx_atime, "time of last access"),
+    G(stx_atime_ns, "time of last access in nanoseconds"),
+    G(stx_btime, "time of creation"),
+    G(stx_btime_ns, "time of creation in nanoseconds"),
+    G(stx_ctime, "time of last change"),
+    G(stx_ctime_ns, "time of last change in nanoseconds"),
+    G(stx_mtime, "time of last modification"),
+    G(stx_mtime_ns, "time of last modification in nanoseconds"),
+#if defined(STATX_MNT_ID) && defined(HAVE_STRUCT_STATX_STX_MNT_ID)
+    G(stx_mnt_id, "mount ID"),
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
+    G(stx_dio_mem_align, "direct I/O memory buffer alignment"),
+    G(stx_dio_offset_align, "direct I/O file offset alignment"),
+#endif
+#if defined(STATX_SUBVOL) && defined(HAVE_STRUCT_STATX_STX_SUBVOL)
+    G(stx_subvol, "subvolume ID"),
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
+    G(stx_atomic_write_unit_min,
+      "minimum size for direct I/O with torn-write protection"),
+    G(stx_atomic_write_unit_max,
+        "maximum size for direct I/O with torn-write protection"),
+    G(stx_atomic_write_segments_max,
+        "maximum iovecs for direct I/O with torn-write protection"),
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
+    G(stx_dio_read_offset_align, "direct I/O file offset alignment for reads"),
+#endif
+#ifdef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
+    G(stx_atomic_write_unit_max_opt,
+        "maximum optimized size for direct I/O with torn-write protection"),
+#endif
     {NULL},
 };
 
-#undef GM
+#undef G
 
 static PyObject *
 pystatx_result_repr(PyObject *op)
@@ -3446,24 +3540,19 @@ pystatx_result_repr(PyObject *op)
         Py_DECREF(o);
     }
 
-    if (Py_ARRAY_LENGTH(pystatx_result_members) > 1
-        && Py_ARRAY_LENGTH(pystatx_result_getset) > 1) {
-        WRITE_ASCII(", ");
-    }
-
     for (size_t i = 0; i < Py_ARRAY_LENGTH(pystatx_result_getset) - 1; ++i) {
-        if (i > 0) {
-            WRITE_ASCII(", ");
-        }
-
         PyGetSetDef *d = &pystatx_result_getset[i];
-        WRITE_ASCII(d->name);
-        WRITE_ASCII("=");
-
         PyObject *o = d->get(op, d->closure);
         if (o == NULL) {
             goto error;
         }
+        if (o == Py_None) {
+            continue;
+        }
+
+        WRITE_ASCII(", ");
+        WRITE_ASCII(d->name);
+        WRITE_ASCII("=");
         if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
             Py_DECREF(o);
             goto error;
@@ -3597,14 +3686,6 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
         return path_error(path);
     }
 
-    v->atime_sec = ((double)v->stx.stx_atime.tv_sec
-                    + 1e-9 * v->stx.stx_atime.tv_nsec);
-    v->btime_sec = ((double)v->stx.stx_btime.tv_sec
-                    + 1e-9 * v->stx.stx_btime.tv_nsec);
-    v->ctime_sec = ((double)v->stx.stx_ctime.tv_sec
-                    + 1e-9 * v->stx.stx_ctime.tv_nsec);
-    v->mtime_sec = ((double)v->stx.stx_mtime.tv_sec
-                    + 1e-9 * v->stx.stx_mtime.tv_nsec);
     v->rdev = makedev(v->stx.stx_rdev_major, v->stx.stx_rdev_minor);
     v->dev = makedev(v->stx.stx_dev_major, v->stx.stx_dev_minor);
 
@@ -7822,7 +7903,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     if (argc < 1) {
         PyErr_Format(PyExc_ValueError,
                      "%s: argv must not be empty", func_name);
-        return NULL;
+        goto exit;
     }
 
     if (!PyMapping_Check(env) && env != Py_None) {
@@ -8350,53 +8431,19 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
 //
-// This should only be called from the parent process after
+// This MUST only be called from the parent process after
 // PyOS_AfterFork_Parent().
 static int
-warn_about_fork_with_threads(const char* name)
+warn_about_fork_with_threads(
+    const char* name,  // Name of the API to use in the warning message.
+    const Py_ssize_t num_os_threads  // Only trusted when >= 1.
+)
 {
     // It's not safe to issue the warning while the world is stopped, because
     // other threads might be holding locks that we need, which would deadlock.
     assert(!_PyRuntime.stoptheworld.world_stopped);
 
-    // TODO: Consider making an `os` module API to return the current number
-    // of threads in the process. That'd presumably use this platform code but
-    // raise an error rather than using the inaccurate fallback.
-    Py_ssize_t num_python_threads = 0;
-#if defined(__APPLE__) && defined(HAVE_GETPID)
-    mach_port_t macos_self = mach_task_self();
-    mach_port_t macos_task;
-    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
-        thread_array_t macos_threads;
-        mach_msg_type_number_t macos_n_threads;
-        if (task_threads(macos_task, &macos_threads,
-                         &macos_n_threads) == KERN_SUCCESS) {
-            num_python_threads = macos_n_threads;
-        }
-    }
-#elif defined(__linux__)
-    // Linux /proc/self/stat 20th field is the number of threads.
-    FILE* proc_stat = fopen("/proc/self/stat", "r");
-    if (proc_stat) {
-        size_t n;
-        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
-        // observed on the author's workstation.
-        char stat_line[160];
-        n = fread(&stat_line, 1, 159, proc_stat);
-        stat_line[n] = '\0';
-        fclose(proc_stat);
-
-        char *saveptr = NULL;
-        char *field = strtok_r(stat_line, " ", &saveptr);
-        unsigned int idx;
-        for (idx = 19; idx && field; --idx) {
-            field = strtok_r(NULL, " ", &saveptr);
-        }
-        if (idx == 0 && field) {  // found the 20th field
-            num_python_threads = atoi(field);  // 0 on error
-        }
-    }
-#endif
+    Py_ssize_t num_python_threads = num_os_threads;
     if (num_python_threads <= 0) {
         // Fall back to just the number our threading module knows about.
         // An incomplete view of the world, but better than nothing.
@@ -8449,6 +8496,51 @@ warn_about_fork_with_threads(const char* name)
     }
     return 0;
 }
+
+// If this returns <= 0, we were unable to successfully use any OS APIs.
+// Returns a positive number of threads otherwise.
+static Py_ssize_t get_number_of_os_threads(void)
+{
+    // TODO: Consider making an `os` module API to return the current number
+    // of threads in the process. That'd presumably use this platform code but
+    // raise an error rather than using the inaccurate fallback.
+    Py_ssize_t num_python_threads = 0;
+#if defined(__APPLE__) && defined(HAVE_GETPID)
+    mach_port_t macos_self = mach_task_self();
+    mach_port_t macos_task;
+    if (task_for_pid(macos_self, getpid(), &macos_task) == KERN_SUCCESS) {
+        thread_array_t macos_threads;
+        mach_msg_type_number_t macos_n_threads;
+        if (task_threads(macos_task, &macos_threads,
+                         &macos_n_threads) == KERN_SUCCESS) {
+            num_python_threads = macos_n_threads;
+        }
+    }
+#elif defined(__linux__)
+    // Linux /proc/self/stat 20th field is the number of threads.
+    FILE* proc_stat = fopen("/proc/self/stat", "r");
+    if (proc_stat) {
+        size_t n;
+        // Size chosen arbitrarily. ~60% more bytes than a 20th column index
+        // observed on the author's workstation.
+        char stat_line[160];
+        n = fread(&stat_line, 1, 159, proc_stat);
+        stat_line[n] = '\0';
+        fclose(proc_stat);
+
+        char *saveptr = NULL;
+        char *field = strtok_r(stat_line, " ", &saveptr);
+        unsigned int idx;
+        for (idx = 19; idx && field; --idx) {
+            field = strtok_r(NULL, " ", &saveptr);
+        }
+        if (idx == 0 && field) {  // found the 20th field
+            num_python_threads = atoi(field);  // 0 on error
+        }
+    }
+#endif
+    return num_python_threads;
+}
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
@@ -8483,10 +8575,12 @@ os_fork1_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("fork1") < 0) {
+        if (warn_about_fork_with_threads("fork1", num_os_threads) < 0) {
             return NULL;
         }
     }
@@ -8534,10 +8628,12 @@ os_fork_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("fork") < 0)
+        if (warn_about_fork_with_threads("fork", num_os_threads) < 0)
             return NULL;
     }
     if (pid == -1) {
@@ -8648,7 +8744,7 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
 static PyObject *
 os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
-    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+    return Py_BuildValue("(O(O))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
 }
 
 static PyMethodDef os_sched_param_reduce_method = {
@@ -8663,7 +8759,7 @@ static PyStructSequence_Field sched_param_fields[] = {
 };
 
 static PyStructSequence_Desc sched_param_desc = {
-    "sched_param", /* name */
+    MODNAME ".sched_param", /* name */
     os_sched_param__doc__, /* doc */
     sched_param_fields,
     1
@@ -9395,6 +9491,8 @@ os_forkpty_impl(PyObject *module)
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
     } else {
+        // Called before AfterFork_Parent in case those hooks start threads.
+        Py_ssize_t num_os_threads = get_number_of_os_threads();
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         /* set O_CLOEXEC on master_fd */
@@ -9404,7 +9502,7 @@ os_forkpty_impl(PyObject *module)
         }
 
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        if (warn_about_fork_with_threads("forkpty") < 0)
+        if (warn_about_fork_with_threads("forkpty", num_os_threads) < 0)
             return NULL;
     }
     if (pid == -1) {
@@ -11057,7 +11155,7 @@ and elapsed.\n\
 See os.times for more information.");
 
 static PyStructSequence_Desc times_result_desc = {
-    "times_result", /* name */
+    MODNAME ".times_result", /* name */
     times_result__doc__, /* doc */
     times_result_fields,
     5
@@ -17308,12 +17406,12 @@ os__supports_virtual_terminal_impl(PyObject *module)
 /*[clinic input]
 os._inputhook
 
-Calls PyOS_CallInputHook droppong the GIL first
+Calls PyOS_InputHook dropping the GIL first
 [clinic start generated code]*/
 
 static PyObject *
 os__inputhook_impl(PyObject *module)
-/*[clinic end generated code: output=525aca4ef3c6149f input=fc531701930d064f]*/
+/*[clinic end generated code: output=525aca4ef3c6149f input=b5018fa1ec3aa440]*/
 {
      int result = 0;
      if (PyOS_InputHook) {
@@ -17327,12 +17425,12 @@ os__inputhook_impl(PyObject *module)
 /*[clinic input]
 os._is_inputhook_installed
 
-Checks if PyOS_CallInputHook is set
+Checks if PyOS_InputHook is set
 [clinic start generated code]*/
 
 static PyObject *
 os__is_inputhook_installed_impl(PyObject *module)
-/*[clinic end generated code: output=3b3eab4f672c689a input=ff177c9938dd76d8]*/
+/*[clinic end generated code: output=3b3eab4f672c689a input=757820f79f48820c]*/
 {
     return PyBool_FromLong(PyOS_InputHook != NULL);
 }
@@ -18584,14 +18682,12 @@ posixmodule_exec(PyObject *m)
     }
 
 #if defined(HAVE_WAITID)
-    waitid_result_desc.name = MODNAME ".waitid_result";
     state->WaitidResultType = (PyObject *)PyStructSequence_NewType(&waitid_result_desc);
     if (PyModule_AddObjectRef(m, "waitid_result", state->WaitidResultType) < 0) {
         return -1;
     }
 #endif
 
-    stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
     stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
     stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
@@ -18602,14 +18698,12 @@ posixmodule_exec(PyObject *m)
     state->statresult_new_orig = ((PyTypeObject *)state->StatResultType)->tp_new;
     ((PyTypeObject *)state->StatResultType)->tp_new = statresult_new;
 
-    statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
     state->StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
     if (PyModule_AddObjectRef(m, "statvfs_result", state->StatVFSResultType) < 0) {
         return -1;
     }
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-    sched_param_desc.name = MODNAME ".sched_param";
     state->SchedParamType = (PyObject *)PyStructSequence_NewType(&sched_param_desc);
     if (PyModule_AddObjectRef(m, "sched_param", state->SchedParamType) < 0) {
         return -1;
@@ -18641,7 +18735,6 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
 
-    times_result_desc.name = MODNAME ".times_result";
     state->TimesResultType = (PyObject *)PyStructSequence_NewType(&times_result_desc);
     if (PyModule_AddObjectRef(m, "times_result", state->TimesResultType) < 0) {
         return -1;

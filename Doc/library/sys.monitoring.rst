@@ -216,14 +216,17 @@ by another event:
 
 The :monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events
 are controlled by the :monitoring-event:`CALL` event.
-:monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events will only be seen if the
-corresponding :monitoring-event:`CALL` event is being monitored.
+:monitoring-event:`C_RETURN` and :monitoring-event:`C_RAISE` events will only be
+seen if the corresponding :monitoring-event:`CALL` event is being monitored.
+
+
+.. _monitoring-event-global:
 
 Other events
 ''''''''''''
 
 Other events are not necessarily tied to a specific location in the
-program and cannot be individually disabled.
+program and cannot be individually disabled via :data:`DISABLE`.
 
 The other events that can be monitored are:
 
@@ -289,12 +292,13 @@ in Python (see :ref:`c-api-monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
-   Returns all the local events for *code*
+   Returns all the :ref:`local events <monitoring-event-local>` for *code*
 
 .. function:: set_local_events(tool_id: int, code: CodeType, event_set: int, /) -> None
 
-   Activates all the local events for *code* which are set in *event_set*.
-   Raises a :exc:`ValueError` if *tool_id* is not in use.
+   Activates all the :ref:`local events <monitoring-event-local>` for *code*
+   which are set in *event_set*. Raises a :exc:`ValueError` if *tool_id* is not
+   in use.
 
 
 Disabling events
@@ -305,14 +309,20 @@ Disabling events
    A special value that can be returned from a callback function to disable
    events for the current code location.
 
-Local events can be disabled for a specific code location by returning
-:data:`sys.monitoring.DISABLE` from a callback function. This does not change
-which events are set, or any other code locations for the same event.
+:ref:`Local events <monitoring-event-local>` can be disabled for a specific code
+location by returning :data:`sys.monitoring.DISABLE` from a callback function.
+This does not change which events are set, or any other code locations for the
+same event.
 
 Disabling events for specific locations is very important for high
 performance monitoring. For example, a program can be run under a
 debugger with no overhead if the debugger disables all monitoring
 except for a few breakpoints.
+
+If :data:`DISABLE` is returned by a callback for a
+:ref:`global event <monitoring-event-global>`, :exc:`ValueError` will be raised
+by the interpreter in a non-specific location (that is, no traceback will be
+provided).
 
 .. function:: restart_events() -> None
 

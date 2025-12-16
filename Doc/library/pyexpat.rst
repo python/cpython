@@ -634,6 +634,15 @@ otherwise stated.
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
 
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
+
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,
    *systemId* and *publicId*, are strings if given; if the public identifier is not

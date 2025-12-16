@@ -164,6 +164,20 @@ class MiscTests(unittest.TestCase):
         self.assertIsInstance(cwd, bytes)
         self.assertEqual(os.fsdecode(cwd), os.getcwd())
 
+    def test_type_fqdn(self):
+        def fqdn(obj):
+            return (obj.__module__, obj.__qualname__)
+
+        native = os.name
+        self.assertEqual(fqdn(os.stat_result), ("os", "stat_result"))
+        self.assertEqual(fqdn(os.times_result), (native, "times_result"))
+        if hasattr(os, "statvfs_result"):
+            self.assertEqual(fqdn(os.statvfs_result), ("os", "statvfs_result"))
+        if hasattr(os, "sched_param"):
+            self.assertEqual(fqdn(os.sched_param), (native, "sched_param"))
+        if hasattr(os, "waitid_result"):
+            self.assertEqual(fqdn(os.waitid_result), (native, "waitid_result"))
+
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
@@ -634,9 +648,10 @@ class StatAttributeTests(unittest.TestCase):
         # Make sure that the st_?time and st_?time_ns fields roughly agree
         # (they should always agree up to around tens-of-microseconds)
         for name in names:
-            floaty = int(getattr(result, name) * 100_000)
-            nanosecondy = getattr(result, name + "_ns") // 10_000
-            self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
+            with self.subTest(name=name):
+                floaty = int(getattr(result, name) * 100_000)
+                nanosecondy = getattr(result, name + "_ns") // 10_000
+                self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
 
     def check_stat_attributes(self, fname):
         result = os.stat(fname)
@@ -727,71 +742,122 @@ class StatAttributeTests(unittest.TestCase):
                 unpickled = pickle.loads(p)
                 self.assertEqual(result, unpickled)
 
-    def check_statx_attributes(self, fname):
+    def check_statx_attributes(self, filename):
         maximal_mask = 0
         for name in dir(os):
             if name.startswith('STATX_'):
                 maximal_mask |= getattr(os, name)
-        result = os.statx(self.fname, maximal_mask)
+        result = os.statx(filename, maximal_mask)
+        stat_result = os.stat(filename)
 
-        time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
+        time_attributes = ('stx_atime', 'stx_btime', 'stx_ctime', 'stx_mtime')
+        # gh-83714: stx_btime can be None on tmpfs even if STATX_BTIME mask
+        # is used
+        time_attributes = [name for name in time_attributes
+                           if getattr(result, name) is not None]
         self.check_timestamp_agreement(result, time_attributes)
 
-        # Check that valid attributes match os.stat.
+        def getmask(name):
+            return getattr(os, name, 0)
+
         requirements = (
-            ('st_mode', os.STATX_TYPE | os.STATX_MODE),
-            ('st_nlink', os.STATX_NLINK),
-            ('st_uid', os.STATX_UID),
-            ('st_gid', os.STATX_GID),
-            ('st_atime', os.STATX_ATIME),
-            ('st_atime_ns', os.STATX_ATIME),
-            ('st_mtime', os.STATX_MTIME),
-            ('st_mtime_ns', os.STATX_MTIME),
-            ('st_ctime', os.STATX_CTIME),
-            ('st_ctime_ns', os.STATX_CTIME),
-            ('st_ino', os.STATX_INO),
-            ('st_size', os.STATX_SIZE),
-            ('st_blocks', os.STATX_BLOCKS),
-            ('st_birthtime', os.STATX_BTIME),
-            ('st_birthtime_ns', os.STATX_BTIME),
-            # unconditionally valid members
-            ('st_blksize', 0),
-            ('st_rdev', 0),
-            ('st_dev', 0),
+            ('stx_atime', os.STATX_ATIME),
+            ('stx_atime_ns', os.STATX_ATIME),
+            ('stx_atomic_write_segments_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_max_opt', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_atomic_write_unit_min', getmask('STATX_WRITE_ATOMIC')),
+            ('stx_attributes', 0),
+            ('stx_attributes_mask', 0),
+            ('stx_blksize', 0),
+            ('stx_blocks', os.STATX_BLOCKS),
+            ('stx_btime', os.STATX_BTIME),
+            ('stx_btime_ns', os.STATX_BTIME),
+            ('stx_ctime', os.STATX_CTIME),
+            ('stx_ctime_ns', os.STATX_CTIME),
+            ('stx_dev', 0),
+            ('stx_dev_major', 0),
+            ('stx_dev_minor', 0),
+            ('stx_dio_mem_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_offset_align', getmask('STATX_DIOALIGN')),
+            ('stx_dio_read_offset_align', getmask('STATX_DIO_READ_ALIGN')),
+            ('stx_gid', os.STATX_GID),
+            ('stx_ino', os.STATX_INO),
+            ('stx_mask', 0),
+            ('stx_mnt_id', getmask('STATX_MNT_ID')),
+            ('stx_mode', os.STATX_TYPE | os.STATX_MODE),
+            ('stx_mtime', os.STATX_MTIME),
+            ('stx_mtime_ns', os.STATX_MTIME),
+            ('stx_nlink', os.STATX_NLINK),
+            ('stx_rdev', 0),
+            ('stx_rdev_major', 0),
+            ('stx_rdev_minor', 0),
+            ('stx_size', os.STATX_SIZE),
+            ('stx_subvol', getmask('STATX_SUBVOL')),
+            ('stx_uid', os.STATX_UID),
         )
-        basic_result = os.stat(self.fname)
-        for name, bits in requirements:
-            if result.stx_mask & bits == bits and hasattr(basic_result, name):
-                x = getattr(result, name)
-                b = getattr(basic_result, name)
-                self.assertEqual(type(x), type(b))
-                if isinstance(x, float):
-                    self.assertAlmostEqual(x, b, msg=name)
+        optional_members = {
+            'stx_atomic_write_segments_max',
+            'stx_atomic_write_unit_max',
+            'stx_atomic_write_unit_max_opt',
+            'stx_atomic_write_unit_min',
+            'stx_dio_mem_align',
+            'stx_dio_offset_align',
+            'stx_dio_read_offset_align',
+            'stx_mnt_id',
+            'stx_subvol',
+        }
+        float_type = {
+            'stx_atime',
+            'stx_btime',
+            'stx_ctime',
+            'stx_mtime',
+        }
+
+        members = set(name for name in dir(result)
+                      if name.startswith('stx_'))
+        tested = set(name for name, mask in requirements)
+        if members - tested:
+            raise ValueError(f"statx members not tested: {members - tested}")
+
+        for name, mask in requirements:
+            with self.subTest(name=name):
+                try:
+                    x = getattr(result, name)
+                except AttributeError:
+                    if name in optional_members:
+                        continue
+                    else:
+                        raise
+
+                if not(result.stx_mask & mask == mask):
+                    self.assertIsNone(x)
+                    continue
+
+                if name in float_type:
+                    self.assertIsInstance(x, float)
                 else:
-                    self.assertEqual(x, b, msg=name)
+                    self.assertIsInstance(x, int)
 
-        self.assertEqual(result.stx_rdev_major, os.major(result.st_rdev))
-        self.assertEqual(result.stx_rdev_minor, os.minor(result.st_rdev))
-        self.assertEqual(result.stx_dev_major, os.major(result.st_dev))
-        self.assertEqual(result.stx_dev_minor, os.minor(result.st_dev))
+                # Compare with stat_result
+                try:
+                    b = getattr(stat_result, "st_" + name[4:])
+                except AttributeError:
+                    pass
+                else:
+                    self.assertEqual(type(x), type(b))
+                    if isinstance(x, float):
+                        self.assertAlmostEqual(x, b)
+                    else:
+                        self.assertEqual(x, b)
 
-        members = [name for name in dir(result)
-                   if name.startswith('st_') or name.startswith('stx_')]
-        for name in members:
-            try:
-                setattr(result, name, 1)
-                self.fail("No exception raised")
-            except AttributeError:
-                pass
+        self.assertEqual(result.stx_rdev_major, os.major(result.stx_rdev))
+        self.assertEqual(result.stx_rdev_minor, os.minor(result.stx_rdev))
+        self.assertEqual(result.stx_dev_major, os.major(result.stx_dev))
+        self.assertEqual(result.stx_dev_minor, os.minor(result.stx_dev))
 
         self.assertEqual(result.stx_attributes & result.stx_attributes_mask,
                          result.stx_attributes)
-
-        # statx_result is not a tuple or tuple-like object.
-        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
-            result[0]
-        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
-            _, _ = result
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):
@@ -808,6 +874,27 @@ class StatAttributeTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes_pathlike(self):
         self.check_statx_attributes(FakePath(self.fname))
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_result(self):
+        result = os.statx(self.fname, os.STATX_BASIC_STATS)
+
+        # Check that attributes are read-only
+        members = [name for name in dir(result)
+                   if name.startswith('stx_')]
+        for name in members:
+            try:
+                setattr(result, name, 1)
+            except AttributeError:
+                pass
+            else:
+                self.fail("No exception raised")
+
+        # statx_result is not a tuple or tuple-like object.
+        with self.assertRaisesRegex(TypeError, 'not subscriptable'):
+            result[0]
+        with self.assertRaisesRegex(TypeError, 'cannot unpack'):
+            _, _ = result
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):

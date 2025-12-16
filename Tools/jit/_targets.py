@@ -46,6 +46,7 @@ class _Target(typing.Generic[_S, _R]):
     optimizer: type[_optimizers.Optimizer] = _optimizers.Optimizer
     label_prefix: typing.ClassVar[str]
     symbol_prefix: typing.ClassVar[str]
+    re_global: typing.ClassVar[re.Pattern[str]]
     stable: bool = False
     debug: bool = False
     verbose: bool = False
@@ -75,7 +76,7 @@ class _Target(typing.Generic[_S, _R]):
             # Exclude cache files from digest computation to ensure reproducible builds.
             if dirpath.endswith("__pycache__"):
                 continue
-            for filename in filenames:
+            for filename in sorted(filenames):
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
@@ -137,6 +138,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-DSUPPORTS_SMALL_CONSTS={1 if self.optimizer.supports_small_constants else 0}",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
@@ -166,10 +168,6 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
-            # about emitting in-range trampolines for out-of-range targets.
-            # We can probably remove this and emit trampolines in the future:
-            "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-std=c11",
@@ -184,7 +182,10 @@ class _Target(typing.Generic[_S, _R]):
             "clang", args_s, echo=self.verbose, llvm_version=self.llvm_version
         )
         self.optimizer(
-            s, label_prefix=self.label_prefix, symbol_prefix=self.symbol_prefix
+            s,
+            label_prefix=self.label_prefix,
+            symbol_prefix=self.symbol_prefix,
+            re_global=self.re_global,
         ).run()
         args_o = [f"--target={self.triple}", "-c", "-o", f"{o}", f"{s}"]
         await _llvm.run(
@@ -218,6 +219,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
+            stencil_group.convert_labels_to_relocations()
             stencil_group.process_relocations(self.known_symbols)
         return stencil_groups
 
@@ -270,6 +272,10 @@ class _COFF(
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
+        name = section["Name"]["Value"]
+        if name == ".debug$S":
+            # skip debug sections
+            return
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" in section:
             section_data_bytes = section["SectionData"]["Bytes"]
@@ -335,7 +341,8 @@ class _COFF(
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Name": "IMAGE_REL_ARM64_BRANCH26"
+                    "Name": "IMAGE_REL_ARM64_BRANCH19"
+                    | "IMAGE_REL_ARM64_BRANCH26"
                     | "IMAGE_REL_ARM64_PAGEBASE_REL21"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
                     | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
@@ -353,12 +360,14 @@ class _COFF32(_COFF):
     # These mangle like Mach-O and other "older" formats:
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _COFF64(_COFF):
     # These mangle like ELF and other "newer" formats:
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.def\s+(?P<label>[\w."$?@]+);')
 
 
 class _ELF(
@@ -366,6 +375,7 @@ class _ELF(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = ".L"
     symbol_prefix = ""
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
@@ -456,6 +466,7 @@ class _MachO(
 ):  # pylint: disable = too-few-public-methods
     label_prefix = "L"
     symbol_prefix = "_"
+    re_global = re.compile(r'\s*\.globl\s+(?P<label>[\w."$?@]+)(\s+.*)?')
 
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
@@ -569,14 +580,14 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
         host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         host = "aarch64-unknown-linux-gnu"
         condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
-        args = ["-fpic", "-mno-outline-atomics"]
+        args = ["-fpic", "-mno-outline-atomics", "-fno-plt"]
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
@@ -600,7 +611,7 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
         host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0", "-fno-plt"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:

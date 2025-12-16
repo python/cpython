@@ -96,6 +96,8 @@ class TestSupport(unittest.TestCase):
                         self.test_get_attribute)
         self.assertRaises(unittest.SkipTest, support.get_attribute, self, "foo")
 
+    @unittest.skipIf(support.is_android or support.is_apple_mobile,
+                     'Mobile platforms redirect stdout to system log')
     def test_get_original_stdout(self):
         if isinstance(sys.stdout, io.StringIO):
             # gh-55258: When --junit-xml is used, stdout is a StringIO:
@@ -796,10 +798,10 @@ class TestSupport(unittest.TestCase):
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
-        # The unlike libc, the musl version is a triple.
+        # The musl version is either triple or just a major version number.
         if linked:
             self.assertIsInstance(linked, tuple)
-            self.assertEqual(3, len(linked))
+            self.assertIn(len(linked), (1, 3))
             for v in linked:
                 self.assertIsInstance(v, int)
 

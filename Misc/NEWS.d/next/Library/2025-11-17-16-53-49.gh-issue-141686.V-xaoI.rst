@@ -1,0 +1,2 @@
+Break reference cycles created by each call to :func:`json.dump` or
+:meth:`json.JSONEncoder.iterencode`.

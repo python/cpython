@@ -58,6 +58,9 @@
 
 #include "clinic/_decimal.c.h"
 
+#define MPD_SPEC_VERSION "1.70"  // Highest version of the spec this complies with
+                                 // See https://speleotrove.com/decimal/decarith.html
+
 /*[clinic input]
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
@@ -5796,7 +5799,7 @@ _decimal_Decimal___floor___impl(PyObject *self, PyTypeObject *cls)
 static Py_hash_t
 _dec_hash(PyDecObject *v)
 {
-#if defined(CONFIG_64) && _PyHASH_BITS == 61
+#if defined(CONFIG_64) && PyHASH_BITS == 61
     /* 2**61 - 1 */
     mpd_uint_t p_data[1] = {2305843009213693951ULL};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 19, 1, 1, p_data};
@@ -5804,7 +5807,7 @@ _dec_hash(PyDecObject *v)
     mpd_uint_t inv10_p_data[1] = {2075258708292324556ULL};
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 19, 1, 1, inv10_p_data};
-#elif defined(CONFIG_32) && _PyHASH_BITS == 31
+#elif defined(CONFIG_32) && PyHASH_BITS == 31
     /* 2**31 - 1 */
     mpd_uint_t p_data[2] = {147483647UL, 2};
     mpd_t p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA, 0, 10, 2, 2, p_data};
@@ -5813,7 +5816,7 @@ _dec_hash(PyDecObject *v)
     mpd_t inv10_p = {MPD_POS|MPD_STATIC|MPD_CONST_DATA,
                      0, 10, 2, 2, inv10_p_data};
 #else
-    #error "No valid combination of CONFIG_64, CONFIG_32 and _PyHASH_BITS"
+    #error "No valid combination of CONFIG_64, CONFIG_32 and PyHASH_BITS"
 #endif
     const Py_hash_t py_hash_inf = 314159;
     mpd_uint_t ten_data[1] = {10};
@@ -7566,12 +7569,35 @@ static PyType_Spec context_spec = {
 };
 
 
+static PyObject *
+decimal_getattr(PyObject *self, PyObject *args)
+{
+    PyObject *name;
+    if (!PyArg_UnpackTuple(args, "__getattr__", 1, 1, &name)) {
+        return NULL;
+    }
+
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "__version__")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'__version__' is deprecated and slated for removal in Python 3.20",
+                         1) < 0) {
+            return NULL;
+        }
+        return PyUnicode_FromString(MPD_SPEC_VERSION);
+    }
+
+    PyErr_Format(PyExc_AttributeError, "module 'decimal' has no attribute %R", name);
+    return NULL;
+}
+
+
 static PyMethodDef _decimal_methods [] =
 {
   _DECIMAL_GETCONTEXT_METHODDEF
   _DECIMAL_SETCONTEXT_METHODDEF
   _DECIMAL_LOCALCONTEXT_METHODDEF
   _DECIMAL_IEEECONTEXT_METHODDEF
+  {"__getattr__", decimal_getattr, METH_VARARGS, "Module __getattr__"},
   { NULL, NULL, 1, NULL }
 };
 
@@ -7727,10 +7753,14 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)PyObject_CallMethod(collections,
-                                 "namedtuple", "(ss)", "DecimalTuple",
-                                 "sign digits exponent"));
-
+    obj = PyObject_CallMethod(collections, "namedtuple", "(ss)", "DecimalTuple",
+                              "sign digits exponent");
+    if (!PyType_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "type is expected from namedtuple call");
+        goto error;
+    }
+    ASSIGN_PTR(state->DecimalTuple, (PyTypeObject *)obj);
     ASSIGN_PTR(obj, PyUnicode_FromString("decimal"));
     CHECK_INT(PyDict_SetItemString(state->DecimalTuple->tp_dict, "__module__", obj));
     Py_CLEAR(obj);
@@ -7891,7 +7921,7 @@ _decimal_exec(PyObject *m)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "SPEC_VERSION", MPD_SPEC_VERSION));
     CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
     return 0;

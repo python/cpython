@@ -69,6 +69,7 @@ is destroyed.
 
 from collections import namedtuple
 import builtins
+import os
 import struct
 import sys
 
@@ -96,7 +97,7 @@ def _byteswap(data, width):
         for j in range(width):
             swapped_data[i + width - 1 - j] = data[i + j]
 
-    return bytes(swapped_data)
+    return swapped_data.take_bytes()
 
 
 class _Chunk:
@@ -274,7 +275,7 @@ class Wave_read:
 
     def __init__(self, f):
         self._i_opened_the_file = None
-        if isinstance(f, str):
+        if isinstance(f, (bytes, str, os.PathLike)):
             f = builtins.open(f, 'rb')
             self._i_opened_the_file = f
         # else, assume it is an open file object already
@@ -431,7 +432,7 @@ class Wave_write:
 
     def __init__(self, f):
         self._i_opened_the_file = None
-        if isinstance(f, str):
+        if isinstance(f, (bytes, str, os.PathLike)):
             f = builtins.open(f, 'wb')
             self._i_opened_the_file = f
         try:

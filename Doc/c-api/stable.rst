@@ -279,7 +279,7 @@ The full API is described below for advanced use cases.
 
    .. c:member:: uint8_t abiinfo_minor_version
 
-      The major version of :c:struct:`PyABIInfo`.
+      The minor version of :c:struct:`PyABIInfo`.
       Must be set to ``0``; larger values are reserved for backwards-compatible
       future versions of :c:struct:`!PyABIInfo`.
 
@@ -294,7 +294,7 @@ The full API is described below for advanced use cases.
          Default flags, based on current values of macros such as
          :c:macro:`Py_LIMITED_API` and :c:macro:`Py_GIL_DISABLED`.
 
-      Alternately, the field can be set to to the following flags, combined
+      Alternately, the field can be set to the following flags, combined
       by bitwise OR.
       Unused bits must be set to zero.
 

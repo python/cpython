@@ -1427,6 +1427,14 @@ class PosixTester(unittest.TestCase):
         self.assertNotEqual(newparam, param)
         self.assertEqual(newparam.sched_priority, 0)
 
+    @requires_sched
+    def test_bug_140634(self):
+        sched_priority = float('inf')  # any new reference
+        param = posix.sched_param(sched_priority)
+        param.__reduce__()
+        del sched_priority, param  # should not crash
+        support.gc_collect()  # just to be sure
+
     @unittest.skipUnless(hasattr(posix, "sched_rr_get_interval"), "no function")
     def test_sched_rr_get_interval(self):
         try:
@@ -1672,17 +1680,22 @@ class TestPosixDirFd(unittest.TestCase):
         with self.prepare_file() as (dir_fd, name, fullname):
             posix.chown(name, os.getuid(), os.getgid(), dir_fd=dir_fd)
 
-    def check_statlike_dir_fd(self, func):
+    def check_statlike_dir_fd(self, func, prefix):
         with self.prepare() as (dir_fd, name, fullname):
             with open(fullname, 'w') as outfile:
                 outfile.write("testline\n")
             self.addCleanup(posix.unlink, fullname)
 
+            def get(result, attr):
+                return getattr(result, prefix + attr)
+
             s1 = func(fullname)
             s2 = func(name, dir_fd=dir_fd)
-            self.assertEqual((s1.st_dev, s1.st_ino), (s2.st_dev, s2.st_ino))
+            self.assertEqual((get(s1, "dev"), get(s1, "ino")),
+                             (get(s2, "dev"), get(s2, "ino")))
             s2 = func(fullname, dir_fd=None)
-            self.assertEqual((s1.st_dev, s1.st_ino), (s2.st_dev, s2.st_ino))
+            self.assertEqual((get(s1, "dev"), get(s1, "ino")),
+                             (get(s2, "dev"), get(s2, "ino")))
 
             self.assertRaisesRegex(TypeError, 'should be integer or None, not',
                     func, name, dir_fd=posix.getcwd())
@@ -1700,13 +1713,13 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
     def test_stat_dir_fd(self):
-        self.check_statlike_dir_fd(posix.stat)
+        self.check_statlike_dir_fd(posix.stat, prefix="st_")
 
     @unittest.skipUnless(hasattr(posix, 'statx'), "test needs os.statx()")
     def test_statx_dir_fd(self):
         def func(path, **kwargs):
             return posix.statx(path, os.STATX_INO, **kwargs)
-        self.check_statlike_dir_fd(func)
+        self.check_statlike_dir_fd(func, prefix="stx_")
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):

@@ -12781,7 +12781,7 @@ PyDoc_STRVAR(os__inputhook__doc__,
 "_inputhook($module, /)\n"
 "--\n"
 "\n"
-"Calls PyOS_CallInputHook droppong the GIL first");
+"Calls PyOS_InputHook dropping the GIL first");
 
 #define OS__INPUTHOOK_METHODDEF    \
     {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
@@ -12799,7 +12799,7 @@ PyDoc_STRVAR(os__is_inputhook_installed__doc__,
 "_is_inputhook_installed($module, /)\n"
 "--\n"
 "\n"
-"Checks if PyOS_CallInputHook is set");
+"Checks if PyOS_InputHook is set");
 
 #define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
     {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
@@ -13610,4 +13610,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=44f7a1a16dad2e08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=82f60940338c70e4 input=a9049054013a1b77]*/

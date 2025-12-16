@@ -426,7 +426,7 @@ specified using a relative path and the current directory changed.
 .. nonce: Jq6Az-
 .. section: Library
 
-Fix CLI of :mod:`cProfile` and :mod:`profile` to catch
+Fix CLI of :mod:`!cProfile` and :mod:`!profile` to catch
 :exc:`BrokenPipeError`.
 
 ..

@@ -110,6 +110,7 @@
       <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">_Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(WITH_COMPUTED_GOTOS)' != ''">HAVE_COMPUTED_GOTOS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(DisableRemoteDebug)' != 'true'">Py_REMOTE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(StackRefDebug)' == 'true'">Py_STACKREF_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -276,6 +277,7 @@
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
     <ClInclude Include="..\Include\internal\pycore_long.h" />
+    <ClInclude Include="..\Include\internal\pycore_mmap.h" />
     <ClInclude Include="..\Include\internal\pycore_modsupport.h" />
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
@@ -328,6 +330,7 @@
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_unicodectype.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h" />
@@ -478,6 +481,7 @@
     <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
+    <ClCompile Include="..\Modules\mathintegermodule.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
@@ -561,6 +565,7 @@
     <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
@@ -655,6 +660,7 @@
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />

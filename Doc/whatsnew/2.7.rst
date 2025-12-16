@@ -2181,22 +2181,20 @@ Changes to Python's build process and to the C API include:
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
-  :c:macro:`!Py_ISALNUM`,
-  :c:macro:`!Py_ISALPHA`,
-  :c:macro:`!Py_ISDIGIT`,
-  :c:macro:`!Py_ISLOWER`,
-  :c:macro:`!Py_ISSPACE`,
-  :c:macro:`!Py_ISUPPER`,
-  :c:macro:`!Py_ISXDIGIT`,
-  :c:macro:`!Py_TOLOWER`, and :c:macro:`!Py_TOUPPER`.
+  :c:macro:`Py_ISALNUM`,
+  :c:macro:`Py_ISALPHA`,
+  :c:macro:`Py_ISDIGIT`,
+  :c:macro:`Py_ISLOWER`,
+  :c:macro:`Py_ISSPACE`,
+  :c:macro:`Py_ISUPPER`,
+  :c:macro:`Py_ISXDIGIT`,
+  :c:macro:`Py_TOLOWER`, and :c:macro:`Py_TOUPPER`.
   All of these functions are analogous to the C
   standard macros for classifying characters, but ignore the current
   locale setting, because in
   several places Python needs to analyze characters in a
   locale-independent way.  (Added by Eric Smith;
   :issue:`5793`.)
-
-  .. XXX these macros don't seem to be described in the c-api docs.
 
 * Removed function: :c:func:`!PyEval_CallObject` is now only available
   as a macro.  A function version was being kept around to preserve
