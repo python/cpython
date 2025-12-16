@@ -582,7 +582,7 @@ is_terminator(const _PyUOpInstruction *uop)
 
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
-int
+Py_NO_INLINE int
 _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
