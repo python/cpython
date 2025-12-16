@@ -1561,7 +1561,7 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
         class BombDescriptor:
             def __get__(self, obj, owner):
-                return dict()
+                return {}
 
         class EvilZoneInfo(ZoneInfo):
             pass
