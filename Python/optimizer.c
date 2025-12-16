@@ -582,6 +582,7 @@ is_terminator(const _PyUOpInstruction *uop)
 
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
+// gh-142543: inlining this function causes stack overflows
 Py_NO_INLINE int
 _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
@@ -994,6 +995,7 @@ full:
 }
 
 // Returns 0 for do not enter tracing, 1 on enter tracing.
+// gh-142543: inlining this function causes stack overflows
 Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
@@ -1066,7 +1068,7 @@ _PyJit_TryInitializeTracing(
     return 1;
 }
 
-void
+Py_NO_INLINE void
 _PyJit_FinalizeTracing(PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
