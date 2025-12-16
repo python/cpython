@@ -35,25 +35,28 @@ class SampleProfiler:
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
         try:
-            if _FREE_THREADED_BUILD:
-                self.unwinder = _remote_debugging.RemoteUnwinder(
-                    self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                    cache_frames=True, stats=collect_stats
-                )
-            else:
-                only_active_threads = bool(self.all_threads)
-                self.unwinder = _remote_debugging.RemoteUnwinder(
-                    self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                    opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                    cache_frames=True, stats=collect_stats
-                )
+            self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
             raise SystemExit(err)
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
         self.realtime_stats = False
+
+    def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
+        if _FREE_THREADED_BUILD:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        else:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        return unwinder
 
     def sample(self, collector, duration_sec=10, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
