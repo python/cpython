@@ -865,7 +865,7 @@ Current results from the pyperformance benchmark suite report
 `3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`_
 geometric mean performance over the standard CPython interpreter built with
 all optimizations enabled. The speedups range from roughly 20% slowdown to
-over 100% speedup (ignoring the unpack_sequence microbenchmark) on the
+over 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on the
 x86-64 Linux and AArch64 macOS systems. These results are not yet final.
 
 The major upgrades to the JIT are as follows:
