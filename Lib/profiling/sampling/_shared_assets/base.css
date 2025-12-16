@@ -124,15 +124,15 @@
 
   --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
 
-  /* Dark mode heat palette - muted colors that provide sufficient contrast with light text */
-  --heat-1: rgba(74, 123, 167, 0.35);
-  --heat-2: rgba(90, 159, 168, 0.38);
-  --heat-3: rgba(106, 181, 181, 0.40);
-  --heat-4: rgba(126, 196, 136, 0.42);
-  --heat-5: rgba(160, 216, 120, 0.45);
-  --heat-6: rgba(196, 222, 106, 0.48);
-  --heat-7: rgba(244, 212, 77, 0.50);
-  --heat-8: rgba(255, 107, 53, 0.55);
+  /* Dark mode heat palette - cool to warm gradient for visualization */
+  --heat-1: rgba(90, 123, 167, 1);
+  --heat-2: rgba(106, 148, 168, 1);
+  --heat-3: rgba(122, 172, 172, 1);
+  --heat-4: rgba(142, 196, 152, 1);
+  --heat-5: rgba(168, 216, 136, 1);
+  --heat-6: rgba(200, 222, 122, 1);
+  --heat-7: rgba(244, 212, 93, 1);
+  --heat-8: rgba(255, 122, 69, 1);
 
   /* Code view specific - dark mode */
   --code-bg: #0d1117;
