@@ -104,6 +104,11 @@ dummy_func(void) {
         o = owner;
     }
 
+    op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner -- o)) {
+        (void)value;
+        o = owner;
+    }
+
     op(_STORE_FAST, (value --)) {
         GETLOCAL(oparg) = value;
     }
