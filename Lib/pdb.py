@@ -1315,7 +1315,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bnum in range(len(bdb.Breakpoint.bpbynumber) - 1, -1, -1):
+                if bdb.Breakpoint.bpbynumber[bnum] is not None:
+                    break
+                if bnum == 0:
+                    self.error('no breakpoints setted')
+                    return
         else:
             try:
                 bnum = int(arg)
