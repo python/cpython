@@ -3478,8 +3478,8 @@ def test_pdb_issue_gh_65052():
     (Pdb) continue
     """
 
-def test_pdb_issue_142834():
-    """See issue-142834
+def test_pdb_commands_last_breakpoint():
+    """See GH-142834
 
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
@@ -3494,25 +3494,31 @@ def test_pdb_issue_142834():
     ...     'p "success"',
     ...     'end',
     ...     'continue',
-    ...     '',
+    ...     'clear 1',
+    ...     'commands',
+    ...     'continue',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_142834[0]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break 4
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
     (Pdb) break 3
-    Breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:3
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
     (Pdb) clear 2
-    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:3
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
     (Pdb) commands
     (com) p "success"
     (com) end
     (Pdb) continue
     'success'
-    > <doctest test.test_pdb.test_pdb_issue_142834[0]>(4)test_function()
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(4)test_function()
     -> bar = 2
-    (Pdb)
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) commands
+    *** no breakpoints set
+    (Pdb) continue
     """
 
 
