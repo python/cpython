@@ -3497,20 +3497,20 @@ def test_pdb_issue_142834():
     ...     '',
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_xxx[0]>(2)test_function()
+    > <doctest test.test_pdb.test_pdb_issue_142834[0]>(2)test_function()
     -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
     (Pdb) break 4
-    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_gh_xxx[0]>:4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:4
     (Pdb) break 3
-    Breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_gh_xxx[0]>:3
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:3
     (Pdb) clear 2
-    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_gh_xxx[0]>:3
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_issue_142834[0]>:3
     (Pdb) commands
     (com) p "success"
     (com) end
     (Pdb) continue
     'success'
-    > <doctest test.test_pdb.test_pdb_issue_gh_xxx[0]>(4)test_function()
+    > <doctest test.test_pdb.test_pdb_issue_142834[0]>(4)test_function()
     -> bar = 2
     (Pdb)
     """
