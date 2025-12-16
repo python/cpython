@@ -62,6 +62,8 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
+* The :ref:`JIT compiler <whatsnew315-jit>` has been significantly upgraded,
+  with 3-4% geometric mean performance improvement on pyperformance benchmarks.
 
 .. PEP-sized items next.
 
@@ -848,6 +850,94 @@ csv
 
 * :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
+
+.. _whatsnew315-jit:
+
+Upgraded JIT Compiler
+=====================
+
+The JIT compiler introduced in
+`Python 3.13 <https://docs.python.org/3.15/whatsnew/3.13.html#an-experimental-just-in-time-jit-compiler>`_
+has been significantly upgraded.
+
+Current results from the pyperformance benchmark suite report
+`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`_
+geometric mean performance over the standard CPython interpreter built with
+all optimizations enabled. The speedups range from roughly 20% slowdown to
+over 100% speedup (ignoring the unpack_sequence microbenchmark) on the
+x86-64 Linux and AArch64 macOS systems. These results are not yet final.
+
+The major upgrades to the JIT are as follows:
+
+* LLVM 21 build-time dependency
+* New tracing frontend
+* Basic register allocation in the JIT
+* More JIT optimizations
+* Better machine code generation
+
+...watch this space for more to come before 3.15 beta!
+
+LLVM 21 Build-Time Dependency
+-----------------------------
+
+The JIT compiler now uses LLVM 21 for build-time stencil generation. As
+always, LLVM is only needed when building CPython with the JIT enabled;
+end users running Python do not need LLVM installed. Instructions for
+installing LLVM can be found in the
+`JIT compiler documentation <Tools/jit/README.md>`_ for all supported
+platforms.
+
+(Contributed by Savannah Ostrowski in :gh:`140973`.)
+
+A New Tracing Frontend
+----------------------
+
+The JIT compiler now supports significantly more bytecode operations and
+control flow than in Python 3.14, enabling speedups on a wider variety of
+code. For example, simple Python object creation is now understood by the
+3.15 JIT compiler. Overloaded operations and generators are also partially
+supported. This was made possible by an overhauled JIT tracing frontend
+that records actual execution paths through code, rather than estimating
+them as the previous implementation did.
+
+(Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
+Mark Shannon :gh:`141703`.)
+
+Basic Register Allocation in the JIT
+------------------------------------
+
+A basic form of register allocation has been added to the JIT compiler's
+optimizer. This allows the JIT compiler to avoid certain stack operations
+altogether and instead operate on registers. This allows the JIT to produce
+more efficient traces by avoiding reads and writes to memory.
+
+(Contributed by Mark Shannon in :gh:`135379`.)
+
+More JIT Optimizations
+----------------------
+
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`_
+is now performed. This means when the JIT compiler detects that certain user
+code results in constants, the code can be simplified by the JIT.
+(Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
+
+The JIT avoids :term:`reference count`\ s where possible. This generally
+reduces the cost of most operations in Python.
+(Contributed by Ken Jin, Donghee Na, Nadeshiko Manju, Savannah Ostrowski,
+Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
+
+Better Machine Code Generation
+------------------------------
+
+The JIT compiler's machine code generator now produces better machine code
+for x86-64 and AArch64 macOS and Linux targets. In general, users should
+experience lower memory usage for generated machine code and more efficient
+machine code versus the old JIT.
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
+Additional optimizations for AArch64 contributed by Mark Shannon and
+Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
