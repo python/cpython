@@ -5587,9 +5587,14 @@ dummy_func(
             next_instr = this_instr;
             frame->instr_ptr = prev_instr;
             opcode = next_instr->op.code;
-            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
-                opcode == RERAISE || opcode == CLEANUP_THROW ||
-                opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT || opcode >= MIN_INSTRUMENTED_OPCODE);
+            bool stop_tracing = (
+                opcode == WITH_EXCEPT_START ||
+                opcode == RERAISE ||
+                opcode == CLEANUP_THROW ||
+                opcode == PUSH_EXC_INFO ||
+                opcode == INTERPRETER_EXIT ||
+                (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
+            );
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
