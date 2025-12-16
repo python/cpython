@@ -1559,22 +1559,9 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         if "UTC" not in available_zones:
             raise unittest.SkipTest("No time zone data available")
 
-        class Cache:
-            def __init__(self):
-                self.data = {}
-
-            def get(self, key, default=None):
-                return self.data.get(key, default)
-
-            def setdefault(self, key, default):
-                return self.data.setdefault(key, default)
-
-            def clear(self, *args, **kwargs):
-                self.data.clear()
-
         class BombDescriptor:
             def __get__(self, obj, owner):
-                return Cache()
+                return dict()
 
         class EvilZoneInfo(ZoneInfo):
             pass
