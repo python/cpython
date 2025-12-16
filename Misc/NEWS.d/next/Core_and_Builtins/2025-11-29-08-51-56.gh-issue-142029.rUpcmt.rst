@@ -1,2 +1,0 @@
-Raise :exc:`ModuleNotFoundError` instead of crashing when a nonexistent module
-is used as a name in ``_imp.create_builtin()``.

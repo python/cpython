@@ -142,7 +142,7 @@ Modules created using the C API are typically defined using an
 array of :dfn:`slots`.
 The slots provide a "description" of how a module should be created.
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
 
    Previously, a :c:type:`PyModuleDef` struct was necessary to define modules.
    The older way of defining modules is still available: consult either the
@@ -190,7 +190,7 @@ Metadata slots
    However, it is still recommended to include this slot for introspection
    and debugging purposes.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_name` instead to support previous versions.
 
@@ -201,7 +201,7 @@ Metadata slots
 
    Usually it is set to a variable created with :c:macro:`PyDoc_STRVAR`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_doc` instead to support previous versions.
 
@@ -332,7 +332,7 @@ Creation and initialization slots
 
    .. versionadded:: 3.5
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       The *slots* argument may be a ``ModuleSpec``-like object, rather than
       a true :py:class:`~importlib.machinery.ModuleSpec` instance.
@@ -365,7 +365,7 @@ Creation and initialization slots
 
    .. versionadded:: 3.5
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
 
       Repeated ``Py_mod_exec`` slots are disallowed, except in
       :c:type:`PyModuleDef.m_slots`.
@@ -384,7 +384,7 @@ Creation and initialization slots
    The table must be statically allocated (or otherwise guaranteed to outlive
    the module object).
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_methods` instead to support previous versions.
 
@@ -434,7 +434,7 @@ To retrieve the state from a given module, use the following functions:
 
    On error, set *\*result* to -1, and return -1 with an exception set.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 
@@ -459,7 +459,7 @@ defining the module state.
 
    Use :c:func:`PyModule_GetStateSize` to retrieve the size of a given module.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_size` instead to support previous versions.
 
@@ -482,7 +482,7 @@ defining the module state.
    (:c:data:`Py_mod_state_size`) is greater than 0 and the module state
    (as returned by :c:func:`PyModule_GetState`) is ``NULL``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_size` instead to support previous versions.
 
@@ -510,7 +510,7 @@ defining the module state.
    the cyclic garbage collector is not involved and
    the :c:macro:`Py_mod_state_free` function is called directly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_clear` instead to support previous versions.
 
@@ -532,7 +532,7 @@ defining the module state.
    (:c:data:`Py_mod_state_size`) is greater than 0 and the module state
    (as returned by :c:func:`PyModule_GetState`) is ``NULL``.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
       Use :c:member:`PyModuleDef.m_free` instead to support previous versions.
 
@@ -593,7 +593,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
    This means that :c:macro:`!Py_mod_token` cannot be used in
    :c:member:`PyModuleDef.m_slots`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyModule_GetToken(PyObject *module, void** result)
 
@@ -601,7 +601,7 @@ A module's token -- and the *your_token* value to use in the above code -- is:
 
    On error, set *\*result* to NULL, and return -1 with an exception set.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 See also :c:func:`PyType_GetModuleByToken`.
 
@@ -641,7 +641,7 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    :c:func:`!PyModule_FromSlotsAndSpec` call.
    In particular, it may be heap-allocated.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. c:function:: int PyModule_Exec(PyObject *module)
 
@@ -654,7 +654,7 @@ rather than from an extension's :ref:`export hook <extension-export-hook>`.
    :ref:`legacy single-phase initialization <single-phase-initialization>`,
    this function does nothing and returns 0.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 
