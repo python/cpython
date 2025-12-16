@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
@@ -23,9 +24,11 @@ bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(source), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -147,7 +150,9 @@ bytearray_find(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_find_impl((PyByteArrayObject *)self, sub, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -196,7 +201,9 @@ bytearray_count(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_count_impl((PyByteArrayObject *)self, sub, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -235,7 +242,13 @@ bytearray_copy_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytearray_copy_impl((PyByteArrayObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_copy_impl((PyByteArrayObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(bytearray_index__doc__,
@@ -283,7 +296,9 @@ bytearray_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_index_impl((PyByteArrayObject *)self, sub, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -334,7 +349,9 @@ bytearray_rfind(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_rfind_impl((PyByteArrayObject *)self, sub, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -385,7 +402,9 @@ bytearray_rindex(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_rindex_impl((PyByteArrayObject *)self, sub, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -436,7 +455,9 @@ bytearray_startswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_startswith_impl((PyByteArrayObject *)self, subobj, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -487,7 +508,9 @@ bytearray_endswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_endswith_impl((PyByteArrayObject *)self, subobj, start, end);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -518,7 +541,9 @@ bytearray_removeprefix(PyObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &prefix, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_removeprefix_impl((PyByteArrayObject *)self, &prefix);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for prefix */
@@ -554,7 +579,9 @@ bytearray_removesuffix(PyObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &suffix, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_removesuffix_impl((PyByteArrayObject *)self, &suffix);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for suffix */
@@ -562,6 +589,82 @@ exit:
        PyBuffer_Release(&suffix);
     }
 
+    return return_value;
+}
+
+PyDoc_STRVAR(bytearray_resize__doc__,
+"resize($self, size, /)\n"
+"--\n"
+"\n"
+"Resize the internal buffer of bytearray to len.\n"
+"\n"
+"  size\n"
+"    New size to resize to.");
+
+#define BYTEARRAY_RESIZE_METHODDEF    \
+    {"resize", (PyCFunction)bytearray_resize, METH_O, bytearray_resize__doc__},
+
+static PyObject *
+bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size);
+
+static PyObject *
+bytearray_resize(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t size;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
+    }
+    return_value = bytearray_resize_impl((PyByteArrayObject *)self, size);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytearray_take_bytes__doc__,
+"take_bytes($self, n=None, /)\n"
+"--\n"
+"\n"
+"Take *n* bytes from the bytearray and return them as a bytes object.\n"
+"\n"
+"  n\n"
+"    Bytes to take, negative indexes from end. None indicates all bytes.");
+
+#define BYTEARRAY_TAKE_BYTES_METHODDEF    \
+    {"take_bytes", _PyCFunction_CAST(bytearray_take_bytes), METH_FASTCALL, bytearray_take_bytes__doc__},
+
+static PyObject *
+bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n);
+
+static PyObject *
+bytearray_take_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *n = Py_None;
+
+    if (!_PyArg_CheckPositional("take_bytes", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    n = args[0];
+skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_take_bytes_impl((PyByteArrayObject *)self, n);
+    Py_END_CRITICAL_SECTION();
+
+exit:
     return return_value;
 }
 
@@ -594,9 +697,11 @@ bytearray_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(delete), },
     };
     #undef NUM_KEYWORDS
@@ -629,7 +734,9 @@ bytearray_translate(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     }
     deletechars = args[1];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_translate_impl((PyByteArrayObject *)self, table, deletechars);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -653,7 +760,7 @@ static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+bytearray_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -736,7 +843,9 @@ bytearray_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         count = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_replace_impl((PyByteArrayObject *)self, &old, &new, count);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     /* Cleanup for old */
@@ -782,9 +891,11 @@ bytearray_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -833,7 +944,9 @@ bytearray_split(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
         maxsplit = ival;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_split_impl((PyByteArrayObject *)self, sep, maxsplit);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -855,6 +968,21 @@ PyDoc_STRVAR(bytearray_partition__doc__,
 #define BYTEARRAY_PARTITION_METHODDEF    \
     {"partition", (PyCFunction)bytearray_partition, METH_O, bytearray_partition__doc__},
 
+static PyObject *
+bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep);
+
+static PyObject *
+bytearray_partition(PyObject *self, PyObject *sep)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_partition_impl((PyByteArrayObject *)self, sep);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_rpartition__doc__,
 "rpartition($self, sep, /)\n"
 "--\n"
@@ -871,6 +999,21 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
 
 #define BYTEARRAY_RPARTITION_METHODDEF    \
     {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
+
+static PyObject *
+bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep);
+
+static PyObject *
+bytearray_rpartition(PyObject *self, PyObject *sep)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_rpartition_impl((PyByteArrayObject *)self, sep);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytearray_rsplit__doc__,
 "rsplit($self, /, sep=None, maxsplit=-1)\n"
@@ -905,9 +1048,11 @@ bytearray_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
     };
     #undef NUM_KEYWORDS
@@ -956,7 +1101,9 @@ bytearray_rsplit(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         maxsplit = ival;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_rsplit_impl((PyByteArrayObject *)self, sep, maxsplit);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -977,7 +1124,13 @@ bytearray_reverse_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_reverse(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytearray_reverse_impl((PyByteArrayObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_reverse_impl((PyByteArrayObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(bytearray_insert__doc__,
@@ -1022,7 +1175,9 @@ bytearray_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (!_getbytevalue(args[1], &item)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_insert_impl((PyByteArrayObject *)self, index, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1052,7 +1207,9 @@ bytearray_append(PyObject *self, PyObject *arg)
     if (!_getbytevalue(arg, &item)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_append_impl((PyByteArrayObject *)self, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1069,6 +1226,21 @@ PyDoc_STRVAR(bytearray_extend__doc__,
 
 #define BYTEARRAY_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)bytearray_extend, METH_O, bytearray_extend__doc__},
+
+static PyObject *
+bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints);
+
+static PyObject *
+bytearray_extend(PyObject *self, PyObject *iterable_of_ints)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_extend_impl((PyByteArrayObject *)self, iterable_of_ints);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytearray_pop__doc__,
 "pop($self, index=-1, /)\n"
@@ -1113,7 +1285,9 @@ bytearray_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         index = ival;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_pop_impl((PyByteArrayObject *)self, index);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1143,7 +1317,9 @@ bytearray_remove(PyObject *self, PyObject *arg)
     if (!_getbytevalue(arg, &value)) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_remove_impl((PyByteArrayObject *)self, value);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1177,7 +1353,9 @@ bytearray_strip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     bytes = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_strip_impl((PyByteArrayObject *)self, bytes);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1211,7 +1389,9 @@ bytearray_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     bytes = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_lstrip_impl((PyByteArrayObject *)self, bytes);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1245,7 +1425,9 @@ bytearray_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     bytes = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_rstrip_impl((PyByteArrayObject *)self, bytes);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1283,9 +1465,11 @@ bytearray_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -1347,7 +1531,9 @@ bytearray_decode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObje
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_decode_impl((PyByteArrayObject *)self, encoding, errors);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1365,6 +1551,21 @@ PyDoc_STRVAR(bytearray_join__doc__,
 
 #define BYTEARRAY_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytearray_join, METH_O, bytearray_join__doc__},
+
+static PyObject *
+bytearray_join_impl(PyByteArrayObject *self, PyObject *iterable_of_bytes);
+
+static PyObject *
+bytearray_join(PyObject *self, PyObject *iterable_of_bytes)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_join_impl((PyByteArrayObject *)self, iterable_of_bytes);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytearray_splitlines__doc__,
 "splitlines($self, /, keepends=False)\n"
@@ -1391,9 +1592,11 @@ bytearray_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(keepends), },
     };
     #undef NUM_KEYWORDS
@@ -1427,7 +1630,9 @@ bytearray_splitlines(PyObject *self, PyObject *const *args, Py_ssize_t nargs, Py
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_splitlines_impl((PyByteArrayObject *)self, keepends);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1449,19 +1654,12 @@ static PyObject *
 bytearray_fromhex_impl(PyTypeObject *type, PyObject *string);
 
 static PyObject *
-bytearray_fromhex(PyTypeObject *type, PyObject *arg)
+bytearray_fromhex(PyObject *type, PyObject *string)
 {
     PyObject *return_value = NULL;
-    PyObject *string;
 
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    string = arg;
-    return_value = bytearray_fromhex_impl(type, string);
+    return_value = bytearray_fromhex_impl((PyTypeObject *)type, string);
 
-exit:
     return return_value;
 }
 
@@ -1504,9 +1702,11 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
     };
     #undef NUM_KEYWORDS
@@ -1547,7 +1747,9 @@ bytearray_hex(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_hex_impl((PyByteArrayObject *)self, sep, bytes_per_sep);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1568,7 +1770,13 @@ bytearray_reduce_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytearray_reduce_impl((PyByteArrayObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = bytearray_reduce_impl((PyByteArrayObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(bytearray_reduce_ex__doc__,
@@ -1600,7 +1808,9 @@ bytearray_reduce_ex(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = bytearray_reduce_ex_impl((PyByteArrayObject *)self, proto);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -1623,4 +1833,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=bc8bec8514102bf3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5eddefde2a001ceb input=a9049054013a1b77]*/

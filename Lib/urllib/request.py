@@ -1450,16 +1450,6 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def file_open(self, req):
-        url = req.selector
-        if url[:2] == '//' and url[2:3] != '/' and (req.host and
-                req.host != 'localhost'):
-            if not req.host in self.get_names():
-                raise URLError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(req)
-
     # names for the localhost
     names = None
     def get_names(self):
@@ -1476,32 +1466,41 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        host = req.host
-        filename = req.selector
-        localfile = url2pathname(filename)
+        localfile = url2pathname(req.full_url, require_scheme=True, resolve_host=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(filename)[0]
+            mtype = mimetypes.guess_file_type(localfile)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            if host:
-                host, port = _splitport(host)
-            if not host or \
-                (not port and _safe_gethostbyname(host) in self.get_names()):
-                origurl = 'file:' + pathname2url(localfile)
-                return addinfourl(open(localfile, 'rb'), headers, origurl)
+            origurl = pathname2url(localfile, add_scheme=True)
+            return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
-        raise URLError('file not on local host')
 
-def _safe_gethostbyname(host):
+    file_open = open_local_file
+
+def _is_local_authority(authority, resolve):
+    # Compare hostnames
+    if not authority or authority == 'localhost':
+        return True
     try:
-        return socket.gethostbyname(host)
-    except socket.gaierror:
-        return None
+        hostname = socket.gethostname()
+    except (socket.gaierror, AttributeError):
+        pass
+    else:
+        if authority == hostname:
+            return True
+    # Compare IP addresses
+    if not resolve:
+        return False
+    try:
+        address = socket.gethostbyname(authority)
+    except (socket.gaierror, AttributeError, UnicodeEncodeError):
+        return False
+    return address in FileHandler().get_names()
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1536,6 +1535,7 @@ class FTPHandler(BaseHandler):
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
@@ -1553,8 +1553,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            raise URLError(f"ftp error: {exp}") from exp
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1578,14 +1582,15 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
@@ -1644,38 +1649,80 @@ class DataHandler(BaseHandler):
         return addinfourl(io.BytesIO(data), headers, url)
 
 
-# Code move from the old urllib module
+# Code moved from the old urllib module
 
-# Helper for non-unix systems
-if os.name == 'nt':
-    from nturl2path import url2pathname, pathname2url
-else:
-    def url2pathname(pathname):
-        """OS-specific conversion from a relative URL of the 'file' scheme
-        to a file system path; not recommended for general use."""
-        if pathname[:3] == '///':
-            # URL has an empty authority section, so the path begins on the
-            # third character.
-            pathname = pathname[2:]
-        elif pathname[:12] == '//localhost/':
-            # Skip past 'localhost' authority.
-            pathname = pathname[11:]
-        encoding = sys.getfilesystemencoding()
-        errors = sys.getfilesystemencodeerrors()
-        return unquote(pathname, encoding=encoding, errors=errors)
+def url2pathname(url, *, require_scheme=False, resolve_host=False):
+    """Convert the given file URL to a local file system path.
 
-    def pathname2url(pathname):
-        """OS-specific conversion from a file system path to a relative URL
-        of the 'file' scheme; not recommended for general use."""
-        if pathname[:1] == '/':
-            # Add explicitly empty authority to absolute path. If the path
-            # starts with exactly one slash then this change is mostly
-            # cosmetic, but if it begins with two or more slashes then this
-            # avoids interpreting the path as a URL authority.
-            pathname = '//' + pathname
-        encoding = sys.getfilesystemencoding()
-        errors = sys.getfilesystemencodeerrors()
-        return quote(pathname, encoding=encoding, errors=errors)
+    The 'file:' scheme prefix must be omitted unless *require_scheme*
+    is set to true.
+
+    The URL authority may be resolved with gethostbyname() if
+    *resolve_host* is set to true.
+    """
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
+    if os.name == 'nt':
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
+            # e.g. file://server/share/file.txt
+            url = '//' + authority + url
+        elif url[:3] == '///':
+            # e.g. file://///server/share/file.txt
+            url = url[1:]
+        else:
+            if url[:1] == '/' and url[2:3] in (':', '|'):
+                # Skip past extra slash before DOS drive in URL path.
+                url = url[1:]
+            if url[1:2] == '|':
+                # Older URLs use a pipe after a drive letter
+                url = url[:1] + ':' + url[2:]
+        url = url.replace('/', '\\')
+    elif not _is_local_authority(authority, resolve_host):
+        raise URLError("file:// scheme is supported only on localhost")
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    return unquote(url, encoding=encoding, errors=errors)
+
+
+def pathname2url(pathname, *, add_scheme=False):
+    """Convert the given local file system path to a file URL.
+
+    The 'file:' scheme prefix is omitted unless *add_scheme*
+    is set to true.
+    """
+    if os.name == 'nt':
+        pathname = pathname.replace('\\', '/')
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    scheme = 'file:' if add_scheme else ''
+    drive, root, tail = os.path.splitroot(pathname)
+    if drive:
+        # First, clean up some special forms. We are going to sacrifice the
+        # additional information anyway
+        if drive[:4] == '//?/':
+            drive = drive[4:]
+            if drive[:4].upper() == 'UNC/':
+                drive = '//' + drive[4:]
+        if drive[1:] == ':':
+            # DOS drive specified. Add three slashes to the start, producing
+            # an authority section with a zero-length authority, and a path
+            # section starting with a single slash.
+            drive = '///' + drive
+        drive = quote(drive, encoding=encoding, errors=errors, safe='/:')
+    elif root:
+        # Add explicitly empty authority to absolute path. If the path
+        # starts with exactly one slash then this change is mostly
+        # cosmetic, but if it begins with two or more slashes then this
+        # avoids interpreting the path as a URL authority.
+        root = '//' + root
+    tail = quote(tail, encoding=encoding, errors=errors)
+    return scheme + drive + root + tail
 
 
 # Utility functions

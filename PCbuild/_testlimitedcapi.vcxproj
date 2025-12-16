@@ -114,6 +114,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

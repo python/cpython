@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"   // _PyIndex_Check()
 #include "pycore_object.h"     // _PyType_IsReady()
+#include "pycore_unicodeobject.h"     // _PyUnicodeWriter_FormatV()
 
 typedef double va_double;
 
@@ -30,6 +31,19 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
         return 0;
     }
     *((Py_ssize_t *)result) = limit;
+    return 1;
+}
+
+int
+_Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
+{
+    if (!_Py_convert_optional_to_ssize_t(obj, result)) {
+        return 0;
+    }
+    if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
+        PyErr_SetString(PyExc_ValueError, "argument cannot be negative");
+        return 0;
+    }
     return 1;
 }
 
@@ -321,7 +335,8 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
+            return PyLong_FromUnsignedLongLong(
+                va_arg(*p_va, unsigned long long));
 
         case 'u':
         {
@@ -363,6 +378,11 @@ do_mkvalue(const char **p_format, va_list *p_va)
         {
             int i = va_arg(*p_va, int);
             return PyUnicode_FromOrdinal(i);
+        }
+        case 'p':
+        {
+            int i = va_arg(*p_va, int);
+            return PyBool_FromLong(i);
         }
 
         case 's':
@@ -649,6 +669,116 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     return PyModule_AddObjectRef(module, name, (PyObject *)type);
 }
 
+static int _abiinfo_raise(const char *module_name, const char *format, ...)
+{
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (!writer) {
+        return -1;
+    }
+    if (module_name) {
+        if (PyUnicodeWriter_WriteUTF8(writer, module_name, -1) < 0) {
+            PyUnicodeWriter_Discard(writer);
+            return -1;
+        }
+        if (PyUnicodeWriter_WriteASCII(writer, ": ", 2) < 0) {
+            PyUnicodeWriter_Discard(writer);
+            return -1;
+        }
+    }
+    va_list vargs;
+    va_start(vargs, format);
+    if (_PyUnicodeWriter_FormatV(writer, format, vargs) < 0) {
+        PyUnicodeWriter_Discard(writer);
+        return -1;
+    }
+    PyObject *message = PyUnicodeWriter_Finish(writer);
+    if (!message) {
+        return -1;
+    }
+    PyErr_SetObject(PyExc_ImportError, message);
+    Py_DECREF(message);
+    return -1;
+}
+
+int PyABIInfo_Check(PyABIInfo *info, const char *module_name)
+{
+    if (!info) {
+        return _abiinfo_raise(module_name, "NULL PyABIInfo");
+    }
+
+    /* abiinfo_major_version */
+    if (info->abiinfo_major_version == 0) {
+        return 0;
+    }
+    if (info->abiinfo_major_version > 1) {
+        return _abiinfo_raise(module_name, "PyABIInfo version too high");
+    }
+
+    /* Internal ABI */
+    if (info->flags & PyABIInfo_INTERNAL) {
+        if (info->abi_version && (info->abi_version != PY_VERSION_HEX)) {
+            return _abiinfo_raise(
+                module_name,
+                "incompatible internal ABI (0x%x != 0x%x)",
+                info->abi_version, PY_VERSION_HEX);
+        }
+    }
+
+#define XY_MASK 0xffff0000
+    if (info->flags & PyABIInfo_STABLE) {
+        /* Greater-than major.minor version check */
+        if (info->abi_version) {
+            if ((info->abi_version & XY_MASK) > (PY_VERSION_HEX & XY_MASK)) {
+                return _abiinfo_raise(
+                    module_name,
+                    "incompatible future stable ABI version (%d.%d)",
+                    ((info->abi_version) >> 24) % 0xff,
+                    ((info->abi_version) >> 16) % 0xff);
+            }
+            if (info->abi_version < Py_PACK_VERSION(3, 2)) {
+                return _abiinfo_raise(
+                    module_name,
+                    "invalid stable ABI version (%d.%d)",
+                    ((info->abi_version) >> 24) % 0xff,
+                    ((info->abi_version) >> 16) % 0xff);
+            }
+        }
+        if (info->flags & PyABIInfo_INTERNAL) {
+            return _abiinfo_raise(module_name,
+                                  "cannot use both internal and stable ABI");
+        }
+    }
+    else {
+        /* Exact major.minor version check */
+        if (info->abi_version) {
+            if ((info->abi_version & XY_MASK) != (PY_VERSION_HEX & XY_MASK)) {
+                return _abiinfo_raise(
+                    module_name,
+                    "incompatible ABI version (%d.%d)",
+                    ((info->abi_version) >> 24) % 0xff,
+                    ((info->abi_version) >> 16) % 0xff);
+            }
+        }
+    }
+#undef XY_MASK
+
+    /* Free-threading/GIL */
+    uint16_t gilflags = info->flags & (PyABIInfo_GIL | PyABIInfo_FREETHREADED);
+#if Py_GIL_DISABLED
+    if (gilflags == PyABIInfo_GIL) {
+        return _abiinfo_raise(module_name,
+                              "incompatible with free-threaded CPython");
+    }
+#else
+    if (gilflags == PyABIInfo_FREETHREADED) {
+        return _abiinfo_raise(module_name,
+                              "only compatible with free-threaded CPython");
+    }
+#endif
+
+    return 0;
+}
+
 
 /* Exported functions for version helper macros */
 
@@ -663,5 +793,5 @@ Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
 uint32_t
 Py_PACK_VERSION(int x, int y)
 {
-    return Py_PACK_FULL_VERSION(x, y, 0, 0, 0);
+    return _Py_PACK_VERSION(x, y);
 }

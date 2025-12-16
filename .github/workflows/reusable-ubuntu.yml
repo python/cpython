@@ -3,9 +3,6 @@ name: Reusable Ubuntu
 on:
   workflow_call:
     inputs:
-      config_hash:
-        required: true
-        type: string
       bolt-optimizations:
         description: Whether to enable BOLT optimizations
         required: false
@@ -25,12 +22,12 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_ubuntu_reusable:
+  build-ubuntu-reusable:
     name: build and test (${{ inputs.os }})
-    timeout-minutes: 60
     runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
@@ -64,11 +61,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -78,12 +70,7 @@ jobs:
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       # `test_unpickle_module_race` writes to the source directory, which is

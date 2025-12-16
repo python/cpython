@@ -8,6 +8,8 @@ module with arguments identifying each test.
 import contextlib
 import os
 import sys
+import unittest.mock
+from test.support import swap_item
 
 
 class TestHook:
@@ -195,6 +197,17 @@ def test_open(testfn):
     except ImportError:
         load_dh_params = None
 
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    def rl(name):
+        if readline:
+            return getattr(readline, name, None)
+        else:
+            return None
+
     # Try a range of "open" functions.
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
@@ -204,11 +217,27 @@ def test_open(testfn):
             (open, 3, "wb"),
             (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
             (load_dh_params, testfn),
+            (rl("read_history_file"), testfn),
+            (rl("read_history_file"), None),
+            (rl("write_history_file"), testfn),
+            (rl("write_history_file"), None),
+            (rl("append_history_file"), 0, testfn),
+            (rl("append_history_file"), 0, None),
+            (rl("read_init_file"), testfn),
+            (rl("read_init_file"), None),
         ]:
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
@@ -221,6 +250,14 @@ def test_open(testfn):
                 (3, "w"),
                 (testfn, "w"),
                 (testfn, "rb") if load_dh_params else None,
+                (testfn, "r") if readline else None,
+                ("~/.history", "r") if readline else None,
+                (testfn, "w") if readline else None,
+                ("~/.history", "w") if readline else None,
+                (testfn, "a") if rl("append_history_file") else None,
+                ("~/.history", "a") if rl("append_history_file") else None,
+                (testfn, "r") if readline else None,
+                ("<readline_init_file>", "r") if readline else None,
             ]
             if i is not None
         ],
@@ -268,6 +305,37 @@ def test_mmap():
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
+
+
+def test_ctypes_call_function():
+    import ctypes
+    import _ctypes
+
+    with TestHook() as hook:
+        _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen, f"{ctypes._memmove_addr=} {hook.seen=}"
+
+        ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen, f"{ctypes._memset_addr=} {hook.seen=}"
+
+    with TestHook() as hook:
+        ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
+        assert "ctypes.call_function" in hook.seen_events
+
+    with TestHook() as hook:
+        ctypes.string_at(id("ctypes.string_at") + 40)
+        assert "ctypes.call_function" in hook.seen_events
+        assert "ctypes.string_at" in hook.seen_events
+
+
+def test_posixsubprocess():
+    import multiprocessing.util
+
+    exe = b"xxx"
+    args = [b"yyy", b"zzz"]
+    with TestHook() as hook:
+        multiprocessing.util.spawnv_passfds(exe, args, ())
+        assert ("_posixsubprocess.fork_exec", ([exe], args, None)) in hook.seen
 
 
 def test_excepthook():
@@ -577,6 +645,112 @@ def test_assert_unicode():
     else:
         raise RuntimeError("Expected sys.audit(9) to fail.")
 
+def test_sys_remote_exec():
+    import tempfile
+
+    pid = os.getpid()
+    event_pid = -1
+    event_script_path = ""
+    remote_event_script_path = ""
+    def hook(event, args):
+        if event not in ["sys.remote_exec", "cpython.remote_debugger_script"]:
+            return
+        print(event, args)
+        match event:
+            case "sys.remote_exec":
+                nonlocal event_pid, event_script_path
+                event_pid = args[0]
+                event_script_path = args[1]
+            case "cpython.remote_debugger_script":
+                nonlocal remote_event_script_path
+                remote_event_script_path = args[0]
+
+    sys.addaudithook(hook)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
+        tmp_file.write("a = 1+1\n")
+        tmp_file.flush()
+        sys.remote_exec(pid, tmp_file.name)
+        assertEqual(event_pid, pid)
+        assertEqual(event_script_path, tmp_file.name)
+        assertEqual(remote_event_script_path, tmp_file.name)
+
+def test_import_module():
+    import importlib
+
+    with TestHook() as hook:
+        importlib.import_module("importlib")  # already imported, won't get logged
+        importlib.import_module("email") # standard library module
+        importlib.import_module("pythoninfo")  # random module
+        importlib.import_module(".audit_test_data.submodule", "test")  # relative import
+        importlib.import_module("test.audit_test_data.submodule2")  # absolute import
+        importlib.import_module("_testcapi")  # extension module
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_builtin__import__():
+    import importlib # noqa: F401
+
+    with TestHook() as hook:
+        __import__("importlib")
+        __import__("email")
+        __import__("pythoninfo")
+        __import__("audit_test_data.submodule", level=1, globals={"__package__": "test"})
+        __import__("test.audit_test_data.submodule2")
+        __import__("_testcapi")
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
+
+def test_import_statement():
+    import importlib # noqa: F401
+    # Set __package__ so relative imports work
+    with swap_item(globals(), "__package__", "test"):
+        with TestHook() as hook:
+            import importlib # noqa: F401
+            import email # noqa: F401
+            import pythoninfo # noqa: F401
+            from .audit_test_data import submodule # noqa: F401
+            import test.audit_test_data.submodule2 # noqa: F401
+            import _testcapi # noqa: F401
+
+    actual = [a for e, a in hook.seen if e == "import"]
+    # Import statement ordering is different because the package is
+    # loaded first and then the submodule
+    assertSequenceEqual(
+        [
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
+        ],
+        actual,
+    )
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts

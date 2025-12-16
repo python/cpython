@@ -137,24 +137,49 @@ created.  Socket addresses are represented as follows:
 - :const:`AF_BLUETOOTH` supports the following protocols and address
   formats:
 
-  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm)`` where ``bdaddr`` is
-    the Bluetooth address as a string and ``psm`` is an integer.
+  - :const:`BTPROTO_L2CAP` accepts a tuple
+    ``(bdaddr, psm[, cid[, bdaddr_type]])`` where:
+
+    - ``bdaddr`` is a string specifying the Bluetooth address.
+    - ``psm`` is an integer specifying the Protocol/Service Multiplexer.
+    - ``cid`` is an optional integer specifying the Channel Identifier.
+      If not given, defaults to zero.
+    - ``bdaddr_type`` is an optional integer specifying the address type;
+      one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
+      :const:`BDADDR_LE_RANDOM`.
+
+    .. versionchanged:: 3.14
+       Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
-    either an integer or a string with the Bluetooth address of the
-    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
-    a Bluetooth address while everything else expects an integer.)
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+
+    - On Linux it accepts an integer ``device_id`` or a tuple
+      ``(device_id, [channel])`` where ``device_id``
+      specifies the number of the Bluetooth device,
+      and ``channel`` is an optional integer specifying the HCI channel
+      (:const:`HCI_CHANNEL_RAW` by default).
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+    .. versionchanged:: 3.13.3
+       FreeBSD support added.
+
+    .. versionchanged:: 3.14
+       Added ``channel`` field.
+       ``device_id`` not packed in a tuple is now accepted.
+
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+
+    .. versionchanged:: 3.14
+       FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -337,10 +362,10 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
@@ -451,11 +476,14 @@ Constants
       network interface instead of its name.
 
    .. versionchanged:: 3.14
-      Added missing ``IP_RECVERR``, ``IPV6_RECVERR``, ``IP_RECVTTL``, and
-      ``IP_RECVORIGDSTADDR`` on Linux.
+      Added missing ``IP_FREEBIND``, ``IP_RECVERR``, ``IPV6_RECVERR``,
+      ``IP_RECVTTL``, and ``IP_RECVORIGDSTADDR`` on Linux.
 
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
+
+   .. versionchanged:: next
+      ``IPV6_HDRINCL`` was added.
 
 
 .. data:: AF_CAN
@@ -472,6 +500,9 @@ Constants
 
    .. versionchanged:: 3.11
       NetBSD support was added.
+
+   .. versionchanged:: 3.14
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -626,6 +657,14 @@ Constants
    This constant contains a boolean value which indicates if IPv6 is supported on
    this platform.
 
+.. data:: AF_BLUETOOTH
+          BTPROTO_L2CAP
+          BTPROTO_RFCOMM
+          BTPROTO_HCI
+          BTPROTO_SCO
+
+   Integer constants for use with Bluetooth addresses.
+
 .. data:: BDADDR_ANY
           BDADDR_LOCAL
 
@@ -634,14 +673,81 @@ Constants
    any address when specifying the binding socket with
    :const:`BTPROTO_RFCOMM`.
 
+.. data:: BDADDR_BREDR
+          BDADDR_LE_PUBLIC
+          BDADDR_LE_RANDOM
+
+   These constants describe the Bluetooth address type when binding or
+   connecting a :const:`BTPROTO_L2CAP` socket.
+
+   .. availability:: Linux, FreeBSD
+
+   .. versionadded:: 3.14
+
+.. data:: SOL_RFCOMM
+          SOL_L2CAP
+          SOL_HCI
+          SOL_SCO
+          SOL_BLUETOOTH
+
+   Used in the level argument to the :meth:`~socket.setsockopt` and
+   :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`SOL_BLUETOOTH` is only available on Linux. Other constants
+   are available if the corresponding protocol is supported.
+
+.. data:: SO_L2CAP_*
+          L2CAP_LM
+          L2CAP_LM_*
+          SO_RFCOMM_*
+          RFCOMM_LM_*
+          SO_SCO_*
+          SO_BTH_*
+          BT_*
+
+   Used in the option name and value argument to the :meth:`~socket.setsockopt`
+   and :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`!BT_*` and :const:`L2CAP_LM` are only available on Linux.
+   :const:`!SO_BTH_*` are only available on Windows.
+   Other constants may be available on Linux and various BSD platforms.
+
+   .. versionadded:: 3.14
+
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
+          SO_HCI_EVT_FILTER
+          SO_HCI_PKT_FILTER
 
-   For use with :const:`BTPROTO_HCI`. :const:`HCI_FILTER` is not
-   available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
-   :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
-   DragonFlyBSD.
+   Option names for use with :const:`BTPROTO_HCI`.
+   Availability and format of the option values depend on platform.
+
+   .. versionchanged:: 3.14
+      Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
+      on NetBSD and DragonFly BSD.
+      Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
+
+.. data:: HCI_DEV_NONE
+
+   The ``device_id`` value used to create an HCI socket that isn't specific
+   to a single Bluetooth adapter.
+
+   .. availability:: Linux
+
+   .. versionadded:: 3.14
+
+.. data:: HCI_CHANNEL_RAW
+          HCI_CHANNEL_USER
+          HCI_CHANNEL_MONITOR
+          HCI_CHANNEL_CONTROL
+          HCI_CHANNEL_LOGGING
+
+   Possible values for ``channel`` field in the :const:`BTPROTO_HCI` address.
+
+   .. availability:: Linux
+
+   .. versionadded:: 3.14
 
 .. data:: AF_QIPCRTR
 
@@ -670,9 +776,9 @@ Constants
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
 
 .. data:: SO_REUSEPORT_LB
 
@@ -854,10 +960,10 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
-   be able to accept both IPv4 and IPv6 connections, else it will raise
-   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
-   this functionality.
+   If *dualstack_ipv6* is true, *family* is :data:`AF_INET6` and the platform
+   supports it the socket will be able to accept both IPv4 and IPv6 connections,
+   else it will raise :exc:`ValueError`. Most POSIX platforms and Windows are
+   supposed to support this functionality.
    When this functionality is enabled the address returned by
    :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
    address represented as an IPv4-mapped IPv6 address.
@@ -1304,10 +1410,13 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: setdefaulttimeout(timeout)
 
-   Set the default timeout in seconds (float) for new socket objects.  When
+   Set the default timeout in seconds (real number) for new socket objects.  When
    the socket module is first imported, the default is ``None``.  See
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. function:: sethostname(name)
@@ -1389,7 +1498,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1403,9 +1512,9 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
@@ -1667,11 +1776,6 @@ to sockets.
    by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
    See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
    *flags*; it defaults to zero.
-
-   .. note::
-
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
@@ -1975,7 +2079,7 @@ to sockets.
 .. method:: socket.settimeout(value)
 
    Set a timeout on blocking socket operations.  The *value* argument can be a
-   nonnegative floating-point number expressing seconds, or ``None``.
+   nonnegative real number expressing seconds, or ``None``.
    If a non-zero value is given, subsequent socket operations will raise a
    :exc:`timeout` exception if the timeout period *value* has elapsed before
    the operation has completed.  If zero is given, the socket is put in
@@ -1987,12 +2091,12 @@ to sockets.
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
       :attr:`socket.type`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+
+.. method:: socket.setsockopt(level, optname, value: int | Buffer)
+            socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: pair: module; struct
 

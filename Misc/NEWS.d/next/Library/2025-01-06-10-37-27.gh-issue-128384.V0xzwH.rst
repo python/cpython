@@ -1,5 +1,0 @@
-Add locking to :mod:`warnings` to avoid some data races when free-threading
-is used.  Change ``_warnings_runtime_state.mutex`` to be a recursive mutex
-and expose it to :mod:`warnings`, via the :func:`!_acquire_lock` and
-:func:`!_release_lock` functions. The lock is held when ``filters`` and
-``_filters_version`` are updated.

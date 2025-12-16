@@ -56,6 +56,11 @@ whose size is determined when the object is allocated.
 #  define Py_REF_DEBUG
 #endif
 
+#if defined(_Py_OPAQUE_PYOBJECT) && !defined(Py_LIMITED_API)
+#   error "_Py_OPAQUE_PYOBJECT only makes sense with Py_LIMITED_API"
+#endif
+
+#ifndef _Py_OPAQUE_PYOBJECT
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
@@ -66,6 +71,8 @@ whose size is determined when the object is allocated.
  *
  * Statically allocated objects might be shared between
  * interpreters, so must be marked as immortal.
+ *
+ * Before changing this, see the check in PyModuleDef_Init().
  */
 #if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
@@ -99,47 +106,46 @@ whose size is determined when the object is allocated.
  * not necessarily a byte count.
  */
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
+
 #define Py_INVALID_SIZE (Py_ssize_t)-1
+
+/* PyObjects are given a minimum alignment so that the least significant bits
+ * of an object pointer become available for other purposes.
+ * This must be an integer literal with the value (1 << _PyGC_PREV_SHIFT), number of bytes.
+ */
+#define _PyObject_MIN_ALIGNMENT 4
 
 /* Nothing is actually declared to be a PyObject, but every pointer to
  * a Python object can be cast to a PyObject*.  This is inheritance built
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-#ifndef Py_GIL_DISABLED
+#ifdef _Py_OPAQUE_PYOBJECT
+  /* PyObject is opaque */
+#elif !defined(Py_GIL_DISABLED)
 struct _object {
-#if (defined(__GNUC__) || defined(__clang__)) \
-        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
-    // On C99 and older, anonymous union is a GCC and clang extension
-    __extension__
-#endif
-#ifdef _MSC_VER
-    // Ignore MSC warning C4201: "nonstandard extension used:
-    // nameless struct/union"
-    __pragma(warning(push))
-    __pragma(warning(disable: 4201))
-#endif
-    union {
+    _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
         PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
         struct {
 #  if PY_BIG_ENDIAN
-            PY_UINT32_T ob_flags;
-            PY_UINT32_T ob_refcnt;
+            uint16_t ob_flags;
+            uint16_t ob_overflow;
+            uint32_t ob_refcnt;
 #  else
-            PY_UINT32_T ob_refcnt;
-            PY_UINT32_T ob_flags;
+            uint32_t ob_refcnt;
+            uint16_t ob_overflow;
+            uint16_t ob_flags;
 #  endif
         };
 #else
-        Py_ssize_t ob_refcnt;
+        Py_ssize_t ob_refcnt;  // part of stable ABI; do not change
 #endif
+        _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
-#ifdef _MSC_VER
-    __pragma(warning(pop))
-#endif
 
-    PyTypeObject *ob_type;
+    PyTypeObject *ob_type;  // part of stable ABI; do not change
 };
 #else
 // Objects that are not owned by any thread use a thread id (tid) of zero.
@@ -151,7 +157,7 @@ struct _object {
     // ob_tid stores the thread id (or zero). It is also used by the GC and the
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
-    uintptr_t ob_tid;
+    _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, uintptr_t) ob_tid;
     uint16_t ob_flags;
     PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
@@ -159,15 +165,18 @@ struct _object {
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
     PyTypeObject *ob_type;
 };
-#endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
-typedef struct {
+#ifndef _Py_OPAQUE_PYOBJECT
+struct PyVarObject {
     PyObject ob_base;
-    Py_ssize_t ob_size; /* Number of items in variable part */
-} PyVarObject;
+    Py_ssize_t ob_size; // Number of items in variable part. Part of stable ABI
+};
+#endif
+typedef struct PyVarObject PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
@@ -256,53 +265,72 @@ _Py_IsOwnedByCurrentThread(PyObject *ob)
 }
 #endif
 
-// Py_TYPE() implementation for the stable ABI
-PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
-
-#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
-    // Stable ABI implements Py_TYPE() as a function call
-    // on limited C API version 3.14 and newer.
-#else
-    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
-    {
-        return ob->ob_type;
-    }
-    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
-    #else
-    #   define Py_TYPE(ob) _Py_TYPE(ob)
-    #endif
-#endif
-
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
+/* Definitions for the stable ABI */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(Py_ssize_t) Py_SIZE(PyObject *ob);
+PyAPI_FUNC(int) Py_IS_TYPE(PyObject *ob, PyTypeObject *type);
+PyAPI_FUNC(void) Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size);
+#endif
+
+#ifndef _Py_OPAQUE_PYOBJECT
+
+static inline void
+Py_SET_TYPE(PyObject *ob, PyTypeObject *type)
+{
+    ob->ob_type = type;
+}
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 11)
+// Non-limited API & limited API 3.11 & below: use static inline functions and
+// use _PyObject_CAST so that users don't need their own casts
+#  define Py_TYPE(ob) _Py_TYPE_impl(_PyObject_CAST(ob))
+#  define Py_SIZE(ob) _Py_SIZE_impl(_PyObject_CAST(ob))
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl(_PyObject_CAST(ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl(_PyVarObject_CAST(ob), (size))
+#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
+#elif Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 15)
+// Limited API 3.11-3.14: use static inline functions, without casts
+#  define Py_SIZE(ob) _Py_SIZE_impl(ob)
+#  define Py_IS_TYPE(ob, type) _Py_IS_TYPE_impl((ob), (type))
+#  define Py_SET_SIZE(ob, size) _Py_SET_SIZE_impl((ob), (size))
+#  if Py_LIMITED_API+0 < _Py_PACK_VERSION(3, 14)
+//   Py_TYPE() is static inline only on Limited API 3.13 and below
+#    define Py_TYPE(ob) _Py_TYPE_impl(ob)
+#  endif
+#else
+// Limited API 3.15+: use function calls
+#endif
+
+static inline
+PyTypeObject* _Py_TYPE_impl(PyObject *ob)
+{
+    return ob->ob_type;
+}
+
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
-static inline Py_ssize_t Py_SIZE(PyObject *ob) {
+static inline Py_ssize_t
+_Py_SIZE_impl(PyObject *ob)
+{
     assert(Py_TYPE(ob) != &PyLong_Type);
     assert(Py_TYPE(ob) != &PyBool_Type);
     return  _PyVarObject_CAST(ob)->ob_size;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
-#endif
 
-static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+static inline int
+_Py_IS_TYPE_impl(PyObject *ob, PyTypeObject *type)
+{
     return Py_TYPE(ob) == type;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST(ob), (type))
-#endif
 
-
-static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
-    ob->ob_type = type;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
-#endif
-
-static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+static inline void
+_Py_SET_SIZE_impl(PyVarObject *ob, Py_ssize_t size)
+{
     assert(Py_TYPE(_PyObject_CAST(ob)) != &PyLong_Type);
     assert(Py_TYPE(_PyObject_CAST(ob)) != &PyBool_Type);
 #ifdef Py_GIL_DISABLED
@@ -311,9 +339,8 @@ static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
 #endif
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
-#endif
+
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 
 /*
@@ -516,7 +543,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_INLINE_VALUES (1 << 2)
 
 /* Placement of weakref pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_weaklistoffset.
+ * The VM will automatically set tp_weaklistoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
@@ -525,6 +552,9 @@ given type object has a specified feature.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
+/* Type has dictionary or weakref pointers that are managed by VM and has
+ * to allocate space to store these.
+ */
 #define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
@@ -618,6 +648,13 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
+// Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
+#define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
+#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#endif
 
 #define Py_CONSTANT_NONE 0
 #define Py_CONSTANT_FALSE 1
@@ -652,8 +689,13 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
-/* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_None
+/* Macro for returning Py_None from a function.
+ * Only treat Py_None as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NONE return Py_NewRef(Py_None)
+#else
+#  define Py_RETURN_NONE return Py_None
+#endif
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
@@ -667,8 +709,13 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #  define Py_NotImplemented (&_Py_NotImplementedStruct)
 #endif
 
-/* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+/* Macro for returning Py_NotImplemented from a function. Only treat
+ * Py_NotImplemented as immortal in the limited C API 3.12 and newer. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030c0000
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#else
+#  define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
+#endif
 
 /* Rich comparison opcodes */
 #define Py_LT 0
@@ -683,7 +730,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 typedef enum {
     PYGEN_RETURN = 0,
     PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
+    PYGEN_NEXT = 1
 } PySendResult;
 #endif
 
@@ -774,11 +821,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-#   ifdef Py_GIL_DISABLED
-        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
-#   else
-        flags = type->tp_flags;
-#   endif
+    flags = type->tp_flags;
 #endif
     return ((flags & feature) != 0);
 }
@@ -808,6 +851,11 @@ PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyType_GetModuleByToken(PyTypeObject *type,
+                                               const void *token);
 #endif
 
 #ifdef __cplusplus

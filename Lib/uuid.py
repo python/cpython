@@ -1,8 +1,12 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
-This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5(), and uuid8() for generating version 1, 3,
-4, 5, and 8 UUIDs as specified in RFC 4122/9562.
+This module provides immutable UUID objects (class UUID) and functions for
+generating UUIDs corresponding to a specific UUID version as specified in
+RFC 4122/9562, e.g., uuid1() for UUID version 1, uuid3() for UUID version 3,
+and so on.
+
+Note that UUID version 2 is deliberately omitted as it is outside the scope
+of the RFC.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -42,10 +46,19 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+    # get the Nil UUID
+    >>> uuid.NIL
+    UUID('00000000-0000-0000-0000-000000000000')
+
+    # get the Max UUID
+    >>> uuid.MAX
+    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 """
 
 import os
 import sys
+import time
 
 from enum import Enum, _simple_enum
 
@@ -93,6 +106,8 @@ _RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_6_FLAGS = ((6 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_7_FLAGS = ((7 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
 
@@ -119,7 +134,16 @@ class UUID:
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
-                    and two derived attributes:
+                    and two derived attributes. Those attributes are not
+                    always relevant to all UUID versions:
+
+                        The 'time_*' attributes are only relevant to version 1.
+
+                        The 'clock_seq*' and 'node' attributes are only relevant
+                        to versions 1 and 6.
+
+                        The 'time' attribute is only relevant to versions 1, 6
+                        and 7.
 
             time_low                the first 32 bits of the UUID
             time_mid                the next 16 bits of the UUID
@@ -128,7 +152,8 @@ class UUID:
             clock_seq_low           the next 8 bits of the UUID
             node                    the last 48 bits of the UUID
 
-            time                    the 60-bit timestamp
+            time                    the 60-bit timestamp for UUIDv1/v6,
+                                    or the 48-bit timestamp for UUIDv7
             clock_seq               the 14-bit sequence number
 
         hex         the UUID as a 32-character hexadecimal string
@@ -304,9 +329,8 @@ class UUID:
         raise TypeError('UUID objects are immutable')
 
     def __str__(self):
-        hex = '%032x' % self.int
-        return '%s-%s-%s-%s-%s' % (
-            hex[:8], hex[8:12], hex[12:16], hex[16:20], hex[20:])
+        x = self.hex
+        return f'{x[:8]}-{x[8:12]}-{x[12:16]}-{x[16:20]}-{x[20:]}'
 
     @property
     def bytes(self):
@@ -345,8 +369,22 @@ class UUID:
 
     @property
     def time(self):
-        return (((self.time_hi_version & 0x0fff) << 48) |
-                (self.time_mid << 32) | self.time_low)
+        if self.version == 6:
+            # time_hi (32) | time_mid (16) | ver (4) | time_lo (12) | ... (64)
+            time_hi = self.int >> 96
+            time_lo = (self.int >> 64) & 0x0fff
+            return time_hi << 28 | (self.time_mid << 12) | time_lo
+        elif self.version == 7:
+            # unix_ts_ms (48) | ... (80)
+            return self.int >> 80
+        else:
+            # time_lo (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
+            #
+            # For compatibility purposes, we do not warn or raise when the
+            # version is not 1 (timestamp is irrelevant to other versions).
+            time_hi = (self.int >> 64) & 0x0fff
+            time_lo = self.int >> 96
+            return time_hi << 48 | (self.time_mid << 32) | time_lo
 
     @property
     def clock_seq(self):
@@ -359,7 +397,7 @@ class UUID:
 
     @property
     def hex(self):
-        return '%032x' % self.int
+        return self.bytes.hex()
 
     @property
     def urn(self):
@@ -595,39 +633,43 @@ def _netstat_getnode():
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
+    _has_stable_extractable_node = _uuid.has_stable_extractable_node
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
 except ImportError:
     _uuid = None
     _generate_time_safe = None
+    _has_stable_extractable_node = False
     _UuidCreate = None
 
 
 def _unix_getnode():
     """Get the hardware address on Unix using the _uuid extension module."""
-    if _generate_time_safe:
+    if _generate_time_safe and _has_stable_extractable_node:
         uuid_time, _ = _generate_time_safe()
         return UUID(bytes=uuid_time).node
 
 def _windll_getnode():
     """Get the hardware address on Windows using the _uuid extension module."""
-    if _UuidCreate:
+    if _UuidCreate and _has_stable_extractable_node:
         uuid_bytes = _UuidCreate()
         return UUID(bytes_le=uuid_bytes).node
 
 def _random_getnode():
     """Get a random node ID."""
-    # RFC 4122, $4.1.6 says "For systems with no IEEE address, a randomly or
-    # pseudo-randomly generated value may be used; see Section 4.5.  The
-    # multicast bit must be set in such addresses, in order that they will
-    # never conflict with addresses obtained from network cards."
+    # RFC 9562, §6.10-3 says that
+    #
+    #   Implementations MAY elect to obtain a 48-bit cryptographic-quality
+    #   random number as per Section 6.9 to use as the Node ID. [...] [and]
+    #   implementations MUST set the least significant bit of the first octet
+    #   of the Node ID to 1. This bit is the unicast or multicast bit, which
+    #   will never be set in IEEE 802 addresses obtained from network cards.
     #
     # The "multicast bit" of a MAC address is defined to be "the least
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
     # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
-    import random
-    return random.getrandbits(48) | (1 << 40)
+    return int.from_bytes(os.urandom(6)) | (1 << 40)
 
 
 # _OS_GETTERS, when known, are targeted for a specific OS or platform.
@@ -695,10 +737,10 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
+        # The version field is assumed to be handled by _generate_time_safe().
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
     global _last_timestamp
-    import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
@@ -748,6 +790,122 @@ def uuid5(namespace, name):
     int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
     return UUID._from_int(int_uuid_5)
 
+
+_last_timestamp_v6 = None
+
+def uuid6(node=None, clock_seq=None):
+    """Similar to :func:`uuid1` but where fields are ordered differently
+    for improved DB locality.
+
+    More precisely, given a 60-bit timestamp value as specified for UUIDv1,
+    for UUIDv6 the first 48 most significant bits are stored first, followed
+    by the 4-bit version (same position), followed by the remaining 12 bits
+    of the original 60-bit timestamp.
+    """
+    global _last_timestamp_v6
+    import time
+    nanoseconds = time.time_ns()
+    # 0x01b21dd213814000 is the number of 100-ns intervals between the
+    # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
+    if _last_timestamp_v6 is not None and timestamp <= _last_timestamp_v6:
+        timestamp = _last_timestamp_v6 + 1
+    _last_timestamp_v6 = timestamp
+    if clock_seq is None:
+        import random
+        clock_seq = random.getrandbits(14)  # instead of stable storage
+    time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
+    time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
+    clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
+    if node is None:
+        node = getnode()
+    # --- 32 + 16 ---   -- 4 --   -- 12 --  -- 2 --   -- 14 ---    48
+    # time_hi_and_mid | version | time_lo | variant | clock_seq | node
+    int_uuid_6 = time_hi_and_mid << 80
+    int_uuid_6 |= time_lo << 64
+    int_uuid_6 |= clock_s << 48
+    int_uuid_6 |= node & 0xffff_ffff_ffff
+    # by construction, the variant and version bits are already cleared
+    int_uuid_6 |= _RFC_4122_VERSION_6_FLAGS
+    return UUID._from_int(int_uuid_6)
+
+
+_last_timestamp_v7 = None
+_last_counter_v7 = 0  # 42-bit counter
+
+def _uuid7_get_counter_and_tail():
+    rand = int.from_bytes(os.urandom(10))
+    # 42-bit counter with MSB set to 0
+    counter = (rand >> 32) & 0x1ff_ffff_ffff
+    # 32-bit random data
+    tail = rand & 0xffff_ffff
+    return counter, tail
+
+
+def uuid7():
+    """Generate a UUID from a Unix timestamp in milliseconds and random bits.
+
+    UUIDv7 objects feature monotonicity within a millisecond.
+    """
+    # --- 48 ---   -- 4 --   --- 12 ---   -- 2 --   --- 30 ---   - 32 -
+    # unix_ts_ms | version | counter_hi | variant | counter_lo | random
+    #
+    # 'counter = counter_hi | counter_lo' is a 42-bit counter constructed
+    # with Method 1 of RFC 9562, §6.2, and its MSB is set to 0.
+    #
+    # 'random' is a 32-bit random value regenerated for every new UUID.
+    #
+    # If multiple UUIDs are generated within the same millisecond, the LSB
+    # of 'counter' is incremented by 1. When overflowing, the timestamp is
+    # advanced and the counter is reset to a random 42-bit integer with MSB
+    # set to 0.
+
+    global _last_timestamp_v7
+    global _last_counter_v7
+
+    nanoseconds = time.time_ns()
+    timestamp_ms = nanoseconds // 1_000_000
+
+    if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
+        counter, tail = _uuid7_get_counter_and_tail()
+    else:
+        if timestamp_ms < _last_timestamp_v7:
+            timestamp_ms = _last_timestamp_v7 + 1
+        # advance the 42-bit counter
+        counter = _last_counter_v7 + 1
+        if counter > 0x3ff_ffff_ffff:
+            # advance the 48-bit timestamp
+            timestamp_ms += 1
+            counter, tail = _uuid7_get_counter_and_tail()
+        else:
+            # 32-bit random data
+            tail = int.from_bytes(os.urandom(4))
+
+    unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+    counter_msbs = counter >> 30
+    # keep 12 counter's MSBs and clear variant bits
+    counter_hi = counter_msbs & 0x0fff
+    # keep 30 counter's LSBs and clear version bits
+    counter_lo = counter & 0x3fff_ffff
+    # ensure that the tail is always a 32-bit integer (by construction,
+    # it is already the case, but future interfaces may allow the user
+    # to specify the random tail)
+    tail &= 0xffff_ffff
+
+    int_uuid_7 = unix_ts_ms << 80
+    int_uuid_7 |= counter_hi << 64
+    int_uuid_7 |= counter_lo << 32
+    int_uuid_7 |= tail
+    # by construction, the variant and version bits are already cleared
+    int_uuid_7 |= _RFC_4122_VERSION_7_FLAGS
+    res = UUID._from_int(int_uuid_7)
+
+    # defer global update until all computations are done
+    _last_timestamp_v7 = timestamp_ms
+    _last_counter_v7 = counter
+    return res
+
+
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
 
@@ -773,6 +931,7 @@ def uuid8(a=None, b=None, c=None):
     int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
     return UUID._from_int(int_uuid_8)
 
+
 def main():
     """Run the uuid command line interface."""
     uuid_funcs = {
@@ -780,6 +939,8 @@ def main():
         "uuid3": uuid3,
         "uuid4": uuid4,
         "uuid5": uuid5,
+        "uuid6": uuid6,
+        "uuid7": uuid7,
         "uuid8": uuid8,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
@@ -792,18 +953,24 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser(
-        description="Generates a uuid using the selected uuid function.")
-    parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
-                        help="The function to use to generate the uuid. "
-                        "By default uuid4 function is used.")
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="Generate a UUID using the selected UUID function.",
+        color=True,
+    )
+    parser.add_argument("-u", "--uuid",
+                        choices=uuid_funcs.keys(),
+                        default="uuid4",
+                        help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
-                        "well-known predefined UUID addressed by namespace name. "
-                        "Such as @dns, @url, @oid, and @x500. "
-                        "Only required for uuid3/uuid5 functions.")
+                        choices=["any UUID", *namespaces.keys()],
+                        help="uuid3/uuid5 only: "
+                        "a UUID, or a well-known predefined UUID addressed "
+                        "by namespace name")
     parser.add_argument("-N", "--name",
-                        help="The name used as part of generating the uuid. "
-                        "Only required for uuid3/uuid5 functions.")
+                        help="uuid3/uuid5 only: "
+                        "name used as part of generating the UUID")
+    parser.add_argument("-C", "--count", metavar="NUM", type=int, default=1,
+                        help="generate NUM fresh UUIDs")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
@@ -818,9 +985,11 @@ def main():
                 "Run 'python -m uuid -h' for more information."
             )
         namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
-        print(uuid_func(namespace, name))
+        for _ in range(args.count):
+            print(uuid_func(namespace, name))
     else:
-        print(uuid_func())
+        for _ in range(args.count):
+            print(uuid_func())
 
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
@@ -829,6 +998,11 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+# RFC 9562 Sections 5.9 and 5.10 define the special Nil and Max UUID formats.
+
+NIL = UUID('00000000-0000-0000-0000-000000000000')
+MAX = UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 if __name__ == "__main__":
     main()

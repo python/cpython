@@ -1,2 +1,0 @@
-Add opcode ``BINARY_OP_EXTEND`` which executes a pair of functions (guard and
-specialization functions) accessed from the inline cache.

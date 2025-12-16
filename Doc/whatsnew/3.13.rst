@@ -60,7 +60,7 @@ Summary -- Release Highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-Python 3.13 is the latest stable release of the Python programming
+Python 3.13 is a stable release of the Python programming
 language, with a mix of changes to the language, the implementation
 and the standard library.
 The biggest changes include a new `interactive interpreter
@@ -325,7 +325,7 @@ enabled at runtime using the environment variable :envvar:`PYTHON_GIL` or
 the command-line option :option:`-X gil=1`.
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :attr:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "experimental free-threading build".
 The new :func:`!sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 
@@ -730,6 +730,22 @@ asyncio
   never awaited).
   (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
 
+* The function and methods named ``create_task`` have received a new
+  ``**kwargs`` argument that is passed through to the task constructor.
+  This change was accidentally added in 3.13.3,
+  and broke the API contract for custom task factories.
+  Several third-party task factories implemented workarounds for this.
+  In 3.13.4 and later releases the old factory contract is honored
+  once again (until 3.14).
+  To keep the workarounds working, the extra ``**kwargs`` argument still
+  allows passing additional keyword arguments to :class:`~asyncio.Task`
+  and to custom task factories.
+
+  This affects the following function and methods:
+  :meth:`asyncio.create_task`,
+  :meth:`asyncio.loop.create_task`,
+  :meth:`asyncio.TaskGroup.create_task`.
+  (Contributed by Thomas Grainger in :gh:`128307`.)
 
 base64
 ------
@@ -818,7 +834,7 @@ dbm
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 * Allow removing all items from the database through
-  the new :meth:`.gdbm.clear` and :meth:`.ndbm.clear` methods.
+  the new :meth:`!clear` methods of the GDBM and NDBM database objects.
   (Contributed by Donghee Na in :gh:`107122`.)
 
 
@@ -1062,7 +1078,7 @@ os
   which makes the newly spawned process use the current process environment.
   (Contributed by Jakub Kulik in :gh:`113119`.)
 
-* :func:`~os.posix_spawn` can now use the :attr:`~os.POSIX_SPAWN_CLOSEFROM`
+* :func:`~os.posix_spawn` can now use the :const:`~os.POSIX_SPAWN_CLOSEFROM`
   attribute in the *file_actions* parameter on platforms that support
   :c:func:`!posix_spawn_file_actions_addclosefrom_np`.
   (Contributed by Jakub Kulik in :gh:`113117`.)
@@ -1553,8 +1569,6 @@ and are now removed:
 
   * :pypi:`bcrypt`:
     Modern password hashing for your software and your servers.
-  * :pypi:`passlib`:
-    Comprehensive password hashing framework supporting over 30 schemes.
   * :pypi:`argon2-cffi`:
     The secure Argon2 password hashing algorithm.
   * :pypi:`legacycrypt`:
@@ -1871,7 +1885,7 @@ New Deprecations
 
 * :mod:`http.server`:
 
-  * Deprecate :class:`~http.server.CGIHTTPRequestHandler`,
+  * Deprecate :class:`!CGIHTTPRequestHandler`,
     to be removed in Python 3.15.
     Process-based CGI HTTP servers have been out of favor for a very long time.
     This code was outdated, unmaintained, and rarely used.
@@ -1901,14 +1915,14 @@ New Deprecations
 
 * :mod:`pathlib`:
 
-  * Deprecate :meth:`.PurePath.is_reserved`,
+  * Deprecate :meth:`!.PurePath.is_reserved`,
     to be removed in Python 3.15.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
     (Contributed by Barney Gale in :gh:`88569`.)
 
 * :mod:`platform`:
 
-  * Deprecate :func:`~platform.java_ver`,
+  * Deprecate :func:`!platform.java_ver`,
     to be removed in Python 3.15.
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
@@ -1979,8 +1993,8 @@ New Deprecations
     use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
-  * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
-    to be removed in in Python 3.15.
+  * Deprecate the :func:`!typing.no_type_check_decorator` decorator function,
+    to be removed in Python 3.15.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
     (Contributed by Alex Waygood in :gh:`106309`.)
@@ -1995,8 +2009,7 @@ New Deprecations
 
 * :mod:`wave`:
 
-  * Deprecate the :meth:`~wave.Wave_read.getmark`, :meth:`!setmark`,
-    and :meth:`~wave.Wave_read.getmarkers` methods of
+  * Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()`` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
     to be removed in Python 3.15.
     (Contributed by Victor Stinner in :gh:`105096`.)
@@ -2008,6 +2021,12 @@ New Deprecations
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-3.20.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2159,7 +2178,7 @@ New Features
   (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`list.extend` and :meth:`list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
 * Add the :c:func:`PyLong_AsInt` function.
@@ -2229,7 +2248,7 @@ New Features
   (Contributed by Serhiy Storchaka in :gh:`110289`.)
 
 * Add the :c:func:`PyWeakref_GetRef` function
-  as an alternative to  :c:func:`PyWeakref_GetObject`
+  as an alternative to  :c:func:`!PyWeakref_GetObject`
   that returns a :term:`strong reference`
   or ``NULL`` if the referent is no longer live.
   (Contributed by Victor Stinner in :gh:`105927`.)
@@ -2473,19 +2492,19 @@ Deprecated C APIs
 
 * Deprecate old Python initialization functions:
 
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
-  * :c:func:`Py_GetExecPrefix`:
+  * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
-  * :c:func:`Py_GetPath`:
+  * :c:func:`!Py_GetPath`:
     Get :data:`sys.path` instead.
-  * :c:func:`Py_GetPrefix`:
+  * :c:func:`!Py_GetPrefix`:
     Get :data:`sys.prefix` instead.
-  * :c:func:`Py_GetProgramFullPath`:
+  * :c:func:`!Py_GetProgramFullPath`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetProgramName`:
+  * :c:func:`!Py_GetProgramName`:
     Get :data:`sys.executable` instead.
-  * :c:func:`Py_GetPythonHome`:
+  * :c:func:`!Py_GetPythonHome`:
     Get :c:member:`PyConfig.home`
     or the :envvar:`PYTHONHOME` environment variable instead.
 
@@ -2497,7 +2516,7 @@ Deprecated C APIs
   which return a :term:`borrowed reference`.
   (Soft deprecated as part of :pep:`667`.)
 
-* Deprecate the :c:func:`PyImport_ImportModuleNoBlock` function,
+* Deprecate the :c:func:`!PyImport_ImportModuleNoBlock` function,
   which is just an alias to :c:func:`PyImport_ImportModule` since Python 3.3.
   (Contributed by Victor Stinner in :gh:`105396`.)
 
@@ -2514,8 +2533,8 @@ Deprecated C APIs
   are just aliases to :c:type:`!wchar_t`.
   (Contributed by Victor Stinner in :gh:`105156`.)
 
-* Deprecate the :c:func:`PyWeakref_GetObject` and
-  :c:func:`PyWeakref_GET_OBJECT` functions,
+* Deprecate the :c:func:`!PyWeakref_GetObject` and
+  :c:func:`!PyWeakref_GET_OBJECT` functions,
   which return a :term:`borrowed reference`.
   Replace them with the new :c:func:`PyWeakref_GetRef` function,
   which returns a :term:`strong reference`.
@@ -2528,6 +2547,10 @@ Deprecated C APIs
 .. include:: ../deprecations/c-api-pending-removal-in-3.14.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
 
@@ -2573,7 +2596,7 @@ Build Changes
 
 * The :file:`configure` option :option:`--with-system-libmpdec`
   now defaults to ``yes``.
-  The bundled copy of ``libmpdecimal`` will be removed in Python 3.15.
+  The bundled copy of ``libmpdec`` will be removed in Python 3.16.
 
 * Python built with :file:`configure` :option:`--with-trace-refs`
   (tracing references) is now ABI compatible with the Python release build

@@ -323,6 +323,9 @@ def _partial_new(cls, func, /, *args, **keywords):
                             "or a descriptor")
     if args and args[-1] is Placeholder:
         raise TypeError("trailing Placeholders are not allowed")
+    for value in keywords.values():
+        if value is Placeholder:
+            raise TypeError("Placeholder cannot be passed as a keyword argument")
     if isinstance(func, base_cls):
         pto_phcount = func._phcount
         tot_args = func.args
@@ -516,22 +519,6 @@ def _unwrap_partialmethod(func):
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
-class _HashedSeq(list):
-    """ This class guarantees that hash() will be called no more than once
-        per element.  This is important because the lru_cache() will hash
-        the key multiple times on a cache miss.
-
-    """
-
-    __slots__ = 'hashvalue'
-
-    def __init__(self, tup, hash=hash):
-        self[:] = tup
-        self.hashvalue = hash(tup)
-
-    def __hash__(self):
-        return self.hashvalue
-
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
              fasttypes = {int, str},
@@ -561,7 +548,7 @@ def _make_key(args, kwds, typed,
             key += tuple(type(v) for v in kwds.values())
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
-    return _HashedSeq(key)
+    return key
 
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.
@@ -593,12 +580,14 @@ def lru_cache(maxsize=128, typed=False):
         # Negative maxsize is treated as 0
         if maxsize < 0:
             maxsize = 0
+
     elif callable(maxsize) and isinstance(typed, bool):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
         wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
+
     elif maxsize is not None:
         raise TypeError(
             'Expected first argument to be an integer, a callable, or None')
@@ -630,6 +619,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # No caching -- just a statistics update
             nonlocal misses
+
             misses += 1
             result = user_function(*args, **kwds)
             return result
@@ -639,6 +629,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # Simple caching without ordering or size limit
             nonlocal hits, misses
+
             key = make_key(args, kwds, typed)
             result = cache_get(key, sentinel)
             if result is not sentinel:
@@ -654,7 +645,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
         def wrapper(*args, **kwds):
             # Size limited caching that tracks accesses by recency
             nonlocal root, hits, misses, full
+
             key = make_key(args, kwds, typed)
+
             with lock:
                 link = cache_get(key)
                 if link is not None:
@@ -669,7 +662,9 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     hits += 1
                     return result
                 misses += 1
+
             result = user_function(*args, **kwds)
+
             with lock:
                 if key in cache:
                     # Getting here means that this same key was added to the
@@ -677,11 +672,13 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # update is already done, we need only return the
                     # computed result and update the count of misses.
                     pass
+
                 elif full:
                     # Use the old root to store the new key and result.
                     oldroot = root
                     oldroot[KEY] = key
                     oldroot[RESULT] = result
+
                     # Empty the oldest link and make it the new root.
                     # Keep a reference to the old key and old result to
                     # prevent their ref counts from going to zero during the
@@ -690,22 +687,27 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
                     # still adjusting the links.
                     root = oldroot[NEXT]
                     oldkey = root[KEY]
-                    oldresult = root[RESULT]
+                    oldresult = root[RESULT]  # noqa: F841
                     root[KEY] = root[RESULT] = None
+
                     # Now update the cache dictionary.
                     del cache[oldkey]
+
                     # Save the potentially reentrant cache[key] assignment
                     # for last, after the root and links have been put in
                     # a consistent state.
                     cache[key] = oldroot
+
                 else:
                     # Put result in a new link at the front of the queue.
                     last = root[PREV]
                     link = [last, root, key, result]
                     last[NEXT] = root[PREV] = cache[key] = link
+
                     # Use the cache_len bound method instead of the len() function
                     # which could potentially be wrapped in an lru_cache itself.
                     full = (cache_len() >= maxsize)
+
             return result
 
     def cache_info():
@@ -716,6 +718,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     def cache_clear():
         """Clear the cache and cache statistics"""
         nonlocal hits, misses, full
+
         with lock:
             cache.clear()
             root[:] = [root, root, None, None]
@@ -926,16 +929,11 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
-    def _is_union_type(cls):
-        from typing import get_origin, Union
-        return get_origin(cls) in {Union, UnionType}
-
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
-        from typing import get_args
-        return (_is_union_type(cls) and
-                all(isinstance(arg, type) for arg in get_args(cls)))
+        return (isinstance(cls, UnionType) and
+                all(isinstance(arg, type) for arg in cls.__args__))
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -967,7 +965,7 @@ def singledispatch(func):
             from annotationlib import Format, ForwardRef
             argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
             if not _is_valid_dispatch_type(cls):
-                if _is_union_type(cls):
+                if isinstance(cls, UnionType):
                     raise TypeError(
                         f"Invalid annotation for {argname!r}. "
                         f"{cls!r} not all arguments are classes."
@@ -983,10 +981,8 @@ def singledispatch(func):
                         f"{cls!r} is not a class."
                     )
 
-        if _is_union_type(cls):
-            from typing import get_args
-
-            for arg in get_args(cls):
+        if isinstance(cls, UnionType):
+            for arg in cls.__args__:
                 registry[arg] = func
         else:
             registry[cls] = func
@@ -1026,9 +1022,6 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
-
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -1037,36 +1030,79 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
-                return _method
-
-        dispatch = self.dispatcher.dispatch
-        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
-        def _method(*args, **kwargs):
-            if not args:
-                raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
-
-        _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method.register = self.register
-        update_wrapper(_method, self.func)
-
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
-
-        return _method
+        return _singledispatchmethod_get(self, obj, cls)
 
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
+
+    def __repr__(self):
+        try:
+            name = self.func.__qualname__
+        except AttributeError:
+            try:
+                name = self.func.__name__
+            except AttributeError:
+                name = '?'
+        return f'<single dispatch method descriptor {name}>'
+
+class _singledispatchmethod_get:
+    def __init__(self, unbound, obj, cls):
+        self._unbound = unbound
+        self._dispatch = unbound.dispatcher.dispatch
+        self._obj = obj
+        self._cls = cls
+        # Set instance attributes which cannot be handled in __getattr__()
+        # because they conflict with type descriptors.
+        func = unbound.func
+        try:
+            self.__module__ = func.__module__
+        except AttributeError:
+            pass
+        try:
+            self.__doc__ = func.__doc__
+        except AttributeError:
+            pass
+
+    def __repr__(self):
+        try:
+            name = self.__qualname__
+        except AttributeError:
+            try:
+                name = self.__name__
+            except AttributeError:
+                name = '?'
+        if self._obj is not None:
+            return f'<bound single dispatch method {name} of {self._obj!r}>'
+        else:
+            return f'<single dispatch method {name}>'
+
+    def __call__(self, /, *args, **kwargs):
+        if not args:
+            funcname = getattr(self._unbound.func, '__name__',
+                               'singledispatchmethod method')
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+        method = self._dispatch(args[0].__class__)
+        if hasattr(method, "__get__"):
+            method = method.__get__(self._obj, self._cls)
+        return method(*args, **kwargs)
+
+    def __getattr__(self, name):
+        # Resolve these attributes lazily to speed up creation of
+        # the _singledispatchmethod_get instance.
+        if name not in {'__name__', '__qualname__', '__isabstractmethod__',
+                        '__annotations__', '__type_params__'}:
+            raise AttributeError
+        return getattr(self._unbound.func, name)
+
+    @property
+    def __wrapped__(self):
+        return self._unbound.func
+
+    @property
+    def register(self):
+        return self._unbound.register
 
 
 ################################################################################

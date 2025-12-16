@@ -26,7 +26,7 @@ PyDoc_STRVAR(select_select__doc__,
 "gotten from a fileno() method call on one of those.\n"
 "\n"
 "The optional 4th argument specifies a timeout in seconds; it may be\n"
-"a floating-point number to specify fractions of seconds.  If it is absent\n"
+"a non-integer to specify fractions of seconds.  If it is absent\n"
 "or None, the call will never time out.\n"
 "\n"
 "The return value is a tuple of three lists corresponding to the first three\n"
@@ -570,9 +570,11 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -693,7 +695,7 @@ static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -702,7 +704,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -743,9 +745,11 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -779,9 +783,21 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = select_epoll_register_impl((pyEpoll_Object *)self, fd, eventmask);
@@ -822,9 +838,11 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -854,9 +872,21 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     if (fd < 0) {
         goto exit;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = select_epoll_modify_impl((pyEpoll_Object *)self, fd, eventmask);
 
@@ -893,9 +923,11 @@ select_epoll_unregister(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -941,7 +973,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "Wait for events on the epoll file descriptor.\n"
 "\n"
 "  timeout\n"
-"    the maximum time to wait in seconds (as float);\n"
+"    the maximum time to wait in seconds (with fractions);\n"
 "    a timeout of None or -1 makes poll wait indefinitely\n"
 "  maxevents\n"
 "    the maximum number of events returned; -1 means no limit\n"
@@ -966,9 +998,11 @@ select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
     };
     #undef NUM_KEYWORDS
@@ -1196,7 +1230,7 @@ static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+select_kqueue_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -1205,7 +1239,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_kqueue_fromfd_impl(type, fd);
+    return_value = select_kqueue_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1228,7 +1262,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    The maximum number of events that the kernel will return.\n"
 "  timeout\n"
 "    The maximum time to wait in seconds, or else None to wait forever.\n"
-"    This accepts floats for smaller timeouts, too.");
+"    This accepts non-integers for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
     {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
@@ -1365,4 +1399,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=c18fd93efc5f4dce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae54d65938513132 input=a9049054013a1b77]*/

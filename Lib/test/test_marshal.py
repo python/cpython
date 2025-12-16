@@ -43,6 +43,11 @@ class IntTestCase(unittest.TestCase, HelperMixin):
             for expected in (-n, n):
                 self.helper(expected)
             n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
+                self.helper(expected)
+            n = n >> 1
 
     def test_int64(self):
         # Simulate int marshaling with TYPE_INT64.
@@ -125,8 +130,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.exceeds_recursion_limit()
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):

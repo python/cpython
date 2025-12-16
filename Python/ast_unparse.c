@@ -18,7 +18,11 @@ expr_as_unicode(expr_ty e, int level);
 static int
 append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level);
 static int
+append_templatestr(PyUnicodeWriter *writer, expr_ty e);
+static int
 append_joinedstr(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec);
+static int
+append_interpolation(PyUnicodeWriter *writer, expr_ty e);
 static int
 append_formattedvalue(PyUnicodeWriter *writer, expr_ty e);
 static int
@@ -621,11 +625,15 @@ append_fstring_element(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
         return append_fstring_unicode(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, is_format_spec);
+    case TemplateStr_kind:
+        return append_templatestr(writer, e);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
+    case Interpolation_kind:
+        return append_interpolation(writer, e);
     default:
         PyErr_SetString(PyExc_SystemError,
-                        "unknown expression kind inside f-string");
+                        "unknown expression kind inside f-string or t-string");
         return -1;
     }
 }
@@ -633,7 +641,7 @@ append_fstring_element(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 /* Build body separately to enable wrapping the entire stream of Strs,
    Constants and FormattedValues in one opening and one closing quote. */
 static PyObject *
-build_fstring_body(asdl_expr_seq *values, bool is_format_spec)
+build_ftstring_body(asdl_expr_seq *values, bool is_format_spec)
 {
     PyUnicodeWriter *body_writer = PyUnicodeWriter_Create(256);
     if (body_writer == NULL) {
@@ -655,10 +663,28 @@ build_fstring_body(asdl_expr_seq *values, bool is_format_spec)
 }
 
 static int
+append_templatestr(PyUnicodeWriter *writer, expr_ty e)
+{
+    int result = -1;
+    PyObject *body = build_ftstring_body(e->v.TemplateStr.values, false);
+    if (!body) {
+        return -1;
+    }
+
+    if (-1 != append_charp(writer, "t") &&
+        -1 != append_repr(writer, body))
+    {
+        result = 0;
+    }
+    Py_DECREF(body);
+    return result;
+}
+
+static int
 append_joinedstr(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 {
     int result = -1;
-    PyObject *body = build_fstring_body(e->v.JoinedStr.values, is_format_spec);
+    PyObject *body = build_ftstring_body(e->v.JoinedStr.values, is_format_spec);
     if (!body) {
         return -1;
     }
@@ -678,58 +704,108 @@ append_joinedstr(PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 }
 
 static int
-append_formattedvalue(PyUnicodeWriter *writer, expr_ty e)
+append_interpolation_str(PyUnicodeWriter *writer, PyObject *str)
 {
-    const char *conversion;
     const char *outer_brace = "{";
-    /* Grammar allows PR_TUPLE, but use >PR_TEST for adding parenthesis
-       around a lambda with ':' */
-    PyObject *temp_fv_str = expr_as_unicode(e->v.FormattedValue.value, PR_TEST + 1);
-    if (!temp_fv_str) {
-        return -1;
-    }
-    if (PyUnicode_Find(temp_fv_str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
+    if (PyUnicode_Find(str, _Py_LATIN1_CHR('{'), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";
     }
     if (-1 == append_charp(writer, outer_brace)) {
-        Py_DECREF(temp_fv_str);
         return -1;
     }
-    if (-1 == PyUnicodeWriter_WriteStr(writer, temp_fv_str)) {
-        Py_DECREF(temp_fv_str);
+    if (-1 == PyUnicodeWriter_WriteStr(writer, str)) {
         return -1;
     }
-    Py_DECREF(temp_fv_str);
+    return 0;
+}
 
-    if (e->v.FormattedValue.conversion > 0) {
-        switch (e->v.FormattedValue.conversion) {
-        case 'a':
-            conversion = "!a";
-            break;
-        case 'r':
-            conversion = "!r";
-            break;
-        case 's':
-            conversion = "!s";
-            break;
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "unknown f-value conversion kind");
-            return -1;
-        }
-        APPEND_STR(conversion);
+static int
+append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
+{
+    /* Grammar allows PR_TUPLE, but use >PR_TEST for adding parenthesis
+       around a lambda with ':' */
+    PyObject *temp_fv_str = expr_as_unicode(e, PR_TEST + 1);
+    if (!temp_fv_str) {
+        return -1;
     }
-    if (e->v.FormattedValue.format_spec) {
+    int result = append_interpolation_str(writer, temp_fv_str);
+    Py_DECREF(temp_fv_str);
+    return result;
+}
+
+static int
+append_interpolation_conversion(PyUnicodeWriter *writer, int conversion)
+{
+    if (conversion < 0) {
+        return 0;
+    }
+
+    const char *conversion_str;
+    switch (conversion) {
+    case 'a':
+        conversion_str = "!a";
+        break;
+    case 'r':
+        conversion_str = "!r";
+        break;
+    case 's':
+        conversion_str = "!s";
+        break;
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "unknown f-value conversion kind");
+        return -1;
+    }
+    APPEND_STR(conversion_str);
+    return 0;
+}
+
+static int
+append_interpolation_format_spec(PyUnicodeWriter *writer, expr_ty e)
+{
+    if (e) {
         if (-1 == PyUnicodeWriter_WriteChar(writer, ':') ||
-            -1 == append_fstring_element(writer,
-                                         e->v.FormattedValue.format_spec,
-                                         true
-                                        ))
+            -1 == append_fstring_element(writer, e, true))
         {
             return -1;
         }
+    }
+    return 0;
+}
+
+static int
+append_interpolation(PyUnicodeWriter *writer, expr_ty e)
+{
+    if (-1 == append_interpolation_str(writer, e->v.Interpolation.str)) {
+        return -1;
+    }
+
+    if (-1 == append_interpolation_conversion(writer, e->v.Interpolation.conversion)) {
+        return -1;
+    }
+
+    if (-1 == append_interpolation_format_spec(writer, e->v.Interpolation.format_spec)) {
+        return -1;
+    }
+
+    APPEND_STR_FINISH("}");
+}
+
+static int
+append_formattedvalue(PyUnicodeWriter *writer, expr_ty e)
+{
+    if (-1 == append_interpolation_value(writer, e->v.FormattedValue.value)) {
+        return -1;
+    }
+
+    if (-1 == append_interpolation_conversion(writer, e->v.FormattedValue.conversion)) {
+        return -1;
+    }
+
+    if (-1 == append_interpolation_format_spec(writer, e->v.FormattedValue.format_spec)) {
+        return -1;
     }
 
     APPEND_CHAR_FINISH('}');
@@ -901,8 +977,12 @@ append_ast_expr(PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
+    case TemplateStr_kind:
+        return append_templatestr(writer, e);
     case FormattedValue_kind:
         return append_formattedvalue(writer, e);
+    case Interpolation_kind:
+        return append_interpolation(writer, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(writer, e);

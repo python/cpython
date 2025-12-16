@@ -11,7 +11,6 @@ import keyword
 import _pickle
 import pkgutil
 import re
-import stat
 import tempfile
 import test.support
 import time
@@ -33,7 +32,7 @@ from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_stdout,
-                          captured_stderr, is_emscripten, is_wasi,
+                          captured_stderr, is_wasm32,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.test_pydoc import pydoc_mod
@@ -78,11 +77,6 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
-     |  Methods defined here:
-     |
-     |  __annotate__(format, /)
-     |
-     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -133,7 +127,7 @@ DATA
     c_alias = test.test_pydoc.pydoc_mod.C[int]
     list_alias1 = typing.List[int]
     list_alias2 = list[int]
-    type_union1 = typing.Union[int, str]
+    type_union1 = int | str
     type_union2 = int | str
 
 VERSION
@@ -180,9 +174,6 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
-    Methods defined here:
-        __annotate__(format, /)
-    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
@@ -223,7 +214,7 @@ Data
     c_alias = test.test_pydoc.pydoc_mod.C[int]
     list_alias1 = typing.List[int]
     list_alias2 = list[int]
-    type_union1 = typing.Union[int, str]
+    type_union1 = int | str
     type_union2 = int | str
 
 Author
@@ -561,7 +552,7 @@ class PydocDocTest(unittest.TestCase):
             # of the known subclasses of object. (doc.docclass() used to
             # fail if HeapType was imported before running this test, like
             # when running tests sequentially.)
-            from _testcapi import HeapType
+            from _testcapi import HeapType  # noqa: F401
         except ImportError:
             pass
         text = doc.docclass(object)
@@ -1308,7 +1299,6 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1316,14 +1306,9 @@ class PydocImportTest(PydocBaseTest):
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
-        current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
-        try:
-            os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
-            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
-                pydoc.apropos('')
-            self.assertIn('walkpkg', stdout.getvalue())
-        finally:
-            os.chmod(pkgdir, current_mode)
+        with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+            pydoc.apropos('')
+        self.assertIn('walkpkg', stdout.getvalue())
 
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
@@ -1348,47 +1333,6 @@ class PydocImportTest(PydocBaseTest):
                 self.assertIn(found, text)
             finally:
                 sys.path[:] = saved_paths
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules(self):
-        # See Helper.listmodules().
-        num_header_lines = 2
-        num_module_lines_min = 5  # Playing it safe.
-        num_footer_lines = 3
-        expected = num_header_lines + num_module_lines_min + num_footer_lines
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        helper('modules')
-        result = output.getvalue().strip()
-        num_lines = len(result.splitlines())
-
-        self.assertGreaterEqual(num_lines, expected)
-
-    @unittest.skip('causes undesirable side-effects (#20128)')
-    def test_modules_search(self):
-        # See Helper.listmodules().
-        expected = 'pydoc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules pydoc')
-        result = help_io.getvalue()
-
-        self.assertIn(expected, result)
-
-    @unittest.skip('some buildbots are not cooperating (#20128)')
-    def test_modules_search_builtin(self):
-        expected = 'gc - '
-
-        output = StringIO()
-        helper = pydoc.Helper(output=output)
-        with captured_stdout() as help_io:
-            helper('modules garbage')
-        result = help_io.getvalue()
-
-        self.assertTrue(result.startswith(expected))
 
     def test_importfile(self):
         try:
@@ -1447,17 +1391,17 @@ class TestDescriptions(unittest.TestCase):
             self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
-        self.assertEqual(pydoc.describe(typing.Union[int, str]), '_UnionGenericAlias')
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), 'Union')
         doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
-        self.assertIn('_UnionGenericAlias in module typing', doc)
-        self.assertIn('Union = typing.Union', doc)
+        self.assertIn('Union in module typing', doc)
+        self.assertIn('class Union(builtins.object)', doc)
         if typing.Union.__doc__:
             self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
 
-        self.assertEqual(pydoc.describe(int | str), 'UnionType')
+        self.assertEqual(pydoc.describe(int | str), 'Union')
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
-        self.assertIn('UnionType in module types object', doc)
-        self.assertIn('\nclass UnionType(builtins.object)', doc)
+        self.assertIn('Union in module typing', doc)
+        self.assertIn('class Union(builtins.object)', doc)
         if not MISSING_C_DOCSTRINGS:
             self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
 
@@ -1469,7 +1413,7 @@ class TestDescriptions(unittest.TestCase):
             self.assertIn('NoReturn = typing.NoReturn', doc)
             self.assertIn(typing.NoReturn.__doc__.strip().splitlines()[0], doc)
         else:
-            self.assertIn('NoReturn = class _SpecialForm(_Final)', doc)
+            self.assertIn('NoReturn = class _SpecialForm(_Final, _NotIterable)', doc)
 
     def test_typing_pydoc(self):
         def foo(data: typing.List[typing.Any],
@@ -1903,6 +1847,11 @@ foo
             html
         )
 
+    def test_module_none(self):
+        # Issue #128772
+        from test.test_pydoc import module_none
+        pydoc.render_doc(module_none)
+
 
 class PydocFodderTest(unittest.TestCase):
     def tearDown(self):
@@ -1930,18 +1879,30 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' |  global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
         self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
-        self.assertIn(' |  count(self, value, /) from builtins.list', lines)
-        self.assertIn(' |  list_count = count(self, value, /)', lines)
-        self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
-        self.assertIn(' |  object_repr = __repr__(self, /)', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' |  count(self, value, /) from builtins.list', lines)
+            self.assertIn(' |  list_count = count(self, value, /)', lines)
+            self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
+            self.assertIn(' |  object_repr = __repr__(self, /)', lines)
+        else:
+            self.assertIn(' |  count(self, object, /) from builtins.list', lines)
+            self.assertIn(' |  list_count = count(self, object, /)', lines)
+            self.assertIn(' |  __repr__(...) from builtins.object', lines)
+            self.assertIn(' |  object_repr = __repr__(...)', lines)
 
         lines = self.getsection(result, f' |  Static methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  A_classmethod_ref = A_classmethod(x) class method of test.test_pydoc.pydocfodder.A', lines)
         note = '' if cls is pydocfodder.B else ' class method of test.test_pydoc.pydocfodder.B'
         self.assertIn(' |  B_classmethod_ref = B_classmethod(x)' + note, lines)
         self.assertIn(' |  A_method_ref = A_method() method of test.test_pydoc.pydocfodder.A instance', lines)
-        self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(x, /)', lines)
+        else:
+            self.assertIn(' |  get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(object, /)', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -1960,10 +1921,16 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn('global_func_alias = global_func(x, y)', lines)
         self.assertIn('global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
-        self.assertIn('count(self, value, /) from builtins.list', lines)
-        self.assertIn('list_count = count(self, value, /)', lines)
-        self.assertIn('__repr__(self, /) from builtins.object', lines)
-        self.assertIn('object_repr = __repr__(self, /)', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('count(self, value, /) from builtins.list', lines)
+            self.assertIn('list_count = count(self, value, /)', lines)
+            self.assertIn('__repr__(self, /) from builtins.object', lines)
+            self.assertIn('object_repr = __repr__(self, /)', lines)
+        else:
+            self.assertIn('count(self, object, /) from builtins.list', lines)
+            self.assertIn('list_count = count(self, object, /)', lines)
+            self.assertIn('__repr__(...) from builtins.object', lines)
+            self.assertIn('object_repr = __repr__(...)', lines)
 
         lines = self.getsection(result, f'Static methods {where}:', '-'*70)
         self.assertIn('A_classmethod_ref = A_classmethod(x) class method of test.test_pydoc.pydocfodder.A', lines)
@@ -2000,15 +1967,32 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('    A_method3 = A_method() method of B instance', lines)
         self.assertIn('    A_staticmethod_ref = A_staticmethod(x, y)', lines)
         self.assertIn('    A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
-        self.assertIn('    get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn('    dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn('    dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        else:
+            self.assertIn('    get(...) method of builtins.dict instance', lines)
+            self.assertIn('    dict_get = get(...) method of builtins.dict instance', lines)
+
         # unbound methods
         self.assertIn('    B_method(self)', lines)
         self.assertIn('    B_method2 = B_method(self)', lines)
-        self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
-        self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
+            self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        else:
+            self.assertIn('    count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn('    list_count = count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn('    __repr__(...) unbound builtins.object method', lines)
+            self.assertIn('    object_repr = __repr__(...) unbound builtins.object method', lines)
+
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    sin(x, /)', lines)
+        else:
+            self.assertIn('    sin(object, /)', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2029,19 +2013,35 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' A_method3 = A_method() method of B instance', lines)
         self.assertIn(' A_staticmethod_ref = A_staticmethod(x, y)', lines)
         self.assertIn(' A_staticmethod_ref2 = A_staticmethod(y) method of B instance', lines)
-        self.assertIn(' get(key, default=None, /) method of builtins.dict instance', lines)
-        self.assertIn(' dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+        else:
+            self.assertIn(' get(...) method of builtins.dict instance', lines)
+            self.assertIn(' dict_get = get(...) method of builtins.dict instance', lines)
         # unbound methods
         self.assertIn(' B_method(self)', lines)
         self.assertIn(' B_method2 = B_method(self)', lines)
-        self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
-        self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
-        self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
+            self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
+            self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
+        else:
+            self.assertIn(' count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn(' list_count = count(self, object, /) unbound builtins.list method', lines)
+            self.assertIn(' __repr__(...) unbound builtins.object method', lines)
+            self.assertIn(' object_repr = __repr__(...) unbound builtins.object method', lines)
+
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' sin(x, /)', lines)
+        else:
+            self.assertIn(' sin(object, /)', lines)
 
 
 @unittest.skipIf(
-    is_emscripten or is_wasi,
+    is_wasm32,
     "Socket server not available on Emscripten/WASI."
 )
 class PydocServerTest(unittest.TestCase):
@@ -2304,6 +2304,32 @@ class TestInternalUtilities(unittest.TestCase):
                 self.assertIsNone(self._get_revised_path(leading_argv0dir))
                 trailing_argv0dir = trailing_curdir + [self.argv0dir]
                 self.assertIsNone(self._get_revised_path(trailing_argv0dir))
+
+    def test__get_version(self):
+        import json
+        import warnings
+
+        class MyModule:
+            __name__ = 'my_module'
+
+            @property
+            def __version__(self):
+                warnings._deprecated("__version__", remove=(3, 20))
+                return "1.2.3"
+
+        module = MyModule()
+        doc = pydoc.Doc()
+        with warnings.catch_warnings(record=True) as w: # TODO: remove in 3.20
+            warnings.simplefilter("always")
+            version = doc._get_version(json)
+            self.assertEqual(version, "2.0.9")
+            self.assertEqual(len(w), 0)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            version = doc._get_version(module)
+            self.assertEqual(version, "1.2.3")
+            self.assertEqual(len(w), 1)
 
 
 def setUpModule():

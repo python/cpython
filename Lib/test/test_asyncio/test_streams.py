@@ -1,15 +1,12 @@
 """Tests for streams.py."""
 
 import gc
-import os
 import queue
 import pickle
 import socket
-import sys
 import threading
 import unittest
 from unittest import mock
-import warnings
 try:
     import ssl
 except ImportError:
@@ -17,11 +14,11 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
-from test.support import requires_subprocess, socket_helper
+from test.support import socket_helper
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class StreamTests(test_utils.TestCase):
@@ -71,7 +68,7 @@ class StreamTests(test_utils.TestCase):
         try:
             reader, writer = self.loop.run_until_complete(open_connection_fut)
         finally:
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
         writer.write(b'GET / HTTP/1.0\r\n\r\n')
         f = reader.read()
         data = self.loop.run_until_complete(f)
@@ -839,8 +836,8 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio._set_event_loop, None)
-        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
         reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
 
@@ -863,8 +860,8 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio._set_event_loop, None)
-        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
         reader = mock.Mock()
         protocol = asyncio.StreamReaderProtocol(reader)
         self.assertIs(protocol._loop, self.loop)

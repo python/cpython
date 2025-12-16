@@ -21,7 +21,9 @@ Glossary
         right delimiters (parentheses, square brackets, curly braces or triple
         quotes), or after specifying a decorator.
 
-      * The :const:`Ellipsis` built-in constant.
+      .. index:: single: ...; ellipsis literal
+
+      * The three dots form of the :ref:`Ellipsis <bltin-ellipsis-object>` object.
 
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
@@ -107,7 +109,7 @@ Glossary
       statements.
 
    asynchronous generator iterator
-      An object created by a :term:`asynchronous generator` function.
+      An object created by an :term:`asynchronous generator` function.
 
       This is an :term:`asynchronous iterator` which when called using the
       :meth:`~object.__anext__` method returns an awaitable object which will execute
@@ -131,6 +133,28 @@ Glossary
       :keyword:`async for` resolves the awaitables returned by an asynchronous
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
+
+   attached thread state
+
+      A :term:`thread state` that is active for the current OS thread.
+
+      When a :term:`thread state` is attached, the OS thread has
+      access to the full Python C API and can safely invoke the
+      bytecode interpreter.
+
+      Unless a function explicitly notes otherwise, attempting to call
+      the C API without an attached thread state will result in a fatal
+      error or undefined behavior.  A thread state can be attached and detached
+      explicitly by the user through the C API, or implicitly by the runtime,
+      including during blocking C calls and by the bytecode interpreter in between
+      calls.
+
+      On most builds of Python, having an attached thread state implies that the
+      caller holds the :term:`GIL` for the current interpreter, so only
+      one OS thread can have an attached thread state at a given moment. In
+      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
+      hold an attached thread state, allowing for true parallelism of the bytecode
+      interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -333,6 +357,12 @@ Glossary
       tasks (see :mod:`asyncio`) associate each task with a context which
       becomes the current context whenever the task starts or resumes execution.
 
+   cyclic isolate
+      A subgroup of one or more objects that reference each other in a reference
+      cycle, but are not referenced by objects outside the group.  The goal of
+      the :term:`cyclic garbage collector <garbage collection>` is to identify these groups and break the reference
+      cycles so that the memory can be reclaimed.
+
    decorator
       A function returning another function, usually applied as a function
       transformation using the ``@wrapper`` syntax.  Common examples for
@@ -407,6 +437,11 @@ Glossary
       with :term:`abstract base classes <abstract base class>`.)  Instead, it
       typically employs :func:`hasattr` tests or :term:`EAFP` programming.
 
+   dunder
+      An informal short-hand for "double underscore", used when talking about a
+      :term:`special method`. For example, ``__init__`` is often pronounced
+      "dunder init".
+
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
       style assumes the existence of valid keys or attributes and catches
@@ -434,7 +469,8 @@ Glossary
       core and with user code.
 
    f-string
-      String literals prefixed with ``'f'`` or ``'F'`` are commonly called
+   f-strings
+      String literals prefixed with ``f`` or ``F`` are commonly called
       "f-strings" which is short for
       :ref:`formatted string literals <f-strings>`.  See also :pep:`498`.
 
@@ -622,6 +658,10 @@ Glossary
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
 
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
+
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
       time of the corresponding source file to determine its validity. See
@@ -657,6 +697,9 @@ Glossary
       If an object is immortal, its :term:`reference count` is never modified,
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
+
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -716,7 +759,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
@@ -796,6 +839,10 @@ Glossary
       code, ``if key in mapping: return mapping[key]`` can fail if another
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
+
+   lexical analyzer
+
+      Formal name for the *tokenizer*; see :term:`token`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -936,10 +983,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 
@@ -972,6 +1024,15 @@ Glossary
       optimized in this fashion. Note: most interpreter optimizations are
       applied to all scopes, only those relying on a known set of local
       and nonlocal variable names are restricted to optimized scopes.
+
+   optional module
+      An :term:`extension module` that is part of the :term:`standard library`,
+      but may be absent in some builds of :term:`CPython`,
+      usually due to missing third-party libraries or because the module
+      is not available for a given platform.
+
+      See :ref:`optional-module-requirements` for a list of optional modules
+      that require third-party libraries.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
@@ -1164,6 +1225,11 @@ Glossary
       :func:`sys.getrefcount` function to return the
       reference count for a particular object.
 
+      In :term:`CPython`, reference counts are not considered to be stable
+      or well-defined values; the number of references to an object, and how
+      that number is affected by Python code, may be different between
+      versions.
+
    regular package
       A traditional :term:`package`, such as a directory containing an
       ``__init__.py`` file.
@@ -1194,8 +1260,9 @@ Glossary
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
       :meth:`~object.__getitem__` and :meth:`~object.__len__`, adding
-      :meth:`!count`, :meth:`!index`, :meth:`~object.__contains__`, and
-      :meth:`~object.__reversed__`. Types that implement this expanded
+      :meth:`~sequence.count`, :meth:`~sequence.index`,
+      :meth:`~object.__contains__`, and :meth:`~object.__reversed__`.
+      Types that implement this expanded
       interface can be registered explicitly using
       :func:`~abc.ABCMeta.register`. For more documentation on sequence
       methods generally, see
@@ -1236,6 +1303,16 @@ Glossary
       and ending with double underscores.  Special methods are documented in
       :ref:`specialnames`.
 
+   standard library
+      The collection of :term:`packages <package>`, :term:`modules <module>`
+      and :term:`extension modules <extension module>` distributed as a part
+      of the official Python interpreter package.  The exact membership of the
+      collection may vary based on platform, available system libraries, or
+      other criteria.  Documentation can be found at :ref:`library-index`.
+
+      See also :data:`sys.stdlib_module_names` for a list of all possible
+      standard library module names.
+
    statement
       A statement is part of a suite (a "block" of code).  A statement is either
       an :term:`expression` or one of several constructs with a keyword, such
@@ -1245,6 +1322,9 @@ Glossary
       An external tool that reads Python code and analyzes it, looking for
       issues such as incorrect types. See also :term:`type hints <type hint>`
       and the :mod:`typing` module.
+
+   stdlib
+      An abbreviation of :term:`standard library`.
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
@@ -1259,6 +1339,12 @@ Glossary
       avoid leaking one reference.
 
       See also :term:`borrowed reference`.
+
+   t-string
+   t-strings
+      String literals prefixed with ``t`` or ``T`` are commonly called
+      "t-strings" which is short for
+      :ref:`template string literals <t-strings>`.
 
    text encoding
       A string in Python is a sequence of Unicode code points (in range
@@ -1282,6 +1368,40 @@ Glossary
 
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+
+   thread state
+
+      The information used by the :term:`CPython` runtime to run in an OS thread.
+      For example, this includes the current exception, if any, and the
+      state of the bytecode interpreter.
+
+      Each thread state is bound to a single OS thread, but threads may have
+      many thread states available.  At most, one of them may be
+      :term:`attached <attached thread state>` at once.
+
+      An :term:`attached thread state` is required to call most
+      of Python's C API, unless a function explicitly documents otherwise.
+      The bytecode interpreter only runs under an attached thread state.
+
+      Each thread state belongs to a single interpreter, but each interpreter
+      may have many thread states, including multiple for the same OS thread.
+      Thread states from multiple interpreters may be bound to the same
+      thread, but only one can be :term:`attached <attached thread state>` in
+      that thread at any given moment.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
+
+   token
+
+      A small unit of source code, generated by the
+      :ref:`lexical analyzer <lexical>` (also called the *tokenizer*).
+      Names, numbers, strings, operators,
+      newlines and similar are represented by tokens.
+
+      The :mod:`tokenize` module exposes Python's lexical analyzer.
+      The :mod:`token` module contains information on the various types
+      of tokens.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
@@ -1370,6 +1490,11 @@ Glossary
    virtual machine
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.
+
+   walrus operator
+      A light-hearted way to refer to the :ref:`assignment expression
+      <assignment-expressions>` operator ``:=`` because it looks a bit like a
+      walrus if you turn your head.
 
    Zen of Python
       Listing of Python design principles and philosophies that are helpful in

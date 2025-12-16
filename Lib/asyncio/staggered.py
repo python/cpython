@@ -8,6 +8,7 @@ from . import events
 from . import exceptions as exceptions_mod
 from . import locks
 from . import tasks
+from . import futures
 
 
 async def staggered_race(coro_fns, delay, *, loop=None):
@@ -61,8 +62,8 @@ async def staggered_race(coro_fns, delay, *, loop=None):
           coroutine's entry is ``None``.
 
     """
-    # TODO: when we have aiter() and anext(), allow async iterables in coro_fns.
     loop = loop or events.get_running_loop()
+    parent_task = tasks.current_task(loop)
     enum_coro_fns = enumerate(coro_fns)
     winner_result = None
     winner_index = None
@@ -73,6 +74,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
 
     def task_done(task):
         running_tasks.discard(task)
+        futures.future_discard_from_awaited_by(task, parent_task)
         if (
             on_completed_fut is not None
             and not on_completed_fut.done()
@@ -110,6 +112,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
         this_failed = locks.Event()
         next_ok_to_start = locks.Event()
         next_task = loop.create_task(run_one_coro(next_ok_to_start, this_failed))
+        futures.future_add_to_awaited_by(next_task, parent_task)
         running_tasks.add(next_task)
         next_task.add_done_callback(task_done)
         # next_task has been appended to running_tasks so next_task is ok to
@@ -148,6 +151,7 @@ async def staggered_race(coro_fns, delay, *, loop=None):
     try:
         ok_to_start = locks.Event()
         first_task = loop.create_task(run_one_coro(ok_to_start, None))
+        futures.future_add_to_awaited_by(first_task, parent_task)
         running_tasks.add(first_task)
         first_task.add_done_callback(task_done)
         # first_task has been appended to running_tasks so first_task is ok to start.
@@ -171,4 +175,4 @@ async def staggered_race(coro_fns, delay, *, loop=None):
             raise propagate_cancellation_error
         return winner_result, winner_index, exceptions
     finally:
-        del exceptions, propagate_cancellation_error, unhandled_exceptions
+        del exceptions, propagate_cancellation_error, unhandled_exceptions, parent_task

@@ -3,9 +3,10 @@ import sys
 import unittest
 from _ctypes import _SimpleCData
 from ctypes import Structure, c_char, c_char_p, c_wchar, c_wchar_p
+from ._support import StructCheckMixin
 
 
-class BytesTest(unittest.TestCase):
+class BytesTest(unittest.TestCase, StructCheckMixin):
     def test_c_char(self):
         x = c_char(b"x")
         self.assertRaises(TypeError, c_char, "x")
@@ -40,6 +41,7 @@ class BytesTest(unittest.TestCase):
     def test_struct(self):
         class X(Structure):
             _fields_ = [("a", c_char * 3)]
+        self.check_struct(X)
 
         x = X(b"abc")
         self.assertRaises(TypeError, X, "abc")
@@ -49,6 +51,7 @@ class BytesTest(unittest.TestCase):
     def test_struct_W(self):
         class X(Structure):
             _fields_ = [("a", c_wchar * 3)]
+        self.check_struct(X)
 
         x = X("abc")
         self.assertRaises(TypeError, X, b"abc")

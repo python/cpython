@@ -1,0 +1,1 @@
+Add :c:func:`PyDict_SetDefaultRef` to the Stable ABI.

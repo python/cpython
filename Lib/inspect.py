@@ -143,7 +143,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import Format
+from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
 import ast
 import dis
@@ -447,7 +447,8 @@ def isroutine(object):
             or isfunction(object)
             or ismethod(object)
             or ismethoddescriptor(object)
-            or ismethodwrapper(object))
+            or ismethodwrapper(object)
+            or isinstance(object, functools._singledispatchmethod_get))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
@@ -705,8 +706,8 @@ def _findclass(func):
         return None
     return cls
 
-def _finddoc(obj):
-    if isclass(obj):
+def _finddoc(obj, *, search_in_class=True):
+    if search_in_class and isclass(obj):
         for base in obj.__mro__:
             if base is not object:
                 try:
@@ -746,6 +747,12 @@ def _finddoc(obj):
         cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
+    # Should be tested before ismethoddescriptor()
+    elif isinstance(obj, functools.cached_property):
+        name = obj.attrname
+        cls = _findclass(obj.func)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
         name = obj.__name__
         cls = obj.__objclass__
@@ -766,19 +773,37 @@ def _finddoc(obj):
             return doc
     return None
 
-def getdoc(object):
+def _getowndoc(obj):
+    """Get the documentation string for an object if it is not
+    inherited from its class."""
+    try:
+        doc = object.__getattribute__(obj, '__doc__')
+        if doc is None:
+            return None
+        if obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return None
+        return doc
+    except AttributeError:
+        return None
+
+def getdoc(object, *, fallback_to_class_doc=True, inherit_class_doc=True):
     """Get the documentation string for an object.
 
     All tabs are expanded to spaces.  To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed."""
-    try:
-        doc = object.__doc__
-    except AttributeError:
-        return None
+    if fallback_to_class_doc:
+        try:
+            doc = object.__doc__
+        except AttributeError:
+            return None
+    else:
+        doc = _getowndoc(object)
     if doc is None:
         try:
-            doc = _finddoc(object)
+            doc = _finddoc(object, search_in_class=inherit_class_doc)
         except (AttributeError, TypeError):
             return None
     if not isinstance(doc, str):
@@ -968,6 +993,8 @@ def findsource(object):
     module = getmodule(object, file)
     if module:
         lines = linecache.getlines(file, module.__dict__)
+        if not lines and file.startswith('<') and hasattr(object, "__code__"):
+            lines = linecache._getlines_from_code(object.__code__)
     else:
         lines = linecache.getlines(file)
     if not lines:
@@ -1053,7 +1080,7 @@ class BlockFinder:
     """Provide a tokeneater() method to detect the end of a code block."""
     def __init__(self):
         self.indent = 0
-        self.islambda = False
+        self.singleline = False
         self.started = False
         self.passline = False
         self.indecorator = False
@@ -1062,19 +1089,24 @@ class BlockFinder:
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
+            if type in (tokenize.INDENT, tokenize.COMMENT, tokenize.NL):
+                pass
+            elif token == "async":
+                pass
             # skip any decorators
-            if token == "@":
+            elif token == "@":
                 self.indecorator = True
-            # look for the first "def", "class" or "lambda"
-            elif token in ("def", "class", "lambda"):
-                if token == "lambda":
-                    self.islambda = True
+            else:
+                # For "def" and "class" scan to the end of the block.
+                # For "lambda" and generator expression scan to
+                # the end of the logical line.
+                self.singleline = token not in ("def", "class")
                 self.started = True
             self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
-            if self.islambda:       # lambdas always end at the first NEWLINE
+            if self.singleline:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
@@ -1341,6 +1373,8 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
         return annotation.__module__+'.'+annotation.__qualname__
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
     return repr(annotation)
 
 def formatannotationrelativeto(object):
@@ -1693,7 +1727,8 @@ def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
             class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
-                    class_dict.__objclass__ is entry):
+                    (class_dict.__objclass__ is object or
+                     class_dict.__objclass__ is entry)):
                 return class_dict
     return _sentinel
 
@@ -1896,7 +1931,7 @@ _NonUserDefinedCallables = (types.WrapperDescriptorType,
                             types.BuiltinFunctionType)
 
 
-def _signature_get_user_defined_method(cls, method_name):
+def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chains=True):
     """Private helper. Checks if ``cls`` has an attribute
     named ``method_name`` and returns it only if it is a
     pure python function.
@@ -1905,7 +1940,19 @@ def _signature_get_user_defined_method(cls, method_name):
         meth = getattr(cls, method_name, None)
     else:
         meth = getattr_static(cls, method_name, None)
-    if meth is None or isinstance(meth, _NonUserDefinedCallables):
+    if meth is None:
+        return None
+
+    # NOTE: The meth may wraps a non-user-defined callable.
+    # In this case, we treat the meth as non-user-defined callable too.
+    # (e.g. cls.__new__ generated by @warnings.deprecated)
+    unwrapped_meth = None
+    if follow_wrapper_chains:
+        unwrapped_meth = unwrap(meth, stop=(lambda m: hasattr(m, "__signature__")
+                                  or _signature_is_builtin(m)))
+
+    if (isinstance(meth, _NonUserDefinedCallables)
+          or isinstance(unwrapped_meth, _NonUserDefinedCallables)):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
         return None
@@ -2061,13 +2108,11 @@ def _signature_is_functionlike(obj):
     code = getattr(obj, '__code__', None)
     defaults = getattr(obj, '__defaults__', _void) # Important to use _void ...
     kwdefaults = getattr(obj, '__kwdefaults__', _void) # ... and not None here
-    annotations = getattr(obj, '__annotations__', None)
 
     return (isinstance(code, types.CodeType) and
             isinstance(name, str) and
             (defaults is None or isinstance(defaults, tuple)) and
-            (kwdefaults is None or isinstance(kwdefaults, dict)) and
-            (isinstance(annotations, (dict)) or annotations is None) )
+            (kwdefaults is None or isinstance(kwdefaults, dict)))
 
 
 def _signature_strip_non_python_syntax(signature):
@@ -2095,7 +2140,6 @@ def _signature_strip_non_python_syntax(signature):
 
     current_parameter = 0
     OP = token.OP
-    ERRORTOKEN = token.ERRORTOKEN
 
     # token stream always starts with ENCODING token, skip it
     t = next(token_stream)
@@ -2502,12 +2546,26 @@ def _signature_from_callable(obj, *,
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = _signature_get_user_defined_method(type(obj), '__call__')
+        call = _signature_get_user_defined_method(
+            type(obj),
+            '__call__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
         if call is not None:
             return _get_signature_of(call)
 
-        new = _signature_get_user_defined_method(obj, '__new__')
-        init = _signature_get_user_defined_method(obj, '__init__')
+        # NOTE: The user-defined method can be a function with a thin wrapper
+        # around object.__new__ (e.g., generated by `@warnings.deprecated`)
+        new = _signature_get_user_defined_method(
+            obj,
+            '__new__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
+        init = _signature_get_user_defined_method(
+            obj,
+            '__init__',
+            follow_wrapper_chains=follow_wrapper_chains,
+        )
 
         # Go through the MRO and see if any class has user-defined
         # pure Python __new__ or __init__ method
@@ -2547,10 +2605,14 @@ def _signature_from_callable(obj, *,
         # Last option is to check if its '__init__' is
         # object.__init__ or type.__init__.
         if type not in obj.__mro__:
+            obj_init = obj.__init__
+            obj_new = obj.__new__
+            if follow_wrapper_chains:
+                obj_init = unwrap(obj_init)
+                obj_new = unwrap(obj_new)
             # We have a class (not metaclass), but no user-defined
             # __init__ or __new__ for it
-            if (obj.__init__ is object.__init__ and
-                obj.__new__ is object.__new__):
+            if obj_init is object.__init__ and obj_new is object.__new__:
                 # Return a signature of 'object' builtin.
                 return sigcls.from_callable(object)
             else:
@@ -3077,6 +3139,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
+                            if param.default is _empty:
+                                msg = f'missing a required positional-only argument: {param.name!r}'
+                                raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
                             pos_only_param_in_kwargs.append(param)
@@ -3309,7 +3374,7 @@ def _main():
     import argparse
     import importlib
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument(
         'object',
          help="The object to be analysed. "
@@ -3342,22 +3407,22 @@ def _main():
         sys.exit(1)
 
     if args.details:
-        print('Target: {}'.format(target))
-        print('Origin: {}'.format(getsourcefile(module)))
-        print('Cached: {}'.format(module.__cached__))
+        print(f'Target: {target}')
+        print(f'Origin: {getsourcefile(module)}')
+        print(f'Cached: {module.__spec__.cached}')
         if obj is module:
-            print('Loader: {}'.format(repr(module.__loader__)))
+            print(f'Loader: {module.__loader__!r}')
             if hasattr(module, '__path__'):
-                print('Submodule search path: {}'.format(module.__path__))
+                print(f'Submodule search path: {module.__path__}')
         else:
             try:
                 __, lineno = findsource(obj)
             except Exception:
                 pass
             else:
-                print('Line: {}'.format(lineno))
+                print(f'Line: {lineno}')
 
-        print('\n')
+        print()
     else:
         print(getsource(obj))
 

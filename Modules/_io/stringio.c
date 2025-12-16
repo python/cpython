@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -44,6 +45,8 @@ typedef struct {
     PyObject *weakreflist;
     _PyIO_State *module_state;
 } stringio;
+
+#define stringio_CAST(op)   ((stringio *)(op))
 
 #define clinic_state() (find_io_state_by_def(Py_TYPE(self)))
 #include "clinic/stringio.c.h"
@@ -402,9 +405,10 @@ _io_StringIO_readline_impl(stringio *self, Py_ssize_t size)
 }
 
 static PyObject *
-stringio_iternext(stringio *self)
+stringio_iternext(PyObject *op)
 {
     PyObject *line;
+    stringio *self = stringio_CAST(op);
 
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -416,8 +420,7 @@ stringio_iternext(stringio *self)
     }
     else {
         /* XXX is subclassing StringIO really supported? */
-        line = PyObject_CallMethodNoArgs((PyObject *)self,
-                                             &_Py_ID(readline));
+        line = PyObject_CallMethodNoArgs(op, &_Py_ID(readline));
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_OSError,
                          "readline() should have returned a str object, "
@@ -442,7 +445,7 @@ stringio_iternext(stringio *self)
 /*[clinic input]
 @critical_section
 _io.StringIO.truncate
-    pos as size: Py_ssize_t(accept={int, NoneType}, c_default="((stringio *)self)->pos") = None
+    pos: object = None
     /
 
 Truncate size to pos.
@@ -453,16 +456,26 @@ Returns the new absolute position.
 [clinic start generated code]*/
 
 static PyObject *
-_io_StringIO_truncate_impl(stringio *self, Py_ssize_t size)
-/*[clinic end generated code: output=eb3aef8e06701365 input=fa8a6c98bb2ba780]*/
+_io_StringIO_truncate_impl(stringio *self, PyObject *pos)
+/*[clinic end generated code: output=c76c43b5ecfaf4e2 input=d59fd2ee49757ae6]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
 
-    if (size < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "Negative size value %zd", size);
-        return NULL;
+    Py_ssize_t size;
+    if (pos == Py_None) {
+        size = self->pos;
+    }
+    else {
+        size = PyLong_AsLong(pos);
+        if (size == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (size < 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "negative pos value %zd", size);
+            return NULL;
+        }
     }
 
     if (size < self->string_size) {
@@ -591,8 +604,9 @@ _io_StringIO_close_impl(stringio *self)
 }
 
 static int
-stringio_traverse(stringio *self, visitproc visit, void *arg)
+stringio_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    stringio *self = stringio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->readnl);
     Py_VISIT(self->writenl);
@@ -602,8 +616,9 @@ stringio_traverse(stringio *self, visitproc visit, void *arg)
 }
 
 static int
-stringio_clear(stringio *self)
+stringio_clear(PyObject *op)
 {
+    stringio *self = stringio_CAST(op);
     Py_CLEAR(self->readnl);
     Py_CLEAR(self->writenl);
     Py_CLEAR(self->decoder);
@@ -612,8 +627,9 @@ stringio_clear(stringio *self)
 }
 
 static void
-stringio_dealloc(stringio *self)
+stringio_dealloc(PyObject *op)
 {
+    stringio *self = stringio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     self->ok = 0;
@@ -622,10 +638,8 @@ stringio_dealloc(stringio *self)
         self->buf = NULL;
     }
     PyUnicodeWriter_Discard(self->writer);
-    (void)stringio_clear(self);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
+    (void)stringio_clear(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1080,7 +1094,7 @@ static PyType_Slot stringio_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec stringio_spec = {
+PyType_Spec _Py_stringio_spec = {
     .name = "_io.StringIO",
     .basicsize = sizeof(stringio),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |

@@ -1,3 +1,0 @@
-When ``-E`` is set, only ignore ``PYTHON_COLORS`` and not
-``FORCE_COLOR``/``NO_COLOR``/``TERM`` when colourising output.
-Patch by Hugo van Kemenade.

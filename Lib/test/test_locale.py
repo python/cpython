@@ -1,12 +1,19 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten, is_wasi, os_helper
+from test import support
+from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
+import os
 import sys
 import codecs
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("locale", {"re", "warnings"})
 
 
 class BaseLocalizedTest(unittest.TestCase):
@@ -344,17 +351,13 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
-                                   sys.platform.startswith('freebsd')):
+        if enc != 'iso8859-1' and is_android:
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
@@ -362,10 +365,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
@@ -387,6 +387,10 @@ class NormalizeTest(unittest.TestCase):
     def test_c(self):
         self.check('c', 'C')
         self.check('posix', 'C')
+
+    def test_c_utf8(self):
+        self.check('c.utf8', 'C.UTF-8')
+        self.check('C.UTF-8', 'C.UTF-8')
 
     def test_english(self):
         self.check('en', 'en_US.ISO8859-1')
@@ -421,8 +425,8 @@ class NormalizeTest(unittest.TestCase):
         self.check('cs_CZ.ISO8859-2', 'cs_CZ.ISO8859-2')
 
     def test_euro_modifier(self):
-        self.check('de_DE@euro', 'de_DE.ISO8859-15')
-        self.check('en_US.ISO8859-15@euro', 'en_US.ISO8859-15')
+        self.check('de_DE@euro', 'de_DE.ISO8859-15@euro')
+        self.check('en_US.ISO8859-15@euro', 'en_US.ISO8859-15@euro')
         self.check('de_DE.utf8@euro', 'de_DE.UTF-8')
 
     def test_latin_modifier(self):
@@ -483,13 +487,159 @@ class NormalizeTest(unittest.TestCase):
         self.check('jp_jp', 'ja_JP.eucJP')
 
 
+class TestRealLocales(unittest.TestCase):
+    def setUp(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+
+    def test_getsetlocale_issue1813(self):
+        # Issue #1813: setting and getting the locale under a Turkish locale
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
+        except locale.Error:
+            # Unsupported locale on this system
+            self.skipTest('test needs Turkish locale')
+        loc = locale.getlocale(locale.LC_CTYPE)
+        if verbose:
+            print('testing with %a' % (loc,), end=' ', flush=True)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except locale.Error as exc:
+            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
+            # and the tr_TR locale on Windows. getlocale() builds a locale
+            # which is not recognize by setlocale().
+            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
+        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_setlocale_long_encoding(self):
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'English.%016d' % 1252)
+        locale.setlocale(locale.LC_CTYPE, 'English.%015d' % 1252)
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.1252', loc)
+        loc2 = loc.replace('.1252', '.%016d' % 1252, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+        loc2 = loc.replace('.1252', '.%015d' % 1252, 1)
+        locale.setlocale(locale.LC_ALL, loc2)
+
+        # gh-137273: Debug assertion failure on Windows for long encoding.
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'en_US.' + 'x'*16)
+        locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.UTF-8', loc)
+        loc2 = loc.replace('.UTF-8', '.' + 'x'*16, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+
+    @support.subTests('localename,localetuple', [
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso885915')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso88591')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-1')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', None)),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'iso885915')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'iso88591')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-1')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', None)),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'iso88597')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', None)),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'iso885915')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'iso88591')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-1')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', None)),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'utf8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', None)),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'utf8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', None)),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'utf8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', None)),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'utf8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', None)),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'utf8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', None)),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'utf8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', None)),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'utf8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', None)),
+    ])
+    def test_setlocale_with_modifier(self, localename, localetuple):
+        try:
+            locale.setlocale(locale.LC_CTYPE, localename)
+        except locale.Error as exc:
+            self.skipTest(str(exc))
+        loc = locale.setlocale(locale.LC_CTYPE, localetuple)
+        self.assertEqual(loc, localename)
+
+        loctuple = locale.getlocale(locale.LC_CTYPE)
+        loc = locale.setlocale(locale.LC_CTYPE, loctuple)
+        self.assertEqual(loc, localename)
+
+    @support.subTests('localename,localetuple', [
+        ('fr_FR.iso885915@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('de_DE.iso885915@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('el_GR.iso88597@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('ca_ES.iso885915@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.utf8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ks_IN.utf8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('sd_IN.utf8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('be_BY.utf8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY@latin', ('be_BY@latin', 'UTF-8')),
+        ('sr_RS.utf8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS@latin', ('sr_RS@latin', 'UTF-8')),
+        ('ug_CN.utf8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN@latin', ('ug_CN@latin', 'UTF-8')),
+        ('uz_UZ.utf8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+    ])
+    def test_getlocale_with_modifier(self, localename, localetuple):
+        try:
+            locale.setlocale(locale.LC_CTYPE, localename)
+        except locale.Error as exc:
+            self.skipTest(str(exc))
+        loctuple = locale.getlocale(locale.LC_CTYPE)
+        self.assertEqual(loctuple, localetuple)
+
+        locale.setlocale(locale.LC_CTYPE, loctuple)
+        self.assertEqual(locale.getlocale(locale.LC_CTYPE), localetuple)
+
+
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
         # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
-        import os
 
         self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
 
@@ -501,9 +651,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         try:
             with os_helper.EnvironmentVarGuard() as env:
-                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                    env.unset(key)
-
+                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
                 with check_warnings(('', DeprecationWarning)):
@@ -551,27 +699,6 @@ class TestMiscellaneous(unittest.TestCase):
 
         # crasher from bug #7419
         self.assertRaises(locale.Error, locale.setlocale, 12345)
-
-    def test_getsetlocale_issue1813(self):
-        # Issue #1813: setting and getting the locale under a Turkish locale
-        oldlocale = locale.setlocale(locale.LC_CTYPE)
-        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
-        except locale.Error:
-            # Unsupported locale on this system
-            self.skipTest('test needs Turkish locale')
-        loc = locale.getlocale(locale.LC_CTYPE)
-        if verbose:
-            print('testing with %a' % (loc,), end=' ', flush=True)
-        try:
-            locale.setlocale(locale.LC_CTYPE, loc)
-        except locale.Error as exc:
-            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
-            # and the tr_TR locale on Windows. getlocale() builds a locale
-            # which is not recognize by setlocale().
-            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
-        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
     def test_invalid_locale_format_in_localetuple(self):
         with self.assertRaises(TypeError):

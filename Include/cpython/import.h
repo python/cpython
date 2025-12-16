@@ -10,6 +10,13 @@ struct _inittab {
 PyAPI_DATA(struct _inittab *) PyImport_Inittab;
 PyAPI_FUNC(int) PyImport_ExtendInittab(struct _inittab *newtab);
 
+// Custom importers may use this API to initialize statically linked
+// extension modules directly from a spec and init function,
+// without needing to go through inittab
+PyAPI_FUNC(PyObject *) PyImport_CreateModuleFromInitfunc(
+    PyObject *spec,
+    PyObject *(*initfunc)(void));
+
 struct _frozen {
     const char *name;                 /* ASCII encoded string */
     const unsigned char *code;
@@ -21,3 +28,10 @@ struct _frozen {
    collection of frozen modules: */
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
+
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttr(
+    PyObject *mod_name,
+    PyObject *attr_name);
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttrString(
+    const char *mod_name,
+    const char *attr_name);

@@ -4,7 +4,7 @@
 .. module:: string
    :synopsis: Common string operations.
 
-**Source code:** :source:`Lib/string.py`
+**Source code:** :source:`Lib/string/__init__.py`
 
 --------------
 
@@ -131,16 +131,18 @@ implementation as the built-in :meth:`~str.format` method.
       (which can happen if two replacement fields occur consecutively), then
       *literal_text* will be a zero-length string.  If there is no replacement
       field, then the values of *field_name*, *format_spec* and *conversion*
-      will be ``None``.
+      will be ``None``. The value of *field_name* is unmodified and
+      auto-numbering of non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
 
-      Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  Returns a tuple (obj, used_key).  The default
-      version takes strings of the form defined in :pep:`3101`, such as
-      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
-      :meth:`vformat`.  The return value *used_key* has the same meaning as the
-      *key* parameter to :meth:`get_value`.
+      Given *field_name*, convert it to an object to be formatted.
+      Auto-numbering of *field_name* returned from :meth:`parse` is done by
+      :meth:`vformat` before calling this method.  Returns a tuple (obj, used_key).
+      The default version takes strings of the form defined in :pep:`3101`,
+      such as "0[name]" or "label.title". *args* and *kwargs* are as passed in to
+      :meth:`vformat`. The return value *used_key* has the same meaning
+      as the *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
 
@@ -196,8 +198,9 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but it is
-less sophisticated and, in particular, does not support arbitrary expressions.
+related to that of :ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`, but it is less sophisticated
+and, in particular, does not support arbitrary expressions in interpolations.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -262,6 +265,8 @@ Some simple format string examples::
    "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
+.. _formatstrings-conversion:
+
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
@@ -304,7 +309,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings` and :ref:`f-strings`).
+:ref:`formatstrings`, :ref:`f-strings`, and :ref:`t-strings`).
 They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
@@ -319,14 +324,19 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
+   format_spec: [`options`][`width_and_precision`][`type`]
+   options: [[`fill`]`align`][`sign`]["z"]["#"]["0"]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
+   width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
+   width_with_grouping: [`width`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`] | "." `grouping`
    width: `~python-grammar:digit`+
-   grouping_option: "_" | ","
    precision: `~python-grammar:digit`+
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+   grouping: "," | "_"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
+       : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
@@ -380,13 +390,13 @@ following:
 +---------+----------------------------------------------------------+
 | Option  | Meaning                                                  |
 +=========+==========================================================+
-| ``'+'`` | indicates that a sign should be used for both            |
+| ``'+'`` | Indicates that a sign should be used for both            |
 |         | positive as well as negative numbers.                    |
 +---------+----------------------------------------------------------+
-| ``'-'`` | indicates that a sign should be used only for negative   |
+| ``'-'`` | Indicates that a sign should be used only for negative   |
 |         | numbers (this is the default behavior).                  |
 +---------+----------------------------------------------------------+
-| space   | indicates that a leading space should be used on         |
+| space   | Indicates that a leading space should be used on         |
 |         | positive numbers, and a minus sign on negative numbers.  |
 +---------+----------------------------------------------------------+
 
@@ -414,30 +424,7 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. index:: single: , (comma); in string formatting
-
-The ``','`` option signals the use of a comma for a thousands separator for
-floating-point presentation types and for integer presentation type ``'d'``.
-For other presentation types, this option is an error.
-For a locale aware separator, use the ``'n'`` integer presentation type
-instead.
-
-.. versionchanged:: 3.1
-   Added the ``','`` option (see also :pep:`378`).
-
-.. index:: single: _ (underscore); in string formatting
-
-The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating-point presentation types and for integer
-presentation type ``'d'``.  For integer presentation types ``'b'``,
-``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
-digits.  For other presentation types, specifying this option is an
-error.
-
-.. versionchanged:: 3.6
-   Added the ``'_'`` option (see also :pep:`515`).
-
-*width* is a decimal integer defining the minimum total field width,
+The *width* is a decimal integer defining the minimum total field width,
 including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
 
@@ -457,6 +444,44 @@ types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
+
+The *grouping* option after *width* and *precision* fields specifies
+a digit group separator for the integral and fractional parts
+of a number respectively. It can be one of the following:
+
+.. index::
+   single: , (comma); in string formatting
+   single: _ (underscore); in string formatting
+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``','`` | Inserts a comma every 3 digits for                       |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+| ``'_'`` | Inserts an underscore every 3 digits for                 |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For integer presentation types                           |
+|         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
+|         | underscores are inserted every 4 digits.                 |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+
+For a locale aware separator, use the ``'n'`` presentation type instead.
+
+.. versionchanged:: 3.1
+   Added the ``','`` option (see also :pep:`378`).
+
+.. versionchanged:: 3.6
+   Added the ``'_'`` option (see also :pep:`515`).
+
+.. versionchanged:: 3.14
+   Support the *grouping* option for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -495,7 +520,7 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit group separators.                                  |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -577,7 +602,8 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit group separators                                   |
+   |         | for the integral part of a number.                       |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
@@ -704,10 +730,22 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma as a thousands separator::
+Using the comma or the underscore as a digit group separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
+   >>> '{:_}'.format(1234567890)
+   '1_234_567_890'
+   >>> '{:_b}'.format(1234567890)
+   '100_1001_1001_0110_0000_0010_1101_0010'
+   >>> '{:_x}'.format(1234567890)
+   '4996_02d2'
+   >>> '{:_}'.format(123456789.123456789)
+   '123_456_789.12345679'
+   >>> '{:.,}'.format(123456789.123456789)
+   '123456789.123,456,79'
+   >>> '{:,._}'.format(123456789.123456789)
+   '123,456,789.123_456_79'
 
 Expressing a percentage::
 
@@ -754,10 +792,22 @@ Nesting arguments and more complex examples::
 
 
 
-.. _template-strings:
+.. _template-strings-pep292:
 
-Template strings
-----------------
+Template strings ($-strings)
+----------------------------
+
+.. note::
+
+   The feature described here was introduced in Python 2.4;
+   a simple templating method based upon regular expressions.
+   It predates :meth:`str.format`, :ref:`formatted string literals <f-strings>`,
+   and :ref:`template string literals <template-strings>`.
+
+   It is unrelated to template string literals (t-strings),
+   which were introduced in Python 3.14.
+   These evaluate to  :class:`string.templatelib.Template` objects,
+   found in the :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for
@@ -823,7 +873,7 @@ these rules.  The methods of :class:`Template` are:
 
    .. method:: is_valid()
 
-      Returns false if the template has invalid placeholders that will cause
+      Returns ``False`` if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
       .. versionadded:: 3.11
