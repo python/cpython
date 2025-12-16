@@ -64,7 +64,7 @@ standard library function :c:func:`system`.
 This function is defined in ``stdlib.h``.
 It takes a C string as argument, runs the argument as a system
 command, and returns a result value as an integer.
-A manual page for ``system`` might summarize it this way::
+A manual page for :c:func:`system` might summarize it this way::
 
    #include <stdlib.h>
    int system(const char *command);
@@ -310,7 +310,7 @@ The next step will be adding a function.
 Exposing a function
 ===================
 
-To expose the ``system`` C function directly to Python,
+To expose the :c:func:`system` C function directly to Python,
 we'll need to write a layer of glue code to convert arguments from Python
 objects to C values, and the C return value back to Python.
 
@@ -512,7 +512,7 @@ Add an ``if`` block for this:
    }
 
 That's it for the setup.
-Now, all that is left is calling C library function ``system`` with
+Now, all that is left is calling C library function :c:func:`system` with
 the ``char *`` buffer, and using its result instead of the ``3``:
 
 .. code-block:: c
