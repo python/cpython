@@ -189,11 +189,9 @@ class TestDefaultDict(unittest.TestCase):
     def test_factory_conflict_with_set_value(self):
         key = "conflict_test"
         count = 0
-        test_dict = None
 
         def default_factory():
             nonlocal count
-            nonlocal test_dict
             count += 1
             local_count = count
             if count == 1:
