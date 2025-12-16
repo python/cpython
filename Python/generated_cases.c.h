@@ -7196,7 +7196,7 @@
             {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
-                    tstate, oparg > 0, frame, this_instr);
+                    tstate, oparg == 0 ? PY_MONITORING_EVENT_PY_START : PY_MONITORING_EVENT_PY_RESUME, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
                     JUMP_TO_LABEL(error);

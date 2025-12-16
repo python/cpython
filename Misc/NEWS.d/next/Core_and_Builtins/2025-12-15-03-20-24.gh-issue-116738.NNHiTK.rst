@@ -1,2 +1,0 @@
-Make the attributes in :mod:`bz2` thread-safe on the :term:`free threaded
-<free threading>` build.
