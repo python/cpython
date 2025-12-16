@@ -10030,7 +10030,7 @@ class ParamSpecTests(BaseTestCase):
         self.assertIs(P.__module__, None)
 
     def test_bound(self):
-        P1 = ParamSpec("P1")     
+        P1 = ParamSpec("P1")
         P2 = ParamSpec("P2", bound=None)
         self.assertIs(P1.__bound__, None)
         self.assertIs(P2.__bound__, None)
