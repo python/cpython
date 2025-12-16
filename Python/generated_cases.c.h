@@ -11576,7 +11576,7 @@
             opcode = next_instr->op.code;
             bool stop_tracing = (opcode == WITH_EXCEPT_START ||
                                  opcode == RERAISE || opcode == CLEANUP_THROW ||
-                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT || opcode >= MIN_INSTRUMENTED_OPCODE);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             stack_pointer = _PyFrame_GetStackPointer(frame);
