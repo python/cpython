@@ -17,6 +17,8 @@
 #include <signal.h>               // SIGWINCH
 #include <stdlib.h>               // free()
 #include <string.h>               // strdup()
+#include <termios.h>              // termios, tcgetattr(), tcsetattr()
+#include <unistd.h>               // isatty(), STDIN_FILENO
 #ifdef HAVE_SYS_SELECT_H
 #  include <sys/select.h>         // select()
 #endif
@@ -1670,6 +1672,20 @@ PyInit_readline(void)
     if (mod_state == NULL){
         goto error;
     }
+
+    // gh-139027: If tcsetattr fails do not initialize readline and err it
+    if (isatty(STDIN_FILENO)) {
+        struct termios original_tty;
+        if (tcgetattr(STDIN_FILENO, &original_tty) == 0) {
+            struct termios test_tty = original_tty;
+            if (tcsetattr(STDIN_FILENO, TCSANOW, &test_tty) != 0) {
+                PyErr_SetString(PyExc_OSError,
+                    "termios failure (Operation not permitted)");
+                goto error;
+            }
+        }
+    }
+
     PyOS_ReadlineFunctionPointer = call_readline;
     if (setup_readline(mod_state) < 0) {
         PyErr_NoMemory();
