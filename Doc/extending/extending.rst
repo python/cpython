@@ -372,7 +372,7 @@ Extracting Parameters in Extension Functions
 The :ref:`tutorial <first-extension-module>` uses a ":c:data:`METH_O`"
 function, which is limited to a single Python argument.
 If you want more, you can use :c:data:`METH_VARARGS` instead.
-With this flag, the C function will receive a *tuple* of arguments
+With this flag, the C function will receive a :py:class:`tuple` of arguments
 instead of a single object.
 
 For unpacking the tuple, CPython provides the :c:func:`PyArg_ParseTuple`
@@ -478,11 +478,11 @@ Some example calls::
 Keyword Parameters for Extension Functions
 ==========================================
 
-If you also want your function to accept *keyword* arguments,
-use the :c:data:`METH_KEYWORDS` flag in combination with
-:c:data:`METH_VARARGS`.
-(It can also be used with other flags; see its documentation for the allowed
-combinations.)
+If you also want your function to accept
+:term:`keyword arguments <keyword argument>`, use the :c:data:`METH_KEYWORDS`
+flag in combination with :c:data:`METH_VARARGS`.
+(:c:data:`!METH_KEYWORDS` can also be used with other flags; see its
+documentation for the allowed combinations.)
 
 In this case, the C function should accept a third ``PyObject *`` parameter
 which will be a dictionary of keywords.

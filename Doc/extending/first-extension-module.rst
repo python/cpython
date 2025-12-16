@@ -37,6 +37,12 @@ You need to have suitable C compiler and Python development headers installed.
 On Linux, headers are often in a package like ``python3-dev``
 or ``python3-devel``.
 
+You need to be able to install Python packages.
+This tutorial uses `pip <https://pip.pypa.io/>`__ (``pip install``), but you
+can substitute any tool that can build and install ``pyproject.toml``-based
+projects, like `uv <https://docs.astral.sh/uv/>`_ (``uv pip install``).
+Preferably, have a :ref:`virtual environment <venv-def>` activated.
+
 
 .. note::
 
@@ -44,7 +50,7 @@ or ``python3-devel``.
    To create an extension that's compatible with earlier versions of CPython,
    please follow an earlier version of this documentation.
 
-   This tutorial uses some syntax added in C11 and C++20.
+   This tutorial uses C syntax added in C11 and C++20.
    If your extension needs to be compatible with earlier standards,
    please follow tutorials in documentation for Python 3.14 or below.
 
@@ -113,7 +119,7 @@ Running your build tool
 =======================
 
 With only the includes in place, your extension won't do anything.
-Still, it's a good time to try compiling and importing it.
+Still, it's a good time to compile it and try to import it.
 This will ensure that your build tool works, so that you can make
 and test incremental changes as you follow the rest of the text.
 
@@ -170,10 +176,9 @@ Now, build install the *project in the current directory* (``.``) via ``pip``:
 .. tip::
 
    If you don't have ``pip`` installed, run ``python -m ensurepip``,
-   preferably in a :mod:`virtual environment <venv>`.
-   You can also use another tool that can build and install
-   ``pyproject.toml``-based projects, like
-   `uv <https://docs.astral.sh/uv/>`_ (``uv pip install .``).
+   preferably in a :ref:`virtual environment <venv-def>`.
+   (Or, if you prefer another tool that can build and install
+   ``pyproject.toml``-based projects, use that.)
 
 .. _meson-python: https://mesonbuild.com/meson-python/
 .. _virtual environment: https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments
@@ -263,8 +268,8 @@ Define this array just before your export hook:
       {0, NULL}
    };
 
-For both name and docstring, the values are C strings -- that is,
-NUL-terminated UTF-8 encoded byte arrays.
+For both :c:data:`Py_mod_name` and :c:data:`Py_mod_doc`, the values are C
+strings -- that is, NUL-terminated UTF-8 encoded byte arrays.
 
 Note the zero-filled sentinel entry at the end.
 If you forget it, you'll trigger undefined behavior.
@@ -595,7 +600,7 @@ add the following function to your module for now:
 
 This is a shim for an old-style :ref:`initialization function <extension-export-hook>`,
 which was required in extension modules for CPython 3.14 and below.
-Current CPython will not call it, but some build tools may still assume that
+Current CPython does not need it, but some build tools may still assume that
 all extension modules need to define it.
 
 If you use this workaround, you will get the exception
