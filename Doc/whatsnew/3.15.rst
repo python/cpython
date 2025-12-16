@@ -62,8 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.15.
    Brevity is key.
 
-* The :ref:`JIT compiler <whatsnew315-jit>` has been significantly upgraded,
-  with 3-4% geometric mean performance improvement on pyperformance benchmarks.
 
 .. PEP-sized items next.
 
@@ -76,6 +74,8 @@ Summary -- Release highlights
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
+* The :ref:`JIT compiler <whatsnew315-jit>` has been significantly upgraded,
+  with 3-4% geometric mean performance improvement on the pyperformance benchmarks.
 
 
 New features
