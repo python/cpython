@@ -1551,6 +1551,10 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    @unittest.skipUnless(
+        lambda: any(os.path.exists(os.path.join(p, 'UTC')) for p in ZoneInfo.tzpath),
+        "timezone data not available"
+    )
     def test_weak_cache_descriptor_use_after_free(self):
         from zoneinfo import ZoneInfo
 
