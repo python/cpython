@@ -1585,7 +1585,7 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
             self.assertIsNotNone(zone1)
             self.assertEqual(str(zone1), "UTC")
-        except ModuleNotFoundError:
+        except self.module.ZoneInfoNotFoundError:
             pass
 
         EvilZoneInfo.clear_cache()
@@ -1594,7 +1594,7 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
             zone2 = EvilZoneInfo("UTC")
             self.assertIsNotNone(zone2)
             self.assertEqual(str(zone2), "UTC")
-        except ModuleNotFoundError:
+        except self.module.ZoneInfoNotFoundError:
             pass
 
 
