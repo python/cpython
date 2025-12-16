@@ -195,13 +195,16 @@ class TestDefaultDict(unittest.TestCase):
             nonlocal count
             nonlocal test_dict
             count += 1
+            local_count = count
             if count == 1:
-                test_dict[key] = "set_value"
-            return "default_factory_value"
+                test_dict[key]
+            return local_count
 
         test_dict = defaultdict(default_factory)
 
-        self.assertEqual(test_dict[key], "set_value")
+        self.assertEqual(count, 0)
+        self.assertEqual(test_dict[key], 2)
+        self.assertEqual(count, 2)
 
 if __name__ == "__main__":
     unittest.main()
