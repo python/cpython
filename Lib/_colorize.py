@@ -1,4 +1,3 @@
-import io
 import os
 import sys
 
@@ -169,6 +168,8 @@ class Argparse(ThemeSection):
     short_option: str = ANSIColors.BOLD_GREEN
     label: str = ANSIColors.BOLD_YELLOW
     action: str = ANSIColors.BOLD_GREEN
+    default: str = ANSIColors.GREY
+    interpolated_value: str = ANSIColors.YELLOW
     reset: str = ANSIColors.RESET
     error: str = ANSIColors.BOLD_MAGENTA
     warning: str = ANSIColors.BOLD_YELLOW
@@ -330,7 +331,7 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
 
     try:
         return os.isatty(file.fileno())
-    except io.UnsupportedOperation:
+    except OSError:
         return hasattr(file, "isatty") and file.isatty()
 
 

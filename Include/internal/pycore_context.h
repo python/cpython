@@ -55,5 +55,8 @@ struct _pycontexttokenobject {
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
 
+PyAPI_FUNC(int) _PyContext_Enter(PyThreadState *ts, PyObject *octx);
+PyAPI_FUNC(int) _PyContext_Exit(PyThreadState *ts, PyObject *octx);
+
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

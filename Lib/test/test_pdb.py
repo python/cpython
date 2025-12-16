@@ -3561,6 +3561,24 @@ class PdbTestCase(unittest.TestCase):
         self.assertEqual(
             expected, pdb.find_function(func_name, os_helper.TESTFN))
 
+    def _fd_dir_for_pipe_targets(self):
+        """Return a directory exposing live file descriptors, if any."""
+        proc_fd = "/proc/self/fd"
+        if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
+            return proc_fd
+
+        dev_fd = "/dev/fd"
+        if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
+            if sys.platform.startswith("freebsd"):
+                try:
+                    if os.stat("/dev").st_dev == os.stat(dev_fd).st_dev:
+                        return None
+                except FileNotFoundError:
+                    return None
+            return dev_fd
+
+        return None
+
     def test_find_function_empty_file(self):
         self._assert_find_function(b'', 'foo', None)
 
@@ -3579,6 +3597,20 @@ def quux():
             'bœr',
             ('bœr', 5),
         )
+
+    def test_print_stack_entry_uses_dynamic_line_prefix(self):
+        """Test that pdb.line_prefix binding is dynamic (gh-141781)."""
+        stdout = io.StringIO()
+        p = pdb.Pdb(stdout=stdout)
+
+        # Get the current frame to use for printing
+        frame = sys._getframe()
+
+        with support.swap_attr(pdb, 'line_prefix', 'CUSTOM_PREFIX> '):
+            p.print_stack_entry((frame, frame.f_lineno))
+
+        # Check if the custom prefix appeared in the output
+        self.assertIn('CUSTOM_PREFIX> ', stdout.getvalue())
 
     def test_find_function_found_with_encoding_cookie(self):
         self._assert_find_function(
@@ -3618,6 +3650,47 @@ def bœr():
 
         stdout, _ = self.run_pdb_script(script, commands)
         self.assertIn('None', stdout)
+
+    def test_script_target_anonymous_pipe(self):
+        """
+        _ScriptTarget doesn't fail on an anonymous pipe.
+
+        GH-142315
+        """
+        fd_dir = self._fd_dir_for_pipe_targets()
+        if fd_dir is None:
+            self.skipTest('anonymous pipe targets require /proc/self/fd or /dev/fd')
+
+        read_fd, write_fd = os.pipe()
+
+        def safe_close(fd):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+        self.addCleanup(safe_close, read_fd)
+        self.addCleanup(safe_close, write_fd)
+
+        pipe_path = os.path.join(fd_dir, str(read_fd))
+        if not os.path.exists(pipe_path):
+            self.skipTest('fd directory does not expose anonymous pipes')
+
+        script_source = 'marker = "via_pipe"\n'
+        os.write(write_fd, script_source.encode('utf-8'))
+        os.close(write_fd)
+
+        original_path0 = sys.path[0]
+        self.addCleanup(sys.path.__setitem__, 0, original_path0)
+
+        target = pdb._ScriptTarget(pipe_path)
+        code_text = target.code
+        namespace = target.namespace
+        exec(code_text, namespace)
+
+        self.assertEqual(namespace['marker'], 'via_pipe')
+        self.assertEqual(namespace['__file__'], target.filename)
+        self.assertIsNone(namespace['__spec__'])
 
     def test_find_function_first_executable_line(self):
         code = textwrap.dedent("""\
@@ -4573,6 +4646,41 @@ def bœr():
             ]))
             self.assertIn('break in bar', stdout)
 
+    @unittest.skipIf(SKIP_CORO_TESTS, "Coroutine tests are skipped")
+    def test_async_break(self):
+        script = """
+            import asyncio
+
+            async def main():
+                pass
+
+            asyncio.run(main())
+        """
+        commands = """
+            break main
+            continue
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertRegex(stdout, r"Breakpoint 1 at .*main\.py:5")
+        self.assertIn("pass", stdout)
+
+    def test_issue_59000(self):
+        script = """
+            def foo():
+                pass
+
+            class C:
+                def foo(self):
+                    pass
+        """
+        commands = """
+            break C.foo
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("The specified object 'C.foo' is not a function", stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
@@ -4742,6 +4850,19 @@ class PdbTestInline(unittest.TestCase):
         commands = ""
         stdout, stderr = self._run_script(script, commands)
         self.assertNotIn("readline imported", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_alternate_stdin(self):
+        script = textwrap.dedent("""
+            import pdb
+            import io
+
+            input_data = io.StringIO("p 40 + 2\\nc\\n")
+            pdb.Pdb(stdin=input_data).set_trace()
+        """)
+        commands = ""
+        stdout, stderr = self._run_script(script, commands)
+        self.assertIn("42", stdout)
         self.assertEqual(stderr, "")
 
 

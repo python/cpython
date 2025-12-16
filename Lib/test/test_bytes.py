@@ -549,6 +549,17 @@ class BaseBytesTest:
         self.assertEqual(three_bytes.hex(':', 2), 'b9:01ef')
         self.assertEqual(three_bytes.hex(':', 1), 'b9:01:ef')
         self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
+        self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
+        self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
+        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                try:
+                    self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+                except OverflowError:
+                    pass
 
         value = b'{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
         self.assertEqual(value.hex('.', 8), '7b7305000000776f.726c646902000000.730500000068656c.6c6f690100000030')
@@ -1523,6 +1534,32 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with memoryview(ba) as mv:
             self.assertRaises(BufferError, ba.take_bytes)
         self.assertEqual(ba.take_bytes(), b'abc')
+
+    @support.cpython_only  # tests an implementation detail
+    def test_take_bytes_optimization(self):
+        # Validate optimization around taking lots of little chunks out of a
+        # much bigger buffer. Save work by only copying a little rather than
+        # moving a lot.
+        ba = bytearray(b'abcdef' + b'0' * 1000)
+        start_alloc = ba.__alloc__()
+
+        # Take two bytes at a time, checking alloc doesn't change.
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 4 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'cd')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 2 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'ef')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 0 + 1000)
+        self.assertEqual(ba.__alloc__(), start_alloc)
+
+        # Take over half, alloc shrinks to exact size.
+        self.assertEqual(ba.take_bytes(501), b'0' * 501)
+        self.assertEqual(len(ba), 499)
+        bytes_header_size = sys.getsizeof(b'')
+        self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
 
     def test_setitem(self):
         def setitem_as_mapping(b, i, val):
@@ -2629,6 +2666,10 @@ class FreeThreadingTest(unittest.TestCase):
             c = a.zfill(0x400000)
             assert not c or c[-1] not in (0xdd, 0xcd)
 
+        def resize(b, a):  # MODIFIES!
+            b.wait()
+            a.resize(10)
+
         def take_bytes(b, a):  # MODIFIES!
             b.wait()
             c = a.take_bytes()
@@ -2701,6 +2742,8 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
         check([clear] + [startswith] * 10)
         check([clear] + [strip] * 10)
+
+        check([clear] + [resize] * 10)
 
         check([clear] + [take_bytes] * 10)
         check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))
