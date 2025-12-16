@@ -1,6 +1,5 @@
 import unittest
 from test.support import import_helper
-import types
 
 xxlimited = import_helper.import_module('xxlimited')
 
