@@ -1,0 +1,1 @@
+Clear out a generator's frame when generator.close() is called.
