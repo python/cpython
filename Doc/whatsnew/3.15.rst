@@ -875,8 +875,7 @@ The major upgrades to the JIT are as follows:
 * Basic register allocation in the JIT
 * More JIT optimizations
 * Better machine code generation
-
-...watch this space for more to come before 3.15 beta!
+* ...watch this space for more to come before 3.15 beta!
 
 LLVM 21 Build-Time Dependency
 -----------------------------
