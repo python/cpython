@@ -560,10 +560,14 @@ xx_free(void *module)
     (void)xx_clear((PyObject *)module);
 }
 
+// Information that CPython uses to prevent loading incompatible extenstions
+PyABIInfo_VAR(abi_info);
+
 static PyModuleDef_Slot xx_slots[] = {
     /* Basic metadata */
     {Py_mod_name, "xxlimited"},
     {Py_mod_doc, (void*)module_doc},
+    {Py_mod_abi, &abi_info},
 
     /* The method table */
     {Py_mod_methods, xx_methods},
