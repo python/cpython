@@ -8,23 +8,24 @@
 #ifndef Py_REMOTE_DEBUGGING_H
 #define Py_REMOTE_DEBUGGING_H
 
+/* _GNU_SOURCE must be defined before any system headers */
+#define _GNU_SOURCE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define _GNU_SOURCE
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #    define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-#include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
-#include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
-#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_INTERPRETER
-#include <internal/pycore_llist.h>          // struct llist_node
-#include <internal/pycore_long.h>           // _PyLong_GetZero
-#include <internal/pycore_stackref.h>       // Py_TAG_BITS
+#include "internal/pycore_debug_offsets.h"  // _Py_DebugOffsets
+#include "internal/pycore_frame.h"          // FRAME_SUSPENDED_YIELD_FROM
+#include "internal/pycore_interpframe.h"    // FRAME_OWNED_BY_INTERPRETER
+#include "internal/pycore_llist.h"          // struct llist_node
+#include "internal/pycore_long.h"           // _PyLong_GetZero
+#include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
 #include <assert.h>
@@ -40,10 +41,17 @@ extern "C" {
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#if defined(__APPLE__) && TARGET_OS_OSX
-#include <libproc.h>
-#include <sys/types.h>
-#define MAX_NATIVE_THREADS 4096
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#  if !defined(TARGET_OS_OSX)
+     /* Older macOS SDKs do not define TARGET_OS_OSX */
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <libproc.h>
+#    include <sys/types.h>
+#    define MAX_NATIVE_THREADS 4096
+#  endif
 #endif
 
 #ifdef MS_WINDOWS
@@ -109,10 +117,11 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_TLBC_SIZE 2048
 
 /* Thread status flags */
-#define THREAD_STATUS_HAS_GIL        (1 << 0)
-#define THREAD_STATUS_ON_CPU         (1 << 1)
-#define THREAD_STATUS_UNKNOWN        (1 << 2)
-#define THREAD_STATUS_GIL_REQUESTED  (1 << 3)
+#define THREAD_STATUS_HAS_GIL             (1 << 0)
+#define THREAD_STATUS_ON_CPU              (1 << 1)
+#define THREAD_STATUS_UNKNOWN             (1 << 2)
+#define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
+#define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
 /* Exception cause macro */
 #define set_exception_cause(unwinder, exc_type, message) \
@@ -154,9 +163,43 @@ typedef struct {
     uintptr_t addr_code_adaptive;
 } CachedCodeMetadata;
 
+/* Frame cache constants and types */
+#define FRAME_CACHE_MAX_THREADS 32
+#define FRAME_CACHE_MAX_FRAMES 1024
+
+typedef struct {
+    uint64_t thread_id;                      // 0 = empty slot
+    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
+    Py_ssize_t num_addrs;
+    PyObject *frame_list;                    // owned reference, NULL if empty
+} FrameCacheEntry;
+
+/* Statistics for profiling performance analysis */
+typedef struct {
+    uint64_t total_samples;                  // Total number of get_stack_trace calls
+    uint64_t frame_cache_hits;               // Full cache hits (entire stack unchanged)
+    uint64_t frame_cache_misses;             // Cache misses requiring full walk
+    uint64_t frame_cache_partial_hits;       // Partial hits (stopped at cached frame)
+    uint64_t frames_read_from_cache;         // Total frames retrieved from cache
+    uint64_t frames_read_from_memory;        // Total frames read from remote memory
+    uint64_t memory_reads;                   // Total remote memory read operations
+    uint64_t memory_bytes_read;              // Total bytes read from remote memory
+    uint64_t code_object_cache_hits;         // Code object cache hits
+    uint64_t code_object_cache_misses;       // Code object cache misses
+    uint64_t stale_cache_invalidations;      // Times stale entries were cleared
+} UnwinderStats;
+
+/* Stats tracking macros - no-op when stats collection is disabled */
+#define STATS_INC(unwinder, field) \
+    do { if ((unwinder)->collect_stats) (unwinder)->stats.field++; } while(0)
+
+#define STATS_ADD(unwinder, field, val) \
+    do { if ((unwinder)->collect_stats) (unwinder)->stats.field += (val); } while(0)
+
 typedef struct {
     PyTypeObject *RemoteDebugging_Type;
     PyTypeObject *TaskInfo_Type;
+    PyTypeObject *LocationInfo_Type;
     PyTypeObject *FrameInfo_Type;
     PyTypeObject *CoroInfo_Type;
     PyTypeObject *ThreadInfo_Type;
@@ -175,7 +218,8 @@ enum _ProfilingMode {
     PROFILING_MODE_WALL = 0,
     PROFILING_MODE_CPU = 1,
     PROFILING_MODE_GIL = 2,
-    PROFILING_MODE_ALL = 3
+    PROFILING_MODE_ALL = 3,
+    PROFILING_MODE_EXCEPTION = 4
 };
 
 typedef struct {
@@ -195,7 +239,13 @@ typedef struct {
     int skip_non_matching_threads;
     int native;
     int gc;
+    int opcodes;
+    int cache_frames;
+    int collect_stats;  // whether to collect statistics
+    uint32_t stale_invalidation_counter;  // counter for throttling frame_cache_invalidate_stale
     RemoteDebuggingState *cached_state;
+    FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
+    UnwinderStats stats;  // statistics for performance analysis
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
@@ -248,6 +298,7 @@ typedef int (*set_entry_processor_func)(
  * ============================================================================ */
 
 extern PyStructSequence_Desc TaskInfo_desc;
+extern PyStructSequence_Desc LocationInfo_desc;
 extern PyStructSequence_Desc FrameInfo_desc;
 extern PyStructSequence_Desc CoroInfo_desc;
 extern PyStructSequence_Desc ThreadInfo_desc;
@@ -298,11 +349,20 @@ extern int parse_code_object(
     int32_t tlbc_index
 );
 
+extern PyObject *make_location_info(
+    RemoteUnwinderObject *unwinder,
+    int lineno,
+    int end_lineno,
+    int col_offset,
+    int end_col_offset
+);
+
 extern PyObject *make_frame_info(
     RemoteUnwinderObject *unwinder,
     PyObject *file,
-    PyObject *line,
-    PyObject *func
+    PyObject *location,  // LocationInfo structseq or None for synthetic frames
+    PyObject *func,
+    PyObject *opcode
 );
 
 /* Line table parsing */
@@ -363,8 +423,45 @@ extern int process_frame_chain(
     uintptr_t initial_frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
-    uintptr_t gc_frame
+    uintptr_t base_frame_addr,
+    uintptr_t gc_frame,
+    uintptr_t last_profiled_frame,
+    int *stopped_at_cached_frame,
+    uintptr_t *frame_addrs,
+    Py_ssize_t *num_addrs,
+    Py_ssize_t max_addrs
 );
+
+/* Frame cache functions */
+extern int frame_cache_init(RemoteUnwinderObject *unwinder);
+extern void frame_cache_cleanup(RemoteUnwinderObject *unwinder);
+extern FrameCacheEntry *frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id);
+extern int clear_last_profiled_frames(RemoteUnwinderObject *unwinder);
+extern void frame_cache_invalidate_stale(RemoteUnwinderObject *unwinder, PyObject *result);
+extern int frame_cache_lookup_and_extend(
+    RemoteUnwinderObject *unwinder,
+    uint64_t thread_id,
+    uintptr_t last_profiled_frame,
+    PyObject *frame_info,
+    uintptr_t *frame_addrs,
+    Py_ssize_t *num_addrs,
+    Py_ssize_t max_addrs);
+// Returns: 1 = stored, 0 = not stored (graceful), -1 = error
+extern int frame_cache_store(
+    RemoteUnwinderObject *unwinder,
+    uint64_t thread_id,
+    PyObject *frame_list,
+    const uintptr_t *addrs,
+    Py_ssize_t num_addrs);
+
+extern int collect_frames_with_cache(
+    RemoteUnwinderObject *unwinder,
+    uintptr_t frame_addr,
+    StackChunkList *chunks,
+    PyObject *frame_info,
+    uintptr_t gc_frame,
+    uintptr_t last_profiled_frame,
+    uint64_t thread_id);
 
 /* ============================================================================
  * THREAD FUNCTION DECLARATIONS
@@ -405,6 +502,7 @@ extern PyObject* unwind_stack_for_thread(
 
 extern uintptr_t _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle);
 extern int read_async_debug(RemoteUnwinderObject *unwinder);
+extern int ensure_async_debug_offsets(RemoteUnwinderObject *unwinder);
 
 /* Task parsing */
 extern PyObject *parse_task_name(RemoteUnwinderObject *unwinder, uintptr_t task_address);
@@ -490,6 +588,16 @@ extern int process_thread_for_async_stack_trace(
     unsigned long tid,
     void *context
 );
+
+/* ============================================================================
+ * SUBPROCESS ENUMERATION FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/* Get all child PIDs of a process.
+ * Returns a new Python list of PIDs, or NULL on error with exception set.
+ * If recursive is true, includes all descendants (children, grandchildren, etc.)
+ */
+extern PyObject *enumerate_child_pids(pid_t target_pid, int recursive);
 
 #ifdef __cplusplus
 }

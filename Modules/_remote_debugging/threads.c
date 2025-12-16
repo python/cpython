@@ -296,6 +296,8 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read thread state");
         goto error;
     }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.thread_state.size);
 
     long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
 
@@ -309,6 +311,8 @@ unwind_stack_for_thread(
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read GC state");
         goto error;
     }
+    STATS_INC(unwinder, memory_reads);
+    STATS_ADD(unwinder, memory_bytes_read, unwinder->debug_offsets.gc.size);
 
     // Calculate thread status using flags (always)
     int status_flags = 0;
@@ -319,6 +323,7 @@ unwind_stack_for_thread(
 #ifdef Py_GIL_DISABLED
     int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
     has_gil = active;
+    (void)gil_requested;  // unused
 #else
     // Read holds_gil directly from thread state
     has_gil = GET_MEMBER(int, ts, unwinder->debug_offsets.thread_state.holds_gil);
@@ -335,11 +340,36 @@ unwind_stack_for_thread(
 #endif
     if (has_gil) {
         status_flags |= THREAD_STATUS_HAS_GIL;
+        // gh-142207 for remote debugging.
+        gil_requested = 0;
     }
 
-    // Assert that we never have both HAS_GIL and GIL_REQUESTED set at the same time
-    // This would indicate a race condition in the GIL state tracking
-    assert(!(has_gil && gil_requested));
+    // Check exception state (both raised and handled exceptions)
+    int has_exception = 0;
+
+    // Check current_exception (exception being raised/propagated)
+    uintptr_t current_exception = GET_MEMBER(uintptr_t, ts,
+        unwinder->debug_offsets.thread_state.current_exception);
+    if (current_exception != 0) {
+        has_exception = 1;
+    }
+
+    // Check exc_state.exc_value (exception being handled in except block)
+    // exc_state is embedded in PyThreadState, so we read it directly from
+    // the thread state buffer. This catches most cases; nested exception
+    // handlers where exc_info points elsewhere are rare.
+    if (!has_exception) {
+        uintptr_t exc_value = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.exc_state +
+            unwinder->debug_offsets.err_stackitem.exc_value);
+        if (exc_value != 0) {
+            has_exception = 1;
+        }
+    }
+
+    if (has_exception) {
+        status_flags |= THREAD_STATUS_HAS_EXCEPTION;
+    }
 
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
@@ -365,6 +395,9 @@ unwind_stack_for_thread(
         } else if (unwinder->mode == PROFILING_MODE_GIL) {
             // Skip if doesn't have GIL
             should_skip = !(status_flags & THREAD_STATUS_HAS_GIL);
+        } else if (unwinder->mode == PROFILING_MODE_EXCEPTION) {
+            // Skip if thread doesn't have an exception active
+            should_skip = !(status_flags & THREAD_STATUS_HAS_EXCEPTION);
         }
         // PROFILING_MODE_WALL and PROFILING_MODE_ALL never skip
     }
@@ -376,6 +409,7 @@ unwind_stack_for_thread(
     }
 
     uintptr_t frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.current_frame);
+    uintptr_t base_frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.base_frame);
 
     frame_info = PyList_New(0);
     if (!frame_info) {
@@ -383,14 +417,37 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
-        goto error;
+    // In cache mode, copying stack chunks is more expensive than direct memory reads
+    if (!unwinder->cache_frames) {
+        if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
+            goto error;
+        }
     }
 
-    if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info, gc_frame) < 0) {
-        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
-        goto error;
+    if (unwinder->cache_frames) {
+        // Use cache to avoid re-reading unchanged parent frames
+        uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.last_profiled_frame);
+        if (collect_frames_with_cache(unwinder, frame_addr, &chunks, frame_info,
+                                      gc_frame, last_profiled_frame, tid) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
+            goto error;
+        }
+        // Update last_profiled_frame for next sample
+        uintptr_t lpf_addr =
+            *current_tstate + (uintptr_t)unwinder->debug_offsets.thread_state.last_profiled_frame;
+        if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
+                                              sizeof(uintptr_t), &frame_addr) < 0) {
+            PyErr_Clear();  // Non-fatal
+        }
+    } else {
+        // No caching - process entire frame chain with base_frame validation
+        if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
+                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
+            set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
+            goto error;
+        }
     }
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);

@@ -1607,6 +1607,7 @@ extern "C" {
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
     INIT_ID(c_stack), \
+    INIT_ID(cache_frames), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -1934,6 +1935,7 @@ extern "C" {
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
+    INIT_ID(opcodes), \
     INIT_ID(open), \
     INIT_ID(opener), \
     INIT_ID(operation), \
@@ -1990,6 +1992,7 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(recursive), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
@@ -2051,6 +2054,7 @@ extern "C" {
     INIT_ID(stacklevel), \
     INIT_ID(start), \
     INIT_ID(statement), \
+    INIT_ID(stats), \
     INIT_ID(status), \
     INIT_ID(stderr), \
     INIT_ID(stdin), \

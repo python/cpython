@@ -7,8 +7,10 @@ Pending removal in Python 3.20
 
   - :mod:`argparse`
   - :mod:`csv`
+  - :mod:`ctypes`
   - :mod:`!ctypes.macholib`
   - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+  - :mod:`http.server`
   - :mod:`imaplib`
   - :mod:`ipaddress`
   - :mod:`json`
@@ -21,6 +23,7 @@ Pending removal in Python 3.20
   - :mod:`tabnanny`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
+  - :mod:`wsgiref.simple_server`
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)

@@ -14,9 +14,12 @@ try:
         FlamegraphCollector,
     )
     from profiling.sampling.gecko_collector import GeckoCollector
+    from profiling.sampling.collector import extract_lineno, normalize_location
+    from profiling.sampling.opcode_utils import get_opcode_info, format_opcode
     from profiling.sampling.constants import (
         PROFILING_MODE_WALL,
         PROFILING_MODE_CPU,
+        DEFAULT_LOCATION,
     )
     from _remote_debugging import (
         THREAD_STATUS_HAS_GIL,
@@ -30,7 +33,7 @@ except ImportError:
 
 from test.support import captured_stdout, captured_stderr
 
-from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo
+from .mocks import MockFrameInfo, MockThreadInfo, MockInterpreterInfo, LocationInfo
 from .helpers import close_and_unlink
 
 
@@ -42,9 +45,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Test with empty strings
         frame = MockFrameInfo("", 0, "")
         self.assertEqual(frame.filename, "")
-        self.assertEqual(frame.lineno, 0)
+        self.assertEqual(frame.location.lineno, 0)
         self.assertEqual(frame.funcname, "")
-        self.assertIn("filename=''", repr(frame))
 
         # Test with unicode characters
         frame = MockFrameInfo("文件.py", 42, "函数名")
@@ -56,7 +58,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         long_funcname = "func_" + "x" * 1000
         frame = MockFrameInfo(long_filename, 999999, long_funcname)
         self.assertEqual(frame.filename, long_filename)
-        self.assertEqual(frame.lineno, 999999)
+        self.assertEqual(frame.location.lineno, 999999)
         self.assertEqual(frame.funcname, long_funcname)
 
     def test_pstats_collector_with_extreme_intervals_and_empty_data(self):
@@ -78,14 +80,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
         test_frames = [
             MockInterpreterInfo(
                 0,
-                [MockThreadInfo(None, [MockFrameInfo("file.py", 10, "func")])],
+                [MockThreadInfo(None, [MockFrameInfo("file.py", 10, "func", None)])],
             )
         ]
         collector.collect(test_frames)
         # Should still process the frames
         self.assertEqual(len(collector.result), 1)
 
-        # Test collecting duplicate frames in same sample
+        # Test collecting duplicate frames in same sample (recursive function)
         test_frames = [
             MockInterpreterInfo(
                 0,  # interpreter_id
@@ -94,7 +96,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                         1,
                         [
                             MockFrameInfo("file.py", 10, "func1"),
-                            MockFrameInfo("file.py", 10, "func1"),  # Duplicate
+                            MockFrameInfo("file.py", 10, "func1"),  # Duplicate (recursion)
                         ],
                     )
                 ],
@@ -102,9 +104,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector = PstatsCollector(sample_interval_usec=1000)
         collector.collect(test_frames)
-        # Should count both occurrences
+        # Should count only once per sample to avoid over-counting recursive functions
         self.assertEqual(
-            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 2
+            collector.result[("file.py", 10, "func1")]["cumulative_calls"], 1
         )
 
     def test_pstats_collector_single_frame_stacks(self):
@@ -193,7 +195,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Test with single frame stack
         test_frames = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [("file.py", 10, "func")])]
+                0, [MockThreadInfo(1, [MockFrameInfo("file.py", 10, "func")])]
             )
         ]
         collector.collect(test_frames)
@@ -204,7 +206,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(count, 1)
 
         # Test with very deep stack
-        deep_stack = [(f"file{i}.py", i, f"func{i}") for i in range(100)]
+        deep_stack = [MockFrameInfo(f"file{i}.py", i, f"func{i}") for i in range(100)]
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
         collector = CollapsedStackCollector(1000)
         collector.collect(test_frames)
@@ -317,7 +319,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
@@ -343,7 +345,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
@@ -353,14 +355,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
         ]  # Same stack
         test_frames3 = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [("other.py", 5, "other_func")])]
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
             )
         ]
 
@@ -406,7 +408,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
@@ -454,7 +456,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
@@ -464,14 +466,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
         ]  # Same stack
         test_frames3 = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [("other.py", 5, "other_func")])]
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
             )
         ]
 
@@ -494,7 +496,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Should be valid HTML
         self.assertIn("<!doctype html>", content.lower())
         self.assertIn("<html", content)
-        self.assertIn("Python Performance Flamegraph", content)
+        self.assertIn("Tachyon Profiler - Flamegraph", content)
         self.assertIn("d3-flame-graph", content)
 
         # Should contain the data
@@ -518,7 +520,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 [
                     MockThreadInfo(
                         1,
-                        [("file.py", 10, "func1"), ("file.py", 20, "func2")],
+                        [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")],
                     )
                 ],
             )
@@ -608,7 +610,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
@@ -618,14 +620,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 0,
                 [
                     MockThreadInfo(
-                        1, [("file.py", 10, "func1"), ("file.py", 20, "func2")]
+                        1, [MockFrameInfo("file.py", 10, "func1"), MockFrameInfo("file.py", 20, "func2")]
                     )
                 ],
             )
         ]  # Same stack
         test_frames3 = [
             MockInterpreterInfo(
-                0, [MockThreadInfo(1, [("other.py", 5, "other_func")])]
+                0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])]
             )
         ]
 
@@ -683,7 +685,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     [
                         MockThreadInfo(
                             1,
-                            [("test.py", 10, "python_func")],
+                            [MockFrameInfo("test.py", 10, "python_func")],
                             status=HAS_GIL_ON_CPU,
                         )
                     ],
@@ -698,7 +700,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     [
                         MockThreadInfo(
                             1,
-                            [("test.py", 15, "wait_func")],
+                            [MockFrameInfo("test.py", 15, "wait_func")],
                             status=WAITING_FOR_GIL,
                         )
                     ],
@@ -713,7 +715,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     [
                         MockThreadInfo(
                             1,
-                            [("test.py", 20, "python_func2")],
+                            [MockFrameInfo("test.py", 20, "python_func2")],
                             status=HAS_GIL_ON_CPU,
                         )
                     ],
@@ -728,7 +730,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     [
                         MockThreadInfo(
                             1,
-                            [("native.c", 100, "native_func")],
+                            [MockFrameInfo("native.c", 100, "native_func")],
                             status=NO_GIL_ON_CPU,
                         )
                     ],
@@ -902,8 +904,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
-                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
                 ],
             )
         ]
@@ -917,9 +919,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_GIL_REQUESTED),
-                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_HAS_GIL),
-                    MockThreadInfo(3, [("c.py", 3, "func_c")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_GIL_REQUESTED),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(3, [MockFrameInfo("c.py", 3, "func_c")], status=THREAD_STATUS_ON_CPU),
                 ],
             )
         ]
@@ -936,7 +938,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("~", 0, "<GC>")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(1, [MockFrameInfo("~", 0, "<GC>")], status=THREAD_STATUS_HAS_GIL),
                 ],
             )
         ]
@@ -960,9 +962,9 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
-                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
-                    MockThreadInfo(3, [("c.py", 3, "func_c")], status=THREAD_STATUS_GIL_REQUESTED),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(3, [MockFrameInfo("c.py", 3, "func_c")], status=THREAD_STATUS_GIL_REQUESTED),
                 ],
             )
         ]
@@ -992,7 +994,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
                 ],
             )
         ]
@@ -1012,7 +1014,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 MockInterpreterInfo(
                     0,
                     [
-                        MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                        MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
                     ],
                 )
             ]
@@ -1023,7 +1025,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                 MockInterpreterInfo(
                     0,
                     [
-                        MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_ON_CPU),
+                        MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_ON_CPU),
                     ],
                 )
             ]
@@ -1046,7 +1048,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func")], status=THREAD_STATUS_HAS_GIL),
                 ],
             )
         ]
@@ -1085,8 +1087,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
             MockInterpreterInfo(
                 0,
                 [
-                    MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
-                    MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                    MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                    MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
                 ],
             )
         ]
@@ -1142,13 +1144,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # First 5 samples: both threads, thread 1 has GC in 2
         for i in range(5):
             has_gc = i < 2  # First 2 samples have GC for thread 1
-            frames_1 = [("~", 0, "<GC>")] if has_gc else [("a.py", 1, "func_a")]
+            frames_1 = [MockFrameInfo("~", 0, "<GC>")] if has_gc else [MockFrameInfo("a.py", 1, "func_a")]
             stack_frames = [
                 MockInterpreterInfo(
                     0,
                     [
                         MockThreadInfo(1, frames_1, status=THREAD_STATUS_HAS_GIL),
-                        MockThreadInfo(2, [("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
+                        MockThreadInfo(2, [MockFrameInfo("b.py", 2, "func_b")], status=THREAD_STATUS_ON_CPU),
                     ],
                 )
             ]
@@ -1162,8 +1164,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     MockInterpreterInfo(
                         0,
                         [
-                            MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
-                            MockThreadInfo(2, [("~", 0, "<GC>")], status=THREAD_STATUS_ON_CPU),
+                            MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                            MockThreadInfo(2, [MockFrameInfo("~", 0, "<GC>")], status=THREAD_STATUS_ON_CPU),
                         ],
                     )
                 ]
@@ -1173,7 +1175,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
                     MockInterpreterInfo(
                         0,
                         [
-                            MockThreadInfo(1, [("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
+                            MockThreadInfo(1, [MockFrameInfo("a.py", 1, "func_a")], status=THREAD_STATUS_HAS_GIL),
                         ],
                     )
                 ]
@@ -1201,3 +1203,625 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(collector.per_thread_stats[2]["gc_samples"], 1)
         self.assertEqual(collector.per_thread_stats[2]["total"], 6)
         self.assertAlmostEqual(per_thread_stats[2]["gc_pct"], 10.0, places=1)
+
+
+class TestRecursiveFunctionHandling(unittest.TestCase):
+    """Tests for correct handling of recursive functions in cumulative stats."""
+
+    def test_pstats_collector_recursive_function_single_sample(self):
+        """Test that recursive functions are counted once per sample, not per occurrence."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Simulate a recursive function appearing 5 times in one sample
+        recursive_frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(recursive_frames)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 1 cumulative call (present in 1 sample), not 5
+        self.assertEqual(collector.result[location]["cumulative_calls"], 1)
+        # Direct calls should be 1 (top of stack)
+        self.assertEqual(collector.result[location]["direct_calls"], 1)
+
+    def test_pstats_collector_recursive_function_multiple_samples(self):
+        """Test cumulative counting across multiple samples with recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Sample 1: recursive function at depth 3
+        sample1 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 2: recursive function at depth 2
+        sample2 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+        # Sample 3: recursive function at depth 4
+        sample3 = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                            MockFrameInfo("test.py", 10, "recursive_func"),
+                        ],
+                    )
+                ],
+            )
+        ]
+
+        collector.collect(sample1)
+        collector.collect(sample2)
+        collector.collect(sample3)
+
+        location = ("test.py", 10, "recursive_func")
+        # Should count as 3 cumulative calls (present in 3 samples)
+        # Not 3+2+4=9 which would be the buggy behavior
+        self.assertEqual(collector.result[location]["cumulative_calls"], 3)
+        self.assertEqual(collector.result[location]["direct_calls"], 3)
+
+    def test_pstats_collector_mixed_recursive_and_nonrecursive(self):
+        """Test a call stack with both recursive and non-recursive functions."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Stack: main -> foo (recursive x3) -> bar
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 50, "bar"),       # top of stack
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 20, "foo"),      # recursive
+                            MockFrameInfo("test.py", 10, "main"),     # bottom
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # bar: 1 cumulative (in stack), 1 direct (top)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 50, "bar")]["direct_calls"], 1)
+
+        # foo: 1 cumulative (counted once despite 3 occurrences), 0 direct
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 20, "foo")]["direct_calls"], 0)
+
+        # main: 1 cumulative, 0 direct
+        self.assertEqual(collector.result[("test.py", 10, "main")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "main")]["direct_calls"], 0)
+
+    def test_pstats_collector_cumulative_percentage_cannot_exceed_100(self):
+        """Test that cumulative percentage stays <= 100% even with deep recursion."""
+        collector = PstatsCollector(sample_interval_usec=1000000)  # 1 second for easy math
+
+        # Collect 10 samples, each with recursive function at depth 100
+        for _ in range(10):
+            frames = [
+                MockInterpreterInfo(
+                    0,
+                    [
+                        MockThreadInfo(
+                            1,
+                            [MockFrameInfo("test.py", 10, "deep_recursive")] * 100,
+                        )
+                    ],
+                )
+            ]
+            collector.collect(frames)
+
+        location = ("test.py", 10, "deep_recursive")
+        # Cumulative calls should be 10 (number of samples), not 1000
+        self.assertEqual(collector.result[location]["cumulative_calls"], 10)
+
+        # Verify stats calculation gives correct percentage
+        collector.create_stats()
+        stats = collector.stats[location]
+        # stats format: (direct_calls, cumulative_calls, total_time, cumulative_time, callers)
+        cumulative_calls = stats[1]
+        self.assertEqual(cumulative_calls, 10)
+
+    def test_pstats_collector_different_lines_same_function_counted_separately(self):
+        """Test that different line numbers in same function are tracked separately."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Function with multiple line numbers (e.g., different call sites within recursion)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("test.py", 15, "func"),  # line 15
+                            MockFrameInfo("test.py", 12, "func"),  # line 12
+                            MockFrameInfo("test.py", 15, "func"),  # line 15 again
+                            MockFrameInfo("test.py", 10, "func"),  # line 10
+                        ],
+                    )
+                ],
+            )
+        ]
+        collector.collect(frames)
+
+        # Each unique (file, line, func) should be counted once
+        self.assertEqual(collector.result[("test.py", 15, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 12, "func")]["cumulative_calls"], 1)
+        self.assertEqual(collector.result[("test.py", 10, "func")]["cumulative_calls"], 1)
+
+
+class TestLocationHelpers(unittest.TestCase):
+    """Tests for location handling helper functions."""
+
+    def test_extract_lineno_from_location_info(self):
+        """Test extracting lineno from LocationInfo namedtuple."""
+        loc = LocationInfo(42, 45, 0, 10)
+        self.assertEqual(extract_lineno(loc), 42)
+
+    def test_extract_lineno_from_tuple(self):
+        """Test extracting lineno from plain tuple."""
+        loc = (100, 105, 5, 20)
+        self.assertEqual(extract_lineno(loc), 100)
+
+    def test_extract_lineno_from_none(self):
+        """Test extracting lineno from None (synthetic frames)."""
+        self.assertEqual(extract_lineno(None), 0)
+
+    def test_normalize_location_with_location_info(self):
+        """Test normalize_location passes through LocationInfo."""
+        loc = LocationInfo(10, 15, 0, 5)
+        result = normalize_location(loc)
+        self.assertEqual(result, loc)
+
+    def test_normalize_location_with_tuple(self):
+        """Test normalize_location passes through tuple."""
+        loc = (10, 15, 0, 5)
+        result = normalize_location(loc)
+        self.assertEqual(result, loc)
+
+    def test_normalize_location_with_none(self):
+        """Test normalize_location returns DEFAULT_LOCATION for None."""
+        result = normalize_location(None)
+        self.assertEqual(result, DEFAULT_LOCATION)
+        self.assertEqual(result, (0, 0, -1, -1))
+
+
+class TestOpcodeFormatting(unittest.TestCase):
+    """Tests for opcode formatting utilities."""
+
+    def test_get_opcode_info_standard_opcode(self):
+        """Test get_opcode_info for a standard opcode."""
+        import opcode
+        # LOAD_CONST is a standard opcode
+        load_const = opcode.opmap.get('LOAD_CONST')
+        if load_const is not None:
+            info = get_opcode_info(load_const)
+            self.assertEqual(info['opname'], 'LOAD_CONST')
+            self.assertEqual(info['base_opname'], 'LOAD_CONST')
+            self.assertFalse(info['is_specialized'])
+
+    def test_get_opcode_info_unknown_opcode(self):
+        """Test get_opcode_info for an unknown opcode."""
+        info = get_opcode_info(999)
+        self.assertEqual(info['opname'], '<999>')
+        self.assertEqual(info['base_opname'], '<999>')
+        self.assertFalse(info['is_specialized'])
+
+    def test_format_opcode_standard(self):
+        """Test format_opcode for a standard opcode."""
+        import opcode
+        load_const = opcode.opmap.get('LOAD_CONST')
+        if load_const is not None:
+            formatted = format_opcode(load_const)
+            self.assertEqual(formatted, 'LOAD_CONST')
+
+    def test_format_opcode_specialized(self):
+        """Test format_opcode for a specialized opcode shows base in parens."""
+        import opcode
+        if not hasattr(opcode, '_specialized_opmap'):
+            self.skipTest("No specialized opcodes in this Python version")
+        if not hasattr(opcode, '_specializations'):
+            self.skipTest("No specialization info in this Python version")
+
+        # Find any specialized opcode to test
+        for base_name, variants in opcode._specializations.items():
+            if not variants:
+                continue
+            variant_name = variants[0]
+            variant_opcode = opcode._specialized_opmap.get(variant_name)
+            if variant_opcode is None:
+                continue
+            formatted = format_opcode(variant_opcode)
+            # Should show: VARIANT_NAME (BASE_NAME)
+            self.assertIn(variant_name, formatted)
+            self.assertIn(f'({base_name})', formatted)
+            return
+
+        self.skipTest("No specialized opcodes found")
+
+    def test_format_opcode_unknown(self):
+        """Test format_opcode for an unknown opcode."""
+        formatted = format_opcode(999)
+        self.assertEqual(formatted, '<999>')
+
+
+class TestLocationInCollectors(unittest.TestCase):
+    """Tests for location tuple handling in each collector."""
+
+    def _make_frames_with_location(self, location, opcode=None):
+        """Create test frames with a specific location."""
+        frame = MockFrameInfo("test.py", 0, "test_func", opcode)
+        # Override the location
+        frame.location = location
+        return [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+
+    def test_pstats_collector_with_location_info(self):
+        """Test PstatsCollector handles LocationInfo properly."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Frame with LocationInfo
+        frame = MockFrameInfo("test.py", 42, "my_function")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should extract lineno from location
+        key = ("test.py", 42, "my_function")
+        self.assertIn(key, collector.result)
+        self.assertEqual(collector.result[key]["direct_calls"], 1)
+
+    def test_pstats_collector_with_none_location(self):
+        """Test PstatsCollector handles None location (synthetic frames)."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Create frame with None location (like GC frame)
+        frame = MockFrameInfo("~", 0, "<GC>")
+        frame.location = None  # Synthetic frame has no location
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should use lineno=0 for None location
+        key = ("~", 0, "<GC>")
+        self.assertIn(key, collector.result)
+
+    def test_collapsed_stack_with_location_info(self):
+        """Test CollapsedStackCollector handles LocationInfo properly."""
+        collector = CollapsedStackCollector(1000)
+
+        frame1 = MockFrameInfo("main.py", 10, "main")
+        frame2 = MockFrameInfo("utils.py", 25, "helper")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1, frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Check that linenos were extracted correctly
+        self.assertEqual(len(collector.stack_counter), 1)
+        (path, _), count = list(collector.stack_counter.items())[0]
+        # Reversed order: helper at top, main at bottom
+        self.assertEqual(path[0], ("utils.py", 25, "helper"))
+        self.assertEqual(path[1], ("main.py", 10, "main"))
+
+    def test_flamegraph_collector_with_location_info(self):
+        """Test FlamegraphCollector handles LocationInfo properly."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+
+        frame = MockFrameInfo("app.py", 100, "process_data")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        data = collector._convert_to_flamegraph_format()
+        # Verify the function name includes lineno from location
+        strings = data.get("strings", [])
+        name_found = any("process_data" in s and "100" in s for s in strings if isinstance(s, str))
+        self.assertTrue(name_found, f"Expected to find 'process_data' with line 100 in {strings}")
+
+    def test_gecko_collector_with_location_info(self):
+        """Test GeckoCollector handles LocationInfo properly."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+
+        frame = MockFrameInfo("server.py", 50, "handle_request")
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        profile = collector._build_profile()
+        # Check that the function was recorded
+        self.assertEqual(len(profile["threads"]), 1)
+        thread_data = profile["threads"][0]
+        string_array = profile["shared"]["stringArray"]
+
+        # Verify function name is in string table
+        self.assertIn("handle_request", string_array)
+
+
+class TestOpcodeHandling(unittest.TestCase):
+    """Tests for opcode field handling in collectors."""
+
+    def test_frame_with_opcode(self):
+        """Test MockFrameInfo properly stores opcode."""
+        frame = MockFrameInfo("test.py", 10, "my_func", opcode=90)
+        self.assertEqual(frame.opcode, 90)
+        # Verify tuple representation includes opcode
+        self.assertEqual(frame[3], 90)
+        self.assertEqual(len(frame), 4)
+
+    def test_frame_without_opcode(self):
+        """Test MockFrameInfo with no opcode defaults to None."""
+        frame = MockFrameInfo("test.py", 10, "my_func")
+        self.assertIsNone(frame.opcode)
+        self.assertIsNone(frame[3])
+
+    def test_collectors_ignore_opcode_for_key_generation(self):
+        """Test that collectors use (filename, lineno, funcname) as key, not opcode."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+
+        # Same function, different opcodes
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+
+        collector.collect(frames1)
+        collector.collect(frames2)
+
+        # Should be counted as same function (opcode not in key)
+        key = ("test.py", 10, "func")
+        self.assertIn(key, collector.result)
+        self.assertEqual(collector.result[key]["direct_calls"], 2)
+
+
+class TestGeckoOpcodeMarkers(unittest.TestCase):
+    """Tests for GeckoCollector opcode interval markers."""
+
+    def test_gecko_collector_opcodes_disabled_by_default(self):
+        """Test that opcode tracking is disabled by default."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+        self.assertFalse(collector.opcodes_enabled)
+
+    def test_gecko_collector_opcodes_enabled(self):
+        """Test that opcode tracking can be enabled."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+        self.assertTrue(collector.opcodes_enabled)
+
+    def test_gecko_opcode_state_tracking(self):
+        """Test that GeckoCollector tracks opcode state changes."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+
+        # First sample with opcode 90 (RAISE_VARARGS)
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        # Should start tracking this opcode state
+        self.assertIn(1, collector.opcode_state)
+        state = collector.opcode_state[1]
+        self.assertEqual(state[0], 90)  # opcode
+        self.assertEqual(state[1], 10)  # lineno
+        self.assertEqual(state[3], "func")  # funcname
+
+    def test_gecko_opcode_state_change_emits_marker(self):
+        """Test that opcode state change emits an interval marker."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+
+        # First sample: opcode 90
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        # Second sample: different opcode 100
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames2)
+
+        # Should have emitted a marker for the first opcode
+        thread_data = collector.threads[1]
+        markers = thread_data["markers"]
+        # At least one marker should have been added
+        self.assertGreater(len(markers["name"]), 0)
+
+    def test_gecko_opcode_markers_not_emitted_when_disabled(self):
+        """Test that no opcode markers when opcodes=False."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=False)
+
+        frame1 = MockFrameInfo("test.py", 10, "func", opcode=90)
+        frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame1], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames1)
+
+        frame2 = MockFrameInfo("test.py", 10, "func", opcode=100)
+        frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame2], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames2)
+
+        # opcode_state should not be tracked
+        self.assertEqual(len(collector.opcode_state), 0)
+
+    def test_gecko_opcode_with_none_opcode(self):
+        """Test that None opcode doesn't cause issues."""
+        collector = GeckoCollector(sample_interval_usec=1000, opcodes=True)
+
+        # Frame with no opcode (None)
+        frame = MockFrameInfo("test.py", 10, "func", opcode=None)
+        frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [frame], status=THREAD_STATUS_HAS_GIL)]
+            )
+        ]
+        collector.collect(frames)
+
+        # Should track the state but opcode is None
+        self.assertIn(1, collector.opcode_state)
+        self.assertIsNone(collector.opcode_state[1][0])
+
+
+class TestCollectorFrameFormat(unittest.TestCase):
+    """Tests verifying all collectors handle the 4-element frame format."""
+
+    def _make_sample_frames(self):
+        """Create sample frames with full format: (filename, location, funcname, opcode)."""
+        return [
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [
+                            MockFrameInfo("app.py", 100, "main", opcode=90),
+                            MockFrameInfo("utils.py", 50, "helper", opcode=100),
+                            MockFrameInfo("lib.py", 25, "process", opcode=None),
+                        ],
+                        status=THREAD_STATUS_HAS_GIL,
+                    )
+                ],
+            )
+        ]
+
+    def test_pstats_collector_frame_format(self):
+        """Test PstatsCollector with 4-element frame format."""
+        collector = PstatsCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        # All three functions should be recorded
+        self.assertEqual(len(collector.result), 3)
+        self.assertIn(("app.py", 100, "main"), collector.result)
+        self.assertIn(("utils.py", 50, "helper"), collector.result)
+        self.assertIn(("lib.py", 25, "process"), collector.result)
+
+    def test_collapsed_stack_frame_format(self):
+        """Test CollapsedStackCollector with 4-element frame format."""
+        collector = CollapsedStackCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        self.assertEqual(len(collector.stack_counter), 1)
+        (path, _), _ = list(collector.stack_counter.items())[0]
+        # 3 frames in the path (reversed order)
+        self.assertEqual(len(path), 3)
+
+    def test_flamegraph_collector_frame_format(self):
+        """Test FlamegraphCollector with 4-element frame format."""
+        collector = FlamegraphCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        data = collector._convert_to_flamegraph_format()
+        # Should have processed the frames
+        self.assertIn("children", data)
+
+    def test_gecko_collector_frame_format(self):
+        """Test GeckoCollector with 4-element frame format."""
+        collector = GeckoCollector(sample_interval_usec=1000)
+        collector.collect(self._make_sample_frames())
+
+        profile = collector._build_profile()
+        # Should have one thread with the frames
+        self.assertEqual(len(profile["threads"]), 1)
+        thread = profile["threads"][0]
+        # Should have recorded 3 functions
+        self.assertEqual(thread["funcTable"]["length"], 3)
