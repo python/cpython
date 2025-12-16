@@ -2,13 +2,14 @@
 
 import copy
 import pickle
+import time
 import io
 from test import support
 import unittest
 
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Attr, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, Element, parseString
 from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
@@ -172,6 +173,31 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(dom.documentElement.childNodes[-1].nodeName, "#comment")
         self.assertEqual(dom.documentElement.childNodes[-1].data, "Hello")
         dom.unlink()
+
+    def testAppendChildNoQuadraticComplexity(self):
+        impl = getDOMImplementation()
+
+        newdoc = impl.createDocument(None, "some_tag", None)
+        top_element = newdoc.documentElement
+        children = [newdoc.createElement(f"child-{i}") for i in range(1, 2 ** 15 + 1)]
+        element = top_element
+
+        start = time.time()
+        for child in children:
+            element.appendChild(child)
+            element = child
+        end = time.time()
+
+        # This example used to take at least 30 seconds.
+        self.assertLess(end - start, 1)
+
+    def testSetAttributeNodeWithoutOwnerDocument(self):
+        # regression test for gh-142754
+        elem = Element("test")
+        attr = Attr("id")
+        attr.value = "test-id"
+        elem.setAttributeNode(attr)
+        self.assertEqual(elem.getAttribute("id"), "test-id")
 
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()

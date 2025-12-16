@@ -134,8 +134,8 @@
 #  define LABEL(name) name:
 #else
 #  define TARGET(op) case op: TARGET_##op:
-#  define DISPATCH_GOTO() goto dispatch_opcode
-#  define DISPATCH_GOTO_NON_TRACING() goto dispatch_opcode
+#  define DISPATCH_GOTO() dispatch_code = opcode | tracing_mode ; goto dispatch_opcode
+#  define DISPATCH_GOTO_NON_TRACING() dispatch_code = opcode; goto dispatch_opcode
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
@@ -148,9 +148,9 @@
 #  define LEAVE_TRACING() \
     DISPATCH_TABLE_VAR = DISPATCH_TABLE;
 #else
-#  define IS_JIT_TRACING() (0)
-#  define ENTER_TRACING()
-#  define LEAVE_TRACING()
+#  define IS_JIT_TRACING() (tracing_mode != 0)
+#  define ENTER_TRACING() tracing_mode = 255
+#  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
@@ -250,6 +250,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 #define WITHIN_STACK_BOUNDS() \
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+// This allows temporary stack "overflows", provided it's all in the cache at any point of time.
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#else
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#endif
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -443,8 +451,12 @@ do {                                                   \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
-#define CURRENT_OPERAND0() (next_uop[-1].operand0)
-#define CURRENT_OPERAND1() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_64() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_64() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_32() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_32() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_16() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_16() (next_uop[-1].operand1)
 #define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
@@ -458,13 +470,21 @@ do {                                                   \
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define SET_CURRENT_CACHED_VALUES(N) current_cached_values = (N)
+#define CHECK_CURRENT_CACHED_VALUES(N) assert(current_cached_values == (N))
+#else
+#define SET_CURRENT_CACHED_VALUES(N) ((void)0)
+#define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
+#endif
 
 static inline int
 check_periodics(PyThreadState *tstate) {

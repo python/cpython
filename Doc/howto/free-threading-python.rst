@@ -11,9 +11,7 @@ available processing power by running threads in parallel on available CPU cores
 While not all software will benefit from this automatically, programs
 designed with threading in mind will run faster on multi-core hardware.
 
-The free-threaded mode is working and continues to be improved, but
-there is some additional overhead in single-threaded workloads compared
-to the regular build. Additionally, third-party packages, in particular ones
+Some third-party packages, in particular ones
 with an :term:`extension module`, may not be ready for use in a
 free-threaded build, and will re-enable the :term:`GIL`.
 
@@ -101,63 +99,42 @@ This section describes known limitations of the free-threaded CPython build.
 Immortalization
 ---------------
 
-The free-threaded build of the 3.13 release makes some objects :term:`immortal`.
+In the free-threaded build, some objects are :term:`immortal`.
 Immortal objects are not deallocated and have reference counts that are
 never modified.  This is done to avoid reference count contention that would
 prevent efficient multi-threaded scaling.
 
-An object will be made immortal when a new thread is started for the first time
-after the main thread is running.  The following objects are immortalized:
+As of the 3.14 release, immortalization is limited to:
 
-* :ref:`function <user-defined-funcs>` objects declared at the module level
-* :ref:`method <instance-methods>` descriptors
-* :ref:`code <code-objects>` objects
-* :term:`module` objects and their dictionaries
-* :ref:`classes <classes>` (type objects)
-
-Because immortal objects are never deallocated, applications that create many
-objects of these types may see increased memory usage under Python 3.13.  This
-has been addressed in the 3.14 release, where the aforementioned objects use
-deferred reference counting to avoid reference count contention.
-
-Additionally, numeric and string literals in the code as well as strings
-returned by :func:`sys.intern` are also immortalized in the 3.13 release.  This
-behavior is part of the 3.14 release as well and it is expected to remain in
-future free-threaded builds.
+* Code constants: numeric literals, string literals, and tuple literals
+  composed of other constants.
+* Strings interned by :func:`sys.intern`.
 
 
 Frame objects
 -------------
 
-It is not safe to access :ref:`frame <frame-objects>` objects from other
-threads and doing so may cause your program to crash .  This means that
-:func:`sys._current_frames` is generally not safe to use in a free-threaded
-build.  Functions like :func:`inspect.currentframe` and :func:`sys._getframe`
-are generally safe as long as the resulting frame object is not passed to
-another thread.
+It is not safe to access :attr:`frame.f_locals` from a :ref:`frame <frame-objects>`
+object if that frame is currently executing in another thread, and doing so may
+crash the interpreter.
+
 
 Iterators
 ---------
 
-Sharing the same iterator object between multiple threads is generally not
-safe and threads may see duplicate or missing elements when iterating or crash
-the interpreter.
+It is generally not thread-safe to access the same iterator object from
+multiple threads concurrently, and threads may see duplicate or missing
+elements.
 
 
 Single-threaded performance
 ---------------------------
 
 The free-threaded build has additional overhead when executing Python code
-compared to the default GIL-enabled build.  In 3.13, this overhead is about
-40% on the `pyperformance <https://pyperformance.readthedocs.io/>`_ suite.
-Programs that spend most of their time in C extensions or I/O will see
-less of an impact.  The largest impact is because the specializing adaptive
-interpreter (:pep:`659`) is disabled in the free-threaded build.
-
-The specializing adaptive interpreter has been re-enabled in a thread-safe way
-in the 3.14 release.  The performance penalty on single-threaded code in
-free-threaded mode is now roughly 5-10%, depending on the platform and C
-compiler used.
+compared to the default GIL-enabled build.  The amount of overhead depends
+on the workload and hardware.  On the pyperformance benchmark suite, the
+average overhead ranges from about 1% on macOS aarch64 to 8% on x86-64 Linux
+systems.
 
 
 Behavioral changes

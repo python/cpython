@@ -914,6 +914,10 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             return -1;
     }
 
+    /* Should be caused by first init or the resize to 0. */
+    assert(self->ob_bytes_object == Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_BYTES));
+    assert(self->ob_exports == 0);
+
     /* Make a quick exit if no first argument */
     if (arg == NULL) {
         if (encoding != NULL || errors != NULL) {
@@ -935,9 +939,20 @@ bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
             return -1;
         }
         encoded = PyUnicode_AsEncodedString(arg, encoding, errors);
-        if (encoded == NULL)
+        if (encoded == NULL) {
             return -1;
+        }
         assert(PyBytes_Check(encoded));
+
+        /* Most encodes return a new unique bytes, just use it as buffer. */
+        if (_PyObject_IsUniquelyReferenced(encoded)
+            && PyBytes_CheckExact(encoded))
+        {
+            Py_ssize_t size = Py_SIZE(encoded);
+            self->ob_bytes_object = encoded;
+            bytearray_reinit_from_bytes(self, size, size);
+            return 0;
+        }
         new = bytearray_iconcat((PyObject*)self, encoded);
         Py_DECREF(encoded);
         if (new == NULL)
@@ -1547,8 +1562,20 @@ bytearray_take_bytes_impl(PyByteArrayObject *self, PyObject *n)
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    // Copy remaining bytes to a new bytes.
     Py_ssize_t remaining_length = size - to_take;
+    // optimization: If taking less than leaving, just copy the small to_take
+    // portion out and move ob_start.
+    if (to_take < remaining_length) {
+        PyObject *ret = PyBytes_FromStringAndSize(self->ob_start, to_take);
+        if (ret == NULL) {
+            return NULL;
+        }
+        self->ob_start += to_take;
+        Py_SET_SIZE(self, remaining_length);
+        return ret;
+    }
+
+    // Copy remaining bytes to a new bytes.
     PyObject *remaining = PyBytes_FromStringAndSize(self->ob_start + to_take,
                                                     remaining_length);
     if (remaining == NULL) {

@@ -171,6 +171,17 @@ complete listing.
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
 
+.. c:macro:: Py_LOCAL(type)
+
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
+
+.. c:macro:: Py_LOCAL_INLINE(type)
+
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
+
 .. c:macro:: Py_MAX(x, y)
 
    Return the maximum value between ``x`` and ``y``.
@@ -182,6 +193,14 @@ complete listing.
    Return the size of a structure (``type``) ``member`` in bytes.
 
    .. versionadded:: 3.6
+
+.. c:macro:: Py_MEMCPY(dest, src, n)
+
+   This is a :term:`soft deprecated` alias to :c:func:`!memcpy`.
+   Use :c:func:`!memcpy` directly instead.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
 
 .. c:macro:: Py_MIN(x, y)
 
@@ -302,6 +321,19 @@ complete listing.
 
       PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
                                         "to the tropics and subtropics of the Eastern Hemisphere.");
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
 
 
 .. _api-objects:

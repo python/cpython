@@ -478,9 +478,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
         if (PyDict_SetItemString(dict, "__file__", filename) < 0) {
             goto done;
         }
-        if (PyDict_SetItemString(dict, "__cached__", Py_None) < 0) {
-            goto done;
-        }
         set_file_name = 1;
     }
 
@@ -533,9 +530,6 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
   done:
     if (set_file_name) {
         if (PyDict_PopString(dict, "__file__", NULL) < 0) {
-            PyErr_Print();
-        }
-        if (PyDict_PopString(dict, "__cached__", NULL) < 0) {
             PyErr_Print();
         }
     }
@@ -1181,7 +1175,7 @@ fallback:
     }
     if (print_exception_recursive(&ctx, value) < 0) {
         PyErr_Clear();
-        _PyObject_Dump(value);
+        PyUnstable_Object_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
     }
     Py_XDECREF(ctx.seen);
@@ -1199,14 +1193,14 @@ PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
     PyObject *file;
     if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
-        _PyObject_Dump(value);
+        PyUnstable_Object_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
-        _PyObject_Dump(exc);
+        PyUnstable_Object_Dump(exc);
         Py_DECREF(exc);
         return;
     }
     if (file == NULL) {
-        _PyObject_Dump(value);
+        PyUnstable_Object_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }

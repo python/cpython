@@ -1,1 +1,0 @@
-Replace :class:`io.IncrementalNewlineDecoder` with non incremental newline decoders in codebase where :meth:`!io.IncrementalNewlineDecoder.decode` was being called once.
