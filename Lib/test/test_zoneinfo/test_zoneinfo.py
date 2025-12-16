@@ -22,7 +22,6 @@ from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
-from test.support.hypothesis_helper import hypothesis
 from test.support.import_helper import import_module, CleanImport
 from test.support.script_helper import assert_python_ok
 
