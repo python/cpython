@@ -689,6 +689,7 @@ class Element(Node):
 
     def __init__(self, tagName, namespaceURI=EMPTY_NAMESPACE, prefix=None,
                  localName=None):
+        self.ownerDocument = None
         self.parentNode = None
         self.tagName = self.nodeName = tagName
         self.prefix = prefix
