@@ -1,0 +1,1 @@
+JIT: Fix segfault caused by not flushing the stack to memory at side exits.

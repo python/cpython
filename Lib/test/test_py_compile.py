@@ -207,16 +207,6 @@ class PyCompileTestsBase:
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, doraise=True, quiet=1)
 
-    def test_gitignore_created(self):
-        py_compile.compile(self.source_path)
-        self.assertTrue(os.path.exists(self.cache_path))
-        pyc = os.path.dirname(self.cache_path)
-        gitignore = os.path.join(pyc, '.gitignore')
-        self.assertTrue(os.path.exists(gitignore))
-        with open(gitignore, 'rb') as f:
-            text = f.read()
-        self.assertEqual(text, b'# Created by CPython\n*\n')
-
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,

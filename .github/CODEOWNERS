@@ -289,10 +289,10 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Micro-op / μop / Tier 2 Optimiser
-Python/optimizer.c            @markshannon
+Python/optimizer.c            @markshannon @Fidget-Spinner
 Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
 Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
-Python/optimizer_symbols.c    @markshannon @tomasr8
+Python/optimizer_symbols.c    @markshannon @tomasr8 @Fidget-Spinner
 
 # Parser, Lexer, and Grammar
 Grammar/python.gram           @pablogsal @lysnikolaou
