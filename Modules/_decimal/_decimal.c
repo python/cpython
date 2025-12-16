@@ -6040,8 +6040,9 @@ _decimal_exec(PyObject *m)
 
     /* DecimalTuple */
     ASSIGN_PTR(collections, PyImport_ImportModule("collections"));
-    obj = PyObject_CallMethod(collections, "namedtuple", "(ss)", "DecimalTuple",
-                              "sign digits exponent");
+    ASSIGN_PTR(obj, PyObject_CallMethod(collections, "namedtuple", "(ss)",
+                                        "DecimalTuple",
+                                        "sign digits exponent"));
     if (!PyType_Check(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "type is expected from namedtuple call");
