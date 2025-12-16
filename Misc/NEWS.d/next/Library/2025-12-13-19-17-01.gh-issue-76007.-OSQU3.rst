@@ -1,0 +1,2 @@
+Deprecate ``__version__`` from :mod:`wsgiref.simple_server`. Patch by Hugo
+van Kemenade.
