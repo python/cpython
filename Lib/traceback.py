@@ -14,6 +14,11 @@ import _colorize
 
 from contextlib import suppress
 
+try:
+    from _missing_stdlib_info import _MISSING_STDLIB_MODULE_MESSAGES
+except ImportError:
+    _MISSING_STDLIB_MODULE_MESSAGES = {}
+
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
@@ -1128,7 +1133,11 @@ class TracebackException:
         elif exc_type and issubclass(exc_type, ModuleNotFoundError):
             module_name = getattr(exc_value, "name", None)
             if module_name in sys.stdlib_module_names:
-                self._str = f"Standard library module '{module_name}' was not found"
+                message = _MISSING_STDLIB_MODULE_MESSAGES.get(
+                    module_name,
+                    f"Standard library module {module_name!r} was not found"
+                )
+                self._str = message
             elif sys.flags.no_site:
                 self._str += (". Site initialization is disabled, did you forget to "
                     + "add the site-packages directory to sys.path "
@@ -1340,6 +1349,15 @@ class TracebackException:
         if len(error_code) > 1024:
             return
 
+        # If the original code doesn't raise SyntaxError, we can't validate
+        # that a keyword replacement actually fixes anything
+        try:
+            codeop.compile_command(error_code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+        except SyntaxError:
+            pass  # Good - the original code has a syntax error we might fix
+        else:
+            return  # Original code compiles or is incomplete - can't validate fixes
+
         error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
         tokens_left_to_process = 10
@@ -1455,10 +1473,11 @@ class TracebackException:
                 # Convert 1-based column offset to 0-based index into stripped text
                 colno = offset - 1 - spaces
                 end_colno = end_offset - 1 - spaces
-                caretspace = ' '
                 if colno >= 0:
-                    # non-space whitespace (likes tabs) must be kept for alignment
-                    caretspace = ((c if c.isspace() else ' ') for c in ltext[:colno])
+                    # Calculate display width to account for wide characters
+                    dp_colno = _display_width(ltext, colno)
+                    highlighted = ltext[colno:end_colno]
+                    caret_count = _display_width(highlighted) if highlighted else (end_colno - colno)
                     start_color = end_color = ""
                     if colorize:
                         # colorize from colno to end_colno
@@ -1471,9 +1490,9 @@ class TracebackException:
                         end_color = theme.reset
                     yield '    {}\n'.format(ltext)
                     yield '    {}{}{}{}\n'.format(
-                        "".join(caretspace),
+                        ' ' * dp_colno,
                         start_color,
-                        ('^' * (end_colno - colno)),
+                        '^' * caret_count,
                         end_color,
                     )
                 else:

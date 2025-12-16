@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -31,15 +32,15 @@ def select_simulator_device(platform):
     json_data = json.loads(raw_json)
 
     if platform == "iOS":
-        # Any iOS device will do; we'll look for "SE" devices - but the name isn't
-        # consistent over time. Older Xcode versions will use "iPhone SE (Nth
-        # generation)"; As of 2025, they've started using "iPhone 16e".
+        # Any iOS device will do; we'll look for "SE" devices - but the name
+        # isn't consistent over time. Older Xcode versions will use "iPhone SE
+        # (Nth generation)"; As of 2025, they've started using "iPhone 16e".
         #
-        # When Xcode is updated after a new release, new devices will be available
-        # and old ones will be dropped from the set available on the latest iOS
-        # version. Select the one with the highest minimum runtime version - this
-        # is an indicator of the "newest" released device, which should always be
-        # supported on the "most recent" iOS version.
+        # When Xcode is updated after a new release, new devices will be
+        # available and old ones will be dropped from the set available on the
+        # latest iOS version. Select the one with the highest minimum runtime
+        # version - this is an indicator of the "newest" released device, which
+        # should always be supported on the "most recent" iOS version.
         se_simulators = sorted(
             (devicetype["minRuntimeVersion"], devicetype["name"])
             for devicetype in json_data["devicetypes"]
@@ -252,7 +253,7 @@ def update_test_plan(testbed_path, platform, args):
         test_plan = json.load(f)
 
     test_plan["defaultOptions"]["commandLineArgumentEntries"] = [
-        {"argument": arg} for arg in args
+        {"argument": shlex.quote(arg)} for arg in args
     ]
 
     with test_plan_path.open("w", encoding="utf-8") as f:
@@ -294,7 +295,8 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Manages the process of testing an Apple Python project through Xcode."
+            "Manages the process of testing an Apple Python project "
+            "through Xcode."
         ),
     )
 
@@ -335,7 +337,10 @@ def main():
 
     run = subcommands.add_parser(
         "run",
-        usage="%(prog)s [-h] [--simulator SIMULATOR] -- <test arg> [<test arg> ...]",
+        usage=(
+            "%(prog)s [-h] [--simulator SIMULATOR] -- "
+            "<test arg> [<test arg> ...]"
+        ),
         description=(
             "Run a testbed project. The arguments provided after `--` will be "
             "passed to the running iOS process as if they were arguments to "
@@ -396,9 +401,9 @@ def main():
                 / "bin"
             ).is_dir():
                 print(
-                    f"Testbed does not contain a compiled Python framework. Use "
-                    f"`python {sys.argv[0]} clone ...` to create a runnable "
-                    f"clone of this testbed."
+                    "Testbed does not contain a compiled Python framework. "
+                    f"Use `python {sys.argv[0]} clone ...` to create a "
+                    "runnable clone of this testbed."
                 )
                 sys.exit(20)
 
@@ -410,7 +415,8 @@ def main():
             )
         else:
             print(
-                f"Must specify test arguments (e.g., {sys.argv[0]} run -- test)"
+                "Must specify test arguments "
+                f"(e.g., {sys.argv[0]} run -- test)"
             )
             print()
             parser.print_help(sys.stderr)

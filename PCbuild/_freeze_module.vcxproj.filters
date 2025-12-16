@@ -367,6 +367,9 @@
     <ClCompile Include="..\Python\pystate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\pystats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>

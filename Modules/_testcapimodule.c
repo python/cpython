@@ -3359,6 +3359,10 @@ _testcapi_exec(PyObject *m)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
         return -1;
     }
@@ -3510,6 +3514,9 @@ _testcapi_exec(PyObject *m)
         return -1;
     }
     if (_PyTestCapi_Init_Function(m) < 0) {
+        return -1;
+    }
+    if (_PyTestCapi_Init_Module(m) < 0) {
         return -1;
     }
 

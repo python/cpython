@@ -813,7 +813,7 @@ Glossary
       :func:`itertools.groupby`.
 
       There are several ways to create a key function.  For example. the
-      :meth:`str.lower` method can serve as a key function for case insensitive
+      :meth:`str.casefold` method can serve as a key function for case insensitive
       sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
       :func:`operator.attrgetter`, :func:`operator.itemgetter`, and
@@ -1024,6 +1024,15 @@ Glossary
       optimized in this fashion. Note: most interpreter optimizations are
       applied to all scopes, only those relying on a known set of local
       and nonlocal variable names are restricted to optimized scopes.
+
+   optional module
+      An :term:`extension module` that is part of the :term:`standard library`,
+      but may be absent in some builds of :term:`CPython`,
+      usually due to missing third-party libraries or because the module
+      is not available for a given platform.
+
+      See :ref:`optional-module-requirements` for a list of optional modules
+      that require third-party libraries.
 
    package
       A Python :term:`module` which can contain submodules or recursively,
