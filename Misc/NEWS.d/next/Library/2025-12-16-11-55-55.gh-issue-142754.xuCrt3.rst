@@ -1,0 +1,4 @@
+Add the *ownerDocument* attribute to :mod:`xml.dom.minidom` elements created
+by directly instantiating the Element class. Note that this way of creating
+Element instances is not supported; creator functions like
+:py:meth:`xml.dom.Document.documentElement` should be used instead.
