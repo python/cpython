@@ -1264,6 +1264,24 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     return 1;
 }
 
+#ifdef Py_GIL_DISABLED
+static void
+maybe_enable_deferred_ref_count(PyObject *globals, PyObject *name)
+{
+    PyObject *value;
+    if (PyDict_GetItemRef(globals, name, &value) != 1) {
+        return;
+    }
+    if (!PyType_IS_GC(Py_TYPE(value)) || _PyObject_HasDeferredRefcount(value)) {
+        Py_DECREF(value);
+        return;
+    }
+    if (PyFrozenSet_Check(value)) {
+        PyUnstable_Object_EnableDeferredRefcount(value);
+    }
+    Py_DECREF(value);
+}
+#endif
 
 static void
 specialize_load_global_lock_held(
@@ -1305,6 +1323,9 @@ specialize_load_global_lock_held(
             SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_OUT_OF_RANGE);
             goto fail;
         }
+#ifdef Py_GIL_DISABLED
+        maybe_enable_deferred_ref_count(globals, name);
+#endif
         cache->index = (uint16_t)index;
         cache->module_keys_version = (uint16_t)keys_version;
         specialize(instr, LOAD_GLOBAL_MODULE);
