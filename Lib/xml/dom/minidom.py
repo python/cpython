@@ -364,6 +364,7 @@ class Attr(Node):
     def __init__(self, qName, namespaceURI=EMPTY_NAMESPACE, localName=None,
                  prefix=None):
         self.ownerElement = None
+        self.ownerDocument = None
         self._name = qName
         self.namespaceURI = namespaceURI
         self._prefix = prefix
