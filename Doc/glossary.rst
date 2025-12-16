@@ -767,7 +767,7 @@ Glossary
       :func:`itertools.groupby`.
 
       There are several ways to create a key function.  For example. the
-      :meth:`str.lower` method can serve as a key function for case insensitive
+      :meth:`str.casefold` method can serve as a key function for case insensitive
       sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
       :func:`operator.attrgetter`, :func:`operator.itemgetter`, and
