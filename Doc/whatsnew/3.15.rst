@@ -75,7 +75,8 @@ Summary -- Release highlights
   <whatsnew315-pep782>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * The :ref:`JIT compiler <whatsnew315-jit>` has been significantly upgraded,
-  with 3-4% geometric mean performance improvement on the pyperformance benchmarks.
+  with 3-4% geometric mean performance improvement on the `pyperformance
+  <https://github.com/python/pyperformance>`__ benchmarks.
 
 
 New features
@@ -857,16 +858,15 @@ csv
 Upgraded JIT Compiler
 =====================
 
-The JIT compiler introduced in
-`Python 3.13 <https://docs.python.org/3.15/whatsnew/3.13.html#an-experimental-just-in-time-jit-compiler>`_
-has been significantly upgraded.
-
-Current results from the pyperformance benchmark suite report
+Results from the pyperformance benchmark suite report
 `3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`_
-geometric mean performance over the standard CPython interpreter built with
-all optimizations enabled. The speedups range from roughly 20% slowdown to
-over 100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on the
-x86-64 Linux and AArch64 macOS systems. These results are not yet final.
+geometric mean performance for the JIT over the standard CPython interpreter built with
+all optimizations enabled. The speedups for JIT builds versus no JIT builds
+range from roughly 20% slowdown to over 100% speedup (ignoring the
+``unpack_sequence`` microbenchmark) on x86-64 Linux and AArch64 macOS systems.
+
+.. attention::
+    These results are not yet final.
 
 The major upgrades to the JIT are as follows:
 
@@ -875,7 +875,6 @@ The major upgrades to the JIT are as follows:
 * Basic register allocation in the JIT
 * More JIT optimizations
 * Better machine code generation
-* ...watch this space for more to come before 3.15 beta!
 
 LLVM 21 Build-Time Dependency
 -----------------------------
