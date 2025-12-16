@@ -272,7 +272,7 @@ class SampleProfiler:
 def _is_process_running(pid):
     if pid <= 0:
         return False
-    if sys.platform == "linux" or sys.platform == "darwin":
+    if os.name == "posix":
         try:
             os.kill(pid, 0)
             return True
