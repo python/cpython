@@ -327,8 +327,9 @@ Add such a function above the slots array::
       Py_RETURN_NONE;
    }
 
-For now, we'll ignore the arguments, and use the :c:macro:`Py_RETURN_NONE`
-macro to properly ``return`` a Python :py:data:`None` object.
+For now, we ignore the arguments, and use the :c:macro:`Py_RETURN_NONE`
+macro, which expands to a ``return`` statement that properly returns
+a Python :py:data:`None` object.
 
 Recompile your extension to make sure you don't have syntax errors.
 We haven't yet added ``spam_system`` to the module, so you might get a
