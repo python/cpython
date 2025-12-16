@@ -156,6 +156,8 @@ def inject_trace(app, exception):
 
 def setup(app):
     app.connect('build-finished', inject_trace)
+    app.add_js_file('profiling-sampling-visualization.js')
+    app.add_css_file('profiling-sampling-visualization.css')
 
     return {
         'version': '1.0',
