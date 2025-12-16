@@ -3,16 +3,15 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"
-#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
-#include "pycore_long.h"          // _PyLong_GetZero
-#include "pycore_lazyimportobject.h"
-#include "pycore_traceback.h"
 #include "pycore_interpframe.h"
+#include "pycore_lazyimportobject.h"
+#include "pycore_long.h"          // _PyLong_GetZero
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -26,6 +25,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
+#include "pycore_traceback.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -2168,7 +2168,8 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
                     if (filename == NULL) {
                         return NULL;
                     }
-                } else {
+                }
+                else {
                     filename = Py_NewRef(info->filename);
                 }
                 // XXX There's a refleak somewhere with the filename.
@@ -3853,7 +3854,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     if (is_loading < 0) {
         _PyImport_ReleaseLock(interp);
         return NULL;
-    } else if (is_loading == 1) {
+    }
+    else if (is_loading == 1) {
         PyObject *name = _PyLazyImport_GetName(lazy_import);
         if (name == NULL) {
             _PyImport_ReleaseLock(interp);
@@ -3872,7 +3874,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         Py_DECREF(name);
         _PyImport_ReleaseLock(interp);
         return NULL;
-    } else if (PySet_Add(importing, lazy_import) < 0) {
+    }
+    else if (PySet_Add(importing, lazy_import) < 0) {
         _PyImport_ReleaseLock(interp);
         goto error;
     }
@@ -3897,7 +3900,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
             }
             Py_INCREF(lz->lz_attr);
             PyTuple_SET_ITEM(fromlist, 0, lz->lz_attr);
-        } else {
+        }
+        else {
             Py_INCREF(lz->lz_attr);
             fromlist = lz->lz_attr;
         }
@@ -3913,25 +3917,20 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         goto error;
     }
     if (full) {
-        obj = _PyEval_ImportNameWithImport(tstate,
-                                   import_func,
-                                   globals,
-                                   globals,
-                                   lz->lz_from,
-                                   fromlist,
-                                   _PyLong_GetZero());
-    } else {
+        obj = _PyEval_ImportNameWithImport(
+            tstate, import_func, globals, globals,
+            lz->lz_from, fromlist, _PyLong_GetZero()
+        );
+    }
+    else {
         PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
         if (name == NULL) {
             goto error;
         }
-        obj = _PyEval_ImportNameWithImport(tstate,
-                                   import_func,
-                                   globals,
-                                   globals,
-                                   name,
-                                   fromlist,
-                                   _PyLong_GetZero());
+        obj = _PyEval_ImportNameWithImport(
+            tstate, import_func, globals, globals,
+            name, fromlist, _PyLong_GetZero()
+        );
         Py_DECREF(name);
     }
     if (obj == NULL) {
@@ -4292,7 +4291,8 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
 
     Py_INCREF(name);
     while (true) {
-        Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0, PyUnicode_GET_LENGTH(name), -1);
+        Py_ssize_t dot = PyUnicode_FindChar(name, '.',
+                                            0, PyUnicode_GET_LENGTH(name), -1);
         if (dot < 0) {
             ret = 0;
             goto done;
@@ -4336,7 +4336,9 @@ register_lazy_on_parent(PyThreadState *tstate, PyObject *name, PyObject *builtin
                     goto done;
                 }
                 if (!contains) {
-                    PyObject *lazy_module_attr = _PyLazyImport_New(builtins, parent, child);
+                    PyObject *lazy_module_attr = _PyLazyImport_New(
+                        builtins, parent, child
+                    );
                     if (lazy_module_attr == NULL) {
                         goto done;
                     }
@@ -4416,12 +4418,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
             modname = Py_NewRef(Py_None);
         }
         PyObject *args[] = {modname, name, fromlist};
-        PyObject *res = PyObject_Vectorcall(
-            filter,
-            args,
-            3,
-            NULL
-        );
+        PyObject *res = PyObject_Vectorcall(filter, args, 3, NULL);
 
         Py_DECREF(modname);
         Py_DECREF(filter);
@@ -4456,9 +4453,13 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         if (register_from_lazy_on_parent(tstate, abs_name, fromlist, builtins) < 0) {
             goto error;
         }
-    } else if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
+    }
+    else if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist)) {
         for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(fromlist); i++) {
-            if (register_from_lazy_on_parent(tstate, abs_name, PyTuple_GET_ITEM(fromlist, i), builtins) < 0) {
+            if (register_from_lazy_on_parent(tstate, abs_name,
+                                             PyTuple_GET_ITEM(fromlist, i),
+                                             builtins) < 0)
+            {
                 goto error;
             }
         }
@@ -5477,7 +5478,10 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
 }
 
 static int
-publish_lazy_imports_on_module(PyThreadState *tstate, PyObject *lazy_submodules, PyObject *name, PyObject *module_dict)
+publish_lazy_imports_on_module(PyThreadState *tstate,
+                               PyObject *lazy_submodules,
+                               PyObject *name,
+                               PyObject *module_dict)
 {
     PyObject *builtins = _PyEval_GetBuiltins(tstate);
     PyObject *attr_name;

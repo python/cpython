@@ -2860,11 +2860,14 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
     }
     if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
         lazy_mode = PyImport_LAZY_NORMAL;
-    } else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "all") == 0) {
         lazy_mode = PyImport_LAZY_ALL;
-    } else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
+    }
+    else if (PyUnicode_CompareWithASCIIString(mode, "none") == 0) {
         lazy_mode = PyImport_LAZY_NONE;
-    } else {
+    }
+    else {
         PyErr_SetString(PyExc_ValueError, "mode must be 'normal', 'all', or 'none'");
         return NULL;
     }

@@ -1336,7 +1336,8 @@ init_interp_main(PyThreadState *tstate)
         PyImport_LazyImportsMode lazy_mode;
         if (config->lazy_imports == 1) {
             lazy_mode = PyImport_LAZY_ALL;
-        } else {
+        }
+        else {
             lazy_mode = PyImport_LAZY_NONE;
         }
         if (PyImport_SetLazyImportsMode(lazy_mode) < 0) {
