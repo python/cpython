@@ -37,10 +37,10 @@ static PyObject* async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
     _Py_CAST(PyAsyncGenObject*, (op))
 
 #ifdef Py_GIL_DISABLED
-# define _Py_GEN_SET_FRAME_STATE(gen, expected, state) \
+# define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
     _Py_atomic_compare_exchange_int8(&(gen)->gi_frame_state, &expected, (state))
 #else
-# define _Py_GEN_SET_FRAME_STATE(gen, expected, state) \
+# define _Py_GEN_TRY_SET_FRAME_STATE(gen, expected, state) \
     ((gen)->gi_frame_state = (state), true)
 #endif
 
@@ -324,7 +324,7 @@ retry:
     assert((frame_state == FRAME_CREATED) ||
            FRAME_STATE_SUSPENDED(frame_state));
 
-    if (!_Py_GEN_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
+    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
         goto retry;
     }
 
@@ -424,7 +424,7 @@ gen_close(PyObject *self, PyObject *args)
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
 retry:
     if (frame_state == FRAME_CREATED) {
-        if (!_Py_GEN_SET_FRAME_STATE(gen, frame_state, FRAME_COMPLETED)) {
+        if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_COMPLETED)) {
             goto retry;
         }
         Py_RETURN_NONE;
@@ -442,7 +442,7 @@ retry:
     assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
            frame_state == FRAME_SUSPENDED);
 
-    if (!_Py_GEN_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
+    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
         goto retry;
     }
 
@@ -602,7 +602,7 @@ retry:
         return NULL;
     }
 
-    if (!_Py_GEN_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
+    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
         goto retry;
     }
 
