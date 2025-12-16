@@ -1370,7 +1370,7 @@ behavior::
    >>> parser.parse_args('--foo XXX'.split())
    Namespace(bar='XXX')
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Single-dash long option now takes precedence over short options.
 
 
@@ -1473,7 +1473,7 @@ this API may be passed as the ``action`` parameter to
 
    .. versionadded:: 3.9
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for single-dash options.
 
       Added support for alternate prefix_chars_.
