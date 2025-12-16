@@ -14,6 +14,7 @@ import shutil
 import struct
 import tempfile
 import unittest
+import zoneinfo
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
@@ -21,6 +22,7 @@ from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.support.hypothesis_helper import hypothesis
 from test.support.import_helper import import_module, CleanImport
 from test.support.script_helper import assert_python_ok
 
@@ -1551,12 +1553,12 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
-    @unittest.skipUnless(
-        lambda: any(os.path.exists(os.path.join(p, 'UTC')) for p in ZoneInfo.tzpath),
-        "timezone data not available"
-    )
     def test_weak_cache_descriptor_use_after_free(self):
         from zoneinfo import ZoneInfo
+
+        available_zones = sorted(zoneinfo.available_timezones())
+        if "UTC" not in available_zones:
+            raise unittest.SkipTest("No time zone data available")
 
         class Cache:
             def __init__(self):
@@ -1580,22 +1582,16 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
         EvilZoneInfo._weak_cache = BombDescriptor()
 
-        try:
-            zone1 = EvilZoneInfo("UTC")
+        zone1 = EvilZoneInfo("UTC")
 
-            self.assertIsNotNone(zone1)
-            self.assertEqual(str(zone1), "UTC")
-        except self.module.ZoneInfoNotFoundError:
-            pass
+        self.assertIsNotNone(zone1)
+        self.assertEqual(str(zone1), "UTC")
 
         EvilZoneInfo.clear_cache()
 
-        try:
-            zone2 = EvilZoneInfo("UTC")
-            self.assertIsNotNone(zone2)
-            self.assertEqual(str(zone2), "UTC")
-        except self.module.ZoneInfoNotFoundError:
-            pass
+        zone2 = EvilZoneInfo("UTC")
+        self.assertIsNotNone(zone2)
+        self.assertEqual(str(zone2), "UTC")
 
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
