@@ -118,7 +118,7 @@ The :mod:`gc` module provides the following functions:
 
    .. versionadded:: 3.4
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Add ``duration`` and ``candidates``.
 
 
@@ -340,7 +340,7 @@ values but should not rebind them):
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Add "duration" and "candidates".
 
 

@@ -111,7 +111,7 @@ Object Protocol
        object type name: str
        object repr     : 'abcdef'
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. c:function:: int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name)

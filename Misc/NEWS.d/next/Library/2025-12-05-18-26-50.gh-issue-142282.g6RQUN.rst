@@ -1,1 +1,0 @@
-Fix :func:`winreg.QueryValueEx` to not accidentally read garbage buffer under race condition.

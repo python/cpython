@@ -1,1 +1,0 @@
-Fix :mod:`argparse` to preserve ``|`` separators in mutually exclusive groups when the usage line wraps due to length.

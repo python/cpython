@@ -1,2 +1,0 @@
-Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``. It should
-only be used for debugging. Patch by Victor Stinner.

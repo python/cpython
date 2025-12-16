@@ -1,3 +1,0 @@
-Tracebacks will be displayed in fallback mode even if :func:`io.open` is lost.
-Previously, this would crash the interpreter.
-Patch by Bartosz Sławecki.
