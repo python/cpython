@@ -153,6 +153,7 @@ _PyGen_Finalize(PyObject *self)
 static void
 gen_clear_frame(PyGenObject *gen)
 {
+    assert(gen->gi_frame_state == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
@@ -285,48 +286,45 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, PyObject **presult)
 {
     *presult = NULL;
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
-retry:
-    if (frame_state == FRAME_CREATED && arg && arg != Py_None) {
-        const char *msg = "can't send non-None value to a "
-                            "just-started generator";
-        if (PyCoro_CheckExact(gen)) {
-            msg = NON_INIT_CORO_MSG;
+    do {
+        if (frame_state == FRAME_CREATED && arg && arg != Py_None) {
+            const char *msg = "can't send non-None value to a "
+                                "just-started generator";
+            if (PyCoro_CheckExact(gen)) {
+                msg = NON_INIT_CORO_MSG;
+            }
+            else if (PyAsyncGen_CheckExact(gen)) {
+                msg = "can't send non-None value to a "
+                        "just-started async generator";
+            }
+            PyErr_SetString(PyExc_TypeError, msg);
+            return PYGEN_ERROR;
         }
-        else if (PyAsyncGen_CheckExact(gen)) {
-            msg = "can't send non-None value to a "
-                    "just-started async generator";
+        if (frame_state == FRAME_EXECUTING) {
+            gen_raise_already_executing_error(gen);
+            return PYGEN_ERROR;
         }
-        PyErr_SetString(PyExc_TypeError, msg);
-        return PYGEN_ERROR;
-    }
-    if (frame_state == FRAME_EXECUTING) {
-        gen_raise_already_executing_error(gen);
-        return PYGEN_ERROR;
-    }
-    if (FRAME_STATE_FINISHED(frame_state)) {
-        if (PyCoro_CheckExact(gen)) {
-            /* `gen` is an exhausted coroutine: raise an error,
-               except when called from gen_close(), which should
-               always be a silent method. */
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited coroutine");
+        if (FRAME_STATE_FINISHED(frame_state)) {
+            if (PyCoro_CheckExact(gen)) {
+                /* `gen` is an exhausted coroutine: raise an error,
+                except when called from gen_close(), which should
+                always be a silent method. */
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "cannot reuse already awaited coroutine");
+            }
+            else if (arg) {
+                /* `gen` is an exhausted generator:
+                only return value if called from send(). */
+                *presult = Py_NewRef(Py_None);
+                return PYGEN_RETURN;
+            }
+            return PYGEN_ERROR;
         }
-        else if (arg) {
-            /* `gen` is an exhausted generator:
-               only return value if called from send(). */
-            *presult = Py_NewRef(Py_None);
-            return PYGEN_RETURN;
-        }
-        return PYGEN_ERROR;
-    }
 
-    assert((frame_state == FRAME_CREATED) ||
-           FRAME_STATE_SUSPENDED(frame_state));
-
-    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
-        goto retry;
-    }
+        assert((frame_state == FRAME_CREATED) ||
+               FRAME_STATE_SUSPENDED(frame_state));
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     return gen_send_ex2(gen, arg, presult, 0);
 }
@@ -422,29 +420,27 @@ gen_close(PyObject *self, PyObject *args)
     PyGenObject *gen = _PyGen_CAST(self);
 
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
-retry:
-    if (frame_state == FRAME_CREATED) {
-        if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_COMPLETED)) {
-            goto retry;
+    do {
+        if (frame_state == FRAME_CREATED) {
+            if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_COMPLETED)) {
+                continue;
+            }
+            Py_RETURN_NONE;
         }
-        Py_RETURN_NONE;
-    }
 
-    if (FRAME_STATE_FINISHED(frame_state)) {
-        Py_RETURN_NONE;
-    }
+        if (FRAME_STATE_FINISHED(frame_state)) {
+            Py_RETURN_NONE;
+        }
 
-    if (frame_state == FRAME_EXECUTING) {
-        gen_raise_already_executing_error(gen);
-        return NULL;
-    }
+        if (frame_state == FRAME_EXECUTING) {
+            gen_raise_already_executing_error(gen);
+            return NULL;
+        }
 
-    assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
-           frame_state == FRAME_SUSPENDED);
+        assert(frame_state == FRAME_SUSPENDED_YIELD_FROM ||
+            frame_state == FRAME_SUSPENDED);
 
-    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
-        goto retry;
-    }
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     int err = 0;
     _PyInterpreterFrame *frame = &gen->gi_iframe;
@@ -584,27 +580,27 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
            PyObject *typ, PyObject *val, PyObject *tb)
 {
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
-retry:
-    if (frame_state == FRAME_EXECUTING) {
-        gen_raise_already_executing_error(gen);
-        return NULL;
-    }
-
-    if (FRAME_STATE_FINISHED(frame_state)) {
-        if (PyCoro_CheckExact(gen)) {
-            /* `gen` is an exhausted coroutine: raise an error */
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "cannot reuse already awaited coroutine");
+    do {
+        if (frame_state == FRAME_EXECUTING) {
+            gen_raise_already_executing_error(gen);
             return NULL;
         }
-        gen_set_exception(typ, val, tb);
-        return NULL;
-    }
 
-    if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING)) {
-        goto retry;
-    }
+        if (FRAME_STATE_FINISHED(frame_state)) {
+            if (PyCoro_CheckExact(gen)) {
+                /* `gen` is an exhausted coroutine: raise an error */
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "cannot reuse already awaited coroutine");
+                return NULL;
+            }
+            gen_set_exception(typ, val, tb);
+            return NULL;
+        }
+
+        assert((frame_state == FRAME_CREATED) ||
+               FRAME_STATE_SUSPENDED(frame_state));
+    } while (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_EXECUTING));
 
     if (frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         _PyInterpreterFrame *frame = &gen->gi_iframe;
