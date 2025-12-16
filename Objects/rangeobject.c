@@ -9,6 +9,21 @@
 #include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *start;
+    PyObject *step;
+    PyObject *len;
+} longrangeiterobject;
+
+/*[clinic input]
+class range_iterator "_PyRangeIterObject *" "&PyRangeIter_Type"
+class longrange_iterator "longrangeiterobject *" "&PyLongRangeIter_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c7d97a63d1cfa6b3]*/
+
+#include "clinic/rangeobject.c.h"
+
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -830,41 +845,55 @@ PyTypeObject PyRange_Type = {
 static PyObject *
 rangeiter_next(PyObject *op)
 {
+    PyObject *ret = NULL;
+    Py_BEGIN_CRITICAL_SECTION(op);
     _PyRangeIterObject *r = (_PyRangeIterObject*)op;
     if (r->len > 0) {
         long result = r->start;
         r->start = result + r->step;
         r->len--;
-        return PyLong_FromLong(result);
+        ret = PyLong_FromLong(result);
     }
-    return NULL;
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
+/*[clinic input]
+@critical_section
+range_iterator.__length_hint__
+
+Private method returning an estimate of len(list(it)).
+[clinic start generated code]*/
+
 static PyObject *
-rangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
+range_iterator___length_hint___impl(_PyRangeIterObject *self)
+/*[clinic end generated code: output=e1cffa4f1e04271b input=ae170413369cd502]*/
 {
-    _PyRangeIterObject *r = (_PyRangeIterObject*)op;
-    return PyLong_FromLong(r->len);
+    return PyLong_FromLong(self->len);
 }
 
-PyDoc_STRVAR(length_hint_doc,
-             "Private method returning an estimate of len(list(it)).");
+/*[clinic input]
+@critical_section
+range_iterator.__reduce__
+
+Return state information for pickling.
+[clinic start generated code]*/
 
 static PyObject *
-rangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+range_iterator___reduce___impl(_PyRangeIterObject *self)
+/*[clinic end generated code: output=a462cc821bf3c94e input=ec043bf3db63c113]*/
 {
-    _PyRangeIterObject *r = (_PyRangeIterObject*)op;
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
     /* create a range object for pickling */
-    start = PyLong_FromLong(r->start);
+    start = PyLong_FromLong(self->start);
     if (start == NULL)
         goto err;
-    stop = PyLong_FromLong(r->start + r->len * r->step);
+    stop = PyLong_FromLong(self->start + self->len * self->step);
     if (stop == NULL)
         goto err;
-    step = PyLong_FromLong(r->step);
+    step = PyLong_FromLong(self->step);
     if (step == NULL)
         goto err;
     range = (PyObject*)make_range_object(&PyRange_Type,
@@ -881,20 +910,30 @@ err:
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+range_iterator.__setstate__
+
+    state: object
+    /
+
+Set state information for unpickling.
+[clinic start generated code]*/
+
 static PyObject *
-rangeiter_setstate(PyObject *op, PyObject *state)
+range_iterator___setstate___impl(_PyRangeIterObject *self, PyObject *state)
+/*[clinic end generated code: output=8c0cbca5b07a30a3 input=acd092f19666fd2e]*/
 {
-    _PyRangeIterObject *r = (_PyRangeIterObject*)op;
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
     /* silently clip the index value */
     if (index < 0)
         index = 0;
-    else if (index > r->len)
-        index = r->len; /* exhausted iterator */
-    r->start += index * r->step;
-    r->len -= index;
+    else if (index > self->len)
+        index = self->len; /* exhausted iterator */
+    self->start += index * self->step;
+    self->len -= index;
     Py_RETURN_NONE;
 }
 
@@ -904,13 +943,10 @@ rangeiter_dealloc(PyObject *self)
     _Py_FREELIST_FREE(range_iters, (_PyRangeIterObject *)self, PyObject_Free);
 }
 
-PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
-PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
-
 static PyMethodDef rangeiter_methods[] = {
-    {"__length_hint__", rangeiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", rangeiter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", rangeiter_setstate, METH_O, setstate_doc},
+    RANGE_ITERATOR___LENGTH_HINT___METHODDEF
+    RANGE_ITERATOR___REDUCE___METHODDEF
+    RANGE_ITERATOR___SETSTATE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -995,42 +1031,49 @@ fast_range_iter(long start, long stop, long step, long len)
     return (PyObject *)it;
 }
 
-typedef struct {
-    PyObject_HEAD
-    PyObject *start;
-    PyObject *step;
-    PyObject *len;
-} longrangeiterobject;
+/*[clinic input]
+@critical_section
+longrange_iterator.__length_hint__
+
+Private method returning an estimate of len(list(it)).
+[clinic start generated code]*/
 
 static PyObject *
-longrangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
+longrange_iterator___length_hint___impl(longrangeiterobject *self)
+/*[clinic end generated code: output=1890e941c1688fcd input=0dd7a785a3ee9e9a]*/
 {
-    longrangeiterobject *r = (longrangeiterobject*)op;
-    Py_INCREF(r->len);
-    return r->len;
+    Py_INCREF(self->len);
+    return self->len;
 }
 
+/*[clinic input]
+@critical_section
+longrange_iterator.__reduce__
+
+Return state information for pickling.
+[clinic start generated code]*/
+
 static PyObject *
-longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+longrange_iterator___reduce___impl(longrangeiterobject *self)
+/*[clinic end generated code: output=6efcfea6587678cd input=f73e1a6449166649]*/
 {
-    longrangeiterobject *r = (longrangeiterobject*)op;
     PyObject *product, *stop=NULL;
     PyObject *range;
 
     /* create a range object for pickling.  Must calculate the "stop" value */
-    product = PyNumber_Multiply(r->len, r->step);
+    product = PyNumber_Multiply(self->len, self->step);
     if (product == NULL)
         return NULL;
-    stop = PyNumber_Add(r->start, product);
+    stop = PyNumber_Add(self->start, product);
     Py_DECREF(product);
     if (stop ==  NULL)
         return NULL;
     range =  (PyObject*)make_range_object(&PyRange_Type,
-                               Py_NewRef(r->start), stop, Py_NewRef(r->step));
+                               Py_NewRef(self->start), stop, Py_NewRef(self->step));
     if (range == NULL) {
-        Py_DECREF(r->start);
+        Py_DECREF(self->start);
         Py_DECREF(stop);
-        Py_DECREF(r->step);
+        Py_DECREF(self->step);
         return NULL;
     }
 
@@ -1039,15 +1082,26 @@ longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
                          range, Py_None);
 }
 
+/*[clinic input]
+@critical_section
+longrange_iterator.__setstate__
+
+    state: object
+    /
+
+Set state information for unpickling.
+[clinic start generated code]*/
+
 static PyObject *
-longrangeiter_setstate(PyObject *op, PyObject *state)
+longrange_iterator___setstate___impl(longrangeiterobject *self,
+                                     PyObject *state)
+/*[clinic end generated code: output=0ad8528a4b723cd0 input=84c0bb455543ee24]*/
 {
     if (!PyLong_CheckExact(state)) {
         PyErr_Format(PyExc_TypeError, "state must be an int, not %T", state);
         return NULL;
     }
 
-    longrangeiterobject *r = (longrangeiterobject*)op;
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
 
@@ -1059,35 +1113,35 @@ longrangeiter_setstate(PyObject *op, PyObject *state)
         state = zero;
     }
     else {
-        cmp = PyObject_RichCompareBool(r->len, state, Py_LT);
+        cmp = PyObject_RichCompareBool(self->len, state, Py_LT);
         if (cmp < 0)
             return NULL;
         if (cmp > 0)
-            state = r->len;
+            state = self->len;
     }
-    PyObject *product = PyNumber_Multiply(state, r->step);
+    PyObject *product = PyNumber_Multiply(state, self->step);
     if (product == NULL)
         return NULL;
-    PyObject *new_start = PyNumber_Add(r->start, product);
+    PyObject *new_start = PyNumber_Add(self->start, product);
     Py_DECREF(product);
     if (new_start == NULL)
         return NULL;
-    PyObject *new_len = PyNumber_Subtract(r->len, state);
+    PyObject *new_len = PyNumber_Subtract(self->len, state);
     if (new_len == NULL) {
         Py_DECREF(new_start);
         return NULL;
     }
-    PyObject *tmp = r->start;
-    r->start = new_start;
-    Py_SETREF(r->len, new_len);
+    PyObject *tmp = self->start;
+    self->start = new_start;
+    Py_SETREF(self->len, new_len);
     Py_DECREF(tmp);
     Py_RETURN_NONE;
 }
 
 static PyMethodDef longrangeiter_methods[] = {
-    {"__length_hint__", longrangeiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", longrangeiter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", longrangeiter_setstate, METH_O, setstate_doc},
+    LONGRANGE_ITERATOR___LENGTH_HINT___METHODDEF
+    LONGRANGE_ITERATOR___REDUCE___METHODDEF
+    LONGRANGE_ITERATOR___SETSTATE___METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1102,7 +1156,7 @@ longrangeiter_dealloc(PyObject *op)
 }
 
 static PyObject *
-longrangeiter_next(PyObject *op)
+longrangeiter_next_lock_held(PyObject *op)
 {
     longrangeiterobject *r = (longrangeiterobject*)op;
     if (PyObject_RichCompareBool(r->len, _PyLong_GetZero(), Py_GT) != 1)
@@ -1120,6 +1174,16 @@ longrangeiter_next(PyObject *op)
     PyObject *result = r->start;
     r->start = new_start;
     Py_SETREF(r->len, new_len);
+    return result;
+}
+
+static PyObject *
+longrangeiter_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = longrangeiter_next_lock_held(op);
+    Py_END_CRITICAL_SECTION();
     return result;
 }
 
