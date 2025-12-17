@@ -596,11 +596,10 @@ static PyModuleDef_Slot xx_slots[] = {
      * Without this slot, free-threaded builds of CPython will enable
      * the GIL when this module is loaded.
      */
-    /* TODO: This is not quite true yet: there is a race in Xxo_setattro
-     * for example.
-     */
+    // TODO: This is not quite true yet: there is a race in Xxo_setattro,
+    // for example.
+    // We include this for CPython's internal testing.
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-
 
     {0, NULL}
 };
