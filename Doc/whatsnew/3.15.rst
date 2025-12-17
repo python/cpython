@@ -877,8 +877,7 @@ The major upgrades to the JIT are as follows:
 * More JIT optimizations
 * Better machine code generation
 
-LLVM 21 Build-Time Dependency
------------------------------
+.. rubric:: LLVM 21 Build-Time Dependency
 
 The JIT compiler now uses LLVM 21 for build-time stencil generation. As
 always, LLVM is only needed when building CPython with the JIT enabled;
@@ -889,8 +888,7 @@ platforms.
 
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
-A New Tracing Frontend
-----------------------
+.. rubric:: A New Tracing Frontend
 
 The JIT compiler now supports significantly more bytecode operations and
 control flow than in Python 3.14, enabling speedups on a wider variety of
@@ -903,8 +901,7 @@ them as the previous implementation did.
 (Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
 Mark Shannon :gh:`141703`.)
 
-Basic Register Allocation in the JIT
-------------------------------------
+.. rubric:: Basic Register Allocation in the JIT
 
 A basic form of register allocation has been added to the JIT compiler's
 optimizer. This allows the JIT compiler to avoid certain stack operations
@@ -913,8 +910,7 @@ more efficient traces by avoiding reads and writes to memory.
 
 (Contributed by Mark Shannon in :gh:`135379`.)
 
-More JIT Optimizations
-----------------------
+.. rubric:: More JIT Optimizations
 
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`_
 is now performed. This means when the JIT compiler detects that certain user
@@ -926,8 +922,7 @@ reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Nadeshiko Manju, Savannah Ostrowski,
 Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
 
-Better Machine Code Generation
-------------------------------
+.. rubric:: Better Machine Code Generation
 
 The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
