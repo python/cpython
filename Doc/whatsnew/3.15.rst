@@ -912,7 +912,7 @@ more efficient traces by avoiding reads and writes to memory.
 
 .. rubric:: More JIT Optimizations
 
-More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`_
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
