@@ -17,7 +17,7 @@ try:
     import profiling.sampling.sample
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import CollapsedStackCollector
-    from profiling.sampling.sample import SampleProfiler
+    from profiling.sampling.sample import SampleProfiler, _is_process_running
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -602,7 +602,7 @@ do_work()
 @requires_remote_subprocess_debugging()
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
-        with self.assertRaises((OSError, RuntimeError)):
+        with self.assertRaises((SystemExit, PermissionError)):
             collector = PstatsCollector(sample_interval_usec=100, skip_idle=False)
             profiling.sampling.sample.sample(-1, collector, duration_sec=1)
 
@@ -638,7 +638,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 sample_interval_usec=1000,
                 all_threads=False,
             )
-            self.assertTrue(profiler._is_process_running())
+            self.assertTrue(_is_process_running(profiler.pid))
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
             subproc.process.kill()
             subproc.process.wait()
@@ -647,7 +647,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
         # Exit the context manager to ensure the process is terminated
-        self.assertFalse(profiler._is_process_running())
+        self.assertFalse(_is_process_running(profiler.pid))
         self.assertRaises(
             ProcessLookupError, profiler.unwinder.get_stack_trace
         )
@@ -863,3 +863,98 @@ asyncio.run(supervisor())
         self.assertGreater(cpu_percentage, 90.0,
             f"cpu_leaf should dominate samples in 'running' mode, "
             f"got {cpu_percentage:.1f}% ({cpu_leaf_samples}/{total})")
+
+
+def _generate_deep_generators_script(chain_depth=20, recurse_depth=150):
+    """Generate a script with deep nested generators for stress testing."""
+    lines = [
+        'import sys',
+        'sys.setrecursionlimit(5000)',
+        '',
+    ]
+    # Generate chain of yield-from functions
+    for i in range(chain_depth - 1):
+        lines.extend([
+            f'def deep_yield_chain_{i}(n):',
+            f'    yield ("L{i}", n)',
+            f'    yield from deep_yield_chain_{i + 1}(n)',
+            '',
+        ])
+    # Last chain function calls recursive_diver
+    lines.extend([
+        f'def deep_yield_chain_{chain_depth - 1}(n):',
+        f'    yield ("L{chain_depth - 1}", n)',
+        f'    yield from recursive_diver(n, {chain_depth})',
+        '',
+        'def recursive_diver(n, depth):',
+        '    yield (f"DIVE_{depth}", n)',
+        f'    if depth < {recurse_depth}:',
+        '        yield from recursive_diver(n, depth + 1)',
+        '    else:',
+        '        for i in range(5):',
+        '            yield (f"BOTTOM_{depth}", i)',
+        '',
+        'def oscillating_generator(iterations=1000):',
+        '    for i in range(iterations):',
+        '        yield ("OSCILLATE", i)',
+        '        yield from deep_yield_chain_0(i)',
+        '',
+        'def run_forever():',
+        '    while True:',
+        '        for _ in oscillating_generator(10):',
+        '            pass',
+        '',
+        '_test_sock.sendall(b"working")',
+        'run_forever()',
+    ])
+    return '\n'.join(lines)
+
+
+@requires_remote_subprocess_debugging()
+class TestDeepGeneratorFrameCache(unittest.TestCase):
+    """Test frame cache consistency with deep oscillating generator stacks."""
+
+    def test_all_stacks_share_same_base_frame(self):
+        """Verify all sampled stacks reach the entry point function.
+
+        When profiling deep generators that oscillate up and down the call
+        stack, every sample should include the entry point function
+        (run_forever) in its call chain. If the frame cache stores
+        incomplete stacks, some samples will be missing this base function,
+        causing broken flamegraphs.
+        """
+        script = _generate_deep_generators_script()
+        with test_subprocess(script, wait_for_working=True) as subproc:
+            collector = CollapsedStackCollector(sample_interval_usec=1, skip_idle=False)
+
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2,
+                )
+
+        samples_with_entry_point = 0
+        samples_without_entry_point = 0
+        total_samples = 0
+
+        for (call_tree, _thread_id), count in collector.stack_counter.items():
+            total_samples += count
+            if call_tree:
+                has_entry_point = call_tree and call_tree[0][2] == "<module>"
+                if has_entry_point:
+                    samples_with_entry_point += count
+                else:
+                    samples_without_entry_point += count
+
+        self.assertGreater(total_samples, 100,
+            f"Expected at least 100 samples, got {total_samples}")
+
+        self.assertEqual(samples_without_entry_point, 0,
+            f"Found {samples_without_entry_point}/{total_samples} samples "
+            f"missing the entry point function 'run_forever'. This indicates "
+            f"incomplete stacks are being returned, likely due to frame cache "
+            f"storing partial stack traces.")

@@ -356,7 +356,7 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
         default:
             printf(" (%d, Unknown format)", uop->oparg);
     }
-    if (_PyUop_Flags[uop->opcode] & HAS_ERROR_FLAG) {
+    if (_PyUop_Flags[_PyUop_Uncached[uop->opcode]] & HAS_ERROR_FLAG) {
         printf(", error_target=%d", uop->error_target);
     }
 
@@ -582,7 +582,8 @@ is_terminator(const _PyUOpInstruction *uop)
 
 /* Returns 1 on success (added to trace), 0 on trace end.
  */
-int
+// gh-142543: inlining this function causes stack overflows
+Py_NO_INLINE int
 _PyJit_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
     _PyInterpreterFrame *frame,
@@ -994,7 +995,8 @@ full:
 }
 
 // Returns 0 for do not enter tracing, 1 on enter tracing.
-int
+// gh-142543: inlining this function causes stack overflows
+Py_NO_INLINE int
 _PyJit_TryInitializeTracing(
     PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *curr_instr,
     _Py_CODEUNIT *start_instr, _Py_CODEUNIT *close_loop_instr, int curr_stackdepth, int chain_depth,
@@ -1066,7 +1068,7 @@ _PyJit_TryInitializeTracing(
     return 1;
 }
 
-void
+Py_NO_INLINE void
 _PyJit_FinalizeTracing(PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -1975,7 +1977,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
 #else
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s op0=%" PRIu64 "</td></tr>\n", i, opname, inst->operand0);
 #endif
-        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
             break;
         }
     }
@@ -1988,7 +1990,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
-        uint16_t flags = _PyUop_Flags[inst->opcode];
+        uint16_t flags = _PyUop_Flags[base_opcode];
         _PyExitData *exit = NULL;
         if (base_opcode == _EXIT_TRACE) {
             exit = (_PyExitData *)inst->operand0;
