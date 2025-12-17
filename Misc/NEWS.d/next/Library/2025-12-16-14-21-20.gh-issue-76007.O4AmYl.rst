@@ -1,2 +1,3 @@
-Deprecate ``VERSION`` from :mod:`xml.etree.ElementTree`. Patch by Hugo van
+Deprecate ``VERSION`` from :mod:`xml.etree.ElementTree` and ``version`` from
+:mod:`xml.sax.expatreader` and :mod:`xml.sax.handler`. Patch by Hugo van
 Kemenade.
