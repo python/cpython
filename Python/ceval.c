@@ -1920,9 +1920,9 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
-    frame->previous = NULL;
 }
 
 void
