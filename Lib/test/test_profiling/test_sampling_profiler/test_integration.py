@@ -17,7 +17,7 @@ try:
     import profiling.sampling.sample
     from profiling.sampling.pstats_collector import PstatsCollector
     from profiling.sampling.stack_collector import CollapsedStackCollector
-    from profiling.sampling.sample import SampleProfiler
+    from profiling.sampling.sample import SampleProfiler, _is_process_running
 except ImportError:
     raise unittest.SkipTest(
         "Test only runs when _remote_debugging is available"
@@ -602,7 +602,7 @@ do_work()
 @requires_remote_subprocess_debugging()
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
-        with self.assertRaises((OSError, RuntimeError)):
+        with self.assertRaises((SystemExit, PermissionError)):
             collector = PstatsCollector(sample_interval_usec=100, skip_idle=False)
             profiling.sampling.sample.sample(-1, collector, duration_sec=1)
 
@@ -638,7 +638,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 sample_interval_usec=1000,
                 all_threads=False,
             )
-            self.assertTrue(profiler._is_process_running())
+            self.assertTrue(_is_process_running(profiler.pid))
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
             subproc.process.kill()
             subproc.process.wait()
@@ -647,7 +647,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             )
 
         # Exit the context manager to ensure the process is terminated
-        self.assertFalse(profiler._is_process_running())
+        self.assertFalse(_is_process_running(profiler.pid))
         self.assertRaises(
             ProcessLookupError, profiler.unwinder.get_stack_trace
         )
