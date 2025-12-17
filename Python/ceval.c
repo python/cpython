@@ -1696,10 +1696,10 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     gen->gi_exc_state.previous_item = NULL;
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
     tstate->c_recursion_remaining++;
-    frame->previous = NULL;
 }
 
 void
