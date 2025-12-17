@@ -8,78 +8,35 @@
   // Configuration
   // ============================================================================
 
-  const COLORS = {
-    // Tachyon logo-inspired colors
-    tachyonBlue: 0x306998,
-    tachyonGold: 0xd4a910,
-    // Docs-matching colors
-    background: 0xffffff,
-    panelBg: 0xffffff,
-    borderLight: 0xe1e4e8,
-    borderHighlight: 0x306998,
-    textPrimary: 0x0d0d0d,
-    textSecondary: 0x505050,
-    textDim: 0x6e6e6e,
-    // Function colors - blue/gold theme
-    funcMain: 0x306998,
-    funcFibonacci: 0xd4a910,
-    active: 0xfff9e6,
-    activeText: 0x856404,
-    success: 0x388e3c,
-    warning: 0xe65100,
-    error: 0xc62828,
-    info: 0x306998,
-    samplingAccent: 0x00897b,
-    tracingAccent: 0xd4a910,
-    overheadLow: 0x388e3c,
-    overheadMedium: 0xe65100,
-    overheadHigh: 0xc62828,
-  };
-
   const TIMINGS = {
-    frameSlideIn: 500,
-    frameSlideOut: 300,
-    frameFadeOut: 200,
-    sampleFlash: 200,
     sampleIntervalMin: 100,
     sampleIntervalMax: 500,
     sampleIntervalDefault: 200,
     sampleToFlame: 600,
-    flameGrowth: 300,
-    hookDelay: 10,
-    eventLightDuration: 150,
-    speeds: [0.1, 0.25, 0.5, 1, 2, 5],
     defaultSpeed: 0.05,
   };
 
-  const LAYOUT = {
-    frameWidth: 200,
-    frameHeight: 40,
-    frameSpacing: 6,
-    frameRadius: 4,
-    codePanelWidth: 0.3,
-    stackPanelWidth: 0.4,
-    timelinePanelWidth: 0.3,
-    flameNodeHeight: 30,
-    flameMaxDepth: 20,
+  const LAYOUT = { frameSpacing: 6 };
+
+  // Function name to color mapping
+  const FUNCTION_COLORS = {
+    main: "#306998",
+    fibonacci: "#D4A910",
+    add: "#E65100",
+    multiply: "#7B1FA2",
+    calculate: "#D4A910",
+  };
+  const DEFAULT_FUNCTION_COLOR = "#306998";
+
+  // Easing functions - cubic-bezier approximations
+  const EASING_MAP = {
+    linear: "linear",
+    easeOutQuad: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    easeOutCubic: "cubic-bezier(0.215, 0.61, 0.355, 1)",
   };
 
-  // ============================================================================
-  // Color Utilities
-  // ============================================================================
-
-  function hexToCSS(hex) {
-    return "#" + hex.toString(16).padStart(6, "0").toUpperCase();
-  }
-
   function getFunctionColor(funcName) {
-    // Blue for main, gold for other functions - matching Tachyon logo
-    if (funcName === "main") return hexToCSS(COLORS.tachyonBlue);
-    if (funcName === "fibonacci") return hexToCSS(COLORS.tachyonGold);
-    if (funcName === "add") return "#E65100"; // Orange
-    if (funcName === "multiply") return "#7B1FA2"; // Purple
-    if (funcName === "calculate") return hexToCSS(COLORS.tachyonGold);
-    return hexToCSS(COLORS.tachyonBlue);
+    return FUNCTION_COLORS[funcName] || DEFAULT_FUNCTION_COLOR;
   }
 
   // ============================================================================
@@ -94,37 +51,17 @@
     to(element, props, duration, easing = "easeOutQuad", onComplete = null) {
       this.killAnimationsOf(element);
 
-      // Cubic-bezier approximations of Robert Penner's easing equations.
-      // See: https://easings.net/ for visual references.
-      // Format: cubic-bezier(x1, y1, x2, y2) defines control points for the curve.
-      const easingMap = {
-        linear: "linear",
-        easeInQuad: "cubic-bezier(0.55, 0.085, 0.68, 0.53)",
-        easeOutQuad: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-        easeInOutQuad: "cubic-bezier(0.455, 0.03, 0.515, 0.955)",
-        easeInCubic: "cubic-bezier(0.55, 0.055, 0.675, 0.19)",
-        easeOutCubic: "cubic-bezier(0.215, 0.61, 0.355, 1)",
-        easeInOutCubic: "cubic-bezier(0.645, 0.045, 0.355, 1)",
-        easeOutElastic: "cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-        easeOutBack: "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-        easeOutBounce: "cubic-bezier(0.68, -0.25, 0.265, 1.25)",
-      };
-
-      const cssEasing = easingMap[easing] || easingMap.easeOutQuad;
+      const cssEasing = EASING_MAP[easing] || EASING_MAP.easeOutQuad;
 
       const transformProps = {};
       const otherProps = {};
 
       for (const [key, value] of Object.entries(props)) {
-        if (key === "position" || key === "x" || key === "y") {
-          if (key === "position") {
-            if (typeof value.x === "number") transformProps.x = value.x;
-            if (typeof value.y === "number") transformProps.y = value.y;
-          } else if (key === "x") {
-            transformProps.x = value;
-          } else if (key === "y") {
-            transformProps.y = value;
-          }
+        if (key === "position") {
+          if (typeof value.x === "number") transformProps.x = value.x;
+          if (typeof value.y === "number") transformProps.y = value.y;
+        } else if (key === "x" || key === "y") {
+          transformProps[key] = value;
         } else if (key === "scale") {
           transformProps.scale = value;
         } else if (key === "alpha" || key === "opacity") {
@@ -136,25 +73,24 @@
 
       const computedStyle = getComputedStyle(element);
       const matrix = new DOMMatrix(computedStyle.transform);
+      const currentScale = Math.sqrt(
+        matrix.m11 * matrix.m11 + matrix.m21 * matrix.m21,
+      );
 
-      if (transformProps.x === undefined) transformProps.x = matrix.m41;
-      if (transformProps.y === undefined) transformProps.y = matrix.m42;
-      if (transformProps.scale === undefined) {
-        transformProps.scale = Math.sqrt(
-          matrix.m11 * matrix.m11 + matrix.m21 * matrix.m21,
-        );
-      }
+      transformProps.x ??= matrix.m41;
+      transformProps.y ??= matrix.m42;
+      transformProps.scale ??= currentScale;
 
       const initialTransform = this._buildTransformString(
         matrix.m41,
         matrix.m42,
-        Math.sqrt(matrix.m11 * matrix.m11 + matrix.m21 * matrix.m21),
+        currentScale,
       );
 
       const finalTransform = this._buildTransformString(
-        transformProps.x !== undefined ? transformProps.x : matrix.m41,
-        transformProps.y !== undefined ? transformProps.y : matrix.m42,
-        transformProps.scale !== undefined ? transformProps.scale : 1,
+        transformProps.x,
+        transformProps.y,
+        transformProps.scale,
       );
 
       const initialKeyframe = { transform: initialTransform };
@@ -337,33 +273,21 @@
     }
 
     _highlightSyntax(line) {
-      let highlighted = line
+      return line
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      highlighted = highlighted.replace(
-        /(f?"[^"]*"|f?'[^']*')/g,
-        '<span class="string">$1</span>',
-      );
-      highlighted = highlighted.replace(
-        /(#.*$)/g,
-        '<span class="comment">$1</span>',
-      );
-      const keywords =
-        /\b(def|if|elif|else|return|for|in|range|print|__name__|__main__)\b/g;
-      highlighted = highlighted.replace(
-        keywords,
-        '<span class="keyword">$1</span>',
-      );
-      highlighted = highlighted.replace(
-        /<span class="keyword">def<\/span>\s+(\w+)/g,
-        '<span class="keyword">def</span> <span class="function">$1</span>',
-      );
-      highlighted = highlighted.replace(
-        /\b(\d+)\b/g,
-        '<span class="number">$1</span>',
-      );
-      return highlighted;
+        .replace(/>/g, "&gt;")
+        .replace(/(f?"[^"]*"|f?'[^']*')/g, '<span class="string">$1</span>')
+        .replace(/(#.*$)/g, '<span class="comment">$1</span>')
+        .replace(
+          /\b(def|if|elif|else|return|for|in|range|print|__name__|__main__)\b/g,
+          '<span class="keyword">$1</span>',
+        )
+        .replace(
+          /<span class="keyword">def<\/span>\s+(\w+)/g,
+          '<span class="keyword">def</span> <span class="function">$1</span>',
+        )
+        .replace(/\b(\d+)\b/g, '<span class="number">$1</span>');
     }
 
     highlightLine(lineNumber) {
@@ -387,22 +311,6 @@
       );
       if (newLine) {
         newLine.classList.add("highlighted");
-      }
-    }
-
-    _scrollToLine(lineElement) {
-      const containerRect = this.codeContainer.getBoundingClientRect();
-      const lineRect = lineElement.getBoundingClientRect();
-      const isAbove = lineRect.top < containerRect.top + 50;
-      const isBelow = lineRect.bottom > containerRect.bottom - 50;
-
-      if (isAbove || isBelow) {
-        // Scroll within the container only, not the page
-        const lineTop = lineElement.offsetTop;
-        const containerHeight = this.codeContainer.clientHeight;
-        const targetScroll =
-          lineTop - containerHeight / 2 + lineElement.offsetHeight / 2;
-        this.codeContainer.scrollTop = Math.max(0, targetScroll);
       }
     }
 
@@ -432,10 +340,10 @@
       this.element.className = "stack-frame";
       this.element.dataset.function = functionName;
 
-      const bg = document.createElement("div");
-      bg.className = "stack-frame-bg";
-      bg.style.backgroundColor = this.color;
-      this.element.appendChild(bg);
+      this.bgElement = document.createElement("div");
+      this.bgElement.className = "stack-frame-bg";
+      this.bgElement.style.backgroundColor = this.color;
+      this.element.appendChild(this.bgElement);
 
       this.textElement = document.createElement("span");
       this.textElement.className = "stack-frame-text";
@@ -451,9 +359,7 @@
     }
 
     destroy() {
-      if (this.element.parentNode) {
-        this.element.parentNode.removeChild(this.element);
-      }
+      this.element.parentNode?.removeChild(this.element);
     }
 
     updateLine(lineno) {
@@ -464,18 +370,15 @@
     setActive(isActive) {
       if (this.isActive === isActive) return;
       this.isActive = isActive;
-      const bg = this.element.querySelector(".stack-frame-bg");
-      bg.style.opacity = isActive ? "1.0" : "0.9";
+      this.bgElement.style.opacity = isActive ? "1.0" : "0.9";
     }
 
     _onHover() {
-      const bg = this.element.querySelector(".stack-frame-bg");
-      bg.style.opacity = "0.8";
+      this.bgElement.style.opacity = "0.8";
     }
 
     _onHoverOut() {
-      const bg = this.element.querySelector(".stack-frame-bg");
-      bg.style.opacity = this.isActive ? "1.0" : "0.9";
+      this.bgElement.style.opacity = this.isActive ? "1.0" : "0.9";
     }
 
     flash(duration = 150) {
@@ -958,10 +861,6 @@
       this.flashOverlay = document.createElement("div");
       this.flashOverlay.className = "flash-overlay";
       this.container.appendChild(this.flashOverlay);
-    }
-
-    isAnimating() {
-      return this.flyingAnimationInProgress;
     }
 
     triggerSamplingEffect(stackViz, samplingPanel, currentTime, trace) {

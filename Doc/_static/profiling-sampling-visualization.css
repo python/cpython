@@ -19,9 +19,8 @@
   --text-muted: #6e6e6e;
   --text-code: #333333;
 
-  /* Accent colors - matching Tachyon logo */
+  /* Accent colors */
   --color-python-blue: #306998;
-  --color-tachyon-gold: #d4a910;
   --color-green: #388e3c;
   --color-orange: #e65100;
   --color-purple: #7b1fa2;
@@ -227,26 +226,6 @@
   inset: 0;
   border-radius: var(--radius-sm);
   transition: opacity 0.15s;
-}
-
-.sampling-profiler-viz .stack-frame[data-function="main"] .stack-frame-bg {
-  background: var(--color-python-blue);
-}
-
-.sampling-profiler-viz .stack-frame[data-function="fibonacci"] .stack-frame-bg {
-  background: var(--color-tachyon-gold);
-}
-
-.sampling-profiler-viz .stack-frame[data-function="add"] .stack-frame-bg {
-  background: var(--color-orange);
-}
-
-.sampling-profiler-viz .stack-frame[data-function="multiply"] .stack-frame-bg {
-  background: var(--color-purple);
-}
-
-.sampling-profiler-viz .stack-frame[data-function="calculate"] .stack-frame-bg {
-  background: var(--color-tachyon-gold);
 }
 
 .sampling-profiler-viz .stack-frame-text {
