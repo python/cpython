@@ -134,6 +134,18 @@ class FinalizationTest(unittest.TestCase):
         self.assertEqual(len(resurrected), 1)
         self.assertIsInstance(resurrected[0].gi_code, types.CodeType)
 
+    def test_exhausted_generator_frame_cycle(self):
+        def g():
+            yield
+
+        generator = g()
+        frame = generator.gi_frame
+        self.assertIsNone(frame.f_back)
+        next(generator)
+        self.assertIsNone(frame.f_back)
+        next(generator, None)
+        self.assertIsNone(frame.f_back)
+
 
 class GeneratorTest(unittest.TestCase):
 
