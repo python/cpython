@@ -856,7 +856,7 @@ Pablo Galindo
 .. date: 2025-02-11-20-38-37
 .. gh-issue: 129983
 .. nonce: _1Fujo
-.. section: Core and Builtins
+.. section: Library
 
 Fix data race in compile_template in :file:`sre.c`.
 

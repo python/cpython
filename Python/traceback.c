@@ -356,6 +356,9 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     npath = PyList_Size(syspath);
 
     open = PyObject_GetAttr(io, &_Py_ID(open));
+    if (open == NULL) {
+        goto error;
+    }
     for (i = 0; i < npath; i++) {
         v = PyList_GetItem(syspath, i);
         if (v == NULL) {
