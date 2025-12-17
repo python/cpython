@@ -390,6 +390,7 @@ gen_close(PyObject *self, PyObject *args)
 
     if (gen->gi_frame_state == FRAME_CREATED) {
         gen->gi_frame_state = FRAME_COMPLETED;
+        gen_clear_frame(gen);
         Py_RETURN_NONE;
     }
     if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
