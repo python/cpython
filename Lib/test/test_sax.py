@@ -1573,5 +1573,15 @@ class TestModuleAll(unittest.TestCase):
         check__all__(self, sax, extra=extra)
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'version' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+                getattr(sax.expatreader, "version")
+        self.assertEqual(cm.filename, __file__)
+
+
 if __name__ == "__main__":
     unittest.main()

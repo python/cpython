@@ -3,8 +3,6 @@ SAX driver for the pyexpat C module.  This driver works with
 pyexpat.__version__ == '2.22'.
 """
 
-version = "0.20"
-
 from xml.sax._exceptions import *
 from xml.sax.handler import feature_validation, feature_namespaces
 from xml.sax.handler import feature_namespace_prefixes
@@ -446,9 +444,19 @@ def create_parser(*args, **kwargs):
 
 # ---
 
+def __getattr__(name):
+    if name == "version":
+        from warnings import _deprecated
+
+        _deprecated("version", remove=(3, 20))
+        return "0.20"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+# ---
+
 if __name__ == "__main__":
     import xml.sax.saxutils
     p = create_parser()
     p.setContentHandler(xml.sax.saxutils.XMLGenerator())
     p.setErrorHandler(xml.sax.ErrorHandler())
-    p.parse("http://www.ibiblio.org/xml/examples/shakespeare/hamlet.xml")
+    p.parse("https://www.ibiblio.org/xml/examples/shakespeare/hamlet.xml")
