@@ -235,32 +235,36 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
         _PyErr_ChainStackItem();
     }
 
-#if defined(Py_GIL_DISABLED)
-    ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = FRAME_EXECUTING;
-#endif
+    // The generator_return_kind field is used to distinguish between a
+    // yield and a return from within _PyEval_EvalFrame(). Earlier versions
+    // of CPython (prior to 3.15) used gi_frame_state for this purpose, but
+    // that requires the GIL for thread-safety.
+    ((_PyThreadStateImpl *)tstate)->generator_return_kind = GENERATOR_RETURN;
 
     EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
     PyObject *result = _PyEval_EvalFrame(tstate, frame, exc);
     assert(tstate->exc_info == prev_exc_info);
-#ifdef Py_GIL_DISABLED
-    // Grab the last frame state from the thread state instead of the
-    // generator, as it may have changed if another thread resumed this
-    // generator.
-    int8_t frame_state = ((_PyThreadStateImpl *)tstate)->gen_last_frame_state;
-#else
+#ifndef Py_GIL_DISABLED
     assert(gen->gi_exc_state.previous_item == NULL);
     assert(frame->previous == NULL);
-    int8_t frame_state = gen->gi_frame_state;
+    assert(gen->gi_frame_state != FRAME_EXECUTING);
 #endif
-    assert(frame_state != FRAME_EXECUTING);
+
+    int return_kind = ((_PyThreadStateImpl *)tstate)->generator_return_kind;
+
+    if (return_kind == GENERATOR_YIELD) {
+        assert(result != NULL && !_PyErr_Occurred(tstate));
+        *presult = result;
+        return PYGEN_NEXT;
+    }
+
+    assert(return_kind == GENERATOR_RETURN);
+    assert(gen->gi_exc_state.exc_value == NULL);
+    assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
     if (result) {
-        if (FRAME_STATE_SUSPENDED(frame_state)) {
-            *presult = result;
-            return PYGEN_NEXT;
-        }
         assert(result == Py_None || !PyAsyncGen_CheckExact(gen));
         if (result == Py_None && !PyAsyncGen_CheckExact(gen) && !arg) {
             /* Return NULL if called by gen_iternext() */
@@ -273,8 +277,6 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
             !PyErr_ExceptionMatches(PyExc_StopAsyncIteration));
     }
 
-    assert(gen->gi_exc_state.exc_value == NULL);
-    assert(frame_state == FRAME_CLEARED);
     *presult = result;
     return result ? PYGEN_RETURN : PYGEN_ERROR;
 }

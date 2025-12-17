@@ -82,6 +82,13 @@ typedef struct _PyThreadStateImpl {
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
+    // Distinguishes between yield and return from PyEval_EvalFrame().
+    // See gen_send_ex2() in Objects/genobject.c
+    enum {
+        GENERATOR_RETURN = 0,
+        GENERATOR_YIELD = 1,
+    } generator_return_kind;
+
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.
     */
@@ -112,10 +119,6 @@ typedef struct _PyThreadStateImpl {
 
     // When >1, code objects do not immortalize their non-string constants.
     int suppress_co_const_immortalization;
-
-    // Last known frame state for generators/coroutines in this thread
-    // Used by genobject.c
-    int8_t gen_last_frame_state;
 
 #ifdef Py_STATS
      // per-thread stats, will be merged into interp->pystats_struct

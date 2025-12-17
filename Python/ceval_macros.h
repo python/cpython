@@ -521,12 +521,3 @@ gen_try_set_executing(PyGenObject *gen)
     }
     return false;
 }
-
-static inline void
-gen_set_frame_state(PyGenObject *gen, PyThreadState *tstate, int8_t frame_state)
-{
-    FT_ATOMIC_STORE_INT8_RELEASE(gen->gi_frame_state, frame_state);
-#ifdef Py_GIL_DISABLED
-    ((_PyThreadStateImpl *)tstate)->gen_last_frame_state = frame_state;
-#endif
-}
