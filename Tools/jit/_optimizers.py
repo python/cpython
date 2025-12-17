@@ -475,7 +475,7 @@ class Optimizer:
         for index, block in enumerate(self._blocks()):
             if block.target and block.fallthrough:
                 branch = block.instructions[-1]
-                assert branch.is_branch()
+                assert branch.is_branch() or branch.kind == InstructionKind.CALL
                 target = branch.target
                 assert target is not None
                 reloc = self._branches[branch.name][1]
