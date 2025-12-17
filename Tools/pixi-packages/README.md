@@ -12,7 +12,7 @@ python = { git = "https://github.com/python/cpython", subdirectory = "Tools/pixi
 ```
 
 This is particularly useful when developers need to build CPython from source
-(for example, for an ASan-instrumented build), as it does not require any manual
+(for example, for an ASan or TSan-instrumented build), as it does not require any manual
 clone or build steps. Instead, Pixi will automatically handle both the build
 and installation of the package.
 
@@ -20,7 +20,9 @@ Each package definition is contained in a subdirectory, but they share the build
 `build.sh` in this directory. Currently defined package variants:
 
 - `default`
-- `asan`: ASan-instrumented build with `PYTHON_ASAN=1`
+- `free-threading`
+- `asan`: ASan-instrumented build
+- `tsan`: free-threading, TSan-instrumented build
 
 ## Maintenance
 
@@ -30,7 +32,7 @@ Each package definition is contained in a subdirectory, but they share the build
 
 ## Opportunities for future improvement
 
-- More package variants (such as TSan, UBSan)
+- More package variants (such as UBSan)
 - Support for Windows
 - Using a single `pixi.toml` and `recipe.yaml` for all package variants is blocked on https://github.com/prefix-dev/pixi/issues/4599
 - A workaround can be removed from the build script once https://github.com/prefix-dev/rattler-build/issues/2012 is resolved
