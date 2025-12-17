@@ -223,8 +223,13 @@ class Optimizer:
                 block.link = block = _Block()
             inst = self._parse_instruction(line)
             block.instructions.append(inst)
-            if inst.is_branch() or inst.kind == InstructionKind.CALL:
-                # A block ending in a branch/call has a target and fallthrough:
+            if inst.is_branch():
+                # A block ending in a branch has a target and fallthrough:
+                assert inst.target is not None
+                block.target = self._lookup_label(inst.target)
+                assert block.fallthrough
+            elif inst.kind == InstructionKind.CALL:
+                # A block ending in a call has a target and return point after call:
                 assert inst.target is not None
                 block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
@@ -262,7 +267,7 @@ class Optimizer:
         elif match := self._re_call.match(line):
             target = match["target"]
             name = line[: -len(target)].strip()
-            kind = InstructionKind.JUMP
+            kind = InstructionKind.CALL
         elif match := self._re_return.match(line):
             name = line
             kind = InstructionKind.RETURN
