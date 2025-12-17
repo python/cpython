@@ -1330,8 +1330,8 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
-    // Initialize lazy imports based on configuration
-    // Do this after site module is imported to avoid circular imports during startup
+    // Initialize lazy imports based on configuration. Do this after site
+    // module is imported to avoid circular imports during startup.
     if (config->lazy_imports != -1) {
         PyImport_LazyImportsMode lazy_mode;
         if (config->lazy_imports == 1) {
@@ -1344,7 +1344,7 @@ init_interp_main(PyThreadState *tstate)
             return _PyStatus_ERR("failed to set lazy imports mode");
         }
     }
-    // If config->lazy_imports == -1, use the default mode (no change needed)
+    // If config->lazy_imports == -1, use the default mode, no change needed.
 
     if (is_main_interp) {
 #ifndef MS_WINDOWS

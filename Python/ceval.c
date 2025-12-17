@@ -3474,11 +3474,13 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 PyObject *
-_PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, PyObject *locals,
-            PyObject *name, PyObject *fromlist, PyObject *level)
+_PyEval_ImportName(PyThreadState *tstate, PyObject *builtins,
+            PyObject *globals, PyObject *locals, PyObject *name,
+            PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__),
+                                  &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
@@ -3486,13 +3488,15 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
         return NULL;
     }
 
-    PyObject *res = _PyEval_ImportNameWithImport(tstate, import_func, globals, locals, name, fromlist, level);
+    PyObject *res = _PyEval_ImportNameWithImport(
+        tstate, import_func, globals, locals, name, fromlist, level);
     Py_DECREF(import_func);
     return res;
 }
 
 PyObject *
-_PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func, PyObject *globals, PyObject *locals,
+_PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func,
+                             PyObject *globals, PyObject *locals,
                              PyObject *name, PyObject *fromlist, PyObject *level)
 {
     if (locals == NULL) {
@@ -3529,7 +3533,8 @@ check_lazy_import_compatibility(PyThreadState *tstate, PyObject *globals,
     int res = -1;
 
     if (globals != NULL &&
-        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0)
+        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__),
+                                  &lazy_modules) < 0)
     {
         return -1;
     }
@@ -3556,9 +3561,9 @@ error:
 }
 
 PyObject *
-_PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
-                       PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level,
-                       int lazy)
+_PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins,
+                       PyObject *globals, PyObject *locals, PyObject *name,
+                       PyObject *fromlist, PyObject *level, int lazy)
 {
     PyObject *res = NULL;
     // Check if global policy overrides the local syntax
@@ -3582,17 +3587,21 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
     }
 
     if (!lazy) {
-        // Not a lazy import or lazy imports are disabled, fallback to the regular import
-        return _PyEval_ImportName(tstate, builtins, globals, locals, name, fromlist, level);
+        // Not a lazy import or lazy imports are disabled, fallback to the
+        // regular import.
+        return _PyEval_ImportName(tstate, builtins, globals, locals,
+                                  name, fromlist, level);
     }
 
     PyObject *lazy_import_func;
-    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &lazy_import_func) < 0) {
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__),
+                                  &lazy_import_func) < 0) {
         goto error;
     }
     if (lazy_import_func == NULL) {
         assert(!PyErr_Occurred());
-        _PyErr_SetString(tstate, PyExc_ImportError, "__lazy_import__ not found");
+        _PyErr_SetString(tstate, PyExc_ImportError,
+                         "__lazy_import__ not found");
         goto error;
     }
 
@@ -3797,7 +3806,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     PyLazyImportObject *d = (PyLazyImportObject *)v;
     PyObject *mod = PyImport_GetModule(d->lz_from);
     if (mod != NULL) {
-        // Check if the module already has the attribute, if so, resolve it eagerly.
+        // Check if the module already has the attribute, if so, resolve it
+        // eagerly.
         if (PyModule_Check(mod)) {
             PyObject *mod_dict = PyModule_GetDict(mod);
             if (mod_dict != NULL) {
@@ -3816,7 +3826,8 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
 
     if (d->lz_attr != NULL) {
         if (PyUnicode_Check(d->lz_attr)) {
-            PyObject *from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);
+            PyObject *from = PyUnicode_FromFormat(
+                "%U.%U", d->lz_from, d->lz_attr);
             if (from == NULL) {
                 return NULL;
             }

@@ -916,9 +916,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Returns the current lazy imports mode as a string.
 
-   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword are lazy
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
    * ``"all"``: All top-level imports are potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked ones)
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
 
    See also :func:`set_lazy_imports` and :pep:`810`.
 
@@ -927,23 +929,25 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: get_lazy_imports_filter()
 
-   Returns the current lazy imports filter function, or ``None`` if no filter
-   is set.
+   Returns the current lazy imports filter function, or ``None`` if no
+   filter is set.
 
-   The filter function is called for every potentially lazy import to determine
-   whether it should actually be lazy. See :func:`set_lazy_imports_filter` for
-   details on the filter function signature.
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. See
+   :func:`set_lazy_imports_filter` for details on the filter function
+   signature.
 
    .. versionadded:: next
 
 
 .. function:: get_lazy_modules()
 
-   Returns a set of fully-qualified module names that have been lazily imported.
-   This is primarily useful for diagnostics and introspection.
+   Returns a set of fully-qualified module names that have been
+   lazilyimported. This is primarily useful for diagnostics and
+   introspection.
 
-   Note that modules are removed from this set when they are reified (actually
-   loaded on first use).
+   Note that modules are removed from this set when they are reified
+   (actually loaded on first use).
 
    .. versionadded:: next
 
@@ -1759,16 +1763,19 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: set_lazy_imports(mode)
 
-   Sets the global lazy imports mode. The *mode* parameter must be one of the
-   following strings:
+   Sets the global lazy imports mode. The *mode* parameter must be one of
+   the following strings:
 
-   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword are lazy
+   * ``"normal"``: Only imports explicitly marked with the ``lazy`` keyword
+     are lazy
    * ``"all"``: All top-level imports become potentially lazy
-   * ``"none"``: All lazy imports are suppressed (even explicitly marked ones)
+   * ``"none"``: All lazy imports are suppressed (even explicitly marked
+     ones)
 
-   This function is intended for advanced users who need to control lazy imports
-   across their entire application. Library developers should generally not use
-   this function as it affects the runtime execution of applications.
+   This function is intended for advanced users who need to control lazy
+   imports across their entire application. Library developers should
+   generally not use this function as it affects the runtime execution of
+   applications.
 
    In addition to the mode, lazy imports can be controlled via the filter
    provided by :func:`set_lazy_imports_filter`.
@@ -1783,8 +1790,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    Sets the lazy imports filter callback. The *filter* parameter must be a
    callable or ``None`` to clear the filter.
 
-   The filter function is called for every potentially lazy import to determine
-   whether it should actually be lazy. It must have the following signature::
+   The filter function is called for every potentially lazy import to
+   determine whether it should actually be lazy. It must have the following
+   signature::
 
       def filter(importing_module: str, imported_module: str,
                  fromlist: tuple[str, ...] | None) -> bool

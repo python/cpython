@@ -78,7 +78,8 @@ extern Py_ssize_t _PyModule_GetFilenameUTF8(
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);
 PyObject* _Py_module_getattro(PyObject *m, PyObject *name);
 
-PyAPI_FUNC(int) _PyModule_ReplaceLazyValue(PyObject *dict, PyObject *name, PyObject *value);
+PyAPI_FUNC(int) _PyModule_ReplaceLazyValue(
+    PyObject *dict, PyObject *name, PyObject *value);
 
 #ifdef __cplusplus
 }

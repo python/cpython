@@ -318,8 +318,8 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
--X lazy_imports=[all|none|normal]: control global lazy imports; default is normal;\n\
-         also PYTHON_LAZY_IMPORTS\n\
+-X lazy_imports=[all|none|normal]: control global lazy imports;\n\
+         default is normal; also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\

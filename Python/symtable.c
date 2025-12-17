@@ -1817,28 +1817,30 @@ check_import_from(struct symtable *st, stmt_ty s)
 }
 
 static int
-check_lazy_import_context(struct symtable *st, stmt_ty s, const char* import_type)
+check_lazy_import_context(struct symtable *st, stmt_ty s,
+                          const char* import_type)
 {
-    /* Check if inside try/except block */
+    // Check if inside try/except block.
     if (st->st_cur->ste_in_try_block) {
         PyErr_Format(PyExc_SyntaxError,
-                    "lazy %s not allowed inside try/except blocks", import_type);
+                     "lazy %s not allowed inside try/except blocks",
+                     import_type);
         SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
         return 0;
     }
 
-    /* Check if inside function scope */
+    // Check if inside function scope.
     if (st->st_cur->ste_type == FunctionBlock) {
         PyErr_Format(PyExc_SyntaxError,
-                    "lazy %s not allowed inside functions", import_type);
+                     "lazy %s not allowed inside functions", import_type);
         SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
         return 0;
     }
 
-    /* Check if inside class scope */
+    // Check if inside class scope.
     if (st->st_cur->ste_type == ClassBlock) {
         PyErr_Format(PyExc_SyntaxError,
-                    "lazy %s not allowed inside classes", import_type);
+                     "lazy %s not allowed inside classes", import_type);
         SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
         return 0;
     }
@@ -2153,11 +2155,15 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 return 0;
             }
 
-            /* Check for import * */
-            for (Py_ssize_t i = 0; i < asdl_seq_LEN(s->v.ImportFrom.names); i++) {
-                alias_ty alias = (alias_ty)asdl_seq_GET(s->v.ImportFrom.names, i);
-                if (alias->name && _PyUnicode_EqualToASCIIString(alias->name, "*")) {
-                    PyErr_SetString(PyExc_SyntaxError, "lazy from ... import * is not allowed");
+            // Check for import *
+            for (Py_ssize_t i = 0; i < asdl_seq_LEN(s->v.ImportFrom.names);
+                 i++) {
+                alias_ty alias = (alias_ty)asdl_seq_GET(
+                    s->v.ImportFrom.names, i);
+                if (alias->name &&
+                        _PyUnicode_EqualToASCIIString(alias->name, "*")) {
+                    PyErr_SetString(PyExc_SyntaxError,
+                                    "lazy from ... import * is not allowed");
                     SET_ERROR_LOCATION(st->st_filename, LOCATION(s));
                     return 0;
                 }

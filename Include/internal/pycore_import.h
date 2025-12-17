@@ -32,17 +32,16 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
-extern PyObject *
-_PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
-extern PyObject *
-_PyImport_GetAbsName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+extern PyObject * _PyImport_ResolveName(
+    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+extern PyObject * _PyImport_GetAbsName(
+    PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 // Symbol is exported for the JIT on Windows builds.
-PyAPI_FUNC(PyObject *)
-_PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import);
-extern PyObject *
-_PyImport_LazyImportModuleLevelObject(PyThreadState *tstate, PyObject *name, PyObject *builtins, PyObject *globals,
-                                      PyObject *locals, PyObject *fromlist,
-                                      int level);
+PyAPI_FUNC(PyObject *) _PyImport_LoadLazyImportTstate(
+    PyThreadState *tstate, PyObject *lazy_import);
+extern PyObject * _PyImport_LazyImportModuleLevelObject(
+    PyThreadState *tstate, PyObject *name, PyObject *builtins,
+    PyObject *globals, PyObject *locals, PyObject *fromlist, int level);
 
 
 #ifdef HAVE_DLOPEN
@@ -82,7 +81,8 @@ extern void _PyImport_ClearModules(PyInterpreterState *interp);
 
 extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 
-extern PyObject * _PyImport_InitLazyModules(PyInterpreterState *interp);
+extern PyObject * _PyImport_InitLazyModules(
+    PyInterpreterState *interp);
 extern void _PyImport_ClearLazyModules(PyInterpreterState *interp);
 
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);

@@ -2950,14 +2950,16 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyObject *res_o;
             if (!(oparg & 0x02)) {
-                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),
+                                LOCALS(), name,
                                 PyStackRef_AsPyObjectBorrow(fromlist),
                                 PyStackRef_AsPyObjectBorrow(level),
                                 oparg & 0x01);
 
             }
             else {
-                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(),
+                                LOCALS(), name,
                                 PyStackRef_AsPyObjectBorrow(fromlist),
                                 PyStackRef_AsPyObjectBorrow(level));
             }
@@ -2970,10 +2972,12 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *res_o;
             if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
-                res_o = _PyEval_LazyImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_LazyImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
             }
             else {
-                res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_ImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
             }
 
             ERROR_IF(res_o == NULL);

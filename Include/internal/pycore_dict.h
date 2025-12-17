@@ -40,7 +40,8 @@ extern int _PyDict_Contains_KnownHash(PyObject *, PyObject *, Py_hash_t);
 extern PyObject* _PyDict_GetItemIdWithError(PyObject *dp,
                                             _Py_Identifier *key);
 extern int _PyDict_ContainsId(PyObject *, _Py_Identifier *);
-extern int _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key, PyObject *item);
+extern int _PyDict_SetItemId(PyObject *dp, _Py_Identifier *key,
+                             PyObject *item);
 extern int _PyDict_DelItemId(PyObject *mp, _Py_Identifier *key);
 extern void _PyDict_ClearKeysVersion(PyObject *mp);
 

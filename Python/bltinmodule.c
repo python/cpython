@@ -322,21 +322,23 @@ builtin___lazy_import___impl(PyObject *module, PyObject *name,
         return NULL;
     }
     if (builtins == NULL) {
-        PyErr_SetString(PyExc_ValueError, "unable to get builtins for lazy import");
+        PyErr_SetString(PyExc_ValueError,
+                        "unable to get builtins for lazy import");
         return NULL;
     }
     if (PyModule_Check(builtins)) {
         PyObject *builtins_dict = Py_XNewRef(PyModule_GetDict(builtins));
         if (builtins_dict == NULL) {
             Py_DECREF(builtins);
-            PyErr_SetString(PyExc_AttributeError, "builtins module has no dict");
+            PyErr_SetString(PyExc_AttributeError,
+                            "builtins module has no dict");
             return NULL;
         }
         Py_SETREF(builtins, builtins_dict);
     }
 
-    PyObject *res = _PyImport_LazyImportModuleLevelObject(tstate, name, builtins,
-                                                 globals, locals, fromlist, level);
+    PyObject *res = _PyImport_LazyImportModuleLevelObject(
+        tstate, name, builtins, globals, locals, fromlist, level);
     Py_DECREF(builtins);
     return res;
 }

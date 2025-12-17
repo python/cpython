@@ -1,4 +1,4 @@
-/* Lazy object implementation */
+// Lazy object implementation.
 
 #include "Python.h"
 #include "pycore_ceval.h"
@@ -23,7 +23,7 @@ _PyLazyImport_New(PyObject *builtins, PyObject *name, PyObject *fromlist)
     }
     else if (!PyUnicode_Check(fromlist) && !PyTuple_Check(fromlist)) {
         PyErr_SetString(PyExc_TypeError,
-                        "lazy_import: fromlist must be None, a string, or a tuple");
+            "lazy_import: fromlist must be None, a string, or a tuple");
         return NULL;
     }
     m = PyObject_GC_New(PyLazyImportObject, &PyLazyImport_Type);
@@ -34,7 +34,7 @@ _PyLazyImport_New(PyObject *builtins, PyObject *name, PyObject *fromlist)
     m->lz_from = Py_NewRef(name);
     m->lz_attr = Py_XNewRef(fromlist);
 
-    /* Capture frame information for the original import location */
+    // Capture frame information for the original import location.
     m->lz_code = NULL;
     m->lz_instr_offset = -1;
 
@@ -43,7 +43,7 @@ _PyLazyImport_New(PyObject *builtins, PyObject *name, PyObject *fromlist)
         PyCodeObject *code = _PyFrame_GetCode(frame);
         if (code != NULL) {
             m->lz_code = (PyCodeObject *)Py_NewRef(code);
-            /* Calculate the instruction offset from the current frame */
+            // Calculate the instruction offset from the current frame.
             m->lz_instr_offset = _PyInterpreterFrame_LASTI(frame);
         }
     }
