@@ -8,23 +8,24 @@
 #ifndef Py_REMOTE_DEBUGGING_H
 #define Py_REMOTE_DEBUGGING_H
 
+/* _GNU_SOURCE must be defined before any system headers */
+#define _GNU_SOURCE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define _GNU_SOURCE
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #    define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-#include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
-#include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
-#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_INTERPRETER
-#include <internal/pycore_llist.h>          // struct llist_node
-#include <internal/pycore_long.h>           // _PyLong_GetZero
-#include <internal/pycore_stackref.h>       // Py_TAG_BITS
+#include "internal/pycore_debug_offsets.h"  // _Py_DebugOffsets
+#include "internal/pycore_frame.h"          // FRAME_SUSPENDED_YIELD_FROM
+#include "internal/pycore_interpframe.h"    // FRAME_OWNED_BY_INTERPRETER
+#include "internal/pycore_llist.h"          // struct llist_node
+#include "internal/pycore_long.h"           // _PyLong_GetZero
+#include "internal/pycore_stackref.h"       // Py_TAG_BITS
 #include "../../Python/remote_debug.h"
 
 #include <assert.h>
@@ -40,10 +41,17 @@ extern "C" {
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#if defined(__APPLE__) && TARGET_OS_OSX
-#include <libproc.h>
-#include <sys/types.h>
-#define MAX_NATIVE_THREADS 4096
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#  if !defined(TARGET_OS_OSX)
+     /* Older macOS SDKs do not define TARGET_OS_OSX */
+#    define TARGET_OS_OSX 1
+#  endif
+#  if TARGET_OS_OSX
+#    include <libproc.h>
+#    include <sys/types.h>
+#    define MAX_NATIVE_THREADS 4096
+#  endif
 #endif
 
 #ifdef MS_WINDOWS
@@ -109,10 +117,11 @@ typedef enum _WIN32_THREADSTATE {
 #define MAX_TLBC_SIZE 2048
 
 /* Thread status flags */
-#define THREAD_STATUS_HAS_GIL        (1 << 0)
-#define THREAD_STATUS_ON_CPU         (1 << 1)
-#define THREAD_STATUS_UNKNOWN        (1 << 2)
-#define THREAD_STATUS_GIL_REQUESTED  (1 << 3)
+#define THREAD_STATUS_HAS_GIL             (1 << 0)
+#define THREAD_STATUS_ON_CPU              (1 << 1)
+#define THREAD_STATUS_UNKNOWN             (1 << 2)
+#define THREAD_STATUS_GIL_REQUESTED       (1 << 3)
+#define THREAD_STATUS_HAS_EXCEPTION       (1 << 4)
 
 /* Exception cause macro */
 #define set_exception_cause(unwinder, exc_type, message) \
@@ -209,7 +218,8 @@ enum _ProfilingMode {
     PROFILING_MODE_WALL = 0,
     PROFILING_MODE_CPU = 1,
     PROFILING_MODE_GIL = 2,
-    PROFILING_MODE_ALL = 3
+    PROFILING_MODE_ALL = 3,
+    PROFILING_MODE_EXCEPTION = 4
 };
 
 typedef struct {
@@ -578,6 +588,16 @@ extern int process_thread_for_async_stack_trace(
     unsigned long tid,
     void *context
 );
+
+/* ============================================================================
+ * SUBPROCESS ENUMERATION FUNCTION DECLARATIONS
+ * ============================================================================ */
+
+/* Get all child PIDs of a process.
+ * Returns a new Python list of PIDs, or NULL on error with exception set.
+ * If recursive is true, includes all descendants (children, grandchildren, etc.)
+ */
+extern PyObject *enumerate_child_pids(pid_t target_pid, int recursive);
 
 #ifdef __cplusplus
 }

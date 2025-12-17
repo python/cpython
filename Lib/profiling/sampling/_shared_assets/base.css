@@ -37,6 +37,7 @@
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
+  --transition-slow: 0.3s ease;
 }
 
 /* Light theme (default) */
@@ -123,15 +124,15 @@
 
   --header-gradient: linear-gradient(135deg, #21262d 0%, #30363d 100%);
 
-  /* Dark mode heat palette - muted colors that provide sufficient contrast with light text */
-  --heat-1: rgba(74, 123, 167, 0.35);
-  --heat-2: rgba(90, 159, 168, 0.38);
-  --heat-3: rgba(106, 181, 181, 0.40);
-  --heat-4: rgba(126, 196, 136, 0.42);
-  --heat-5: rgba(160, 216, 120, 0.45);
-  --heat-6: rgba(196, 222, 106, 0.48);
-  --heat-7: rgba(244, 212, 77, 0.50);
-  --heat-8: rgba(255, 107, 53, 0.55);
+  /* Dark mode heat palette - cool to warm gradient for visualization */
+  --heat-1: rgba(90, 123, 167, 1);
+  --heat-2: rgba(106, 148, 168, 1);
+  --heat-3: rgba(122, 172, 172, 1);
+  --heat-4: rgba(142, 196, 152, 1);
+  --heat-5: rgba(168, 216, 136, 1);
+  --heat-6: rgba(200, 222, 122, 1);
+  --heat-7: rgba(244, 212, 93, 1);
+  --heat-8: rgba(255, 122, 69, 1);
 
   /* Code view specific - dark mode */
   --code-bg: #0d1117;
@@ -292,6 +293,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
   cursor: pointer;
+  text-decoration: none;
   transition: all var(--transition-fast);
 }
 
@@ -385,7 +387,9 @@ body {
 
 button:focus-visible,
 select:focus-visible,
-input:focus-visible {
+input:focus-visible,
+.toggle-switch:focus-visible,
+a.toolbar-btn:focus-visible {
   outline: 2px solid var(--python-gold);
   outline-offset: 2px;
 }
@@ -404,4 +408,91 @@ input:focus-visible {
   .toolbar-btn:not(.theme-toggle) {
     display: none;
   }
+}
+
+/* --------------------------------------------------------------------------
+   Toggle Switch
+   -------------------------------------------------------------------------- */
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-sans);
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-switch:hover {
+  opacity: 0.85;
+}
+
+.toggle-switch .toggle-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+  white-space: nowrap;
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.toggle-switch .toggle-label.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Reserve space for bold text to prevent layout shift on toggle */
+.toggle-switch .toggle-label::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  visibility: hidden;
+}
+
+.toggle-switch.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+  box-shadow: inset var(--shadow-sm);
+}
+
+.toggle-track:hover {
+  border-color: var(--text-muted);
+}
+
+.toggle-track.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.toggle-track.on::after {
+  transform: translateX(16px);
+  box-shadow: var(--shadow-md);
 }

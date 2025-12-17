@@ -5,6 +5,7 @@ from .constants import (
     THREAD_STATUS_ON_CPU,
     THREAD_STATUS_GIL_REQUESTED,
     THREAD_STATUS_UNKNOWN,
+    THREAD_STATUS_HAS_EXCEPTION,
 )
 
 try:
@@ -170,7 +171,7 @@ class Collector(ABC):
 
         Returns:
             tuple: (aggregate_status_counts, has_gc_frame, per_thread_stats)
-                - aggregate_status_counts: dict with has_gil, on_cpu, etc.
+                - aggregate_status_counts: dict with has_gil, on_cpu, has_exception, etc.
                 - has_gc_frame: bool indicating if any thread has GC frames
                 - per_thread_stats: dict mapping thread_id to per-thread counts
         """
@@ -179,6 +180,7 @@ class Collector(ABC):
             "on_cpu": 0,
             "gil_requested": 0,
             "unknown": 0,
+            "has_exception": 0,
             "total": 0,
         }
         has_gc_frame = False
@@ -200,6 +202,8 @@ class Collector(ABC):
                     status_counts["gil_requested"] += 1
                 if status_flags & THREAD_STATUS_UNKNOWN:
                     status_counts["unknown"] += 1
+                if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                    status_counts["has_exception"] += 1
 
                 # Track per-thread statistics
                 thread_id = getattr(thread_info, "thread_id", None)
@@ -210,6 +214,7 @@ class Collector(ABC):
                             "on_cpu": 0,
                             "gil_requested": 0,
                             "unknown": 0,
+                            "has_exception": 0,
                             "total": 0,
                             "gc_samples": 0,
                         }
@@ -225,6 +230,8 @@ class Collector(ABC):
                         thread_stats["gil_requested"] += 1
                     if status_flags & THREAD_STATUS_UNKNOWN:
                         thread_stats["unknown"] += 1
+                    if status_flags & THREAD_STATUS_HAS_EXCEPTION:
+                        thread_stats["has_exception"] += 1
 
                     # Check for GC frames in this thread
                     frames = getattr(thread_info, "frame_info", None)
