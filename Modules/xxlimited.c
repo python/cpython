@@ -180,6 +180,7 @@ Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
     // function zeroes instance memory; we don't need to do it again.
     XxoObject_Data *xxo_data = Xxo_get_data(self);
     if (xxo_data == NULL) {
+        Py_DECREF(self);
         return NULL;
     }
     xxo_data->x_attr = NULL;
