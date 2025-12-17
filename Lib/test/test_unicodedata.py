@@ -848,5 +848,52 @@ class NormalizationTest(unittest.TestCase):
                     self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
+class GraphemeBreakTest(unittest.TestCase):
+    @staticmethod
+    def check_version(testfile):
+        hdr = testfile.readline()
+        return unicodedata.unidata_version in hdr
+
+    @requires_resource('network')
+    def test_grapheme_break(self):
+        TESTDATAFILE = "auxiliary/GraphemeBreakTest.txt"
+        TESTDATAURL = f"https://www.unicode.org/Public/{unicodedata.unidata_version}/ucd/{TESTDATAFILE}"
+
+        # Hit the exception early
+        try:
+            testdata = open_urlresource(TESTDATAURL, encoding="utf-8",
+                                        check=self.check_version)
+        except PermissionError:
+            self.skipTest(f"Permission error when downloading {TESTDATAURL} "
+                          f"into the test data directory")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
+
+        with testdata:
+            self.run_grapheme_break_tests(testdata, unicodedata)
+
+    def run_grapheme_break_tests(self, testdata, ucd):
+        part = None
+        part1_data = set()
+
+        for line in testdata:
+            line, _, comment = line.partition('#')
+            line = line.strip()
+            if not line:
+                continue
+            comment = comment.strip()
+
+            chunks = []
+            for field in line.replace('×', ' ').split():
+                if field == '÷':
+                    chunks.append('')
+                else:
+                    chunks[-1] += chr(int(field, 16))
+            self.assertEqual(chunks.pop(), '', line)
+            with self.subTest(line):
+                result = list(unicodedata.iter_graphemes(''.join(chunks)))
+                self.assertEqual(result, chunks, comment)
+
+
 if __name__ == "__main__":
     unittest.main()
