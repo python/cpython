@@ -429,7 +429,8 @@ extern int process_frame_chain(
     int *stopped_at_cached_frame,
     uintptr_t *frame_addrs,
     Py_ssize_t *num_addrs,
-    Py_ssize_t max_addrs
+    Py_ssize_t max_addrs,
+    uintptr_t *out_last_frame_addr
 );
 
 /* Frame cache functions */
@@ -447,18 +448,22 @@ extern int frame_cache_lookup_and_extend(
     Py_ssize_t *num_addrs,
     Py_ssize_t max_addrs);
 // Returns: 1 = stored, 0 = not stored (graceful), -1 = error
+// Only stores complete stacks that reach base_frame_addr
 extern int frame_cache_store(
     RemoteUnwinderObject *unwinder,
     uint64_t thread_id,
     PyObject *frame_list,
     const uintptr_t *addrs,
-    Py_ssize_t num_addrs);
+    Py_ssize_t num_addrs,
+    uintptr_t base_frame_addr,
+    uintptr_t last_frame_visited);
 
 extern int collect_frames_with_cache(
     RemoteUnwinderObject *unwinder,
     uintptr_t frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
+    uintptr_t base_frame_addr,
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     uint64_t thread_id);
