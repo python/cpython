@@ -1969,11 +1969,8 @@ can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
-execution of a new program (via :func:`os.execl` and related functions), but
-they remain accessible after :func:`os.fork` until an exec call occurs. In other
-words, a forked child process can still use the file descriptor, but it will be
-closed if that child process calls exec to run a new program. Inheritable file
-descriptors are inherited across both fork and exec calls.
+execution of a new program, other file descriptors are inherited. Note that
+non-inheritable file descriptors are still *inherited* by child process on :func:`os.fork`.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
 processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
