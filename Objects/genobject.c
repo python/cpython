@@ -236,7 +236,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
     }
 
     EVAL_CALL_STAT_INC(EVAL_CALL_GENERATOR);
-    PyObject *result = PyEval_EvalFrame(tstate, frame, exc);
+    PyObject *result = _PyEval_EvalFrame(tstate, frame, exc);
     assert(tstate->exc_info == prev_exc_info);
 #ifndef Py_GIL_DISABLED
     assert(gen->gi_exc_state.previous_item == NULL);
@@ -245,7 +245,7 @@ gen_send_ex2(PyGenObject *gen, PyObject *arg, PyObject **presult, int exc)
 #endif
 
     // The generator_return_kind field is used to distinguish between a
-    // yield and a return from within PyEval_EvalFrame(). Earlier versions
+    // yield and a return from within _PyEval_EvalFrame(). Earlier versions
     // of CPython (prior to 3.15) used gi_frame_state for this purpose, but
     // that requires the GIL for thread-safety.
     int return_kind = ((_PyThreadStateImpl *)tstate)->generator_return_kind;
