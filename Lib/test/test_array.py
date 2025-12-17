@@ -1683,32 +1683,44 @@ class LargeArrayTest(unittest.TestCase):
     def test_gh_142555(self):
         # Test for null pointer dereference in array.__setitem__
         # via re-entrant __index__.
-        victim = array.array('b', [0] * 64)
 
-        class EvilIndex:
-            def __index__(self):
-                # Re-entrant mutation: shrink the array while __setitem__
-                # still holds a pointer to the pre-clear buffer.
-                victim.clear()
-                return 0
+        def test_clear_array(victim):
+            """Test array clearing scenario"""
+            class EvilIndex:
+                def __index__(self):
+                    # Re-entrant mutation: clear the array while __setitem__
+                    # still holds a pointer to the pre-clear buffer.
+                    victim.clear()
+                    return 0
 
-        with self.assertRaises(IndexError):
-            victim[1] = EvilIndex()
+            with self.assertRaises(IndexError):
+                victim[1] = EvilIndex()
 
-        self.assertEqual(len(victim), 0)
+            self.assertEqual(len(victim), 0)
 
-        # Test case where array is shrunk but not completely cleared
-        victim2 = array.array('b', [1, 2, 3])
+        def test_shrink_array(victim):
+            """Test array shrinking scenario"""
+            class ShrinkIndex:
+                def __index__(self):
+                    # Pop two elements, making array size 1, so index 1 is out of bounds
+                    victim.pop()
+                    victim.pop()
+                    return 0
 
-        class ShrinkIndex:
-            def __index__(self):
-                # Pop two elements, making array size 1, so index 1 is out of bounds
-                victim2.pop()
-                victim2.pop()
-                return 0
+            with self.assertRaises(IndexError):
+                victim[1] = ShrinkIndex()  # Original index 1 should now be out of bounds
 
-        with self.assertRaises(IndexError):
-            victim2[1] = ShrinkIndex()
+        # Test various array types
+        test_clear_array(array.array('b', [0] * 64))
+        test_shrink_array(array.array('b', [1, 2, 3]))
+        test_clear_array(array.array('B', [1, 2, 3]))
+        test_clear_array(array.array('h', [1, 2, 3]))
+        test_clear_array(array.array('H', [1, 2, 3]))
+        test_clear_array(array.array('i', [1, 2, 3]))
+        test_clear_array(array.array('l', [1, 2, 3]))
+        test_clear_array(array.array('q', [1, 2, 3]))
+        test_clear_array(array.array('f', [1.0, 2.0, 3.0]))
+        test_clear_array(array.array('d', [1.0, 2.0, 3.0]))
 
 
 if __name__ == "__main__":
