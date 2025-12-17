@@ -848,9 +848,10 @@ call release as many times the lock has been acquired can lead to deadlock.
    reentrant lock, the same thread may acquire it again without blocking; the
    thread must release it once for each time it has acquired it.
 
-   Note that ``RLock`` is actually a factory function which returns an instance
-   of the most efficient version of the concrete RLock class that is supported
-   by the platform.
+   .. versionchanged:: 3.15
+      ``RLock`` is now a class. In earlier Pythons, ``RLock`` was a factory
+      function which returned an instance of the underlying private lock
+      type.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
