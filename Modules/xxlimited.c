@@ -277,11 +277,7 @@ static int
 Xxo_setattro(PyObject *self, PyObject *name, PyObject *v)
 {
     // filter a specific attribute name
-    int is_reserved = PyUnicode_EqualToUTF8(name, "reserved");
-    if (is_reserved < 0) {
-        return -1;
-    }
-    else if (is_reserved) {
+    if (PyUnicode_Check(name) && PyUnicode_EqualToUTF8(name, "reserved")) {
         PyErr_Format(PyExc_AttributeError, "cannot set %R", name);
         return -1;
     }
