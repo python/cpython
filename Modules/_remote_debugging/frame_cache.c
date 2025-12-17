@@ -44,7 +44,9 @@ frame_cache_find(RemoteUnwinderObject *unwinder, uint64_t thread_id)
         return NULL;
     }
     for (int i = 0; i < FRAME_CACHE_MAX_THREADS; i++) {
+        assert(i >= 0 && i < FRAME_CACHE_MAX_THREADS);
         if (unwinder->frame_cache[i].thread_id == thread_id) {
+            assert(unwinder->frame_cache[i].num_addrs <= FRAME_CACHE_MAX_FRAMES);
             return &unwinder->frame_cache[i];
         }
     }
@@ -154,6 +156,8 @@ frame_cache_lookup_and_extend(
         return 0;
     }
 
+    assert(entry->num_addrs >= 0 && entry->num_addrs <= FRAME_CACHE_MAX_FRAMES);
+
     // Find the index where last_profiled_frame matches
     Py_ssize_t start_idx = -1;
     for (Py_ssize_t i = 0; i < entry->num_addrs; i++) {
@@ -166,6 +170,7 @@ frame_cache_lookup_and_extend(
     if (start_idx < 0) {
         return 0;  // Not found
     }
+    assert(start_idx < entry->num_addrs);
 
     Py_ssize_t num_frames = PyList_GET_SIZE(entry->frame_list);
 
@@ -225,6 +230,7 @@ frame_cache_store(
     if (num_addrs > FRAME_CACHE_MAX_FRAMES) {
         num_addrs = FRAME_CACHE_MAX_FRAMES;
     }
+    assert(num_addrs >= 0 && num_addrs <= FRAME_CACHE_MAX_FRAMES);
 
     FrameCacheEntry *entry = frame_cache_alloc_slot(unwinder, thread_id);
     if (!entry) {
@@ -245,6 +251,8 @@ frame_cache_store(
     entry->thread_id = thread_id;
     memcpy(entry->addrs, addrs, num_addrs * sizeof(uintptr_t));
     entry->num_addrs = num_addrs;
+    assert(entry->num_addrs == num_addrs);
+    assert(entry->thread_id == thread_id);
 
     return 1;
 }
