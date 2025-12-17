@@ -548,7 +548,8 @@ class Optimizer:
         for _ in range(4):
             self._invert_hot_branches()
             self._remove_redundant_jumps()
-            self._remove_unreachable()
+            # FIXME (gh-141594): Breaks LLVM on FT builds
+            # self._remove_unreachable()
         self._fixup_external_labels()
         self._fixup_constants()
         self.path.write_text(self._body())
