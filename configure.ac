@@ -2148,7 +2148,7 @@ if test "$Py_BOLT" = 'true' ; then
   esac
   AC_MSG_RESULT([$has_packed_relocs])
 
-  # Check BOLT version to determine if we need to skip functions with computed gotos.
+  # Check BOLT version if it's < 21.1.0, to determine if we need to skip functions with computed gotos.
   AC_MSG_CHECKING([llvm-bolt version])
   llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[[0-9]]+\.[[0-9]]+\.[[0-9]]+' | head -1)
   AC_MSG_RESULT([${llvm_bolt_version}])
@@ -2204,7 +2204,7 @@ then
     dnl Skip base computed goto functions
     BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1"
     dnl GCC's LTO creates .lto_priv.0 clones that also need to be skipped
-    dnl Skip if packed relocs not present
+    dnl Skip if packed relocs not present.
     if test "${has_packed_relocs}" != "yes" && test "${ac_cv_cc_name}" = "gcc" && test "${with_lto}" != "no" && test -n "${with_lto}"; then
       BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
     fi
@@ -2227,7 +2227,7 @@ then
         bolt_need_lto=$( (test "${with_lto}" != "no" && test -n "${with_lto}") && echo "yes" || echo "no")
         bolt_need_pgo=$( (test "${enable_optimizations}" = "yes" && test "${enable_shared}" = "yes") && echo "yes" || echo "no")
 
-        dnl Build the skip list
+        dnl Build the skip list $bolt_skip_list
         test "${bolt_need_base}" = "yes" && bolt_skip_list="${bolt_base}"
         if test "${bolt_need_lto}" = "yes"; then
           if test "${enable_shared}" = "yes"; then
@@ -2250,7 +2250,7 @@ then
           fi
         fi
 
-        dnl Apply the skip list
+        dnl Apply the skip list to BOLT_COMMON_FLAGS
         if test -n "${bolt_skip_list}"; then
           if test "${bolt_need_skip_computed_goto}" = "yes"; then
             BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},${bolt_skip_list}"
