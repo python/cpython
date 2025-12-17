@@ -3563,10 +3563,22 @@ class PdbTestCase(unittest.TestCase):
 
     def _fd_dir_for_pipe_targets(self):
         """Return a directory exposing live file descriptors, if any."""
+        return self._proc_fd_dir() or self._dev_fd_dir()
+
+    def _proc_fd_dir(self):
+        """Return /proc-backed fd dir when it can be used for pipes."""
+        # GH-142836: Opening /proc/self/fd entries for pipes raises EACCES on
+        # Solaris, so prefer other mechanisms there.
+        if sys.platform.startswith("sunos"):
+            return None
+
         proc_fd = "/proc/self/fd"
         if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
             return proc_fd
+        return None
 
+    def _dev_fd_dir(self):
+        """Return /dev-backed fd dir when usable."""
         dev_fd = "/dev/fd"
         if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
             if sys.platform.startswith("freebsd"):
@@ -3576,7 +3588,6 @@ class PdbTestCase(unittest.TestCase):
                 except FileNotFoundError:
                     return None
             return dev_fd
-
         return None
 
     def test_find_function_empty_file(self):
