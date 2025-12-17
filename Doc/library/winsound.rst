@@ -1,5 +1,5 @@
-:mod:`winsound` --- Sound-playing interface for Windows
-=======================================================
+:mod:`!winsound` --- Sound-playing interface for Windows
+========================================================
 
 .. module:: winsound
    :platform: Windows
@@ -13,6 +13,8 @@
 The :mod:`winsound` module provides access to the basic sound-playing machinery
 provided by Windows platforms.  It includes functions and several constants.
 
+.. availability:: Windows.
+
 
 .. function:: Beep(frequency, duration)
 
@@ -24,7 +26,7 @@ provided by Windows platforms.  It includes functions and several constants.
 
 .. function:: PlaySound(sound, flags)
 
-   Call the underlying :c:func:`PlaySound` function from the Platform API.  The
+   Call the underlying :c:func:`!PlaySound` function from the Platform API.  The
    *sound* parameter may be a filename, a system sound alias, audio data as a
    :term:`bytes-like object`, or ``None``.  Its
    interpretation depends on the value of *flags*, which can be a bitwise ORed
@@ -35,7 +37,7 @@ provided by Windows platforms.  It includes functions and several constants.
 
 .. function:: MessageBeep(type=MB_OK)
 
-   Call the underlying :c:func:`MessageBeep` function from the Platform API.  This
+   Call the underlying :c:func:`!MessageBeep` function from the Platform API.  This
    plays a sound as specified in the registry.  The *type* argument specifies which
    sound to play; possible values are ``-1``, ``MB_ICONASTERISK``,
    ``MB_ICONEXCLAMATION``, ``MB_ICONHAND``, ``MB_ICONQUESTION``, and ``MB_OK``, all
@@ -135,6 +137,34 @@ provided by Windows platforms.  It includes functions and several constants.
       This flag is not supported on modern Windows platforms.
 
 
+.. data:: SND_APPLICATION
+
+   The *sound* parameter is an application-specific alias in the registry.
+   This flag can be combined with the :const:`SND_ALIAS` flag
+   to specify an application-defined sound alias.
+
+
+.. data:: SND_SENTRY
+
+   Triggers a SoundSentry event when the sound is played.
+
+   .. versionadded:: 3.14
+
+
+.. data:: SND_SYNC
+
+   The sound is played synchronously.  This is the default behavior.
+
+   .. versionadded:: 3.14
+
+
+.. data:: SND_SYSTEM
+
+   Assign the sound to the audio session for system notification sounds.
+
+   .. versionadded:: 3.14
+
+
 .. data:: MB_ICONASTERISK
 
    Play the ``SystemDefault`` sound.
@@ -159,3 +189,30 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Play the ``SystemDefault`` sound.
 
+
+.. data:: MB_ICONERROR
+
+   Play the ``SystemHand`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONINFORMATION
+
+   Play the ``SystemDefault`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONSTOP
+
+   Play the ``SystemHand`` sound.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MB_ICONWARNING
+
+   Play the ``SystemExclamation`` sound.
+
+   .. versionadded:: 3.14

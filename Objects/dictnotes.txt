@@ -70,8 +70,8 @@ A values array
 Tunable Dictionary Parameters
 -----------------------------
 
-See comments for PyDict_MINSIZE_SPLIT, PyDict_MINSIZE_COMBINED,
-USABLE_FRACTION and GROWTH_RATE in dictobject.c
+See comments for PyDict_MINSIZE, USABLE_FRACTION and GROWTH_RATE in
+dictobject.c
 
 Tune-ups should be measured across a broad range of applications and
 use cases.  A change to any parameter will help in some situations and

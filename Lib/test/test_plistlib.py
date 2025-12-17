@@ -1,14 +1,24 @@
-# Copyright (C) 2003-2013 Python Software Foundation
-
+# Copyright (C) 2003 Python Software Foundation
+import copy
+import operator
+import pickle
+import struct
 import unittest
 import plistlib
 import os
+import sys
+import json
 import datetime
 import codecs
+import subprocess
 import binascii
 import collections
+import zoneinfo
 from test import support
+from test.support import os_helper
 from io import BytesIO
+
+from plistlib import UID
 
 ALL_FORMATS=(plistlib.FMT_XML, plistlib.FMT_BINARY)
 
@@ -88,14 +98,317 @@ TESTDATA={
         ZwB0AHwAiACUAJoApQCuALsAygDTAOQA7QD4AQQBDwEdASsBNgE3ATgBTwFn
         AW4BcAFyAXQBdgF/AYMBhQGHAYwBlQGbAZ0BnwGhAaUBpwGwAbkBwAHBAcIB
         xQHHAsQC0gAAAAAAAAIBAAAAAAAAADkAAAAAAAAAAAAAAAAAAALs'''),
+    'KEYED_ARCHIVE': binascii.a2b_base64(b'''
+        YnBsaXN0MDDUAQIDBAUGHB1YJHZlcnNpb25YJG9iamVjdHNZJGFyY2hpdmVy
+        VCR0b3ASAAGGoKMHCA9VJG51bGzTCQoLDA0OVnB5dHlwZVYkY2xhc3NZTlMu
+        c3RyaW5nEAGAAl8QE0tleUFyY2hpdmUgVUlEIFRlc3TTEBESExQZWiRjbGFz
+        c25hbWVYJGNsYXNzZXNbJGNsYXNzaGludHNfEBdPQ19CdWlsdGluUHl0aG9u
+        VW5pY29kZaQVFhcYXxAXT0NfQnVpbHRpblB5dGhvblVuaWNvZGVfEBBPQ19Q
+        eXRob25Vbmljb2RlWE5TU3RyaW5nWE5TT2JqZWN0ohobXxAPT0NfUHl0aG9u
+        U3RyaW5nWE5TU3RyaW5nXxAPTlNLZXllZEFyY2hpdmVy0R4fVHJvb3SAAQAI
+        ABEAGgAjAC0AMgA3ADsAQQBIAE8AVgBgAGIAZAB6AIEAjACVAKEAuwDAANoA
+        7QD2AP8BAgEUAR0BLwEyATcAAAAAAAACAQAAAAAAAAAgAAAAAAAAAAAAAAAA
+        AAABOQ=='''),
 }
+
+XML_PLIST_WITH_ENTITY=b'''\
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd" [
+   <!ENTITY entity "replacement text">
+  ]>
+<plist version="1.0">
+  <dict>
+    <key>A</key>
+    <string>&entity;</string>
+  </dict>
+</plist>
+'''
+
+INVALID_BINARY_PLISTS = [
+    ('too short data',
+        b''
+    ),
+    ('too large offset_table_offset and offset_size = 1',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x2a'
+    ),
+    ('too large offset_table_offset and nonstandard offset_size',
+        b'\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x03\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x2c'
+    ),
+    ('integer overflow in offset_table_offset',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\xff\xff\xff\xff\xff\xff\xff\xff'
+    ),
+    ('too large top_object',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('integer overflow in top_object',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\xff\xff\xff\xff\xff\xff\xff\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('too large num_objects and offset_size = 1',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('too large num_objects and nonstandard offset_size',
+        b'\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x03\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('extremally large num_objects (32 bit)',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x7f\xff\xff\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('extremally large num_objects (64 bit)',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\xff\xff\xff\xff\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('integer overflow in num_objects',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\xff\xff\xff\xff\xff\xff\xff\xff'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('offset_size = 0',
+        b'\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('ref_size = 0',
+        b'\xa1\x01\x00\x08\x0a'
+        b'\x00\x00\x00\x00\x00\x00\x01\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0b'
+    ),
+    ('too large offset',
+        b'\x00\x2a'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('integer overflow in offset',
+        b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+        b'\x00\x00\x00\x00\x00\x00\x08\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x09'
+    ),
+    ('too large array size',
+        b'\xaf\x00\x01\xff\x00\x08\x0c'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0d'
+    ),
+    ('extremally large array size (32-bit)',
+        b'\xaf\x02\x7f\xff\xff\xff\x01\x00\x08\x0f'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x10'
+    ),
+    ('extremally large array size (64-bit)',
+        b'\xaf\x03\x00\x00\x00\xff\xff\xff\xff\xff\x01\x00\x08\x13'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x14'
+    ),
+    ('integer overflow in array size',
+        b'\xaf\x03\xff\xff\xff\xff\xff\xff\xff\xff\x01\x00\x08\x13'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x14'
+    ),
+    ('too large reference index',
+        b'\xa1\x02\x00\x08\x0a'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0b'
+    ),
+    ('integer overflow in reference index',
+        b'\xa1\xff\xff\xff\xff\xff\xff\xff\xff\x00\x08\x11'
+        b'\x00\x00\x00\x00\x00\x00\x01\x08'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x12'
+    ),
+    ('too large bytes size',
+        b'\x4f\x00\x23\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0c'
+    ),
+    ('extremally large bytes size (32-bit)',
+        b'\x4f\x02\x7f\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0f'
+    ),
+    ('extremally large bytes size (64-bit)',
+        b'\x4f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x13'
+    ),
+    ('integer overflow in bytes size',
+        b'\x4f\x03\xff\xff\xff\xff\xff\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x13'
+    ),
+    ('too large ASCII size',
+        b'\x5f\x00\x23\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0c'
+    ),
+    ('extremally large ASCII size (32-bit)',
+        b'\x5f\x02\x7f\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0f'
+    ),
+    ('extremally large ASCII size (64-bit)',
+        b'\x5f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x13'
+    ),
+    ('integer overflow in ASCII size',
+        b'\x5f\x03\xff\xff\xff\xff\xff\xff\xff\xff\x41\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x13'
+    ),
+    ('invalid ASCII',
+        b'\x51\xff\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0a'
+    ),
+    ('too large UTF-16 size',
+        b'\x6f\x00\x13\x20\xac\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0e'
+    ),
+    ('extremally large UTF-16 size (32-bit)',
+        b'\x6f\x02\x4f\xff\xff\xff\x20\xac\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('extremally large UTF-16 size (64-bit)',
+        b'\x6f\x03\x00\x00\x00\xff\xff\xff\xff\xff\x20\xac\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x15'
+    ),
+    ('integer overflow in UTF-16 size',
+        b'\x6f\x03\xff\xff\xff\xff\xff\xff\xff\xff\x20\xac\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x15'
+    ),
+    ('invalid UTF-16',
+        b'\x61\xd8\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0b'
+    ),
+    ('non-hashable key',
+        b'\xd1\x01\x01\xa0\x08\x0b'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x02'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x0c'
+    ),
+    ('too large datetime (datetime overflow)',
+        b'\x33\x42\x50\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('too large datetime (timedelta overflow)',
+        b'\x33\x42\xe0\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('invalid datetime (Infinity)',
+        b'\x33\x7f\xf0\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+    ('invalid datetime (NaN)',
+        b'\x33\x7f\xf8\x00\x00\x00\x00\x00\x00\x08'
+        b'\x00\x00\x00\x00\x00\x00\x01\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x01'
+        b'\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00\x00\x00\x11'
+    ),
+]
 
 
 class TestPlistlib(unittest.TestCase):
 
     def tearDown(self):
         try:
-            os.unlink(support.TESTFN)
+            os.unlink(os_helper.TESTFN)
         except:
             pass
 
@@ -133,10 +446,10 @@ class TestPlistlib(unittest.TestCase):
 
     def test_io(self):
         pl = self._create()
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             plistlib.dump(pl, fp)
 
-        with open(support.TESTFN, 'rb') as fp:
+        with open(os_helper.TESTFN, 'rb') as fp:
             pl2 = plistlib.load(fp)
 
         self.assertEqual(dict(pl), dict(pl2))
@@ -150,6 +463,14 @@ class TestPlistlib(unittest.TestCase):
         for fmt in ALL_FORMATS:
             with self.subTest(fmt=fmt):
                 self.assertRaises(TypeError, plistlib.dumps, pl, fmt=fmt)
+
+    def test_invalid_uid(self):
+        with self.assertRaises(TypeError):
+            UID("not an int")
+        with self.assertRaises(ValueError):
+            UID(2 ** 64)
+        with self.assertRaises(ValueError):
+            UID(-19)
 
     def test_int(self):
         for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
@@ -169,6 +490,17 @@ class TestPlistlib(unittest.TestCase):
                     self.assertRaises(OverflowError, plistlib.dumps,
                                       pl, fmt=fmt)
 
+    def test_bytearray(self):
+        for pl in (b'<binary gunk>', b"<lots of binary gunk>\0\1\2\3" * 10):
+            for fmt in ALL_FORMATS:
+                with self.subTest(pl=pl, fmt=fmt):
+                    data = plistlib.dumps(bytearray(pl), fmt=fmt)
+                    pl2 = plistlib.loads(data)
+                    self.assertIsInstance(pl2, bytes)
+                    self.assertEqual(pl2, pl)
+                    data2 = plistlib.dumps(pl2, fmt=fmt)
+                    self.assertEqual(data, data2)
+
     def test_bytes(self):
         pl = self._create()
         data = plistlib.dumps(pl)
@@ -176,6 +508,19 @@ class TestPlistlib(unittest.TestCase):
         self.assertEqual(dict(pl), dict(pl2))
         data2 = plistlib.dumps(pl2)
         self.assertEqual(data, data2)
+
+    def test_loads_str_with_xml_fmt(self):
+        pl = self._create()
+        b = plistlib.dumps(pl)
+        s = b.decode()
+        self.assertIsInstance(s, str)
+        pl2 = plistlib.loads(s)
+        self.assertEqual(pl, pl2)
+
+    def test_loads_str_with_binary_fmt(self):
+        msg = "value must be bytes-like object when fmt is FMT_BINARY"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.loads('test', fmt=plistlib.FMT_BINARY)
 
     def test_indentation_array(self):
         data = [[[[[[[[{'test': b'aaaaaa'}]]]]]]]]
@@ -189,15 +534,52 @@ class TestPlistlib(unittest.TestCase):
         data = {'1': {'2': [{'3': [[[[[{'test': b'aaaaaa'}]]]]]}]}}
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
 
+    def test_uid(self):
+        data = UID(1)
+        self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=plistlib.FMT_BINARY)), data)
+        dict_data = {
+            'uid0': UID(0),
+            'uid2': UID(2),
+            'uid8': UID(2 ** 8),
+            'uid16': UID(2 ** 16),
+            'uid32': UID(2 ** 32),
+            'uid63': UID(2 ** 63)
+        }
+        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
+
+    def test_uid_data(self):
+        uid = UID(1)
+        self.assertEqual(uid.data, 1)
+
+    def test_uid_eq(self):
+        self.assertEqual(UID(1), UID(1))
+        self.assertNotEqual(UID(1), UID(2))
+        self.assertNotEqual(UID(1), "not uid")
+
+    def test_uid_hash(self):
+        self.assertEqual(hash(UID(1)), hash(UID(1)))
+
+    def test_uid_repr(self):
+        self.assertEqual(repr(UID(1)), "UID(1)")
+
+    def test_uid_index(self):
+        self.assertEqual(operator.index(UID(1)), 1)
+
+    def test_uid_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertEqual(pickle.loads(pickle.dumps(UID(19), protocol=proto)), UID(19))
+
+    def test_uid_copy(self):
+        self.assertEqual(copy.copy(UID(1)), UID(1))
+        self.assertEqual(copy.deepcopy(UID(1)), UID(1))
+
     def test_appleformatting(self):
-        for use_builtin_types in (True, False):
-            for fmt in ALL_FORMATS:
-                with self.subTest(fmt=fmt, use_builtin_types=use_builtin_types):
-                    pl = plistlib.loads(TESTDATA[fmt],
-                        use_builtin_types=use_builtin_types)
-                    data = plistlib.dumps(pl, fmt=fmt)
-                    self.assertEqual(data, TESTDATA[fmt],
-                        "generated data was not identical to Apple's output")
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                pl = plistlib.loads(TESTDATA[fmt])
+                data = plistlib.dumps(pl, fmt=fmt)
+                self.assertEqual(data, TESTDATA[fmt],
+                    "generated data was not identical to Apple's output")
 
 
     def test_appleformattingfromliteral(self):
@@ -309,7 +691,8 @@ class TestPlistlib(unittest.TestCase):
                     'second': [1, 2],
                     'third': [3, 4],
                 })
-                self.assertIsNot(pl2['first'], pl2['second'])
+                if fmt != plistlib.FMT_BINARY:
+                    self.assertIsNot(pl2['first'], pl2['second'])
 
     def test_list_members(self):
         pl = {
@@ -353,11 +736,13 @@ class TestPlistlib(unittest.TestCase):
             testString = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                if c != "\r":
+                    self.assertEqual(plistlib.loads(data), testString)
             else:
-                self.assertRaises(ValueError,
-                                  plistlib.dumps,
-                                  testString)
+                with self.assertRaises(ValueError):
+                    plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+            plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}
@@ -365,6 +750,14 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(plistlib.loads(data), pl)
+
+    def test_lone_surrogates(self):
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\ud8ff', fmt=fmt)
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\udcff', fmt=fmt)
 
     def test_nondictroot(self):
         for fmt in ALL_FORMATS:
@@ -402,6 +795,19 @@ class TestPlistlib(unittest.TestCase):
         self.assertRaises(ValueError, plistlib.loads,
                           b"<plist><integer>not real</integer></plist>")
 
+    def test_integer_notations(self):
+        pl = b"<plist><integer>456</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 456)
+
+        pl = b"<plist><integer>0xa</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 10)
+
+        pl = b"<plist><integer>0123</integer></plist>"
+        value = plistlib.loads(pl)
+        self.assertEqual(value, 123)
+
     def test_xml_encodings(self):
         base = TESTDATA[plistlib.FMT_XML]
 
@@ -421,6 +827,100 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+    def test_dump_invalid_format(self):
+        with self.assertRaises(ValueError):
+            plistlib.dumps({}, fmt="blah")
+
+    def test_load_invalid_file(self):
+        with self.assertRaises(plistlib.InvalidFileException):
+            plistlib.loads(b"these are not plist file contents")
+
+    def test_modified_uid_negative(self):
+        neg_uid = UID(1)
+        neg_uid.data = -1  # dodge the negative check in the constructor
+        with self.assertRaises(ValueError):
+            plistlib.dumps(neg_uid, fmt=plistlib.FMT_BINARY)
+
+    def test_modified_uid_huge(self):
+        huge_uid = UID(1)
+        huge_uid.data = 2 ** 64  # dodge the size check in the constructor
+        with self.assertRaises(OverflowError):
+            plistlib.dumps(huge_uid, fmt=plistlib.FMT_BINARY)
+
+    def test_xml_plist_with_entity_decl(self):
+        with self.assertRaisesRegex(plistlib.InvalidFileException,
+                                    "XML entity declarations are not supported"):
+            plistlib.loads(XML_PLIST_WITH_ENTITY, fmt=plistlib.FMT_XML)
+
+    def test_load_aware_datetime(self):
+        dt = plistlib.loads(b"<plist><date>2023-12-10T08:03:30Z</date></plist>",
+                            aware_datetime=True)
+        self.assertEqual(dt.tzinfo, datetime.UTC)
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime(self):
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
+
+    def test_dump_utc_aware_datetime(self):
+        dt = datetime.datetime(2345, 6, 7, 8, 9, 10, tzinfo=datetime.UTC)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            loaded_dt = plistlib.loads(s, fmt=fmt, aware_datetime=True)
+            self.assertEqual(loaded_dt.tzinfo, datetime.UTC)
+            self.assertEqual(loaded_dt, dt)
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
+        self.assertIn(b"2345-06-07T08:00:00Z", s)
+
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
+        s = plistlib.dumps(dt, fmt=plistlib.FMT_XML, aware_datetime=False)
+        self.assertIn(b"2345-06-07T08:00:00Z", s)
+
+    def test_dump_naive_datetime_with_aware_datetime_option(self):
+        # Save a naive datetime with aware_datetime set to true.  This will lead
+        # to having different time as compared to the current machine's
+        # timezone, which is UTC.
+        dt = datetime.datetime(2003, 6, 7, 8, tzinfo=None)
+        for fmt in ALL_FORMATS:
+            s = plistlib.dumps(dt, fmt=fmt, aware_datetime=True)
+            parsed = plistlib.loads(s, aware_datetime=False)
+            expected = dt.astimezone(datetime.UTC).replace(tzinfo=None)
+            self.assertEqual(parsed, expected)
+
+
+class TestBinaryPlistlib(unittest.TestCase):
+
+    def build(self, *objects, offset_size=1, ref_size=1):
+        data = [b'bplist00']
+        offset = 8
+        offsets = []
+        for x in objects:
+            offsets.append(offset.to_bytes(offset_size, 'big'))
+            data.append(x)
+            offset += len(x)
+        tail = struct.pack('>6xBBQQQ', offset_size, ref_size,
+                           len(objects), 0, offset)
+        data.extend(offsets)
+        data.append(tail)
+        return b''.join(data)
+
+    def decode(self, *objects, offset_size=1, ref_size=1):
+        data = self.build(*objects, offset_size=offset_size, ref_size=ref_size)
+        return plistlib.loads(data, fmt=plistlib.FMT_BINARY)
+
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
         data = (b'bplist00'
@@ -433,114 +933,260 @@ class TestPlistlib(unittest.TestCase):
                 b'\x00\x00\x00\x00\x00\x00\x00\x13')
         self.assertEqual(plistlib.loads(data), {'a': 'b'})
 
+    def test_dump_duplicates(self):
+        # Test effectiveness of saving duplicated objects
+        for x in (None, False, True, 12345, 123.45, 'abcde', 'абвгд', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
+                self.assertLess(len(data), 1100, repr(data))
+
+    def test_identity(self):
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
+                a, b = plistlib.loads(data)
+                if isinstance(x, tuple):
+                    x = list(x)
+                self.assertEqual(a, x)
+                self.assertEqual(b, x)
+                self.assertIs(a, b)
+
+    def test_cycles(self):
+        # recursive list
+        a = []
+        a.append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0], b)
+        # recursive tuple
+        a = ([],)
+        a[0].append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0][0], b)
+        # recursive dict
+        a = {}
+        a['x'] = a
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b['x'], b)
+
+    def test_deep_nesting(self):
+        for N in [50, 300, 100_000]:
+            chunks = [b'\xa1' + (i + 1).to_bytes(4, 'big') for i in range(N)]
+            try:
+                result = self.decode(*chunks, b'\x54seed', offset_size=4, ref_size=4)
+            except RecursionError:
+                self.assertGreater(N, sys.getrecursionlimit())
+            else:
+                for i in range(N):
+                    self.assertIsInstance(result, list)
+                    self.assertEqual(len(result), 1)
+                    result = result[0]
+                self.assertEqual(result, 'seed')
+
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range
         for ts in -2**31-1, 2**31:
             with self.subTest(ts=ts):
-                d = (datetime.datetime.utcfromtimestamp(0) +
+                d = (datetime.datetime(1970, 1, 1, 0, 0) +
                      datetime.timedelta(seconds=ts))
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)
 
+    def test_load_singletons(self):
+        self.assertIs(self.decode(b'\x00'), None)
+        self.assertIs(self.decode(b'\x08'), False)
+        self.assertIs(self.decode(b'\x09'), True)
+        self.assertEqual(self.decode(b'\x0f'), b'')
 
-class TestPlistlibDeprecated(unittest.TestCase):
-    def test_io_deprecated(self):
-        pl_in = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
+    def test_load_int(self):
+        self.assertEqual(self.decode(b'\x10\x00'), 0)
+        self.assertEqual(self.decode(b'\x10\xfe'), 0xfe)
+        self.assertEqual(self.decode(b'\x11\xfe\xdc'), 0xfedc)
+        self.assertEqual(self.decode(b'\x12\xfe\xdc\xba\x98'), 0xfedcba98)
+        self.assertEqual(self.decode(b'\x13\x01\x23\x45\x67\x89\xab\xcd\xef'),
+                         0x0123456789abcdef)
+        self.assertEqual(self.decode(b'\x13\xfe\xdc\xba\x98\x76\x54\x32\x10'),
+                         -0x123456789abcdf0)
+
+    def test_unsupported(self):
+        unsupported = [*range(1, 8), *range(10, 15),
+                       0x20, 0x21, *range(0x24, 0x33), *range(0x34, 0x40)]
+        for i in [0x70, 0x90, 0xb0, 0xc0, 0xe0, 0xf0]:
+            unsupported.extend(i + j for j in range(16))
+        for token in unsupported:
+            with self.subTest(f'token {token:02x}'):
+                with self.assertRaises(plistlib.InvalidFileException):
+                    self.decode(bytes([token]) + b'\x00'*16)
+
+    def test_invalid_binary(self):
+        for name, data in INVALID_BINARY_PLISTS:
+            with self.subTest(name):
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
+
+    def test_truncated_large_data(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        def check(data):
+            with open(os_helper.TESTFN, 'wb') as f:
+                f.write(data)
+            # buffered file
+            with open(os_helper.TESTFN, 'rb') as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+            # unbuffered file
+            with open(os_helper.TESTFN, 'rb', buffering=0) as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+        for w in range(20, 64):
+            s = 1 << w
+            # data
+            check(self.build(b'\x4f\x13' + s.to_bytes(8, 'big')))
+            # ascii string
+            check(self.build(b'\x5f\x13' + s.to_bytes(8, 'big')))
+            # unicode string
+            check(self.build(b'\x6f\x13' + s.to_bytes(8, 'big')))
+            # array
+            check(self.build(b'\xaf\x13' + s.to_bytes(8, 'big')))
+            # dict
+            check(self.build(b'\xdf\x13' + s.to_bytes(8, 'big')))
+            # number of objects
+            check(b'bplist00' + struct.pack('>6xBBQQQ', 1, 1, s, 0, 8))
+
+    def test_load_aware_datetime(self):
+        data = (b'bplist003B\x04>\xd0d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00'
+                b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11')
+        self.assertEqual(plistlib.loads(data, aware_datetime=True),
+                         datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC))
+
+    @unittest.skipUnless("America/Los_Angeles" in zoneinfo.available_timezones(),
+                         "Can't find timezone datebase")
+    def test_dump_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8,
+                               tzinfo=zoneinfo.ZoneInfo("America/Los_Angeles"))
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
+
+    def test_dump_utc_aware_datetime_without_aware_datetime_option(self):
+        dt = datetime.datetime(2345, 6, 7, 8, tzinfo=datetime.UTC)
+        msg = "can't subtract offset-naive and offset-aware datetimes"
+        with self.assertRaisesRegex(TypeError, msg):
+            plistlib.dumps(dt, fmt=plistlib.FMT_BINARY, aware_datetime=False)
+
+
+class TestKeyedArchive(unittest.TestCase):
+    def test_keyed_archive_data(self):
+        # This is the structure of a NSKeyedArchive packed plist
+        data = {
+            '$version': 100000,
+            '$objects': [
+                '$null', {
+                    'pytype': 1,
+                    '$class': UID(2),
+                    'NS.string': 'KeyArchive UID Test'
+                },
+                {
+                    '$classname': 'OC_BuiltinPythonUnicode',
+                    '$classes': [
+                        'OC_BuiltinPythonUnicode',
+                        'OC_PythonUnicode',
+                        'NSString',
+                        'NSObject'
+                    ],
+                    '$classhints': [
+                        'OC_PythonString', 'NSString'
+                    ]
+                }
+            ],
+            '$archiver': 'NSKeyedArchiver',
+            '$top': {
+                'root': UID(1)
             }
         }
-        pl_out = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': plistlib.Data(b'buffer'),
-            }
-        }
-
-        self.addCleanup(support.unlink, support.TESTFN)
-        with self.assertWarns(DeprecationWarning):
-            plistlib.writePlist(pl_in, support.TESTFN)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlist(support.TESTFN)
-
-        self.assertEqual(pl_out, pl2)
-
-        os.unlink(support.TESTFN)
-
-        with open(support.TESTFN, 'wb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                plistlib.writePlist(pl_in, fp)
-
-        with open(support.TESTFN, 'rb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                pl2 = plistlib.readPlist(fp)
-
-        self.assertEqual(pl_out, pl2)
-
-    def test_bytes_deprecated(self):
-        pl = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
-            }
-        }
-        with self.assertWarns(DeprecationWarning):
-            data = plistlib.writePlistToBytes(pl)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlistFromBytes(data)
-
-        self.assertIsInstance(pl2, dict)
-        self.assertEqual(pl2, dict(
-            key=42,
-            sub=dict(
-                key=9,
-                alt='value',
-                data=plistlib.Data(b'buffer'),
-            )
-        ))
-
-        with self.assertWarns(DeprecationWarning):
-            data2 = plistlib.writePlistToBytes(pl2)
-        self.assertEqual(data, data2)
-
-    def test_dataobject_deprecated(self):
-        in_data = { 'key': plistlib.Data(b'hello') }
-        out_data = { 'key': b'hello' }
-
-        buf = plistlib.dumps(in_data)
-
-        cur = plistlib.loads(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        cur = plistlib.loads(buf, use_builtin_types=False)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        with self.assertWarns(DeprecationWarning):
-            cur = plistlib.readPlistFromBytes(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
+        self.assertEqual(plistlib.loads(TESTDATA["KEYED_ARCHIVE"]), data)
 
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {"PlistFormat", "PLISTHEADER"}
-        support.check__all__(self, plistlib, blacklist=blacklist)
+        not_exported = {"PlistFormat", "PLISTHEADER"}
+        support.check__all__(self, plistlib, not_exported=not_exported)
 
+@unittest.skipUnless(sys.platform == "darwin", "plutil utility is for Mac os")
+class TestPlutil(unittest.TestCase):
+    file_name = "plutil_test.plist"
+    properties = {
+            "fname" : "H",
+            "lname":"A",
+            "marks" : {"a":100, "b":0x10}
+        }
+    exptected_properties = {
+        "fname" : "H",
+        "lname": "A",
+        "marks" : {"a":100, "b":16}
+    }
+    pl = {
+            "HexType" : 0x0100000c,
+            "IntType" : 0o123
+        }
 
-def test_main():
-    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, MiscTestCase)
+    @classmethod
+    def setUpClass(cls) -> None:
+        ## Generate plist file with plistlib and parse with plutil
+        with open(cls.file_name,'wb') as f:
+            plistlib.dump(cls.properties, f, fmt=plistlib.FMT_BINARY)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        os.remove(cls.file_name)
+
+    def get_lint_status(self):
+        return subprocess.run(['plutil', "-lint", self.file_name], capture_output=True, text=True).stdout
+
+    def convert_to_json(self):
+        """Convert binary file to json using plutil
+        """
+        subprocess.run(['plutil', "-convert", 'json', self.file_name])
+
+    def convert_to_bin(self):
+        """Convert file to binary using plutil
+        """
+        subprocess.run(['plutil', "-convert", 'binary1', self.file_name])
+
+    def write_pl(self):
+        """Write Hex properties to file using writePlist
+        """
+        with open(self.file_name, 'wb') as f:
+            plistlib.dump(self.pl, f, fmt=plistlib.FMT_BINARY)
+
+    def test_lint_status(self):
+        # check lint status of file using plutil
+        self.assertEqual(f"{self.file_name}: OK\n", self.get_lint_status())
+
+    def check_content(self):
+        # check file content with plutil converting binary to json
+        self.convert_to_json()
+        with open(self.file_name) as f:
+            ff = json.loads(f.read())
+            self.assertEqual(ff, self.exptected_properties)
+
+    def check_plistlib_parse(self):
+        # Generate plist files with plutil and parse with plistlib
+        self.convert_to_bin()
+        with open(self.file_name, 'rb') as f:
+            self.assertEqual(plistlib.load(f), self.exptected_properties)
+
+    def test_octal_and_hex(self):
+        self.write_pl()
+        self.convert_to_json()
+        with open(self.file_name, 'r') as f:
+            p = json.loads(f.read())
+            self.assertEqual(p.get("HexType"), 16777228)
+            self.assertEqual(p.get("IntType"), 83)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

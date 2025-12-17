@@ -1,7 +1,11 @@
 import unittest
 from test import audiotests
 from test import support
-from audioop import byteswap
+from test.support.os_helper import FakePath
+import io
+import os
+import struct
+import tempfile
 import sys
 import wave
 
@@ -46,7 +50,7 @@ class WavePCM16Test(WaveTest, unittest.TestCase):
       E4B50CEB 63440A5A 08CA0A1F 2BBA0B0B 51460E47 8BCB113C B6F50EEA 44150A59 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 2)
+        frames = wave._byteswap(frames, 2)
 
 
 class WavePCM24Test(WaveTest, unittest.TestCase):
@@ -73,7 +77,34 @@ class WavePCM24Test(WaveTest, unittest.TestCase):
       51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 3)
+        frames = wave._byteswap(frames, 3)
+
+
+class WavePCM24ExtTest(WaveTest, unittest.TestCase):
+    sndfilename = 'pluck-pcm24-ext.wav'
+    sndfilenframes = 3307
+    nchannels = 2
+    sampwidth = 3
+    framerate = 11025
+    nframes = 48
+    comptype = 'NONE'
+    compname = 'not compressed'
+    frames = bytes.fromhex("""\
+      022D65FFEB9D 4B5A0F00FA54 3113C304EE2B 80DCD6084303 \
+      CBDEC006B261 48A99803F2F8 BFE82401B07D 036BFBFE7B5D \
+      B85756FA3EC9 B4B055F3502B 299830EBCB62 1A5CA7E6D99A \
+      EDFA3EE491BD C625EBE27884 0E05A9E0B6CF EF2929E02922 \
+      5758D8E27067 FB3557E83E16 1377BFEF8402 D82C5BF7272A \
+      978F16FB7745 F5F865FC1013 086635FB9C4E DF30FCFB40EE \
+      117FE0FA3438 3EE6B8FB5AC3 BC77A3FCB2F4 66D6DAFF5F32 \
+      CF13B9041275 431D69097A8C C1BB600EC74E 5120B912A2BA \
+      EEDF641754C0 8207001664B7 7FFFFF14453F 8000001294E6 \
+      499C1B0EB3B2 52B73E0DBCA0 EFB2B20F5FD8 CE3CDB0FBE12 \
+      E4B49C0CEA2D 6344A80A5A7C 08C8FE0A1FFE 2BB9860B0A0E \
+      51486F0E44E1 8BCC64113B05 B6F4EC0EEB36 4413170A5B48 \
+      """)
+    if sys.byteorder != 'big':
+        frames = wave._byteswap(frames, 3)
 
 
 class WavePCM32Test(WaveTest, unittest.TestCase):
@@ -100,13 +131,101 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
       51486F800E44E190 8BCC6480113B0580 B6F4EC000EEB3630 441317800A5B48A0 \
       """)
     if sys.byteorder != 'big':
-        frames = byteswap(frames, 4)
+        frames = wave._byteswap(frames, 4)
 
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'WAVE_FORMAT_PCM'}
-        support.check__all__(self, wave, blacklist=blacklist)
+        not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
+        support.check__all__(self, wave, not_exported=not_exported)
+
+
+class WaveLowLevelTest(unittest.TestCase):
+
+    def test_read_no_chunks(self):
+        b = b'SPAM'
+        with self.assertRaises(EOFError):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_riff_chunk(self):
+        b = b'SPAM' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error,
+                                    'file does not start with RIFF id'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_not_wave(self):
+        b = b'RIFF' + struct.pack('<L', 4) + b'SPAM'
+        with self.assertRaisesRegex(wave.Error,
+                                    'not a WAVE file'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_fmt_no_data_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 4) + b'WAVE'
+        with self.assertRaisesRegex(wave.Error,
+                                    'fmt chunk and/or data chunk missing'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_data_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 28) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 8)
+        with self.assertRaisesRegex(wave.Error,
+                                    'fmt chunk and/or data chunk missing'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_no_fmt_chunk(self):
+        b = b'RIFF' + struct.pack('<L', 12) + b'WAVE'
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'data chunk before fmt chunk'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_form(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 2, 1, 11025, 11025, 1, 1)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'unknown format: 2'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_number_of_channels(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 0, 11025, 11025, 1, 8)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'bad # of channels'):
+            wave.open(io.BytesIO(b))
+
+    def test_read_wrong_sample_width(self):
+        b = b'RIFF' + struct.pack('<L', 36) + b'WAVE'
+        b += b'fmt ' + struct.pack('<LHHLLHH', 16, 1, 1, 11025, 11025, 1, 0)
+        b += b'data' + struct.pack('<L', 0)
+        with self.assertRaisesRegex(wave.Error, 'bad sample width'):
+            wave.open(io.BytesIO(b))
+
+    def test_open_in_write_raises(self):
+        # gh-136523: Wave_write.__del__ should not throw
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(OSError):
+                wave.open(os.curdir, "wb")
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
+
+
+class WaveOpen(unittest.TestCase):
+    def test_open_pathlike(self):
+        """It is possible to use `wave.read` and `wave.write` with a path-like object"""
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
+            cases = (
+                FakePath(fp.name),
+                FakePath(os.fsencode(fp.name)),
+                os.fsencode(fp.name),
+                )
+            for fake_path in cases:
+                with self.subTest(fake_path):
+                    with wave.open(fake_path, 'wb') as f:
+                        f.setnchannels(1)
+                        f.setsampwidth(2)
+                        f.setframerate(44100)
+
+                    with wave.open(fake_path, 'rb') as f:
+                        pass
 
 
 if __name__ == '__main__':

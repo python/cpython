@@ -13,8 +13,8 @@ This chapter explains the meaning of the elements of expressions in Python.
 be used to describe syntax, not lexical analysis.  When (one alternative of) a
 syntax rule has the form
 
-.. productionlist:: *
-   name: `othername`
+.. productionlist:: python-grammar
+   name: othername
 
 and no semantics are given, the semantics of this form of ``name`` are the same
 as for ``othername``.
@@ -28,13 +28,12 @@ Arithmetic conversions
 .. index:: pair: arithmetic; conversion
 
 When a description of an arithmetic operator below uses the phrase "the numeric
-arguments are converted to a common type," this means that the operator
+arguments are converted to a common real type", this means that the operator
 implementation for built-in types works as follows:
 
-* If either argument is a complex number, the other is converted to complex;
+* If both arguments are complex numbers, no conversion is performed;
 
-* otherwise, if either argument is a floating point number, the other is
-  converted to floating point;
+* if either argument is a complex or a floating-point number, the other is converted to a floating-point number;
 
 * otherwise, both must be integers and no conversion is necessary.
 
@@ -54,7 +53,7 @@ Atoms are the most basic elements of expressions.  The simplest atoms are
 identifiers or literals.  Forms enclosed in parentheses, brackets or braces are
 also categorized syntactically as atoms.  The syntax for atoms is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    atom: `identifier` | `literal` | `enclosure`
    enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
             : | `generator_expression` | `yield_atom`
@@ -71,28 +70,59 @@ An identifier occurring as an atom is a name.  See section :ref:`identifiers`
 for lexical definition and section :ref:`naming` for documentation of naming and
 binding.
 
-.. index:: exception: NameError
+.. index:: pair: exception; NameError
 
 When the name is bound to an object, evaluation of the atom yields that object.
 When a name is not bound, an attempt to evaluate it raises a :exc:`NameError`
 exception.
 
+.. _private-name-mangling:
+
 .. index::
    pair: name; mangling
    pair: private; names
 
-**Private name mangling:** When an identifier that textually occurs in a class
-definition begins with two or more underscore characters and does not end in two
-or more underscores, it is considered a :dfn:`private name` of that class.
-Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name, with leading underscores
-removed and a single underscore inserted, in front of the name.  For example,
-the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
-to ``_Ham__spam``.  This transformation is independent of the syntactical
-context in which the identifier is used.  If the transformed name is extremely
-long (longer than 255 characters), implementation defined truncation may happen.
-If the class name consists only of underscores, no transformation is done.
+Private name mangling
+^^^^^^^^^^^^^^^^^^^^^
 
+When an identifier that textually occurs in a class definition begins with two
+or more underscore characters and does not end in two or more underscores, it
+is considered a :dfn:`private name` of that class.
+
+.. seealso::
+
+   The :ref:`class specifications <class>`.
+
+More precisely, private names are transformed to a longer form before code is
+generated for them.  If the transformed name is longer than 255 characters,
+implementation-defined truncation may happen.
+
+The transformation is independent of the syntactical context in which the
+identifier is used but only the following private identifiers are mangled:
+
+- Any name used as the name of a variable that is assigned or read or any
+  name of an attribute being accessed.
+
+  The :attr:`~definition.__name__` attribute of nested functions, classes, and
+  type aliases is however not mangled.
+
+- The name of imported modules, e.g., ``__spam`` in ``import __spam``.
+  If the module is part of a package (i.e., its name contains a dot),
+  the name is *not* mangled, e.g., the ``__foo`` in ``import __foo.bar``
+  is not mangled.
+
+- The name of an imported member, e.g., ``__f`` in ``from spam import __f``.
+
+The transformation rule is defined as follows:
+
+- The class name, with leading underscores removed and a single leading
+  underscore inserted, is inserted in front of the identifier, e.g., the
+  identifier ``__spam`` occurring in a class named ``Foo``, ``_Foo`` or
+  ``__Foo`` is transformed to ``_Foo__spam``.
+
+- If the class name consists only of underscores, the transformation is the
+  identity, e.g., the identifier ``__spam`` occurring in a class named ``_``
+  or ``__`` is left as is.
 
 .. _atom-literals:
 
@@ -103,14 +133,18 @@ Literals
 
 Python supports string and bytes literals and various numeric literals:
 
-.. productionlist::
-   literal: `stringliteral` | `bytesliteral`
-          : | `integer` | `floatnumber` | `imagnumber`
+.. grammar-snippet::
+   :group: python-grammar
+
+   literal: `strings` | `NUMBER`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
-integer, floating point number, complex number) with the given value.  The value
-may be approximated in the case of floating point and imaginary (complex)
-literals.  See section :ref:`literals` for details.
+integer, floating-point number, complex number) with the given value.  The value
+may be approximated in the case of floating-point and imaginary (complex)
+literals.
+See section :ref:`literals` for details.
+See section :ref:`string-concatenation` for details on ``strings``.
+
 
 .. index::
    triple: immutable; data; type
@@ -123,16 +157,70 @@ occurrence) may obtain the same object or a different object with the same
 value.
 
 
+.. _string-concatenation:
+
+String literal concatenation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multiple adjacent string or bytes literals (delimited by whitespace), possibly
+using different quoting conventions, are allowed, and their meaning is the same
+as their concatenation::
+
+   >>> "hello" 'world'
+   "helloworld"
+
+Formally:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
+
+This feature is defined at the syntactical level, so it only works with literals.
+To concatenate string expressions at run time, the '+' operator may be used::
+
+   >>> greeting = "Hello"
+   >>> space = " "
+   >>> name = "Blaise"
+   >>> print(greeting + space + name)   # not: print(greeting space name)
+   Hello Blaise
+
+Literal concatenation can freely mix raw strings, triple-quoted strings,
+and formatted string literals.
+For example::
+
+   >>> "Hello" r', ' f"{name}!"
+   "Hello, Blaise!"
+
+This feature can be used to reduce the number of backslashes
+needed, to split long strings conveniently across long lines, or even to add
+comments to parts of strings. For example::
+
+   re.compile("[A-Za-z_]"       # letter or underscore
+              "[A-Za-z0-9_]*"   # letter, digit or underscore
+             )
+
+However, bytes literals may only be combined with other byte literals;
+not with string literals of any kind.
+Also, template string literals may only be combined with other template
+string literals::
+
+   >>> t"Hello" t"{name}!"
+   Template(strings=('Hello', '!'), interpolations=(...))
+
+
 .. _parenthesized:
 
 Parenthesized forms
 -------------------
 
-.. index:: single: parenthesized form
+.. index::
+   single: parenthesized form
+   single: () (parentheses); tuple display
 
 A parenthesized form is an optional expression list enclosed in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    parenth_form: "(" [`starred_expression`] ")"
 
 A parenthesized expression list yields whatever that expression list yields: if
@@ -142,15 +230,15 @@ the single expression that makes up the expression list.
 .. index:: pair: empty; tuple
 
 An empty pair of parentheses yields an empty tuple object.  Since tuples are
-immutable, the rules for literals apply (i.e., two occurrences of the empty
+immutable, the same rules as for literals apply (i.e., two occurrences of the empty
 tuple may or may not yield the same object).
 
 .. index::
    single: comma
-   pair: tuple; display
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
-comma operator.  The exception is the empty tuple, for which parentheses *are*
+comma.  The exception is the empty tuple, for which parentheses *are*
 required --- allowing unparenthesized "nothing" in expressions would cause
 ambiguities and allow common typos to pass uncaught.
 
@@ -160,6 +248,8 @@ ambiguities and allow common typos to pass uncaught.
 Displays for lists, sets and dictionaries
 -----------------------------------------
 
+.. index:: single: comprehensions
+
 For constructing a list, a set or a dictionary Python provides special syntax
 called "displays", each of them in two flavors:
 
@@ -168,35 +258,69 @@ called "displays", each of them in two flavors:
 * they are computed via a set of looping and filtering instructions, called a
   :dfn:`comprehension`.
 
+.. index::
+   single: for; in comprehensions
+   single: if; in comprehensions
+   single: async for; in comprehensions
+
 Common syntax elements for comprehensions are:
 
-.. productionlist::
-   comprehension: `expression` `comp_for`
-   comp_for: [ASYNC] "for" `target_list` "in" `or_test` [`comp_iter`]
+.. productionlist:: python-grammar
+   comprehension: `assignment_expression` `comp_for`
+   comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
-   comp_if: "if" `expression_nocond` [`comp_iter`]
+   comp_if: "if" `or_test` [`comp_iter`]
 
 The comprehension consists of a single expression followed by at least one
-:keyword:`for` clause and zero or more :keyword:`for` or :keyword:`if` clauses.
+:keyword:`!for` clause and zero or more :keyword:`!for` or :keyword:`!if` clauses.
 In this case, the elements of the new container are those that would be produced
-by considering each of the :keyword:`for` or :keyword:`if` clauses a block,
+by considering each of the :keyword:`!for` or :keyword:`!if` clauses a block,
 nesting from left to right, and evaluating the expression to produce an element
 each time the innermost block is reached.
 
-Note that the comprehension is executed in a separate scope, so names assigned
-to in the target list don't "leak" into the enclosing scope.
+However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
+the comprehension is executed in a separate implicitly nested scope. This ensures
+that names assigned to in the target list don't "leak" into the enclosing scope.
 
-Since Python 3.6, in an :keyword:`async def` function, an :keyword:`async for`
+The iterable expression in the leftmost :keyword:`!for` clause is evaluated
+directly in the enclosing scope and then passed as an argument to the implicitly
+nested scope. Subsequent :keyword:`!for` clauses and any filter condition in the
+leftmost :keyword:`!for` clause cannot be evaluated in the enclosing scope as
+they may depend on the values obtained from the leftmost iterable. For example:
+``[x*y for x in range(10) for y in range(x, x+10)]``.
+
+To ensure the comprehension always results in a container of the appropriate
+type, ``yield`` and ``yield from`` expressions are prohibited in the implicitly
+nested scope.
+
+.. index::
+   single: await; in comprehensions
+
+Since Python 3.6, in an :keyword:`async def` function, an :keyword:`!async for`
 clause may be used to iterate over a :term:`asynchronous iterator`.
-A comprehension in an :keyword:`async def` function may consist of either a
-:keyword:`for` or :keyword:`async for` clause following the leading
-expression, may contain additional :keyword:`for` or :keyword:`async for`
+A comprehension in an :keyword:`!async def` function may consist of either a
+:keyword:`!for` or :keyword:`!async for` clause following the leading
+expression, may contain additional :keyword:`!for` or :keyword:`!async for`
 clauses, and may also use :keyword:`await` expressions.
-If a comprehension contains either :keyword:`async for` clauses
-or :keyword:`await` expressions it is called an
-:dfn:`asynchronous comprehension`.  An asynchronous comprehension may
-suspend the execution of the coroutine function in which it appears.
+
+If a comprehension contains :keyword:`!async for` clauses, or if it contains
+:keyword:`!await` expressions or other asynchronous comprehensions anywhere except
+the iterable expression in the leftmost :keyword:`!for` clause, it is called an
+:dfn:`asynchronous comprehension`. An asynchronous comprehension may suspend the
+execution of the coroutine function in which it appears.
 See also :pep:`530`.
+
+.. versionadded:: 3.6
+   Asynchronous comprehensions were introduced.
+
+.. versionchanged:: 3.8
+   ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+
+.. versionchanged:: 3.11
+   Asynchronous comprehensions are now allowed inside comprehensions in
+   asynchronous functions. Outer comprehensions implicitly become
+   asynchronous.
+
 
 .. _lists:
 
@@ -207,13 +331,15 @@ List displays
    pair: list; display
    pair: list; comprehensions
    pair: empty; list
-   object: list
+   pair: object; list
+   single: [] (square brackets); list expression
+   single: , (comma); expression list
 
 A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
-.. productionlist::
-   list_display: "[" [`starred_list` | `comprehension`] "]"
+.. productionlist:: python-grammar
+   list_display: "[" [`flexible_expression_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -227,14 +353,18 @@ the list is constructed from the elements resulting from the comprehension.
 Set displays
 ------------
 
-.. index:: pair: set; display
-           object: set
+.. index::
+   pair: set; display
+   pair: set; comprehensions
+   pair: object; set
+   single: {} (curly brackets); set expression
+   single: , (comma); expression list
 
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
-.. productionlist::
-   set_display: "{" (`starred_list` | `comprehension`) "}"
+.. productionlist:: python-grammar
+   set_display: "{" (`flexible_expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -251,33 +381,40 @@ dictionary.
 Dictionary displays
 -------------------
 
-.. index:: pair: dictionary; display
-           key, datum, key/datum pair
-           object: dictionary
+.. index::
+   pair: dictionary; display
+   pair: dictionary; comprehensions
+   key, value, key/value pair
+   pair: object; dictionary
+   single: {} (curly brackets); dictionary expression
+   single: : (colon); in dictionary expressions
+   single: , (comma); in dictionary displays
 
-A dictionary display is a possibly empty series of key/datum pairs enclosed in
-curly braces:
+A dictionary display is a possibly empty series of dict items (key/value pairs)
+enclosed in curly braces:
 
-.. productionlist::
-   dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
-   key_datum_list: `key_datum` ("," `key_datum`)* [","]
-   key_datum: `expression` ":" `expression` | "**" `or_expr`
+.. productionlist:: python-grammar
+   dict_display: "{" [`dict_item_list` | `dict_comprehension`] "}"
+   dict_item_list: `dict_item` ("," `dict_item`)* [","]
+   dict_item: `expression` ":" `expression` | "**" `or_expr`
    dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
 
-If a comma-separated sequence of key/datum pairs is given, they are evaluated
+If a comma-separated sequence of dict items is given, they are evaluated
 from left to right to define the entries of the dictionary: each key object is
-used as a key into the dictionary to store the corresponding datum.  This means
-that you can specify the same key multiple times in the key/datum list, and the
+used as a key into the dictionary to store the corresponding value.  This means
+that you can specify the same key multiple times in the dict item list, and the
 final dictionary's value for that key will be the last one given.
 
-.. index:: unpacking; dictionary, **; in dictionary displays
+.. index::
+   unpacking; dictionary
+   single: **; in dictionary displays
 
 A double asterisk ``**`` denotes :dfn:`dictionary unpacking`.
 Its operand must be a :term:`mapping`.  Each mapping item is added
 to the new dictionary.  Later values replace values already set by
-earlier key/datum pairs and earlier dictionary unpackings.
+earlier dict items and earlier dictionary unpackings.
 
 .. versionadded:: 3.5
    Unpacking into dictionary displays, originally proposed by :pep:`448`.
@@ -293,8 +430,14 @@ in the new dictionary in the order they are produced.
 Restrictions on the types of the key values are listed earlier in section
 :ref:`types`.  (To summarize, the key type should be :term:`hashable`, which excludes
 all mutable objects.)  Clashes between duplicate keys are not detected; the last
-datum (textually rightmost in the display) stored for a given key value
+value (textually rightmost in the display) stored for a given key value
 prevails.
+
+.. versionchanged:: 3.8
+   Prior to Python 3.8, in dict comprehensions, the evaluation order of key
+   and value was not well-defined.  In CPython, the value was evaluated before
+   the key.  Starting with 3.8, the key is evaluated before the value, as
+   proposed by :pep:`572`.
 
 
 .. _genexpr:
@@ -302,12 +445,14 @@ prevails.
 Generator expressions
 ---------------------
 
-.. index:: pair: generator; expression
-           object: generator
+.. index::
+   pair: generator; expression
+   pair: object; generator
+   single: () (parentheses); generator expression
 
 A generator expression is a compact generator notation in parentheses:
 
-.. productionlist::
+.. productionlist:: python-grammar
    generator_expression: "(" `expression` `comp_for` ")"
 
 A generator expression yields a new generator object.  Its syntax is the same as
@@ -316,24 +461,40 @@ brackets or curly braces.
 
 Variables used in the generator expression are evaluated lazily when the
 :meth:`~generator.__next__` method is called for the generator object (in the same
-fashion as normal generators).  However, the leftmost :keyword:`for` clause is
-immediately evaluated, so that an error produced by it can be seen before any
-other possible error in the code that handles the generator expression.
-Subsequent :keyword:`for` clauses cannot be evaluated immediately since they
-may depend on the previous :keyword:`for` loop. For example: ``(x*y for x in
-range(10) for y in bar(x))``.
+fashion as normal generators).  However, the iterable expression in the
+leftmost :keyword:`!for` clause is immediately evaluated, and the
+:term:`iterator` is immediately created for that iterable, so that an error
+produced while creating the iterator will be emitted at the point where the generator expression
+is defined, rather than at the point where the first value is retrieved.
+Subsequent :keyword:`!for` clauses and any filter condition in the leftmost
+:keyword:`!for` clause cannot be evaluated in the enclosing scope as they may
+depend on the values obtained from the leftmost iterable. For example:
+``(x*y for x in range(10) for y in range(x, x+10))``.
 
 The parentheses can be omitted on calls with only one argument.  See section
 :ref:`calls` for details.
 
-Since Python 3.6, if the generator appears in an :keyword:`async def` function,
-then :keyword:`async for` clauses and :keyword:`await` expressions are permitted
-as with an asynchronous comprehension.  If a generator expression
-contains either :keyword:`async for` clauses or :keyword:`await` expressions
-it is called an :dfn:`asynchronous generator expression`.
-An asynchronous generator expression yields a new asynchronous
-generator object, which is an asynchronous iterator
-(see :ref:`async-iterators`).
+To avoid interfering with the expected operation of the generator expression
+itself, ``yield`` and ``yield from`` expressions are prohibited in the
+implicitly defined generator.
+
+If a generator expression contains either :keyword:`!async for`
+clauses or :keyword:`await` expressions it is called an
+:dfn:`asynchronous generator expression`.  An asynchronous generator
+expression returns a new asynchronous generator object,
+which is an asynchronous iterator (see :ref:`async-iterators`).
+
+.. versionadded:: 3.6
+   Asynchronous generator expressions were introduced.
+
+.. versionchanged:: 3.7
+   Prior to Python 3.7, asynchronous generator expressions could
+   only appear in :keyword:`async def` coroutines.  Starting
+   with 3.7, any function can use asynchronous generator expressions.
+
+.. versionchanged:: 3.8
+   ``yield`` and ``yield from`` prohibited in the implicitly nested scope.
+
 
 .. _yieldexpr:
 
@@ -341,47 +502,58 @@ Yield expressions
 -----------------
 
 .. index::
-   keyword: yield
+   pair: keyword; yield
+   pair: keyword; from
    pair: yield; expression
    pair: generator; function
 
-.. productionlist::
+.. productionlist:: python-grammar
    yield_atom: "(" `yield_expression` ")"
-   yield_expression: "yield" [`expression_list` | "from" `expression`]
+   yield_from: "yield" "from" `expression`
+   yield_expression: "yield" `yield_list` | `yield_from`
 
 The yield expression is used when defining a :term:`generator` function
 or an :term:`asynchronous generator` function and
 thus can only be used in the body of a function definition.  Using a yield
-expression in a function's body causes that function to be a generator,
+expression in a function's body causes that function to be a generator function,
 and using it in an :keyword:`async def` function's body causes that
-coroutine function to be an asynchronous generator. For example::
+coroutine function to be an asynchronous generator function. For example::
 
     def gen():  # defines a generator function
         yield 123
 
-    async def agen(): # defines an asynchronous generator function (PEP 525)
+    async def agen(): # defines an asynchronous generator function
         yield 123
+
+Due to their side effects on the containing scope, ``yield`` expressions
+are not permitted as part of the implicitly defined scopes used to
+implement comprehensions and generator expressions.
+
+.. versionchanged:: 3.8
+   Yield expressions prohibited in the implicitly nested scopes used to
+   implement comprehensions and generator expressions.
 
 Generator functions are described below, while asynchronous generator
 functions are described separately in section
 :ref:`asynchronous-generator-functions`.
 
 When a generator function is called, it returns an iterator known as a
-generator.  That generator then controls the execution of the generator function.
-The execution starts when one of the generator's methods is called.  At that
-time, the execution proceeds to the first yield expression, where it is
-suspended again, returning the value of :token:`expression_list` to the generator's
-caller.  By suspended, we mean that all local state is retained, including the
-current bindings of local variables, the instruction pointer, the internal
-evaluation stack, and the state of any exception handling.  When the execution
-is resumed by calling one of the
-generator's methods, the function can proceed exactly as if the yield expression
-were just another external call.  The value of the yield expression after
-resuming depends on the method which resumed the execution.  If
-:meth:`~generator.__next__` is used (typically via either a :keyword:`for` or
-the :func:`next` builtin) then the result is :const:`None`.  Otherwise, if
-:meth:`~generator.send` is used, then the result will be the value passed in to
-that method.
+generator.  That generator then controls the execution of the generator
+function.  The execution starts when one of the generator's methods is called.
+At that time, the execution proceeds to the first yield expression, where it is
+suspended again, returning the value of :token:`~python-grammar:yield_list`
+to the generator's caller,
+or ``None`` if :token:`~python-grammar:yield_list` is omitted.
+By suspended, we mean that all local state is
+retained, including the current bindings of local variables, the instruction
+pointer, the internal evaluation stack, and the state of any exception handling.
+When the execution is resumed by calling one of the generator's methods, the
+function can proceed exactly as if the yield expression were just another
+external call.  The value of the yield expression after resuming depends on the
+method which resumed the execution.  If :meth:`~generator.__next__` is used
+(typically via either a :keyword:`for` or the :func:`next` builtin) then the
+result is :const:`None`.  Otherwise, if :meth:`~generator.send` is used, then
+the result will be the value passed in to that method.
 
 .. index:: single: coroutine
 
@@ -397,8 +569,11 @@ finalized (by reaching a zero reference count or by being garbage collected),
 the generator-iterator's :meth:`~generator.close` method will be called,
 allowing any pending :keyword:`finally` clauses to execute.
 
-When ``yield from <expr>`` is used, it treats the supplied expression as
-a subiterator. All values produced by that subiterator are passed directly
+.. index::
+   single: from; yield from expression
+
+When ``yield from <expr>`` is used, the supplied expression must be an
+iterable. The values produced by iterating that iterable are passed directly
 to the caller of the current generator's methods. Any values passed in with
 :meth:`~generator.send` and any exceptions passed in with
 :meth:`~generator.throw` are passed to the underlying iterator if it has the
@@ -409,11 +584,11 @@ will raise :exc:`AttributeError` or :exc:`TypeError`, while
 When the underlying iterator is complete, the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
 the yield expression. It can be either set explicitly when raising
-:exc:`StopIteration`, or automatically when the sub-iterator is a generator
-(by returning a value from the sub-generator).
+:exc:`StopIteration`, or automatically when the subiterator is a generator
+(by returning a value from the subgenerator).
 
-   .. versionchanged:: 3.3
-      Added ``yield from <expr>`` to delegate control flow to a subiterator.
+.. versionchanged:: 3.3
+   Added ``yield from <expr>`` to delegate control flow to a subiterator.
 
 The parentheses may be omitted when the yield expression is the sole expression
 on the right hand side of an assignment statement.
@@ -428,10 +603,14 @@ on the right hand side of an assignment statement.
       usable as simple coroutines.
 
    :pep:`380` - Syntax for Delegating to a Subgenerator
-      The proposal to introduce the :token:`yield_from` syntax, making delegation
-      to sub-generators easy.
+      The proposal to introduce the :token:`~python-grammar:yield_from` syntax,
+      making delegation to subgenerators easy.
 
-.. index:: object: generator
+   :pep:`525` - Asynchronous Generators
+      The proposal that expanded on :pep:`492` by adding generator capabilities to
+      coroutine functions.
+
+.. index:: pair: object; generator
 .. _generator-methods:
 
 Generator-iterator methods
@@ -443,7 +622,7 @@ be used to control the execution of a generator function.
 Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
-.. index:: exception: StopIteration
+.. index:: pair: exception; StopIteration
 
 
 .. method:: generator.__next__()
@@ -453,9 +632,9 @@ is already executing raises a :exc:`ValueError` exception.
    :meth:`~generator.__next__` method, the current yield expression always
    evaluates to :const:`None`.  The execution then continues to the next yield
    expression, where the generator is suspended again, and the value of the
-   :token:`expression_list` is returned to :meth:`__next__`'s caller.  If the
-   generator exits without yielding another value, a :exc:`StopIteration`
-   exception is raised.
+   :token:`~python-grammar:yield_list` is returned to :meth:`__next__`'s
+   caller.  If the generator exits without yielding another value, a
+   :exc:`StopIteration` exception is raised.
 
    This method is normally called implicitly, e.g. by a :keyword:`for` loop, or
    by the built-in :func:`next` function.
@@ -472,26 +651,53 @@ is already executing raises a :exc:`ValueError` exception.
    could receive the value.
 
 
-.. method:: generator.throw(type[, value[, traceback]])
+.. method:: generator.throw(value)
+            generator.throw(type[, value[, traceback]])
 
-   Raises an exception of type ``type`` at the point where the generator was paused,
+   Raises an exception at the point where the generator was paused,
    and returns the next value yielded by the generator function.  If the generator
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.  If the generator function does not catch the passed-in exception, or
    raises a different exception, then that exception propagates to the caller.
 
-.. index:: exception: GeneratorExit
+   In typical use, this is called with a single exception instance similar to the
+   way the :keyword:`raise` keyword is used.
+
+   For backwards compatibility, however, the second signature is
+   supported, following a convention from older versions of Python.
+   The *type* argument should be an exception class, and *value*
+   should be an exception instance. If the *value* is not provided, the
+   *type* constructor is called to get an instance. If *traceback*
+   is provided, it is set on the exception, otherwise any existing
+   :attr:`~BaseException.__traceback__` attribute stored in *value* may
+   be cleared.
+
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
+.. index:: pair: exception; GeneratorExit
 
 
 .. method:: generator.close()
 
-   Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function then exits gracefully, is already closed,
-   or raises :exc:`GeneratorExit` (by not catching the exception), close
-   returns to its caller.  If the generator yields a value, a
-   :exc:`RuntimeError` is raised.  If the generator raises any other exception,
-   it is propagated to the caller.  :meth:`close` does nothing if the generator
-   has already exited due to an exception or normal exit.
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function was paused (equivalent to calling ``throw(GeneratorExit)``).
+   The exception is raised by the yield expression where the generator was paused.
+   If the generator function catches the exception and returns a
+   value, this value is returned from :meth:`close`.  If the generator function
+   is already closed, or raises :exc:`GeneratorExit` (by not catching the
+   exception), :meth:`close` returns :const:`None`.  If the generator yields a
+   value, a :exc:`RuntimeError` is raised.  If the generator raises any other
+   exception, it is propagated to the caller.  If the generator has already
+   exited due to an exception or normal exit, :meth:`close` returns
+   :const:`None` and has no other effect.
+
+   .. versionchanged:: 3.13
+
+      If a generator returns a value upon being closed, the value is returned
+      by :meth:`close`.
 
 .. index:: single: yield; examples
 
@@ -534,7 +740,7 @@ Asynchronous generator functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The presence of a yield expression in a function or method defined using
-:keyword:`async def` further defines the function as a
+:keyword:`async def` further defines the function as an
 :term:`asynchronous generator` function.
 
 When an asynchronous generator function is called, it returns an
@@ -544,36 +750,45 @@ An asynchronous generator object is typically used in an
 :keyword:`async for` statement in a coroutine function analogously to
 how a generator object would be used in a :keyword:`for` statement.
 
-Calling one of the asynchronous generator's methods returns an
-:term:`awaitable` object, and the execution starts when this object
-is awaited on. At that time, the execution proceeds to the first yield
-expression, where it is suspended again, returning the value of
-:token:`expression_list` to the awaiting coroutine. As with a generator,
-suspension means that all local state is retained, including the
-current bindings of local variables, the instruction pointer, the internal
-evaluation stack, and the state of any exception handling.  When the execution
-is resumed by awaiting on the next object returned by the asynchronous
-generator's methods, the function can proceed exactly as if the yield
-expression were just another external call. The value of the yield expression
-after resuming depends on the method which resumed the execution.  If
+Calling one of the asynchronous generator's methods returns an :term:`awaitable`
+object, and the execution starts when this object is awaited on. At that time,
+the execution proceeds to the first yield expression, where it is suspended
+again, returning the value of :token:`~python-grammar:yield_list` to the
+awaiting coroutine. As with a generator, suspension means that all local state
+is retained, including the current bindings of local variables, the instruction
+pointer, the internal evaluation stack, and the state of any exception handling.
+When the execution is resumed by awaiting on the next object returned by the
+asynchronous generator's methods, the function can proceed exactly as if the
+yield expression were just another external call. The value of the yield
+expression after resuming depends on the method which resumed the execution.  If
 :meth:`~agen.__anext__` is used then the result is :const:`None`. Otherwise, if
-:meth:`~agen.asend` is used, then the result will be the value passed in to
-that method.
+:meth:`~agen.asend` is used, then the result will be the value passed in to that
+method.
+
+If an asynchronous generator happens to exit early by :keyword:`break`, the caller
+task being cancelled, or other exceptions, the generator's async cleanup code
+will run and possibly raise exceptions or access context variables in an
+unexpected context--perhaps after the lifetime of tasks it depends, or
+during the event loop shutdown when the async-generator garbage collection hook
+is called.
+To prevent this, the caller must explicitly close the async generator by calling
+:meth:`~agen.aclose` method to finalize the generator and ultimately detach it
+from the event loop.
 
 In an asynchronous generator function, yield expressions are allowed anywhere
 in a :keyword:`try` construct. However, if an asynchronous generator is not
 resumed before it is finalized (by reaching a zero reference count or by
-being garbage collected), then a yield expression within a :keyword:`try`
+being garbage collected), then a yield expression within a :keyword:`!try`
 construct could result in a failure to execute pending :keyword:`finally`
 clauses.  In this case, it is the responsibility of the event loop or
 scheduler running the asynchronous generator to call the asynchronous
 generator-iterator's :meth:`~agen.aclose` method and run the resulting
-coroutine object, thus allowing any pending :keyword:`finally` clauses
+coroutine object, thus allowing any pending :keyword:`!finally` clauses
 to execute.
 
-To take care of finalization, an event loop should define
-a *finalizer* function which takes an asynchronous generator-iterator
-and presumably calls :meth:`~agen.aclose` and executes the coroutine.
+To take care of finalization upon event loop termination, an event loop should
+define a *finalizer* function which takes an asynchronous generator-iterator and
+presumably calls :meth:`~agen.aclose` and executes the coroutine.
 This  *finalizer* may be registered by calling :func:`sys.set_asyncgen_hooks`.
 When first iterated over, an asynchronous generator-iterator will store the
 registered *finalizer* to be called upon finalization. For a reference example
@@ -583,7 +798,7 @@ of a *finalizer* method see the implementation of
 The expression ``yield from <expr>`` is a syntax error when used in an
 asynchronous generator function.
 
-.. index:: object: asynchronous-generator
+.. index:: pair: object; asynchronous-generator
 .. _asynchronous-generator-methods:
 
 Asynchronous generator-iterator methods
@@ -593,29 +808,31 @@ This subsection describes the methods of an asynchronous generator iterator,
 which are used to control the execution of a generator function.
 
 
-.. index:: exception: StopAsyncIteration
+.. index:: pair: exception; StopAsyncIteration
 
-.. coroutinemethod:: agen.__anext__()
+.. method:: agen.__anext__()
+   :async:
 
    Returns an awaitable which when run starts to execute the asynchronous
    generator or resumes it at the last executed yield expression.  When an
-   asynchronous generator function is resumed with a :meth:`~agen.__anext__`
-   method, the current yield expression always evaluates to :const:`None` in
-   the returned awaitable, which when run will continue to the next yield
-   expression. The value of the :token:`expression_list` of the yield
-   expression is the value of the :exc:`StopIteration` exception raised by
+   asynchronous generator function is resumed with an :meth:`~agen.__anext__`
+   method, the current yield expression always evaluates to :const:`None` in the
+   returned awaitable, which when run will continue to the next yield
+   expression. The value of the :token:`~python-grammar:yield_list` of the
+   yield expression is the value of the :exc:`StopIteration` exception raised by
    the completing coroutine.  If the asynchronous generator exits without
-   yielding another value, the awaitable instead raises an
+   yielding another value, the awaitable instead raises a
    :exc:`StopAsyncIteration` exception, signalling that the asynchronous
    iteration has completed.
 
    This method is normally called implicitly by a :keyword:`async for` loop.
 
 
-.. coroutinemethod:: agen.asend(value)
+.. method:: agen.asend(value)
+   :async:
 
    Returns an awaitable which when run resumes the execution of the
-   asynchronous generator. As with the :meth:`~generator.send()` method for a
+   asynchronous generator. As with the :meth:`~generator.send` method for a
    generator, this "sends" a value into the asynchronous generator function,
    and the *value* argument becomes the result of the current yield expression.
    The awaitable returned by the :meth:`asend` method will return the next
@@ -627,22 +844,30 @@ which are used to control the execution of a generator function.
    because there is no yield expression that could receive the value.
 
 
-.. coroutinemethod:: agen.athrow(type[, value[, traceback]])
+.. method:: agen.athrow(value)
+            agen.athrow(type[, value[, traceback]])
+   :async:
 
    Returns an awaitable that raises an exception of type ``type`` at the point
    where the asynchronous generator was paused, and returns the next value
    yielded by the generator function as the value of the raised
    :exc:`StopIteration` exception.  If the asynchronous generator exits
-   without yielding another value, an :exc:`StopAsyncIteration` exception is
+   without yielding another value, a :exc:`StopAsyncIteration` exception is
    raised by the awaitable.
    If the generator function does not catch the passed-in exception, or
    raises a different exception, then when the awaitable is run that exception
    propagates to the caller of the awaitable.
 
-.. index:: exception: GeneratorExit
+   .. versionchanged:: 3.12
+
+      The second signature \(type\[, value\[, traceback\]\]\) is deprecated and
+      may be removed in a future version of Python.
+
+.. index:: pair: exception; GeneratorExit
 
 
-.. coroutinemethod:: agen.aclose()
+.. method:: agen.aclose()
+   :async:
 
    Returns an awaitable that when run will throw a :exc:`GeneratorExit` into
    the asynchronous generator function at the point where it was paused.
@@ -667,7 +892,7 @@ Primaries
 Primaries represent the most tightly bound operations of the language. Their
 syntax is:
 
-.. productionlist::
+.. productionlist:: python-grammar
    primary: `atom` | `attributeref` | `subscription` | `slicing` | `call`
 
 
@@ -676,78 +901,107 @@ syntax is:
 Attribute references
 --------------------
 
-.. index:: pair: attribute; reference
+.. index::
+   pair: attribute; reference
+   single: . (dot); attribute reference
 
 An attribute reference is a primary followed by a period and a name:
 
-.. productionlist::
+.. productionlist:: python-grammar
    attributeref: `primary` "." `identifier`
 
 .. index::
-   exception: AttributeError
-   object: module
-   object: list
+   pair: exception; AttributeError
+   pair: object; module
+   pair: object; list
 
 The primary must evaluate to an object of a type that supports attribute
 references, which most objects do.  This object is then asked to produce the
-attribute whose name is the identifier.  This production can be customized by
-overriding the :meth:`__getattr__` method.  If this attribute is not available,
-the exception :exc:`AttributeError` is raised.  Otherwise, the type and value of
-the object produced is determined by the object.  Multiple evaluations of the
-same attribute reference may yield different objects.
+attribute whose name is the identifier. The type and value produced is
+determined by the object.  Multiple evaluations of the same attribute
+reference may yield different objects.
 
+This production can be customized by overriding the
+:meth:`~object.__getattribute__` method or the :meth:`~object.__getattr__`
+method.  The :meth:`!__getattribute__` method is called first and either
+returns a value or raises :exc:`AttributeError` if the attribute is not
+available.
+
+If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
+method, that method is called as a fallback.
 
 .. _subscriptions:
 
 Subscriptions
 -------------
 
-.. index:: single: subscription
+.. index::
+   single: subscription
+   single: [] (square brackets); subscription
 
 .. index::
-   object: sequence
-   object: mapping
-   object: string
-   object: tuple
-   object: list
-   object: dictionary
+   pair: object; sequence
+   pair: object; mapping
+   pair: object; string
+   pair: object; tuple
+   pair: object; list
+   pair: object; dictionary
    pair: sequence; item
 
-A subscription selects an item of a sequence (string, tuple or list) or mapping
-(dictionary) object:
+The subscription of an instance of a :ref:`container class <sequence-types>`
+will generally select an element from the container. The subscription of a
+:term:`generic class <generic type>` will generally return a
+:ref:`GenericAlias <types-genericalias>` object.
 
-.. productionlist::
-   subscription: `primary` "[" `expression_list` "]"
+.. productionlist:: python-grammar
+   subscription: `primary` "[" `flexible_expression_list` "]"
 
-The primary must evaluate to an object that supports subscription (lists or
-dictionaries for example).  User-defined objects can support subscription by
-defining a :meth:`__getitem__` method.
+When an object is subscripted, the interpreter will evaluate the primary and
+the expression list.
 
-For built-in objects, there are two types of objects that support subscription:
+The primary must evaluate to an object that supports subscription. An object
+may support subscription through defining one or both of
+:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`. When the
+primary is subscripted, the evaluated result of the expression list will be
+passed to one of these methods. For more details on when ``__class_getitem__``
+is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
 
-If the primary is a mapping, the expression list must evaluate to an object
-whose value is one of the keys of the mapping, and the subscription selects the
-value in the mapping that corresponds to that key.  (The expression list is a
-tuple except if it has exactly one item.)
+If the expression list contains at least one comma, or if any of the expressions
+are starred, the expression list will evaluate to a :class:`tuple` containing
+the items of the expression list. Otherwise, the expression list will evaluate
+to the value of the list's sole member.
 
-If the primary is a sequence, the expression (list) must evaluate to an integer
-or a slice (as discussed in the following section).
+.. versionchanged:: 3.11
+   Expressions in an expression list may be starred. See :pep:`646`.
+
+For built-in objects, there are two types of objects that support subscription
+via :meth:`~object.__getitem__`:
+
+1. Mappings. If the primary is a :term:`mapping`, the expression list must
+   evaluate to an object whose value is one of the keys of the mapping, and the
+   subscription selects the value in the mapping that corresponds to that key.
+   An example of a builtin mapping class is the :class:`dict` class.
+2. Sequences. If the primary is a :term:`sequence`, the expression list must
+   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
+   following section). Examples of builtin sequence classes include the
+   :class:`str`, :class:`list` and :class:`tuple` classes.
 
 The formal syntax makes no special provision for negative indices in
-sequences; however, built-in sequences all provide a :meth:`__getitem__`
+:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
 method that interprets negative indices by adding the length of the sequence
-to the index (so that ``x[-1]`` selects the last item of ``x``).  The
+to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
 resulting value must be a nonnegative integer less than the number of items in
 the sequence, and the subscription selects the item whose index is that value
 (counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`__getitem__` method, subclasses overriding
+occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
 this method will need to explicitly add that support.
 
 .. index::
    single: character
    pair: string; item
 
-A string's items are characters.  A character is not a separate data type but a
+A :class:`string <str>` is a special kind of sequence whose items are
+*characters*. A character is not a separate data type but a
 string of exactly one character.
 
 
@@ -759,18 +1013,20 @@ Slicings
 .. index::
    single: slicing
    single: slice
+   single: : (colon); slicing
+   single: , (comma); slicing
 
 .. index::
-   object: sequence
-   object: string
-   object: tuple
-   object: list
+   pair: object; sequence
+   pair: object; string
+   pair: object; tuple
+   pair: object; list
 
 A slicing selects a range of items in a sequence object (e.g., a string, tuple
 or list).  Slicings may be used as expressions or as targets in assignment or
 :keyword:`del` statements.  The syntax for a slicing:
 
-.. productionlist::
+.. productionlist:: python-grammar
    slicing: `primary` "[" `slice_list` "]"
    slice_list: `slice_item` ("," `slice_item`)* [","]
    slice_item: `expression` | `proper_slice`
@@ -792,7 +1048,7 @@ slice list contains no proper slice).
    single: step (slice object attribute)
 
 The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`__getitem__` method as
+same :meth:`~object.__getitem__` method as
 normal subscription) with a key that is constructed from the slice list, as
 follows.  If the slice list contains at least one comma, the key is a tuple
 containing the conversion of the slice items; otherwise, the conversion of the
@@ -805,9 +1061,12 @@ substituting ``None`` for missing expressions.
 
 
 .. index::
-   object: callable
+   pair: object; callable
    single: call
    single: argument; call semantics
+   single: () (parentheses); call
+   single: , (comma); argument list
+   single: = (equals); in function calls
 
 .. _calls:
 
@@ -817,13 +1076,14 @@ Calls
 A call calls a callable object (e.g., a :term:`function`) with a possibly empty
 series of :term:`arguments <argument>`:
 
-.. productionlist::
+.. productionlist:: python-grammar
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
    argument_list: `positional_arguments` ["," `starred_and_keywords`]
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: `positional_item` ("," `positional_item`)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -838,7 +1098,7 @@ but does not affect the semantics.
 
 The primary must evaluate to a callable object (user-defined functions, built-in
 functions, methods of built-in objects, class objects, methods of class
-instances, and all objects having a :meth:`__call__` method are callable).  All
+instances, and all objects having a :meth:`~object.__call__` method are callable).  All
 argument expressions are evaluated before the call is attempted.  Please refer
 to section :ref:`function` for the syntax of formal :term:`parameter` lists.
 
@@ -850,8 +1110,8 @@ formal parameters.  If there are N positional arguments, they are placed in the
 first N slots.  Next, for each keyword argument, the identifier is used to
 determine the corresponding slot (if the identifier is the same as the first
 formal parameter name, the first slot is used, and so on).  If the slot is
-already filled, a :exc:`TypeError` exception is raised. Otherwise, the value of
-the argument is placed in the slot, filling it (even if the expression is
+already filled, a :exc:`TypeError` exception is raised. Otherwise, the
+argument is placed in the slot, filling it (even if the expression is
 ``None``, it fills the slot).  When all arguments have been processed, the slots
 that are still unfilled are filled with the corresponding default value from the
 function definition.  (Default values are calculated, once, when the function is
@@ -884,7 +1144,7 @@ and the argument values as corresponding values), or a (new) empty dictionary if
 there were no excess keyword arguments.
 
 .. index::
-   single: *; in function calls
+   single: * (asterisk); in function calls
    single: unpacking; in function calls
 
 If the syntax ``*expression`` appears in the function call, ``expression`` must
@@ -911,16 +1171,26 @@ keyword arguments (and any ``**expression`` arguments -- see below).  So::
    1 2
 
 It is unusual for both keyword arguments and the ``*expression`` syntax to be
-used in the same call, so in practice this confusion does not arise.
+used in the same call, so in practice this confusion does not often arise.
 
 .. index::
    single: **; in function calls
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
 evaluate to a :term:`mapping`, the contents of which are treated as
-additional keyword arguments.  If a keyword is already present
-(as an explicit keyword argument, or from another unpacking),
+additional keyword arguments. If a parameter matching a key has already been
+given a value (by an explicit keyword argument, or from another unpacking),
 a :exc:`TypeError` exception is raised.
+
+When ``**expression`` is used, each key in this mapping must be
+a string.
+Each value from the mapping is assigned to the first formal parameter
+eligible for keyword assignment whose name is equal to the key.
+A key need not be a Python identifier (e.g. ``"max-temp °F"`` is acceptable,
+although it will not match any formal parameter that could be declared).
+If there is no match to a formal parameter
+the key-value pair is collected by the ``**`` parameter, if there is one,
+or if there is not, a :exc:`TypeError` exception is raised.
 
 Formal parameters using the syntax ``*identifier`` or ``**identifier`` cannot be
 used as positional argument slots or as keyword argument names.
@@ -941,14 +1211,15 @@ a user-defined function:
    .. index::
       pair: function; call
       triple: user-defined; function; call
-      object: user-defined function
-      object: function
+      pair: object; user-defined function
+      pair: object; function
 
    The code block for the function is executed, passing it the argument list.  The
    first thing the code block will do is bind the formal parameters to the
    arguments; this is described in section :ref:`function`.  When the code block
    executes a :keyword:`return` statement, this specifies the return value of the
-   function call.
+   function call.  If execution reaches the end of the code block without
+   executing a :keyword:`return` statement, the return value is ``None``.
 
 a built-in function or method:
    .. index::
@@ -956,25 +1227,25 @@ a built-in function or method:
       pair: built-in function; call
       pair: method; call
       pair: built-in method; call
-      object: built-in method
-      object: built-in function
-      object: method
-      object: function
+      pair: object; built-in method
+      pair: object; built-in function
+      pair: object; method
+      pair: object; function
 
    The result is up to the interpreter; see :ref:`built-in-funcs` for the
    descriptions of built-in functions and methods.
 
 a class object:
    .. index::
-      object: class
+      pair: object; class
       pair: class object; call
 
    A new instance of that class is returned.
 
 a class instance method:
    .. index::
-      object: class instance
-      object: instance
+      pair: object; class instance
+      pair: object; instance
       pair: class instance; call
 
    The corresponding user-defined function is called, with an argument list that is
@@ -986,10 +1257,11 @@ a class instance:
       pair: instance; call
       single: __call__() (object method)
 
-   The class must define a :meth:`__call__` method; the effect is then the same as
+   The class must define a :meth:`~object.__call__` method; the effect is then the same as
    if that method was called.
 
 
+.. index:: pair: keyword; await
 .. _await:
 
 Await expression
@@ -998,7 +1270,7 @@ Await expression
 Suspend the execution of :term:`coroutine` on an :term:`awaitable` object.
 Can only be used inside a :term:`coroutine function`.
 
-.. productionlist::
+.. productionlist:: python-grammar
    await_expr: "await" `primary`
 
 .. versionadded:: 3.5
@@ -1009,11 +1281,15 @@ Can only be used inside a :term:`coroutine function`.
 The power operator
 ==================
 
+.. index::
+   pair: power; operation
+   pair: operator; **
+
 The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
-.. productionlist::
-   power: ( `await_expr` | `primary` ) ["**" `u_expr`]
+.. productionlist:: python-grammar
+   power: (`await_expr` | `primary`) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
@@ -1033,6 +1309,8 @@ Raising ``0.0`` to a negative power results in a :exc:`ZeroDivisionError`.
 Raising a negative number to a fractional power results in a :class:`complex`
 number. (In earlier versions it raised a :exc:`ValueError`.)
 
+This operation can be customized using the special :meth:`~object.__pow__` and
+:meth:`~object.__rpow__` methods.
 
 .. _unary:
 
@@ -1045,27 +1323,38 @@ Unary arithmetic and bitwise operations
 
 All unary arithmetic and bitwise operations have the same priority:
 
-.. productionlist::
+.. productionlist:: python-grammar
    u_expr: `power` | "-" `u_expr` | "+" `u_expr` | "~" `u_expr`
 
 .. index::
    single: negation
    single: minus
+   single: operator; - (minus)
+   single: - (minus); unary operator
 
-The unary ``-`` (minus) operator yields the negation of its numeric argument.
+The unary ``-`` (minus) operator yields the negation of its numeric argument; the
+operation can be overridden with the :meth:`~object.__neg__` special method.
 
-.. index:: single: plus
+.. index::
+   single: plus
+   single: operator; + (plus)
+   single: + (plus); unary operator
 
-The unary ``+`` (plus) operator yields its numeric argument unchanged.
+The unary ``+`` (plus) operator yields its numeric argument unchanged; the
+operation can be overridden with the :meth:`~object.__pos__` special method.
 
-.. index:: single: inversion
-
+.. index::
+   single: inversion
+   pair: operator; ~ (tilde)
 
 The unary ``~`` (invert) operator yields the bitwise inversion of its integer
 argument.  The bitwise inversion of ``x`` is defined as ``-(x+1)``.  It only
-applies to integral numbers.
+applies to integral numbers or to custom objects that override the
+:meth:`~object.__invert__` special method.
 
-.. index:: exception: TypeError
+
+
+.. index:: pair: exception; TypeError
 
 In all three cases, if the argument does not have the proper type, a
 :exc:`TypeError` exception is raised.
@@ -1083,30 +1372,46 @@ that some of these operations also apply to certain non-numeric types.  Apart
 from the power operator, there are only two levels, one for multiplicative
 operators and one for additive operators:
 
-.. productionlist::
+.. productionlist:: python-grammar
    m_expr: `u_expr` | `m_expr` "*" `u_expr` | `m_expr` "@" `m_expr` |
-         : `m_expr` "//" `u_expr`| `m_expr` "/" `u_expr` |
+         : `m_expr` "//" `u_expr` | `m_expr` "/" `u_expr` |
          : `m_expr` "%" `u_expr`
    a_expr: `m_expr` | `a_expr` "+" `m_expr` | `a_expr` "-" `m_expr`
 
-.. index:: single: multiplication
+.. index::
+   single: multiplication
+   pair: operator; * (asterisk)
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
 the other must be a sequence. In the former case, the numbers are converted to a
-common type and then multiplied together.  In the latter case, sequence
+common real type and then multiplied together.  In the latter case, sequence
 repetition is performed; a negative repetition factor yields an empty sequence.
 
-.. index:: single: matrix multiplication
+This operation can be customized using the special :meth:`~object.__mul__` and
+:meth:`~object.__rmul__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
+
+.. index::
+   single: matrix multiplication
+   pair: operator; @ (at)
 
 The ``@`` (at) operator is intended to be used for matrix multiplication.  No
 builtin Python types implement this operator.
 
+This operation can be customized using the special :meth:`~object.__matmul__` and
+:meth:`~object.__rmatmul__` methods.
+
 .. versionadded:: 3.5
 
 .. index::
-   exception: ZeroDivisionError
+   pair: exception; ZeroDivisionError
    single: division
+   pair: operator; / (slash)
+   pair: operator; //
 
 The ``/`` (division) and ``//`` (floor division) operators yield the quotient of
 their arguments.  The numeric arguments are first converted to a common type.
@@ -1115,12 +1420,19 @@ integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
 
-.. index:: single: modulo
+The division operation can be customized using the special :meth:`~object.__truediv__`
+and :meth:`~object.__rtruediv__` methods.
+The floor division operation can be customized using the special
+:meth:`~object.__floordiv__` and :meth:`~object.__rfloordiv__` methods.
+
+.. index::
+   single: modulo
+   pair: operator; % (percent)
 
 The ``%`` (modulo) operator yields the remainder from the division of the first
 argument by the second.  The numeric arguments are first converted to a common
 type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
-arguments may be floating point numbers, e.g., ``3.14%0.7`` equals ``0.34``
+arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
 (since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
 result with the same sign as its second operand (or zero); the absolute value of
 the result is strictly smaller than the absolute value of the second operand
@@ -1136,21 +1448,44 @@ also overloaded by string objects to perform old-style string formatting (also
 known as interpolation).  The syntax for string formatting is described in the
 Python Library Reference, section :ref:`old-string-formatting`.
 
-The floor division operator, the modulo operator, and the :func:`divmod`
-function are not defined for complex numbers.  Instead, convert to a floating
-point number using the :func:`abs` function if appropriate.
+The *modulo* operation can be customized using the special :meth:`~object.__mod__`
+and :meth:`~object.__rmod__` methods.
 
-.. index:: single: addition
+The floor division operator, the modulo operator, and the :func:`divmod`
+function are not defined for complex numbers.  Instead, convert to a
+floating-point number using the :func:`abs` function if appropriate.
+
+.. index::
+   single: addition
+   single: operator; + (plus)
+   single: + (plus); binary operator
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
 must either both be numbers or both be sequences of the same type.  In the
-former case, the numbers are converted to a common type and then added together.
+former case, the numbers are converted to a common real type and then added together.
 In the latter case, the sequences are concatenated.
 
-.. index:: single: subtraction
+This operation can be customized using the special :meth:`~object.__add__` and
+:meth:`~object.__radd__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
+
+.. index::
+   single: subtraction
+   single: operator; - (minus)
+   single: - (minus); binary operator
 
 The ``-`` (subtraction) operator yields the difference of its arguments.  The
-numeric arguments are first converted to a common type.
+numeric arguments are first converted to a common real type.
+
+This operation can be customized using the special :meth:`~object.__sub__` and
+:meth:`~object.__rsub__` methods.
+
+.. versionchanged:: 3.14
+   If only one operand is a complex number, the other operand is converted
+   to a floating-point number.
 
 
 .. _shifting:
@@ -1158,17 +1493,25 @@ numeric arguments are first converted to a common type.
 Shifting operations
 ===================
 
-.. index:: pair: shifting; operation
+.. index::
+   pair: shifting; operation
+   pair: operator; <<
+   pair: operator; >>
 
 The shifting operations have lower priority than the arithmetic operations:
 
-.. productionlist::
-   shift_expr: `a_expr` | `shift_expr` ( "<<" | ">>" ) `a_expr`
+.. productionlist:: python-grammar
+   shift_expr: `a_expr` | `shift_expr` ("<<" | ">>") `a_expr`
 
 These operators accept integers as arguments.  They shift the first argument to
 the left or right by the number of bits given by the second argument.
 
-.. index:: exception: ValueError
+The left shift operation can be customized using the special :meth:`~object.__lshift__`
+and :meth:`~object.__rlshift__` methods.
+The right shift operation can be customized using the special :meth:`~object.__rshift__`
+and :meth:`~object.__rrshift__` methods.
+
+.. index:: pair: exception; ValueError
 
 A right shift by *n* bits is defined as floor division by ``pow(2,n)``.  A left
 shift by *n* bits is defined as multiplication with ``pow(2,n)``.
@@ -1183,29 +1526,36 @@ Binary bitwise operations
 
 Each of the three bitwise operations has a different priority level:
 
-.. productionlist::
+.. productionlist:: python-grammar
    and_expr: `shift_expr` | `and_expr` "&" `shift_expr`
    xor_expr: `and_expr` | `xor_expr` "^" `and_expr`
    or_expr: `xor_expr` | `or_expr` "|" `xor_expr`
 
-.. index:: pair: bitwise; and
+.. index::
+   pair: bitwise; and
+   pair: operator; & (ampersand)
 
 The ``&`` operator yields the bitwise AND of its arguments, which must be
-integers.
+integers or one of them must be a custom object overriding :meth:`~object.__and__` or
+:meth:`~object.__rand__` special methods.
 
 .. index::
    pair: bitwise; xor
    pair: exclusive; or
+   pair: operator; ^ (caret)
 
 The ``^`` operator yields the bitwise XOR (exclusive OR) of its arguments, which
-must be integers.
+must be integers or one of them must be a custom object overriding :meth:`~object.__xor__` or
+:meth:`~object.__rxor__` special methods.
 
 .. index::
    pair: bitwise; or
    pair: inclusive; or
+   pair: operator; | (vertical bar)
 
 The ``|`` operator yields the bitwise (inclusive) OR of its arguments, which
-must be integers.
+must be integers or one of them must be a custom object overriding :meth:`~object.__or__` or
+:meth:`~object.__ror__` special methods.
 
 
 .. _comparisons:
@@ -1213,21 +1563,29 @@ must be integers.
 Comparisons
 ===========
 
-.. index:: single: comparison
-
-.. index:: pair: C; language
+.. index::
+   single: comparison
+   pair: C; language
+   pair: operator; < (less)
+   pair: operator; > (greater)
+   pair: operator; <=
+   pair: operator; >=
+   pair: operator; ==
+   pair: operator; !=
 
 Unlike C, all comparison operations in Python have the same priority, which is
 lower than that of any arithmetic, shifting or bitwise operation.  Also unlike
 C, expressions like ``a < b < c`` have the interpretation that is conventional
 in mathematics:
 
-.. productionlist::
-   comparison: `or_expr` ( `comp_operator` `or_expr` )*
+.. productionlist:: python-grammar
+   comparison: `or_expr` (`comp_operator` `or_expr`)*
    comp_operator: "<" | ">" | "==" | ">=" | "<=" | "!="
                 : | "is" ["not"] | ["not"] "in"
 
-Comparisons yield boolean values: ``True`` or ``False``.
+Comparisons yield boolean values: ``True`` or ``False``. Custom
+:dfn:`rich comparison methods` may return non-boolean values. In this case
+Python will call :func:`bool` on such value in boolean contexts.
 
 .. index:: pair: chaining; comparisons
 
@@ -1243,6 +1601,8 @@ evaluated at most once.
 Note that ``a op1 b op2 c`` doesn't imply any kind of comparison between *a* and
 *c*, so that, e.g., ``x < y > z`` is perfectly legal (though perhaps not
 pretty).
+
+.. _expressions-value-comparisons:
 
 Value comparisons
 -----------------
@@ -1262,7 +1622,7 @@ comparison implementation.
 Because all types are (direct or indirect) subtypes of :class:`object`, they
 inherit the default comparison behavior from :class:`object`.  Types can
 customize their comparison behavior by implementing
-:dfn:`rich comparison methods` like :meth:`__lt__`, described in
+:dfn:`rich comparison methods` like :meth:`~object.__lt__`, described in
 :ref:`customization`.
 
 The default behavior for equality comparison (``==`` and ``!=``) is based on
@@ -1292,12 +1652,16 @@ built-in types.
   involved, they compare mathematically (algorithmically) correct without loss
   of precision.
 
-  The not-a-number values :const:`float('NaN')` and :const:`Decimal('NaN')`
-  are special.  They are identical to themselves (``x is x`` is true) but
-  are not equal to themselves (``x == x`` is false).  Additionally,
-  comparing any number to a not-a-number value
-  will return ``False``.  For example, both ``3 < float('NaN')`` and
-  ``float('NaN') < 3`` will return ``False``.
+  The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
+  special.  Any ordered comparison of a number to a not-a-number value is false.
+  A counter-intuitive implication is that not-a-number values are not equal to
+  themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3`` and
+  ``x == x`` are all false, while ``x != x`` is true.  This behavior is
+  compliant with IEEE 754.
+
+* ``None`` and :data:`NotImplemented` are singletons.  :PEP:`8` advises that
+  comparisons for singletons should always be done with ``is`` or ``is not``,
+  never the equality operators.
 
 * Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
   compared within and across their types.  They compare lexicographically using
@@ -1316,25 +1680,9 @@ built-in types.
   :exc:`TypeError`.
 
   Sequences compare lexicographically using comparison of corresponding
-  elements, whereby reflexivity of the elements is enforced.
-
-  In enforcing reflexivity of elements, the comparison of collections assumes
-  that for a collection element ``x``, ``x == x`` is always true.  Based on
-  that assumption, element identity is compared first, and element comparison
-  is performed only for distinct elements.  This approach yields the same
-  result as a strict element comparison would, if the compared elements are
-  reflexive.  For non-reflexive elements, the result is different than for
-  strict element comparison, and may be surprising:  The non-reflexive
-  not-a-number values for example result in the following comparison behavior
-  when used in a list::
-
-    >>> nan = float('NaN')
-    >>> nan is nan
-    True
-    >>> nan == nan
-    False                 <-- the defined non-reflexive behavior of NaN
-    >>> [nan] == [nan]
-    True                  <-- list enforces reflexivity and tests identity first
+  elements.  The built-in containers typically assume identical objects are
+  equal to themselves.  That lets them bypass equality tests for identical
+  objects to improve performance and to maintain their internal invariants.
 
   Lexicographical comparison between built-in collections works as follows:
 
@@ -1350,7 +1698,7 @@ built-in types.
     true).
 
 * Mappings (instances of :class:`dict`) compare equal if and only if they have
-  equal `(key, value)` pairs. Equality comparison of the keys and values
+  equal ``(key, value)`` pairs. Equality comparison of the keys and values
   enforces reflexivity.
 
   Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
@@ -1428,7 +1776,7 @@ Membership test operations
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to ``True`` if *x* is a member of *s*, and ``False`` otherwise.
 ``x not in s`` returns the negation of ``x in s``.  All built-in sequences and
-set types support this as well as dictionary, for which :keyword:`in` tests
+set types support this as well as dictionary, for which :keyword:`!in` tests
 whether the dictionary has a given key. For container types such as list, tuple,
 set, frozenset, dict, or collections.deque, the expression ``x in y`` is equivalent
 to ``any(x is e or x == e for e in y)``.
@@ -1438,33 +1786,34 @@ substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Empty strings are
 always considered to be a substring of any other string, so ``"" in "abc"`` will
 return ``True``.
 
-For user-defined classes which define the :meth:`__contains__` method, ``x in
+For user-defined classes which define the :meth:`~object.__contains__` method, ``x in
 y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 ``False`` otherwise.
 
-For user-defined classes which do not define :meth:`__contains__` but do define
-:meth:`__iter__`, ``x in y`` is ``True`` if some value ``z`` with ``x == z`` is
-produced while iterating over ``y``.  If an exception is raised during the
-iteration, it is as if :keyword:`in` raised that exception.
+For user-defined classes which do not define :meth:`~object.__contains__` but do define
+:meth:`~object.__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
+expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
+If an exception is raised during the iteration, it is as if :keyword:`in` raised
+that exception.
 
 Lastly, the old-style iteration protocol is tried: if a class defines
-:meth:`__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
-integer index *i* such that ``x == y[i]``, and all lower integer indices do not
-raise :exc:`IndexError` exception.  (If any other exception is raised, it is as
+:meth:`~object.__getitem__`, ``x in y`` is ``True`` if and only if there is a non-negative
+integer index *i* such that ``x is y[i] or x == y[i]``, and no lower integer index
+raises the :exc:`IndexError` exception.  (If any other exception is raised, it is as
 if :keyword:`in` raised that exception).
 
 .. index::
-   operator: in
-   operator: not in
+   pair: operator; in
+   pair: operator; not in
    pair: membership; test
-   object: sequence
+   pair: object; sequence
 
-The operator :keyword:`not in` is defined to have the inverse true value of
+The operator :keyword:`not in` is defined to have the inverse truth value of
 :keyword:`in`.
 
 .. index::
-   operator: is
-   operator: is not
+   pair: operator; is
+   pair: operator; is not
    pair: identity; test
 
 
@@ -1474,8 +1823,8 @@ The operator :keyword:`not in` is defined to have the inverse true value of
 Identity comparisons
 --------------------
 
-The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  Object identity
+The operators :keyword:`is` and :keyword:`is not` test for an object's identity: ``x
+is y`` is true if and only if *x* and *y* are the same object.  An Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 
@@ -1492,7 +1841,7 @@ Boolean operations
    pair: Conditional; expression
    pair: Boolean; operation
 
-.. productionlist::
+.. productionlist:: python-grammar
    or_test: `and_test` | `or_test` "or" `and_test`
    and_test: `not_test` | `and_test` "and" `not_test`
    not_test: `comparison` | "not" `not_test`
@@ -1502,24 +1851,24 @@ control flow statements, the following values are interpreted as false:
 ``False``, ``None``, numeric zero of all types, and empty strings and containers
 (including strings, tuples, lists, dictionaries, sets and frozensets).  All
 other values are interpreted as true.  User-defined objects can customize their
-truth value by providing a :meth:`__bool__` method.
+truth value by providing a :meth:`~object.__bool__` method.
 
-.. index:: operator: not
+.. index:: pair: operator; not
 
 The operator :keyword:`not` yields ``True`` if its argument is false, ``False``
 otherwise.
 
-.. index:: operator: and
+.. index:: pair: operator; and
 
 The expression ``x and y`` first evaluates *x*; if *x* is false, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
-.. index:: operator: or
+.. index:: pair: operator; or
 
 The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
-(Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
+Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
 they return to ``False`` and ``True``, but rather return the last evaluated
 argument.  This is sometimes useful, e.g., if ``s`` is a string that should be
 replaced by a default value if it is empty, the expression ``s or 'foo'`` yields
@@ -1528,20 +1877,70 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+.. index::
+   single: := (colon equals)
+   single: assignment expression
+   single: walrus operator
+   single: named expression
+   pair: assignment; expression
+
+.. _assignment-expressions:
+
+Assignment expressions
+======================
+
+.. productionlist:: python-grammar
+   assignment_expression: [`identifier` ":="] `expression`
+
+An assignment expression (sometimes also called a "named expression" or
+"walrus") assigns an :token:`~python-grammar:expression` to an
+:token:`~python-grammar:identifier`, while also returning the value of the
+:token:`~python-grammar:expression`.
+
+One common use case is when handling matched regular expressions:
+
+.. code-block:: python
+
+   if matching := pattern.search(data):
+       do_something(matching)
+
+Or, when processing a file stream in chunks:
+
+.. code-block:: python
+
+   while chunk := file.read(9000):
+       process(chunk)
+
+Assignment expressions must be surrounded by parentheses when
+used as expression statements and when used as sub-expressions in
+slicing, conditional, lambda,
+keyword-argument, and comprehension-if expressions and
+in ``assert``, ``with``, and ``assignment`` statements.
+In all other places where they can be used, parentheses are not required,
+including in ``if`` and ``while`` statements.
+
+.. versionadded:: 3.8
+   See :pep:`572` for more details about assignment expressions.
+
+
+.. _if_expr:
+
 Conditional expressions
 =======================
 
 .. index::
    pair: conditional; expression
    pair: ternary; operator
+   single: if; conditional expression
+   single: else; conditional expression
 
-.. productionlist::
+.. productionlist:: python-grammar
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
-   expression_nocond: `or_test` | `lambda_expr_nocond`
 
-Conditional expressions (sometimes called a "ternary operator") have the lowest
-priority of all Python operations.
+A conditional expression (sometimes called a "ternary operator") is an
+alternative to the if-else statement. As it is an expression, it returns a value
+and can appear as a sub-expression.
 
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
@@ -1560,18 +1959,18 @@ Lambdas
    pair: lambda; expression
    pair: lambda; form
    pair: anonymous; function
+   single: : (colon); lambda expression
 
-.. productionlist::
-   lambda_expr: "lambda" [`parameter_list`]: `expression`
-   lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
+.. productionlist:: python-grammar
+   lambda_expr: "lambda" [`parameter_list`] ":" `expression`
 
 Lambda expressions (sometimes called lambda forms) are used to create anonymous
-functions. The expression ``lambda arguments: expression`` yields a function
+functions. The expression ``lambda parameters: expression`` yields a function
 object.  The unnamed object behaves like a function object defined with:
 
 .. code-block:: none
 
-   def <lambda>(arguments):
+   def <lambda>(parameters):
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
@@ -1584,15 +1983,19 @@ annotations.
 Expression lists
 ================
 
-.. index:: pair: expression; list
+.. index::
+   pair: expression; list
+   single: , (comma); expression list
 
-.. productionlist::
-   expression_list: `expression` ( "," `expression` )* [","]
-   starred_list: `starred_item` ( "," `starred_item` )* [","]
-   starred_expression: `expression` | ( `starred_item` "," )* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+.. productionlist:: python-grammar
+   starred_expression: "*" `or_expr` | `expression`
+   flexible_expression: `assignment_expression` | `starred_expression`
+   flexible_expression_list: `flexible_expression` ("," `flexible_expression`)* [","]
+   starred_expression_list: `starred_expression` ("," `starred_expression`)* [","]
+   expression_list: `expression` ("," `expression`)* [","]
+   yield_list: `expression_list` | `starred_expression` "," [`starred_expression_list`]
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 Except when part of a list or set display, an expression list
 containing at least one comma yields a tuple.  The length of
@@ -1601,7 +2004,7 @@ evaluated from left to right.
 
 .. index::
    pair: iterable; unpacking
-   single: *; in expression lists
+   single: * (asterisk); in expression lists
 
 An asterisk ``*`` denotes :dfn:`iterable unpacking`.  Its operand must be
 an :term:`iterable`.  The iterable is expanded into a sequence of items,
@@ -1611,10 +2014,14 @@ the unpacking.
 .. versionadded:: 3.5
    Iterable unpacking in expression lists, originally proposed by :pep:`448`.
 
+.. versionadded:: 3.11
+   Any item in an expression list may be starred. See :pep:`646`.
+
 .. index:: pair: trailing; comma
 
-The trailing comma is required only to create a single tuple (a.k.a. a
-*singleton*); it is optional in all other cases.  A single expression without a
+A trailing comma is required only to create a one-item tuple,
+such as ``1,``; it is optional in all other cases.
+A single expression without a
 trailing comma doesn't create a tuple, but rather yields the value of that
 expression. (To create an empty tuple, use an empty pair of parentheses:
 ``()``.)
@@ -1646,13 +2053,14 @@ their suffixes::
 Operator precedence
 ===================
 
-.. index:: pair: operator; precedence
+.. index::
+   pair: operator; precedence
 
-The following table summarizes the operator precedence in Python, from lowest
-precedence (least binding) to highest precedence (most binding).  Operators in
+The following table summarizes the operator precedence in Python, from highest
+precedence (most binding) to lowest precedence (least binding).  Operators in
 the same box have the same precedence.  Unless the syntax is explicitly given,
 operators are binary.  Operators in the same box group left to right (except for
-exponentiation, which groups from right to left).
+exponentiation and conditional expressions, which group from right to left).
 
 Note that comparisons, membership tests, and identity tests, all have the same
 precedence and have a left-to-right chaining feature as described in the
@@ -1662,47 +2070,50 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
-| :keyword:`lambda`                             | Lambda expression                   |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expression,                         |
+| ``[expressions...]``,                         | list display,                       |
+| ``{key: value...}``,                          | dictionary display,                 |
+| ``{expressions...}``                          | set display                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`if` -- :keyword:`else`              | Conditional expression              |
+| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
+| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`or`                                 | Boolean OR                          |
+| :keyword:`await x <await>`                    | Await expression                    |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`and`                                | Boolean AND                         |
+| ``**``                                        | Exponentiation [#]_                 |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`not` ``x``                          | Boolean NOT                         |
+| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
++-----------------------------------------------+-------------------------------------+
+| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
+|                                               | multiplication, division, floor     |
+|                                               | division, remainder [#]_            |
++-----------------------------------------------+-------------------------------------+
+| ``+``, ``-``                                  | Addition and subtraction            |
++-----------------------------------------------+-------------------------------------+
+| ``<<``, ``>>``                                | Shifts                              |
++-----------------------------------------------+-------------------------------------+
+| ``&``                                         | Bitwise AND                         |
++-----------------------------------------------+-------------------------------------+
+| ``^``                                         | Bitwise XOR                         |
++-----------------------------------------------+-------------------------------------+
+| ``|``                                         | Bitwise OR                          |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
 | :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
 | ``<=``, ``>``, ``>=``, ``!=``, ``==``         |                                     |
 +-----------------------------------------------+-------------------------------------+
-| ``|``                                         | Bitwise OR                          |
+| :keyword:`not x <not>`                        | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
-| ``^``                                         | Bitwise XOR                         |
+| :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+
-| ``&``                                         | Bitwise AND                         |
+| :keyword:`or`                                 | Boolean OR                          |
 +-----------------------------------------------+-------------------------------------+
-| ``<<``, ``>>``                                | Shifts                              |
+| :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
 +-----------------------------------------------+-------------------------------------+
-| ``+``, ``-``                                  | Addition and subtraction            |
+| :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
-| ``*``, ``@``, ``/``, ``//``, ``%``            | Multiplication, matrix              |
-|                                               | multiplication division,            |
-|                                               | remainder [#]_                      |
-+-----------------------------------------------+-------------------------------------+
-| ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
-+-----------------------------------------------+-------------------------------------+
-| ``**``                                        | Exponentiation [#]_                 |
-+-----------------------------------------------+-------------------------------------+
-| ``await`` ``x``                               | Await expression                    |
-+-----------------------------------------------+-------------------------------------+
-| ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
-| ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
-+-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
-| ``[expressions...]``,                         | list display,                       |
-| ``{key: value...}``,                          | dictionary display,                 |
-| ``{expressions...}``                          | set display                         |
+| ``:=``                                        | Assignment expression               |
 +-----------------------------------------------+-------------------------------------+
 
 
@@ -1746,8 +2157,8 @@ precedence and have a left-to-right chaining feature as described in the
    the :keyword:`is` operator, like those involving comparisons between instance
    methods, or constants.  Check their documentation for more info.
 
-.. [#] The ``%`` operator is also used for string formatting; the same
-   precedence applies.
-
 .. [#] The power operator ``**`` binds less tightly than an arithmetic or
    bitwise unary operator on its right, that is, ``2**-1`` is ``0.5``.
+
+.. [#] The ``%`` operator is also used for string formatting; the same
+   precedence applies.

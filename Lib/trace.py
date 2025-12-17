@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # portions copyright 2001, Autonomous Zones Industries, Inc., all rights...
 # err...  reserved and offered to the public under the terms of the
 # Python 2.2 license.
@@ -49,10 +47,11 @@ Sample use, programmatically
 """
 __all__ = ['Trace', 'CoverageResults']
 
+import io
 import linecache
 import os
-import re
 import sys
+import sysconfig
 import token
 import tokenize
 import inspect
@@ -61,26 +60,9 @@ import dis
 import pickle
 from time import monotonic as _time
 
-try:
-    import threading
-except ImportError:
-    _settrace = sys.settrace
-
-    def _unsettrace():
-        sys.settrace(None)
-else:
-    def _settrace(func):
-        threading.settrace(func)
-        sys.settrace(func)
-
-    def _unsettrace():
-        sys.settrace(None)
-        threading.settrace(None)
+import threading
 
 PRAGMA_NOCOVER = "#pragma NO COVER"
-
-# Simple rx to find lines with no code.
-rx_blank = re.compile(r'^\s*(#.*)?$')
 
 class _Ignore:
     def __init__(self, modules=None, dirs=None):
@@ -133,7 +115,7 @@ class _Ignore:
         return 0
 
 def _modname(path):
-    """Return a plausible module name for the patch."""
+    """Return a plausible module name for the path."""
 
     base = os.path.basename(path)
     filename, ext = os.path.splitext(base)
@@ -189,7 +171,7 @@ class CoverageResults:
             try:
                 with open(self.infile, 'rb') as f:
                     counts, calledfuncs, callers = pickle.load(f)
-                self.update(self.__class__(counts, calledfuncs, callers))
+                self.update(self.__class__(counts, calledfuncs, callers=callers))
             except (OSError, EOFError, ValueError) as err:
                 print(("Skipping counts file %r: %s"
                                       % (self.infile, err)), file=sys.stderr)
@@ -218,7 +200,8 @@ class CoverageResults:
         for key in other_callers:
             callers[key] = 1
 
-    def write_results(self, show_missing=True, summary=False, coverdir=None):
+    def write_results(self, show_missing=True, summary=False, coverdir=None, *,
+                      ignore_missing_files=False):
         """
         Write the coverage results.
 
@@ -227,6 +210,9 @@ class CoverageResults:
         :param coverdir: If None, the results of each module are placed in its
                          directory, otherwise it is included in the directory
                          specified.
+        :param ignore_missing_files: If True, counts for files that no longer
+                         exist are silently ignored. Otherwise, a missing file
+                         will raise a FileNotFoundError.
         """
         if self.calledfuncs:
             print()
@@ -269,13 +255,15 @@ class CoverageResults:
             if filename.endswith(".pyc"):
                 filename = filename[:-1]
 
+            if ignore_missing_files and not os.path.isfile(filename):
+                continue
+
             if coverdir is None:
                 dir = os.path.dirname(os.path.abspath(filename))
                 modulename = _modname(filename)
             else:
                 dir = coverdir
-                if not os.path.exists(dir):
-                    os.makedirs(dir)
+                os.makedirs(dir, exist_ok=True)
                 modulename = _fullmodname(filename)
 
             # If desired, get a list of the line numbers which represent
@@ -284,39 +272,38 @@ class CoverageResults:
                 lnotab = _find_executable_linenos(filename)
             else:
                 lnotab = {}
-            if lnotab:
-                source = linecache.getlines(filename)
-                coverpath = os.path.join(dir, modulename + ".cover")
-                with open(filename, 'rb') as fp:
-                    encoding, _ = tokenize.detect_encoding(fp.readline)
-                n_hits, n_lines = self.write_results_file(coverpath, source,
-                                                          lnotab, count, encoding)
-                if summary and n_lines:
-                    percent = int(100 * n_hits / n_lines)
-                    sums[modulename] = n_lines, percent, modulename, filename
-
+            source = linecache.getlines(filename)
+            coverpath = os.path.join(dir, modulename + ".cover")
+            with open(filename, 'rb') as fp:
+                encoding, _ = tokenize.detect_encoding(fp.readline)
+            n_hits, n_lines = self.write_results_file(coverpath, source,
+                                                      lnotab, count, encoding)
+            if summary and n_lines:
+                sums[modulename] = n_lines, n_hits, modulename, filename
 
         if summary and sums:
             print("lines   cov%   module   (path)")
             for m in sorted(sums):
-                n_lines, percent, modulename, filename = sums[m]
-                print("%5d   %3d%%   %s   (%s)" % sums[m])
+                n_lines, n_hits, modulename, filename = sums[m]
+                print(f"{n_lines:5d}   {n_hits/n_lines:.1%}   {modulename}   ({filename})")
 
         if self.outfile:
             # try and store counts and module info into self.outfile
             try:
-                pickle.dump((self.counts, self.calledfuncs, self.callers),
-                            open(self.outfile, 'wb'), 1)
+                with open(self.outfile, 'wb') as f:
+                    pickle.dump((self.counts, self.calledfuncs, self.callers),
+                                f, 1)
             except OSError as err:
                 print("Can't save counts files because %s" % err, file=sys.stderr)
 
     def write_results_file(self, path, lines, lnotab, lines_hit, encoding=None):
         """Return a coverage results file in path."""
+        # ``lnotab`` is a dict of executable lines, or a line number "table"
 
         try:
             outfile = open(path, "w", encoding=encoding)
         except OSError as err:
-            print(("trace: Could not open %r for writing: %s"
+            print(("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err)), file=sys.stderr)
             return 0, 0
 
@@ -330,17 +317,13 @@ class CoverageResults:
                     outfile.write("%5d: " % lines_hit[lineno])
                     n_hits += 1
                     n_lines += 1
-                elif rx_blank.match(line):
-                    outfile.write("       ")
-                else:
-                    # lines preceded by no marks weren't hit
-                    # Highlight them if so indicated, unless the line contains
+                elif lineno in lnotab and not PRAGMA_NOCOVER in line:
+                    # Highlight never-executed lines, unless the line contains
                     # #pragma: NO COVER
-                    if lineno in lnotab and not PRAGMA_NOCOVER in line:
-                        outfile.write(">>>>>> ")
-                        n_lines += 1
-                    else:
-                        outfile.write("       ")
+                    outfile.write(">>>>>> ")
+                    n_lines += 1
+                else:
+                    outfile.write("       ")
                 outfile.write(line.expandtabs(8))
 
         return n_hits, n_lines
@@ -416,7 +399,7 @@ class Trace:
         @param countfuncs true iff it should just output a list of
                      (filename, modulename, funcname,) for functions
                      that were called at least once;  This overrides
-                     `count' and `trace'
+                     'count' and 'trace'
         @param ignoremods a list of the names of modules to ignore
         @param ignoredirs a list of the names of directories to ignore
                      all of the (recursive) contents of
@@ -464,14 +447,16 @@ class Trace:
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
-            _settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
+            sys.settrace(self.globaltrace)
         try:
             exec(cmd, globals, locals)
         finally:
             if not self.donothing:
-                _unsettrace()
+                sys.settrace(None)
+                threading.settrace(None)
 
-    def runfunc(self, func, *args, **kw):
+    def runfunc(self, func, /, *args, **kw):
         result = None
         if not self.donothing:
             sys.settrace(self.globaltrace)
@@ -546,7 +531,7 @@ class Trace:
     def globaltrace_lt(self, frame, why, arg):
         """Handler for call events.
 
-        If the code block being entered is to be ignored, returns `None',
+        If the code block being entered is to be ignored, returns 'None',
         else returns self.localtrace.
         """
         if why == 'call':
@@ -577,8 +562,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_trace(self, frame, why, arg):
@@ -590,8 +579,12 @@ class Trace:
             if self.start_time:
                 print('%.2f' % (_time() - self.start_time), end=' ')
             bname = os.path.basename(filename)
-            print("%s(%d): %s" % (bname, lineno,
-                                  linecache.getline(filename, lineno)), end='')
+            line = linecache.getline(filename, lineno)
+            print("%s(%d)" % (bname, lineno), end='')
+            if line:
+                print(": ", line, end='')
+            else:
+                print()
         return self.localtrace
 
     def localtrace_count(self, frame, why, arg):
@@ -611,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',
@@ -663,14 +656,16 @@ def main():
     grp = parser.add_argument_group('Filters',
             'Can be specified multiple times')
     grp.add_argument('--ignore-module', action='append', default=[],
-            help='Ignore the given module(s) and its submodules'
+            help='Ignore the given module(s) and its submodules '
                  '(if it is a package). Accepts comma separated list of '
                  'module names.')
     grp.add_argument('--ignore-dir', action='append', default=[],
             help='Ignore files in the given directory '
                  '(multiple directories can be joined by os.pathsep).')
 
-    parser.add_argument('filename', nargs='?',
+    parser.add_argument('--module', action='store_true', default=False,
+                        help='Trace a module. ')
+    parser.add_argument('progname', nargs='?',
             help='file to run as main program')
     parser.add_argument('arguments', nargs=argparse.REMAINDER,
             help='arguments to the program')
@@ -678,9 +673,8 @@ def main():
     opts = parser.parse_args()
 
     if opts.ignore_dir:
-        rel_path = 'lib', 'python{0.major}.{0.minor}'.format(sys.version_info)
-        _prefix = os.path.join(sys.base_prefix, *rel_path)
-        _exec_prefix = os.path.join(sys.base_exec_prefix, *rel_path)
+        _prefix = sysconfig.get_path("stdlib")
+        _exec_prefix = sysconfig.get_path("platstdlib")
 
     def parse_ignore_dir(s):
         s = os.path.expanduser(os.path.expandvars(s))
@@ -708,26 +702,38 @@ def main():
     if opts.summary and not opts.count:
         parser.error('--summary can only be used with --count or --report')
 
-    if opts.filename is None:
-        parser.error('filename is missing: required with the main options')
-
-    sys.argv = opts.filename, *opts.arguments
-    sys.path[0] = os.path.dirname(opts.filename)
+    if opts.progname is None:
+        parser.error('progname is missing: required with the main options')
 
     t = Trace(opts.count, opts.trace, countfuncs=opts.listfuncs,
               countcallers=opts.trackcalls, ignoremods=opts.ignore_module,
               ignoredirs=opts.ignore_dir, infile=opts.file,
               outfile=opts.file, timing=opts.timing)
     try:
-        with open(opts.filename) as fp:
-            code = compile(fp.read(), opts.filename, 'exec')
-        # try to emulate __main__ namespace as much as possible
-        globs = {
-            '__file__': opts.filename,
-            '__name__': '__main__',
-            '__package__': None,
-            '__cached__': None,
-        }
+        if opts.module:
+            import runpy
+            module_name = opts.progname
+            mod_name, mod_spec, code = runpy._get_module_details(module_name)
+            sys.argv = [code.co_filename, *opts.arguments]
+            globs = {
+                '__name__': '__main__',
+                '__file__': code.co_filename,
+                '__package__': mod_spec.parent,
+                '__loader__': mod_spec.loader,
+                '__spec__': mod_spec,
+            }
+        else:
+            sys.argv = [opts.progname, *opts.arguments]
+            sys.path[0] = os.path.dirname(opts.progname)
+
+            with io.open_code(opts.progname) as fp:
+                code = compile(fp.read(), opts.progname, 'exec')
+            # try to emulate __main__ namespace as much as possible
+            globs = {
+                '__file__': opts.progname,
+                '__name__': '__main__',
+                '__package__': None,
+            }
         t.runctx(code, globs, globs)
     except OSError as err:
         sys.exit("Cannot run file %r because: %s" % (sys.argv[0], err))

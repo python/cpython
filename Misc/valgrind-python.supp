@@ -8,10 +8,10 @@
 #		./python -E ./Lib/test/regrtest.py -u gui,network
 #
 # You must edit Objects/obmalloc.c and uncomment Py_USING_MEMORY_DEBUGGER
-# to use the preferred suppressions with Py_ADDRESS_IN_RANGE.
+# to use the preferred suppressions with address_in_range.
 #
 # If you do not want to recompile Python, you can uncomment
-# suppressions for PyObject_Free and PyObject_Realloc.
+# suppressions for _PyObject_Free and _PyObject_Realloc.
 #
 # See Misc/README.valgrind for more information.
 
@@ -19,25 +19,25 @@
 {
    ADDRESS_IN_RANGE/Invalid read of size 4
    Memcheck:Addr4
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Invalid read of size 4
    Memcheck:Value4
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Invalid read of size 8 (x86_64 aka amd64)
    Memcheck:Value8
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 {
    ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
    Memcheck:Cond
-   fun:Py_ADDRESS_IN_RANGE
+   fun:address_in_range
 }
 
 #
@@ -45,14 +45,6 @@
 #    Hmmm, I wonder if this masks some real leaks.  I think it does.
 #    Will need to fix that.
 #
-
-{
-   Suppress leaking the GIL.  Happens once per process, see comment in ceval.c.
-   Memcheck:Leak
-   fun:malloc
-   fun:PyThread_allocate_lock
-   fun:PyEval_InitThreads
-}
 
 {
    Suppress leaking the GIL after a fork.
@@ -104,6 +96,49 @@
 }
 
 #
+# Leaks: dlopen() called without dlclose()
+#
+
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_check_map_versions
+}
+
+
+#
 # Non-python specific leaks
 #
 
@@ -127,61 +162,61 @@
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Addr4
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Value4
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Addr8
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Value8
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
 ###   Memcheck:Cond
-###   fun:PyObject_Free
+###   fun:_PyObject_Free
 ###}
 
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Addr4
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Invalid read of size 4
 ###   Memcheck:Value4
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Addr8
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Use of uninitialised value of size 8
 ###   Memcheck:Value8
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 ###
 ###{
 ###   ADDRESS_IN_RANGE/Conditional jump or move depends on uninitialised value
 ###   Memcheck:Cond
-###   fun:PyObject_Realloc
+###   fun:_PyObject_Realloc
 ###}
 
 ###
@@ -264,6 +299,14 @@
 }
 
 {
+   Uninitialised byte(s) false alarm, see bpo-35561
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:pyepoll_internal_ctl
+}
+
+{
    ZLIB problems, see test_gzip
    Memcheck:Cond
    obj:/lib/libz.so.1.2.3
@@ -282,6 +325,17 @@
    obj:/lib/libreadline.so.4.3
    fun:rl_initialize
 }
+
+# Valgrind emits "Conditional jump or move depends on uninitialised value(s)"
+# false alarms on GCC builtin strcmp() function. The GCC code is correct.
+#
+# Valgrind bug: https://bugs.kde.org/show_bug.cgi?id=264936
+{
+   bpo-38118: Valgrind emits false alarm on GCC builtin strcmp()
+   Memcheck:Cond
+   fun:PyUnicode_Decode
+}
+
 
 ###
 ### These occur from somewhere within the SSL, when running

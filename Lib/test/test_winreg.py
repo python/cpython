@@ -1,14 +1,16 @@
 # Test the windows specific win32reg module.
 # Only win32reg functions not hit here: FlushKey, LoadKey and SaveKey
 
+import gc
 import os, sys, errno
+import itertools
+import threading
 import unittest
-from test import support
-threading = support.import_module("threading")
-from platform import machine
+from platform import machine, win32_edition
+from test.support import cpython_only, import_helper
 
 # Do this first so test will be skipped if module doesn't exist
-support.import_module('winreg', required_on=['win'])
+import_helper.import_module('winreg', required_on=['win'])
 # Now import everything
 from winreg import *
 
@@ -41,12 +43,24 @@ test_data = [
     ("String Val",    "A string value",                        REG_SZ),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
+    ("Multi-nul",     ["", "", "", ""],                        REG_MULTI_SZ),
     ("Raw Data",      b"binary\x00data",                       REG_BINARY),
     ("Big String",    "x"*(2**14-1),                           REG_SZ),
     ("Big Binary",    b"x"*(2**14),                            REG_BINARY),
-    # Two and three kanjis, meaning: "Japan" and "Japanese")
+    # Two and three kanjis, meaning: "Japan" and "Japanese".
     ("Japanese 日本", "日本語", REG_SZ),
 ]
+
+
+@cpython_only
+class HeapTypeTests(unittest.TestCase):
+    def test_have_gc(self):
+        self.assertTrue(gc.is_tracked(HKEYType))
+
+    def test_immutable(self):
+        with self.assertRaisesRegex(TypeError, "immutable"):
+            HKEYType.foo = "bar"
+
 
 class BaseWinregTests(unittest.TestCase):
 
@@ -112,7 +126,6 @@ class BaseWinregTests(unittest.TestCase):
                       "does not close the actual key!")
         except OSError:
             pass
-
     def _read_test_data(self, root_key, subkeystr="sub_key", OpenKey=OpenKey):
         # Check we can get default value for this key.
         val = QueryValue(root_key, test_key_name)
@@ -197,6 +210,33 @@ class BaseWinregTests(unittest.TestCase):
                        access=KEY_ALL_ACCESS) as okey:
             self.assertTrue(okey.handle != 0)
 
+    def test_hkey_comparison(self):
+        """Test HKEY comparison by handle value rather than object identity."""
+        key1 = OpenKey(HKEY_CURRENT_USER, None)
+        key2 = OpenKey(HKEY_CURRENT_USER, None)
+        key3 = OpenKey(HKEY_LOCAL_MACHINE, None)
+
+        self.addCleanup(CloseKey, key1)
+        self.addCleanup(CloseKey, key2)
+        self.addCleanup(CloseKey, key3)
+
+        self.assertEqual(key1.handle, key2.handle)
+        self.assertTrue(key1 == key2)
+        self.assertFalse(key1 != key2)
+
+        self.assertTrue(key1 != key3)
+        self.assertFalse(key1 == key3)
+
+        # Closed keys should be equal (all have handle=0)
+        CloseKey(key1)
+        CloseKey(key2)
+        CloseKey(key3)
+
+        self.assertEqual(key1.handle, 0)
+        self.assertEqual(key2.handle, 0)
+        self.assertEqual(key3.handle, 0)
+        self.assertEqual(key2, key3)
+
 
 class LocalWinregTests(BaseWinregTests):
 
@@ -229,7 +269,7 @@ class LocalWinregTests(BaseWinregTests):
         h.Close()
         self.assertEqual(h.handle, 0)
 
-    def test_inexistant_remote_registry(self):
+    def test_nonexistent_remote_registry(self):
         connect = lambda: ConnectRegistry("abcdefghijkl", HKEY_CURRENT_USER)
         self.assertRaises(OSError, connect)
 
@@ -277,6 +317,37 @@ class LocalWinregTests(BaseWinregTests):
             done = True
             thread.join()
             DeleteKey(HKEY_CURRENT_USER, test_key_name+'\\changing_value')
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_queryvalueex_race_condition(self):
+        # gh-142282: QueryValueEx could read garbage buffer under race
+        # condition when another thread changes the value size
+        done = False
+        ready = threading.Event()
+        values = [b'ham', b'spam']
+
+        class WriterThread(threading.Thread):
+            def run(self):
+                with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                    values_iter = itertools.cycle(values)
+                    while not done:
+                        val = next(values_iter)
+                        SetValueEx(key, 'test_value', 0, REG_BINARY, val)
+                        ready.set()
+
+        thread = WriterThread()
+        thread.start()
+        try:
+            ready.wait()
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as key:
+                for _ in range(1000):
+                    result, typ = QueryValueEx(key, 'test_value')
+                    # The result must be one of the written values,
+                    # not garbage data from uninitialized buffer
+                    self.assertIn(result, values)
+        finally:
+            done = True
+            thread.join()
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
     def test_long_key(self):
@@ -336,6 +407,23 @@ class LocalWinregTests(BaseWinregTests):
             with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
                 self.assertNotEqual(ck.handle, 0)
                 SetValueEx(ck, "test_name", None, REG_DWORD, 0x80000000)
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
+    def test_setvalueex_negative_one_check(self):
+        # Test for Issue #43984, check -1 was not set by SetValueEx.
+        # Py2Reg, which gets called by SetValueEx, wasn't checking return
+        # value by PyLong_AsUnsignedLong, thus setting -1 as value in the registry.
+        # The implementation now checks PyLong_AsUnsignedLong return value to assure
+        # the value set was not -1.
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                with self.assertRaises(OverflowError):
+                    SetValueEx(ck, "test_name_dword", None, REG_DWORD, -1)
+                    SetValueEx(ck, "test_name_qword", None, REG_QWORD, -1)
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_dword")
+                self.assertRaises(FileNotFoundError, QueryValueEx, ck, "test_name_qword")
+
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
@@ -399,6 +487,7 @@ class Win64WinregTests(BaseWinregTests):
         DeleteKeyEx(key=HKEY_CURRENT_USER, sub_key=test_key_name,
                     access=KEY_ALL_ACCESS, reserved=0)
 
+    @unittest.skipIf(win32_edition() in ('WindowsCoreHeadless', 'IoTEdgeOS'), "APIs not available on WindowsCoreHeadless")
     def test_reflection_functions(self):
         # Test that we can call the query, enable, and disable functions
         # on a key which isn't on the reflection list with no consequences.
@@ -487,12 +576,24 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
 
-def test_main():
-    support.run_unittest(LocalWinregTests, RemoteWinregTests,
-                         Win64WinregTests)
+    def test_delete_tree(self):
+        with CreateKey(HKEY_CURRENT_USER, test_key_name) as main_key:
+            with CreateKey(main_key, "subkey1") as subkey1:
+                SetValueEx(subkey1, "value1", 0, REG_SZ, "test_value1")
+                with CreateKey(subkey1, "subsubkey1") as subsubkey1:
+                    SetValueEx(subsubkey1, "value2", 0, REG_DWORD, 42)
+
+            with CreateKey(main_key, "subkey2") as subkey2:
+                SetValueEx(subkey2, "value3", 0, REG_SZ, "test_value3")
+
+        DeleteTree(HKEY_CURRENT_USER, test_key_name)
+
+        with self.assertRaises(OSError):
+            OpenKey(HKEY_CURRENT_USER, test_key_name)
+
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
         print("Remote registry calls can be tested using",
               "'test_winreg.py --remote \\\\machine_name'")
-    test_main()
+    unittest.main()

@@ -1,4 +1,5 @@
 #! /bin/sh
+set -e
 
 # Convert templates into Makefile and config.c, based on the module
 # definitions found in the file Setup.
@@ -17,7 +18,7 @@
 # Setup files after a -n option are used for their variables, modules
 # and libraries but not for their .o files.
 #
-# See Setup.dist for a description of the format of the Setup file.
+# See Setup for a description of the format of the Setup file.
 #
 # The following edits are made:
 #
@@ -31,6 +32,7 @@
 # - insert an identifying comment at the start
 # - replace _MODBUILT_NAMES_ by the list of *static* and *shared* modules
 #   from Setup
+# - replace _MODBSHARED_NAMES_ by the list of *shared* modules from Setup
 # - replace _MODDISABLED_NAMES_ by the list of *disabled* modules from Setup
 # - replace _MODOBJS_ by the list of objects from Setup (except for
 #   Setup files after a -n option)
@@ -85,21 +87,10 @@ esac
 NL='\
 '
 
-# Setup to link with extra libraries when making shared extensions.
-# Currently, only Cygwin needs this baggage.
-case `uname -s` in
-CYGWIN*) if test $libdir = .
-	 then
-	 	ExtraLibDir=.
-	 else
-	 	ExtraLibDir='$(LIBPL)'
-	 fi
-	 ExtraLibs="-L$ExtraLibDir -lpython\$(LDVERSION)";;
-esac
-
 # Main loop
 for i in ${*-Setup}
 do
+	echo ''  # Add a linebreak so we don't choke on files missing EOL.
 	case $i in
 	-n)	echo '*noobjects*';;
 	*)	echo '*doconfig*'; cat "$i";;
@@ -110,11 +101,13 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	rulesf="@rules.$$"
 	trap 'rm -f $rulesf' 0 1 2 3
 	echo "
-# Rules appended by makedepend
+# Rules appended by makesetup
 " >$rulesf
 	DEFS=
 	BUILT=
+	BUILT_SHARED=
 	DISABLED=
+	CONFIGURED=
 	MODS=
 	SHAREDMODS=
 	OBJS=
@@ -152,6 +145,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		cpps=
 		libs=
 		mods=
+		mods_upper=
 		skip=
 		for arg in $line
 		do
@@ -182,15 +176,37 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.c++)		srcs="$srcs $arg";;
 			*.cxx)		srcs="$srcs $arg";;
 			*.cpp)		srcs="$srcs $arg";;
+			\$\(*_CFLAGS\))		cpps="$cpps $arg";;
+			\$\(*_INCLUDES\))	cpps="$cpps $arg";;
+			\$\(*_LIBS\))		libs="$libs $arg";;
+			\$\(*_LDFLAGS\))	libs="$libs $arg";;
+			\$\(*_RPATH\))		libs="$libs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			-u)		skip=libs; libs="$libs -u";;
-			[a-zA-Z_]*)	mods="$mods $arg";;
+			[a-zA-Z_]*)
+					mods="$mods $arg"
+					mods_upper=$(echo $mods | tr '[a-z]' '[A-Z]');;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			esac
+		done
+		if test -z "$cpps" -a -z "$libs"; then
+			cpps="\$(MODULE_${mods_upper}_CFLAGS)"
+			libs="\$(MODULE_${mods_upper}_LDFLAGS)"
+		fi
+		for mod in $mods
+		do
+			case $CONFIGURED in
+			*,${mod},*)
+				# Detected multiple rules for a module, first rule wins. This
+				# allows users to disable modules in Setup.local.
+				echo 1>&2 "maksetup: '$mod' was handled by previous rule."
+				continue 2;;
+			esac
+			CONFIGURED="$CONFIGURED,${mod},"
 		done
 		case $doconfig in
 		yes)
@@ -222,7 +238,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.m)   obj=`basename $src .m`.o; cc='$(CC)';; # Obj-C
 			*)     continue;;
 			esac
-			obj="$srcdir/$obj"
+			case $src in
+			*/*) obj="$srcdir/`dirname $src`/$obj";;
+			*)   obj="$srcdir/$obj";;
+			esac
 			objs="$objs $obj"
 			case $src in
 			glmodule.c) ;;
@@ -230,12 +249,19 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$*) ;;
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
+			# custom flags first, PY_STDMODULE_CFLAGS may contain -I with system libmpdec
 			case $doconfig in
-			no)	cc="$cc \$(CCSHARED) \$(PY_CFLAGS) \$(PY_CPPFLAGS)";;
+			no)
+				cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_SHARED) \$(PYTHON_HEADERS)"
+				rule="$rule; $cc -c $src -o $obj"
+				;;
 			*)
-				cc="$cc \$(PY_CORE_CFLAGS)";;
+				cc="$cc $cpps \$(PY_BUILTIN_MODULE_CFLAGS)"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_STATIC) \$(PYTHON_HEADERS)"
+				rule="$rule; $cc -c $src -o $obj"
+				;;
 			esac
-			rule="$obj: $src; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
@@ -245,10 +271,13 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		do
 			file="$srcdir/$mod\$(EXT_SUFFIX)"
 			case $doconfig in
-			no)	SHAREDMODS="$SHAREDMODS $file";;
+			no)
+				SHAREDMODS="$SHAREDMODS $file"
+				BUILT_SHARED="$BUILT_SHARED $mod"
+				;;
 			esac
-			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs $ExtraLibs -o $file"
+			rule="$file: $objs \$(MODULE_${mods_upper}_LDEPS)"
+			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
@@ -289,19 +318,25 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 
 	case $makepre in
 	-)	;;
-	*)	sedf="@sed.in.$$"
-		trap 'rm -f $sedf' 0 1 2 3
+	*)
+		# macOS' sed has issues with 'a' command. Use 'r' command with an
+		# external replacement file instead.
+		sedf="@sed.in.$$"
+		sedr="@sed.replace.$$"
+		trap 'rm -f $sedf $sedr' 0 1 2 3
+		echo "$NL$NL$DEFS" | sed 's/\\$//' > $sedr
 		echo "1i\\" >$sedf
 		str="# Generated automatically from $makepre by makesetup."
 		echo "$str" >>$sedf
 		echo "s%_MODBUILT_NAMES_%$BUILT%" >>$sedf
+		echo "s%_MODSHARED_NAMES_%$BUILT_SHARED%" >>$sedf
 		echo "s%_MODDISABLED_NAMES_%$DISABLED%" >>$sedf
 		echo "s%_MODOBJS_%$OBJS%" >>$sedf
 		echo "s%_MODLIBS_%$LIBS%" >>$sedf
-		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf
+		echo "/Definitions added by makesetup/r $sedr" >>$sedf
 		sed -f $sedf $makepre >Makefile
 		cat $rulesf >>Makefile
-		rm -f $sedf
+		rm -f $sedf $sedr
 	    ;;
 	esac
 

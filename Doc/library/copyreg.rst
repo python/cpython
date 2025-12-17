@@ -1,5 +1,5 @@
-:mod:`copyreg` --- Register :mod:`pickle` support functions
-===========================================================
+:mod:`!copyreg` --- Register :mod:`!pickle` support functions
+=============================================================
 
 .. module:: copyreg
    :synopsis: Register pickle support functions.
@@ -7,8 +7,8 @@
 **Source code:** :source:`Lib/copyreg.py`
 
 .. index::
-   module: pickle
-   module: copy
+   pair: module; pickle
+   pair: module; copy
 
 --------------
 
@@ -25,20 +25,17 @@ Such constructors may be factory functions or class instances.
    hence not valid as a constructor), raises :exc:`TypeError`.
 
 
-.. function:: pickle(type, function, constructor=None)
+.. function:: pickle(type, function, constructor_ob=None)
 
    Declares that *function* should be used as a "reduction" function for objects
-   of type *type*.  *function* should return either a string or a tuple
-   containing two or three elements.
+   of type *type*.  *function* must return either a string or a tuple
+   containing between two and six elements. See the :attr:`~pickle.Pickler.dispatch_table`
+   for more details on the interface of *function*.
 
-   The optional *constructor* parameter, if provided, is a callable object which
-   can be used to reconstruct the object when called with the tuple of arguments
-   returned by *function* at pickling time.  :exc:`TypeError` will be raised if
-   *object* is a class or *constructor* is not callable.
+   The *constructor_ob* parameter is a legacy feature and is now ignored, but if
+   passed it must be a callable.
 
-   See the :mod:`pickle` module for more details on the interface
-   expected of *function* and *constructor*.  Note that the
-   :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
+   Note that the :attr:`~pickle.Pickler.dispatch_table` attribute of a pickler
    object or subclass of :class:`pickle.Pickler` can also be used for
    declaring reduction functions.
 
@@ -49,7 +46,7 @@ The example below would like to show how to register a pickle function and how
 it will be used:
 
    >>> import copyreg, copy, pickle
-   >>> class C(object):
+   >>> class C:
    ...     def __init__(self, a):
    ...         self.a = a
    ...

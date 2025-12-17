@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _concrete:
@@ -17,8 +17,8 @@ dictionary, use :c:func:`PyDict_Check`.  The chapter is structured like the
 .. warning::
 
    While the functions described in this chapter carefully check the type of the
-   objects which are passed in, many of them do not check for *NULL* being passed
-   instead of a valid object.  Allowing *NULL* to be passed in can cause memory
+   objects which are passed in, many of them do not check for ``NULL`` being passed
+   instead of a valid object.  Allowing ``NULL`` to be passed in can cause memory
    access violations and immediate termination of the interpreter.
 
 
@@ -40,7 +40,7 @@ This section describes Python type objects and the singleton object ``None``.
 Numeric Objects
 ===============
 
-.. index:: object: numeric
+.. index:: pair: object; numeric
 
 .. toctree::
 
@@ -55,7 +55,7 @@ Numeric Objects
 Sequence Objects
 ================
 
-.. index:: object: sequence
+.. index:: pair: object; sequence
 
 Generic operations on sequence objects were discussed in the previous chapter;
 this section deals with the specific kinds of sequence objects that are
@@ -77,7 +77,7 @@ intrinsic to the Python language.
 Container Objects
 =================
 
-.. index:: object: mapping
+.. index:: pair: object; mapping
 
 .. toctree::
 
@@ -109,9 +109,20 @@ Other Objects
    descriptor.rst
    slice.rst
    memoryview.rst
+   picklebuffer.rst
    weakref.rst
    capsule.rst
+   frame.rst
    gen.rst
    coro.rst
-   datetime.rst
+   contextvars.rst
+   typehints.rst
 
+
+C API for extension modules
+===========================
+
+.. toctree::
+
+   curses.rst
+   datetime.rst

@@ -1,38 +1,66 @@
-import atexit
 import faulthandler
+import gc
+import io
 import os
+import random
 import signal
 import sys
 import unittest
 from test import support
-try:
-    import gc
-except ImportError:
-    gc = None
+from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
+from _colorize import can_colorize  # type: ignore[import-not-found]
 
-from test.libregrtest.refleak import warm_caches
+from .filter import set_match_tests
+from .runtests import RunTests
+from .utils import (
+    setup_unraisable_hook, setup_threading_excepthook,
+    adjust_rlimit_nofile)
 
 
-def setup_tests(ns):
-    # Display the Python traceback on fatal errors (e.g. segfault)
-    faulthandler.enable(all_threads=True)
+UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
 
-    # Display the Python traceback on SIGALRM or SIGUSR1 signal
-    signals = []
-    if hasattr(signal, 'SIGALRM'):
-        signals.append(signal.SIGALRM)
-    if hasattr(signal, 'SIGUSR1'):
-        signals.append(signal.SIGUSR1)
-    for signum in signals:
-        faulthandler.register(signum, chain=True)
 
-    replace_stdout()
-    support.record_original_stdout(sys.stdout)
-
-    if ns.testdir:
+def setup_test_dir(testdir: str | None) -> None:
+    if testdir:
         # Prepend test directory to sys.path, so runtest() will be able
         # to locate tests
-        sys.path.insert(0, os.path.abspath(ns.testdir))
+        sys.path.insert(0, os.path.abspath(testdir))
+
+
+def setup_process() -> None:
+    assert sys.__stderr__ is not None, "sys.__stderr__ is None"
+    try:
+        stderr_fd = sys.__stderr__.fileno()
+    except (ValueError, AttributeError):
+        # Catch ValueError to catch io.UnsupportedOperation on TextIOBase
+        # and ValueError on a closed stream.
+        #
+        # Catch AttributeError for stderr being None.
+        pass
+    else:
+        # Display the Python traceback on fatal errors (e.g. segfault)
+        faulthandler.enable(all_threads=True, file=stderr_fd)
+
+        # Display the Python traceback on SIGALRM or SIGUSR1 signal
+        signals: list[signal.Signals] = []
+        if hasattr(signal, 'SIGALRM'):
+            signals.append(signal.SIGALRM)
+        if hasattr(signal, 'SIGUSR1'):
+            signals.append(signal.SIGUSR1)
+        for signum in signals:
+            faulthandler.register(signum, chain=True, file=stderr_fd)
+
+    adjust_rlimit_nofile()
+
+    support.record_original_stdout(sys.stdout)
+
+    # Set sys.stdout encoder error handler to backslashreplace,
+    # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+    # when printing a traceback or any other non-encodable character.
+    #
+    # Use an assertion to fix mypy error.
+    assert isinstance(sys.stdout, io.TextIOWrapper)
+    sys.stdout.reconfigure(errors="backslashreplace")
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
@@ -48,74 +76,74 @@ def setup_tests(ns):
         if hasattr(module, '__path__'):
             for index, path in enumerate(module.__path__):
                 module.__path__[index] = os.path.abspath(path)
-        if hasattr(module, '__file__'):
-            module.__file__ = os.path.abspath(module.__file__)
+        if getattr(module, '__file__', None):
+            module.__file__ = os.path.abspath(module.__file__)  # type: ignore[type-var]
 
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
+    if hasattr(sys, 'addaudithook'):
+        # Add an auditing hook for all tests to ensure PySys_Audit is tested
+        def _test_audit_hook(name, args):
             pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
+        sys.addaudithook(_test_audit_hook)
 
-    if ns.huntrleaks:
-        unittest.BaseTestSuite._cleanup = False
+    setup_unraisable_hook()
+    setup_threading_excepthook()
 
-        # Avoid false positives due to various caches
-        # filling slowly with random data:
-        warm_caches()
+    # Ensure there's a non-ASCII character in env vars at all times to force
+    # tests consider this case. See BPO-44647 for details.
+    if TESTFN_UNDECODABLE and os.supports_bytes_environ:
+        os.environb.setdefault(UNICODE_GUARD_ENV.encode(), TESTFN_UNDECODABLE)
+    elif FS_NONASCII:
+        os.environ.setdefault(UNICODE_GUARD_ENV, FS_NONASCII)
 
-    if ns.memlimit is not None:
-        support.set_memlimit(ns.memlimit)
 
-    if ns.threshold is not None:
-        gc.set_threshold(ns.threshold)
+def setup_tests(runtests: RunTests) -> None:
+    support.verbose = runtests.verbose
+    support.failfast = runtests.fail_fast
+    support.PGO = runtests.pgo
+    support.PGO_EXTENDED = runtests.pgo_extended
 
-    try:
-        import msvcrt
-    except ImportError:
-        pass
+    set_match_tests(runtests.match_tests)
+
+    if runtests.use_junit:
+        support.junit_xml_list = []
+        from .testresult import RegressionTestResult
+        RegressionTestResult.USE_XML = True
     else:
-        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                            msvcrt.SEM_NOGPFAULTERRORBOX|
-                            msvcrt.SEM_NOOPENFILEERRORBOX)
-        try:
-            msvcrt.CrtSetReportMode
-        except AttributeError:
-            # release build
-            pass
-        else:
-            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                if ns.verbose and ns.verbose >= 2:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-                else:
-                    msvcrt.CrtSetReportMode(m, 0)
+        support.junit_xml_list = None
 
-    support.use_resources = ns.use_resources
+    if runtests.memory_limit is not None:
+        support.set_memlimit(runtests.memory_limit)
 
+    support.suppress_msvcrt_asserts(runtests.verbose >= 2)
 
-def replace_stdout():
-    """Set stdout encoder error handler to backslashreplace (as stderr error
-    handler) to avoid UnicodeEncodeError when printing a traceback"""
-    stdout = sys.stdout
-    sys.stdout = open(stdout.fileno(), 'w',
-        encoding=stdout.encoding,
-        errors="backslashreplace",
-        closefd=False,
-        newline='\n')
+    support.use_resources = runtests.use_resources
 
-    def restore_stdout():
-        sys.stdout.close()
-        sys.stdout = stdout
-    atexit.register(restore_stdout)
+    timeout = runtests.timeout
+    if timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
+
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
+
+    if runtests.hunt_refleak:
+        # private attribute that mypy doesn't know about:
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
+
+    if runtests.gc_threshold is not None:
+        gc.set_threshold(runtests.gc_threshold)
+
+    random.seed(runtests.random_seed)
+
+    # sys.stdout is redirected to a StringIO in single process mode on which
+    # color auto-detect fails as StringIO is not a TTY. If the original
+    # sys.stdout supports color pass that through with FORCE_COLOR so that when
+    # results are printed, such as with -W, they get color.
+    if can_colorize(file=sys.stdout):
+        os.environ['FORCE_COLOR'] = "1"

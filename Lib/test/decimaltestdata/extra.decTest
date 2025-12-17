@@ -156,7 +156,7 @@ extr1302 fma -Inf 0E-456 sNaN148 -> NaN Invalid_operation
 
 -- max/min/max_mag/min_mag bug in 2.5.2/2.6/3.0: max(NaN, finite) gave
 -- incorrect answers when the finite number required rounding; similarly
--- for the other thre functions
+-- for the other three functions
 maxexponent: 999
 minexponent: -999
 precision: 6

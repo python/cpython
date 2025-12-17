@@ -1,5 +1,9 @@
+import textwrap
 import types
+import typing
 import unittest
+import warnings
+from test import support
 
 
 def global_function():
@@ -68,10 +72,67 @@ class FunctionPropertiesTest(FuncAttrsTest):
         test.__code__ = self.b.__code__
         self.assertEqual(test(), 3) # self.b always returns 3, arbitrarily
 
+    def test_invalid___code___assignment(self):
+        def A(): pass
+        def B(): yield
+        async def C(): yield
+        async def D(x): await x
+
+        for src in [A, B, C, D]:
+            for dst in [A, B, C, D]:
+                if src == dst:
+                    continue
+
+                assert src.__code__.co_flags != dst.__code__.co_flags
+                prev = dst.__code__
+                try:
+                    with self.assertWarnsRegex(DeprecationWarning, 'code object of non-matching type'):
+                        dst.__code__ = src.__code__
+                finally:
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', '', DeprecationWarning)
+                        dst.__code__ = prev
+
     def test___globals__(self):
         self.assertIs(self.b.__globals__, globals())
         self.cannot_set_attr(self.b, '__globals__', 2,
                              (AttributeError, TypeError))
+
+    def test___builtins__(self):
+        if __name__ == "__main__":
+            builtins_dict = __builtins__.__dict__
+        else:
+            builtins_dict = __builtins__
+
+        self.assertIs(self.b.__builtins__, builtins_dict)
+        self.cannot_set_attr(self.b, '__builtins__', 2,
+                             (AttributeError, TypeError))
+
+        # bpo-42990: If globals is specified and has no "__builtins__" key,
+        # a function inherits the current builtins namespace.
+        def func(s): return len(s)
+        ns = {}
+        func2 = type(func)(func.__code__, ns)
+        self.assertIs(func2.__globals__, ns)
+        self.assertIs(func2.__builtins__, builtins_dict)
+
+        # Make sure that the function actually works.
+        self.assertEqual(func2("abc"), 3)
+        self.assertEqual(ns, {})
+
+        # Define functions using exec() with different builtins,
+        # and test inheritance when globals has no "__builtins__" key
+        code = textwrap.dedent("""
+            def func3(s): pass
+            func4 = type(func3)(func3.__code__, {})
+        """)
+        safe_builtins = {'None': None}
+        ns = {'type': type, '__builtins__': safe_builtins}
+        exec(code, ns)
+        self.assertIs(ns['func3'].__builtins__, safe_builtins)
+        self.assertIs(ns['func4'].__builtins__, safe_builtins)
+        self.assertIs(ns['func3'].__globals__['__builtins__'], safe_builtins)
+        self.assertNotIn('__builtins__', ns['func4'].__globals__)
 
     def test___closure__(self):
         a = 12
@@ -82,6 +143,15 @@ class FunctionPropertiesTest(FuncAttrsTest):
         # don't have a type object handy
         self.assertEqual(c[0].__class__.__name__, "cell")
         self.cannot_set_attr(f, "__closure__", c, AttributeError)
+
+    def test_cell_new(self):
+        cell_obj = types.CellType(1)
+        self.assertEqual(cell_obj.cell_contents, 1)
+
+        cell_obj = types.CellType()
+        msg = "shouldn't be able to read an empty cell"
+        with self.assertRaises(ValueError, msg=msg):
+            cell_obj.cell_contents
 
     def test_empty_cell(self):
         def f(): print(a)
@@ -148,6 +218,23 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(self.b.__qualname__, 'd')
         # __qualname__ must be a string
         self.cannot_set_attr(self.b, '__qualname__', 7, TypeError)
+
+    def test___type_params__(self):
+        def generic[T](): pass
+        def not_generic(): pass
+        lambda_ = lambda: ...
+        T, = generic.__type_params__
+        self.assertIsInstance(T, typing.TypeVar)
+        self.assertEqual(generic.__type_params__, (T,))
+        for func in (not_generic, lambda_):
+            with self.subTest(func=func):
+                self.assertEqual(func.__type_params__, ())
+                with self.assertRaises(TypeError):
+                    del func.__type_params__
+                with self.assertRaises(TypeError):
+                    func.__type_params__ = 42
+                func.__type_params__ = (T,)
+                self.assertEqual(func.__type_params__, (T,))
 
     def test___code__(self):
         num_one, num_two = 7, 8
@@ -391,6 +478,33 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         # builtin bound instance method:
         self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
         self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
+
+    @support.cpython_only
+    def test_builtin__self__(self):
+        # See https://github.com/python/cpython/issues/58211.
+        import builtins
+        import time
+
+        # builtin function:
+        self.assertIs(len.__self__, builtins)
+        self.assertIs(time.sleep.__self__, time)
+
+        # builtin classmethod:
+        self.assertIs(dict.fromkeys.__self__, dict)
+        self.assertIs(float.__getformat__.__self__, float)
+
+        # builtin staticmethod:
+        self.assertIsNone(str.maketrans.__self__)
+        self.assertIsNone(bytes.maketrans.__self__)
+
+        # builtin bound instance method:
+        l = [1, 2, 3]
+        self.assertIs(l.append.__self__, l)
+
+        d = {'foo': 'bar'}
+        self.assertEqual(d.pop.__self__, d)
+
+        self.assertIsNone(None.__repr__.__self__)
 
 
 if __name__ == "__main__":

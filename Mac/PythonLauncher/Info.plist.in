@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
+	<string>en</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -39,8 +39,10 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>Python Launcher</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2001 Python Software Foundation</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%VERSION%, © 2001-2017 Python Software Foundation</string>
+	<string>%VERSION%, © 2001 Python Software Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string>PythonLauncher.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -61,5 +63,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Python Launcher uses Apple events to launch your Python script in a Terminal window.</string>
 </dict>
 </plist>

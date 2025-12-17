@@ -1,19 +1,15 @@
-#!/usr/bin/env python3
-"""     turtlegraphics-example-suite:
+"""turtledemo/forest.py
 
-             tdemo_forest.py
+Displays a 'forest' of 3 breadth-first trees,
+similar to the one in tree.py.
+For further details, see tree.py.
 
-Displays a 'forest' of 3 breadth-first-trees
-similar to the one in tree.
-For further remarks see tree.py
-
-This example is a 'breadth-first'-rewrite of
-a Logo program written by Erich Neuwirth. See
-http://homepage.univie.ac.at/erich.neuwirth/
+This example is a breadth-first rewrite of
+a Logo program by Erich Neuwirth.
 """
 from turtle import Turtle, colormode, tracer, mainloop
 from random import randrange
-from time import clock
+from time import perf_counter as clock
 
 def symRandom(n):
     return randrange(-n,n+1)

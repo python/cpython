@@ -1,5 +1,6 @@
 # Import the email modules we'll need
-from email.parser import BytesParser, Parser
+#from email.parser import BytesParser
+from email.parser import Parser
 from email.policy import default
 
 # If the e-mail headers are in a file, uncomment these two lines:

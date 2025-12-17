@@ -12,14 +12,12 @@ maintaining the widget state and invoking callbacks, all aspects
 of the widgets appearance lies at Themes.
 """
 
-__version__ = "0.3.1"
-
 __author__ = "Guilherme Polo <ggpolo@gmail.com>"
 
 __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
            "Labelframe", "LabelFrame", "Menubutton", "Notebook", "Panedwindow",
            "PanedWindow", "Progressbar", "Radiobutton", "Scale", "Scrollbar",
-           "Separator", "Sizegrip", "Style", "Treeview",
+           "Separator", "Sizegrip", "Spinbox", "Style", "Treeview",
            # Extensions
            "LabeledScale", "OptionMenu",
            # functions
@@ -28,25 +26,6 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
-_sentinel = object()
-
-# Verify if Tk is new enough to not need the Tile package
-_REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
-
-def _load_tile(master):
-    if _REQUIRE_TILE:
-        import os
-        tilelib = os.environ.get('TILE_LIBRARY')
-        if tilelib:
-            # append custom tile path to the list of directories that
-            # Tcl uses when attempting to resolve packages with the package
-            # command
-            master.tk.eval(
-                    'global auto_path; '
-                    'lappend auto_path {%s}' % tilelib)
-
-        master.tk.eval('package require tile') # TclError may be raised here
-        master._tile_loaded = True
 
 def _format_optvalue(value, script=False):
     """Internal function."""
@@ -83,8 +62,6 @@ def _mapdict_values(items):
     #   ['active selected', 'grey', 'focus', [1, 2, 3, 4]]
     opt_val = []
     for *state, val in items:
-        # hacks for bakward compatibility
-        state[0] # raise IndexError if empty
         if len(state) == 1:
             # if it is empty (something that evaluates to False), then
             # format it to Tcl code to denote the "normal" state
@@ -116,40 +93,47 @@ def _format_mapdict(mapdict, script=False):
 
 def _format_elemcreate(etype, script=False, *args, **kw):
     """Formats args and kw according to the given element factory etype."""
-    spec = None
+    specs = ()
     opts = ()
-    if etype in ("image", "vsapi"):
-        if etype == "image": # define an element based on an image
-            # first arg should be the default image name
-            iname = args[0]
-            # next args, if any, are statespec/value pairs which is almost
-            # a mapdict, but we just need the value
-            imagespec = _join(_mapdict_values(args[1:]))
-            spec = "%s %s" % (iname, imagespec)
-
+    if etype == "image": # define an element based on an image
+        # first arg should be the default image name
+        iname = args[0]
+        # next args, if any, are statespec/value pairs which is almost
+        # a mapdict, but we just need the value
+        imagespec = (iname, *_mapdict_values(args[1:]))
+        if script:
+            specs = (imagespec,)
         else:
-            # define an element whose visual appearance is drawn using the
-            # Microsoft Visual Styles API which is responsible for the
-            # themed styles on Windows XP and Vista.
-            # Availability: Tk 8.6, Windows XP and Vista.
-            class_name, part_id = args[:2]
-            statemap = _join(_mapdict_values(args[2:]))
-            spec = "%s %s %s" % (class_name, part_id, statemap)
+            specs = (_join(imagespec),)
+        opts = _format_optdict(kw, script)
 
+    if etype == "vsapi":
+        # define an element whose visual appearance is drawn using the
+        # Microsoft Visual Styles API which is responsible for the
+        # themed styles on Windows XP and Vista.
+        # Availability: Tk 8.6, Windows XP and Vista.
+        if len(args) < 3:
+            class_name, part_id = args
+            statemap = (((), 1),)
+        else:
+            class_name, part_id, statemap = args
+        specs = (class_name, part_id, tuple(_mapdict_values(statemap)))
         opts = _format_optdict(kw, script)
 
     elif etype == "from": # clone an element
         # it expects a themename and optionally an element to clone from,
         # otherwise it will clone {} (empty element)
-        spec = args[0] # theme name
+        specs = (args[0],) # theme name
         if len(args) > 1: # elementfrom specified
             opts = (_format_optvalue(args[1], script),)
 
     if script:
-        spec = '{%s}' % spec
+        specs = _join(specs)
         opts = ' '.join(opts)
+        return specs, opts
+    else:
+        return *specs, opts
 
-    return spec, opts
 
 def _format_layoutlist(layout, indent=0, indent_size=2):
     """Formats a layout list so we can pass the result to ttk::style
@@ -235,29 +219,32 @@ def _script_from_settings(settings):
 
             elemargs = eopts[1:argc]
             elemkw = eopts[argc] if argc < len(eopts) and eopts[argc] else {}
-            spec, opts = _format_elemcreate(etype, True, *elemargs, **elemkw)
+            specs, eopts = _format_elemcreate(etype, True, *elemargs, **elemkw)
 
             script.append("ttk::style element create %s %s %s %s" % (
-                name, etype, spec, opts))
+                name, etype, specs, eopts))
 
     return '\n'.join(script)
 
 def _list_from_statespec(stuple):
     """Construct a list from the given statespec tuple according to the
     accepted statespec accepted by _format_mapdict."""
-    nval = []
-    for val in stuple:
-        typename = getattr(val, 'typename', None)
-        if typename is None:
-            nval.append(val)
-        else: # this is a Tcl object
+    if isinstance(stuple, str):
+        return stuple
+    result = []
+    it = iter(stuple)
+    for state, val in zip(it, it):
+        if hasattr(state, 'typename'):  # this is a Tcl object
+            state = str(state).split()
+        elif isinstance(state, str):
+            state = state.split()
+        elif not isinstance(state, (tuple, list)):
+            state = (state,)
+        if hasattr(val, 'typename'):
             val = str(val)
-            if typename == 'StateSpec':
-                val = val.split()
-            nval.append(val)
+        result.append((*state, val))
 
-    it = iter(nval)
-    return [_flatten(spec) for spec in zip(it, it)]
+    return result
 
 def _list_from_layouttuple(tk, ltuple):
     """Construct a list from the tuple returned by ttk::layout, this is
@@ -332,6 +319,8 @@ def _tclobj_to_py(val):
     elif hasattr(val, 'typename'): # some other (single) Tcl object
         val = _convert_stringval(val)
 
+    if isinstance(val, tuple) and len(val) == 0:
+        return ''
     return val
 
 def tclobjs_to_py(adict):
@@ -350,12 +339,7 @@ def setup_master(master=None):
     If it is not allowed to use the default root and master is None,
     RuntimeError is raised."""
     if master is None:
-        if tkinter._support_default_root:
-            master = tkinter._default_root or tkinter.Tk()
-        else:
-            raise RuntimeError(
-                    "No master specified and tkinter is "
-                    "configured to not support default root")
+        master = tkinter._get_default_root()
     return master
 
 
@@ -366,11 +350,6 @@ class Style(object):
 
     def __init__(self, master=None):
         master = setup_master(master)
-
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
-
         self.master = master
         self.tk = self.master.tk
 
@@ -397,13 +376,12 @@ class Style(object):
         or something else of your preference. A statespec is compound of
         one or more states and then a value."""
         if query_opt is not None:
-            return _list_from_statespec(self.tk.splitlist(
-                self.tk.call(self._name, "map", style, '-%s' % query_opt)))
+            result = self.tk.call(self._name, "map", style, '-%s' % query_opt)
+            return _list_from_statespec(self.tk.splitlist(result))
 
-        return _splitdict(
-            self.tk,
-            self.tk.call(self._name, "map", style, *_format_mapdict(kw)),
-            conv=_tclobj_to_py)
+        result = self.tk.call(self._name, "map", style, *_format_mapdict(kw))
+        return {k: _list_from_statespec(self.tk.splitlist(v))
+                for k, v in _splitdict(self.tk, result).items()}
 
 
     def lookup(self, style, option, state=None, default=None):
@@ -463,9 +441,9 @@ class Style(object):
 
     def element_create(self, elementname, etype, *args, **kw):
         """Create a new element in the current theme of given etype."""
-        spec, opts = _format_elemcreate(etype, False, *args, **kw)
+        *specs, opts = _format_elemcreate(etype, False, *args, **kw)
         self.tk.call(self._name, "element", "create", elementname, etype,
-            spec, *opts)
+            *specs, *opts)
 
 
     def element_names(self):
@@ -553,9 +531,6 @@ class Widget(tkinter.Widget):
             readonly, alternate, invalid
         """
         master = setup_master(master)
-        if not getattr(master, '_tile_loaded', False):
-            # Load tile now, if needed
-            _load_tile(master)
         tkinter.Widget.__init__(self, master, widgetname, kw=kw)
 
 
@@ -576,7 +551,7 @@ class Widget(tkinter.Widget):
         matches statespec. statespec is expected to be a sequence."""
         ret = self.tk.getboolean(
                 self.tk.call(self._w, "instate", ' '.join(statespec)))
-        if ret and callback:
+        if ret and callback is not None:
             return callback(*args, **kw)
 
         return ret
@@ -715,7 +690,10 @@ class Combobox(Entry):
         returns the index of the current value in the list of values
         or -1 if the current value does not appear in the list."""
         if newindex is None:
-            return self.tk.getint(self.tk.call(self._w, "current"))
+            res = self.tk.call(self._w, "current")
+            if res == '':
+                return -1
+            return self.tk.getint(res)
         return self.tk.call(self._w, "current", newindex)
 
 
@@ -1086,11 +1064,12 @@ class Scale(Widget, tkinter.Scale):
 
         Setting a value for any of the "from", "from_" or "to" options
         generates a <<RangeChanged>> event."""
-        if cnf:
+        retval = Widget.configure(self, cnf, **kw)
+        if not isinstance(cnf, (type(None), str)):
             kw.update(cnf)
-        Widget.configure(self, **kw)
         if any(['from' in kw, 'from_' in kw, 'to' in kw]):
             self.event_generate('<<RangeChanged>>')
+        return retval
 
 
     def get(self, x=None, y=None):
@@ -1149,6 +1128,33 @@ class Sizegrip(Widget):
             class, cursor, state, style, takefocus
         """
         Widget.__init__(self, master, "ttk::sizegrip", kw)
+
+
+class Spinbox(Entry):
+    """Ttk Spinbox is an Entry with increment and decrement arrows
+
+    It is commonly used for number entry or to select from a list of
+    string values.
+    """
+
+    def __init__(self, master=None, **kw):
+        """Construct a Ttk Spinbox widget with the parent master.
+
+        STANDARD OPTIONS
+
+            class, cursor, style, takefocus, validate,
+            validatecommand, xscrollcommand, invalidcommand
+
+        WIDGET-SPECIFIC OPTIONS
+
+            to, from_, increment, values, wrap, format, command
+        """
+        Entry.__init__(self, master, "ttk::spinbox", **kw)
+
+
+    def set(self, value):
+        """Sets the value of the Spinbox to value."""
+        self.tk.call(self._w, "set", value)
 
 
 class Treeview(Widget, tkinter.XView, tkinter.YView):
@@ -1336,7 +1342,7 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         already exist in the tree. Otherwise, a new unique identifier
         is generated."""
         opts = _format_optdict(kw)
-        if iid:
+        if iid is not None:
             res = self.tk.call(self._w, "insert", parent, index,
                 "-id", iid, *opts)
         else:
@@ -1396,26 +1402,9 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self.tk.call(self._w, "see", item)
 
 
-    def selection(self, selop=_sentinel, items=None):
+    def selection(self):
         """Returns the tuple of selected items."""
-        if selop is _sentinel:
-            selop = None
-        elif selop is None:
-            import warnings
-            warnings.warn(
-                "The selop=None argument of selection() is deprecated "
-                "and will be removed in Python 3.7",
-                DeprecationWarning, 3)
-        elif selop in ('set', 'add', 'remove', 'toggle'):
-            import warnings
-            warnings.warn(
-                "The selop argument of selection() is deprecated "
-                "and will be removed in Python 3.7, "
-                "use selection_%s() instead" % (selop,),
-                DeprecationWarning, 3)
-        else:
-            raise TypeError('Unsupported operation')
-        return self.tk.splitlist(self.tk.call(self._w, "selection", selop, items))
+        return self.tk.splitlist(self.tk.call(self._w, "selection"))
 
 
     def _selection(self, selop, items):
@@ -1529,11 +1518,14 @@ class LabeledScale(Frame):
         scale_side = 'bottom' if self._label_top else 'top'
         label_side = 'top' if scale_side == 'bottom' else 'bottom'
         self.scale.pack(side=scale_side, fill='x')
-        tmp = Label(self).pack(side=label_side) # place holder
+        # Dummy required to make frame correct height
+        dummy = Label(self)
+        dummy.pack(side=label_side)
+        dummy.lower()
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
-        self.__tracecb = self._variable.trace_variable('w', self._adjust)
+        self.__tracecb = self._variable.trace_add('write', self._adjust)
         self.bind('<Configure>', self._adjust)
         self.bind('<Map>', self._adjust)
 
@@ -1541,13 +1533,14 @@ class LabeledScale(Frame):
     def destroy(self):
         """Destroy this widget and possibly its associated variable."""
         try:
-            self._variable.trace_vdelete('w', self.__tracecb)
+            self._variable.trace_remove('write', self.__tracecb)
         except AttributeError:
-            # widget has been destroyed already
             pass
         else:
             del self._variable
-            Frame.destroy(self)
+        super().destroy()
+        self.label = None
+        self.scale = None
 
 
     def _adjust(self, *args):
@@ -1594,7 +1587,7 @@ class OptionMenu(Menubutton):
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
         """Construct a themed OptionMenu widget with master as the parent,
-        the resource textvariable set to variable, the initially selected
+        the option textvariable set to variable, the initially selected
         value specified by the default parameter, the menu values given by
         *values and additional keywords.
 
@@ -1608,7 +1601,8 @@ class OptionMenu(Menubutton):
                 A callback that will be invoked after selecting an item.
         """
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
-              'direction': kwargs.pop('direction', None)}
+              'direction': kwargs.pop('direction', None),
+              'name': kwargs.pop('name', None)}
         Menubutton.__init__(self, master, **kw)
         self['menu'] = tkinter.Menu(self, tearoff=False)
 
@@ -1635,7 +1629,11 @@ class OptionMenu(Menubutton):
         menu.delete(0, 'end')
         for val in values:
             menu.add_radiobutton(label=val,
-                command=tkinter._setit(self._variable, val, self._callback))
+                command=(
+                    None if self._callback is None
+                    else lambda val=val: self._callback(val)
+                ),
+                variable=self._variable)
 
         if default:
             self._variable.set(default)
@@ -1643,5 +1641,17 @@ class OptionMenu(Menubutton):
 
     def destroy(self):
         """Destroy this widget and its associated variable."""
-        del self._variable
-        Menubutton.destroy(self)
+        try:
+            del self._variable
+        except AttributeError:
+            pass
+        super().destroy()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "0.3.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

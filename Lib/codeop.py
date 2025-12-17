@@ -10,30 +10,6 @@ and:
   syntax error (OverflowError and ValueError can be produced by
   malformed literals).
 
-Approach:
-
-First, check if the source consists entirely of blank lines and
-comments; if so, replace it with 'pass', because the built-in
-parser doesn't always do the right thing for these.
-
-Compile three times: as is, with \n, and with \n\n appended.  If it
-compiles as is, it's complete.  If it compiles with one \n appended,
-we expect more.  If it doesn't compile either way, we compare the
-error we get when compiling with \n or \n\n appended.  If the errors
-are the same, the code is broken.  But if the errors are different, we
-expect more.  Not intuitive; not even guaranteed to hold in future
-releases; but this matches the compiler's behavior from Python 1.4
-through 2.2, at least.
-
-Caveat:
-
-It is possible (but not likely) that the parser stops parsing with a
-successful outcome before reaching the end of the source; in this
-case, trailing symbols may be ignored instead of causing an error.
-For example, a backslash followed by two newlines may be followed by
-arbitrary garbage.  This will be fixed once the API for the parser is
-better.
-
 The two interfaces are:
 
 compile_command(source, filename, symbol):
@@ -57,51 +33,54 @@ Compile():
 """
 
 import __future__
+import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
 
 __all__ = ["compile_command", "Compile", "CommandCompiler"]
 
-PyCF_DONT_IMPLY_DEDENT = 0x200          # Matches pythonrun.h
+# The following flags match the values from Include/cpython/compile.h
+# Caveat emptor: These flags are undocumented on purpose and depending
+# on their effect outside the standard library is **unsupported**.
+PyCF_DONT_IMPLY_DEDENT = 0x200
+PyCF_ONLY_AST = 0x400
+PyCF_ALLOW_INCOMPLETE_INPUT = 0x4000
 
-def _maybe_compile(compiler, source, filename, symbol):
-    # Check for source consisting of only blank lines and comments
+def _maybe_compile(compiler, source, filename, symbol, flags):
+    # Check for source consisting of only blank lines and comments.
     for line in source.split("\n"):
         line = line.strip()
         if line and line[0] != '#':
-            break               # Leave it alone
+            break               # Leave it alone.
     else:
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
 
-    err = err1 = err2 = None
-    code = code1 = code2 = None
+    # Disable compiler warnings when checking for incomplete input.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
+        try:
+            compiler(source, filename, symbol, flags=flags)
+        except SyntaxError:  # Let other compile() errors propagate.
+            try:
+                compiler(source + "\n", filename, symbol, flags=flags)
+                return None
+            except _IncompleteInputError:
+                return None
+            except SyntaxError:
+                pass
+                # fallthrough
 
-    try:
-        code = compiler(source, filename, symbol)
-    except SyntaxError as err:
-        pass
+    return compiler(source, filename, symbol, incomplete_input=False)
 
-    try:
-        code1 = compiler(source + "\n", filename, symbol)
-    except SyntaxError as e:
-        err1 = e
+def _compile(source, filename, symbol, incomplete_input=True, *, flags=0):
+    if incomplete_input:
+        flags |= PyCF_ALLOW_INCOMPLETE_INPUT
+        flags |= PyCF_DONT_IMPLY_DEDENT
+    return compile(source, filename, symbol, flags)
 
-    try:
-        code2 = compiler(source + "\n\n", filename, symbol)
-    except SyntaxError as e:
-        err2 = e
-
-    if code:
-        return code
-    if not code1 and repr(err1) == repr(err2):
-        raise err1
-
-def _compile(source, filename, symbol):
-    return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT)
-
-def compile_command(source, filename="<input>", symbol="single"):
+def compile_command(source, filename="<input>", symbol="single", flags=0):
     r"""Compile a command and determine whether it is incomplete.
 
     Arguments:
@@ -109,7 +88,8 @@ def compile_command(source, filename="<input>", symbol="single"):
     source -- the source string; may contain \n characters
     filename -- optional filename from which source was read; default
                 "<input>"
-    symbol -- optional grammar start symbol; "single" (default) or "eval"
+    symbol -- optional grammar start symbol; "single" (default), "exec"
+              or "eval"
 
     Return value / exceptions raised:
 
@@ -119,7 +99,7 @@ def compile_command(source, filename="<input>", symbol="single"):
       syntax error (OverflowError and ValueError can be produced by
       malformed literals).
     """
-    return _maybe_compile(_compile, source, filename, symbol)
+    return _maybe_compile(_compile, source, filename, symbol, flags)
 
 class Compile:
     """Instances of this class behave much like the built-in compile
@@ -127,10 +107,16 @@ class Compile:
     statement, it "remembers" and compiles all subsequent program texts
     with the statement in force."""
     def __init__(self):
-        self.flags = PyCF_DONT_IMPLY_DEDENT
+        self.flags = PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT
 
-    def __call__(self, source, filename, symbol):
-        codeob = compile(source, filename, symbol, self.flags, 1)
+    def __call__(self, source, filename, symbol, flags=0, **kwargs):
+        flags |= self.flags
+        if kwargs.get('incomplete_input', True) is False:
+            flags &= ~PyCF_DONT_IMPLY_DEDENT
+            flags &= ~PyCF_ALLOW_INCOMPLETE_INPUT
+        codeob = compile(source, filename, symbol, flags, True)
+        if flags & PyCF_ONLY_AST:
+            return codeob  # this is an ast.Module in this case
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
@@ -165,4 +151,4 @@ class CommandCompiler:
           syntax error (OverflowError and ValueError can be produced by
           malformed literals).
         """
-        return _maybe_compile(self.compiler, source, filename, symbol)
+        return _maybe_compile(self.compiler, source, filename, symbol, flags=self.compiler.flags)

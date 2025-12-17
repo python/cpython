@@ -2,22 +2,33 @@
 setlocal
 rem Simple script to fetch source for external libraries
 
-if "%PCBUILD%"=="" (set PCBUILD=%~dp0)
-if "%EXTERNALS_DIR%"=="" (set EXTERNALS_DIR=%PCBUILD%\..\externals)
-if "%NUGET%"=="" (set NUGET=%EXTERNALS_DIR%\nuget.exe)
-if "%NUGET_URL%"=="" (set NUGET_URL=https://aka.ms/nugetclidl)
+if NOT DEFINED PCBUILD (set PCBUILD=%~dp0)
+if NOT DEFINED EXTERNALS_DIR (set EXTERNALS_DIR=%PCBUILD%\..\externals)
 
 set DO_FETCH=true
 set DO_CLEAN=false
+set IncludeLibffiSrc=false
+set IncludeTkinterSrc=false
+set IncludeSSLSrc=false
 
 :CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 if "%~1"=="--no-openssl" (set IncludeSSL=false) & shift & goto CheckOpts
-if "%~1"=="--python" (set PYTHON_FOR_BUILD=%2) & shift & shift & goto CheckOpts
+if "%~1"=="--no-libffi" (set IncludeLibffi=false) & shift & goto CheckOpts
+if "%~1"=="--no-llvm" (set IncludeLLVM=false) & shift & goto CheckOpts
+if "%~1"=="--tkinter-src" (set IncludeTkinterSrc=true) & shift & goto CheckOpts
+if "%~1"=="--openssl-src" (set IncludeSSLSrc=true) & shift & goto CheckOpts
+if "%~1"=="--libffi-src" (set IncludeLibffiSrc=true) & shift & goto CheckOpts
+if "%~1"=="--python" (set PYTHON=%2) & shift & shift & goto CheckOpts
 if "%~1"=="--organization" (set ORG=%2) & shift & shift & goto CheckOpts
 if "%~1"=="-c" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean" (set DO_CLEAN=true) & shift & goto CheckOpts
 if "%~1"=="--clean-only" (set DO_FETCH=false) & goto clean
+
+rem Include old options for compatibility
+if "%~1"=="--no-tkinter" shift & goto CheckOpts
+if "%~1"=="--no-openssl" shift & goto CheckOpts
+
 if "x%~1" NEQ "x" goto usage
 
 if "%DO_CLEAN%"=="false" goto fetch
@@ -32,57 +43,60 @@ if "%DO_FETCH%"=="false" goto end
 :fetch
 
 if "%ORG%"=="" (set ORG=python)
+call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
-if "%PYTHON_FOR_BUILD%"=="" (
-    echo Checking for installed python...
-    py -3.6 -V >nul 2>&1 && (set PYTHON_FOR_BUILD=py -3.6)
-)
-if "%PYTHON_FOR_BUILD%"=="" (
-    if NOT exist "%EXTERNALS_DIR%" mkdir "%EXTERNALS_DIR%"
-    if NOT exist "%NUGET%" (
-        echo Downloading nuget...
-        rem NB: Must use single quotes around NUGET here, NOT double!
-        rem Otherwise, a space in the path would break things
-        powershell.exe -Command Invoke-WebRequest %NUGET_URL% -OutFile '%NUGET%'
-    )
-    echo Installing Python via nuget...
-    "%NUGET%" install pythonx86 -ExcludeVersion -OutputDirectory "%EXTERNALS_DIR%"
-    rem Quote it here; it's not quoted later because "py -3.6" wouldn't work
-    set PYTHON_FOR_BUILD="%EXTERNALS_DIR%\pythonx86\tools\python.exe"
+if NOT DEFINED PYTHON (
+    where /Q git || echo Python 3.10 or later could not be found or installed, and git.exe is not on your PATH && exit /B 1
 )
 
 echo.Fetching external libraries...
 
 set libraries=
-set libraries=%libraries%                                    bzip2-1.0.6
-if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2k
-set libraries=%libraries%                                    sqlite-3.14.2.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-core-8.6.6.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.6.6.0
-if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
-set libraries=%libraries%                                    xz-5.2.2
+set libraries=%libraries%                                       bzip2-1.0.8
+if NOT "%IncludeLibffiSrc%"=="false" set libraries=%libraries%  libffi-3.4.4
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-3.0.18
+set libraries=%libraries%                                       mpdecimal-4.0.0
+set libraries=%libraries%                                       sqlite-3.50.4.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.15.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.15.0
+set libraries=%libraries%                                       xz-5.8.1.1
+set libraries=%libraries%                                       zlib-ng-2.2.4
+set libraries=%libraries%                                       zstd-1.5.7
 
 for %%e in (%libraries%) do (
     if exist "%EXTERNALS_DIR%\%%e" (
         echo.%%e already exists, skipping.
+    ) else if NOT DEFINED PYTHON (
+        echo.Fetching %%e with git...
+        git clone --depth 1 https://github.com/%ORG%/cpython-source-deps --branch %%e "%EXTERNALS_DIR%\%%e"
     ) else (
         echo.Fetching %%e...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -O %ORG% %%e
+        %PYTHON% -E "%PCBUILD%\get_external.py" -O %ORG% -e "%EXTERNALS_DIR%" %%e
     )
 )
 
 echo.Fetching external binaries...
 
 set binaries=
-set binaries=%binaries%
-if NOT "%IncludeSSL%"=="false" set binaries=%binaries%     nasm-2.11.06
+if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.18
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
+if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
+if NOT "%IncludeLLVM%"=="false"    set binaries=%binaries% llvm-21.1.4.0
 
 for %%b in (%binaries%) do (
     if exist "%EXTERNALS_DIR%\%%b" (
         echo.%%b already exists, skipping.
+    ) else if NOT DEFINED PYTHON (
+        echo.Fetching %%b with git...
+        git clone --depth 1 https://github.com/%ORG%/cpython-bin-deps --branch %%b "%EXTERNALS_DIR%\%%b"
     ) else (
         echo.Fetching %%b...
-        %PYTHON_FOR_BUILD% "%PCBUILD%get_external.py" -b -O %ORG% %%b
+        if "%%b"=="llvm-21.1.4.0" (
+            %PYTHON% -E "%PCBUILD%\get_external.py" --release --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
+        ) else (
+            %PYTHON% -E "%PCBUILD%\get_external.py" --binary --organization %ORG% --externals-dir "%EXTERNALS_DIR%" %%b
+        )
     )
 )
 
@@ -91,7 +105,7 @@ goto end
 
 :usage
 echo.Valid options: -c, --clean, --clean-only, --organization, --python,
-echo.--no-tkinter, --no-openssl
+echo.--no-tkinter, --no-openssl, --no-llvm
 echo.
 echo.Pull all sources and binaries necessary for compiling optional extension
 echo.modules that rely on external libraries.

@@ -59,11 +59,10 @@ else:
 
 
 class _ResourceSharer(object):
-    '''Manager for resouces using background thread.'''
+    '''Manager for resources using background thread.'''
     def __init__(self):
         self._key = 0
         self._cache = {}
-        self._old_locks = []
         self._lock = threading.Lock()
         self._listener = None
         self._address = None
@@ -113,10 +112,7 @@ class _ResourceSharer(object):
         for key, (send, close) in self._cache.items():
             close()
         self._cache.clear()
-        # If self._lock was locked at the time of the fork, it may be broken
-        # -- see issue 6721.  Replace it without letting it be gc'ed.
-        self._old_locks.append(self._lock)
-        self._lock = threading.Lock()
+        self._lock._at_fork_reinit()
         if self._listener is not None:
             self._listener.close()
         self._listener = None
@@ -125,9 +121,9 @@ class _ResourceSharer(object):
 
     def _start(self):
         from .connection import Listener
-        assert self._listener is None
+        assert self._listener is None, "Already have Listener"
         util.debug('starting listener and thread for sending handles')
-        self._listener = Listener(authkey=process.current_process().authkey)
+        self._listener = Listener(authkey=process.current_process().authkey, backlog=128)
         self._address = self._listener.address
         t = threading.Thread(target=self._serve)
         t.daemon = True
@@ -136,7 +132,7 @@ class _ResourceSharer(object):
 
     def _serve(self):
         if hasattr(signal, 'pthread_sigmask'):
-            signal.pthread_sigmask(signal.SIG_BLOCK, range(1, signal.NSIG))
+            signal.pthread_sigmask(signal.SIG_BLOCK, signal.valid_signals())
         while 1:
             try:
                 with self._listener.accept() as conn:

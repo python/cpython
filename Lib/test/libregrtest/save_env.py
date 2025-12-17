@@ -1,20 +1,24 @@
 import builtins
 import locale
-import logging
 import os
-import shutil
 import sys
-import sysconfig
-import warnings
+import threading
+
 from test import support
+from test.support import os_helper
+
+from .utils import print_warning
+
+# Import termios to save and restore terminal echo.  This is only available on
+# Unix, and it's fine if the module can't be found.
 try:
-    import threading
-except ImportError:
-    threading = None
-try:
-    import _multiprocessing, multiprocessing.process
-except ImportError:
-    multiprocessing = None
+    import termios                                # noqa: F401
+except ModuleNotFoundError:
+    pass
+
+
+class SkipTestEnvironment(Exception):
+    pass
 
 
 # Unit tests are supposed to leave the execution environment unchanged
@@ -28,21 +32,19 @@ except ImportError:
 class saved_test_environment:
     """Save bits of the test environment and restore them at block exit.
 
-        with saved_test_environment(testname, verbose, quiet):
+        with saved_test_environment(test_name, verbose, quiet):
             #stuff
 
     Unless quiet is True, a warning is printed to stderr if any of
-    the saved items was changed by the test.  The attribute 'changed'
-    is initially False, but is set to True if a change is detected.
+    the saved items was changed by the test. The support.environment_altered
+    attribute is set to True if a change is detected.
 
     If verbose is more than 1, the before and after state of changed
     items is also printed.
     """
 
-    changed = False
-
-    def __init__(self, testname, verbose=0, quiet=False, *, pgo=False):
-        self.testname = testname
+    def __init__(self, test_name, verbose, quiet, *, pgo):
+        self.test_name = test_name
         self.verbose = verbose
         self.quiet = quiet
         self.pgo = pgo
@@ -68,7 +70,42 @@ class saved_test_environment:
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
                  'shutil_archive_formats', 'shutil_unpack_formats',
+                 'asyncio.events._event_loop_policy',
+                 'urllib.requests._url_tempfiles', 'urllib.requests._opener',
+                 'stty_echo',
                 )
+
+    def get_module(self, name):
+        # function for restore() methods
+        return sys.modules[name]
+
+    def try_get_module(self, name):
+        # function for get() methods
+        try:
+            return self.get_module(name)
+        except KeyError:
+            raise SkipTestEnvironment
+
+    def get_urllib_requests__url_tempfiles(self):
+        urllib_request = self.try_get_module('urllib.request')
+        return list(urllib_request._url_tempfiles)
+    def restore_urllib_requests__url_tempfiles(self, tempfiles):
+        for filename in tempfiles:
+            os_helper.unlink(filename)
+
+    def get_urllib_requests__opener(self):
+        urllib_request = self.try_get_module('urllib.request')
+        return urllib_request._opener
+    def restore_urllib_requests__opener(self, opener):
+        urllib_request = self.get_module('urllib.request')
+        urllib_request._opener = opener
+
+    def get_asyncio_events__event_loop_policy(self):
+        self.try_get_module('asyncio')
+        return support.maybe_get_event_loop_policy()
+    def restore_asyncio_events__event_loop_policy(self, policy):
+        asyncio = self.get_module('asyncio')
+        asyncio.events._set_event_loop_policy(policy)
 
     def get_sys_argv(self):
         return id(sys.argv), sys.argv, sys.argv[:]
@@ -126,39 +163,46 @@ class saved_test_environment:
         builtins.__import__ = import_
 
     def get_warnings_filters(self):
+        warnings = self.try_get_module('warnings')
         return id(warnings.filters), warnings.filters, warnings.filters[:]
     def restore_warnings_filters(self, saved_filters):
+        warnings = self.get_module('warnings')
         warnings.filters = saved_filters[1]
         warnings.filters[:] = saved_filters[2]
 
     def get_asyncore_socket_map(self):
-        asyncore = sys.modules.get('asyncore')
+        asyncore = sys.modules.get('test.support.asyncore')
         # XXX Making a copy keeps objects alive until __exit__ gets called.
         return asyncore and asyncore.socket_map.copy() or {}
     def restore_asyncore_socket_map(self, saved_map):
-        asyncore = sys.modules.get('asyncore')
+        asyncore = sys.modules.get('test.support.asyncore')
         if asyncore is not None:
             asyncore.close_all(ignore_all=True)
             asyncore.socket_map.update(saved_map)
 
     def get_shutil_archive_formats(self):
+        shutil = self.try_get_module('shutil')
         # we could call get_archives_formats() but that only returns the
         # registry keys; we want to check the values too (the functions that
         # are registered)
         return shutil._ARCHIVE_FORMATS, shutil._ARCHIVE_FORMATS.copy()
     def restore_shutil_archive_formats(self, saved):
+        shutil = self.get_module('shutil')
         shutil._ARCHIVE_FORMATS = saved[0]
         shutil._ARCHIVE_FORMATS.clear()
         shutil._ARCHIVE_FORMATS.update(saved[1])
 
     def get_shutil_unpack_formats(self):
+        shutil = self.try_get_module('shutil')
         return shutil._UNPACK_FORMATS, shutil._UNPACK_FORMATS.copy()
     def restore_shutil_unpack_formats(self, saved):
+        shutil = self.get_module('shutil')
         shutil._UNPACK_FORMATS = saved[0]
         shutil._UNPACK_FORMATS.clear()
         shutil._UNPACK_FORMATS.update(saved[1])
 
     def get_logging__handlers(self):
+        logging = self.try_get_module('logging')
         # _handlers is a WeakValueDictionary
         return id(logging._handlers), logging._handlers, logging._handlers.copy()
     def restore_logging__handlers(self, saved_handlers):
@@ -166,6 +210,7 @@ class saved_test_environment:
         pass
 
     def get_logging__handlerList(self):
+        logging = self.try_get_module('logging')
         # _handlerList is a list of weakrefs to handlers
         return id(logging._handlerList), logging._handlerList, logging._handlerList[:]
     def restore_logging__handlerList(self, saved_handlerList):
@@ -181,58 +226,58 @@ class saved_test_environment:
     # Controlling dangling references to Thread objects can make it easier
     # to track reference leaks.
     def get_threading__dangling(self):
-        if not threading:
-            return None
         # This copies the weakrefs without making any strong reference
         return threading._dangling.copy()
     def restore_threading__dangling(self, saved):
-        if not threading:
-            return
         threading._dangling.clear()
         threading._dangling.update(saved)
 
     # Same for Process objects
     def get_multiprocessing_process__dangling(self):
-        if not multiprocessing:
-            return None
+        multiprocessing_process = self.try_get_module('multiprocessing.process')
         # Unjoined process objects can survive after process exits
-        multiprocessing.process._cleanup()
+        multiprocessing_process._cleanup()
         # This copies the weakrefs without making any strong reference
-        return multiprocessing.process._dangling.copy()
+        return multiprocessing_process._dangling.copy()
     def restore_multiprocessing_process__dangling(self, saved):
-        if not multiprocessing:
-            return
-        multiprocessing.process._dangling.clear()
-        multiprocessing.process._dangling.update(saved)
+        multiprocessing_process = self.get_module('multiprocessing.process')
+        multiprocessing_process._dangling.clear()
+        multiprocessing_process._dangling.update(saved)
 
     def get_sysconfig__CONFIG_VARS(self):
         # make sure the dict is initialized
+        sysconfig = self.try_get_module('sysconfig')
         sysconfig.get_config_var('prefix')
         return (id(sysconfig._CONFIG_VARS), sysconfig._CONFIG_VARS,
                 dict(sysconfig._CONFIG_VARS))
     def restore_sysconfig__CONFIG_VARS(self, saved):
+        sysconfig = self.get_module('sysconfig')
         sysconfig._CONFIG_VARS = saved[1]
         sysconfig._CONFIG_VARS.clear()
         sysconfig._CONFIG_VARS.update(saved[2])
 
     def get_sysconfig__INSTALL_SCHEMES(self):
+        sysconfig = self.try_get_module('sysconfig')
         return (id(sysconfig._INSTALL_SCHEMES), sysconfig._INSTALL_SCHEMES,
                 sysconfig._INSTALL_SCHEMES.copy())
     def restore_sysconfig__INSTALL_SCHEMES(self, saved):
+        sysconfig = self.get_module('sysconfig')
         sysconfig._INSTALL_SCHEMES = saved[1]
         sysconfig._INSTALL_SCHEMES.clear()
         sysconfig._INSTALL_SCHEMES.update(saved[2])
 
     def get_files(self):
+        # XXX: Maybe add an allow-list here?
         return sorted(fn + ('/' if os.path.isdir(fn) else '')
-                      for fn in os.listdir())
+                      for fn in os.listdir()
+                      if not fn.startswith(".hypothesis"))
     def restore_files(self, saved_value):
-        fn = support.TESTFN
+        fn = os_helper.TESTFN
         if fn not in saved_value and (fn + '/') not in saved_value:
             if os.path.isfile(fn):
-                support.unlink(fn)
+                os_helper.unlink(fn)
             elif os.path.isdir(fn):
-                support.rmtree(fn)
+                os_helper.rmtree(fn)
 
     _lc = [getattr(locale, lc) for lc in dir(locale)
            if lc.startswith('LC_')]
@@ -249,9 +294,29 @@ class saved_test_environment:
             locale.setlocale(lc, setting)
 
     def get_warnings_showwarning(self):
+        warnings = self.try_get_module('warnings')
         return warnings.showwarning
     def restore_warnings_showwarning(self, fxn):
+        warnings = self.get_module('warnings')
         warnings.showwarning = fxn
+
+    def get_stty_echo(self):
+        termios = self.try_get_module('termios')
+        if not os.isatty(fd := sys.__stdin__.fileno()):
+            return None
+        attrs = termios.tcgetattr(fd)
+        lflags = attrs[3]
+        return bool(lflags & termios.ECHO)
+    def restore_stty_echo(self, echo):
+        termios = self.get_module('termios')
+        attrs = termios.tcgetattr(fd := sys.__stdin__.fileno())
+        if echo:
+            # Turn echo on.
+            attrs[3] |= termios.ECHO
+        else:
+            # Turn echo off.
+            attrs[3] &= ~termios.ECHO
+        termios.tcsetattr(fd, termios.TCSADRAIN, attrs)
 
     def resource_info(self):
         for name in self.resources:
@@ -261,30 +326,32 @@ class saved_test_environment:
             yield name, getattr(self, get_name), getattr(self, restore_name)
 
     def __enter__(self):
-        self.saved_values = dict((name, get()) for name, get, restore
-                                                   in self.resource_info())
+        self.saved_values = []
+        for name, get, restore in self.resource_info():
+            try:
+                original = get()
+            except SkipTestEnvironment:
+                continue
+
+            self.saved_values.append((name, get, restore, original))
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         saved_values = self.saved_values
-        del self.saved_values
+        self.saved_values = None
 
         # Some resources use weak references
         support.gc_collect()
 
-        # Read support.environment_altered, set by support helper functions
-        self.changed |= support.environment_altered
-
-        for name, get, restore in self.resource_info():
+        for name, get, restore, original in saved_values:
             current = get()
-            original = saved_values.pop(name)
             # Check for changes to the resource's value
             if current != original:
-                self.changed = True
+                support.environment_altered = True
                 restore(original)
                 if not self.quiet and not self.pgo:
-                    print(f"Warning -- {name} was modified by {self.testname}",
-                          file=sys.stderr, flush=True)
-                    print(f"  Before: {original}\n  After:  {current} ",
-                          file=sys.stderr, flush=True)
+                    print_warning(
+                        f"{name} was modified by {self.test_name}\n"
+                        f"  Before: {original}\n"
+                        f"  After:  {current} ")
         return False

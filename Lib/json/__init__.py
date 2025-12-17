@@ -1,4 +1,4 @@
-r"""JSON (JavaScript Object Notation) <http://json.org> is a subset of
+r"""JSON (JavaScript Object Notation) <https://json.org> is a subset of
 JavaScript syntax (ECMA-262 3rd edition) used as a lightweight data
 interchange format.
 
@@ -28,8 +28,7 @@ Encoding basic Python object hierarchies::
 Compact encoding::
 
     >>> import json
-    >>> from collections import OrderedDict
-    >>> mydict = OrderedDict([('4', 5), ('6', 7)])
+    >>> mydict = {'4': 5, '6': 7}
     >>> json.dumps([1,2,3,mydict], separators=(',', ':'))
     '[1,2,3,{"4":5,"6":7}]'
 
@@ -76,7 +75,8 @@ Specializing JSON object encoding::
     >>> def encode_complex(obj):
     ...     if isinstance(obj, complex):
     ...         return [obj.real, obj.imag]
-    ...     raise TypeError(repr(obj) + " is not JSON serializable")
+    ...     raise TypeError(f'Object of type {obj.__class__.__name__} '
+    ...                     f'is not JSON serializable')
     ...
     >>> json.dumps(2 + 1j, default=encode_complex)
     '[2.0, 1.0]'
@@ -86,16 +86,15 @@ Specializing JSON object encoding::
     '[2.0, 1.0]'
 
 
-Using json.tool from the shell to validate and pretty-print::
+Using json from the shell to validate and pretty-print::
 
-    $ echo '{"json":"obj"}' | python -m json.tool
+    $ echo '{"json":"obj"}' | python -m json
     {
         "json": "obj"
     }
-    $ echo '{ 1.2:3.4}' | python -m json.tool
+    $ echo '{ 1.2:3.4}' | python -m json
     Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
 """
-__version__ = '2.0.9'
 __all__ = [
     'dump', 'dumps', 'load', 'loads',
     'JSONDecoder', 'JSONDecodeError', 'JSONEncoder',
@@ -128,12 +127,13 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     instead of raising a ``TypeError``.
 
     If ``ensure_ascii`` is false, then the strings written to ``fp`` can
-    contain non-ASCII characters if they appear in strings contained in
-    ``obj``. Otherwise, all such characters are escaped in JSON strings.
+    contain non-ASCII and non-printable characters if they appear in strings
+    contained in ``obj``. Otherwise, all such characters are escaped in JSON
+    strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
@@ -145,10 +145,11 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If specified, ``separators`` should be an ``(item_separator, key_separator)``
-    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-    you should specify ``(',', ':')`` to eliminate whitespace.
+    If specified, ``separators`` should be an ``(item_separator,
+    key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
+    ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
+    representation, you should specify ``(',', ':')`` to eliminate
+    whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
@@ -189,13 +190,14 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
     instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the return value can contain non-ASCII
-    characters if they appear in strings contained in ``obj``. Otherwise, all
-    such characters are escaped in JSON strings.
+    If ``ensure_ascii`` is false, then the return value can contain
+    non-ASCII and non-printable characters if they appear in strings
+    contained in ``obj``.  Otherwise, all such characters are escaped in
+    JSON strings.
 
     If ``check_circular`` is false, then the circular reference check
     for container types will be skipped and a circular reference will
-    result in an ``OverflowError`` (or worse).
+    result in an ``RecursionError`` (or worse).
 
     If ``allow_nan`` is false, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
@@ -207,10 +209,11 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If specified, ``separators`` should be an ``(item_separator, key_separator)``
-    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
-    you should specify ``(',', ':')`` to eliminate whitespace.
+    If specified, ``separators`` should be an ``(item_separator,
+    key_separator)`` tuple.  The default is ``(', ', ': ')`` if *indent* is
+    ``None`` and ``(',', ': ')`` otherwise.  To get the most compact JSON
+    representation, you should specify ``(',', ':')`` to eliminate
+    whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
@@ -281,17 +284,15 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` will be used instead of the ``dict``. This feature
     can be used to implement custom decoders (e.g. JSON-RPC class hinting).
 
-    ``object_pairs_hook`` is an optional function that will be called with the
-    result of any object literal decoded with an ordered list of pairs.  The
-    return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded (for example,
-    collections.OrderedDict will remember the order of insertion). If
-    ``object_hook`` is also defined, the ``object_pairs_hook`` takes priority.
+    ``object_pairs_hook`` is an optional function that will be called with
+    the result of any object literal decoded with an ordered list of pairs.
+    The return value of ``object_pairs_hook`` will be used instead of the
+    ``dict``.  This feature can be used to implement custom decoders.  If
+    ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+    priority.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
-
     """
     return loads(fp.read(),
         cls=cls, object_hook=object_hook,
@@ -299,7 +300,7 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
         parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
 
 
-def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
+def loads(s, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
@@ -309,13 +310,12 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     ``object_hook`` will be used instead of the ``dict``. This feature
     can be used to implement custom decoders (e.g. JSON-RPC class hinting).
 
-    ``object_pairs_hook`` is an optional function that will be called with the
-    result of any object literal decoded with an ordered list of pairs.  The
-    return value of ``object_pairs_hook`` will be used instead of the ``dict``.
-    This feature can be used to implement custom decoders that rely on the
-    order that the key and value pairs are decoded (for example,
-    collections.OrderedDict will remember the order of insertion). If
-    ``object_hook`` is also defined, the ``object_pairs_hook`` takes priority.
+    ``object_pairs_hook`` is an optional function that will be called with
+    the result of any object literal decoded with an ordered list of pairs.
+    The return value of ``object_pairs_hook`` will be used instead of the
+    ``dict``.  This feature can be used to implement custom decoders.  If
+    ``object_hook`` is also defined, the ``object_pairs_hook`` takes
+    priority.
 
     ``parse_float``, if specified, will be called with the string
     of every JSON float to be decoded. By default this is equivalent to
@@ -334,9 +334,6 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
-
-    The ``encoding`` argument is ignored and deprecated.
-
     """
     if isinstance(s, str):
         if s.startswith('\ufeff'):
@@ -344,8 +341,8 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
                                   s, 0)
     else:
         if not isinstance(s, (bytes, bytearray)):
-            raise TypeError('the JSON object must be str, bytes or bytearray, '
-                            'not {!r}'.format(s.__class__.__name__))
+            raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+                            f'not {s.__class__.__name__}')
         s = s.decode(detect_encoding(s), 'surrogatepass')
 
     if (cls is None and object_hook is None and
@@ -365,3 +362,12 @@ def loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None,
     if parse_constant is not None:
         kw['parse_constant'] = parse_constant
     return cls(**kw).decode(s)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "2.0.9"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

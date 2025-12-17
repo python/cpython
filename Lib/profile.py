@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 #
 # Class for profiling python code. rev 1.0  6/2/94
 #
@@ -24,11 +23,22 @@
 # governing permissions and limitations under the License.
 
 
+import importlib.machinery
+import io
 import sys
 import time
 import marshal
+import warnings
 
 __all__ = ["run", "runctx", "Profile"]
+
+# Emit deprecation warning as per PEP 799
+warnings.warn(
+    "The profile module is deprecated and will be removed in Python 3.17. "
+    "Use profiling.tracing (or cProfile) for tracing profilers instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 # Sample timer for use with
 #i_count = 0
@@ -195,7 +205,7 @@ class Profile:
             self.t = r[0] + r[1] - t # put back unrecorded delta
 
     # Dispatch routine for best timer program (return = scalar, fastest if
-    # an integer but float works too -- and time.clock() relies on that).
+    # an integer but float works too -- and time.process_time() relies on that).
 
     def trace_dispatch_i(self, frame, event, arg):
         timer = self.timer
@@ -385,8 +395,9 @@ class Profile:
 
     def print_stats(self, sort=-1):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort). \
-                  print_stats()
+        if not isinstance(sort, tuple):
+            sort = (sort,)
+        pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
     def dump_stats(self, file):
         with open(file, 'wb') as f:
@@ -425,7 +436,7 @@ class Profile:
         return self
 
     # This method is more useful to profile a single function call.
-    def runcall(self, func, *args, **kw):
+    def runcall(self, func, /, *args, **kw):
         self.set_cmd(repr(func))
         sys.setprofile(self.dispatcher)
         try:
@@ -553,11 +564,13 @@ def main():
     import os
     from optparse import OptionParser
 
-    usage = "profile.py [-o output_file_path] [-s sort] scriptfile [arg] ..."
+    usage = "profile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
     parser = OptionParser(usage=usage)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)
+    parser.add_option('-m', dest="module", action="store_true",
+        help="Profile a library module.", default=False)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class",
         default=-1)
@@ -569,18 +582,38 @@ def main():
     (options, args) = parser.parse_args()
     sys.argv[:] = args
 
+    # The script that we're profiling may chdir, so capture the absolute path
+    # to the output file at startup.
+    if options.outfile is not None:
+        options.outfile = os.path.abspath(options.outfile)
+
     if len(args) > 0:
-        progname = args[0]
-        sys.path.insert(0, os.path.dirname(progname))
-        with open(progname, 'rb') as fp:
-            code = compile(fp.read(), progname, 'exec')
-        globs = {
-            '__file__': progname,
-            '__name__': '__main__',
-            '__package__': None,
-            '__cached__': None,
-        }
-        runctx(code, globs, None, options.outfile, options.sort)
+        if options.module:
+            import runpy
+            code = "run_module(modname, run_name='__main__')"
+            globs = {
+                'run_module': runpy.run_module,
+                'modname': args[0]
+            }
+        else:
+            progname = args[0]
+            sys.path.insert(0, os.path.dirname(progname))
+            with io.open_code(progname) as fp:
+                code = compile(fp.read(), progname, 'exec')
+            spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
+                                                  origin=progname)
+            globs = {
+                '__spec__': spec,
+                '__file__': spec.origin,
+                '__name__': spec.name,
+                '__package__': None,
+            }
+        try:
+            runctx(code, globs, None, options.outfile, options.sort)
+        except BrokenPipeError as exc:
+            # Prevent "Exception ignored" during interpreter shutdown.
+            sys.stdout = None
+            sys.exit(exc.errno)
     else:
         parser.print_usage()
     return parser

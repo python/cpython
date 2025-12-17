@@ -12,20 +12,19 @@ and adds some new things as well.
 More on Lists
 =============
 
-The list data type has some more methods.  Here are all of the methods of list
-objects:
-
+The :ref:`list <typesseq-list>` data type has some more methods. Here are all
+of the methods of list objects:
 
 .. method:: list.append(x)
    :noindex:
 
-   Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
+   Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
 
 
 .. method:: list.extend(iterable)
    :noindex:
 
-   Extend the list by appending all the items from the iterable.  Equivalent to
+   Extend the list by appending all the items from the iterable.  Similar to
    ``a[len(a):] = iterable``.
 
 
@@ -40,30 +39,29 @@ objects:
 .. method:: list.remove(x)
    :noindex:
 
-   Remove the first item from the list whose value is equal to *x*.  It is an error if
-   there is no such item.
+   Remove the first item from the list whose value is equal to *x*.  It raises a
+   :exc:`ValueError` if there is no such item.
 
 
 .. method:: list.pop([i])
    :noindex:
 
    Remove the item at the given position in the list, and return it.  If no index
-   is specified, ``a.pop()`` removes and returns the last item in the list.  (The
-   square brackets around the *i* in the method signature denote that the parameter
-   is optional, not that you should type square brackets at that position.  You
-   will see this notation frequently in the Python Library Reference.)
+   is specified, ``a.pop()`` removes and returns the last item in the list.
+   It raises an :exc:`IndexError` if the list is empty or the index is
+   outside the list range.
 
 
 .. method:: list.clear()
    :noindex:
 
-   Remove all items from the list.  Equivalent to ``del a[:]``.
+   Remove all items from the list.  Similar to ``del a[:]``.
 
 
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is equal to *x*.
+   Return zero-based index of the first occurrence of *x* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
@@ -78,7 +76,7 @@ objects:
    Return the number of times *x* appears in the list.
 
 
-.. method:: list.sort(key=None, reverse=False)
+.. method:: list.sort(*, key=None, reverse=False)
    :noindex:
 
    Sort the items of the list in place (the arguments can be used for sort
@@ -94,7 +92,7 @@ objects:
 .. method:: list.copy()
    :noindex:
 
-   Return a shallow copy of the list.  Equivalent to ``a[:]``.
+   Return a shallow copy of the list.  Similar to ``a[:]``.
 
 
 An example that uses most of the list methods::
@@ -106,7 +104,7 @@ An example that uses most of the list methods::
     0
     >>> fruits.index('banana')
     3
-    >>> fruits.index('banana', 4)  # Find next banana starting a position 4
+    >>> fruits.index('banana', 4)  # Find next banana starting at position 4
     6
     >>> fruits.reverse()
     >>> fruits
@@ -122,8 +120,15 @@ An example that uses most of the list methods::
 
 You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
-``None``. [1]_  This is a design principle for all mutable data structures in
+``None``. [#]_  This is a design principle for all mutable data structures in
 Python.
+
+Another thing you might notice is that not all data can be sorted or
+compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
+integers can't be compared to strings and ``None`` can't be compared to
+other types.  Also, there are some types that don't have a defined
+ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
+comparison.
 
 
 .. _tut-lists-as-stacks:
@@ -136,8 +141,8 @@ Using Lists as Stacks
 
 The list methods make it very easy to use a list as a stack, where the last
 element added is the first element retrieved ("last-in, first-out").  To add an
-item to the top of the stack, use :meth:`append`.  To retrieve an item from the
-top of the stack, use :meth:`pop` without an explicit index.  For example::
+item to the top of the stack, use :meth:`~list.append`.  To retrieve an item from the
+top of the stack, use :meth:`~list.pop` without an explicit index.  For example::
 
    >>> stack = [3, 4, 5]
    >>> stack.append(6)
@@ -216,9 +221,9 @@ or, equivalently::
 which is more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
-by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
+by a :keyword:`!for` clause, then zero or more :keyword:`!for` or :keyword:`!if`
 clauses.  The result will be a new list resulting from evaluating the expression
-in the context of the :keyword:`for` and :keyword:`if` clauses which follow it.
+in the context of the :keyword:`!for` and :keyword:`!if` clauses which follow it.
 For example, this listcomp combines the elements of two lists if they are not
 equal::
 
@@ -261,10 +266,10 @@ it must be parenthesized. ::
    [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25)]
    >>> # the tuple must be parenthesized, otherwise an error is raised
    >>> [x, x**2 for x in range(6)]
-     File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1
        [x, x**2 for x in range(6)]
-                  ^
-   SyntaxError: invalid syntax
+        ^^^^^^^
+   SyntaxError: did you forget parentheses around the comprehension target?
    >>> # flatten a list using a listcomp with two 'for'
    >>> vec = [[1,2,3], [4,5,6], [7,8,9]]
    >>> [num for elem in vec for num in elem]
@@ -296,7 +301,7 @@ The following list comprehension will transpose rows and columns::
    >>> [[row[i] for row in matrix] for i in range(4)]
    [[1, 5, 9], [2, 6, 10], [3, 7, 11], [4, 8, 12]]
 
-As we saw in the previous section, the nested listcomp is evaluated in
+As we saw in the previous section, the inner list comprehension is evaluated in
 the context of the :keyword:`for` that follows it, so this example is
 equivalent to::
 
@@ -330,12 +335,12 @@ See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
 .. _tut-del:
 
-The :keyword:`del` statement
-============================
+The :keyword:`!del` statement
+=============================
 
 There is a way to remove an item from a list given its index instead of its
-value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
-which returns a value.  The :keyword:`del` statement can also be used to remove
+value: the :keyword:`del` statement.  This differs from the :meth:`~list.pop` method
+which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
 
@@ -377,16 +382,16 @@ A tuple consists of a number of values separated by commas, for instance::
    >>> t
    (12345, 54321, 'hello!')
    >>> # Tuples may be nested:
-   ... u = t, (1, 2, 3, 4, 5)
+   >>> u = t, (1, 2, 3, 4, 5)
    >>> u
    ((12345, 54321, 'hello!'), (1, 2, 3, 4, 5))
    >>> # Tuples are immutable:
-   ... t[0] = 88888
+   >>> t[0] = 88888
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
    TypeError: 'tuple' object does not support item assignment
    >>> # but they can contain mutable objects:
-   ... v = ([1, 2, 3], [3, 2, 1])
+   >>> v = ([1, 2, 3], [3, 2, 1])
    >>> v
    ([1, 2, 3], [3, 2, 1])
 
@@ -439,10 +444,11 @@ packing and sequence unpacking.
 Sets
 ====
 
-Python also includes a data type for *sets*.  A set is an unordered collection
-with no duplicate elements.  Basic uses include membership testing and
-eliminating duplicate entries.  Set objects also support mathematical operations
-like union, intersection, difference, and symmetric difference.
+Python also includes a data type for :ref:`sets <types-set>`.  A set is
+an unordered collection with no duplicate elements.  Basic uses include
+membership testing and eliminating duplicate entries.  Set objects also
+support mathematical operations like union, intersection, difference, and
+symmetric difference.
 
 Curly braces or the :func:`set` function can be used to create sets.  Note: to
 create an empty set you have to use ``set()``, not ``{}``; the latter creates an
@@ -459,7 +465,7 @@ Here is a brief demonstration::
    False
 
    >>> # Demonstrate set operations on unique letters from two words
-   ...
+   >>>
    >>> a = set('abracadabra')
    >>> b = set('alacazam')
    >>> a                                  # unique letters in a
@@ -494,10 +500,10 @@ any immutable type; strings and numbers can always be keys.  Tuples can be used
 as keys if they contain only strings, numbers, or tuples; if a tuple contains
 any mutable object either directly or indirectly, it cannot be used as a key.
 You can't use lists as keys, since lists can be modified in place using index
-assignments, slice assignments, or methods like :meth:`append` and
-:meth:`extend`.
+assignments, slice assignments, or methods like :meth:`~list.append` and
+:meth:`~list.extend`.
 
-It is best to think of a dictionary as an unordered set of *key: value* pairs,
+It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
 braces creates an empty dictionary: ``{}``. Placing a comma-separated list of
 key:value pairs within the braces adds initial key:value pairs to the
@@ -506,12 +512,16 @@ dictionary; this is also the way dictionaries are written on output.
 The main operations on a dictionary are storing a value with some key and
 extracting the value given the key.  It is also possible to delete a key:value
 pair with ``del``. If you store using a key that is already in use, the old
-value associated with that key is forgotten.  It is an error to extract a value
-using a non-existent key.
+value associated with that key is forgotten.
 
-Performing ``list(d.keys())`` on a dictionary returns a list of all the keys
-used in the dictionary, in arbitrary order (if you want it sorted, just use
-``sorted(d.keys())`` instead). [2]_  To check whether a single key is in the
+Extracting a value for a non-existent key by subscripting (``d[key]``) raises a
+:exc:`KeyError`. To avoid getting this error when trying to access a possibly
+non-existent key, use the :meth:`~dict.get` method instead, which returns
+``None`` (or a specified default value) if the key is not in the dictionary.
+
+Performing ``list(d)`` on a dictionary returns a list of all the keys
+used in the dictionary, in insertion order (if you want it sorted, just use
+``sorted(d)`` instead). To check whether a single key is in the
 dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
@@ -519,16 +529,22 @@ Here is a small example using a dictionary::
    >>> tel = {'jack': 4098, 'sape': 4139}
    >>> tel['guido'] = 4127
    >>> tel
-   {'sape': 4139, 'guido': 4127, 'jack': 4098}
+   {'jack': 4098, 'sape': 4139, 'guido': 4127}
    >>> tel['jack']
    4098
+   >>> tel['irv']
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   KeyError: 'irv'
+   >>> print(tel.get('irv'))
+   None
    >>> del tel['sape']
    >>> tel['irv'] = 4127
    >>> tel
-   {'guido': 4127, 'irv': 4127, 'jack': 4098}
-   >>> list(tel.keys())
-   ['irv', 'guido', 'jack']
-   >>> sorted(tel.keys())
+   {'jack': 4098, 'guido': 4127, 'irv': 4127}
+   >>> list(tel)
+   ['jack', 'guido', 'irv']
+   >>> sorted(tel)
    ['guido', 'irv', 'jack']
    >>> 'guido' in tel
    True
@@ -539,7 +555,7 @@ The :func:`dict` constructor builds dictionaries directly from sequences of
 key-value pairs::
 
    >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 In addition, dict comprehensions can be used to create dictionaries from
 arbitrary key and value expressions::
@@ -551,7 +567,7 @@ When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
 
    >>> dict(sape=4139, guido=4127, jack=4098)
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 
 .. _tut-loopidioms:
@@ -560,7 +576,7 @@ Looping Techniques
 ==================
 
 When looping through dictionaries, the key and corresponding value can be
-retrieved at the same time using the :meth:`items` method. ::
+retrieved at the same time using the :meth:`~dict.items` method. ::
 
    >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
    >>> for k, v in knights.items():
@@ -607,6 +623,21 @@ To loop over a sequence in sorted order, use the :func:`sorted` function which
 returns a new sorted list while leaving the source unaltered. ::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+   >>> for i in sorted(basket):
+   ...     print(i)
+   ...
+   apple
+   apple
+   banana
+   orange
+   orange
+   pear
+
+Using :func:`set` on a sequence eliminates duplicate elements. The use of
+:func:`sorted` in combination with :func:`set` over a sequence is an idiomatic
+way to loop over unique elements of the sequence in sorted order. ::
+
+   >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
    >>> for f in sorted(set(basket)):
    ...     print(f)
    ...
@@ -637,11 +668,12 @@ More on Conditions
 The conditions used in ``while`` and ``if`` statements can contain any
 operators, not just comparisons.
 
-The comparison operators ``in`` and ``not in`` check whether a value occurs
-(does not occur) in a sequence.  The operators ``is`` and ``is not`` compare
-whether two objects are really the same object; this only matters for mutable
-objects like lists.  All comparison operators have the same priority, which is
-lower than that of all numerical operators.
+
+The comparison operators ``in`` and ``not in`` are membership tests that
+determine whether a value is in (or not in) a container.  The operators ``is``
+and ``is not`` compare whether two objects are really the same object.  All
+comparison operators have the same priority, which is lower than that of all
+numerical operators.
 
 Comparisons can be chained.  For example, ``a < b == c`` tests whether ``a`` is
 less than ``b`` and moreover ``b`` equals ``c``.
@@ -668,28 +700,28 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-Note that in Python, unlike C, assignment cannot occur inside expressions. C
-programmers may grumble about this, but it avoids a common class of problems
-encountered in C programs: typing ``=`` in an expression when ``==`` was
-intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the
+:ref:`walrus operator <why-can-t-i-use-an-assignment-in-an-expression>` ``:=``.
+This avoids a common class of problems encountered in C programs: typing ``=``
+in an expression when ``==`` was intended.
 
 
 .. _tut-comparing:
 
 Comparing Sequences and Other Types
 ===================================
-
-Sequence objects may be compared to other objects with the same sequence type.
-The comparison uses *lexicographical* ordering: first the first two items are
-compared, and if they differ this determines the outcome of the comparison; if
-they are equal, the next two items are compared, and so on, until either
-sequence is exhausted. If two items to be compared are themselves sequences of
-the same type, the lexicographical comparison is carried out recursively.  If
-all items of two sequences compare equal, the sequences are considered equal.
-If one sequence is an initial sub-sequence of the other, the shorter sequence is
-the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-code point number to order individual characters.  Some examples of comparisons
-between sequences of the same type::
+Sequence objects typically may be compared to other objects with the same sequence
+type. The comparison uses *lexicographical* ordering: first the first two
+items are compared, and if they differ this determines the outcome of the
+comparison; if they are equal, the next two items are compared, and so on, until
+either sequence is exhausted. If two items to be compared are themselves
+sequences of the same type, the lexicographical comparison is carried out
+recursively.  If all items of two sequences compare equal, the sequences are
+considered equal. If one sequence is an initial sub-sequence of the other, the
+shorter sequence is the smaller (lesser) one.  Lexicographical ordering for
+strings uses the Unicode code point number to order individual characters.
+Some examples of comparisons between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)
    [1, 2, 3]              < [1, 2, 4]
@@ -708,9 +740,5 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. rubric:: Footnotes
 
-.. [1] Other languages may return the mutated object, which allows method
+.. [#] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
-
-.. [2] Calling ``d.keys()`` will return a :dfn:`dictionary view` object.  It
-       supports operations like membership test and iteration, but its contents
-       are not independent of the original dictionary -- it is only a *view*.

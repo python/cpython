@@ -52,6 +52,12 @@
     }
 
 /*
+ * codecs in this file use the first byte of MultibyteCodec_State.c[8]
+ * to store a 0 or 1 state value
+ */
+#define CN_STATE_OFFSET 0
+
+/*
  * GB2312 codec
  */
 
@@ -329,15 +335,15 @@ DECODER(gb18030)
 
 ENCODER_INIT(hz)
 {
-    state->i = 0;
+    state->c[CN_STATE_OFFSET] = 0;
     return 0;
 }
 
 ENCODER_RESET(hz)
 {
-    if (state->i != 0) {
+    if (state->c[CN_STATE_OFFSET] != 0) {
         WRITEBYTE2('~', '}');
-        state->i = 0;
+        state->c[CN_STATE_OFFSET] = 0;
         NEXT_OUT(2);
     }
     return 0;
@@ -350,10 +356,10 @@ ENCODER(hz)
         DBCHAR code;
 
         if (c < 0x80) {
-            if (state->i) {
+            if (state->c[CN_STATE_OFFSET]) {
                 WRITEBYTE2('~', '}');
                 NEXT_OUT(2);
-                state->i = 0;
+                state->c[CN_STATE_OFFSET] = 0;
             }
             WRITEBYTE1((unsigned char)c);
             NEXT(1, 1);
@@ -375,10 +381,10 @@ ENCODER(hz)
         if (code & 0x8000) /* MSB set: GBK */
             return 1;
 
-        if (state->i == 0) {
+        if (state->c[CN_STATE_OFFSET] == 0) {
             WRITEBYTE4('~', '{', code >> 8, code & 0xff);
             NEXT(1, 4);
-            state->i = 1;
+            state->c[CN_STATE_OFFSET] = 1;
         }
         else {
             WRITEBYTE2(code >> 8, code & 0xff);
@@ -391,13 +397,13 @@ ENCODER(hz)
 
 DECODER_INIT(hz)
 {
-    state->i = 0;
+    state->c[CN_STATE_OFFSET] = 0;
     return 0;
 }
 
 DECODER_RESET(hz)
 {
-    state->i = 0;
+    state->c[CN_STATE_OFFSET] = 0;
     return 0;
 }
 
@@ -411,14 +417,14 @@ DECODER(hz)
             unsigned char c2 = INBYTE2;
 
             REQUIRE_INBUF(2);
-            if (c2 == '~' && state->i == 0)
+            if (c2 == '~' && state->c[CN_STATE_OFFSET] == 0)
                 OUTCHAR('~');
-            else if (c2 == '{' && state->i == 0)
-                state->i = 1; /* set GB */
-            else if (c2 == '\n' && state->i == 0)
+            else if (c2 == '{' && state->c[CN_STATE_OFFSET] == 0)
+                state->c[CN_STATE_OFFSET] = 1; /* set GB */
+            else if (c2 == '\n' && state->c[CN_STATE_OFFSET] == 0)
                 ; /* line-continuation */
-            else if (c2 == '}' && state->i == 1)
-                state->i = 0; /* set ASCII */
+            else if (c2 == '}' && state->c[CN_STATE_OFFSET] == 1)
+                state->c[CN_STATE_OFFSET] = 0; /* set ASCII */
             else
                 return 1;
             NEXT_IN(2);
@@ -428,7 +434,7 @@ DECODER(hz)
         if (c & 0x80)
             return 1;
 
-        if (state->i == 0) { /* ASCII mode */
+        if (state->c[CN_STATE_OFFSET] == 0) { /* ASCII mode */
             OUTCHAR(c);
             NEXT_IN(1);
         }
@@ -447,14 +453,14 @@ DECODER(hz)
 }
 
 
-BEGIN_MAPPINGS_LIST
+BEGIN_MAPPINGS_LIST(4)
   MAPPING_DECONLY(gb2312)
   MAPPING_DECONLY(gbkext)
   MAPPING_ENCONLY(gbcommon)
   MAPPING_ENCDEC(gb18030ext)
 END_MAPPINGS_LIST
 
-BEGIN_CODECS_LIST
+BEGIN_CODECS_LIST(4)
   CODEC_STATELESS(gb2312)
   CODEC_STATELESS(gbk)
   CODEC_STATELESS(gb18030)

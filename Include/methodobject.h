@@ -13,45 +13,57 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
-#define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
+#define PyCFunction_CheckExact(op) Py_IS_TYPE((op), &PyCFunction_Type)
+#define PyCFunction_Check(op) PyObject_TypeCheck((op), &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
-typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject **, Py_ssize_t);
+typedef PyObject *(*PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
-typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
-                                                   PyObject **, Py_ssize_t,
-                                                   PyObject *);
-typedef PyObject *(*PyNoArgsFunction)(PyObject *);
+typedef PyObject *(*PyCFunctionFastWithKeywords) (PyObject *,
+                                                  PyObject *const *, Py_ssize_t,
+                                                  PyObject *);
+typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
+                               Py_ssize_t, PyObject *);
+
+// For backwards compatibility. `METH_FASTCALL` was added to the stable API in
+// 3.10 alongside `_PyCFunctionFastWithKeywords` and `_PyCFunctionFast`.
+// Note that the underscore-prefixed names were documented in public docs;
+// people may be using them.
+typedef PyCFunctionFast _PyCFunctionFast;
+typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
+
+// Cast a function to the PyCFunction type to use it with PyMethodDef.
+//
+// This macro can be used to prevent compiler warnings if the first parameter
+// uses a different pointer type than PyObject* (ex: METH_VARARGS and METH_O
+// calling conventions).
+//
+// The macro can also be used for METH_FASTCALL and METH_VARARGS|METH_KEYWORDS
+// calling conventions to avoid compiler warnings because the function has more
+// than 2 parameters. The macro first casts the function to the
+// "void func(void)" type to prevent compiler warnings.
+//
+// If a function is declared with the METH_NOARGS calling convention, it must
+// have 2 parameters. Since the second parameter is unused, Py_UNUSED() can be
+// used to prevent a compiler warning. If the function has a single parameter,
+// it triggers an undefined behavior when Python calls it with 2 parameters
+// (bpo-33012).
+#define _PyCFunction_CAST(func)                         \
+    _Py_FUNC_CAST(PyCFunction, func)
+// The macros below are given for semantic convenience, allowing users
+// to see whether a cast to suppress an undefined behavior is necessary.
+// Note: At runtime, the original function signature must be respected.
+#define _PyCFunctionFast_CAST(func)                     \
+    _Py_FUNC_CAST(PyCFunctionFast, func)
+#define _PyCFunctionWithKeywords_CAST(func)             \
+    _Py_FUNC_CAST(PyCFunctionWithKeywords, func)
+#define _PyCFunctionFastWithKeywords_CAST(func)         \
+    _Py_FUNC_CAST(PyCFunctionFastWithKeywords, func)
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
-
-/* Macros for direct access to these values. Type checks are *not*
-   done, so use with care. */
-#ifndef Py_LIMITED_API
-#define PyCFunction_GET_FUNCTION(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_meth)
-#define PyCFunction_GET_SELF(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags & METH_STATIC ? \
-         NULL : ((PyCFunctionObject *)func) -> m_self)
-#define PyCFunction_GET_FLAGS(func) \
-        (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
-#endif
-PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
-    PyObject **args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
-    PyObject **stack,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
-#endif
 
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
@@ -60,11 +72,23 @@ struct PyMethodDef {
                                describe the args expected by the C func */
     const char  *ml_doc;    /* The __doc__ attribute, or NULL */
 };
-typedef struct PyMethodDef PyMethodDef;
 
+/* PyCFunction_New is declared as a function for stable ABI (declaration is
+ * needed for e.g. GCC with -fvisibility=hidden), but redefined as a macro
+ * that calls PyCFunction_NewEx. */
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
+
+/* PyCFunction_NewEx is similar: on 3.9+, this calls PyCMethod_New. */
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#define PyCFunction_NewEx(ML, SELF, MOD) PyCMethod_New((ML), (SELF), (MOD), NULL)
+PyAPI_FUNC(PyObject *) PyCMethod_New(PyMethodDef *, PyObject *,
+                                     PyObject *, PyTypeObject *);
+#endif
+
 
 /* Flag passed to newmethodobject */
 /* #define METH_OLDARGS  0x0000   -- unsupported now */
@@ -87,37 +111,33 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 #define METH_COEXIST   0x0040
 
-#ifndef Py_LIMITED_API
-#define METH_FASTCALL  0x0080
-
-typedef struct {
-    PyObject_HEAD
-    PyMethodDef *m_ml; /* Description of the C function to call */
-    PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
-    PyObject    *m_module; /* The __module__ attribute, can be anything */
-    PyObject    *m_weakreflist; /* List of weak references */
-} PyCFunctionObject;
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallDict(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject **args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
-PyAPI_FUNC(PyObject *) _PyMethodDef_RawFastCallKeywords(
-    PyMethodDef *method,
-    PyObject *self,
-    PyObject **args,
-    Py_ssize_t nargs,
-    PyObject *kwnames);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030a0000
+#  define METH_FASTCALL  0x0080
 #endif
 
-PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
+/* This bit is preserved for Stackless Python */
+#ifdef STACKLESS
+#  define METH_STACKLESS 0x0100
+#else
+#  define METH_STACKLESS 0x0000
+#endif
+
+/* METH_METHOD means the function stores an
+ * additional reference to the class that defines it;
+ * both self and class are passed to it.
+ * It uses PyCMethodObject instead of PyCFunctionObject.
+ * May not be combined with METH_NOARGS, METH_O, METH_CLASS or METH_STATIC.
+ */
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+#define METH_METHOD 0x0200
+#endif
+
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyCFunction_DebugMallocStats(FILE *out);
-PyAPI_FUNC(void) _PyMethod_DebugMallocStats(FILE *out);
+#  define Py_CPYTHON_METHODOBJECT_H
+#  include "cpython/methodobject.h"
+#  undef Py_CPYTHON_METHODOBJECT_H
 #endif
 
 #ifdef __cplusplus

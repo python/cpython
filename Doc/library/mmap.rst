@@ -1,10 +1,12 @@
-:mod:`mmap` --- Memory-mapped file support
-==========================================
+:mod:`!mmap` --- Memory-mapped file support
+===========================================
 
 .. module:: mmap
    :synopsis: Interface to memory-mapped files for Unix and Windows.
 
 --------------
+
+.. include:: ../includes/wasm-notavail.rst
 
 Memory-mapped file objects behave like both :class:`bytearray` and like
 :term:`file objects <file object>`.  You can use mmap objects in most places
@@ -17,7 +19,7 @@ the current file position, and :meth:`seek` through the file to different positi
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
-file object, use its :meth:`fileno` method to obtain the correct value for the
+file object, use its :meth:`~io.IOBase.fileno` method to obtain the correct value for the
 *fileno* parameter.  Otherwise, you can open the file using the
 :func:`os.open` function, which returns a file descriptor directly (the file
 still needs to be closed when done).
@@ -29,23 +31,28 @@ still needs to be closed when done).
    mapping.
 
 For both the Unix and Windows versions of the constructor, *access* may be
-specified as an optional keyword parameter. *access* accepts one of three
-values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY`
-to specify read-only, write-through or copy-on-write memory respectively.
-*access* can be used on both Unix and Windows.  If *access* is not specified,
-Windows mmap returns a write-through mapping.  The initial memory values for
-all three access types are taken from the specified file.  Assignment to an
-:const:`ACCESS_READ` memory map raises a :exc:`TypeError` exception.
-Assignment to an :const:`ACCESS_WRITE` memory map affects both memory and the
-underlying file.  Assignment to an :const:`ACCESS_COPY` memory map affects
-memory but does not update the underlying file.
+specified as an optional keyword parameter. *access* accepts one of four
+values: :const:`ACCESS_READ`, :const:`ACCESS_WRITE`, or :const:`ACCESS_COPY` to
+specify read-only, write-through or copy-on-write memory respectively, or
+:const:`ACCESS_DEFAULT` to defer to *prot*.  *access* can be used on both Unix
+and Windows.  If *access* is not specified, Windows mmap returns a
+write-through mapping.  The initial memory values for all three access types
+are taken from the specified file.  Assignment to an :const:`ACCESS_READ`
+memory map raises a :exc:`TypeError` exception.  Assignment to an
+:const:`ACCESS_WRITE` memory map affects both memory and the underlying file.
+Assignment to an :const:`ACCESS_COPY` memory map affects memory but does not
+update the underlying file.
+
+.. versionchanged:: 3.7
+   Added :const:`ACCESS_DEFAULT` constant.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT[, offset])
+.. class:: mmap(fileno, length, tagname=None, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
 
    **(Windows version)** Maps *length* bytes from the file specified by the
-   file handle *fileno*, and creates a mmap object.  If *length* is larger
+   file descriptor *fileno*, and creates a mmap object.  If *length* is larger
    than the current size of the file, the file is extended to contain *length*
    bytes.  If *length* is ``0``, the maximum length of the map is the current
    size of the file, except that if the file is empty Windows raises an
@@ -56,15 +63,28 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    the same file.  If you specify the name of an existing tag, that tag is
    opened, otherwise a new tag of this name is created.  If this parameter is
    omitted or ``None``, the mapping is created without a name.  Avoiding the
-   use of the tag parameter will assist in keeping your code portable between
-   Unix and Windows.
+   use of the *tagname* parameter will assist in keeping your code portable
+   between Unix and Windows.
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the ALLOCATIONGRANULARITY.
+   defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
 
+   If *trackfd* is ``False``, the file handle corresponding to *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file handles.
+   The original file can be renamed (but not deleted) after closing *fileno*.
 
-.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, access=ACCESS_DEFAULT[, offset])
+   .. versionchanged:: 3.15
+      The *trackfd* parameter was added.
+
+   .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
+
+.. class:: mmap(fileno, length, flags=MAP_SHARED, prot=PROT_WRITE|PROT_READ, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
    :noindex:
 
    **(Unix version)** Maps *length* bytes from the file specified by the file
@@ -76,7 +96,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    private copy-on-write mapping, so changes to the contents of the mmap
    object will be private to this process, and :const:`MAP_SHARED` creates a
    mapping that's shared with all other processes mapping the same areas of
-   the file.  The default value is :const:`MAP_SHARED`.
+   the file.  The default value is :const:`MAP_SHARED`. Some systems have
+   additional possible flags with the full list specified in
+   :ref:`MAP_* constants <map-constants>`.
 
    *prot*, if specified, gives the desired memory protection; the two most
    useful values are :const:`PROT_READ` and :const:`PROT_WRITE`, to specify
@@ -90,12 +112,22 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
-   defaults to 0.  *offset* must be a multiple of the PAGESIZE or
-   ALLOCATIONGRANULARITY.
+   defaults to 0. *offset* must be a multiple of :const:`ALLOCATIONGRANULARITY`
+   which is equal to :const:`PAGESIZE` on Unix systems.
+
+   If *trackfd* is ``False``, the file descriptor specified by *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file descriptors.
 
    To ensure validity of the created memory mapping the file specified
    by the descriptor *fileno* is internally automatically synchronized
-   with physical backing store on Mac OS X and OpenVMS.
+   with the physical backing store on macOS.
+
+   .. versionchanged:: 3.13
+      The *trackfd* parameter was added.
 
    This example shows a simple way of using :class:`~mmap.mmap`::
 
@@ -123,7 +155,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
 
    :class:`~mmap.mmap` can also be used as a context manager in a :keyword:`with`
-   statement.::
+   statement::
 
       import mmap
 
@@ -151,6 +183,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
           mm.close()
 
+   .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
    Memory-mapped file objects support the following methods:
 
@@ -185,13 +218,36 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       use of this call there is no guarantee that changes are written back before
       the object is destroyed.  If *offset* and *size* are specified, only
       changes to the given range of bytes will be flushed to disk; otherwise, the
-      whole extent of the mapping is flushed.
+      whole extent of the mapping is flushed.  *offset* must be a multiple of the
+      :const:`PAGESIZE` or :const:`ALLOCATIONGRANULARITY`.
 
-      **(Windows version)** A nonzero value returned indicates success; zero
-      indicates failure.
+      ``None`` is returned to indicate success.  An exception is raised when the
+      call failed.
 
-      **(Unix version)** A zero value is returned to indicate success. An
-      exception is raised when the call failed.
+      .. versionchanged:: 3.8
+         Previously, a nonzero value was returned on success; zero was returned
+         on error under Windows.  A zero value was returned on success; an
+         exception was raised on error under Unix.
+
+      .. versionchanged:: 3.15
+         Allow specifying *offset* without *size*. Previously, both *offset*
+         and *size* parameters were required together. Now *offset* can be
+         specified alone, and the flush operation will extend from *offset*
+         to the end of the mmap.
+
+
+   .. method:: madvise(option[, start[, length]])
+
+      Send advice *option* to the kernel about the memory region beginning at
+      *start* and extending *length* bytes.  *option* must be one of the
+      :ref:`MADV_* constants <madvise-constants>` available on the system.  If
+      *start* and *length* are omitted, the entire mapping is spanned.  On
+      some systems (including Linux), *start* must be a multiple of the
+      :const:`PAGESIZE`.
+
+      Availability: Systems with the ``madvise()`` system call.
+
+      .. versionadded:: 3.8
 
 
    .. method:: move(dest, src, count)
@@ -221,15 +277,29 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. method:: readline()
 
       Returns a single line, starting at the current file position and up to the
-      next newline.
+      next newline. The file position is updated to point after the bytes that were
+      returned.
 
 
    .. method:: resize(newsize)
 
-      Resizes the map and the underlying file, if any. If the mmap was created
-      with :const:`ACCESS_READ` or :const:`ACCESS_COPY`, resizing the map will
-      raise a :exc:`TypeError` exception.
+      Resizes the map and the underlying file, if any.
 
+      Resizing a map created with *access* of :const:`ACCESS_READ` or
+      :const:`ACCESS_COPY`, will raise a :exc:`TypeError` exception.
+      Resizing a map created with *trackfd* set to ``False``,
+      will raise a :exc:`ValueError` exception.
+
+      **On Windows**: Resizing the map will raise an :exc:`OSError` if there are other
+      maps against the same named file. Resizing an anonymous map (ie against the
+      pagefile) will silently create a new map with the original data copied over
+      up to the length of the new size.
+
+      Availability: Windows and systems with the ``mremap()`` system call.
+
+      .. versionchanged:: 3.11
+         Correctly fails if attempting to resize when another map is held
+         Allows resize against an anonymous map on Windows
 
    .. method:: rfind(sub[, start[, end]])
 
@@ -249,11 +319,23 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       values are ``os.SEEK_CUR`` or ``1`` (seek relative to the current
       position) and ``os.SEEK_END`` or ``2`` (seek relative to the file's end).
 
+      .. versionchanged:: 3.13
+         Return the new absolute position instead of ``None``.
+
+   .. method:: seekable()
+
+      Return whether the file supports seeking, and the return value is always ``True``.
+
+      .. versionadded:: 3.13
 
    .. method:: size()
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
+      For an anonymous mapping, return its size.
+
+      .. versionchanged:: 3.15
+         Anonymous mappings are now supported on Unix.
 
 
    .. method:: tell()
@@ -283,3 +365,88 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       position of the file pointer; the file position is advanced by ``1``. If
       the mmap was created with :const:`ACCESS_READ`, then writing to it will
       raise a :exc:`TypeError` exception.
+
+.. _madvise-constants:
+
+MADV_* Constants
+++++++++++++++++
+
+.. data:: MADV_NORMAL
+          MADV_RANDOM
+          MADV_SEQUENTIAL
+          MADV_WILLNEED
+          MADV_DONTNEED
+          MADV_REMOVE
+          MADV_DONTFORK
+          MADV_DOFORK
+          MADV_HWPOISON
+          MADV_MERGEABLE
+          MADV_UNMERGEABLE
+          MADV_SOFT_OFFLINE
+          MADV_HUGEPAGE
+          MADV_NOHUGEPAGE
+          MADV_DONTDUMP
+          MADV_DODUMP
+          MADV_FREE
+          MADV_NOSYNC
+          MADV_AUTOSYNC
+          MADV_NOCORE
+          MADV_CORE
+          MADV_PROTECT
+          MADV_FREE_REUSABLE
+          MADV_FREE_REUSE
+
+   These options can be passed to :meth:`mmap.madvise`.  Not every option will
+   be present on every system.
+
+   Availability: Systems with the madvise() system call.
+
+   .. versionadded:: 3.8
+
+.. _map-constants:
+
+MAP_* Constants
++++++++++++++++
+
+.. data:: MAP_SHARED
+          MAP_PRIVATE
+          MAP_32BIT
+          MAP_ALIGNED_SUPER
+          MAP_ANON
+          MAP_ANONYMOUS
+          MAP_CONCEAL
+          MAP_DENYWRITE
+          MAP_EXECUTABLE
+          MAP_HASSEMAPHORE
+          MAP_JIT
+          MAP_NOCACHE
+          MAP_NOEXTEND
+          MAP_NORESERVE
+          MAP_POPULATE
+          MAP_RESILIENT_CODESIGN
+          MAP_RESILIENT_MEDIA
+          MAP_STACK
+          MAP_TPRO
+          MAP_TRANSLATED_ALLOW_EXECUTE
+          MAP_UNIX03
+
+    These are the various flags that can be passed to :meth:`mmap.mmap`.  :data:`MAP_ALIGNED_SUPER`
+    is only available at FreeBSD and :data:`MAP_CONCEAL` is only available at OpenBSD.  Note
+    that some options might not be present on some systems.
+
+    .. versionchanged:: 3.10
+       Added :data:`MAP_POPULATE` constant.
+
+    .. versionadded:: 3.11
+       Added :data:`MAP_STACK` constant.
+
+    .. versionadded:: 3.12
+       Added :data:`MAP_ALIGNED_SUPER` and :data:`MAP_CONCEAL` constants.
+
+    .. versionadded:: 3.13
+       Added :data:`MAP_32BIT`, :data:`MAP_HASSEMAPHORE`, :data:`MAP_JIT`,
+       :data:`MAP_NOCACHE`, :data:`MAP_NOEXTEND`, :data:`MAP_NORESERVE`,
+       :data:`MAP_RESILIENT_CODESIGN`, :data:`MAP_RESILIENT_MEDIA`,
+       :data:`MAP_TPRO`, :data:`MAP_TRANSLATED_ALLOW_EXECUTE`, and
+       :data:`MAP_UNIX03` constants.
+

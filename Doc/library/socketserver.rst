@@ -1,5 +1,5 @@
-:mod:`socketserver` --- A framework for network servers
-=======================================================
+:mod:`!socketserver` --- A framework for network servers
+========================================================
 
 .. module:: socketserver
    :synopsis: A framework for network servers.
@@ -10,18 +10,22 @@
 
 The :mod:`socketserver` module simplifies the task of writing network servers.
 
+.. include:: ../includes/wasm-notavail.rst
+
 There are four basic concrete server classes:
 
 
 .. class:: TCPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
-   This uses the Internet TCP protocol, which provides for
+   This uses the internet TCP protocol, which provides for
    continuous streams of data between the client and server.
    If *bind_and_activate* is true, the constructor automatically attempts to
    invoke :meth:`~BaseServer.server_bind` and
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
 
+   .. versionchanged:: 3.15
+      The default queue size is now ``socket.SOMAXCONN`` for :class:`socketserver.TCPServer`.
 
 .. class:: UDPServer(server_address, RequestHandlerClass, bind_and_activate=True)
 
@@ -57,7 +61,7 @@ the server in a :keyword:`with` statement. Then call the
 :meth:`~BaseServer.handle_request` or
 :meth:`~BaseServer.serve_forever` method of the server object to
 process one or many requests.  Finally, call :meth:`~BaseServer.server_close`
-to close the socket (unless you used a :keyword:`with` statement).
+to close the socket (unless you used a :keyword:`!with` statement).
 
 When inheriting from :class:`ThreadingMixIn` for threaded connection behavior,
 you should explicitly declare how you want your threads to behave on an abrupt
@@ -94,8 +98,7 @@ synchronous servers of four types::
 
 Note that :class:`UnixDatagramServer` derives from :class:`UDPServer`, not from
 :class:`UnixStreamServer` --- the only difference between an IP and a Unix
-stream server is the address family, which is simply repeated in both Unix
-server classes.
+server is the address family.
 
 
 .. class:: ForkingMixIn
@@ -115,13 +118,51 @@ server classes.
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
+   .. attribute:: block_on_close
+
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>`
+      waits until all child processes complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>`
+      waits until all non-daemon threads complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+   .. attribute:: max_children
+
+      Specify how many child processes will exist to handle requests at a time
+      for :class:`ForkingMixIn`.  If the limit is reached,
+      new requests will wait until one child process has finished.
+
+   .. attribute:: daemon_threads
+
+      For :class:`ThreadingMixIn` use daemonic threads by setting
+      :data:`ThreadingMixIn.daemon_threads <daemon_threads>`
+      to ``True`` to not wait until threads complete.
+
+   .. versionchanged:: 3.7
+
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>` and
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>` now waits until all
+      child processes and non-daemonic threads complete.
+      Add a new :attr:`ForkingMixIn.block_on_close <block_on_close>` class
+      attribute to opt-in for the pre-3.7 behaviour.
+
+
 .. class:: ForkingTCPServer
            ForkingUDPServer
            ThreadingTCPServer
            ThreadingUDPServer
+           ForkingUnixStreamServer
+           ForkingUnixDatagramServer
+           ThreadingUnixStreamServer
+           ThreadingUnixDatagramServer
 
    These classes are pre-defined using the mix-in classes.
 
+.. versionadded:: 3.12
+   The ``ForkingUnixStreamServer`` and ``ForkingUnixDatagramServer`` classes
+   were added.
 
 To implement a service, you must derive a class from :class:`BaseRequestHandler`
 and redefine its :meth:`~BaseRequestHandler.handle` method.
@@ -155,8 +196,7 @@ expensive or inappropriate for the service) is to maintain an explicit table of
 partially finished requests and to use :mod:`selectors` to decide which
 request to work on next (or whether to handle a new incoming request).  This is
 particularly important for stream services where each client can potentially be
-connected for a long time (if threads or subprocesses cannot be used).  See
-:mod:`asyncore` for another way to manage this.
+connected for a long time (if threads or subprocesses cannot be used).
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?
@@ -217,6 +257,8 @@ Server Objects
    .. method:: shutdown()
 
       Tell the :meth:`serve_forever` loop to stop and wait until it does.
+      :meth:`shutdown` must be called while :meth:`serve_forever` is running in a
+      different thread otherwise it will deadlock.
 
 
    .. method:: server_close()
@@ -226,8 +268,11 @@ Server Objects
 
    .. attribute:: address_family
 
-      The family of protocols to which the server's socket belongs.
-      Common examples are :const:`socket.AF_INET` and :const:`socket.AF_UNIX`.
+      The family of protocols to which the server's socket belongs.  Common
+      examples are :const:`socket.AF_INET`, :const:`socket.AF_INET6`, and
+      :const:`socket.AF_UNIX`.  Subclass the TCP or UDP server classes in this
+      module with class attribute ``address_family = AF_INET6`` set if you
+      want IPv6 server classes.
 
 
    .. attribute:: RequestHandlerClass
@@ -241,7 +286,7 @@ Server Objects
       The address on which the server is listening.  The format of addresses varies
       depending on the protocol family;
       see the documentation for the :mod:`socket` module
-      for details.  For Internet protocols, this is a tuple containing a string giving
+      for details.  For internet protocols, this is a tuple containing a string giving
       the address, and an integer port number: ``('127.0.0.1', 80)``, for example.
 
 
@@ -289,7 +334,7 @@ Server Objects
    .. XXX should the default implementations of these be documented, or should
       it be assumed that the user will look at socketserver.py?
 
-   .. method:: finish_request()
+   .. method:: finish_request(request, client_address)
 
       Actually processes the request by instantiating :attr:`RequestHandlerClass` and
       calling its :meth:`~BaseRequestHandler.handle` method.
@@ -383,13 +428,13 @@ Request Handler Objects
 
       This function must do all the work required to service a request.  The
       default implementation does nothing.  Several instance attributes are
-      available to it; the request is available as :attr:`self.request`; the client
-      address as :attr:`self.client_address`; and the server instance as
-      :attr:`self.server`, in case it needs access to per-server information.
+      available to it; the request is available as :attr:`request`; the client
+      address as :attr:`client_address`; and the server instance as
+      :attr:`server`, in case it needs access to per-server information.
 
-      The type of :attr:`self.request` is different for datagram or stream
-      services.  For stream services, :attr:`self.request` is a socket object; for
-      datagram services, :attr:`self.request` is a pair of string and socket.
+      The type of :attr:`request` is different for datagram or stream
+      services.  For stream services, :attr:`request` is a socket object; for
+      datagram services, :attr:`request` is a pair of string and socket.
 
 
    .. method:: finish()
@@ -399,23 +444,42 @@ Request Handler Objects
       raises an exception, this function will not be called.
 
 
+   .. attribute:: request
+
+      The *new* :class:`socket.socket` object
+      to be used to communicate with the client.
+
+
+   .. attribute:: client_address
+
+      Client address returned by :meth:`BaseServer.get_request`.
+
+
+   .. attribute:: server
+
+      :class:`BaseServer` object used for handling the request.
+
+
 .. class:: StreamRequestHandler
            DatagramRequestHandler
 
    These :class:`BaseRequestHandler` subclasses override the
    :meth:`~BaseRequestHandler.setup` and :meth:`~BaseRequestHandler.finish`
-   methods, and provide :attr:`self.rfile` and :attr:`self.wfile` attributes.
-   The :attr:`self.rfile` and :attr:`self.wfile` attributes can be
-   read or written, respectively, to get the request data or return data
-   to the client.
+   methods, and provide :attr:`rfile` and :attr:`wfile` attributes.
 
-   The :attr:`rfile` attributes of both classes support the
-   :class:`io.BufferedIOBase` readable interface, and
-   :attr:`DatagramRequestHandler.wfile` supports the
-   :class:`io.BufferedIOBase` writable interface.
+   .. attribute:: rfile
+
+      A file object from which receives the request is read.
+      Support the :class:`io.BufferedIOBase` readable interface.
+
+   .. attribute:: wfile
+
+      A file object to which the reply is written.
+      Support the :class:`io.BufferedIOBase` writable interface
+
 
    .. versionchanged:: 3.6
-      :attr:`StreamRequestHandler.wfile` also supports the
+      :attr:`wfile` also supports the
       :class:`io.BufferedIOBase` writable interface.
 
 
@@ -440,11 +504,17 @@ This is the server side::
 
        def handle(self):
            # self.request is the TCP socket connected to the client
-           self.data = self.request.recv(1024).strip()
-           print("{} wrote:".format(self.client_address[0]))
-           print(self.data)
+           pieces = [b'']
+           total = 0
+           while b'\n' not in pieces[-1] and total < 10_000:
+               pieces.append(self.request.recv(2000))
+               total += len(pieces[-1])
+           self.data = b''.join(pieces)
+           print(f"Received from {self.client_address[0]}:")
+           print(self.data.decode("utf-8"))
            # just send back the same data, but upper-cased
            self.request.sendall(self.data.upper())
+           # after we return, the socket will be closed.
 
    if __name__ == "__main__":
        HOST, PORT = "localhost", 9999
@@ -461,19 +531,24 @@ objects that simplify communication by providing the standard file interface)::
    class MyTCPHandler(socketserver.StreamRequestHandler):
 
        def handle(self):
-           # self.rfile is a file-like object created by the handler;
-           # we can now use e.g. readline() instead of raw recv() calls
-           self.data = self.rfile.readline().strip()
-           print("{} wrote:".format(self.client_address[0]))
-           print(self.data)
+           # self.rfile is a file-like object created by the handler.
+           # We can now use e.g. readline() instead of raw recv() calls.
+           # We limit ourselves to 10000 bytes to avoid abuse by the sender.
+           self.data = self.rfile.readline(10000).rstrip()
+           print(f"{self.client_address[0]} wrote:")
+           print(self.data.decode("utf-8"))
            # Likewise, self.wfile is a file-like object used to write back
            # to the client
            self.wfile.write(self.data.upper())
 
 The difference is that the ``readline()`` call in the second handler will call
 ``recv()`` multiple times until it encounters a newline character, while the
-single ``recv()`` call in the first handler will just return what has been sent
-from the client in one ``sendall()`` call.
+first handler had to use a ``recv()`` loop to accumulate data until a
+newline itself.  If it had just used a single ``recv()`` without the loop it
+would just have returned what has been received so far from the client.
+TCP is stream based: data arrives in the order it was sent, but there is no
+correlation between client ``send()`` or ``sendall()`` calls and the number
+of ``recv()`` calls on the server required to receive it.
 
 
 This is the client side::
@@ -488,13 +563,14 @@ This is the client side::
    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
        # Connect to server and send data
        sock.connect((HOST, PORT))
-       sock.sendall(bytes(data + "\n", "utf-8"))
+       sock.sendall(bytes(data, "utf-8"))
+       sock.sendall(b"\n")
 
        # Receive data from the server and shut down
        received = str(sock.recv(1024), "utf-8")
 
-   print("Sent:     {}".format(data))
-   print("Received: {}".format(received))
+   print("Sent:    ", data)
+   print("Received:", received)
 
 
 The output of the example should look something like this:
@@ -539,7 +615,7 @@ This is the server side::
        def handle(self):
            data = self.request[0].strip()
            socket = self.request[1]
-           print("{} wrote:".format(self.client_address[0]))
+           print(f"{self.client_address[0]} wrote:")
            print(data)
            socket.sendto(data.upper(), self.client_address)
 
@@ -564,8 +640,8 @@ This is the client side::
    sock.sendto(bytes(data + "\n", "utf-8"), (HOST, PORT))
    received = str(sock.recv(1024), "utf-8")
 
-   print("Sent:     {}".format(data))
-   print("Received: {}".format(received))
+   print("Sent:    ", data)
+   print("Received:", received)
 
 The output of the example should look exactly like for the TCP server example.
 

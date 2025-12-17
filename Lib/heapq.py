@@ -12,6 +12,8 @@ heappush(heap, item) # pushes a new item on the heap
 item = heappop(heap) # pops the smallest item from the heap
 item = heap[0]       # smallest item on the heap without popping it
 heapify(x)           # transforms list into a heap, in-place, in linear time
+item = heappushpop(heap, item) # pushes a new item and then returns
+                               # the smallest item; the heap size is unchanged
 item = heapreplace(heap, item) # pops and returns smallest item, and adds
                                # new item; the heap size is unchanged
 
@@ -40,7 +42,7 @@ non-existing elements are considered to be infinite.  The interesting
 property of a heap is that a[0] is always its smallest element.
 
 The strange invariant above is meant to be an efficient memory
-representation for a tournament.  The numbers below are `k', not a[k]:
+representation for a tournament.  The numbers below are 'k', not a[k]:
 
                                    0
 
@@ -53,7 +55,7 @@ representation for a tournament.  The numbers below are `k', not a[k]:
     15 16   17 18   19 20   21 22   23 24   25 26   27 28   29 30
 
 
-In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In
+In the tree above, each cell 'k' is topping '2*k+1' and '2*k+2'.  In
 a usual binary tournament we see in sports, each cell is the winner
 over the two cells it tops, and we can trace the winner down the tree
 to see all opponents s/he had.  However, in many computer applications
@@ -76,7 +78,7 @@ items while the sort is going on, provided that the inserted items are
 not "better" than the last 0'th element you extracted.  This is
 especially useful in simulation contexts, where the tree holds all
 incoming events, and the "win" condition means the smallest scheduled
-time.  When an event schedule other events for execution, they are
+time.  When an event schedules other events for execution, they are
 scheduled into the future, so they can easily go into the heap.  So, a
 heap is a good structure for implementing schedulers (this is what I
 used for my MIDI sequencer :-).
@@ -89,14 +91,14 @@ are more efficient overall, yet the worst cases might be terrible.
 
 Heaps are also very useful in big disk sorts.  You most probably all
 know that a big sort implies producing "runs" (which are pre-sorted
-sequences, which size is usually related to the amount of CPU memory),
+sequences, whose size is usually related to the amount of CPU memory),
 followed by a merging passes for these runs, which merging is often
 very cleverly organised[1].  It is very important that the initial
 sort produces the longest runs possible.  Tournaments are a good way
-to that.  If, using all the memory available to hold a tournament, you
-replace and percolate items that happen to fit the current run, you'll
-produce runs which are twice the size of the memory for random input,
-and much better for input fuzzily ordered.
+to achieve that.  If, using all the memory available to hold a
+tournament, you replace and percolate items that happen to fit the
+current run, you'll produce runs which are twice the size of the
+memory for random input, and much better for input fuzzily ordered.
 
 Moreover, if you output the 0'th item on disk and get an input which
 may not fit in the current tournament (because the value "wins" over
@@ -108,7 +110,7 @@ vanishes, you switch heaps and start a new run.  Clever and quite
 effective!
 
 In a word, heaps are useful memory structures to know.  I use them in
-a few applications, and I think it is good to keep a `heap' module
+a few applications, and I think it is good to keep a 'heap' module
 around. :-)
 
 --------------------
@@ -124,8 +126,9 @@ Believe me, real good tape sorts were quite spectacular to watch!
 From all times, sorting has always been a Great Art! :-)
 """
 
-__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'merge',
-           'nlargest', 'nsmallest', 'heappushpop']
+__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace', 'heappushpop',
+           'heappush_max', 'heappop_max', 'heapify_max', 'heapreplace_max',
+           'heappushpop_max', 'nlargest', 'nsmallest', 'merge']
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
@@ -176,7 +179,7 @@ def heapify(x):
     for i in reversed(range(n//2)):
         _siftup(x, i)
 
-def _heappop_max(heap):
+def heappop_max(heap):
     """Maxheap version of a heappop."""
     lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
     if heap:
@@ -186,18 +189,31 @@ def _heappop_max(heap):
         return returnitem
     return lastelt
 
-def _heapreplace_max(heap, item):
+def heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
     heap[0] = item
     _siftup_max(heap, 0)
     return returnitem
 
-def _heapify_max(x):
+def heappush_max(heap, item):
+    """Maxheap version of a heappush."""
+    heap.append(item)
+    _siftdown_max(heap, 0, len(heap)-1)
+
+def heappushpop_max(heap, item):
+    """Maxheap fast version of a heappush followed by a heappop."""
+    if heap and item < heap[0]:
+        item, heap[0] = heap[0], item
+        _siftup_max(heap, 0)
+    return item
+
+def heapify_max(x):
     """Transform list into a maxheap, in-place, in O(len(x)) time."""
     n = len(x)
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
+
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -333,9 +349,9 @@ def merge(*iterables, key=None, reverse=False):
     h_append = h.append
 
     if reverse:
-        _heapify = _heapify_max
-        _heappop = _heappop_max
-        _heapreplace = _heapreplace_max
+        _heapify = heapify_max
+        _heappop = heappop_max
+        _heapreplace = heapreplace_max
         direction = -1
     else:
         _heapify = heapify
@@ -468,10 +484,7 @@ def nsmallest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        if key is None:
-            result = min(it, default=sentinel)
-        else:
-            result = min(it, default=sentinel, key=key)
+        result = min(it, default=sentinel, key=key)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -481,7 +494,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=key)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -491,35 +504,35 @@ def nsmallest(n, iterable, key=None):
         result = [(elem, i) for i, elem in zip(range(n), it)]
         if not result:
             return result
-        _heapify_max(result)
+        heapify_max(result)
         top = result[0][0]
         order = n
-        _heapreplace = _heapreplace_max
+        _heapreplace = heapreplace_max
         for elem in it:
             if elem < top:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order += 1
         result.sort()
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
     result = [(key(elem), i, elem) for i, elem in zip(range(n), it)]
     if not result:
         return result
-    _heapify_max(result)
+    heapify_max(result)
     top = result[0][0]
     order = n
-    _heapreplace = _heapreplace_max
+    _heapreplace = heapreplace_max
     for elem in it:
         k = key(elem)
         if k < top:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order += 1
     result.sort()
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 def nlargest(n, iterable, key=None):
     """Find the n largest elements in a dataset.
@@ -531,10 +544,7 @@ def nlargest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        if key is None:
-            result = max(it, default=sentinel)
-        else:
-            result = max(it, default=sentinel, key=key)
+        result = max(it, default=sentinel, key=key)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -544,7 +554,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=key, reverse=True)
 
     # When key is none, use simpler decoration
     if key is None:
@@ -559,10 +569,10 @@ def nlargest(n, iterable, key=None):
         for elem in it:
             if top < elem:
                 _heapreplace(result, (elem, order))
-                top = result[0][0]
+                top, _order = result[0]
                 order -= 1
         result.sort(reverse=True)
-        return [r[0] for r in result]
+        return [elem for (elem, order) in result]
 
     # General case, slowest method
     it = iter(iterable)
@@ -577,31 +587,25 @@ def nlargest(n, iterable, key=None):
         k = key(elem)
         if top < k:
             _heapreplace(result, (k, order, elem))
-            top = result[0][0]
+            top, _order, _elem = result[0]
             order -= 1
     result.sort(reverse=True)
-    return [r[2] for r in result]
+    return [elem for (k, order, elem) in result]
 
 # If available, use C implementation
 try:
     from _heapq import *
 except ImportError:
     pass
-try:
-    from _heapq import _heapreplace_max
-except ImportError:
-    pass
-try:
-    from _heapq import _heapify_max
-except ImportError:
-    pass
-try:
-    from _heapq import _heappop_max
-except ImportError:
-    pass
 
+# For backwards compatibility
+_heappop_max  = heappop_max
+_heapreplace_max = heapreplace_max
+_heappush_max = heappush_max
+_heappushpop_max = heappushpop_max
+_heapify_max = heapify_max
 
 if __name__ == "__main__":
 
-    import doctest
-    print(doctest.testmod())
+    import doctest # pragma: no cover
+    print(doctest.testmod()) # pragma: no cover

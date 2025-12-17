@@ -1,5 +1,5 @@
-:mod:`xmlrpc.client` --- XML-RPC client access
-==============================================
+:mod:`!xmlrpc.client` --- XML-RPC client access
+===============================================
 
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
@@ -24,20 +24,19 @@ between conformable Python objects and XML on the wire.
 .. warning::
 
    The :mod:`xmlrpc.client` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   constructed data.  If you need to parse untrusted or unauthenticated data,
+   see :ref:`xml-security`.
 
 .. versionchanged:: 3.5
 
    For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
+.. include:: ../includes/wasm-notavail.rst
+
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
                        allow_none=False, use_datetime=False, \
-                       use_builtin_types=False, *, context=None)
-
-   .. versionchanged:: 3.3
-      The *use_builtin_types* flag was added.
+                       use_builtin_types=False, *, headers=(), context=None)
 
    A :class:`ServerProxy` instance is an object that manages communication with a
    remote XML-RPC server.  The required first argument is a URI (Uniform Resource
@@ -50,7 +49,7 @@ between conformable Python objects and XML on the wire.
    The following parameters govern the use of the returned proxy instance.
    If *allow_none* is true,  the Python constant ``None`` will be translated into
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
-   a commonly-used extension to the XML-RPC specification, but isn't supported by
+   a commonly used extension to the XML-RPC specification, but isn't supported by
    all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
    <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`_
    for a description.
@@ -59,17 +58,26 @@ between conformable Python objects and XML on the wire.
    presented as :class:`bytes` objects; this flag is false by default.
    :class:`datetime.datetime`, :class:`bytes` and :class:`bytearray` objects
    may be passed to calls.
+   The *headers* parameter is an optional sequence of HTTP headers to send with
+   each request, expressed as a sequence of 2-tuples representing the header
+   name and value. (e.g. ``[('Header-Name', 'value')]``).
+   If an HTTPS URL is provided, *context* may be :class:`ssl.SSLContext`
+   and configures the SSL settings of the underlying HTTPS connection.
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
+
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
+
+   .. versionchanged:: 3.8
+      The *headers* parameter was added.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
    Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
    portion will be base64-encoded as an HTTP 'Authorization' header, and sent to
    the remote server as part of the connection process when invoking an XML-RPC
    method.  You only need to use this if the remote server requires a Basic
-   Authentication user and password. If an HTTPS URL is provided, *context* may
-   be :class:`ssl.SSLContext` and configures the SSL settings of the underlying
-   HTTPS connection.
+   Authentication user and password.
 
    The returned instance is a proxy object with methods that can be used to invoke
    corresponding RPC calls on the remote server.  If the remote server supports the
@@ -145,29 +153,23 @@ between conformable Python objects and XML on the wire.
 
    .. versionchanged:: 3.6
       Added support of type tags with prefixes (e.g. ``ex:nil``).
-      Added support of unmarsalling additional types used by Apache XML-RPC
+      Added support of unmarshalling additional types used by Apache XML-RPC
       implementation for numerics: ``i1``, ``i2``, ``i8``, ``biginteger``,
       ``float`` and ``bigdecimal``.
-      See http://ws.apache.org/xmlrpc/types.html for a description.
+      See https://ws.apache.org/xmlrpc/types.html for a description.
 
 
 .. seealso::
 
-   `XML-RPC HOWTO <http://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
+   `XML-RPC HOWTO <https://tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Introspection <http://xmlrpc-c.sourceforge.net/introspection.html>`_
+   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.io/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_
       The official specification.
-
-   `Unofficial XML-RPC Errata <http://effbot.org/zone/xmlrpc-errata.htm>`_
-      Fredrik Lundh's "unofficial errata, intended to clarify certain
-      details in the XML-RPC specification, as well as hint at
-      'best practices' to use when designing your own XML-RPC
-      implementations."
 
 .. _serverproxy-objects:
 
@@ -177,9 +179,9 @@ ServerProxy Objects
 A :class:`ServerProxy` instance has a method corresponding to each remote
 procedure call accepted by the XML-RPC server.  Calling the method performs an
 RPC, dispatched by both name and argument signature (e.g. the same method name
-can be overloaded with multiple argument signatures).  The RPC finishes by
-returning a value, which may be either returned data in a conformant type or a
-:class:`Fault` or :class:`ProtocolError` object indicating an error.
+can be overloaded with multiple argument signatures).  The RPC finishes either
+by returning data in a conformant type or by raising a :class:`Fault` or
+:class:`ProtocolError` exception indicating an error.
 
 Servers that support the XML introspection API support some common methods
 grouped under the reserved :attr:`~ServerProxy.system` attribute:
@@ -267,8 +269,9 @@ DateTime Objects
       Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
       object.
 
-   It also supports certain of Python's built-in operators through rich comparison
-   and :meth:`__repr__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`rich comparison <object.__lt__>` and :meth:`~object.__repr__`
+   methods.
 
 A working example follows. The server code::
 
@@ -328,12 +331,12 @@ Binary Objects
       Write the XML-RPC base 64 encoding of this binary item to the *out* stream object.
 
       The encoded data will have newlines every 76 characters as per
-      `RFC 2045 section 6.8 <https://tools.ietf.org/html/rfc2045#section-6.8>`_,
+      :rfc:`RFC 2045 section 6.8 <2045#section-6.8>`,
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 
-   It also supports certain of Python's built-in operators through :meth:`__eq__`
-   and :meth:`__ne__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`~object.__eq__` and :meth:`~object.__ne__` methods.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::
@@ -372,7 +375,7 @@ Fault Objects
 
    .. attribute:: faultCode
 
-      A string indicating the fault type.
+      An int indicating the fault type.
 
 
    .. attribute:: faultString
@@ -469,7 +472,7 @@ remote server into a single request [#]_.
 
    Create an object used to boxcar method calls. *server* is the eventual target of
    the call. Calls can be made to the result object, but they will immediately
-   return ``None``, and only store the call name and parameters in the
+   return ``None``, and only store the call name and arguments in the
    :class:`MultiCall` object. Calling the object itself causes all stored calls to
    be transmitted as a single ``system.multicall`` request. The result of this call
    is a :term:`generator`; iterating over this generator yields the individual
@@ -521,7 +524,7 @@ Convenience Functions
 
 .. function:: dumps(params, methodname=None, methodresponse=None, encoding=None, allow_none=False)
 
-   Convert *params* into an XML-RPC request. or into a response if *methodresponse*
+   Convert *params* into an XML-RPC request, or into a response if *methodresponse*
    is true. *params* can be either a tuple of arguments or an instance of the
    :exc:`Fault` exception class.  If *methodresponse* is true, only a single value
    can be returned, meaning that *params* must be of length 1. *encoding*, if

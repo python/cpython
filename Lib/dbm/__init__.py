@@ -5,7 +5,7 @@ Use
         import dbm
         d = dbm.open(file, 'w', 0o666)
 
-The returned object is a dbm.gnu, dbm.ndbm or dbm.dumb object, dependent on the
+The returned object is a dbm.sqlite3, dbm.gnu, dbm.ndbm or dbm.dumb database object, dependent on the
 type of database being opened (determined by the whichdb function) in the case
 of an existing dbm. If the dbm does not exist and the create or new flag ('c'
 or 'n') was specified, the dbm type will be determined by the availability of
@@ -38,7 +38,7 @@ import sys
 class error(Exception):
     pass
 
-_names = ['dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
+_names = ['dbm.sqlite3', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
 _defaultmod = None
 _modules = {}
 
@@ -82,7 +82,8 @@ def open(file, flag='r', mode=0o666):
             # file doesn't exist and the new flag was used so use default type
             mod = _defaultmod
         else:
-            raise error[0]("need 'c' or 'n' flag to open new db")
+            raise error[0]("db file doesn't exist; "
+                           "use 'c' or 'n' flag to create a new db")
     elif result == "":
         # db type cannot be determined
         raise error[0]("db type could not be determined")
@@ -108,17 +109,18 @@ def whichdb(filename):
     """
 
     # Check for ndbm first -- this has a .pag and a .dir file
+    filename = os.fsencode(filename)
     try:
-        f = io.open(filename + ".pag", "rb")
+        f = io.open(filename + b".pag", "rb")
         f.close()
-        f = io.open(filename + ".dir", "rb")
+        f = io.open(filename + b".dir", "rb")
         f.close()
         return "dbm.ndbm"
     except OSError:
         # some dbm emulations based on Berkeley DB generate a .db file
         # some do not, but they should be caught by the bsd checks
         try:
-            f = io.open(filename + ".db", "rb")
+            f = io.open(filename + b".db", "rb")
             f.close()
             # guarantee we can actually open the file using dbm
             # kind of overkill, but since we are dealing with emulations
@@ -133,12 +135,12 @@ def whichdb(filename):
     # Check for dumbdbm next -- this has a .dir and a .dat file
     try:
         # First check for presence of files
-        os.stat(filename + ".dat")
-        size = os.stat(filename + ".dir").st_size
+        os.stat(filename + b".dat")
+        size = os.stat(filename + b".dir").st_size
         # dumbdbm files with no keys are empty
         if size == 0:
             return "dbm.dumb"
-        f = io.open(filename + ".dir", "rb")
+        f = io.open(filename + b".dir", "rb")
         try:
             if f.read(1) in (b"'", b'"'):
                 return "dbm.dumb"
@@ -161,6 +163,10 @@ def whichdb(filename):
     # Return "" if not at least 4 bytes
     if len(s) != 4:
         return ""
+
+    # Check for SQLite3 header string.
+    if s16 == b"SQLite format 3\0":
+        return "dbm.sqlite3"
 
     # Convert to 4-byte int in native byte order -- return "" if impossible
     try:

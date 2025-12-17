@@ -5,6 +5,7 @@ the latter should be modernized).
 """
 
 import array
+import operator
 import os
 import re
 import sys
@@ -12,19 +13,26 @@ import copy
 import functools
 import pickle
 import tempfile
+import textwrap
+import threading
 import unittest
 
 import test.support
+from test import support
+from test.support import import_helper
+from test.support import threading_helper
+from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
+from test.support.script_helper import assert_python_failure
 
 
 if sys.flags.bytes_warning:
     def check_bytes_warnings(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
-            with test.support.check_warnings(('', BytesWarning)):
+            with warnings_helper.check_warnings(('', BytesWarning)):
                 return func(*args, **kw)
         return wrapper
 else:
@@ -41,6 +49,10 @@ class Indexable:
 
 
 class BaseBytesTest:
+
+    def assertTypedEqual(self, actual, expected):
+        self.assertIs(type(actual), type(expected))
+        self.assertEqual(actual, expected)
 
     def test_basics(self):
         b = self.type2test()
@@ -69,11 +81,66 @@ class BaseBytesTest:
         self.assertRaises(IndexError, lambda: b[-sys.maxsize-2])
         self.assertRaises(IndexError, lambda: b[-10**100])
 
-    def test_from_list(self):
-        ints = list(range(256))
-        b = self.type2test(i for i in ints)
+    def test_from_iterable(self):
+        b = self.type2test(range(256))
         self.assertEqual(len(b), 256)
-        self.assertEqual(list(b), ints)
+        self.assertEqual(list(b), list(range(256)))
+
+        # Non-sequence iterable.
+        b = self.type2test({42})
+        self.assertEqual(b, b"*")
+        b = self.type2test({43, 45})
+        self.assertIn(tuple(b), {(43, 45), (45, 43)})
+
+        # Iterator that has a __length_hint__.
+        b = self.type2test(iter(range(256)))
+        self.assertEqual(len(b), 256)
+        self.assertEqual(list(b), list(range(256)))
+
+        # Iterator that doesn't have a __length_hint__.
+        b = self.type2test(i for i in range(256) if i % 2)
+        self.assertEqual(len(b), 128)
+        self.assertEqual(list(b), list(range(256))[1::2])
+
+        # Sequence without __iter__.
+        class S:
+            def __getitem__(self, i):
+                return (1, 2, 3)[i]
+        b = self.type2test(S())
+        self.assertEqual(b, b"\x01\x02\x03")
+
+    def test_from_tuple(self):
+        # There is a special case for tuples.
+        b = self.type2test(tuple(range(256)))
+        self.assertEqual(len(b), 256)
+        self.assertEqual(list(b), list(range(256)))
+        b = self.type2test((1, 2, 3))
+        self.assertEqual(b, b"\x01\x02\x03")
+
+    def test_from_list(self):
+        # There is a special case for lists.
+        b = self.type2test(list(range(256)))
+        self.assertEqual(len(b), 256)
+        self.assertEqual(list(b), list(range(256)))
+        b = self.type2test([1, 2, 3])
+        self.assertEqual(b, b"\x01\x02\x03")
+
+    def test_from_mutating_list(self):
+        # Issue #34973: Crash in bytes constructor with mutating list.
+        class X:
+            def __index__(self):
+                a.clear()
+                return 42
+        a = [X(), X()]
+        self.assertEqual(bytes(a), b'*')
+
+        class Y:
+            def __index__(self):
+                if len(a) < 1000:
+                    a.append(self)
+                return 42
+        a = [Y()]
+        self.assertEqual(bytes(a), b'*' * 1000)  # should not crash
 
     def test_from_index(self):
         b = self.type2test([Indexable(), Indexable(1), Indexable(254),
@@ -85,9 +152,11 @@ class BaseBytesTest:
     def test_from_buffer(self):
         a = self.type2test(array.array('B', [1, 2, 3]))
         self.assertEqual(a, b"\x01\x02\x03")
+        a = self.type2test(b"\x01\x02\x03")
+        self.assertEqual(a, b"\x01\x02\x03")
 
-        # http://bugs.python.org/issue29159
-        # Fallback when __index__ raises exception other than OverflowError
+        # Issues #29159 and #34974.
+        # Fallback when __index__ raises a TypeError
         class B(bytes):
             def __index__(self):
                 raise TypeError
@@ -112,6 +181,8 @@ class BaseBytesTest:
         self.assertRaises(TypeError, self.type2test, [0.0])
         self.assertRaises(TypeError, self.type2test, [None])
         self.assertRaises(TypeError, self.type2test, [C()])
+        self.assertRaises(TypeError, self.type2test, encoding='ascii')
+        self.assertRaises(TypeError, self.type2test, errors='ignore')
         self.assertRaises(TypeError, self.type2test, 0, 'ascii')
         self.assertRaises(TypeError, self.type2test, b'', 'ascii')
         self.assertRaises(TypeError, self.type2test, 0, errors='ignore')
@@ -143,6 +214,20 @@ class BaseBytesTest:
             bytearray(size - 4)
         except (OverflowError, MemoryError):
             pass
+
+    def test_constructor_exceptions(self):
+        # Issue #34974: bytes and bytearray constructors replace unexpected
+        # exceptions.
+        class BadInt:
+            def __index__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadInt())
+        self.assertRaises(ZeroDivisionError, self.type2test, [BadInt()])
+
+        class BadIterable:
+            def __iter__(self):
+                1/0
+        self.assertRaises(ZeroDivisionError, self.type2test, BadIterable())
 
     def test_compare(self):
         b1 = self.type2test([1, 2, 3])
@@ -212,7 +297,7 @@ class BaseBytesTest:
         # Test extended slicing by comparing with list slicing.
         L = list(range(255))
         b = self.type2test(L)
-        indices = (0, None, 1, 3, 19, 100, -1, -2, -31, -100)
+        indices = (0, None, 1, 3, 19, 100, sys.maxsize, -1, -2, -31, -100)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)
@@ -241,6 +326,62 @@ class BaseBytesTest:
                          "Hello world\n")
         # Default encoding is utf-8
         self.assertEqual(self.type2test(b'\xe2\x98\x83').decode(), '\u2603')
+
+    def test_check_encoding_errors(self):
+        # bpo-37388: bytes(str) and bytes.encode() must check encoding
+        # and errors arguments in dev mode
+        invalid = 'Boom, Shaka Laka, Boom!'
+        encodings = ('ascii', 'utf8', 'latin1')
+        code = textwrap.dedent(f'''
+            import sys
+            type2test = {self.type2test.__name__}
+            encodings = {encodings!r}
+
+            for data in ('', 'short string'):
+                try:
+                    type2test(data, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(21)
+
+                for encoding in encodings:
+                    try:
+                        type2test(data, encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(22)
+
+            for data in (b'', b'short string'):
+                data = type2test(data)
+                print(repr(data))
+                try:
+                    data.decode(encoding={invalid!r})
+                except LookupError:
+                    sys.exit(10)
+                else:
+                    sys.exit(23)
+
+                try:
+                    data.decode(errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+                for encoding in encodings:
+                    try:
+                        data.decode(encoding=encoding, errors={invalid!r})
+                    except LookupError:
+                        pass
+                    else:
+                        sys.exit(25)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
 
     def test_from_int(self):
         b = self.type2test(0)
@@ -309,18 +450,49 @@ class BaseBytesTest:
 
         # check that ASCII whitespace is ignored
         self.assertEqual(self.type2test.fromhex(' 1A\n2B\t30\v'), b)
+        self.assertEqual(self.type2test.fromhex(b' 1A\n2B\t30\v'), b)
         for c in "\x09\x0A\x0B\x0C\x0D\x20":
             self.assertEqual(self.type2test.fromhex(c), self.type2test())
         for c in "\x1C\x1D\x1E\x1F\x85\xa0\u2000\u2002\u2028":
             self.assertRaises(ValueError, self.type2test.fromhex, c)
 
+        # Check that we can parse bytes and bytearray
+        tests = [
+            ("bytes", bytes),
+            ("bytearray", bytearray),
+            ("memoryview", memoryview),
+            ("array.array", lambda bs: array.array('B', bs)),
+        ]
+        for name, factory in tests:
+            with self.subTest(name=name):
+                self.assertEqual(self.type2test.fromhex(factory(b' 1A 2B 30 ')), b)
+
+        # Invalid bytes are rejected
+        for u8 in b"\0\x1C\x1D\x1E\x1F\x85\xa0":
+            b = bytes([30, 31, u8])
+            self.assertRaises(ValueError, self.type2test.fromhex, b)
+
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
-        self.assertRaises(TypeError, self.type2test.fromhex, b'1B')
+        with self.assertRaisesRegex(
+            TypeError,
+            r'fromhex\(\) argument must be str or bytes-like, not tuple',
+        ):
+            self.type2test.fromhex(())
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')
         self.assertRaises(ValueError, self.type2test.fromhex, 'rt')
         self.assertRaises(ValueError, self.type2test.fromhex, '1a b cd')
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
+
+        # For odd number of character(s)
+        for value in ("a", "aaa", "deadbee"):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn("fromhex() arg must contain an even number of hexadecimal digits", str(cm.exception))
+        for value, position in (("a ", 1), (" aa a ", 5), (" aa a a ", 5)):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(value)
+            self.assertIn(f"non-hexadecimal number found in fromhex() arg at position {position}", str(cm.exception))
 
         for data, pos in (
             # invalid first hexadecimal character
@@ -344,6 +516,74 @@ class BaseBytesTest:
         self.assertEqual(self.type2test(b"\x1a\x2b\x30").hex(), '1a2b30')
         self.assertEqual(memoryview(b"\x1a\x2b\x30").hex(), '1a2b30')
 
+    def test_hex_separator_basics(self):
+        three_bytes = self.type2test(b'\xb9\x01\xef')
+        self.assertEqual(three_bytes.hex(), 'b901ef')
+        with self.assertRaises(ValueError):
+            three_bytes.hex('')
+        with self.assertRaises(ValueError):
+            three_bytes.hex('xx')
+        self.assertEqual(three_bytes.hex(':', 0), 'b901ef')
+        with self.assertRaises(TypeError):
+            three_bytes.hex(None, 0)
+        with self.assertRaises(ValueError):
+            three_bytes.hex('\xff')
+        with self.assertRaises(ValueError):
+            three_bytes.hex(b'\xff')
+        with self.assertRaises(ValueError):
+            three_bytes.hex(b'\x80')
+        with self.assertRaises(ValueError):
+            three_bytes.hex(chr(0x100))
+        self.assertEqual(three_bytes.hex(':', 0), 'b901ef')
+        self.assertEqual(three_bytes.hex(b'\x00'), 'b9\x0001\x00ef')
+        self.assertEqual(three_bytes.hex('\x00'), 'b9\x0001\x00ef')
+        self.assertEqual(three_bytes.hex(b'\x7f'), 'b9\x7f01\x7fef')
+        self.assertEqual(three_bytes.hex('\x7f'), 'b9\x7f01\x7fef')
+        self.assertEqual(three_bytes.hex(':', 3), 'b901ef')
+        self.assertEqual(three_bytes.hex(':', 4), 'b901ef')
+        self.assertEqual(three_bytes.hex(':', -4), 'b901ef')
+        self.assertEqual(three_bytes.hex(':'), 'b9:01:ef')
+        self.assertEqual(three_bytes.hex(b'$'), 'b9$01$ef')
+        self.assertEqual(three_bytes.hex(':', 1), 'b9:01:ef')
+        self.assertEqual(three_bytes.hex(':', -1), 'b9:01:ef')
+        self.assertEqual(three_bytes.hex(':', 2), 'b9:01ef')
+        self.assertEqual(three_bytes.hex(':', 1), 'b9:01:ef')
+        self.assertEqual(three_bytes.hex('*', -2), 'b901*ef')
+        self.assertEqual(three_bytes.hex(sep=':', bytes_per_sep=2), 'b9:01ef')
+        self.assertEqual(three_bytes.hex(sep='*', bytes_per_sep=-2), 'b901*ef')
+        for bytes_per_sep in 3, -3, 2**31-1, -(2**31-1):
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+        for bytes_per_sep in 2**31, -2**31, 2**1000, -2**1000:
+            with self.subTest(bytes_per_sep=bytes_per_sep):
+                try:
+                    self.assertEqual(three_bytes.hex(':', bytes_per_sep), 'b901ef')
+                except OverflowError:
+                    pass
+
+        value = b'{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
+        self.assertEqual(value.hex('.', 8), '7b7305000000776f.726c646902000000.730500000068656c.6c6f690100000030')
+
+    def test_hex_separator_five_bytes(self):
+        five_bytes = self.type2test(range(90,95))
+        self.assertEqual(five_bytes.hex(), '5a5b5c5d5e')
+
+    def test_hex_separator_six_bytes(self):
+        six_bytes = self.type2test(x*3 for x in range(1, 7))
+        self.assertEqual(six_bytes.hex(), '0306090c0f12')
+        self.assertEqual(six_bytes.hex('.', 1), '03.06.09.0c.0f.12')
+        self.assertEqual(six_bytes.hex(' ', 2), '0306 090c 0f12')
+        self.assertEqual(six_bytes.hex('-', 3), '030609-0c0f12')
+        self.assertEqual(six_bytes.hex(':', 4), '0306:090c0f12')
+        self.assertEqual(six_bytes.hex(':', 5), '03:06090c0f12')
+        self.assertEqual(six_bytes.hex(':', 6), '0306090c0f12')
+        self.assertEqual(six_bytes.hex(':', 95), '0306090c0f12')
+        self.assertEqual(six_bytes.hex('_', -3), '030609_0c0f12')
+        self.assertEqual(six_bytes.hex(':', -4), '0306090c:0f12')
+        self.assertEqual(six_bytes.hex(b'@', -5), '0306090c0f@12')
+        self.assertEqual(six_bytes.hex(':', -6), '0306090c0f12')
+        self.assertEqual(six_bytes.hex(' ', -95), '0306090c0f12')
+
     def test_join(self):
         self.assertEqual(self.type2test(b"").join([]), b"")
         self.assertEqual(self.type2test(b"").join([b""]), b"")
@@ -359,9 +599,13 @@ class BaseBytesTest:
         self.assertEqual(dot_join([bytearray(b"ab"), b"cd"]), b"ab.:cd")
         self.assertEqual(dot_join([b"ab", bytearray(b"cd")]), b"ab.:cd")
         # Stress it with many items
-        seq = [b"abc"] * 1000
-        expected = b"abc" + b".:abc" * 999
+        seq = [b"abc"] * 100000
+        expected = b"abc" + b".:abc" * 99999
         self.assertEqual(dot_join(seq), expected)
+        # Stress test with empty separator
+        seq = [b"abc"] * 100000
+        expected = b"abc" * 100000
+        self.assertEqual(self.type2test(b"").join(seq), expected)
         self.assertRaises(TypeError, self.type2test(b" ").join, None)
         # Error handling and cleanup when some item in the middle of the
         # sequence has the wrong type.
@@ -521,6 +765,61 @@ class BaseBytesTest:
         self.assertEqual(b, b'hello,\x00world!')
         self.assertIs(type(b), self.type2test)
 
+        def check(fmt, vals, result):
+            b = self.type2test(fmt)
+            b = b % vals
+            self.assertEqual(b, result)
+            self.assertIs(type(b), self.type2test)
+
+        # A set of tests adapted from test_unicode:UnicodeTest.test_formatting
+        check(b'...%(foo)b...', {b'foo':b"abc"}, b'...abc...')
+        check(b'...%(f(o)o)b...', {b'f(o)o':b"abc", b'foo':b'bar'}, b'...abc...')
+        check(b'...%(foo)b...', {b'foo':b"abc",b'def':123}, b'...abc...')
+        check(b'%*b', (5, b'abc',), b'  abc')
+        check(b'%*b', (-5, b'abc',), b'abc  ')
+        check(b'%*.*b', (5, 2, b'abc',), b'   ab')
+        check(b'%*.*b', (5, 3, b'abc',), b'  abc')
+        check(b'%i %*.*b', (10, 5, 3, b'abc',), b'10   abc')
+        check(b'%i%b %*.*b', (10, b'3', 5, 3, b'abc',), b'103   abc')
+        check(b'%c', b'a', b'a')
+
+        class PseudoFloat:
+            def __init__(self, value):
+                self.value = float(value)
+            def __int__(self):
+                return int(self.value)
+
+        pi = PseudoFloat(3.1415)
+
+        exceptions_params = [
+            ('%x format: an integer is required, not float', b'%x', 3.14),
+            ('%X format: an integer is required, not float', b'%X', 2.11),
+            ('%o format: an integer is required, not float', b'%o', 1.79),
+            ('%x format: an integer is required, not PseudoFloat', b'%x', pi),
+            ('%x format: an integer is required, not complex', b'%x', 3j),
+            ('%X format: an integer is required, not complex', b'%X', 2j),
+            ('%o format: an integer is required, not complex', b'%o', 1j),
+            ('%u format: a real number is required, not complex', b'%u', 3j),
+            ('%i format: a real number is required, not complex', b'%i', 2j),
+            ('%d format: a real number is required, not complex', b'%d', 2j),
+            (
+                r'%c requires an integer in range\(256\)'
+                r' or a single byte, not .*\.PseudoFloat',
+                b'%c', pi
+            ),
+        ]
+
+        for msg, format_bytes, value in exceptions_params:
+            with self.assertRaisesRegex(TypeError, msg):
+                operator.mod(format_bytes, value)
+
+    def test_memory_leak_gh_140939(self):
+        # gh-140939: MemoryError is raised without leaking
+        _testcapi = import_helper.import_module('_testcapi')
+        with self.assertRaises(MemoryError):
+            b = self.type2test(b'%*b')
+            b % (_testcapi.PY_SSIZE_T_MAX, b'abc')
+
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
         orig = b
@@ -548,8 +847,16 @@ class BaseBytesTest:
         self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
         self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
 
+    def test_replace_int_error(self):
+        self.assertRaises(TypeError, self.type2test(b'a b').replace, 32, b'')
+
     def test_split_string_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').split, ' ')
+        self.assertRaises(TypeError, self.type2test(b'a b').rsplit, ' ')
+
+    def test_split_int_error(self):
+        self.assertRaises(TypeError, self.type2test(b'a b').split, 32)
+        self.assertRaises(TypeError, self.type2test(b'a b').rsplit, 32)
 
     def test_split_unicodewhitespace(self):
         for b in (b'a\x1Cb', b'a\x1Db', b'a\x1Eb', b'a\x1Fb'):
@@ -557,9 +864,6 @@ class BaseBytesTest:
             self.assertEqual(b.split(), [b])
         b = self.type2test(b"\x09\x0A\x0B\x0C\x0D\x1C\x1D\x1E\x1F")
         self.assertEqual(b.split(), [b'\x1c\x1d\x1e\x1f'])
-
-    def test_rsplit_string_error(self):
-        self.assertRaises(TypeError, self.type2test(b'a b').rsplit, ' ')
 
     def test_rsplit_unicodewhitespace(self):
         b = self.type2test(b"\x09\x0A\x0B\x0C\x0D\x1C\x1D\x1E\x1F")
@@ -575,6 +879,14 @@ class BaseBytesTest:
         self.assertEqual(b.rpartition(b'ss'), (b'missi', b'ss', b'ippi'))
         self.assertEqual(b.rpartition(b'i'), (b'mississipp', b'i', b''))
         self.assertEqual(b.rpartition(b'w'), (b'', b'', b'mississippi'))
+
+    def test_partition_string_error(self):
+        self.assertRaises(TypeError, self.type2test(b'a b').partition, ' ')
+        self.assertRaises(TypeError, self.type2test(b'a b').rpartition, ' ')
+
+    def test_partition_int_error(self):
+        self.assertRaises(TypeError, self.type2test(b'a b').partition, 32)
+        self.assertRaises(TypeError, self.type2test(b'a b').rpartition, 32)
 
     def test_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -608,9 +920,14 @@ class BaseBytesTest:
         self.assertEqual(self.type2test(b'abc').rstrip(memoryview(b'ac')), b'ab')
 
     def test_strip_string_error(self):
-        self.assertRaises(TypeError, self.type2test(b'abc').strip, 'b')
-        self.assertRaises(TypeError, self.type2test(b'abc').lstrip, 'b')
-        self.assertRaises(TypeError, self.type2test(b'abc').rstrip, 'b')
+        self.assertRaises(TypeError, self.type2test(b'abc').strip, 'ac')
+        self.assertRaises(TypeError, self.type2test(b'abc').lstrip, 'ac')
+        self.assertRaises(TypeError, self.type2test(b'abc').rstrip, 'ac')
+
+    def test_strip_int_error(self):
+        self.assertRaises(TypeError, self.type2test(b' abc ').strip, 32)
+        self.assertRaises(TypeError, self.type2test(b' abc ').lstrip, 32)
+        self.assertRaises(TypeError, self.type2test(b' abc ').rstrip, 32)
 
     def test_center(self):
         # Fill character can be either bytes or bytearray (issue 12380)
@@ -632,6 +949,11 @@ class BaseBytesTest:
         for fill_type in (bytes, bytearray):
             self.assertEqual(b.rjust(7, fill_type(b'-')),
                              self.type2test(b'----abc'))
+
+    def test_xjust_int_error(self):
+        self.assertRaises(TypeError, self.type2test(b'abc').center, 7, 32)
+        self.assertRaises(TypeError, self.type2test(b'abc').ljust, 7, 32)
+        self.assertRaises(TypeError, self.type2test(b'abc').rjust, 7, 32)
 
     def test_ord(self):
         b = self.type2test(b'\0A\x7f\x80\xff')
@@ -751,14 +1073,36 @@ class BaseBytesTest:
         c = b.translate(None, delete=b'e')
         self.assertEqual(c, b'hllo')
 
+    def test_sq_item(self):
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+        obj = self.type2test((42,))
+        with self.assertRaises(IndexError):
+            _testlimitedcapi.sequence_getitem(obj, -2)
+        with self.assertRaises(IndexError):
+            _testlimitedcapi.sequence_getitem(obj, 1)
+        self.assertEqual(_testlimitedcapi.sequence_getitem(obj, 0), 42)
+
 
 class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
+    def test__bytes__(self):
+        foo = b'foo\x00bar'
+        self.assertEqual(foo.__bytes__(), foo)
+        self.assertEqual(type(foo.__bytes__()), self.type2test)
+
+        class bytes_subclass(bytes):
+            pass
+
+        bar = bytes_subclass(b'bar\x00foo')
+        self.assertEqual(bar.__bytes__(), bar)
+        self.assertEqual(type(bar.__bytes__()), self.type2test)
+
     def test_getitem_error(self):
+        b = b'python'
         msg = "byte indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            b'python'['a']
+            b['a']
 
     def test_buffer_is_readonly(self):
         fd = os.open(__file__, os.O_RDONLY)
@@ -766,41 +1110,68 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             self.assertRaises(TypeError, f.readinto, b"")
 
     def test_custom(self):
-        class A:
-            def __bytes__(self):
-                return b'abc'
-        self.assertEqual(bytes(A()), b'abc')
-        class A: pass
-        self.assertRaises(TypeError, bytes, A())
-        class A:
-            def __bytes__(self):
-                return None
-        self.assertRaises(TypeError, bytes, A())
-        class A:
+        self.assertEqual(bytes(BytesSubclass(b'abc')), b'abc')
+        self.assertEqual(BytesSubclass(OtherBytesSubclass(b'abc')),
+                         BytesSubclass(b'abc'))
+        self.assertEqual(bytes(WithBytes(b'abc')), b'abc')
+        self.assertEqual(BytesSubclass(WithBytes(b'abc')), BytesSubclass(b'abc'))
+
+        class NoBytes: pass
+        self.assertRaises(TypeError, bytes, NoBytes())
+        self.assertRaises(TypeError, bytes, WithBytes('abc'))
+        self.assertRaises(TypeError, bytes, WithBytes(None))
+        class IndexWithBytes:
             def __bytes__(self):
                 return b'a'
             def __index__(self):
                 return 42
-        self.assertEqual(bytes(A()), b'a')
+        self.assertEqual(bytes(IndexWithBytes()), b'a')
         # Issue #25766
-        class A(str):
+        class StrWithBytes(str):
+            def __new__(cls, value):
+                self = str.__new__(cls, '\u20ac')
+                self.value = value
+                return self
             def __bytes__(self):
-                return b'abc'
-        self.assertEqual(bytes(A('\u20ac')), b'abc')
-        self.assertEqual(bytes(A('\u20ac'), 'iso8859-15'), b'\xa4')
+                return self.value
+        self.assertEqual(bytes(StrWithBytes(b'abc')), b'abc')
+        self.assertEqual(bytes(StrWithBytes(b'abc'), 'iso8859-15'), b'\xa4')
+        self.assertEqual(bytes(StrWithBytes(BytesSubclass(b'abc'))), b'abc')
+        self.assertEqual(BytesSubclass(StrWithBytes(b'abc')), BytesSubclass(b'abc'))
+        self.assertEqual(BytesSubclass(StrWithBytes(b'abc'), 'iso8859-15'),
+                         BytesSubclass(b'\xa4'))
+        self.assertEqual(BytesSubclass(StrWithBytes(BytesSubclass(b'abc'))),
+                         BytesSubclass(b'abc'))
+        self.assertEqual(BytesSubclass(StrWithBytes(OtherBytesSubclass(b'abc'))),
+                         BytesSubclass(b'abc'))
         # Issue #24731
-        class A:
+        self.assertTypedEqual(bytes(WithBytes(BytesSubclass(b'abc'))), BytesSubclass(b'abc'))
+        self.assertTypedEqual(BytesSubclass(WithBytes(BytesSubclass(b'abc'))),
+                              BytesSubclass(b'abc'))
+        self.assertTypedEqual(BytesSubclass(WithBytes(OtherBytesSubclass(b'abc'))),
+                              BytesSubclass(b'abc'))
+
+        class BytesWithBytes(bytes):
+            def __new__(cls, value):
+                self = bytes.__new__(cls, b'\xa4')
+                self.value = value
+                return self
             def __bytes__(self):
-                return OtherBytesSubclass(b'abc')
-        self.assertEqual(bytes(A()), b'abc')
-        self.assertIs(type(bytes(A())), OtherBytesSubclass)
-        self.assertEqual(BytesSubclass(A()), b'abc')
-        self.assertIs(type(BytesSubclass(A())), BytesSubclass)
+                return self.value
+        self.assertTypedEqual(bytes(BytesWithBytes(b'abc')), b'abc')
+        self.assertTypedEqual(BytesSubclass(BytesWithBytes(b'abc')),
+                              BytesSubclass(b'abc'))
+        self.assertTypedEqual(bytes(BytesWithBytes(BytesSubclass(b'abc'))),
+                              BytesSubclass(b'abc'))
+        self.assertTypedEqual(BytesSubclass(BytesWithBytes(BytesSubclass(b'abc'))),
+                              BytesSubclass(b'abc'))
+        self.assertTypedEqual(BytesSubclass(BytesWithBytes(OtherBytesSubclass(b'abc'))),
+                              BytesSubclass(b'abc'))
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):
-        ctypes = test.support.import_module('ctypes')
-        _testcapi = test.support.import_module('_testcapi')
+        ctypes = import_helper.import_module('ctypes')
+        _testcapi = import_helper.import_module('_testcapi')
         from ctypes import pythonapi, py_object
         from ctypes import (
             c_int, c_uint,
@@ -809,6 +1180,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             c_char_p)
 
         PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
+        PyBytes_FromFormat.argtypes = (c_char_p,)
         PyBytes_FromFormat.restype = py_object
 
         # basic tests
@@ -905,6 +1277,12 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertRaises(OverflowError,
                           PyBytes_FromFormat, b'%c', c_int(256))
 
+        # Issue #33817: empty strings
+        self.assertEqual(PyBytes_FromFormat(b''),
+                         b'')
+        self.assertEqual(PyBytes_FromFormat(b'%s', b''),
+                         b'')
+
     def test_bytes_blocking(self):
         class IterationBlocked(list):
             __bytes__ = None
@@ -935,19 +1313,44 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(bytes(ba), b'ab')
         self.assertRaises(TypeError, bytes, bb)
 
+    def test_repeat_id_preserving(self):
+        a = b'123abc1@'
+        b = b'456zyx-+'
+        self.assertEqual(id(a), id(a))
+        self.assertNotEqual(id(a), id(b))
+        self.assertNotEqual(id(a), id(a * -4))
+        self.assertNotEqual(id(a), id(a * 0))
+        self.assertEqual(id(a), id(a * 1))
+        self.assertEqual(id(a), id(1 * a))
+        self.assertNotEqual(id(a), id(a * 2))
+
+        class SubBytes(bytes):
+            pass
+
+        s = SubBytes(b'qwerty()')
+        self.assertEqual(id(s), id(s))
+        self.assertNotEqual(id(s), id(s * -4))
+        self.assertNotEqual(id(s), id(s * 0))
+        self.assertNotEqual(id(s), id(s * 1))
+        self.assertNotEqual(id(s), id(1 * s))
+        self.assertNotEqual(id(s), id(s * 2))
+
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
 
+    _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
     def test_getitem_error(self):
+        b = bytearray(b'python')
         msg = "bytearray indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            bytearray(b'python')['a']
+            b['a']
 
     def test_setitem_error(self):
+        b = bytearray(b'python')
         msg = "bytearray indices must be integers or slices"
         with self.assertRaisesRegex(TypeError, msg):
-            b = bytearray(b'python')
             b['a'] = "python"
 
     def test_nohash(self):
@@ -1005,6 +1408,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b.append(ord('p'))
         self.assertEqual(b, b'p')
 
+        # Cleared object should be empty.
+        b = bytearray(b'abc')
+        b.clear()
+        self.assertEqual(b.__alloc__(), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(b), base_size)
+        c = b.copy()
+        self.assertEqual(c.__alloc__(), 0)
+        self.assertEqual(sys.getsizeof(c), base_size)
+
     def test_copy(self):
         b = bytearray(b'abc')
         bb = b.copy()
@@ -1029,48 +1442,193 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = by("Hello, world")
         self.assertEqual(re.findall(br"\w+", b), [by("Hello"), by("world")])
 
+    def test_resize(self):
+        ba = bytearray(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(len(ba), 10)
+        # Bytes beyond set values must be cleared.
+        self.assertEqual(ba, bytearray(b'abc\0\0\0\0\0\0\0'))
+
+        ba[3:10] = b'defghij'
+        self.assertEqual(ba, bytearray(b'abcdefghij'))
+
+        self.assertIsNone(ba.resize(2 ** 20))
+        self.assertEqual(len(ba), 2**20)
+        self.assertEqual(ba, bytearray(b'abcdefghij' + b'\0' * (2 ** 20 - 10)))
+
+        self.assertIsNone(ba.resize(0))
+        self.assertEqual(ba, bytearray())
+
+        self.assertIsNone(ba.resize(10))
+        self.assertEqual(ba, bytearray(b'\0' * 10))
+
+        # Subclass
+        ba = ByteArraySubclass(b'abcdef')
+        self.assertIsNone(ba.resize(3))
+        self.assertEqual(ba, bytearray(b'abc'))
+
+        # Check arguments
+        self.assertRaises(TypeError, bytearray().resize)
+        self.assertRaises(TypeError, bytearray().resize, (10, 10))
+
+        self.assertRaises(ValueError, bytearray().resize, -1)
+        self.assertRaises(ValueError, bytearray().resize, -200)
+        self.assertRaises(MemoryError, bytearray().resize, sys.maxsize)
+        self.assertRaises(MemoryError, bytearray(1000).resize, sys.maxsize)
+
+    def test_take_bytes(self):
+        ba = bytearray(b'ab')
+        self.assertEqual(ba.take_bytes(), b'ab')
+        self.assertEqual(len(ba), 0)
+        self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(ba.__alloc__(), 0)
+        base_size = sys.getsizeof(bytearray())
+        self.assertEqual(sys.getsizeof(ba), base_size)
+
+        # Positive and negative slicing.
+        ba = bytearray(b'abcdef')
+        self.assertEqual(ba.take_bytes(1), b'a')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-5), b'')
+        self.assertEqual(ba, bytearray(b'bcdef'))
+        self.assertEqual(len(ba), 5)
+        self.assertEqual(ba.take_bytes(-3), b'bc')
+        self.assertEqual(ba, bytearray(b'def'))
+        self.assertEqual(len(ba), 3)
+        self.assertEqual(ba.take_bytes(3), b'def')
+        self.assertEqual(ba, bytearray(b''))
+        self.assertEqual(len(ba), 0)
+
+        # Take nothing from emptiness.
+        self.assertEqual(ba.take_bytes(0), b'')
+        self.assertEqual(ba.take_bytes(), b'')
+        self.assertEqual(ba.take_bytes(None), b'')
+
+        # Out of bounds, bad take value.
+        self.assertRaises(IndexError, ba.take_bytes, -1)
+        self.assertRaises(TypeError, ba.take_bytes, 3.14)
+        ba = bytearray(b'abcdef')
+        self.assertRaises(IndexError, ba.take_bytes, 7)
+
+        # Offset between physical and logical start (ob_bytes != ob_start).
+        ba = bytearray(b'abcde')
+        del ba[:2]
+        self.assertEqual(ba, bytearray(b'cde'))
+        self.assertEqual(ba.take_bytes(), b'cde')
+
+        # Overallocation at end.
+        ba = bytearray(b'abcde')
+        del ba[-2:]
+        self.assertEqual(ba, bytearray(b'abc'))
+        self.assertEqual(ba.take_bytes(), b'abc')
+        ba = bytearray(b'abcde')
+        ba.resize(4)
+        self.assertEqual(ba.take_bytes(), b'abcd')
+
+        # Take of a bytearray with references should fail.
+        ba = bytearray(b'abc')
+        with memoryview(ba) as mv:
+            self.assertRaises(BufferError, ba.take_bytes)
+        self.assertEqual(ba.take_bytes(), b'abc')
+
+    @support.cpython_only  # tests an implementation detail
+    def test_take_bytes_optimization(self):
+        # Validate optimization around taking lots of little chunks out of a
+        # much bigger buffer. Save work by only copying a little rather than
+        # moving a lot.
+        ba = bytearray(b'abcdef' + b'0' * 1000)
+        start_alloc = ba.__alloc__()
+
+        # Take two bytes at a time, checking alloc doesn't change.
+        self.assertEqual(ba.take_bytes(2), b'ab')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 4 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'cd')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 2 + 1000)
+        self.assertEqual(ba.take_bytes(2), b'ef')
+        self.assertEqual(ba.__alloc__(), start_alloc)
+        self.assertEqual(len(ba), 0 + 1000)
+        self.assertEqual(ba.__alloc__(), start_alloc)
+
+        # Take over half, alloc shrinks to exact size.
+        self.assertEqual(ba.take_bytes(501), b'0' * 501)
+        self.assertEqual(len(ba), 499)
+        bytes_header_size = sys.getsizeof(b'')
+        self.assertEqual(ba.__alloc__(), 499 + bytes_header_size)
+
     def test_setitem(self):
-        b = bytearray([1, 2, 3])
-        b[1] = 100
-        self.assertEqual(b, bytearray([1, 100, 3]))
-        b[-1] = 200
-        self.assertEqual(b, bytearray([1, 100, 200]))
-        b[0] = Indexable(10)
-        self.assertEqual(b, bytearray([10, 100, 200]))
-        try:
-            b[3] = 0
-            self.fail("Didn't raise IndexError")
-        except IndexError:
-            pass
-        try:
-            b[-10] = 0
-            self.fail("Didn't raise IndexError")
-        except IndexError:
-            pass
-        try:
-            b[0] = 256
-            self.fail("Didn't raise ValueError")
-        except ValueError:
-            pass
-        try:
-            b[0] = Indexable(-1)
-            self.fail("Didn't raise ValueError")
-        except ValueError:
-            pass
-        try:
-            b[0] = None
-            self.fail("Didn't raise TypeError")
-        except TypeError:
-            pass
+        def setitem_as_mapping(b, i, val):
+            b[i] = val
+
+        def setitem_as_sequence(b, i, val):
+            self._testlimitedcapi.sequence_setitem(b, i, val)
+
+        def do_tests(setitem):
+            b = bytearray([1, 2, 3])
+            setitem(b, 1, 100)
+            self.assertEqual(b, bytearray([1, 100, 3]))
+            setitem(b, -1, 200)
+            self.assertEqual(b, bytearray([1, 100, 200]))
+            setitem(b, 0, Indexable(10))
+            self.assertEqual(b, bytearray([10, 100, 200]))
+            try:
+                setitem(b, 3, 0)
+                self.fail("Didn't raise IndexError")
+            except IndexError:
+                pass
+            try:
+                setitem(b, -10, 0)
+                self.fail("Didn't raise IndexError")
+            except IndexError:
+                pass
+            try:
+                setitem(b, 0, 256)
+                self.fail("Didn't raise ValueError")
+            except ValueError:
+                pass
+            try:
+                setitem(b, 0, Indexable(-1))
+                self.fail("Didn't raise ValueError")
+            except ValueError:
+                pass
+            try:
+                setitem(b, 0, object())
+                self.fail("Didn't raise TypeError")
+            except TypeError:
+                pass
+
+        with self.subTest("tp_as_mapping"):
+            do_tests(setitem_as_mapping)
+
+        with self.subTest("tp_as_sequence"):
+            do_tests(setitem_as_sequence)
 
     def test_delitem(self):
-        b = bytearray(range(10))
-        del b[0]
-        self.assertEqual(b, bytearray(range(1, 10)))
-        del b[-1]
-        self.assertEqual(b, bytearray(range(1, 9)))
-        del b[4]
-        self.assertEqual(b, bytearray([1, 2, 3, 4, 6, 7, 8]))
+        def del_as_mapping(b, i):
+            del b[i]
+
+        def del_as_sequence(b, i):
+            self._testlimitedcapi.sequence_delitem(b, i)
+
+        def do_tests(delete):
+            b = bytearray(range(10))
+            delete(b, 0)
+            self.assertEqual(b, bytearray(range(1, 10)))
+            delete(b, -1)
+            self.assertEqual(b, bytearray(range(1, 9)))
+            delete(b, 4)
+            self.assertEqual(b, bytearray([1, 2, 3, 4, 6, 7, 8]))
+
+        with self.subTest("tp_as_mapping"):
+            do_tests(del_as_mapping)
+
+        with self.subTest("tp_as_sequence"):
+            do_tests(del_as_sequence)
 
     def test_setslice(self):
         b = bytearray(range(10))
@@ -1138,7 +1696,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertLessEqual(sys.getsizeof(b), size)
 
     def test_extended_set_del_slice(self):
-        indices = (0, None, 1, 3, 19, 300, 1<<333, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, 1<<333, sys.maxsize,
+            -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip invalid step 0
@@ -1252,6 +1811,13 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         a = bytearray(b'')
         a.extend([Indexable(ord('a'))])
         self.assertEqual(a, b'a')
+        a = bytearray(b'abc')
+        self.assertRaisesRegex(TypeError,  # Override for string.
+                               "expected iterable of integers; got: 'str'",
+                               a.extend, 'def')
+        self.assertRaisesRegex(TypeError,  # But not for others.
+                               "can't extend bytearray with float",
+                               a.extend, 1.0)
 
     def test_remove(self):
         b = bytearray(b'hello')
@@ -1351,17 +1917,18 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # if it wouldn't reallocate the underlying buffer.
         # Furthermore, no destructive changes to the buffer may be applied
         # before raising the error.
-        b = bytearray(range(10))
+        b = bytearray(10)
         v = memoryview(b)
-        def resize(n):
+        def manual_resize(n):
             b[1:-1] = range(n + 1, 2*n - 1)
-        resize(10)
+        b.resize(10)
         orig = b[:]
-        self.assertRaises(BufferError, resize, 11)
+        self.assertRaises(BufferError, b.resize, 11)
+        self.assertRaises(BufferError, manual_resize, 11)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 9)
+        self.assertRaises(BufferError, b.resize, 9)
         self.assertEqual(b, orig)
-        self.assertRaises(BufferError, resize, 0)
+        self.assertRaises(BufferError, b.resize, 0)
         self.assertEqual(b, orig)
         # Other operations implying resize
         self.assertRaises(BufferError, b.pop, 0)
@@ -1380,8 +1947,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
     @test.support.cpython_only
     def test_obsolete_write_lock(self):
-        from _testcapi import getbuffer_with_null_view
-        self.assertRaises(BufferError, getbuffer_with_null_view, bytearray())
+        _testcapi = import_helper.import_module('_testcapi')
+        self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, bytearray())
 
     def test_iterator_pickling2(self):
         orig = bytearray(b'abc')
@@ -1430,22 +1997,112 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         # Shouldn't raise an error
         self.assertEqual(list(it), [])
 
+    def test_repeat_after_setslice(self):
+        # bpo-42924: * used to copy from the wrong memory location
+        b = bytearray(b'abc')
+        b[:2] = b'x'
+        b1 = b * 1
+        b3 = b * 3
+        self.assertEqual(b1, b'xc')
+        self.assertEqual(b1, b)
+        self.assertEqual(b3, b'xcxcxc')
+
+    def test_mutating_index(self):
+        # bytearray slice assignment can call into python code
+        # that reallocates the internal buffer
+        # See gh-91153
+
+        class Boom:
+            def __index__(self):
+                b.clear()
+                return 0
+
+        with self.subTest("tp_as_mapping"):
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                b[0] = Boom()
+
+        with self.subTest("tp_as_sequence"):
+            b = bytearray(b'Now you see me...')
+            with self.assertRaises(IndexError):
+                self._testlimitedcapi.sequence_setitem(b, 0, Boom())
+
+    def test_mutating_index_inbounds(self):
+        # gh-91153 continued
+        # Ensure buffer is not broken even if length is correct
+
+        class MutatesOnIndex:
+            def __init__(self):
+                self.ba = bytearray(0x180)
+
+            def __index__(self):
+                self.ba.clear()
+                self.new_ba = bytearray(0x180)  # to catch out-of-bounds writes
+                self.ba.extend([0] * 0x180)     # to check bounds checks
+                return 0
+
+        with self.subTest("skip_bounds_safety"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_capi"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self._testlimitedcapi.sequence_setitem(instance.ba, instance, ord("?"))
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_slice"):
+            instance = MutatesOnIndex()
+            instance.ba[instance:1] = [ord("?")]
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
     # Test various combinations of bytes and bytearray
     #
 
+    def test_bytes_repr(self, f=repr):
+        self.assertEqual(f(b''), "b''")
+        self.assertEqual(f(b"abc"), "b'abc'")
+        self.assertEqual(f(bytes([92])), r"b'\\'")
+        self.assertEqual(f(bytes([0, 1, 254, 255])), r"b'\x00\x01\xfe\xff'")
+        self.assertEqual(f(b'\a\b\t\n\v\f\r'), r"b'\x07\x08\t\n\x0b\x0c\r'")
+        self.assertEqual(f(b'"'), """b'"'""") # '"'
+        self.assertEqual(f(b"'"), '''b"'"''') # "'"
+        self.assertEqual(f(b"'\""), r"""b'\'"'""") # '\'"'
+        self.assertEqual(f(b"\"'\""), r"""b'"\'"'""") # '"\'"'
+        self.assertEqual(f(b"'\"'"), r"""b'\'"\''""") # '\'"\''
+        self.assertEqual(f(BytesSubclass(b"abc")), "b'abc'")
+
+    def test_bytearray_repr(self, f=repr):
+        self.assertEqual(f(bytearray()), "bytearray(b'')")
+        self.assertEqual(f(bytearray(b'abc')), "bytearray(b'abc')")
+        self.assertEqual(f(bytearray([92])), r"bytearray(b'\\')")
+        self.assertEqual(f(bytearray([0, 1, 254, 255])),
+                            r"bytearray(b'\x00\x01\xfe\xff')")
+        self.assertEqual(f(bytearray([7, 8, 9, 10, 11, 12, 13])),
+                            r"bytearray(b'\x07\x08\t\n\x0b\x0c\r')")
+        self.assertEqual(f(bytearray(b'"')), """bytearray(b'"')""") # '"'
+        self.assertEqual(f(bytearray(b"'")), '''bytearray(b"'")''') # "'"
+        self.assertEqual(f(bytearray(b"'\"")), r"""bytearray(b'\'"')""") # '\'"'
+        self.assertEqual(f(bytearray(b"\"'\"")), r"""bytearray(b'"\'"')""") # '"\'"'
+        self.assertEqual(f(bytearray(b'\'"\'')), r"""bytearray(b'\'"\'')""") # '\'"\''
+        self.assertEqual(f(ByteArraySubclass(b"abc")), "ByteArraySubclass(b'abc')")
+        self.assertEqual(f(ByteArraySubclass.Nested(b"abc")), "Nested(b'abc')")
+        self.assertEqual(f(ByteArraySubclass.Ŭñıçöđë(b"abc")), "Ŭñıçöđë(b'abc')")
+
     @check_bytes_warnings
-    def test_repr_str(self):
-        for f in str, repr:
-            self.assertEqual(f(bytearray()), "bytearray(b'')")
-            self.assertEqual(f(bytearray([0])), "bytearray(b'\\x00')")
-            self.assertEqual(f(bytearray([0, 1, 254, 255])),
-                             "bytearray(b'\\x00\\x01\\xfe\\xff')")
-            self.assertEqual(f(b"abc"), "b'abc'")
-            self.assertEqual(f(b"'"), '''b"'"''') # '''
-            self.assertEqual(f(b"'\""), r"""b'\'"'""") # '
+    def test_bytes_str(self):
+        self.test_bytes_repr(str)
+
+    @check_bytes_warnings
+    def test_bytearray_str(self):
+        self.test_bytearray_repr(str)
 
     @check_bytes_warnings
     def test_format(self):
@@ -1488,24 +2145,15 @@ class AssortedBytesTest(unittest.TestCase):
     @test.support.requires_docstrings
     def test_doc(self):
         self.assertIsNotNone(bytearray.__doc__)
-        self.assertTrue(bytearray.__doc__.startswith("bytearray("), bytearray.__doc__)
+        self.assertStartsWith(bytearray.__doc__, "bytearray(")
         self.assertIsNotNone(bytes.__doc__)
-        self.assertTrue(bytes.__doc__.startswith("bytes("), bytes.__doc__)
+        self.assertStartsWith(bytes.__doc__, "bytes(")
 
     def test_from_bytearray(self):
         sample = bytes(b"Hello world\n\x80\x81\xfe\xff")
         buf = memoryview(sample)
         b = bytearray(buf)
         self.assertEqual(b, bytearray(sample))
-
-    @check_bytes_warnings
-    def test_to_str(self):
-        self.assertEqual(str(b''), "b''")
-        self.assertEqual(str(b'x'), "b'x'")
-        self.assertEqual(str(b'\x80'), "b'\\x80'")
-        self.assertEqual(str(bytearray(b'')), "bytearray(b'')")
-        self.assertEqual(str(bytearray(b'x')), "bytearray(b'x')")
-        self.assertEqual(str(bytearray(b'\x80')), "bytearray(b'\\x80')")
 
     def test_literal(self):
         tests =  [
@@ -1535,7 +2183,7 @@ class AssortedBytesTest(unittest.TestCase):
                          "BytesWarning is needed for this test: use -bb option")
     def test_compare(self):
         def bytes_warning():
-            return test.support.check_warnings(('', BytesWarning))
+            return warnings_helper.check_warnings(('', BytesWarning))
         with bytes_warning():
             b'' == ''
         with bytes_warning():
@@ -1621,7 +2269,7 @@ class BytesAsStringTest(FixedStringTest, unittest.TestCase):
 class SubclassTest:
 
     def test_basic(self):
-        self.assertTrue(issubclass(self.type2test, self.basetype))
+        self.assertIsSubclass(self.type2test, self.basetype)
         self.assertIsInstance(self.type2test(), self.basetype)
 
         a, b = b"abcd", b"efgh"
@@ -1660,28 +2308,30 @@ class SubclassTest:
     def test_pickle(self):
         a = self.type2test(b"abcd")
         a.x = 10
-        a.y = self.type2test(b"efgh")
+        a.z = self.type2test(b"efgh")
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             b = pickle.loads(pickle.dumps(a, proto))
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
             self.assertEqual(a.x, b.x)
-            self.assertEqual(a.y, b.y)
+            self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
-            self.assertEqual(type(a.y), type(b.y))
+            self.assertEqual(type(a.z), type(b.z))
+            self.assertNotHasAttr(b, 'y')
 
     def test_copy(self):
         a = self.type2test(b"abcd")
         a.x = 10
-        a.y = self.type2test(b"efgh")
+        a.z = self.type2test(b"efgh")
         for copy_method in (copy.copy, copy.deepcopy):
             b = copy_method(a)
             self.assertNotEqual(id(a), id(b))
             self.assertEqual(a, b)
             self.assertEqual(a.x, b.x)
-            self.assertEqual(a.y, b.y)
+            self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
-            self.assertEqual(type(a.y), type(b.y))
+            self.assertEqual(type(a.z), type(b.z))
+            self.assertNotHasAttr(b, 'y')
 
     def test_fromhex(self):
         b = self.type2test.fromhex('1a2B30')
@@ -1712,13 +2362,25 @@ class SubclassTest:
 
 
 class ByteArraySubclass(bytearray):
-    pass
+    class Nested(bytearray):
+        pass
+    class Ŭñıçöđë(bytearray):
+        pass
+
+class ByteArraySubclassWithSlots(bytearray):
+    __slots__ = ('x', 'y', '__dict__')
 
 class BytesSubclass(bytes):
     pass
 
 class OtherBytesSubclass(bytes):
     pass
+
+class WithBytes:
+    def __init__(self, value):
+        self.value = value
+    def __bytes__(self):
+        return self.value
 
 class ByteArraySubclassTest(SubclassTest, unittest.TestCase):
     basetype = bytearray
@@ -1734,10 +2396,413 @@ class ByteArraySubclassTest(SubclassTest, unittest.TestCase):
         x = subclass(newarg=4, source=b"abcd")
         self.assertEqual(x, b"abcd")
 
+class ByteArraySubclassWithSlotsTest(SubclassTest, unittest.TestCase):
+    basetype = bytearray
+    type2test = ByteArraySubclassWithSlots
 
 class BytesSubclassTest(SubclassTest, unittest.TestCase):
     basetype = bytes
     type2test = BytesSubclass
+
+
+class FreeThreadingTest(unittest.TestCase):
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearray(self):
+        # Test pretty much everything that can break under free-threading.
+        # Non-deterministic, but at least one of these things will fail if
+        # bytearray module is not free-thread safe.
+
+        def clear(b, a, *args):  # MODIFIES!
+            b.wait()
+            try: a.clear()
+            except BufferError: pass
+
+        def clear2(b, a, c):  # MODIFIES c!
+            b.wait()
+            try: c.clear()
+            except BufferError: pass
+
+        def pop1(b, a):  # MODIFIES!
+            b.wait()
+            try: a.pop()
+            except IndexError: pass
+
+        def append1(b, a):  # MODIFIES!
+            b.wait()
+            a.append(0)
+
+        def insert1(b, a):  # MODIFIES!
+            b.wait()
+            a.insert(0, 0)
+
+        def extend(b, a):  # MODIFIES!
+            c = bytearray(b'0' * 0x400000)
+            b.wait()
+            a.extend(c)
+
+        def remove(b, a):  # MODIFIES!
+            c = ord('0')
+            b.wait()
+            try: a.remove(c)
+            except ValueError: pass
+
+        def reverse(b, a):  # modifies inplace
+            b.wait()
+            a.reverse()
+
+        def reduce(b, a):
+            b.wait()
+            a.__reduce__()
+
+        def reduceex2(b, a):
+            b.wait()
+            a.__reduce_ex__(2)
+
+        def reduceex3(b, a):
+            b.wait()
+            c = a.__reduce_ex__(3)
+            assert not c[1] or 0xdd not in c[1][0]
+
+        def count0(b, a):
+            b.wait()
+            a.count(0)
+
+        def decode(b, a):
+            b.wait()
+            a.decode()
+
+        def find(b, a):
+            c = bytearray(b'0' * 0x40000)
+            b.wait()
+            a.find(c)
+
+        def hex(b, a):
+            b.wait()
+            a.hex('_')
+
+        def join(b, a):
+            b.wait()
+            a.join([b'1', b'2', b'3'])
+
+        def replace(b, a):
+            b.wait()
+            a.replace(b'0', b'')
+
+        def maketrans(b, a, c):
+            b.wait()
+            try: a.maketrans(a, c)
+            except ValueError: pass
+
+        def translate(b, a, c):
+            b.wait()
+            a.translate(c)
+
+        def copy(b, a):
+            b.wait()
+            c = a.copy()
+            if c: assert c[0] == 48  # '0'
+
+        def endswith(b, a):
+            b.wait()
+            assert not a.endswith(b'\xdd')
+
+        def index(b, a):
+            b.wait()
+            try: a.index(b'\xdd')
+            except ValueError: return
+            assert False
+
+        def lstrip(b, a):
+            b.wait()
+            assert not a.lstrip(b'0')
+
+        def partition(b, a):
+            b.wait()
+            assert not a.partition(b'\xdd')[2]
+
+        def removeprefix(b, a):
+            b.wait()
+            assert not a.removeprefix(b'0')
+
+        def removesuffix(b, a):
+            b.wait()
+            assert not a.removesuffix(b'0')
+
+        def rfind(b, a):
+            b.wait()
+            assert a.rfind(b'\xdd') == -1
+
+        def rindex(b, a):
+            b.wait()
+            try: a.rindex(b'\xdd')
+            except ValueError: return
+            assert False
+
+        def rpartition(b, a):
+            b.wait()
+            assert not a.rpartition(b'\xdd')[0]
+
+        def rsplit(b, a):
+            b.wait()
+            assert len(a.rsplit(b'\xdd')) == 1
+
+        def rstrip(b, a):
+            b.wait()
+            assert not a.rstrip(b'0')
+
+        def split(b, a):
+            b.wait()
+            assert len(a.split(b'\xdd')) == 1
+
+        def splitlines(b, a):
+            b.wait()
+            l = len(a.splitlines())
+            assert l > 1 or l == 0
+
+        def startswith(b, a):
+            b.wait()
+            assert not a.startswith(b'\xdd')
+
+        def strip(b, a):
+            b.wait()
+            assert not a.strip(b'0')
+
+        def repeat(b, a):
+            b.wait()
+            a * 2
+
+        def contains(b, a):
+            b.wait()
+            assert 0xdd not in a
+
+        def iconcat(b, a):  # MODIFIES!
+            c = bytearray(b'0' * 0x400000)
+            b.wait()
+            a += c
+
+        def irepeat(b, a):  # MODIFIES!
+            b.wait()
+            a *= 2
+
+        def subscript(b, a):
+            b.wait()
+            try: assert a[0] != 0xdd
+            except IndexError: pass
+
+        def ass_subscript(b, a):  # MODIFIES!
+            c = bytearray(b'0' * 0x400000)
+            b.wait()
+            a[:] = c
+
+        def ass_subscript2(b, a, c):  # MODIFIES!
+            b.wait()
+            a[:] = c
+            assert b'\xdd' not in a
+
+        def mod(b, a):
+            c = tuple(range(4096))
+            b.wait()
+            try: a % c
+            except TypeError: pass
+
+        def mod2(b, a, c):
+            b.wait()
+            d = a % c
+            assert b'\xdd' not in d
+
+        def repr_(b, a):
+            b.wait()
+            repr(a)
+
+        def capitalize(b, a):
+            b.wait()
+            c = a.capitalize()
+            assert not c or c[0] not in (0xdd, 0xcd)
+
+        def center(b, a):
+            b.wait()
+            c = a.center(0x60000)
+            assert not c or c[0x20000] not in (0xdd, 0xcd)
+
+        def expandtabs(b, a):
+            b.wait()
+            c = a.expandtabs()
+            assert not c or c[0] not in (0xdd, 0xcd)
+
+        def ljust(b, a):
+            b.wait()
+            c = a.ljust(0x600000)
+            assert not c or c[0] not in (0xdd, 0xcd)
+
+        def lower(b, a):
+            b.wait()
+            c = a.lower()
+            assert not c or c[0] not in (0xdd, 0xcd)
+
+        def rjust(b, a):
+            b.wait()
+            c = a.rjust(0x600000)
+            assert not c or c[-1] not in (0xdd, 0xcd)
+
+        def swapcase(b, a):
+            b.wait()
+            c = a.swapcase()
+            assert not c or c[-1] not in (0xdd, 0xcd)
+
+        def title(b, a):
+            b.wait()
+            c = a.title()
+            assert not c or c[-1] not in (0xdd, 0xcd)
+
+        def upper(b, a):
+            b.wait()
+            c = a.upper()
+            assert not c or c[-1] not in (0xdd, 0xcd)
+
+        def zfill(b, a):
+            b.wait()
+            c = a.zfill(0x400000)
+            assert not c or c[-1] not in (0xdd, 0xcd)
+
+        def resize(b, a):  # MODIFIES!
+            b.wait()
+            a.resize(10)
+
+        def take_bytes(b, a):  # MODIFIES!
+            b.wait()
+            c = a.take_bytes()
+            assert not c or c[0] == 48  # '0'
+
+        def take_bytes_n(b, a):  # MODIFIES!
+            b.wait()
+            try:
+                c = a.take_bytes(10)
+                assert c == b'0123456789'
+            except IndexError: pass
+
+        def check(funcs, a=None, *args):
+            if a is None:
+                a = bytearray(b'0' * 0x400000)
+
+            barrier = threading.Barrier(len(funcs))
+            threads = []
+
+            for func in funcs:
+                thread = threading.Thread(target=func, args=(barrier, a, *args))
+
+                threads.append(thread)
+
+            with threading_helper.start_threads(threads):
+                pass
+
+        # hard errors
+
+        check([clear] + [reduce] * 10)
+        check([clear] + [reduceex2] * 10)
+        check([clear] + [append1] * 10)
+        check([clear] * 10)
+        check([clear] + [count0] * 10)
+        check([clear] + [decode] * 10)
+        check([clear] + [extend] * 10)
+        check([clear] + [find] * 10)
+        check([clear] + [hex] * 10)
+        check([clear] + [insert1] * 10)
+        check([clear] + [join] * 10)
+        check([clear] + [pop1] * 10)
+        check([clear] + [remove] * 10)
+        check([clear] + [replace] * 10)
+        check([clear] + [reverse] * 10)
+        check([clear, clear2] + [maketrans] * 10, bytearray(range(128)), bytearray(range(128)))
+        check([clear] + [translate] * 10, None, bytearray.maketrans(bytearray(range(128)), bytearray(range(128))))
+
+        check([clear] + [repeat] * 10)
+        check([clear] + [iconcat] * 10)
+        check([clear] + [irepeat] * 10)
+        check([clear] + [ass_subscript] * 10)
+        check([clear] + [repr_] * 10)
+
+        # value errors
+
+        check([clear] + [reduceex3] * 10, bytearray(b'a' * 0x40000))
+        check([clear] + [copy] * 10)
+        check([clear] + [endswith] * 10)
+        check([clear] + [index] * 10)
+        check([clear] + [lstrip] * 10)
+        check([clear] + [partition] * 10)
+        check([clear] + [removeprefix] * 10, bytearray(b'0'))
+        check([clear] + [removesuffix] * 10, bytearray(b'0'))
+        check([clear] + [rfind] * 10)
+        check([clear] + [rindex] * 10)
+        check([clear] + [rpartition] * 10)
+        check([clear] + [rsplit] * 10, bytearray(b'0' * 0x4000))
+        check([clear] + [rstrip] * 10)
+        check([clear] + [split] * 10, bytearray(b'0' * 0x4000))
+        check([clear] + [splitlines] * 10, bytearray(b'\n' * 0x400))
+        check([clear] + [startswith] * 10)
+        check([clear] + [strip] * 10)
+
+        check([clear] + [resize] * 10)
+
+        check([clear] + [take_bytes] * 10)
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 0x400))
+        check([take_bytes_n] * 10, bytearray(b'0123456789' * 5))
+
+        check([clear] + [contains] * 10)
+        check([clear] + [subscript] * 10)
+        check([clear2] + [ass_subscript2] * 10, None, bytearray(b'0' * 0x400000))
+        check([clear] + [mod] * 10, bytearray(b'%d' * 4096))
+        check([clear2] + [mod2] * 10, bytearray(b'%s'), bytearray(b'0' * 0x400000))
+
+        check([clear] + [capitalize] * 10, bytearray(b'a' * 0x40000))
+        check([clear] + [center] * 10, bytearray(b'a' * 0x40000))
+        check([clear] + [expandtabs] * 10, bytearray(b'0\t' * 4096))
+        check([clear] + [ljust] * 10, bytearray(b'0' * 0x400000))
+        check([clear] + [lower] * 10, bytearray(b'A' * 0x400000))
+        check([clear] + [rjust] * 10, bytearray(b'0' * 0x400000))
+        check([clear] + [swapcase] * 10, bytearray(b'aA' * 0x200000))
+        check([clear] + [title] * 10, bytearray(b'aA' * 0x200000))
+        check([clear] + [upper] * 10, bytearray(b'a' * 0x400000))
+        check([clear] + [zfill] * 10, bytearray(b'1' * 0x200000))
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearrayiter(self):
+        # Non-deterministic but good chance to fail if bytearrayiter is not free-threading safe.
+        # We are fishing for a "Assertion failed: object has negative ref count" and tsan races.
+
+        def iter_next(b, it):
+            b.wait()
+            list(it)
+
+        def iter_reduce(b, it):
+            b.wait()
+            it.__reduce__()
+
+        def iter_setstate(b, it):
+            b.wait()
+            it.__setstate__(0)
+
+        def check(funcs, it):
+            barrier = threading.Barrier(len(funcs))
+            threads = []
+
+            for func in funcs:
+                thread = threading.Thread(target=func, args=(barrier, it))
+
+                threads.append(thread)
+
+            with threading_helper.start_threads(threads):
+                pass
+
+        for _ in range(10):
+            ba = bytearray(b'0' * 0x4000)  # this is a load-bearing variable, do not remove
+
+            check([iter_next] * 10, iter(ba))
+            check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
+            check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
 
 if __name__ == "__main__":

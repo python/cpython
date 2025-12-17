@@ -3,10 +3,16 @@ import os.path
 import re
 import subprocess
 import sys
+import sysconfig
 import types
 import unittest
 
-from test.support import findfile, run_unittest
+from test import support
+from test.support import findfile
+
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 
 def abspath(filename):
@@ -34,7 +40,7 @@ def normalize_trace_output(output):
         return "\n".join(result)
     except (IndexError, ValueError):
         raise AssertionError(
-            "tracer produced unparseable output:\n{}".format(output)
+            "tracer produced unparsable output:\n{}".format(output)
         )
 
 
@@ -79,7 +85,7 @@ class TraceBackend:
         try:
             output = self.trace(abspath("assert_usable" + self.EXTENSION))
             output = output.strip()
-        except (FileNotFoundError, PermissionError) as fnfe:
+        except (FileNotFoundError, NotADirectoryError, PermissionError) as fnfe:
             output = str(fnfe)
         if output != "probe: success":
             raise unittest.SkipTest(
@@ -97,7 +103,7 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
-class TraceTests(unittest.TestCase):
+class TraceTests:
     # unittest.TestCase options
     maxDiff = None
 
@@ -149,30 +155,106 @@ class TraceTests(unittest.TestCase):
         self.run_case("line")
 
 
-class DTraceNormalTests(TraceTests):
+class DTraceNormalTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
     optimize_python = 0
 
 
-class DTraceOptimizedTests(TraceTests):
+class DTraceOptimizedTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
     optimize_python = 2
 
 
-class SystemTapNormalTests(TraceTests):
+class SystemTapNormalTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 0
 
 
-class SystemTapOptimizedTests(TraceTests):
+class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
     optimize_python = 2
 
+class CheckDtraceProbes(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if sysconfig.get_config_var('WITH_DTRACE'):
+            readelf_major_version, readelf_minor_version = cls.get_readelf_version()
+            if support.verbose:
+                print(f"readelf version: {readelf_major_version}.{readelf_minor_version}")
+        else:
+            raise unittest.SkipTest("CPython must be configured with the --with-dtrace option.")
 
-def test_main():
-    run_unittest(DTraceNormalTests, DTraceOptimizedTests, SystemTapNormalTests,
-                 SystemTapOptimizedTests)
+
+    @staticmethod
+    def get_readelf_version():
+        try:
+            cmd = ["readelf", "--version"]
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            with proc:
+                version, stderr = proc.communicate()
+
+            if proc.returncode:
+                raise Exception(
+                    f"Command {' '.join(cmd)!r} failed "
+                    f"with exit code {proc.returncode}: "
+                    f"stdout={version!r} stderr={stderr!r}"
+                )
+        except OSError:
+            raise unittest.SkipTest("Couldn't find readelf on the path")
+
+        # Regex to parse:
+        # 'GNU readelf (GNU Binutils) 2.40.0\n' -> 2.40
+        match = re.search(r"^(?:GNU) readelf.*?\b(\d+)\.(\d+)", version)
+        if match is None:
+            raise unittest.SkipTest(f"Unable to parse readelf version: {version}")
+
+        return int(match.group(1)), int(match.group(2))
+
+    def get_readelf_output(self):
+        command = ["readelf", "-n", sys.executable]
+        stdout, _ = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        ).communicate()
+        return stdout
+
+    def test_check_probes(self):
+        readelf_output = self.get_readelf_output()
+
+        available_probe_names = [
+            "Name: import__find__load__done",
+            "Name: import__find__load__start",
+            "Name: audit",
+            "Name: gc__start",
+            "Name: gc__done",
+        ]
+
+        for probe_name in available_probe_names:
+            with self.subTest(probe_name=probe_name):
+                self.assertIn(probe_name, readelf_output)
+
+    @unittest.expectedFailure
+    def test_missing_probes(self):
+        readelf_output = self.get_readelf_output()
+
+        # Missing probes will be added in the future.
+        missing_probe_names = [
+            "Name: function__entry",
+            "Name: function__return",
+            "Name: line",
+        ]
+
+        for probe_name in missing_probe_names:
+            with self.subTest(probe_name=probe_name):
+                self.assertIn(probe_name, readelf_output)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -10,6 +10,7 @@
 *.ico binary
 *.jpg binary
 *.pck binary
+*.pdf binary
 *.png binary
 *.psd binary
 *.tar binary
@@ -18,24 +19,91 @@
 *.zip binary
 
 # Specific binary files
-Lib/test/sndhdrdata/sndhdr.* binary
+PC/classicAppCompat.* binary
 
 # Text files that should not be subject to eol conversion
-Lib/test/cjkencodings/* -text
-Lib/test/decimaltestdata/*.decTest -text
-Lib/test/test_email/data/*.txt -text
-Lib/test/xmltestdata/* -text
-Lib/test/coding20731.py -text
+[attr]noeol -text
 
-# Special files in third party code
-Modules/zlib/zlib.map -text
+Lib/test/cjkencodings/*                    noeol
+Lib/test/tokenizedata/coding20731.py       noeol
+Lib/test/decimaltestdata/*.decTest         noeol
+Lib/test/test_email/data/*.txt             noeol
+Lib/test/xmltestdata/*                     noeol
+
+# Shell scripts should have LF even on Windows because of Cygwin
+Lib/venv/scripts/common/activate text eol=lf
+Lib/venv/scripts/posix/* text eol=lf
 
 # CRLF files
-*.bat text eol=crlf
-*.ps1 text eol=crlf
-*.sln text eol=crlf
-*.vcxproj* text eol=crlf
-*.props text eol=crlf
-*.proj text eol=crlf
-PCbuild/readme.txt text eol=crlf
-PC/readme.txt text eol=crlf
+[attr]dos text eol=crlf
+
+*.bat               dos
+*.proj              dos
+*.props             dos
+*.ps1               dos
+*.sln               dos
+*.vcxproj*          dos
+PC/readme.txt       dos
+PCbuild/readme.txt  dos
+
+# Language aware diff headers
+# https://tekin.co.uk/2020/10/better-git-diff-output-for-ruby-python-elixir-and-more
+# https://gist.github.com/tekin/12500956bd56784728e490d8cef9cb81
+*.c     diff=cpp
+*.h     diff=cpp
+*.css   diff=css
+*.html  diff=html
+*.py    diff=python
+*.md    diff=markdown
+
+# Generated files
+# https://github.com/github/linguist/blob/master/docs/overrides.md
+#
+# To always hide generated files in local diffs, mark them as binary:
+# $ git config diff.generated.binary true
+#
+[attr]generated linguist-generated=true diff=generated
+
+**/clinic/*.c.h                                     generated
+**/clinic/*.cpp.h                                   generated
+**/clinic/*.h.h                                     generated
+*_db.h                                              generated
+Doc/_static/tachyon-example-*.html                  generated
+Doc/c-api/lifecycle.dot.svg                         generated
+Doc/data/stable_abi.dat                             generated
+Doc/library/token-list.inc                          generated
+Include/internal/pycore_ast.h                       generated
+Include/internal/pycore_ast_state.h                 generated
+Include/internal/pycore_opcode.h                    generated
+Include/internal/pycore_opcode_metadata.h           generated
+Include/internal/pycore_*_generated.h               generated
+Include/internal/pycore_uop_ids.h                   generated
+Include/internal/pycore_uop_metadata.h              generated
+Include/opcode.h                                    generated
+Include/opcode_ids.h                                generated
+Include/token.h                                     generated
+Lib/_opcode_metadata.py                             generated
+Lib/keyword.py                                      generated
+Lib/idlelib/help.html                               generated
+Lib/test/certdata/*.pem                             generated
+Lib/test/certdata/*.0                               generated
+Lib/test/levenshtein_examples.json                  generated
+Lib/test/test_stable_abi_ctypes.py                  generated
+Lib/test/test_zoneinfo/data/*.json                  generated
+Lib/token.py                                        generated
+Misc/sbom.spdx.json                                 generated
+Objects/typeslots.inc                               generated
+PC/python3dll.c                                     generated
+Parser/parser.c                                     generated
+Parser/token.c                                      generated
+Programs/test_frozenmain.h                          generated
+Python/Python-ast.c                                 generated
+Python/executor_cases.c.h                           generated
+Python/generated_cases.c.h                          generated
+Python/optimizer_cases.c.h                          generated
+Python/opcode_targets.h                             generated
+Python/stdlib_module_names.h                        generated
+Tools/peg_generator/pegen/grammar_parser.py         generated
+aclocal.m4                                          generated
+configure                                           generated
+*.min.js                                            generated

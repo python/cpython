@@ -20,15 +20,16 @@ complaint you get while you are still learning Python::
    >>> while True print('Hello world')
      File "<stdin>", line 1
        while True print('Hello world')
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
-The parser repeats the offending line and displays a little 'arrow' pointing at
-the earliest point in the line where the error was detected.  The error is
-caused by (or at least detected at) the token *preceding* the arrow: in the
-example, the error is detected at the function :func:`print`, since a colon
-(``':'``) is missing before it.  File name and line number are printed so you
-know where to look in case the input came from a script.
+The parser repeats the offending line and displays little arrows pointing
+at the place where the error was detected.  Note that this is not always the
+place that needs to be fixed.  In the example, the error is detected at the
+function :func:`print`, since a colon (``':'``) is missing just before it.
+
+The file name (``<stdin>`` in our example) and line number are printed so you
+know where to look in case the input came from a file.
 
 
 .. _tut-exceptions:
@@ -45,15 +46,21 @@ programs, however, and result in error messages as shown here::
    >>> 10 * (1/0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
+       10 * (1/0)
+             ~^~
    ZeroDivisionError: division by zero
    >>> 4 + spam*3
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
+       4 + spam*3
+           ^^^^
    NameError: name 'spam' is not defined
    >>> '2' + 2
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: Can't convert 'int' object to str implicitly
+       '2' + 2
+       ~~~~^~~
+   TypeError: can only concatenate str (not "int") to str
 
 The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
@@ -67,7 +74,7 @@ The rest of the line provides detail based on the type of exception and what
 caused it.
 
 The preceding part of the error message shows the context where the exception
-happened, in the form of a stack traceback. In general it contains a stack
+occurred, in the form of a stack traceback. In general it contains a stack
 traceback listing source lines; however, it will not display lines read from
 standard input.
 
@@ -101,29 +108,28 @@ The :keyword:`try` statement works as follows.
 * If no exception occurs, the *except clause* is skipped and execution of the
   :keyword:`try` statement is finished.
 
-* If an exception occurs during execution of the try clause, the rest of the
-  clause is skipped.  Then if its type matches the exception named after the
-  :keyword:`except` keyword, the except clause is executed, and then execution
-  continues after the :keyword:`try` statement.
+* If an exception occurs during execution of the :keyword:`try` clause, the rest of the
+  clause is skipped.  Then, if its type matches the exception named after the
+  :keyword:`except` keyword, the *except clause* is executed, and then execution
+  continues after the try/except block.
 
-* If an exception occurs which does not match the exception named in the except
-  clause, it is passed on to outer :keyword:`try` statements; if no handler is
-  found, it is an *unhandled exception* and execution stops with a message as
-  shown above.
+* If an exception occurs which does not match the exception named in the *except
+  clause*, it is passed on to outer :keyword:`try` statements; if no handler is
+  found, it is an *unhandled exception* and execution stops with an error message.
 
-A :keyword:`try` statement may have more than one except clause, to specify
+A :keyword:`try` statement may have more than one *except clause*, to specify
 handlers for different exceptions.  At most one handler will be executed.
-Handlers only handle exceptions that occur in the corresponding try clause, not
-in other handlers of the same :keyword:`try` statement.  An except clause may
-name multiple exceptions as a parenthesized tuple, for example::
+Handlers only handle exceptions that occur in the corresponding *try clause*,
+not in other handlers of the same :keyword:`!try` statement.  An *except clause*
+may name multiple exceptions as a parenthesized tuple, for example::
 
    ... except (RuntimeError, TypeError, NameError):
    ...     pass
 
-A class in an :keyword:`except` clause is compatible with an exception if it is
-the same class or a base class thereof (but not the other way around --- an
-except clause listing a derived class is not compatible with a base class).  For
-example, the following code will print B, C, D in that order::
+A class in an :keyword:`except` clause matches exceptions which are instances of the
+class itself or one of its derived classes (but not the other way around --- an
+*except clause* listing a derived class does not match instances of its base classes).
+For example, the following code will print B, C, D in that order::
 
    class B(Exception):
        pass
@@ -144,62 +150,23 @@ example, the following code will print B, C, D in that order::
        except B:
            print("B")
 
-Note that if the except clauses were reversed (with ``except B`` first), it
-would have printed B, B, B --- the first matching except clause is triggered.
+Note that if the *except clauses* were reversed (with ``except B`` first), it
+would have printed B, B, B --- the first matching *except clause* is triggered.
 
-The last except clause may omit the exception name(s), to serve as a wildcard.
-Use this with extreme caution, since it is easy to mask a real programming error
-in this way!  It can also be used to print an error message and then re-raise
-the exception (allowing a caller to handle the exception as well)::
-
-   import sys
-
-   try:
-       f = open('myfile.txt')
-       s = f.readline()
-       i = int(s.strip())
-   except OSError as err:
-       print("OS error: {0}".format(err))
-   except ValueError:
-       print("Could not convert data to an integer.")
-   except:
-       print("Unexpected error:", sys.exc_info()[0])
-       raise
-
-The :keyword:`try` ... :keyword:`except` statement has an optional *else
-clause*, which, when present, must follow all except clauses.  It is useful for
-code that must be executed if the try clause does not raise an exception.  For
-example::
-
-   for arg in sys.argv[1:]:
-       try:
-           f = open(arg, 'r')
-       except OSError:
-           print('cannot open', arg)
-       else:
-           print(arg, 'has', len(f.readlines()), 'lines')
-           f.close()
-
-The use of the :keyword:`else` clause is better than adding additional code to
-the :keyword:`try` clause because it avoids accidentally catching an exception
-that wasn't raised by the code being protected by the :keyword:`try` ...
-:keyword:`except` statement.
-
-When an exception occurs, it may have an associated value, also known as the
-exception's *argument*. The presence and type of the argument depend on the
+When an exception occurs, it may have associated values, also known as the
+exception's *arguments*. The presence and types of the arguments depend on the
 exception type.
 
-The except clause may specify a variable after the exception name.  The
-variable is bound to an exception instance with the arguments stored in
-``instance.args``.  For convenience, the exception instance defines
-:meth:`__str__` so the arguments can be printed directly without having to
-reference ``.args``.  One may also instantiate an exception first before
-raising it and add any attributes to it as desired. ::
+The *except clause* may specify a variable after the exception name.  The
+variable is bound to the exception instance which typically has an ``args``
+attribute that stores the arguments. For convenience, builtin exception
+types define :meth:`~object.__str__` to print all the arguments without explicitly
+accessing ``.args``.  ::
 
    >>> try:
    ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
+   ...     print(type(inst))    # the exception type
    ...     print(inst.args)     # arguments stored in .args
    ...     print(inst)          # __str__ allows args to be printed directly,
    ...                          # but may be overridden in exception subclasses
@@ -213,12 +180,62 @@ raising it and add any attributes to it as desired. ::
    x = spam
    y = eggs
 
-If an exception has arguments, they are printed as the last part ('detail') of
-the message for unhandled exceptions.
+The exception's :meth:`~object.__str__` output is printed as the last part ('detail')
+of the message for unhandled exceptions.
 
-Exception handlers don't just handle exceptions if they occur immediately in the
-try clause, but also if they occur inside functions that are called (even
-indirectly) in the try clause. For example::
+:exc:`BaseException` is the common base class of all exceptions. One of its
+subclasses, :exc:`Exception`, is the base class of all the non-fatal exceptions.
+Exceptions which are not subclasses of :exc:`Exception` are not typically
+handled, because they are used to indicate that the program should terminate.
+They include :exc:`SystemExit` which is raised by :meth:`sys.exit` and
+:exc:`KeyboardInterrupt` which is raised when a user wishes to interrupt
+the program.
+
+:exc:`Exception` can be used as a wildcard that catches (almost) everything.
+However, it is good practice to be as specific as possible with the types
+of exceptions that we intend to handle, and to allow any unexpected
+exceptions to propagate on.
+
+The most common pattern for handling :exc:`Exception` is to print or log
+the exception and then re-raise it (allowing a caller to handle the
+exception as well)::
+
+   import sys
+
+   try:
+       f = open('myfile.txt')
+       s = f.readline()
+       i = int(s.strip())
+   except OSError as err:
+       print("OS error:", err)
+   except ValueError:
+       print("Could not convert data to an integer.")
+   except Exception as err:
+       print(f"Unexpected {err=}, {type(err)=}")
+       raise
+
+The :keyword:`try` ... :keyword:`except` statement has an optional *else
+clause*, which, when present, must follow all *except clauses*.  It is useful
+for code that must be executed if the *try clause* does not raise an exception.
+For example::
+
+   for arg in sys.argv[1:]:
+       try:
+           f = open(arg, 'r')
+       except OSError:
+           print('cannot open', arg)
+       else:
+           print(arg, 'has', len(f.readlines()), 'lines')
+           f.close()
+
+The use of the :keyword:`!else` clause is better than adding additional code to
+the :keyword:`try` clause because it avoids accidentally catching an exception
+that wasn't raised by the code being protected by the :keyword:`!try` ...
+:keyword:`!except` statement.
+
+Exception handlers do not handle only exceptions that occur immediately in the
+*try clause*, but also those that occur inside functions that are called (even
+indirectly) in the *try clause*. For example::
 
    >>> def this_fails():
    ...     x = 1/0
@@ -242,12 +259,14 @@ exception to occur. For example::
    >>> raise NameError('HiThere')
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
+       raise NameError('HiThere')
    NameError: HiThere
 
 The sole argument to :keyword:`raise` indicates the exception to be raised.
 This must be either an exception instance or an exception class (a class that
-derives from :class:`Exception`).  If an exception class is passed, it will
-be implicitly instantiated by calling its constructor with no arguments::
+derives from :class:`BaseException`, such as :exc:`Exception` or one of its
+subclasses).  If an exception class is passed, it will be implicitly
+instantiated by calling its constructor with no arguments::
 
    raise ValueError  # shorthand for 'raise ValueError()'
 
@@ -264,7 +283,81 @@ re-raise the exception::
    An exception flew by!
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       raise NameError('HiThere')
    NameError: HiThere
+
+
+.. _tut-exception-chaining:
+
+Exception Chaining
+==================
+
+If an unhandled exception occurs inside an :keyword:`except` section, it will
+have the exception being handled attached to it and included in the error
+message::
+
+    >>> try:
+    ...     open("database.sqlite")
+    ... except OSError:
+    ...     raise RuntimeError("unable to handle error")
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in <module>
+        open("database.sqlite")
+        ~~~~^^^^^^^^^^^^^^^^^^^
+    FileNotFoundError: [Errno 2] No such file or directory: 'database.sqlite'
+    <BLANKLINE>
+    During handling of the above exception, another exception occurred:
+    <BLANKLINE>
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+        raise RuntimeError("unable to handle error")
+    RuntimeError: unable to handle error
+
+To indicate that an exception is a direct consequence of another, the
+:keyword:`raise` statement allows an optional :keyword:`from<raise>` clause::
+
+    # exc must be exception instance or None.
+    raise RuntimeError from exc
+
+This can be useful when you are transforming exceptions. For example::
+
+    >>> def func():
+    ...     raise ConnectionError
+    ...
+    >>> try:
+    ...     func()
+    ... except ConnectionError as exc:
+    ...     raise RuntimeError('Failed to open database') from exc
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 2, in <module>
+        func()
+        ~~~~^^
+      File "<stdin>", line 2, in func
+    ConnectionError
+    <BLANKLINE>
+    The above exception was the direct cause of the following exception:
+    <BLANKLINE>
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+        raise RuntimeError('Failed to open database') from exc
+    RuntimeError: Failed to open database
+
+It also allows disabling automatic exception chaining using the ``from None``
+idiom::
+
+    >>> try:
+    ...     open('database.sqlite')
+    ... except OSError:
+    ...     raise RuntimeError from None
+    ...
+    Traceback (most recent call last):
+      File "<stdin>", line 4, in <module>
+        raise RuntimeError from None
+    RuntimeError
+
+For more information about chaining mechanics, see :ref:`bltin-exceptions`.
 
 
 .. _tut-userexceptions:
@@ -278,48 +371,13 @@ be derived from the :exc:`Exception` class, either directly or indirectly.
 
 Exception classes can be defined which do anything any other class can do, but
 are usually kept simple, often only offering a number of attributes that allow
-information about the error to be extracted by handlers for the exception.  When
-creating a module that can raise several distinct errors, a common practice is
-to create a base class for exceptions defined by that module, and subclass that
-to create specific exception classes for different error conditions::
+information about the error to be extracted by handlers for the exception.
 
-   class Error(Exception):
-       """Base class for exceptions in this module."""
-       pass
-
-   class InputError(Error):
-       """Exception raised for errors in the input.
-
-       Attributes:
-           expression -- input expression in which the error occurred
-           message -- explanation of the error
-       """
-
-       def __init__(self, expression, message):
-           self.expression = expression
-           self.message = message
-
-   class TransitionError(Error):
-       """Raised when an operation attempts a state transition that's not
-       allowed.
-
-       Attributes:
-           previous -- state at beginning of transition
-           next -- attempted new state
-           message -- explanation of why the specific transition is not allowed
-       """
-
-       def __init__(self, previous, next, message):
-           self.previous = previous
-           self.next = next
-           self.message = message
-
-Most exceptions are defined with names that end in "Error," similar to the
+Most exceptions are defined with names that end in "Error", similar to the
 naming of the standard exceptions.
 
 Many standard modules define their own exceptions to report errors that may
-occur in functions they define.  More information on classes is presented in
-chapter :ref:`tut-classes`.
+occur in functions they define.
 
 
 .. _tut-cleanup:
@@ -339,17 +397,57 @@ example::
    Goodbye, world!
    Traceback (most recent call last):
      File "<stdin>", line 2, in <module>
+       raise KeyboardInterrupt
    KeyboardInterrupt
 
-A *finally clause* is always executed before leaving the :keyword:`try`
-statement, whether an exception has occurred or not. When an exception has
-occurred in the :keyword:`try` clause and has not been handled by an
-:keyword:`except` clause (or it has occurred in an :keyword:`except` or
-:keyword:`else` clause), it is re-raised after the :keyword:`finally` clause has
-been executed.  The :keyword:`finally` clause is also executed "on the way out"
-when any other clause of the :keyword:`try` statement is left via a
-:keyword:`break`, :keyword:`continue` or :keyword:`return` statement.  A more
-complicated example::
+If a :keyword:`finally` clause is present, the :keyword:`!finally`
+clause will execute as the last task before the :keyword:`try`
+statement completes. The :keyword:`!finally` clause runs whether or
+not the :keyword:`!try` statement produces an exception. The following
+points discuss more complex cases when an exception occurs:
+
+* If an exception occurs during execution of the :keyword:`!try`
+  clause, the exception may be handled by an :keyword:`except`
+  clause. If the exception is not handled by an :keyword:`!except`
+  clause, the exception is re-raised after the :keyword:`!finally`
+  clause has been executed.
+
+* An exception could occur during execution of an :keyword:`!except`
+  or :keyword:`!else` clause. Again, the exception is re-raised after
+  the :keyword:`!finally` clause has been executed.
+
+* If the :keyword:`!finally` clause executes a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, exceptions are not
+  re-raised. This can be confusing and is therefore discouraged. From
+  version 3.14 the compiler emits a :exc:`SyntaxWarning` for it
+  (see :pep:`765`).
+
+* If the :keyword:`!try` statement reaches a :keyword:`break`,
+  :keyword:`continue` or :keyword:`return` statement, the
+  :keyword:`!finally` clause will execute just prior to the
+  :keyword:`!break`, :keyword:`!continue` or :keyword:`!return`
+  statement's execution.
+
+* If a :keyword:`!finally` clause includes a :keyword:`!return`
+  statement, the returned value will be the one from the
+  :keyword:`!finally` clause's :keyword:`!return` statement, not the
+  value from the :keyword:`!try` clause's :keyword:`!return`
+  statement. This can be confusing and is therefore discouraged. From
+  version 3.14 the compiler emits a :exc:`SyntaxWarning` for it
+  (see :pep:`765`).
+
+For example::
+
+   >>> def bool_return():
+   ...     try:
+   ...         return True
+   ...     finally:
+   ...         return False
+   ...
+   >>> bool_return()
+   False
+
+A more complicated example::
 
    >>> def divide(x, y):
    ...     try:
@@ -371,12 +469,16 @@ complicated example::
    executing finally clause
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
+       divide("2", "1")
+       ~~~~~~^^^^^^^^^^
      File "<stdin>", line 3, in divide
+       result = x / y
+                ~~^~~
    TypeError: unsupported operand type(s) for /: 'str' and 'str'
 
 As you can see, the :keyword:`finally` clause is executed in any event.  The
 :exc:`TypeError` raised by dividing two strings is not handled by the
-:keyword:`except` clause and therefore re-raised after the :keyword:`finally`
+:keyword:`except` clause and therefore re-raised after the :keyword:`!finally`
 clause has been executed.
 
 In real world applications, the :keyword:`finally` clause is useful for
@@ -412,3 +514,184 @@ problem was encountered while processing the lines. Objects which, like files,
 provide predefined clean-up actions will indicate this in their documentation.
 
 
+.. _tut-exception-groups:
+
+Raising and Handling Multiple Unrelated Exceptions
+==================================================
+
+There are situations where it is necessary to report several exceptions that
+have occurred. This is often the case in concurrency frameworks, when several
+tasks may have failed in parallel, but there are also other use cases where
+it is desirable to continue execution and collect multiple errors rather than
+raise the first exception.
+
+The builtin :exc:`ExceptionGroup` wraps a list of exception instances so
+that they can be raised together. It is an exception itself, so it can be
+caught like any other exception. ::
+
+   >>> def f():
+   ...     excs = [OSError('error 1'), SystemError('error 2')]
+   ...     raise ExceptionGroup('there were problems', excs)
+   ...
+   >>> f()
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     |     f()
+     |     ~^^
+     |   File "<stdin>", line 3, in f
+     |     raise ExceptionGroup('there were problems', excs)
+     | ExceptionGroup: there were problems (2 sub-exceptions)
+     +-+---------------- 1 ----------------
+       | OSError: error 1
+       +---------------- 2 ----------------
+       | SystemError: error 2
+       +------------------------------------
+   >>> try:
+   ...     f()
+   ... except Exception as e:
+   ...     print(f'caught {type(e)}: e')
+   ...
+   caught <class 'ExceptionGroup'>: e
+   >>>
+
+By using ``except*`` instead of ``except``, we can selectively
+handle only the exceptions in the group that match a certain
+type. In the following example, which shows a nested exception
+group, each ``except*`` clause extracts from the group exceptions
+of a certain type while letting all other exceptions propagate to
+other clauses and eventually to be reraised. ::
+
+   >>> def f():
+   ...     raise ExceptionGroup(
+   ...         "group1",
+   ...         [
+   ...             OSError(1),
+   ...             SystemError(2),
+   ...             ExceptionGroup(
+   ...                 "group2",
+   ...                 [
+   ...                     OSError(3),
+   ...                     RecursionError(4)
+   ...                 ]
+   ...             )
+   ...         ]
+   ...     )
+   ...
+   >>> try:
+   ...     f()
+   ... except* OSError as e:
+   ...     print("There were OSErrors")
+   ... except* SystemError as e:
+   ...     print("There were SystemErrors")
+   ...
+   There were OSErrors
+   There were SystemErrors
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 2, in <module>
+     |     f()
+     |     ~^^
+     |   File "<stdin>", line 2, in f
+     |     raise ExceptionGroup(
+     |     ...<12 lines>...
+     |     )
+     | ExceptionGroup: group1 (1 sub-exception)
+     +-+---------------- 1 ----------------
+       | ExceptionGroup: group2 (1 sub-exception)
+       +-+---------------- 1 ----------------
+         | RecursionError: 4
+         +------------------------------------
+   >>>
+
+Note that the exceptions nested in an exception group must be instances,
+not types. This is because in practice the exceptions would typically
+be ones that have already been raised and caught by the program, along
+the following pattern::
+
+   >>> excs = []
+   ... for test in tests:
+   ...     try:
+   ...         test.run()
+   ...     except Exception as e:
+   ...         excs.append(e)
+   ...
+   >>> if excs:
+   ...    raise ExceptionGroup("Test Failures", excs)
+   ...
+
+
+.. _tut-exception-notes:
+
+Enriching Exceptions with Notes
+===============================
+
+When an exception is created in order to be raised, it is usually initialized
+with information that describes the error that has occurred. There are cases
+where it is useful to add information after the exception was caught. For this
+purpose, exceptions have a method ``add_note(note)`` that accepts a string and
+adds it to the exception's notes list. The standard traceback rendering
+includes all notes, in the order they were added, after the exception. ::
+
+   >>> try:
+   ...     raise TypeError('bad type')
+   ... except Exception as e:
+   ...     e.add_note('Add some information')
+   ...     e.add_note('Add some more information')
+   ...     raise
+   ...
+   Traceback (most recent call last):
+     File "<stdin>", line 2, in <module>
+       raise TypeError('bad type')
+   TypeError: bad type
+   Add some information
+   Add some more information
+   >>>
+
+For example, when collecting exceptions into an exception group, we may want
+to add context information for the individual errors. In the following each
+exception in the group has a note indicating when this error has occurred. ::
+
+   >>> def f():
+   ...     raise OSError('operation failed')
+   ...
+   >>> excs = []
+   >>> for i in range(3):
+   ...     try:
+   ...         f()
+   ...     except Exception as e:
+   ...         e.add_note(f'Happened in Iteration {i+1}')
+   ...         excs.append(e)
+   ...
+   >>> raise ExceptionGroup('We have some problems', excs)
+     + Exception Group Traceback (most recent call last):
+     |   File "<stdin>", line 1, in <module>
+     |     raise ExceptionGroup('We have some problems', excs)
+     | ExceptionGroup: We have some problems (3 sub-exceptions)
+     +-+---------------- 1 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |     f()
+       |     ~^^
+       |   File "<stdin>", line 2, in f
+       |     raise OSError('operation failed')
+       | OSError: operation failed
+       | Happened in Iteration 1
+       +---------------- 2 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |     f()
+       |     ~^^
+       |   File "<stdin>", line 2, in f
+       |     raise OSError('operation failed')
+       | OSError: operation failed
+       | Happened in Iteration 2
+       +---------------- 3 ----------------
+       | Traceback (most recent call last):
+       |   File "<stdin>", line 3, in <module>
+       |     f()
+       |     ~^^
+       |   File "<stdin>", line 2, in f
+       |     raise OSError('operation failed')
+       | OSError: operation failed
+       | Happened in Iteration 3
+       +------------------------------------
+   >>>

@@ -1,5 +1,5 @@
-:mod:`imaplib` --- IMAP4 protocol client
-========================================
+:mod:`!imaplib` --- IMAP4 protocol client
+=========================================
 
 .. module:: imaplib
    :synopsis: IMAP4 protocol client (requires sockets).
@@ -10,6 +10,7 @@
 .. changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
+.. changes for IMAP4 IDLE by Forest <forestix@nom.one>, August 2024
 
 **Source code:** :source:`Lib/imaplib.py`
 
@@ -26,20 +27,24 @@ implement a large subset of the IMAP4rev1 client protocol as defined in
 :rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
 
-.. class:: IMAP4(host='', port=IMAP4_PORT)
+.. class:: IMAP4(host='', port=IMAP4_PORT, timeout=None)
 
    This class implements the actual IMAP4 protocol.  The connection is created and
    protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
-   *port* is omitted, the standard IMAP4 port (143) is used.
+   *port* is omitted, the standard IMAP4 port (143) is used. The optional *timeout*
+   parameter specifies a timeout in seconds for the connection attempt.
+   If timeout is not given or is ``None``, the global default socket timeout is used.
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
-   :keyword:`with` statement exits.  E.g.::
+   :keyword:`!with` statement exits.  E.g.::
 
     >>> from imaplib import IMAP4
     >>> with IMAP4("domain.org") as M:
@@ -49,6 +54,9 @@ base class:
 
    .. versionchanged:: 3.5
       Support for the :keyword:`with` statement was added.
+
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
@@ -77,8 +85,8 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, \
-                     certfile=None, ssl_context=None)
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, *, ssl_context=None, \
+                     timeout=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -89,27 +97,23 @@ There's also a subclass for secure connections:
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
 
-   *keyfile* and *certfile* are a legacy alternative to *ssl_context* - they
-   can point to PEM-formatted private key and certificate chain files for
-   the SSL connection.  Note that the *keyfile*/*certfile* parameters are
-   mutually exclusive with *ssl_context*, a :class:`ValueError` is raised
-   if *keyfile*/*certfile* is provided along with *ssl_context*.
+   The optional *timeout* parameter specifies a timeout in seconds for the
+   connection attempt. If timeout is not given or is ``None``, the global default
+   socket timeout is used.
 
    .. versionchanged:: 3.3
-      *ssl_context* parameter added.
+      *ssl_context* parameter was added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
-   .. deprecated:: 3.6
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
-       *keyfile* and *certfile* are deprecated in favor of *ssl_context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
+   .. versionchanged:: 3.12
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 The second subclass allows for connections created by a child process:
 
@@ -132,7 +136,7 @@ The following utility functions are defined:
 
 .. function:: Int2AP(num)
 
-   Converts an integer into a string representation using characters from the set
+   Converts an integer into a bytes representation using characters from the set
    [``A`` .. ``P``].
 
 
@@ -163,9 +167,9 @@ example of usage.
 
 .. seealso::
 
-   Documents describing the protocol, and sources and binaries  for servers
-   implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (https://www.washington.edu/imap/).
+   Documents describing the protocol, sources for servers
+   implementing it, by the University of Washington's IMAP Information Center
+   can all be found at (**Source Code**) https://github.com/uw-imap/imap (**Not Maintained**).
 
 
 .. _imap4-objects:
@@ -174,7 +178,7 @@ IMAP4 Objects
 -------------
 
 All IMAP4rev1 commands are represented by methods of the same name, either
-upper-case or lower-case.
+uppercase or lowercase.
 
 All arguments to commands are converted to strings, except for ``AUTHENTICATE``,
 and the last argument to ``APPEND`` which is passed as an IMAP4 literal.  If
@@ -184,9 +188,9 @@ However, the *password* argument to the ``LOGIN`` command is always quoted. If
 you want to avoid having an argument string quoted (eg: the *flags* argument to
 ``STORE``) then enclose the string in parentheses (eg: ``r'(\Deleted)'``).
 
-Each command returns a tuple: ``(type, [data, ...])`` where *type* is usually
+Most commands return a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
-or mandated results from the command. Each *data* is either a string, or a
+or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 
@@ -304,6 +308,93 @@ An :class:`IMAP4` instance has the following methods:
    of the IMAP4 QUOTA extension defined in rfc2087.
 
 
+.. method:: IMAP4.idle(duration=None)
+
+   Return an :class:`!Idler`: an iterable context manager implementing the
+   IMAP4 ``IDLE`` command as defined in :rfc:`2177`.
+
+   The returned object sends the ``IDLE`` command when activated by the
+   :keyword:`with` statement, produces IMAP untagged responses via the
+   :term:`iterator` protocol, and sends ``DONE`` upon context exit.
+
+   All untagged responses that arrive after sending the ``IDLE`` command
+   (including any that arrive before the server acknowledges the command) will
+   be available via iteration. Any leftover responses (those not iterated in
+   the :keyword:`with` context) can be retrieved in the usual way after
+   ``IDLE`` ends, using :meth:`IMAP4.response`.
+
+   Responses are represented as ``(type, [data, ...])`` tuples, as described
+   in :ref:`IMAP4 Objects <imap4-objects>`.
+
+   The *duration* argument sets a maximum duration (in seconds) to keep idling,
+   after which any ongoing iteration will stop. It can be an :class:`int` or
+   :class:`float`, or ``None`` for no time limit.
+   Callers wishing to avoid inactivity timeouts on servers that impose them
+   should keep this at most 29 minutes (1740 seconds).
+   Requires a socket connection; *duration* must be ``None`` on
+   :class:`IMAP4_stream` connections.
+
+   .. code-block:: pycon
+
+      >>> with M.idle(duration=29 * 60) as idler:
+      ...     for typ, data in idler:
+      ...         print(typ, data)
+      ...
+      EXISTS [b'1']
+      RECENT [b'1']
+
+
+   .. method:: Idler.burst(interval=0.1)
+
+      Yield a burst of responses no more than *interval* seconds apart
+      (expressed as an :class:`int` or :class:`float`).
+
+      This :term:`generator` is an alternative to iterating one response at a
+      time, intended to aid in efficient batch processing. It retrieves the
+      next response along with any immediately available subsequent responses.
+      (For example, a rapid series of ``EXPUNGE`` responses after a bulk
+      delete.)
+
+      Requires a socket connection; does not work on :class:`IMAP4_stream`
+      connections.
+
+      .. code-block:: pycon
+
+         >>> with M.idle() as idler:
+         ...     # get a response and any others following by < 0.1 seconds
+         ...     batch = list(idler.burst())
+         ...     print(f'processing {len(batch)} responses...')
+         ...     print(batch)
+         ...
+         processing 3 responses...
+         [('EXPUNGE', [b'2']), ('EXPUNGE', [b'1']), ('RECENT', [b'0'])]
+
+      .. tip::
+
+         The ``IDLE`` context's maximum duration, as passed to
+         :meth:`IMAP4.idle`, is respected when waiting for the first response
+         in a burst. Therefore, an expired :class:`!Idler` will cause this
+         generator to return immediately without producing anything. Callers
+         should consider this if using it in a loop.
+
+
+   .. note::
+
+      The iterator returned by :meth:`IMAP4.idle` is usable only within a
+      :keyword:`with` statement. Before or after that context, unsolicited
+      responses are collected internally whenever a command finishes, and can
+      be retrieved with :meth:`IMAP4.response`.
+
+   .. note::
+
+      The :class:`!Idler` class name and structure are internal interfaces,
+      subject to change. Calling code can rely on its context management,
+      iteration, and public method to remain stable, but should not subclass,
+      instantiate, compare, or otherwise directly reference the class.
+
+   .. versionadded:: 3.14
+
+
 .. method:: IMAP4.list([directory[, pattern]])
 
    List mailbox names in *directory* matching *pattern*.  *directory* defaults to
@@ -322,10 +413,16 @@ An :class:`IMAP4` instance has the following methods:
    the password.  Will only work if the server ``CAPABILITY`` response includes the
    phrase ``AUTH=CRAM-MD5``.
 
+   .. versionchanged:: 3.15
+      An :exc:`IMAP4.error` is raised if MD5 support is not available.
+
 
 .. method:: IMAP4.logout()
 
    Shutdown connection to server. Returns server ``BYE`` response.
+
+   .. versionchanged:: 3.8
+      The method no longer ignores silently arbitrary exceptions.
 
 
 .. method:: IMAP4.lsub(directory='""', pattern='*')
@@ -342,7 +439,7 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.namespace()
 
-   Returns IMAP namespaces as defined in RFC2342.
+   Returns IMAP namespaces as defined in :rfc:`2342`.
 
 
 .. method:: IMAP4.noop()
@@ -350,14 +447,22 @@ An :class:`IMAP4` instance has the following methods:
    Send ``NOOP`` to server.
 
 
-.. method:: IMAP4.open(host, port)
+.. method:: IMAP4.open(host, port, timeout=None)
 
-   Opens socket to *port* at *host*.  This method is implicitly called by
-   the :class:`IMAP4` constructor.  The connection objects established by this
-   method will be used in the :meth:`IMAP4.read`, :meth:`IMAP4.readline`,
-   :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
-   this method.
+   Opens socket to *port* at *host*. The optional *timeout* parameter
+   specifies a timeout in seconds for the connection attempt.
+   If timeout is not given or is ``None``, the global default socket timeout
+   is used. Also note that if the *timeout* parameter is set to be zero,
+   it will raise a :class:`ValueError` to reject creating a non-blocking socket.
+   This method is implicitly called by the :class:`IMAP4` constructor.
+   The connection objects established by this method will be used in
+   the :meth:`IMAP4.read`, :meth:`IMAP4.readline`, :meth:`IMAP4.send`,
+   and :meth:`IMAP4.shutdown` methods. You may override this method.
 
+   .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
+
+   .. versionchanged:: 3.9
+      The *timeout* parameter was added.
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)
 
@@ -427,6 +532,8 @@ An :class:`IMAP4` instance has the following methods:
 
    Sends ``data`` to the remote server. You may override this method.
 
+   .. audit-event:: imaplib.send self,data imaplib.IMAP4.send
+
 
 .. method:: IMAP4.setacl(mailbox, who, what)
 
@@ -487,7 +594,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 
 .. method:: IMAP4.status(mailbox, names)
@@ -515,9 +622,9 @@ An :class:`IMAP4` instance has the following methods:
       allowed creation of such tags, and popular IMAP servers, such as Gmail,
       accept and produce such flags.  There are non-Python programs which also
       create such tags.  Although it is an RFC violation and IMAP clients and
-      servers are supposed to be strict, imaplib nonetheless continues to allow
+      servers are supposed to be strict, imaplib still continues to allow
       such tags to be created for backward compatibility reasons, and as of
-      python 3.6, handles them if they are sent from the server, since this
+      Python 3.6, handles them if they are sent from the server, since this
       improves real-world compatibility.
 
 .. method:: IMAP4.subscribe(mailbox)
@@ -538,7 +645,7 @@ An :class:`IMAP4` instance has the following methods:
    ``search``, the searching *charset* argument is mandatory.  There is also a
    ``uid thread`` command which corresponds to ``thread`` the way that ``uid
    search`` corresponds to ``search``.  The ``thread`` command first searches the
-   mailbox for messages that match the given searching criteria using the charset
+   mailbox for messages that match the given searching criteria using the *charset*
    argument for the interpretation of strings in the searching criteria. It then
    returns the matching messages threaded according to the specified threading
    algorithm.
@@ -558,6 +665,15 @@ An :class:`IMAP4` instance has the following methods:
 
    Unsubscribe from old mailbox.
 
+.. method:: IMAP4.unselect()
+
+   :meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
+   selected mailbox and returns the server to the authenticated
+   state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
+   that no messages are permanently removed from the currently
+   selected mailbox.
+
+   .. versionadded:: 3.9
 
 .. method:: IMAP4.xatom(name[, ...])
 
@@ -597,7 +713,7 @@ retrieves and prints all messages::
 
    import getpass, imaplib
 
-   M = imaplib.IMAP4()
+   M = imaplib.IMAP4(host='example.org')
    M.login(getpass.getuser(), getpass.getpass())
    M.select()
    typ, data = M.search(None, 'ALL')

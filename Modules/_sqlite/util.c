@@ -21,56 +21,27 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "module.h"
-#include "connection.h"
-
-int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
-{
-    int rc;
-
-    if (statement == NULL) {
-        /* this is a workaround for SQLite 3.5 and later. it now apparently
-         * returns NULL for "no-operation" statements */
-        rc = SQLITE_OK;
-    } else {
-        Py_BEGIN_ALLOW_THREADS
-        rc = sqlite3_step(statement);
-        Py_END_ALLOW_THREADS
-    }
-
-    return rc;
-}
-
-/**
- * Checks the SQLite error code and sets the appropriate DB-API exception.
- * Returns the error code (0 means no error occurred).
- */
-int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
-{
-    int errorcode;
-
-#if SQLITE_VERSION_NUMBER < 3003009
-    /* SQLite often doesn't report anything useful, unless you reset the statement first.
-       When using sqlite3_prepare_v2 this is not needed. */
-    if (st != NULL) {
-        (void)sqlite3_reset(st);
-    }
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
-    errorcode = sqlite3_errcode(db);
+#include "module.h"
+#include "pycore_long.h"          // _PyLong_AsByteArray()
+#include "connection.h"
 
-    switch (errorcode)
-    {
+// Returns non-NULL if a new exception should be raised
+static PyObject *
+get_exception_class(pysqlite_state *state, int errorcode)
+{
+    switch (errorcode) {
         case SQLITE_OK:
             PyErr_Clear();
-            break;
+            return NULL;
         case SQLITE_INTERNAL:
         case SQLITE_NOTFOUND:
-            PyErr_SetString(pysqlite_InternalError, sqlite3_errmsg(db));
-            break;
+            return state->InternalError;
         case SQLITE_NOMEM:
-            (void)PyErr_NoMemory();
-            break;
+            return PyErr_NoMemory();
         case SQLITE_ERROR:
         case SQLITE_PERM:
         case SQLITE_ABORT:
@@ -84,26 +55,101 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
         case SQLITE_PROTOCOL:
         case SQLITE_EMPTY:
         case SQLITE_SCHEMA:
-            PyErr_SetString(pysqlite_OperationalError, sqlite3_errmsg(db));
-            break;
+            return state->OperationalError;
         case SQLITE_CORRUPT:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
-            break;
+            return state->DatabaseError;
         case SQLITE_TOOBIG:
-            PyErr_SetString(pysqlite_DataError, sqlite3_errmsg(db));
-            break;
+            return state->DataError;
         case SQLITE_CONSTRAINT:
         case SQLITE_MISMATCH:
-            PyErr_SetString(pysqlite_IntegrityError, sqlite3_errmsg(db));
-            break;
+            return state->IntegrityError;
         case SQLITE_MISUSE:
-            PyErr_SetString(pysqlite_ProgrammingError, sqlite3_errmsg(db));
-            break;
+        case SQLITE_RANGE:
+            return state->InterfaceError;
         default:
-            PyErr_SetString(pysqlite_DatabaseError, sqlite3_errmsg(db));
-            break;
+            return state->DatabaseError;
+    }
+}
+
+static void
+raise_exception(PyObject *type, int errcode, const char *errmsg)
+{
+    PyObject *exc = NULL;
+    PyObject *args[] = { PyUnicode_FromString(errmsg), };
+    if (args[0] == NULL) {
+        goto exit;
+    }
+    exc = PyObject_Vectorcall(type, args, 1, NULL);
+    Py_DECREF(args[0]);
+    if (exc == NULL) {
+        goto exit;
     }
 
+    PyObject *code = PyLong_FromLong(errcode);
+    if (code == NULL) {
+        goto exit;
+    }
+    int rc = PyObject_SetAttrString(exc, "sqlite_errorcode", code);
+    Py_DECREF(code);
+    if (rc < 0) {
+        goto exit;
+    }
+
+    const char *error_name = pysqlite_error_name(errcode);
+    PyObject *name;
+    if (error_name) {
+        name = PyUnicode_FromString(error_name);
+    }
+    else {
+        name = PyUnicode_InternFromString("unknown");
+    }
+    if (name == NULL) {
+        goto exit;
+    }
+    rc = PyObject_SetAttrString(exc, "sqlite_errorname", name);
+    Py_DECREF(name);
+    if (rc < 0) {
+        goto exit;
+    }
+
+    PyErr_SetObject(type, exc);
+
+exit:
+    Py_XDECREF(exc);
+}
+
+void
+set_error_from_code(pysqlite_state *state, int code)
+{
+    PyObject *exc_class = get_exception_class(state, code);
+    if (exc_class == NULL) {
+        // No new exception need be raised.
+        return;
+    }
+
+    const char *errmsg = sqlite3_errstr(code);
+    assert(errmsg != NULL);
+    raise_exception(exc_class, code, errmsg);
+}
+
+/**
+ * Checks the SQLite error code and sets the appropriate DB-API exception.
+ */
+int
+set_error_from_db(pysqlite_state *state, sqlite3 *db)
+{
+    int errorcode = sqlite3_errcode(db);
+    PyObject *exc_class = get_exception_class(state, errorcode);
+    if (exc_class == NULL) {
+        // No new exception need be raised.
+        return SQLITE_OK;
+    }
+
+    /* Create and set the exception. */
+    int extended_errcode = sqlite3_extended_errcode(db);
+    // sqlite3_errmsg() always returns an UTF-8 encoded message
+    const char *errmsg = sqlite3_errmsg(db);
+    raise_exception(exc_class, extended_errcode, errmsg);
     return errorcode;
 }
 
@@ -112,22 +158,6 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 #else
 # define IS_LITTLE_ENDIAN 1
 #endif
-
-PyObject *
-_pysqlite_long_from_int64(sqlite_int64 value)
-{
-# if SIZEOF_LONG_LONG < 8
-    if (value > PY_LLONG_MAX || value < PY_LLONG_MIN) {
-        return _PyLong_FromByteArray(&value, sizeof(value),
-                                     IS_LITTLE_ENDIAN, 1 /* signed */);
-    }
-# endif
-# if SIZEOF_LONG < SIZEOF_LONG_LONG
-    if (value > LONG_MAX || value < LONG_MIN)
-        return PyLong_FromLongLong(value);
-# endif
-    return PyLong_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
-}
 
 sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)
@@ -146,7 +176,7 @@ _pysqlite_long_as_int64(PyObject * py_val)
         sqlite_int64 int64val;
         if (_PyLong_AsByteArray((PyLongObject *)py_val,
                                 (unsigned char *)&int64val, sizeof(int64val),
-                                IS_LITTLE_ENDIAN, 1 /* signed */) >= 0) {
+                                IS_LITTLE_ENDIAN, 1 /* signed */, 0) >= 0) {
             return int64val;
         }
     }

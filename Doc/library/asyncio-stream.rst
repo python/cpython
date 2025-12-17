@@ -2,293 +2,434 @@
 
 .. _asyncio-streams:
 
-+++++++++++++++++++++++++++++
-Streams (coroutine based API)
-+++++++++++++++++++++++++++++
+=======
+Streams
+=======
 
-Stream functions
-================
+**Source code:** :source:`Lib/asyncio/streams.py`
 
-.. note::
+-------------------------------------------------
 
-   The top-level functions in this module are meant as convenience wrappers
-   only; there's really nothing special there, and if they don't do
-   exactly what you want, feel free to copy their code.
+Streams are high-level async/await-ready primitives to work with
+network connections.  Streams allow sending and receiving data without
+using callbacks or low-level protocols and transports.
+
+.. _asyncio_example_stream:
+
+Here is an example of a TCP echo client written using asyncio
+streams::
+
+    import asyncio
+
+    async def tcp_echo_client(message):
+        reader, writer = await asyncio.open_connection(
+            '127.0.0.1', 8888)
+
+        print(f'Send: {message!r}')
+        writer.write(message.encode())
+        await writer.drain()
+
+        data = await reader.read(100)
+        print(f'Received: {data.decode()!r}')
+
+        print('Close the connection')
+        writer.close()
+        await writer.wait_closed()
+
+    asyncio.run(tcp_echo_client('Hello World!'))
 
 
-.. coroutinefunction:: open_connection(host=None, port=None, \*, loop=None, limit=None, \*\*kwds)
+See also the `Examples`_ section below.
 
-   A wrapper for :meth:`~AbstractEventLoop.create_connection()` returning a (reader,
-   writer) pair.
 
-   The reader returned is a :class:`StreamReader` instance; the writer is
-   a :class:`StreamWriter` instance.
+.. rubric:: Stream Functions
 
-   The arguments are all the usual arguments to
-   :meth:`AbstractEventLoop.create_connection` except *protocol_factory*; most
-   common are positional host and port, with various optional keyword arguments
-   following.
+The following top-level asyncio functions can be used to create
+and work with streams:
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   :class:`StreamReader`).
 
-   This function is a :ref:`coroutine <coroutine>`.
+.. function:: open_connection(host=None, port=None, *, \
+                 limit=None, ssl=None, family=0, proto=0, \
+                 flags=0, sock=None, local_addr=None, \
+                 server_hostname=None, ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, \
+                 happy_eyeballs_delay=None, interleave=None)
+   :async:
 
-.. coroutinefunction:: start_server(client_connected_cb, host=None, port=None, \*, loop=None, limit=None, \*\*kwds)
+   Establish a network connection and return a pair of
+   ``(reader, writer)`` objects.
 
-   Start a socket server, with a callback for each client connected. The return
-   value is the same as :meth:`~AbstractEventLoop.create_server()`.
+   The returned *reader* and *writer* objects are instances of
+   :class:`StreamReader` and :class:`StreamWriter` classes.
 
-   The *client_connected_cb* parameter is called with two parameters:
-   *client_reader*, *client_writer*.  *client_reader* is a
-   :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  The *client_connected_cb* parameter can
-   either be a plain callback function or a :ref:`coroutine function
-   <coroutine>`; if it is a coroutine function, it will be automatically
-   converted into a :class:`Task`.
+   *limit* determines the buffer size limit used by the
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
 
-   The rest of the arguments are all the usual arguments to
-   :meth:`~AbstractEventLoop.create_server()` except *protocol_factory*; most
-   common are positional *host* and *port*, with various optional keyword
-   arguments following.
+   The rest of the arguments are passed directly to
+   :meth:`loop.create_connection`.
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   :class:`StreamReader`).
+   .. note::
 
-   This function is a :ref:`coroutine <coroutine>`.
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
 
-.. coroutinefunction:: open_unix_connection(path=None, \*, loop=None, limit=None, **kwds)
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* parameter.
 
-   A wrapper for :meth:`~AbstractEventLoop.create_unix_connection()` returning
-   a (reader, writer) pair.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
-   See :func:`open_connection` for information about return value and other
-   details.
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
 
-   This function is a :ref:`coroutine <coroutine>`.
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
 
-   Availability: UNIX.
 
-.. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \*, loop=None, limit=None, **kwds)
+.. function:: start_server(client_connected_cb, host=None, \
+                 port=None, *, limit=None, \
+                 family=socket.AF_UNSPEC, \
+                 flags=socket.AI_PASSIVE, sock=None, \
+                 backlog=100, ssl=None, reuse_address=None, \
+                 reuse_port=None, keep_alive=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, start_serving=True)
+   :async:
 
-   Start a UNIX Domain Socket server, with a callback for each client connected.
+   Start a socket server.
 
-   See :func:`start_server` for information about return value and other
-   details.
+   The *client_connected_cb* callback is called whenever a new client
+   connection is established.  It receives a ``(reader, writer)`` pair
+   as two arguments, instances of the :class:`StreamReader` and
+   :class:`StreamWriter` classes.
 
-   This function is a :ref:`coroutine <coroutine>`.
+   *client_connected_cb* can be a plain callable or a
+   :ref:`coroutine function <coroutine>`; if it is a coroutine function,
+   it will be automatically scheduled as a :class:`Task`.
 
-   Availability: UNIX.
+   *limit* determines the buffer size limit used by the
+   returned :class:`StreamReader` instance.  By default the *limit*
+   is set to 64 KiB.
+
+   The rest of the arguments are passed directly to
+   :meth:`loop.create_server`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* and *start_serving* parameters.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+      Added the *keep_alive* parameter.
+
+
+.. rubric:: Unix Sockets
+
+.. function:: open_unix_connection(path=None, *, limit=None, \
+               ssl=None, sock=None, server_hostname=None, \
+               ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
+   :async:
+
+   Establish a Unix socket connection and return a pair of
+   ``(reader, writer)``.
+
+   Similar to :func:`open_connection` but operates on Unix sockets.
+
+   See also the documentation of :meth:`loop.create_unix_connection`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      :class:`StreamWriter` created. To close the socket, call its
+      :meth:`~asyncio.StreamWriter.close` method.
+
+   .. availability:: Unix.
+
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* parameter.
+      The *path* parameter can now be a :term:`path-like object`
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
+
+.. function:: start_unix_server(client_connected_cb, path=None, \
+                 *, limit=None, sock=None, backlog=100, ssl=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, start_serving=True, cleanup_socket=True)
+   :async:
+
+   Start a Unix socket server.
+
+   Similar to :func:`start_server` but works with Unix sockets.
+
+   If *cleanup_socket* is true then the Unix socket will automatically
+   be removed from the filesystem when the server is closed, unless the
+   socket has been replaced after the server has been created.
+
+   See also the documentation of :meth:`loop.create_unix_server`.
+
+   .. note::
+
+      The *sock* argument transfers ownership of the socket to the
+      server created. To close the socket, call the server's
+      :meth:`~asyncio.Server.close` method.
+
+   .. availability:: Unix.
+
+   .. versionchanged:: 3.7
+      Added the *ssl_handshake_timeout* and *start_serving* parameters.
+      The *path* parameter can now be a :term:`path-like object`.
+
+   .. versionchanged:: 3.10
+      Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *ssl_shutdown_timeout* parameter.
+
+   .. versionchanged:: 3.13
+      Added the *cleanup_socket* parameter.
 
 
 StreamReader
 ============
 
-.. class:: StreamReader(limit=None, loop=None)
+.. class:: StreamReader
 
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
+   Represents a reader object that provides APIs to read data
+   from the IO stream. As an :term:`asynchronous iterable`, the
+   object supports the :keyword:`async for` statement.
 
-   .. method:: exception()
-
-      Get the exception.
+   It is not recommended to instantiate *StreamReader* objects
+   directly; use :func:`open_connection` and :func:`start_server`
+   instead.
 
    .. method:: feed_eof()
 
       Acknowledge the EOF.
 
-   .. method:: feed_data(data)
+   .. method:: read(n=-1)
+      :async:
 
-      Feed *data* bytes in the internal buffer.  Any operations waiting
-      for the data will be resumed.
+      Read up to *n* bytes from the stream.
 
-   .. method:: set_exception(exc)
-
-      Set the exception.
-
-   .. method:: set_transport(transport)
-
-      Set the transport.
-
-   .. coroutinemethod:: read(n=-1)
-
-      Read up to *n* bytes.  If *n* is not provided, or set to ``-1``,
-      read until EOF and return all read bytes.
-
-      If the EOF was received and the internal buffer is empty,
+      If *n* is not provided or set to ``-1``,
+      read until EOF, then return all read :class:`bytes`.
+      If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
-      This method is a :ref:`coroutine <coroutine>`.
+      If *n* is ``0``, return an empty ``bytes`` object immediately.
 
-   .. coroutinemethod:: readline()
+      If *n* is positive, return at most *n* available ``bytes``
+      as soon as at least 1 byte is available in the internal buffer.
+      If EOF is received before any byte is read, return an empty
+      ``bytes`` object.
 
-      Read one line, where "line" is a sequence of bytes ending with ``\n``.
+   .. method:: readline()
+      :async:
 
-      If EOF is received, and ``\n`` was not found, the method will
-      return the partial read bytes.
+      Read one line, where "line" is a sequence of bytes
+      ending with ``\n``.
 
-      If the EOF was received and the internal buffer is empty,
+      If EOF is received and ``\n`` was not found, the method
+      returns partially read data.
+
+      If EOF is received and the internal buffer is empty,
       return an empty ``bytes`` object.
 
-      This method is a :ref:`coroutine <coroutine>`.
+   .. method:: readexactly(n)
+      :async:
 
-   .. coroutinemethod:: readexactly(n)
+      Read exactly *n* bytes.
 
-      Read exactly *n* bytes. Raise an :exc:`IncompleteReadError` if the end of
-      the stream is reached before *n* can be read, the
-      :attr:`IncompleteReadError.partial` attribute of the exception contains
-      the partial read bytes.
+      Raise an :exc:`IncompleteReadError` if EOF is reached before *n*
+      can be read.  Use the :attr:`IncompleteReadError.partial`
+      attribute to get the partially read data.
 
-      This method is a :ref:`coroutine <coroutine>`.
+   .. method:: readuntil(separator=b'\n')
+      :async:
 
-   .. coroutinemethod:: readuntil(separator=b'\\n')
-
-      Read data from the stream until ``separator`` is found.
+      Read data from the stream until *separator* is found.
 
       On success, the data and separator will be removed from the
       internal buffer (consumed). Returned data will include the
       separator at the end.
 
-      Configured stream limit is used to check result. Limit sets the
-      maximal length of data that can be returned, not counting the
-      separator.
+      If the amount of data read exceeds the configured stream limit, a
+      :exc:`LimitOverrunError` exception is raised, and the data
+      is left in the internal buffer and can be read again.
 
-      If an EOF occurs and the complete separator is still not found,
-      an :exc:`IncompleteReadError` exception will be
-      raised, and the internal buffer will be reset.  The
-      :attr:`IncompleteReadError.partial` attribute may contain the
-      separator partially.
+      If EOF is reached before the complete separator is found,
+      an :exc:`IncompleteReadError` exception is raised, and the internal
+      buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
+      may contain a portion of the separator.
 
-      If the data cannot be read because of over limit, a
-      :exc:`LimitOverrunError` exception  will be raised, and the data
-      will be left in the internal buffer, so it can be read again.
+      The *separator* may also be a tuple of separators. In this
+      case the return value will be the shortest possible that has any
+      separator as the suffix. For the purposes of :exc:`LimitOverrunError`,
+      the shortest possible separator is considered to be the one that
+      matched.
 
       .. versionadded:: 3.5.2
 
+      .. versionchanged:: 3.13
+
+         The *separator* parameter may now be a :class:`tuple` of
+         separators.
+
    .. method:: at_eof()
 
-      Return ``True`` if the buffer is empty and :meth:`feed_eof` was called.
+      Return ``True`` if the buffer is empty and :meth:`feed_eof`
+      was called.
 
 
 StreamWriter
 ============
 
-.. class:: StreamWriter(transport, protocol, reader, loop)
+.. class:: StreamWriter
 
-   Wraps a Transport.
+   Represents a writer object that provides APIs to write data
+   to the IO stream.
 
-   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`,
-   :meth:`write_eof`, :meth:`get_extra_info` and :meth:`close`.  It adds
-   :meth:`drain` which returns an optional :class:`Future` on which you can
-   wait for flow control.  It also adds a transport attribute which references
-   the :class:`Transport` directly.
-
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
-
-   .. attribute:: transport
-
-      Transport.
-
-   .. method:: can_write_eof()
-
-      Return :const:`True` if the transport supports :meth:`write_eof`,
-      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
-
-   .. method:: close()
-
-      Close the transport: see :meth:`BaseTransport.close`.
-
-   .. coroutinemethod:: drain()
-
-      Let the write buffer of the underlying transport a chance to be flushed.
-
-      The intended use is to write::
-
-          w.write(data)
-          yield from w.drain()
-
-      When the size of the transport buffer reaches the high-water limit (the
-      protocol is paused), block until the size of the buffer is drained down
-      to the low-water limit and the protocol is resumed. When there is nothing
-      to wait for, the yield-from continues immediately.
-
-      Yielding from :meth:`drain` gives the opportunity for the loop to
-      schedule the write operation and flush the buffer. It should especially
-      be used when a possibly large amount of data is written to the transport,
-      and the coroutine does not yield-from between calls to :meth:`write`.
-
-      This method is a :ref:`coroutine <coroutine>`.
-
-   .. method:: get_extra_info(name, default=None)
-
-      Return optional transport information: see
-      :meth:`BaseTransport.get_extra_info`.
+   It is not recommended to instantiate *StreamWriter* objects
+   directly; use :func:`open_connection` and :func:`start_server`
+   instead.
 
    .. method:: write(data)
 
-      Write some *data* bytes to the transport: see
-      :meth:`WriteTransport.write`.
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      The *data* buffer should be a bytes, bytearray, or C-contiguous one-dimensional
+      memoryview object.
+
+      The method should be used along with the ``drain()`` method::
+
+         stream.write(data)
+         await stream.drain()
+
 
    .. method:: writelines(data)
 
-      Write a list (or any iterable) of data bytes to the transport:
-      see :meth:`WriteTransport.writelines`.
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      The method should be used along with the ``drain()`` method::
+
+         stream.writelines(lines)
+         await stream.drain()
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      The method should be used, though not mandatory,
+      along with the ``wait_closed()`` method::
+
+         stream.close()
+         await stream.wait_closed()
+
+   .. method:: can_write_eof()
+
+      Return ``True`` if the underlying transport supports
+      the :meth:`write_eof` method, ``False`` otherwise.
 
    .. method:: write_eof()
 
-      Close the write end of the transport after flushing buffered data:
-      see :meth:`WriteTransport.write_eof`.
+      Close the write end of the stream after the buffered write
+      data is flushed.
+
+   .. attribute:: transport
+
+      Return the underlying asyncio transport.
+
+   .. method:: get_extra_info(name, default=None)
+
+      Access optional transport information; see
+      :meth:`BaseTransport.get_extra_info` for details.
+
+   .. method:: drain()
+      :async:
+
+      Wait until it is appropriate to resume writing to the stream.
+      Example::
+
+          writer.write(data)
+          await writer.drain()
+
+      This is a flow control method that interacts with the underlying
+      IO write buffer.  When the size of the buffer reaches
+      the high watermark, *drain()* blocks until the size of the
+      buffer is drained down to the low watermark and writing can
+      be resumed.  When there is nothing to wait for, the :meth:`drain`
+      returns immediately.
+
+   .. method:: start_tls(sslcontext, *, server_hostname=None, \
+                         ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
+      :async:
+
+      Upgrade an existing stream-based connection to TLS.
+
+      Parameters:
+
+      * *sslcontext*: a configured instance of :class:`~ssl.SSLContext`.
+
+      * *server_hostname*: sets or overrides the host name that the target
+        server's certificate will be matched against.
+
+      * *ssl_handshake_timeout* is the time in seconds to wait for the TLS
+        handshake to complete before aborting the connection.  ``60.0`` seconds
+        if ``None`` (default).
+
+      * *ssl_shutdown_timeout* is the time in seconds to wait for the SSL shutdown
+        to complete before aborting the connection. ``30.0`` seconds if ``None``
+        (default).
+
+      .. versionadded:: 3.11
+
+      .. versionchanged:: 3.12
+         Added the *ssl_shutdown_timeout* parameter.
 
 
-StreamReaderProtocol
-====================
+   .. method:: is_closing()
 
-.. class:: StreamReaderProtocol(stream_reader, client_connected_cb=None, loop=None)
+      Return ``True`` if the stream is closed or in the process of
+      being closed.
 
-    Trivial helper class to adapt between :class:`Protocol` and
-    :class:`StreamReader`. Subclass of :class:`Protocol`.
+      .. versionadded:: 3.7
 
-    *stream_reader* is a :class:`StreamReader` instance, *client_connected_cb*
-    is an optional function called with (stream_reader, stream_writer) when a
-    connection is made, *loop* is the event loop instance to use.
+   .. method:: wait_closed()
+      :async:
 
-    (This is a helper class instead of making :class:`StreamReader` itself a
-    :class:`Protocol` subclass, because the :class:`StreamReader` has other
-    potential uses, and to prevent the user of the :class:`StreamReader` from
-    accidentally calling inappropriate methods of the protocol.)
+      Wait until the stream is closed.
 
+      Should be called after :meth:`close` to wait until the underlying
+      connection is closed, ensuring that all data has been flushed
+      before e.g. exiting the program.
 
-IncompleteReadError
-===================
-
-.. exception:: IncompleteReadError
-
-    Incomplete read error, subclass of :exc:`EOFError`.
-
-   .. attribute:: expected
-
-      Total number of expected bytes (:class:`int`).
-
-   .. attribute:: partial
-
-      Read bytes string before the end of stream was reached (:class:`bytes`).
+      .. versionadded:: 3.7
 
 
-LimitOverrunError
-=================
-
-.. exception:: LimitOverrunError
-
-   Reached the buffer limit while looking for a separator.
-
-   .. attribute:: consumed
-
-      Total number of to be consumed bytes.
-
-
-Stream examples
-===============
+Examples
+========
 
 .. _asyncio-tcp-echo-client-streams:
 
@@ -299,29 +440,28 @@ TCP echo client using the :func:`asyncio.open_connection` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def tcp_echo_client(message, loop):
-        reader, writer = yield from asyncio.open_connection('127.0.0.1', 8888,
-                                                            loop=loop)
+    async def tcp_echo_client(message):
+        reader, writer = await asyncio.open_connection(
+            '127.0.0.1', 8888)
 
-        print('Send: %r' % message)
+        print(f'Send: {message!r}')
         writer.write(message.encode())
+        await writer.drain()
 
-        data = yield from reader.read(100)
-        print('Received: %r' % data.decode())
+        data = await reader.read(100)
+        print(f'Received: {data.decode()!r}')
 
-        print('Close the socket')
+        print('Close the connection')
         writer.close()
+        await writer.wait_closed()
 
-    message = 'Hello World!'
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(tcp_echo_client(message, loop))
-    loop.close()
+    asyncio.run(tcp_echo_client('Hello World!'))
+
 
 .. seealso::
 
-   The :ref:`TCP echo client protocol <asyncio-tcp-echo-client-protocol>`
-   example uses the :meth:`AbstractEventLoop.create_connection` method.
+   The :ref:`TCP echo client protocol <asyncio_example_tcp_echo_client_protocol>`
+   example uses the low-level :meth:`loop.create_connection` method.
 
 
 .. _asyncio-tcp-echo-server-streams:
@@ -333,40 +473,38 @@ TCP echo server using the :func:`asyncio.start_server` function::
 
     import asyncio
 
-    @asyncio.coroutine
-    def handle_echo(reader, writer):
-        data = yield from reader.read(100)
+    async def handle_echo(reader, writer):
+        data = await reader.read(100)
         message = data.decode()
         addr = writer.get_extra_info('peername')
-        print("Received %r from %r" % (message, addr))
 
-        print("Send: %r" % message)
+        print(f"Received {message!r} from {addr!r}")
+
+        print(f"Send: {message!r}")
         writer.write(data)
-        yield from writer.drain()
+        await writer.drain()
 
-        print("Close the client socket")
+        print("Close the connection")
         writer.close()
+        await writer.wait_closed()
 
-    loop = asyncio.get_event_loop()
-    coro = asyncio.start_server(handle_echo, '127.0.0.1', 8888, loop=loop)
-    server = loop.run_until_complete(coro)
+    async def main():
+        server = await asyncio.start_server(
+            handle_echo, '127.0.0.1', 8888)
 
-    # Serve requests until Ctrl+C is pressed
-    print('Serving on {}'.format(server.sockets[0].getsockname()))
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
+        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
+        print(f'Serving on {addrs}')
 
-    # Close the server
-    server.close()
-    loop.run_until_complete(server.wait_closed())
-    loop.close()
+        async with server:
+            await server.serve_forever()
+
+    asyncio.run(main())
+
 
 .. seealso::
 
-   The :ref:`TCP echo server protocol <asyncio-tcp-echo-server-protocol>`
-   example uses the :meth:`AbstractEventLoop.create_server` method.
+   The :ref:`TCP echo server protocol <asyncio_example_tcp_echo_server_protocol>`
+   example uses the :meth:`loop.create_server` method.
 
 
 Get HTTP headers
@@ -378,34 +516,38 @@ Simple example querying HTTP headers of the URL passed on the command line::
     import urllib.parse
     import sys
 
-    @asyncio.coroutine
-    def print_http_headers(url):
+    async def print_http_headers(url):
         url = urllib.parse.urlsplit(url)
         if url.scheme == 'https':
-            connect = asyncio.open_connection(url.hostname, 443, ssl=True)
+            reader, writer = await asyncio.open_connection(
+                url.hostname, 443, ssl=True)
         else:
-            connect = asyncio.open_connection(url.hostname, 80)
-        reader, writer = yield from connect
-        query = ('HEAD {path} HTTP/1.0\r\n'
-                 'Host: {hostname}\r\n'
-                 '\r\n').format(path=url.path or '/', hostname=url.hostname)
+            reader, writer = await asyncio.open_connection(
+                url.hostname, 80)
+
+        query = (
+            f"HEAD {url.path or '/'} HTTP/1.0\r\n"
+            f"Host: {url.hostname}\r\n"
+            f"\r\n"
+        )
+
         writer.write(query.encode('latin-1'))
         while True:
-            line = yield from reader.readline()
+            line = await reader.readline()
             if not line:
                 break
+
             line = line.decode('latin1').rstrip()
             if line:
-                print('HTTP header> %s' % line)
+                print(f'HTTP header> {line}')
 
         # Ignore the body, close the socket
         writer.close()
+        await writer.wait_closed()
 
     url = sys.argv[1]
-    loop = asyncio.get_event_loop()
-    task = asyncio.ensure_future(print_http_headers(url))
-    loop.run_until_complete(task)
-    loop.close()
+    asyncio.run(print_http_headers(url))
+
 
 Usage::
 
@@ -415,7 +557,8 @@ or with HTTPS::
 
     python example.py https://example.com/path/page.html
 
-.. _asyncio-register-socket-streams:
+
+.. _asyncio_example_create_connection-streams:
 
 Register an open socket to wait for data using streams
 ------------------------------------------------------
@@ -424,44 +567,41 @@ Coroutine waiting until a socket receives data using the
 :func:`open_connection` function::
 
     import asyncio
-    try:
-        from socket import socketpair
-    except ImportError:
-        from asyncio.windows_utils import socketpair
+    import socket
 
-    @asyncio.coroutine
-    def wait_for_data(loop):
-        # Create a pair of connected sockets
-        rsock, wsock = socketpair()
+    async def wait_for_data():
+        # Get a reference to the current event loop because
+        # we want to access low-level APIs.
+        loop = asyncio.get_running_loop()
 
-        # Register the open socket to wait for data
-        reader, writer = yield from asyncio.open_connection(sock=rsock, loop=loop)
+        # Create a pair of connected sockets.
+        rsock, wsock = socket.socketpair()
+
+        # Register the open socket to wait for data.
+        reader, writer = await asyncio.open_connection(sock=rsock)
 
         # Simulate the reception of data from the network
         loop.call_soon(wsock.send, 'abc'.encode())
 
         # Wait for data
-        data = yield from reader.read(100)
+        data = await reader.read(100)
 
         # Got data, we are done: close the socket
         print("Received:", data.decode())
         writer.close()
+        await writer.wait_closed()
 
         # Close the second socket
         wsock.close()
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(wait_for_data(loop))
-    loop.close()
+    asyncio.run(wait_for_data())
 
 .. seealso::
 
    The :ref:`register an open socket to wait for data using a protocol
-   <asyncio-register-socket>` example uses a low-level protocol created by the
-   :meth:`AbstractEventLoop.create_connection` method.
+   <asyncio_example_create_connection>` example uses a low-level protocol and
+   the :meth:`loop.create_connection` method.
 
    The :ref:`watch a file descriptor for read events
-   <asyncio-watch-read-event>` example uses the low-level
-   :meth:`AbstractEventLoop.add_reader` method to register the file descriptor of a
-   socket.
-
+   <asyncio_example_watch_fd>` example uses the low-level
+   :meth:`loop.add_reader` method to watch a file descriptor.

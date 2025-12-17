@@ -1,5 +1,5 @@
-:mod:`operator` --- Standard operators as functions
-===================================================
+:mod:`!operator` --- Standard operators as functions
+====================================================
 
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
@@ -17,9 +17,10 @@
 
 The :mod:`operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
-equivalent to the expression ``x+y``.  The function names are those used for
-special class methods; variants without leading and trailing ``__`` are also
-provided for convenience.
+equivalent to the expression ``x+y``. Many function names are those used for
+special methods, without the double underscores.  For backward compatibility,
+many of these have a variant with the double underscores kept. The variants
+without the double underscores are preferred for clarity.
 
 The functions fall into categories that perform object comparisons, logical
 operations, mathematical operations and sequence operations.
@@ -58,9 +59,9 @@ truth tests, identity tests, and boolean operations:
               __not__(obj)
 
    Return the outcome of :keyword:`not` *obj*.  (Note that there is no
-   :meth:`__not__` method for object instances; only the interpreter core defines
-   this operation.  The result is affected by the :meth:`__bool__` and
-   :meth:`__len__` methods.)
+   :meth:`!__not__` method for object instances; only the interpreter core defines
+   this operation.  The result is affected by the :meth:`~object.__bool__` and
+   :meth:`~object.__len__` methods.)
 
 
 .. function:: truth(obj)
@@ -77,6 +78,20 @@ truth tests, identity tests, and boolean operations:
 .. function:: is_not(a, b)
 
    Return ``a is not b``.  Tests object identity.
+
+
+.. function:: is_none(a)
+
+   Return ``a is None``.  Tests object identity.
+
+   .. versionadded:: 3.14
+
+
+.. function:: is_not_none(a)
+
+   Return ``a is not None``.  Tests object identity.
+
+   .. versionadded:: 3.14
 
 
 The mathematical and bitwise operations are the most numerous:
@@ -110,6 +125,10 @@ The mathematical and bitwise operations are the most numerous:
               __index__(a)
 
    Return *a* converted to an integer.  Equivalent to ``a.__index__()``.
+
+   .. versionchanged:: 3.10
+      The result always has exact type :class:`int`.  Previously, the result
+      could have been an instance of a subclass of ``int``.
 
 
 .. function:: inv(obj)
@@ -239,11 +258,22 @@ Operations which work with sequences (some of them with mappings too) include:
 
 .. function:: length_hint(obj, default=0)
 
-   Return an estimated length for the object *o*. First try to return its
+   Return an estimated length for the object *obj*. First try to return its
    actual length, then an estimate using :meth:`object.__length_hint__`, and
    finally return the default value.
 
    .. versionadded:: 3.4
+
+
+The following operation works with callables:
+
+.. function:: call(obj, /, *args, **kwargs)
+              __call__(obj, /, *args, **kwargs)
+
+   Return ``obj(*args, **kwargs)``.
+
+   .. versionadded:: 3.11
+
 
 The :mod:`operator` module also defines tools for generalized attribute and item
 lookups.  These are useful for making fast field extractors as arguments for
@@ -290,7 +320,7 @@ expect a function argument.
               itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
-   operand's :meth:`__getitem__` method.  If multiple items are specified,
+   operand's :meth:`~object.__getitem__` method.  If multiple items are specified,
    returns a tuple of lookup values.  For example:
 
    * After ``f = itemgetter(2)``, the call ``f(r)`` returns ``r[2]``.
@@ -310,17 +340,19 @@ expect a function argument.
                   return tuple(obj[item] for item in items)
           return g
 
-   The items can be any type accepted by the operand's :meth:`__getitem__`
-   method.  Dictionaries accept any hashable value.  Lists, tuples, and
+   The items can be any type accepted by the operand's :meth:`~object.__getitem__`
+   method.  Dictionaries accept any :term:`hashable` value.  Lists, tuples, and
    strings accept an index or a slice:
 
       >>> itemgetter(1)('ABCDEFG')
       'B'
-      >>> itemgetter(1,3,5)('ABCDEFG')
+      >>> itemgetter(1, 3, 5)('ABCDEFG')
       ('B', 'D', 'F')
-      >>> itemgetter(slice(2,None))('ABCDEFG')
+      >>> itemgetter(slice(2, None))('ABCDEFG')
       'CDEFG'
-
+      >>> soldier = dict(rank='captain', name='dotterbart')
+      >>> itemgetter('rank')(soldier)
+      'captain'
 
    Example of using :func:`itemgetter` to retrieve specific fields from a
    tuple record:
@@ -333,7 +365,7 @@ expect a function argument.
       [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
 
 
-.. function:: methodcaller(name[, args...])
+.. function:: methodcaller(name, /, *args, **kwargs)
 
    Return a callable object that calls the method *name* on its operand.  If
    additional arguments and/or keyword arguments are given, they will be given
@@ -346,7 +378,7 @@ expect a function argument.
 
    Equivalent to::
 
-      def methodcaller(name, *args, **kwargs):
+      def methodcaller(name, /, *args, **kwargs):
           def caller(obj):
               return getattr(obj, name)(*args, **kwargs)
           return caller
@@ -386,6 +418,10 @@ Python syntax and the functions in the :mod:`operator` module.
 | Identity              | ``a is b``              | ``is_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is not b``          | ``is_not(a, b)``                      |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is None``           | ``is_none(a)``                        |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is not None``       | ``is_not_none(a)``                    |
 +-----------------------+-------------------------+---------------------------------------+
 | Indexed Assignment    | ``obj[k] = v``          | ``setitem(obj, k, v)``                |
 +-----------------------+-------------------------+---------------------------------------+
@@ -434,8 +470,8 @@ Python syntax and the functions in the :mod:`operator` module.
 | Ordering              | ``a > b``               | ``gt(a, b)``                          |
 +-----------------------+-------------------------+---------------------------------------+
 
-Inplace Operators
------------------
+In-place Operators
+------------------
 
 Many operations have an "in-place" version.  Listed below are functions
 providing a more primitive access to in-place operators than the usual syntax
@@ -458,7 +494,7 @@ value is computed, but not assigned back to the input variable:
 >>> a
 'hello'
 
-For mutable targets such as lists and dictionaries, the inplace method
+For mutable targets such as lists and dictionaries, the in-place method
 will perform the update, so no subsequent assignment is necessary:
 
 >>> s = ['h', 'e', 'l', 'l', 'o']

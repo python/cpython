@@ -312,7 +312,7 @@ uint8 = ArgumentDescriptor(
             doc="Eight-byte unsigned integer, little-endian.")
 
 
-def read_stringnl(f, decode=True, stripquotes=True):
+def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
     r"""
     >>> import io
     >>> read_stringnl(io.BytesIO(b"'abcd'\nefg\n"))
@@ -348,7 +348,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
         for q in (b'"', b"'"):
             if data.startswith(q):
                 if not data.endswith(q):
-                    raise ValueError("strinq quote %r not found at both "
+                    raise ValueError("string quote %r not found at both "
                                      "ends of %r" % (q, data))
                 data = data[1:-1]
                 break
@@ -356,7 +356,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = codecs.escape_decode(data)[0].decode("ascii")
+        data = codecs.escape_decode(data)[0].decode(encoding)
     return data
 
 stringnl = ArgumentDescriptor(
@@ -370,7 +370,7 @@ stringnl = ArgumentDescriptor(
                    """)
 
 def read_stringnl_noescape(f):
-    return read_stringnl(f, stripquotes=False)
+    return read_stringnl(f, stripquotes=False, encoding='utf-8')
 
 stringnl_noescape = ArgumentDescriptor(
                         name='stringnl_noescape',
@@ -560,6 +560,41 @@ bytes8 = ArgumentDescriptor(
               n=TAKEN_FROM_ARGUMENT8U,
               reader=read_bytes8,
               doc="""A counted bytes string.
+
+              The first argument is an 8-byte little-endian unsigned int giving
+              the number of bytes, and the second argument is that many bytes.
+              """)
+
+
+def read_bytearray8(f):
+    r"""
+    >>> import io, struct, sys
+    >>> read_bytearray8(io.BytesIO(b"\x00\x00\x00\x00\x00\x00\x00\x00abc"))
+    bytearray(b'')
+    >>> read_bytearray8(io.BytesIO(b"\x03\x00\x00\x00\x00\x00\x00\x00abcdef"))
+    bytearray(b'abc')
+    >>> bigsize8 = struct.pack("<Q", sys.maxsize//3)
+    >>> read_bytearray8(io.BytesIO(bigsize8 + b"abcdef"))  #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: expected ... bytes in a bytearray8, but only 6 remain
+    """
+
+    n = read_uint8(f)
+    assert n >= 0
+    if n > sys.maxsize:
+        raise ValueError("bytearray8 byte count > sys.maxsize: %d" % n)
+    data = f.read(n)
+    if len(data) == n:
+        return bytearray(data)
+    raise ValueError("expected %d bytes in a bytearray8, but only %d remain" %
+                     (n, len(data)))
+
+bytearray8 = ArgumentDescriptor(
+              name="bytearray8",
+              n=TAKEN_FROM_ARGUMENT8U,
+              reader=read_bytearray8,
+              doc="""A counted bytearray.
 
               The first argument is an 8-byte little-endian unsigned int giving
               the number of bytes, and the second argument is that many bytes.
@@ -970,6 +1005,11 @@ pybytes = StackObject(
     obtype=bytes,
     doc="A Python bytes object.")
 
+pybytearray = StackObject(
+    name='bytearray',
+    obtype=bytearray,
+    doc="A Python bytearray object.")
+
 pyunicode = StackObject(
     name='str',
     obtype=str,
@@ -1004,6 +1044,11 @@ pyfrozenset = StackObject(
     name="frozenset",
     obtype=set,
     doc="A Python frozenset object.")
+
+pybuffer = StackObject(
+    name='buffer',
+    obtype=object,
+    doc="A Python buffer-like object.")
 
 anyobject = StackObject(
     name='any',
@@ -1208,7 +1253,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pyint],
       proto=2,
-      doc="""Long integer using found-byte length.
+      doc="""Long integer using four-byte length.
 
       A more efficient encoding of a Python long; the long4 encoding
       says it all."""),
@@ -1265,7 +1310,7 @@ opcodes = [
       object instead.
       """),
 
-    # Bytes (protocol 3 only; older protocols don't support bytes at all)
+    # Bytes (protocol 3 and higher)
 
     I(name='BINBYTES',
       code='B',
@@ -1306,6 +1351,39 @@ opcodes = [
       which are taken literally as the string content.
       """),
 
+    # Bytearray (protocol 5 and higher)
+
+    I(name='BYTEARRAY8',
+      code='\x96',
+      arg=bytearray8,
+      stack_before=[],
+      stack_after=[pybytearray],
+      proto=5,
+      doc="""Push a Python bytearray object.
+
+      There are two arguments:  the first is an 8-byte unsigned int giving
+      the number of bytes in the bytearray, and the second is that many bytes,
+      which are taken literally as the bytearray content.
+      """),
+
+    # Out-of-band buffer (protocol 5 and higher)
+
+    I(name='NEXT_BUFFER',
+      code='\x97',
+      arg=None,
+      stack_before=[],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Push an out-of-band buffer object."),
+
+    I(name='READONLY_BUFFER',
+      code='\x98',
+      arg=None,
+      stack_before=[pybuffer],
+      stack_after=[pybuffer],
+      proto=5,
+      doc="Make an out-of-band buffer object read-only."),
+
     # Ways to spell None.
 
     I(name='NONE',
@@ -1325,9 +1403,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push True onto the stack."""),
+      doc="Push True onto the stack."),
 
     I(name='NEWFALSE',
       code='\x89',
@@ -1335,9 +1411,7 @@ opcodes = [
       stack_before=[],
       stack_after=[pybool],
       proto=2,
-      doc="""True.
-
-      Push False onto the stack."""),
+      doc="Push False onto the stack."),
 
     # Ways to spell Unicode strings.
 
@@ -2279,7 +2353,7 @@ def optimize(p):
             if arg > proto:
                 proto = arg
             if pos == 0:
-                protoheader = p[pos: end_pos]
+                protoheader = p[pos:end_pos]
             else:
                 opcodes.append((pos, end_pos))
         else:
@@ -2295,6 +2369,7 @@ def optimize(p):
         pickler.framer.start_framing()
     idx = 0
     for op, arg in opcodes:
+        frameless = False
         if op is put:
             if arg not in newids:
                 continue
@@ -2305,8 +2380,12 @@ def optimize(p):
             data = pickler.get(newids[arg])
         else:
             data = p[op:arg]
-        pickler.framer.commit_frame()
-        pickler.write(data)
+            frameless = len(data) > pickler.framer._FRAME_SIZE_TARGET
+        pickler.framer.commit_frame(force=frameless)
+        if frameless:
+            pickler.framer.file_write(data)
+        else:
+            pickler.write(data)
     pickler.framer.end_framing()
     return out.getvalue()
 
@@ -2350,8 +2429,6 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
     + A memo entry isn't referenced before it's defined.
 
     + The markobject isn't stored in the memo.
-
-    + A memo entry isn't redefined.
     """
 
     # Most of the hair here is for sanity checks, but most of it is needed
@@ -2405,7 +2482,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
                     assert opcode.name == "POP"
                     numtopop = 0
             else:
-                errormsg = markmsg = "no MARK exists on stack"
+                errormsg = "no MARK exists on stack"
 
         # Check for correct memo usage.
         if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT", "MEMOIZE"):
@@ -2415,9 +2492,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             else:
                 assert arg is not None
                 memo_idx = arg
-            if memo_idx in memo:
-                errormsg = "memo key %r already defined" % arg
-            elif not stack:
+            if not stack:
                 errormsg = "stack is empty -- can't store into memo"
             elif stack[-1] is markobject:
                 errormsg = "can't store markobject in the memo"
@@ -2434,7 +2509,10 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             # make a mild effort to align arguments
             line += ' ' * (10 - len(opcode.name))
             if arg is not None:
-                line += ' ' + repr(arg)
+                if opcode.name in ("STRING", "BINSTRING", "SHORT_BINSTRING"):
+                    line += ' ' + ascii(arg)
+                else:
+                    line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
         if annotate:
@@ -2480,35 +2558,35 @@ _dis_test = r"""
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
-    5: L    LONG       1
-    9: a    APPEND
-   10: L    LONG       2
-   14: a    APPEND
-   15: (    MARK
-   16: L        LONG       3
-   20: L        LONG       4
-   24: t        TUPLE      (MARK at 15)
-   25: p    PUT        1
-   28: a    APPEND
-   29: (    MARK
-   30: d        DICT       (MARK at 29)
-   31: p    PUT        2
-   34: c    GLOBAL     '_codecs encode'
-   50: p    PUT        3
-   53: (    MARK
-   54: V        UNICODE    'abc'
-   59: p        PUT        4
-   62: V        UNICODE    'latin1'
-   70: p        PUT        5
-   73: t        TUPLE      (MARK at 53)
-   74: p    PUT        6
-   77: R    REDUCE
-   78: p    PUT        7
-   81: V    UNICODE    'def'
-   86: p    PUT        8
-   89: s    SETITEM
-   90: a    APPEND
-   91: .    STOP
+    5: I    INT        1
+    8: a    APPEND
+    9: I    INT        2
+   12: a    APPEND
+   13: (    MARK
+   14: I        INT        3
+   17: I        INT        4
+   20: t        TUPLE      (MARK at 13)
+   21: p    PUT        1
+   24: a    APPEND
+   25: (    MARK
+   26: d        DICT       (MARK at 25)
+   27: p    PUT        2
+   30: c    GLOBAL     '_codecs encode'
+   46: p    PUT        3
+   49: (    MARK
+   50: V        UNICODE    'abc'
+   55: p        PUT        4
+   58: V        UNICODE    'latin1'
+   66: p        PUT        5
+   69: t        TUPLE      (MARK at 49)
+   70: p    PUT        6
+   73: R    REDUCE
+   74: p    PUT        7
+   77: V    UNICODE    'def'
+   82: p    PUT        8
+   85: s    SETITEM
+   86: a    APPEND
+   87: .    STOP
 highest protocol among opcodes = 0
 
 Try again with a "binary" pickle.
@@ -2577,13 +2655,13 @@ highest protocol among opcodes = 0
    93: p    PUT        6
    96: V    UNICODE    'value'
   103: p    PUT        7
-  106: L    LONG       42
-  111: s    SETITEM
-  112: b    BUILD
-  113: a    APPEND
-  114: g    GET        5
-  117: a    APPEND
-  118: .    STOP
+  106: I    INT        42
+  110: s    SETITEM
+  111: b    BUILD
+  112: a    APPEND
+  113: g    GET        5
+  116: a    APPEND
+  117: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
@@ -2760,19 +2838,18 @@ __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
            }
 
-def _test():
-    import doctest
-    return doctest.testmod()
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
     parser = argparse.ArgumentParser(
-        description='disassemble one or more pickle files')
+        description='disassemble one or more pickle files',
+        color=True,
+    )
     parser.add_argument(
-        'pickle_file', type=argparse.FileType('br'),
-        nargs='*', help='the pickle file')
+        'pickle_file',
+        nargs='+', help='the pickle file')
     parser.add_argument(
-        '-o', '--output', default=sys.stdout, type=argparse.FileType('w'),
+        '-o', '--output',
         help='the file where the output should be written')
     parser.add_argument(
         '-m', '--memo', action='store_true',
@@ -2787,25 +2864,28 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
-    args = parser.parse_args()
-    if args.test:
-        _test()
+    args = parser.parse_args(args)
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        annotate = 30 if args.annotate else 0
-        if not args.pickle_file:
-            parser.print_help()
-        elif len(args.pickle_file) == 1:
-            dis(args.pickle_file[0], args.output, None,
-                args.indentlevel, annotate)
-        else:
-            memo = {} if args.memo else None
-            for f in args.pickle_file:
-                preamble = args.preamble.format(name=f.name)
-                args.output.write(preamble + '\n')
-                dis(f, args.output, memo, args.indentlevel, annotate)
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
+            else:
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()
+
+
+if __name__ == "__main__":
+    _main()

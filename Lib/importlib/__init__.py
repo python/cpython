@@ -34,7 +34,7 @@ try:
     import _frozen_importlib_external as _bootstrap_external
 except ImportError:
     from . import _bootstrap_external
-    _bootstrap_external._setup(_bootstrap)
+    _bootstrap_external._set_bootstrap_module(_bootstrap)
     _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
@@ -48,14 +48,11 @@ else:
     sys.modules['importlib._bootstrap_external'] = _bootstrap_external
 
 # To simplify imports in test code
-_w_long = _bootstrap_external._w_long
-_r_long = _bootstrap_external._r_long
+_pack_uint32 = _bootstrap_external._pack_uint32
+_unpack_uint32 = _bootstrap_external._unpack_uint32
 
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)
-
-import types
-import warnings
 
 
 # Public API #########################################################
@@ -71,41 +68,6 @@ def invalidate_caches():
             finder.invalidate_caches()
 
 
-def find_loader(name, path=None):
-    """Return the loader for the specified module.
-
-    This is a backward-compatible wrapper around find_spec().
-
-    This function is deprecated in favor of importlib.util.find_spec().
-
-    """
-    warnings.warn('Deprecated since Python 3.4. '
-                  'Use importlib.util.find_spec() instead.',
-                  DeprecationWarning, stacklevel=2)
-    try:
-        loader = sys.modules[name].__loader__
-        if loader is None:
-            raise ValueError('{}.__loader__ is None'.format(name))
-        else:
-            return loader
-    except KeyError:
-        pass
-    except AttributeError:
-        raise ValueError('{}.__loader__ is not set'.format(name)) from None
-
-    spec = _bootstrap._find_spec(name, path)
-    # We won't worry about malformed specs (missing attributes).
-    if spec is None:
-        return None
-    if spec.loader is None:
-        if spec.submodule_search_locations is None:
-            raise ImportError('spec for {} missing loader'.format(name),
-                              name=name)
-        raise ImportError('namespace packages do not have loaders',
-                          name=name)
-    return spec.loader
-
-
 def import_module(name, package=None):
     """Import a module.
 
@@ -117,9 +79,8 @@ def import_module(name, package=None):
     level = 0
     if name.startswith('.'):
         if not package:
-            msg = ("the 'package' argument is required to perform a relative "
-                   "import for {!r}")
-            raise TypeError(msg.format(name))
+            raise TypeError("the 'package' argument is required to perform a "
+                            f"relative import for {name!r}")
         for character in name:
             if character != '.':
                 break
@@ -136,16 +97,21 @@ def reload(module):
     The module must have been successfully imported before.
 
     """
-    if not module or not isinstance(module, types.ModuleType):
-        raise TypeError("reload() argument must be a module")
+    # If a LazyModule has not yet been materialized, reload is a no-op.
+    if importlib_util := sys.modules.get('importlib.util'):
+        if lazy_module_type := getattr(importlib_util, '_LazyModule', None):
+            if isinstance(module, lazy_module_type):
+                return module
     try:
         name = module.__spec__.name
     except AttributeError:
-        name = module.__name__
+        try:
+            name = module.__name__
+        except AttributeError:
+            raise TypeError("reload() argument must be a module") from None
 
     if sys.modules.get(name) is not module:
-        msg = "module {} not in sys.modules"
-        raise ImportError(msg.format(name), name=name)
+        raise ImportError(f"module {name} not in sys.modules", name=name)
     if name in _RELOADING:
         return _RELOADING[name]
     _RELOADING[name] = module
@@ -155,8 +121,7 @@ def reload(module):
             try:
                 parent = sys.modules[parent_name]
             except KeyError:
-                msg = "parent {!r} not in sys.modules"
-                raise ImportError(msg.format(parent_name),
+                raise ImportError(f"parent {parent_name!r} not in sys.modules",
                                   name=parent_name) from None
             else:
                 pkgpath = parent.__path__

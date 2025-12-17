@@ -46,6 +46,14 @@ class TestInversion(TestEmailBase):
             foo
             """),),
 
+        'header_with_invalid_date': (dedent(b"""\
+            Date: Tue, 06 Jun 2017 27:39:33 +0600
+            From: abc@xyz.com
+            Subject: timezones
+
+            How do they work even?
+            """),),
+
             }
 
     payload_params = {

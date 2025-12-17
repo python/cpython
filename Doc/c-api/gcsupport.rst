@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _supporting-cycle-detection:
 
@@ -13,43 +13,127 @@ or strings), do not need to provide any explicit support for garbage
 collection.
 
 To create a container type, the :c:member:`~PyTypeObject.tp_flags` field of the type object must
-include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
+include the :c:macro:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
 :c:member:`~PyTypeObject.tp_traverse` handler.  If instances of the type are mutable, a
 :c:member:`~PyTypeObject.tp_clear` implementation must also be provided.
 
 
-.. data:: Py_TPFLAGS_HAVE_GC
-   :noindex:
-
+:c:macro:`Py_TPFLAGS_HAVE_GC`
    Objects with a type with this flag set must conform with the rules
    documented here.  For convenience these objects will be referred to as
    container objects.
 
 Constructors for container types must conform to two rules:
 
-#. The memory for the object must be allocated using :c:func:`PyObject_GC_New`
-   or :c:func:`PyObject_GC_NewVar`.
+#. The memory for the object must be allocated using :c:macro:`PyObject_GC_New`
+   or :c:macro:`PyObject_GC_NewVar`.
 
 #. Once all the fields which may contain references to other containers are
    initialized, it must call :c:func:`PyObject_GC_Track`.
 
+Similarly, the deallocator for the object must conform to a similar pair of
+rules:
 
-.. c:function:: TYPE* PyObject_GC_New(TYPE, PyTypeObject *type)
+#. Before fields which refer to other containers are invalidated,
+   :c:func:`PyObject_GC_UnTrack` must be called.
 
-   Analogous to :c:func:`PyObject_New` but for container objects with the
-   :const:`Py_TPFLAGS_HAVE_GC` flag set.
+#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+
+   .. warning::
+      If a type adds the Py_TPFLAGS_HAVE_GC, then it *must* implement at least
+      a :c:member:`~PyTypeObject.tp_traverse` handler or explicitly use one
+      from its subclass or subclasses.
+
+      When calling :c:func:`PyType_Ready` or some of the APIs that indirectly
+      call it like :c:func:`PyType_FromSpecWithBases` or
+      :c:func:`PyType_FromSpec` the interpreter will automatically populate the
+      :c:member:`~PyTypeObject.tp_flags`, :c:member:`~PyTypeObject.tp_traverse`
+      and :c:member:`~PyTypeObject.tp_clear` fields if the type inherits from a
+      class that implements the garbage collector protocol and the child class
+      does *not* include the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
+
+.. c:macro:: PyObject_GC_New(TYPE, typeobj)
+
+   Analogous to :c:macro:`PyObject_New` but for container objects with the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
+   :c:func:`PyType_GenericAlloc` is preferred over a custom function that
+   simply calls this macro.
+
+   Memory allocated by this macro must be freed with
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
+
+   .. seealso::
+
+      * :c:func:`PyObject_GC_Del`
+      * :c:macro:`PyObject_New`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_alloc`
 
 
-.. c:function:: TYPE* PyObject_GC_NewVar(TYPE, PyTypeObject *type, Py_ssize_t size)
+.. c:macro:: PyObject_GC_NewVar(TYPE, typeobj, size)
 
-   Analogous to :c:func:`PyObject_NewVar` but for container objects with the
-   :const:`Py_TPFLAGS_HAVE_GC` flag set.
+   Analogous to :c:macro:`PyObject_NewVar` but for container objects with the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag set.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   When populating a type's :c:member:`~PyTypeObject.tp_alloc` slot,
+   :c:func:`PyType_GenericAlloc` is preferred over a custom function that
+   simply calls this macro.
+
+   Memory allocated by this macro must be freed with
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
+
+   .. seealso::
+
+      * :c:func:`PyObject_GC_Del`
+      * :c:macro:`PyObject_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_alloc`
 
 
-.. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
+.. c:function:: PyObject* PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *type, size_t extra_size)
 
-   Resize an object allocated by :c:func:`PyObject_NewVar`.  Returns the
-   resized object or *NULL* on failure.
+   Analogous to :c:macro:`PyObject_GC_New` but allocates *extra_size*
+   bytes at the end of the object (at offset
+   :c:member:`~PyTypeObject.tp_basicsize`).
+   The allocated memory is initialized to zeros,
+   except for the :c:type:`Python object header <PyObject>`.
+
+   The extra data will be deallocated with the object, but otherwise it is
+   not managed by Python.
+
+   Memory allocated by this function must be freed with
+   :c:func:`PyObject_GC_Del` (usually called via the object's
+   :c:member:`~PyTypeObject.tp_free` slot).
+
+   .. warning::
+      The function is marked as unstable because the final mechanism
+      for reserving extra data after an instance is not yet decided.
+      For allocating a variable number of fields, prefer using
+      :c:type:`PyVarObject` and :c:member:`~PyTypeObject.tp_itemsize`
+      instead.
+
+   .. versionadded:: 3.12
+
+
+.. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
+
+   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Returns the resized object of type ``TYPE*`` (refers to any C type)
+   or ``NULL`` on failure.
+
+   *op* must be of type :c:expr:`PyVarObject *`
+   and must not be tracked by the collector yet.
+   *newsize* must be of type :c:type:`Py_ssize_t`.
 
 
 .. c:function:: void PyObject_GC_Track(PyObject *op)
@@ -61,24 +145,53 @@ Constructors for container types must conform to two rules:
    end of the constructor.
 
 
-.. c:function:: void _PyObject_GC_TRACK(PyObject *op)
+.. c:function:: int PyObject_IS_GC(PyObject *obj)
 
-   A macro version of :c:func:`PyObject_GC_Track`.  It should not be used for
-   extension modules.
+   Returns non-zero if the object implements the garbage collector protocol,
+   otherwise returns 0.
 
-Similarly, the deallocator for the object must conform to a similar pair of
-rules:
+   The object cannot be tracked by the garbage collector if this function returns 0.
 
-#. Before fields which refer to other containers are invalidated,
-   :c:func:`PyObject_GC_UnTrack` must be called.
 
-#. The object's memory must be deallocated using :c:func:`PyObject_GC_Del`.
+.. c:function:: int PyObject_GC_IsTracked(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* is being
+   currently tracked by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_tracked`.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: int PyObject_GC_IsFinalized(PyObject *op)
+
+   Returns 1 if the object type of *op* implements the GC protocol and *op* has been
+   already finalized by the garbage collector and 0 otherwise.
+
+   This is analogous to the Python function :func:`gc.is_finalized`.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: void PyObject_GC_Del(void *op)
 
-   Releases memory allocated to an object using :c:func:`PyObject_GC_New` or
-   :c:func:`PyObject_GC_NewVar`.
+   Releases memory allocated to an object using :c:macro:`PyObject_GC_New` or
+   :c:macro:`PyObject_GC_NewVar`.
+
+   Do not call this directly to free an object's memory; call the type's
+   :c:member:`~PyTypeObject.tp_free` slot instead.
+
+   Do not use this for memory allocated by :c:macro:`PyObject_New`,
+   :c:macro:`PyObject_NewVar`, or related allocation functions; use
+   :c:func:`PyObject_Free` instead.
+
+   .. seealso::
+
+      * :c:func:`PyObject_Free` is the non-GC equivalent of this function.
+      * :c:macro:`PyObject_GC_New`
+      * :c:macro:`PyObject_GC_NewVar`
+      * :c:func:`PyType_GenericAlloc`
+      * :c:member:`~PyTypeObject.tp_free`
 
 
 .. c:function:: void PyObject_GC_UnTrack(void *op)
@@ -90,10 +203,10 @@ rules:
    the fields used by the :c:member:`~PyTypeObject.tp_traverse` handler become invalid.
 
 
-.. c:function:: void _PyObject_GC_UNTRACK(PyObject *op)
+.. versionchanged:: 3.8
 
-   A macro version of :c:func:`PyObject_GC_UnTrack`.  It should not be used for
-   extension modules.
+   The :c:func:`!_PyObject_GC_TRACK` and :c:func:`!_PyObject_GC_UNTRACK` macros
+   have been removed from the public C API.
 
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 
@@ -115,18 +228,22 @@ The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
    Traversal function for a container object.  Implementations must call the
    *visit* function for each object directly contained by *self*, with the
    parameters to *visit* being the contained object and the *arg* value passed
-   to the handler.  The *visit* function must not be called with a *NULL*
+   to the handler.  The *visit* function must not be called with a ``NULL``
    object argument.  If *visit* returns a non-zero value that value should be
    returned immediately.
+
+   The traversal function must not have any side effects.  Implementations
+   may not modify the reference counts of any Python objects nor create or
+   destroy any Python objects.
 
 To simplify writing :c:member:`~PyTypeObject.tp_traverse` handlers, a :c:func:`Py_VISIT` macro is
 provided.  In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse` implementation
 must name its arguments exactly *visit* and *arg*:
 
 
-.. c:function:: void Py_VISIT(PyObject *o)
+.. c:macro:: Py_VISIT(o)
 
-   If *o* is not *NULL*, call the *visit* callback, with arguments *o*
+   If the :c:expr:`PyObject *` *o* is not ``NULL``, call the *visit* callback, with arguments *o*
    and *arg*.  If *visit* returns a non-zero value, then return it.
    Using this macro, :c:member:`~PyTypeObject.tp_traverse` handlers
    look like::
@@ -139,7 +256,7 @@ must name its arguments exactly *visit* and *arg*:
           return 0;
       }
 
-The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or *NULL*
+The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or ``NULL``
 if the object is immutable.
 
 
@@ -151,3 +268,79 @@ if the object is immutable.
    this method (don't just call :c:func:`Py_DECREF` on a reference).  The
    collector will call this method if it detects that this object is involved
    in a reference cycle.
+
+
+Controlling the Garbage Collector State
+---------------------------------------
+
+The C-API provides the following functions for controlling
+garbage collection runs.
+
+.. c:function:: Py_ssize_t PyGC_Collect(void)
+
+   Perform a full garbage collection, if the garbage collector is enabled.
+   (Note that :func:`gc.collect` runs it unconditionally.)
+
+   Returns the number of collected + unreachable objects which cannot
+   be collected.
+   If the garbage collector is disabled or already collecting,
+   returns ``0`` immediately.
+   Errors during garbage collection are passed to :data:`sys.unraisablehook`.
+   This function does not raise exceptions.
+
+
+.. c:function:: int PyGC_Enable(void)
+
+   Enable the garbage collector: similar to :func:`gc.enable`.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int PyGC_Disable(void)
+
+   Disable the garbage collector: similar to :func:`gc.disable`.
+   Returns the previous state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10
+
+
+.. c:function:: int PyGC_IsEnabled(void)
+
+   Query the state of the garbage collector: similar to :func:`gc.isenabled`.
+   Returns the current state, 0 for disabled and 1 for enabled.
+
+   .. versionadded:: 3.10
+
+
+Querying Garbage Collector State
+--------------------------------
+
+The C-API provides the following interface for querying information about
+the garbage collector.
+
+.. c:function:: void PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
+
+   Run supplied *callback* on all live GC-capable objects. *arg* is passed through to
+   all invocations of *callback*.
+
+   .. warning::
+      If new objects are (de)allocated by the callback it is undefined if they
+      will be visited.
+
+      Garbage collection is disabled during operation. Explicitly running a collection
+      in the callback may lead to undefined behaviour e.g. visiting the same objects
+      multiple times or not at all.
+
+   .. versionadded:: 3.12
+
+.. c:type:: int (*gcvisitobjects_t)(PyObject *object, void *arg)
+
+   Type of the visitor function to be passed to :c:func:`PyUnstable_GC_VisitObjects`.
+   *arg* is the same as the *arg* passed to ``PyUnstable_GC_VisitObjects``.
+   Return ``1`` to continue iteration, return ``0`` to stop iteration. Other return
+   values are reserved for now so behavior on returning anything else is undefined.
+
+   .. versionadded:: 3.12
+
+

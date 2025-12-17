@@ -2,18 +2,19 @@ This document describes some caveats about the use of Valgrind with
 Python.  Valgrind is used periodically by Python developers to try
 to ensure there are no memory leaks or invalid memory reads/writes.
 
+If you want to enable valgrind support in Python, you will need to
+configure Python --with-valgrind option or an older option
+--without-pymalloc.
+
 UPDATE: Python 3.6 now supports PYTHONMALLOC=malloc environment variable which
 can be used to force the usage of the malloc() allocator of the C library.
 
 If you don't want to read about the details of using Valgrind, there
 are still two things you must do to suppress the warnings.  First,
 you must use a suppressions file.  One is supplied in
-Misc/valgrind-python.supp.  Second, you must do one of the following:
-
-  * Uncomment Py_USING_MEMORY_DEBUGGER in Objects/obmalloc.c,
-    then rebuild Python
-  * Uncomment the lines in Misc/valgrind-python.supp that
-    suppress the warnings for PyObject_Free and PyObject_Realloc
+Misc/valgrind-python.supp.  Second, you must uncomment the lines in 
+Misc/valgrind-python.supp that suppress the warnings for PyObject_Free and
+PyObject_Realloc.
 
 If you want to use Valgrind more effectively and catch even more
 memory leaks, you will need to configure python --without-pymalloc.
@@ -45,6 +46,10 @@ PyMalloc when configuring python by adding the --without-pymalloc option.
 If you disable PyMalloc, most of the information in this document and
 the supplied suppressions file will not be useful.  As discussed above,
 disabling PyMalloc can catch more problems.
+
+PyMalloc uses 256KB chunks of memory, so it can't detect anything
+wrong within these blocks.  For that reason, compiling Python
+--without-pymalloc usually increases the usefulness of other tools.
 
 If you use valgrind on a default build of Python,  you will see
 many errors like:

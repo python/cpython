@@ -1,5 +1,4 @@
 # regression test for SAX 2.0
-# $Id$
 
 from xml.sax import make_parser, ContentHandler, \
                     SAXException, SAXReaderNotAvailable, SAXParseException
@@ -13,15 +12,22 @@ except SAXReaderNotAvailable:
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
                              XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
-from xml.sax.handler import feature_namespaces
+from xml.sax.handler import (feature_namespaces, feature_external_ges,
+                             LexicalHandler)
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
+from xml import sax
 from io import BytesIO, StringIO
 import codecs
-import gc
 import os.path
+import pyexpat
 import shutil
-from test import support
-from test.support import findfile, run_unittest, TESTFN
+import sys
+from urllib.error import URLError
+import urllib.request
+from test.support import os_helper
+from test.support import findfile, check__all__
+from test.support.os_helper import FakePath, TESTFN
+
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -34,7 +40,7 @@ except UnicodeEncodeError:
 supports_nonascii_filenames = True
 if not os.path.supports_unicode_filenames:
     try:
-        support.TESTFN_UNICODE.encode(support.TESTFN_ENCODING)
+        os_helper.TESTFN_UNICODE.encode(sys.getfilesystemencoding())
     except (UnicodeError, TypeError):
         # Either the file system encoding is None, or the file name
         # cannot be encoded in the file system encoding.
@@ -119,7 +125,7 @@ class ParseTest(unittest.TestCase):
     data = '<money value="$\xa3\u20ac\U0001017b">$\xa3\u20ac\U0001017b</money>'
 
     def tearDown(self):
-        support.unlink(TESTFN)
+        os_helper.unlink(TESTFN)
 
     def check_parse(self, f):
         from xml.sax import parse
@@ -181,6 +187,10 @@ class ParseTest(unittest.TestCase):
         with open(TESTFN, 'rb') as f:
             with self.assertRaises(SAXException):
                 self.check_parse(f)
+
+    def test_parse_path_object(self):
+        make_xml_file(self.data, 'utf-8', None)
+        self.check_parse(FakePath(TESTFN))
 
     def test_parse_InputSource(self):
         # accept data without declared but with explicitly specified encoding
@@ -253,6 +263,34 @@ class MakeParserTest(unittest.TestCase):
         from xml.sax import make_parser
         p = make_parser()
 
+    def test_make_parser3(self):
+        # Testing that make_parser can handle different types of
+        # iterables.
+        make_parser(['module'])
+        make_parser(('module', ))
+        make_parser({'module'})
+        make_parser(frozenset({'module'}))
+        make_parser({'module': None})
+        make_parser(iter(['module']))
+
+    def test_make_parser4(self):
+        # Testing that make_parser can handle empty iterables.
+        make_parser([])
+        make_parser(tuple())
+        make_parser(set())
+        make_parser(frozenset())
+        make_parser({})
+        make_parser(iter([]))
+
+    def test_make_parser5(self):
+        # Testing that make_parser can handle iterables with more than
+        # one item.
+        make_parser(['module1', 'module2'])
+        make_parser(('module1', 'module2'))
+        make_parser({'module1', 'module2'})
+        make_parser(frozenset({'module1', 'module2'}))
+        make_parser({'module1': None, 'module2': None})
+        make_parser(iter(['module1', 'module2']))
 
 # ===========================================================================
 #
@@ -315,12 +353,12 @@ class SaxutilsTest(unittest.TestCase):
 class PrepareInputSourceTest(unittest.TestCase):
 
     def setUp(self):
-        self.file = support.TESTFN
+        self.file = os_helper.TESTFN
         with open(self.file, "w") as tmp:
             tmp.write("This was read from a file.")
 
     def tearDown(self):
-        support.unlink(self.file)
+        os_helper.unlink(self.file)
 
     def make_byte_stream(self):
         return BytesIO(b"This is a byte stream.")
@@ -365,6 +403,13 @@ class PrepareInputSourceTest(unittest.TestCase):
     def test_string(self):
         # If the source is a string, use it as a system ID and open it.
         prep = prepare_input_source(self.file)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This was read from a file.")
+
+    def test_path_objects(self):
+        # If the source is a Path object, use it as a system ID and open it.
+        prep = prepare_input_source(FakePath(self.file))
         self.assertIsNone(prep.getCharacterStream())
         self.checkContent(prep.getByteStream(),
                           b"This was read from a file.")
@@ -783,14 +828,15 @@ class StreamWriterXmlgenTest(XmlgenTest, unittest.TestCase):
                 (encoding, doc)).encode('ascii', 'xmlcharrefreplace')
 
 class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
-    fname = support.TESTFN + '-codecs'
+    fname = os_helper.TESTFN + '-codecs'
 
     def ioclass(self):
-        writer = codecs.open(self.fname, 'w', encoding='ascii',
-                             errors='xmlcharrefreplace', buffering=0)
+        with self.assertWarns(DeprecationWarning):
+            writer = codecs.open(self.fname, 'w', encoding='ascii',
+                                errors='xmlcharrefreplace', buffering=0)
         def cleanup():
             writer.close()
-            support.unlink(self.fname)
+            os_helper.unlink(self.fname)
         self.addCleanup(cleanup)
         def getvalue():
             # Windows will not let use reopen without first closing
@@ -860,9 +906,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_binary_file_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -911,6 +957,18 @@ class ExpatReaderTest(XmlTestBase):
         def unparsedEntityDecl(self, name, publicId, systemId, ndata):
             self._entities.append((name, publicId, systemId, ndata))
 
+
+    class TestEntityRecorder:
+        def __init__(self):
+            self.entities = []
+
+        def resolveEntity(self, publicId, systemId):
+            self.entities.append((publicId, systemId))
+            source = InputSource()
+            source.setPublicId(publicId)
+            source.setSystemId(systemId)
+            return source
+
     def test_expat_dtdhandler(self):
         parser = create_parser()
         handler = self.TestDTDHandler()
@@ -927,6 +985,35 @@ class ExpatReaderTest(XmlTestBase):
             [("GIF", "-//CompuServe//NOTATION Graphics Interchange Format 89a//EN", None)])
         self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
+    def test_expat_external_dtd_enabled(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
+        parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        with self.assertRaises(URLError):
+            parser.feed(
+                '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+            )
+        self.assertEqual(
+            resolver.entities, [(None, 'unsupported://non-existing')]
+        )
+
+    def test_expat_external_dtd_default(self):
+        parser = create_parser()
+        resolver = self.TestEntityRecorder()
+        parser.setEntityResolver(resolver)
+
+        parser.feed(
+            '<!DOCTYPE external SYSTEM "unsupported://non-existing">\n'
+        )
+        parser.feed('<doc />')
+        parser.close()
+        self.assertEqual(resolver.entities, [])
+
     # ===== EntityResolver support
 
     class TestEntityResolver:
@@ -936,8 +1023,9 @@ class ExpatReaderTest(XmlTestBase):
             inpsrc.setByteStream(BytesIO(b"<entity/>"))
             return inpsrc
 
-    def test_expat_entityresolver(self):
+    def test_expat_entityresolver_enabled(self):
         parser = create_parser()
+        parser.setFeature(feature_external_ges, True)
         parser.setEntityResolver(self.TestEntityResolver())
         result = BytesIO()
         parser.setContentHandler(XMLGenerator(result))
@@ -950,6 +1038,22 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start +
                          b"<doc><entity></entity></doc>")
+
+    def test_expat_entityresolver_default(self):
+        parser = create_parser()
+        self.assertEqual(parser.getFeature(feature_external_ges), False)
+        parser.setEntityResolver(self.TestEntityResolver())
+        result = BytesIO()
+        parser.setContentHandler(XMLGenerator(result))
+
+        parser.feed('<!DOCTYPE doc [\n')
+        parser.feed('  <!ENTITY test SYSTEM "whatever">\n')
+        parser.feed(']>\n')
+        parser.feed('<doc>&test;</doc>')
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start +
+                         b"<doc></doc>")
 
     # ===== Attributes support
 
@@ -1038,9 +1142,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_inpsource_sysid_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         parser = create_parser()
         result = BytesIO()
@@ -1112,6 +1216,56 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
+    def test_flush_reparse_deferral_enabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
+    def test_flush_reparse_deferral_disabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        if pyexpat.version_info >= (2, 6, 0):
+            parser._parser.SetReparseDeferralEnabled(False)
+            self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
     # ===== Locator support
 
     def test_expat_locator_noinfo(self):
@@ -1140,9 +1294,9 @@ class ExpatReaderTest(XmlTestBase):
 
     @requires_nonascii_filenames
     def test_expat_locator_withinfo_nonascii(self):
-        fname = support.TESTFN_UNICODE
+        fname = os_helper.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
-        self.addCleanup(support.unlink, fname)
+        self.addCleanup(os_helper.unlink, fname)
 
         result = BytesIO()
         xmlgen = XMLGenerator(result)
@@ -1255,19 +1409,169 @@ class XmlReaderTest(XmlTestBase):
         self.assertEqual(attrs.getQNameByName((ns_uri, "attr")), "ns:attr")
 
 
-def test_main():
-    run_unittest(MakeParserTest,
-                 ParseTest,
-                 SaxutilsTest,
-                 PrepareInputSourceTest,
-                 StringXmlgenTest,
-                 BytesXmlgenTest,
-                 WriterXmlgenTest,
-                 StreamWriterXmlgenTest,
-                 StreamReaderWriterXmlgenTest,
-                 ExpatReaderTest,
-                 ErrorReportingTest,
-                 XmlReaderTest)
+class LexicalHandlerTest(unittest.TestCase):
+    def setUp(self):
+        self.parser = None
+
+        self.specified_version = '1.0'
+        self.specified_encoding = 'UTF-8'
+        self.specified_doctype = 'wish'
+        self.specified_entity_names = ('nbsp', 'source', 'target')
+        self.specified_comment = ('Comment in a DTD',
+                                  'Really! You think so?')
+        self.test_data = StringIO()
+        self.test_data.write('<?xml version="{}" encoding="{}"?>\n'.
+                             format(self.specified_version,
+                                    self.specified_encoding))
+        self.test_data.write('<!DOCTYPE {} [\n'.
+                             format(self.specified_doctype))
+        self.test_data.write('<!-- {} -->\n'.
+                             format(self.specified_comment[0]))
+        self.test_data.write('<!ELEMENT {} (to,from,heading,body,footer)>\n'.
+                             format(self.specified_doctype))
+        self.test_data.write('<!ELEMENT to (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT from (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT heading (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT body (#PCDATA)>\n')
+        self.test_data.write('<!ELEMENT footer (#PCDATA)>\n')
+        self.test_data.write('<!ENTITY {} "&#xA0;">\n'.
+                             format(self.specified_entity_names[0]))
+        self.test_data.write('<!ENTITY {} "Written by: Alexander.">\n'.
+                             format(self.specified_entity_names[1]))
+        self.test_data.write('<!ENTITY {} "Hope it gets to: Aristotle.">\n'.
+                             format(self.specified_entity_names[2]))
+        self.test_data.write(']>\n')
+        self.test_data.write('<{}>'.format(self.specified_doctype))
+        self.test_data.write('<to>Aristotle</to>\n')
+        self.test_data.write('<from>Alexander</from>\n')
+        self.test_data.write('<heading>Supplication</heading>\n')
+        self.test_data.write('<body>Teach me patience!</body>\n')
+        self.test_data.write('<footer>&{};&{};&{};</footer>\n'.
+                             format(self.specified_entity_names[1],
+                                    self.specified_entity_names[0],
+                                    self.specified_entity_names[2]))
+        self.test_data.write('<!-- {} -->\n'.format(self.specified_comment[1]))
+        self.test_data.write('</{}>\n'.format(self.specified_doctype))
+        self.test_data.seek(0)
+
+        # Data received from handlers - to be validated
+        self.version = None
+        self.encoding = None
+        self.standalone = None
+        self.doctype = None
+        self.publicID = None
+        self.systemID = None
+        self.end_of_dtd = False
+        self.comments = []
+
+    def test_handlers(self):
+        class TestLexicalHandler(LexicalHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def startDTD(self, doctype, publicID, systemID):
+                self.test_harness.doctype = doctype
+                self.test_harness.publicID = publicID
+                self.test_harness.systemID = systemID
+
+            def endDTD(self):
+                self.test_harness.end_of_dtd = True
+
+            def comment(self, text):
+                self.test_harness.comments.append(text)
+
+        self.parser = create_parser()
+        self.parser.setContentHandler(ContentHandler())
+        self.parser.setProperty(
+            'http://xml.org/sax/properties/lexical-handler',
+            TestLexicalHandler(self))
+        source = InputSource()
+        source.setCharacterStream(self.test_data)
+        self.parser.parse(source)
+        self.assertEqual(self.doctype, self.specified_doctype)
+        self.assertIsNone(self.publicID)
+        self.assertIsNone(self.systemID)
+        self.assertTrue(self.end_of_dtd)
+        self.assertEqual(len(self.comments),
+                         len(self.specified_comment))
+        self.assertEqual(f' {self.specified_comment[0]} ', self.comments[0])
+
+
+class CDATAHandlerTest(unittest.TestCase):
+    def setUp(self):
+        self.parser = None
+        self.specified_chars = []
+        self.specified_chars.append(('Parseable character data', False))
+        self.specified_chars.append(('<> &% - assorted other XML junk.', True))
+        self.char_index = 0  # Used to index specified results within handlers
+        self.test_data = StringIO()
+        self.test_data.write('<root_doc>\n')
+        self.test_data.write('<some_pcdata>\n')
+        self.test_data.write(f'{self.specified_chars[0][0]}\n')
+        self.test_data.write('</some_pcdata>\n')
+        self.test_data.write('<some_cdata>\n')
+        self.test_data.write(f'<![CDATA[{self.specified_chars[1][0]}]]>\n')
+        self.test_data.write('</some_cdata>\n')
+        self.test_data.write('</root_doc>\n')
+        self.test_data.seek(0)
+
+        # Data received from handlers - to be validated
+        self.chardata = []
+        self.in_cdata = False
+
+    def test_handlers(self):
+        class TestLexicalHandler(LexicalHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def startCDATA(self):
+                self.test_harness.in_cdata = True
+
+            def endCDATA(self):
+                self.test_harness.in_cdata = False
+
+        class TestCharHandler(ContentHandler):
+            def __init__(self, test_harness, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.test_harness = test_harness
+
+            def characters(self, content):
+                if content != '\n':
+                    h = self.test_harness
+                    t = h.specified_chars[h.char_index]
+                    h.assertEqual(t[0], content)
+                    h.assertEqual(t[1], h.in_cdata)
+                    h.char_index += 1
+
+        self.parser = create_parser()
+        self.parser.setContentHandler(TestCharHandler(self))
+        self.parser.setProperty(
+            'http://xml.org/sax/properties/lexical-handler',
+            TestLexicalHandler(self))
+        source = InputSource()
+        source.setCharacterStream(self.test_data)
+        self.parser.parse(source)
+
+        self.assertFalse(self.in_cdata)
+        self.assertEqual(self.char_index, 2)
+
+
+class TestModuleAll(unittest.TestCase):
+    def test_all(self):
+        extra = (
+            'ContentHandler',
+            'ErrorHandler',
+            'InputSource',
+            'SAXException',
+            'SAXNotRecognizedException',
+            'SAXNotSupportedException',
+            'SAXParseException',
+            'SAXReaderNotAvailable',
+        )
+        check__all__(self, sax, extra=extra)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

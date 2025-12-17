@@ -26,7 +26,10 @@ class GetpassGetuserTest(unittest.TestCase):
         environ.get.return_value = None
         try:
             getpass.getuser()
-        except ImportError: # in case there's no pwd module
+        except OSError:  # in case there's no pwd module
+            pass
+        except KeyError:
+            # current user has no pwd entry
             pass
         self.assertEqual(
             environ.get.call_args_list,
@@ -44,7 +47,7 @@ class GetpassGetuserTest(unittest.TestCase):
                                  getpass.getuser())
                 getpw.assert_called_once_with(42)
         else:
-            self.assertRaises(ImportError, getpass.getuser)
+            self.assertRaises(OSError, getpass.getuser)
 
 
 class GetpassRawinputTest(unittest.TestCase):
@@ -157,6 +160,81 @@ class UnixGetpassTest(unittest.TestCase):
             stdin.readline.assert_called_once_with()
             self.assertIn('Warning', stderr.getvalue())
             self.assertIn('Password:', stderr.getvalue())
+
+    def test_echo_char_replaces_input_with_asterisks(self):
+        mock_result = '*************'
+        with mock.patch('os.open') as os_open, \
+                mock.patch('io.FileIO'), \
+                mock.patch('io.TextIOWrapper') as textio, \
+                mock.patch('termios.tcgetattr'), \
+                mock.patch('termios.tcsetattr'), \
+                mock.patch('getpass._raw_input') as mock_input:
+            os_open.return_value = 3
+            mock_input.return_value = mock_result
+
+            result = getpass.unix_getpass(echo_char='*')
+            mock_input.assert_called_once_with('Password: ', textio(),
+                                               input=textio(), echo_char='*')
+            self.assertEqual(result, mock_result)
+
+    def test_raw_input_with_echo_char(self):
+        passwd = 'my1pa$$word!'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        with mock.patch('sys.stdin', mock_input), \
+                mock.patch('sys.stdout', mock_output):
+            result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                        '*')
+        self.assertEqual(result, passwd)
+        self.assertEqual('Password: ************', mock_output.getvalue())
+
+    def test_control_chars_with_echo_char(self):
+        passwd = 'pass\twd\b'
+        expect_result = 'pass\tw'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        with mock.patch('sys.stdin', mock_input), \
+                mock.patch('sys.stdout', mock_output):
+            result = getpass._raw_input('Password: ', mock_output, mock_input,
+                                        '*')
+        self.assertEqual(result, expect_result)
+        self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
+
+
+class GetpassEchoCharTest(unittest.TestCase):
+
+    def test_accept_none(self):
+        getpass._check_echo_char(None)
+
+    @support.subTests('echo_char', ["*", "A", " "])
+    def test_accept_single_printable_ascii(self, echo_char):
+        getpass._check_echo_char(echo_char)
+
+    def test_reject_empty_string(self):
+        self.assertRaises(ValueError, getpass.getpass, echo_char="")
+
+    @support.subTests('echo_char', ["***", "AA", "aA*!"])
+    def test_reject_multi_character_strings(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        '\N{LATIN CAPITAL LETTER AE}',  # non-ASCII single character
+        '\N{HEAVY BLACK HEART}',        # non-ASCII multibyte character
+    ])
+    def test_reject_non_ascii(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        ch for ch in map(chr, range(0, 128))
+        if not ch.isprintable()
+    ])
+    def test_reject_non_printable_characters(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    # TypeError Rejection
+    @support.subTests('echo_char', [b"*", 0, 0.0, [], {}])
+    def test_reject_non_string(self, echo_char):
+        self.assertRaises(TypeError, getpass.getpass, echo_char=echo_char)
 
 
 if __name__ == "__main__":

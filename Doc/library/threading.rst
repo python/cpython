@@ -1,5 +1,5 @@
-:mod:`threading` --- Thread-based parallelism
-=============================================
+:mod:`!threading` --- Thread-based parallelism
+==============================================
 
 .. module:: threading
    :synopsis: Thread-based parallelism.
@@ -9,17 +9,107 @@
 --------------
 
 This module constructs higher-level threading interfaces on top of the lower
-level :mod:`_thread` module.  See also the :mod:`queue` module.
+level :mod:`_thread` module.
 
-The :mod:`dummy_threading` module is provided for situations where
-:mod:`threading` cannot be used because :mod:`_thread` is missing.
+.. include:: ../includes/wasm-notavail.rst
+
+Introduction
+------------
+
+The :mod:`!threading` module provides a way to run multiple `threads
+<https://en.wikipedia.org/wiki/Thread_(computing)>`_ (smaller
+units of a process) concurrently within a single process. It allows for the
+creation and management of threads, making it possible to execute tasks in
+parallel, sharing memory space. Threads are particularly useful when tasks are
+I/O bound, such as file operations or making network requests,
+where much of the time is spent waiting for external resources.
+
+A typical use case for :mod:`!threading` includes managing a pool of worker
+threads that can process multiple tasks concurrently.  Here's a basic example of
+creating and starting threads using :class:`~threading.Thread`::
+
+   import threading
+   import time
+
+   def crawl(link, delay=3):
+       print(f"crawl started for {link}")
+       time.sleep(delay)  # Blocking I/O (simulating a network request)
+       print(f"crawl ended for {link}")
+
+   links = [
+       "https://python.org",
+       "https://docs.python.org",
+       "https://peps.python.org",
+   ]
+
+   # Start threads for each link
+   threads = []
+   for link in links:
+       # Using `args` to pass positional arguments and `kwargs` for keyword arguments
+       t = threading.Thread(target=crawl, args=(link,), kwargs={"delay": 2})
+       threads.append(t)
+
+   # Start each thread
+   for t in threads:
+       t.start()
+
+   # Wait for all threads to finish
+   for t in threads:
+       t.join()
+
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
+
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
 
 .. note::
 
-   While they are not listed below, the ``camelCase`` names used for some
-   methods and functions in this module in the Python 2.x series are still
-   supported by this module.
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
 
+
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
+
+GIL and performance considerations
+----------------------------------
+
+Unlike the :mod:`multiprocessing` module, which uses separate processes to
+bypass the :term:`global interpreter lock` (GIL), the threading module operates
+within a single process, meaning that all threads share the same memory space.
+However, the GIL limits the performance gains of threading when it comes to
+CPU-bound tasks, as only one thread can execute Python bytecode at a time.
+Despite this, threads remain a useful tool for achieving concurrency in many
+scenarios.
+
+As of Python 3.13, :term:`free-threaded <free threading>` builds
+can disable the GIL, enabling true parallel execution of threads, but this
+feature is not available by default (see :pep:`703`).
+
+.. TODO: At some point this feature will become available by default.
+
+Reference
+---------
 
 This module defines the following functions:
 
@@ -29,14 +119,59 @@ This module defines the following functions:
    Return the number of :class:`Thread` objects currently alive.  The returned
    count is equal to the length of the list returned by :func:`.enumerate`.
 
+   The function ``activeCount`` is a deprecated alias for this function.
+
 
 .. function:: current_thread()
 
    Return the current :class:`Thread` object, corresponding to the caller's thread
    of control.  If the caller's thread of control was not created through the
-   :mod:`threading` module, a dummy thread object with limited functionality is
+   :mod:`!threading` module, a dummy thread object with limited functionality is
    returned.
 
+   The function ``currentThread`` is a deprecated alias for this function.
+
+
+.. function:: excepthook(args, /)
+
+   Handle uncaught exception raised by :func:`Thread.run`.
+
+   The *args* argument has the following attributes:
+
+   * *exc_type*: Exception type.
+   * *exc_value*: Exception value, can be ``None``.
+   * *exc_traceback*: Exception traceback, can be ``None``.
+   * *thread*: Thread which raised the exception, can be ``None``.
+
+   If *exc_type* is :exc:`SystemExit`, the exception is silently ignored.
+   Otherwise, the exception is printed out on :data:`sys.stderr`.
+
+   If  this function raises an exception, :func:`sys.excepthook` is called to
+   handle it.
+
+   :func:`threading.excepthook` can be overridden to control how uncaught
+   exceptions raised by :func:`Thread.run` are handled.
+
+   Storing *exc_value* using a custom hook can create a reference cycle. It
+   should be cleared explicitly to break the reference cycle when the
+   exception is no longer needed.
+
+   Storing *thread* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *thread* after the custom
+   hook completes to avoid resurrecting objects.
+
+   .. seealso::
+      :func:`sys.excepthook` handles uncaught exceptions.
+
+   .. versionadded:: 3.8
+
+.. data:: __excepthook__
+
+   Holds the original value of :func:`threading.excepthook`. It is saved so that the
+   original value can be restored in case they happen to get replaced with
+   broken or alternative objects.
+
+   .. versionadded:: 3.10
 
 .. function:: get_ident()
 
@@ -49,12 +184,31 @@ This module defines the following functions:
    .. versionadded:: 3.3
 
 
+.. function:: get_native_id()
+
+   Return the native integral Thread ID of the current thread assigned by the kernel.
+   This is a non-negative integer.
+   Its value may be used to uniquely identify this particular thread system-wide
+   (until the thread terminates, after which the value may be recycled by the OS).
+
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
+
+   .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: 3.15
+      Added support for Solaris.
+
+
 .. function:: enumerate()
 
-   Return a list of all :class:`Thread` objects currently alive.  The list
-   includes daemonic threads, dummy thread objects created by
-   :func:`current_thread`, and the main thread.  It excludes terminated threads
-   and threads that have not yet been started.
+   Return a list of all :class:`Thread` objects currently active.  The list
+   includes daemonic threads and dummy thread objects created by
+   :func:`current_thread`.  It excludes terminated threads and threads
+   that have not yet been started.  However, the main thread is always part
+   of the result, even when terminated.
 
 
 .. function:: main_thread()
@@ -70,18 +224,56 @@ This module defines the following functions:
 
    .. index:: single: trace function
 
-   Set a trace function for all threads started from the :mod:`threading` module.
+   Set a trace function for all threads started from the :mod:`!threading` module.
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+.. function:: settrace_all_threads(func)
+
+   Set a trace function for all threads started from the :mod:`!threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.settrace` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
+
+.. function:: gettrace()
+
+   .. index::
+      single: trace function
+      single: debugger
+
+   Get the trace function as set by :func:`settrace`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: setprofile(func)
 
    .. index:: single: profile function
 
-   Set a profile function for all threads started from the :mod:`threading` module.
+   Set a profile function for all threads started from the :mod:`!threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
+
+.. function:: setprofile_all_threads(func)
+
+   Set a profile function for all threads started from the :mod:`!threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
+
+.. function:: getprofile()
+
+   .. index:: single: profile function
+
+   Get the profiler function as set by :func:`setprofile`.
+
+   .. versionadded:: 3.10
 
 
 .. function:: stack_size([size])
@@ -100,7 +292,10 @@ This module defines the following functions:
    memory page size - platform documentation should be referred to for more
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
-   Availability: Windows, systems with POSIX threads.
+
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -129,38 +324,147 @@ when implemented, are mapped to module-level functions.
 All of the methods described below are executed atomically.
 
 
-Thread-Local Data
------------------
+Thread-local data
+^^^^^^^^^^^^^^^^^
 
-Thread-local data is data whose values are thread specific.  To manage
-thread-local data, just create an instance of :class:`local` (or a
-subclass) and store attributes on it::
+Thread-local data is data whose values are thread specific. If you
+have data that you want to be local to a thread, create a
+:class:`local` object and use its attributes::
 
-  mydata = threading.local()
-  mydata.x = 1
+   >>> mydata = local()
+   >>> mydata.number = 42
+   >>> mydata.number
+   42
 
-The instance's values will be different for separate threads.
+You can also access the :class:`local`-object's dictionary::
+
+   >>> mydata.__dict__
+   {'number': 42}
+   >>> mydata.__dict__.setdefault('widgets', [])
+   []
+   >>> mydata.widgets
+   []
+
+If we access the data in a different thread::
+
+   >>> log = []
+   >>> def f():
+   ...     items = sorted(mydata.__dict__.items())
+   ...     log.append(items)
+   ...     mydata.number = 11
+   ...     log.append(mydata.number)
+
+   >>> import threading
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+   >>> log
+   [[], 11]
+
+we get different data.  Furthermore, changes made in the other thread
+don't affect data seen in this thread::
+
+   >>> mydata.number
+   42
+
+Of course, values you get from a :class:`local` object, including their
+:attr:`~object.__dict__` attribute, are for whatever thread was current
+at the time the attribute was read.  For that reason, you generally
+don't want to save these values across threads, as they apply only to
+the thread they came from.
+
+You can create custom :class:`local` objects by subclassing the
+:class:`local` class::
+
+   >>> class MyLocal(local):
+   ...     number = 2
+   ...     def __init__(self, /, **kw):
+   ...         self.__dict__.update(kw)
+   ...     def squared(self):
+   ...         return self.number ** 2
+
+This can be useful to support default values, methods and
+initialization.  Note that if you define an :py:meth:`~object.__init__`
+method, it will be called each time the :class:`local` object is used
+in a separate thread.  This is necessary to initialize each thread's
+dictionary.
+
+Now if we create a :class:`local` object::
+
+   >>> mydata = MyLocal(color='red')
+
+we have a default number::
+
+   >>> mydata.number
+   2
+
+an initial color::
+
+   >>> mydata.color
+   'red'
+   >>> del mydata.color
+
+And a method that operates on the data::
+
+   >>> mydata.squared()
+   4
+
+As before, we can access the data in a separate thread::
+
+   >>> log = []
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+   >>> log
+   [[('color', 'red')], 11]
+
+without affecting this thread's data::
+
+   >>> mydata.number
+   2
+   >>> mydata.color
+   Traceback (most recent call last):
+   ...
+   AttributeError: 'MyLocal' object has no attribute 'color'
+
+Note that subclasses can define :term:`__slots__`, but they are not
+thread local. They are shared across threads::
+
+   >>> class MyLocal(local):
+   ...     __slots__ = 'number'
+
+   >>> mydata = MyLocal()
+   >>> mydata.number = 42
+   >>> mydata.color = 'red'
+
+So, the separate thread::
+
+   >>> thread = threading.Thread(target=f)
+   >>> thread.start()
+   >>> thread.join()
+
+affects what we see::
+
+   >>> mydata.number
+   11
 
 
 .. class:: local()
 
    A class that represents thread-local data.
 
-   For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module.
-
 
 .. _thread-objects:
 
-Thread Objects
---------------
+Thread objects
+^^^^^^^^^^^^^^
 
 The :class:`Thread` class represents an activity that is run in a separate
 thread of control.  There are two ways to specify the activity: by passing a
 callable object to the constructor, or by overriding the :meth:`~Thread.run`
 method in a subclass.  No other methods (except for the constructor) should be
 overridden in a subclass.  In other words, *only*  override the
-:meth:`~Thread.__init__` and :meth:`~Thread.run` methods of this class.
+``__init__()`` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
@@ -177,6 +481,10 @@ called is terminated.
 
 A thread has a name.  The name can be passed to the constructor, and read or
 changed through the :attr:`~Thread.name` attribute.
+
+If the :meth:`~Thread.run` method raises an exception,
+:func:`threading.excepthook` is called to handle it. By default,
+:func:`threading.excepthook` ignores silently :exc:`SystemExit`.
 
 A thread can be flagged as a "daemon thread".  The significance of this flag is
 that the entire Python program exits when only daemon threads are left.  The
@@ -197,26 +505,28 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
-                  daemon=None)
+                  daemon=None, context=None)
 
    This constructor should always be called with keyword arguments.  Arguments
    are:
 
    *group* should be ``None``; reserved for future extension when a
-   :class:`ThreadGroup` class is implemented.
+   :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
 
-   *name* is the thread name.  By default, a unique name is constructed of the
-   form "Thread-*N*" where *N* is a small decimal number.
+   *name* is the thread name. By default, a unique name is constructed
+   of the form "Thread-*N*" where *N* is a small decimal number,
+   or "Thread-*N* (target)" where "target" is ``target.__name__`` if the
+   *target* argument is specified.
 
-   *args* is the argument tuple for the target invocation.  Defaults to ``()``.
+   *args* is a list or tuple of arguments for the target invocation.  Defaults to ``()``.
 
    *kwargs* is a dictionary of keyword arguments for the target invocation.
    Defaults to ``{}``.
@@ -225,12 +535,28 @@ since it is impossible to detect the termination of alien threads.
    If ``None`` (the default), the daemonic property is inherited from the
    current thread.
 
+   *context* is the :class:`~contextvars.Context` value to use when starting
+   the thread.  The default value is ``None`` which indicates that the
+   :data:`sys.flags.thread_inherit_context` flag controls the behaviour.  If
+   the flag is true, threads will start with a copy of the context of the
+   caller of :meth:`~Thread.start`.  If false, they will start with an empty
+   context.  To explicitly start with an empty context, pass a new instance of
+   :class:`~contextvars.Context()`.  To explicitly start with a copy of the
+   current context, pass the value from :func:`~contextvars.copy_context`. The
+   flag defaults true on free-threaded builds and false otherwise.
+
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
    .. versionchanged:: 3.3
-      Added the *daemon* argument.
+      Added the *daemon* parameter.
+
+   .. versionchanged:: 3.10
+      Use the *target* name if *name* argument is omitted.
+
+   .. versionchanged:: 3.14
+      Added the *context* parameter.
 
    .. method:: start()
 
@@ -243,14 +569,36 @@ since it is impossible to detect the termination of alien threads.
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
 
+      If supported, set the operating system thread name to
+      :attr:`threading.Thread.name`. The name can be truncated depending on the
+      operating system thread name limits.
+
+      .. versionchanged:: 3.14
+         Set the operating system thread name.
+
    .. method:: run()
 
       Method representing the thread's activity.
 
       You may override this method in a subclass.  The standard :meth:`run`
       method invokes the callable object passed to the object's constructor as
-      the *target* argument, if any, with sequential and keyword arguments taken
+      the *target* argument, if any, with positional and keyword arguments taken
       from the *args* and *kwargs* arguments, respectively.
+
+      Using list or tuple as the *args* argument which passed to the :class:`Thread`
+      could achieve the same effect.
+
+      Example::
+
+         >>> from threading import Thread
+         >>> t = Thread(target=print, args=[1])
+         >>> t.run()
+         1
+         >>> t = Thread(target=print, args=(1,))
+         >>> t.run()
+         1
+
+   .. _meth-thread-join:
 
    .. method:: join(timeout=None)
 
@@ -260,7 +608,7 @@ since it is impossible to detect the termination of alien threads.
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof). As :meth:`~Thread.join` always returns ``None``,
       you must call :meth:`~Thread.is_alive` after :meth:`~Thread.join` to
       decide whether a timeout happened -- if the thread is still alive, the
@@ -269,12 +617,23 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
       an error to :meth:`~Thread.join` a thread before it has been started
       and attempts to do so raise the same exception.
+
+      If an attempt is made to join a running daemonic thread in late stages
+      of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
+      raises a :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.14
+
+         May raise :exc:`PythonFinalizationError`.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
    .. attribute:: name
 
@@ -282,19 +641,49 @@ since it is impossible to detect the termination of alien threads.
       Multiple threads may be given the same name.  The initial name is set by
       the constructor.
 
+      On some platforms, the thread name is set at the operating system level
+      when the thread starts, so that it is visible in task managers.
+      This name may be truncated to fit in a system-specific limit (for example,
+      15 bytes on Linux or 63 bytes on macOS).
+
+      Changes to *name* are only reflected at the OS level when the currently
+      running thread is renamed. (Setting the *name* attribute of a
+      different thread only updates the Python Thread object.)
+
    .. method:: getName()
                setName()
 
-      Old getter/setter API for :attr:`~Thread.name`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.name`; use it directly as a
       property instead.
+
+      .. deprecated:: 3.10
 
    .. attribute:: ident
 
       The 'thread identifier' of this thread or ``None`` if the thread has not
-      been started.  This is a nonzero integer.  See the
-      :func:`_thread.get_ident()` function.  Thread identifiers may be recycled
-      when a thread exits and another thread is created.  The identifier is
-      available even after the thread has exited.
+      been started.  This is a nonzero integer.  See the :func:`get_ident`
+      function.  Thread identifiers may be recycled when a thread exits and
+      another thread is created.  The identifier is available even after the
+      thread has exited.
+
+   .. attribute:: native_id
+
+      The Thread ID (``TID``) of this thread, as assigned by the OS (kernel).
+      This is a non-negative integer, or ``None`` if the thread has not
+      been started. See the :func:`get_native_id` function.
+      This value may be used to uniquely identify this particular thread
+      system-wide (until the thread terminates, after which the value
+      may be recycled by the OS).
+
+      .. note::
+
+         Similar to Process IDs, Thread IDs are only valid (guaranteed unique
+         system-wide) from the time the thread is created until the thread
+         has been terminated.
+
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
+
+      .. versionadded:: 3.8
 
    .. method:: is_alive()
 
@@ -306,8 +695,8 @@ since it is impossible to detect the termination of alien threads.
 
    .. attribute:: daemon
 
-      A boolean value indicating whether this thread is a daemon thread (True)
-      or not (False).  This must be set before :meth:`~Thread.start` is called,
+      A boolean value indicating whether this thread is a daemon thread (``True``)
+      or not (``False``).  This must be set before :meth:`~Thread.start` is called,
       otherwise :exc:`RuntimeError` is raised.  Its initial value is inherited
       from the creating thread; the main thread is not a daemon thread and
       therefore all threads created in the main thread default to
@@ -318,26 +707,16 @@ since it is impossible to detect the termination of alien threads.
    .. method:: isDaemon()
                setDaemon()
 
-      Old getter/setter API for :attr:`~Thread.daemon`; use it directly as a
+      Deprecated getter/setter API for :attr:`~Thread.daemon`; use it directly as a
       property instead.
 
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
+      .. deprecated:: 3.10
 
 
 .. _lock-objects:
 
-Lock Objects
-------------
+Lock objects
+^^^^^^^^^^^^
 
 A primitive lock is a synchronization primitive that is not owned by a
 particular thread when locked.  In Python, it is currently the lowest level
@@ -371,9 +750,10 @@ All methods are executed atomically.
    lock, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
-   Note that ``Lock`` is actually a factory function which returns an instance
-   of the most efficient version of the concrete Lock class that is supported
-   by the platform.
+   .. versionchanged:: 3.13
+      ``Lock`` is now a class. In earlier Pythons, ``Lock`` was a factory
+      function which returned an instance of the underlying private lock
+      type.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
@@ -387,11 +767,11 @@ All methods are executed atomically.
       If a call with *blocking* set to ``True`` would block, return ``False``
       immediately; otherwise, set the lock to locked and return ``True``.
 
-      When invoked with the floating-point *timeout* argument set to a positive
+      When invoked with the *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is ``False``.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -400,7 +780,14 @@ All methods are executed atomically.
          The *timeout* parameter is new.
 
       .. versionchanged:: 3.2
-         Lock acquires can now be interrupted by signals on POSIX.
+         Lock acquisition can now be interrupted by signals on POSIX if the
+         underlying threading implementation supports it.
+
+      .. versionchanged:: 3.14
+         Lock acquisition can now be interrupted by signals on Windows.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -416,11 +803,16 @@ All methods are executed atomically.
 
       There is no return value.
 
+   .. method:: locked()
+
+      Return ``True`` if the lock is acquired.
+
+
 
 .. _rlock-objects:
 
-RLock Objects
--------------
+RLock objects
+^^^^^^^^^^^^^
 
 A reentrant lock is a synchronization primitive that may be acquired multiple
 times by the same thread.  Internally, it uses the concepts of "owning thread"
@@ -428,14 +820,25 @@ and "recursion level" in addition to the locked/unlocked state used by primitive
 locks.  In the locked state, some thread owns the lock; in the unlocked state,
 no thread owns it.
 
-To lock the lock, a thread calls its :meth:`~RLock.acquire` method; this
-returns once the thread owns the lock.  To unlock the lock, a thread calls
-its :meth:`~Lock.release` method. :meth:`~Lock.acquire`/:meth:`~Lock.release`
-call pairs may be nested; only the final :meth:`~Lock.release` (the
-:meth:`~Lock.release` of the outermost pair) resets the lock to unlocked and
-allows another thread blocked in :meth:`~Lock.acquire` to proceed.
+Threads call a lock's :meth:`~RLock.acquire` method to lock it,
+and its :meth:`~Lock.release` method to unlock it.
 
-Reentrant locks also support the :ref:`context management protocol <with-locks>`.
+.. note::
+
+  Reentrant locks support the :ref:`context management protocol <with-locks>`,
+  so it is recommended to use :keyword:`with` instead of manually calling
+  :meth:`~RLock.acquire` and :meth:`~RLock.release`
+  to handle acquiring and releasing the lock for a block of code.
+
+RLock's :meth:`~RLock.acquire`/:meth:`~RLock.release` call pairs may be nested,
+unlike Lock's :meth:`~Lock.acquire`/:meth:`~Lock.release`. Only the final
+:meth:`~RLock.release` (the :meth:`~Lock.release` of the outermost pair) resets
+the lock to an unlocked state and allows another thread blocked in
+:meth:`~RLock.acquire` to proceed.
+
+:meth:`~RLock.acquire`/:meth:`~RLock.release` must be used in pairs: each acquire
+must have a release in the thread that has acquired the lock. Failing to
+call release as many times the lock has been acquired can lead to deadlock.
 
 
 .. class:: RLock()
@@ -454,28 +857,47 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
 
       Acquire a lock, blocking or non-blocking.
 
-      When invoked without arguments: if this thread already owns the lock, increment
-      the recursion level by one, and return immediately.  Otherwise, if another
-      thread owns the lock, block until the lock is unlocked.  Once the lock is
-      unlocked (not owned by any thread), then grab ownership, set the recursion level
-      to one, and return.  If more than one thread is blocked waiting until the lock
-      is unlocked, only one at a time will be able to grab ownership of the lock.
-      There is no return value in this case.
+      .. seealso::
 
-      When invoked with the *blocking* argument set to true, do the same thing as when
-      called without arguments, and return true.
+         :ref:`Using RLock as a context manager <with-locks>`
+            Recommended over manual :meth:`!acquire` and :meth:`release` calls
+            whenever practical.
 
-      When invoked with the *blocking* argument set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise, do the
-      same thing as when called without arguments, and return true.
 
-      When invoked with the floating-point *timeout* argument set to a positive
-      value, block for at most the number of seconds specified by *timeout*
-      and as long as the lock cannot be acquired.  Return true if the lock has
-      been acquired, false if the timeout has elapsed.
+      When invoked with the *blocking* argument set to ``True`` (the default):
+
+         * If no thread owns the lock, acquire the lock and return immediately.
+
+         * If another thread owns the lock, block until we are able to acquire
+           lock, or *timeout*, if set to a positive value.
+
+         * If the same thread owns the lock, acquire the lock again, and
+           return immediately. This is the difference between :class:`Lock` and
+           :class:`!RLock`; :class:`Lock` handles this case the same as the previous,
+           blocking until the lock can be acquired.
+
+      When invoked with the *blocking* argument set to ``False``:
+
+         * If no thread owns the lock, acquire the lock and return immediately.
+
+         * If another thread owns the lock, return immediately.
+
+         * If the same thread owns the lock, acquire the lock again and return
+           immediately.
+
+      In all cases, if the thread was able to acquire the lock, return ``True``.
+      If the thread was unable to acquire the lock (i.e. if not blocking or
+      the timeout was reached) return ``False``.
+
+      If called multiple times, failing to call :meth:`~RLock.release` as many times
+      may lead to deadlock. Consider using :class:`!RLock` as a context manager rather than
+      calling acquire/release directly.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
+
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
 
    .. method:: release()
@@ -488,15 +910,22 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
 
       Only call this method when the calling thread owns the lock. A
       :exc:`RuntimeError` is raised if this method is called when the lock is
-      unlocked.
+      not acquired.
 
       There is no return value.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
+
 .. _condition-objects:
 
-Condition Objects
------------------
+Condition objects
+^^^^^^^^^^^^^^^^^
 
 A condition variable is always associated with some kind of lock; this can be
 passed in or one will be created by default.  Passing one in is useful when
@@ -585,6 +1014,12 @@ item to the buffer only needs to wake up one consumer thread.
       Release the underlying lock. This method calls the corresponding method on
       the underlying lock; there is no return value.
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: 3.14
+
    .. method:: wait(timeout=None)
 
       Wait until notified or until a timeout occurs. If the calling thread has
@@ -597,7 +1032,7 @@ item to the buffer only needs to wake up one consumer thread.
       occurs.  Once awakened or timed out, it re-acquires the lock and returns.
 
       When the *timeout* argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
+      real number specifying a timeout for the operation in seconds
       (or fractions thereof).
 
       When the underlying lock is an :class:`RLock`, it is not released using
@@ -662,11 +1097,13 @@ item to the buffer only needs to wake up one consumer thread.
       calling thread has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
+      The method ``notifyAll`` is a deprecated alias for this method.
+
 
 .. _semaphore-objects:
 
-Semaphore Objects
------------------
+Semaphore objects
+^^^^^^^^^^^^^^^^^
 
 This is one of the oldest synchronization primitives in the history of computer
 science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he
@@ -684,8 +1121,8 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
 .. class:: Semaphore(value=1)
 
-   This class implements semaphore objects.  A semaphore manages a counter
-   representing the number of :meth:`release` calls minus the number of
+   This class implements semaphore objects.  A semaphore manages an atomic
+   counter representing the number of :meth:`release` calls minus the number of
    :meth:`acquire` calls, plus an initial value.  The :meth:`acquire` method
    blocks if necessary until it can return without making the counter negative.
    If not given, *value* defaults to 1.
@@ -701,32 +1138,38 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
       Acquire a semaphore.
 
-      When invoked without arguments: if the internal counter is larger than
-      zero on entry, decrement it by one and return immediately.  If it is zero
-      on entry, block, waiting until some other thread has called
-      :meth:`~Semaphore.release` to make it larger than zero.  This is done
-      with proper interlocking so that if multiple :meth:`acquire` calls are
-      blocked, :meth:`~Semaphore.release` will wake exactly one of them up.
-      The implementation may pick one at random, so the order in which
-      blocked threads are awakened should not be relied on.  Returns
-      true (or blocks indefinitely).
+      When invoked without arguments:
 
-      When invoked with *blocking* set to false, do not block.  If a call
-      without an argument would block, return false immediately; otherwise,
-      do the same thing as when called without arguments, and return true.
+      * If the internal counter is larger than zero on entry, decrement it by
+        one and return ``True`` immediately.
+      * If the internal counter is zero on entry, block until awoken by a call to
+        :meth:`~Semaphore.release`.  Once awoken (and the counter is greater
+        than 0), decrement the counter by 1 and return ``True``.  Exactly one
+        thread will be awoken by each call to :meth:`~Semaphore.release`.  The
+        order in which threads are awoken should not be relied on.
+
+      When invoked with *blocking* set to ``False``, do not block.  If a call
+      without an argument would block, return ``False`` immediately; otherwise, do
+      the same thing as when called without arguments, and return ``True``.
 
       When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
-      that interval, return false.  Return true otherwise.
+      that interval, return ``False``.  Return ``True`` otherwise.
 
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
-   .. method:: release()
+      .. versionchanged:: 3.15
+         Accepts any real number as *timeout*, not only integer or float.
 
-      Release a semaphore, incrementing the internal counter by one.  When it
-      was zero on entry and another thread is waiting for it to become larger
-      than zero again, wake up that thread.
+   .. method:: release(n=1)
+
+      Release a semaphore, incrementing the internal counter by *n*.  When it
+      was zero on entry and other threads are waiting for it to become larger
+      than zero again, wake up *n* of those threads.
+
+      .. versionchanged:: 3.9
+         Added the *n* parameter to release multiple waiting threads at once.
 
 
 .. class:: BoundedSemaphore(value=1)
@@ -743,7 +1186,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
 
 .. _semaphore-examples:
 
-:class:`Semaphore` Example
+:class:`Semaphore` example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Semaphores are often used to guard resources with limited capacity, for example,
@@ -771,8 +1214,8 @@ causes the semaphore to be released more than it's acquired will go undetected.
 
 .. _event-objects:
 
-Event Objects
--------------
+Event objects
+^^^^^^^^^^^^^
 
 This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
@@ -794,7 +1237,9 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: is_set()
 
-      Return true if and only if the internal flag is true.
+      Return ``True`` if and only if the internal flag is true.
+
+      The method ``isSet`` is a deprecated alias for this method.
 
    .. method:: set()
 
@@ -810,18 +1255,15 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: wait(timeout=None)
 
-      Block until the internal flag is true.  If the internal flag is true on
-      entry, return immediately.  Otherwise, block until another thread calls
-      :meth:`.set` to set the flag to true, or until the optional timeout occurs.
+      Block as long as the internal flag is false and the timeout, if given,
+      has not expired. The return value represents the
+      reason that this blocking method returned; ``True`` if returning because
+      the internal flag is set to true, or ``False`` if a timeout is given and
+      the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof).
-
-      This method returns true if and only if the internal flag has been set to
-      true, either before the wait call or after the wait starts, so it will
-      always return ``True`` except if a timeout is given and the operation
-      times out.
+      real number specifying a timeout for the operation in seconds,
+      or fractions thereof.
 
       .. versionchanged:: 3.1
          Previously, the method always returned ``None``.
@@ -829,14 +1271,14 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
 .. _timer-objects:
 
-Timer Objects
--------------
+Timer objects
+^^^^^^^^^^^^^
 
 This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
-Timers are started, as with threads, by calling their :meth:`~Timer.start`
+Timers are started, as with threads, by calling their :meth:`Timer.start <Thread.start>`
 method.  The timer can be stopped (before its action has begun) by calling the
 :meth:`~Timer.cancel` method.  The interval the timer will wait before
 executing its action may not be exactly the same as the interval specified by
@@ -867,16 +1309,16 @@ For example::
       only work if the timer is still in its waiting stage.
 
 
-Barrier Objects
----------------
+Barrier objects
+^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.2
 
 This class provides a simple synchronization primitive for use by a fixed number
 of threads that need to wait for each other.  Each of the threads tries to pass
 the barrier by calling the :meth:`~Barrier.wait` method and will block until
-all of the threads have made the call.  At this points, the threads are released
-simultaneously.
+all of the threads have made their :meth:`~Barrier.wait` calls. At this point,
+the threads are released simultaneously.
 
 The barrier can be reused any number of times for the same number of threads.
 
@@ -935,7 +1377,7 @@ As an example, here is a simple way to synchronize a client and server thread::
       Return the barrier to the default, empty state.  Any threads waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
-      Note that using this function may can require some external
+      Note that using this function may require some external
       synchronization if there are other threads whose state is unknown.  If a
       barrier is broken it may be better to just leave it and create a new one.
 
@@ -943,7 +1385,7 @@ As an example, here is a simple way to synchronize a client and server thread::
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.  Use
-      this for example if one of the needs to abort, to avoid deadlocking the
+      this for example if one of the threads needs to abort, to avoid deadlocking the
       application.
 
       It may be preferable to simply create the barrier with a sensible
@@ -971,13 +1413,13 @@ As an example, here is a simple way to synchronize a client and server thread::
 
 .. _with-locks:
 
-Using locks, conditions, and semaphores in the :keyword:`with` statement
-------------------------------------------------------------------------
+Using locks, conditions, and semaphores in the :keyword:`!with` statement
+-------------------------------------------------------------------------
 
-All of the objects provided by this module that have :meth:`acquire` and
-:meth:`release` methods can be used as context managers for a :keyword:`with`
-statement.  The :meth:`acquire` method will be called when the block is
-entered, and :meth:`release` will be called when the block is exited.  Hence,
+All of the objects provided by this module that have ``acquire`` and
+``release`` methods can be used as context managers for a :keyword:`with`
+statement.  The ``acquire`` method will be called when the block is
+entered, and ``release`` will be called when the block is exited.  Hence,
 the following snippet::
 
    with some_lock:

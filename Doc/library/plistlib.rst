@@ -1,8 +1,8 @@
-:mod:`plistlib` --- Generate and parse Mac OS X ``.plist`` files
-================================================================
+:mod:`!plistlib` --- Generate and parse Apple ``.plist`` files
+==============================================================
 
 .. module:: plistlib
-   :synopsis: Generate and parse Mac OS X plist files.
+   :synopsis: Generate and parse Apple plist files.
 
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
@@ -17,7 +17,8 @@
 --------------
 
 This module provides an interface for reading and writing the "property list"
-files used mainly by Mac OS X and supports both binary and XML plist files.
+files used by Apple, primarily on macOS and iOS. This module supports both binary
+and XML plist files.
 
 The property list (``.plist``) file format is a simple serialization supporting
 basic object types, like dictionaries, lists, numbers and strings.  Usually the
@@ -26,25 +27,32 @@ top level object is a dictionary.
 To write out and to parse a plist file, use the :func:`dump` and
 :func:`load` functions.
 
-To work with plist data in bytes objects, use :func:`dumps`
+To work with plist data in bytes or string objects, use :func:`dumps`
 and :func:`loads`.
 
 Values can be strings, integers, floats, booleans, tuples, lists, dictionaries
-(but only with string keys), :class:`Data`, :class:`bytes`, :class:`bytesarray`
+(but only with string keys), :class:`bytes`, :class:`bytearray`
 or :class:`datetime.datetime` objects.
 
 .. versionchanged:: 3.4
    New API, old API deprecated.  Support for binary format plists added.
 
+.. versionchanged:: 3.8
+   Support added for reading and writing :class:`UID` tokens in binary plists as used
+   by NSKeyedArchiver and NSKeyedUnarchiver.
+
+.. versionchanged:: 3.9
+   Old API removed.
+
 .. seealso::
 
-   `PList manual page <https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
+   `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
 
 
 This module defines the following functions:
 
-.. function:: load(fp, \*, fmt=None, use_builtin_types=True, dict_type=dict)
+.. function:: load(fp, *, fmt=None, dict_type=dict, aware_datetime=False)
 
    Read a plist file. *fp* should be a readable and binary file object.
    Return the unpacked root object (which usually is a
@@ -58,37 +66,39 @@ This module defines the following functions:
 
    * :data:`FMT_BINARY`: Binary plist format
 
-   If *use_builtin_types* is true (the default) binary data will be returned
-   as instances of :class:`bytes`, otherwise it is returned as instances of
-   :class:`Data`.
-
    The *dict_type* is the type used for dictionaries that are read from the
-   plist file. The exact structure of the plist can be recovered by using
-   :class:`collections.OrderedDict` (although the order of keys shouldn't be
-   important in plist files).
+   plist file.
+
+   When *aware_datetime* is true, fields with type ``datetime.datetime`` will
+   be created as :ref:`aware object <datetime-naive-aware>`, with
+   :attr:`!tzinfo` as :const:`datetime.UTC`.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
    by the plist parser.
 
-   The parser for the binary format raises :exc:`InvalidFileException`
-   when the file cannot be parsed.
+   The parser raises :exc:`InvalidFileException` when the file cannot be parsed.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      The keyword-only parameter *aware_datetime* has been added.
 
-.. function:: loads(data, \*, fmt=None, use_builtin_types=True, dict_type=dict)
 
-   Load a plist from a bytes object. See :func:`load` for an explanation of
-   the keyword arguments.
+.. function:: loads(data, *, fmt=None, dict_type=dict, aware_datetime=False)
+
+   Load a plist from a bytes or string object. See :func:`load` for an
+   explanation of the keyword arguments.
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      *data* can be a string when *fmt* equals :data:`FMT_XML`.
 
-.. function:: dump(value, fp, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+.. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be
@@ -105,6 +115,10 @@ This module defines the following functions:
    When *skipkeys* is false (the default) the function raises :exc:`TypeError`
    when a key of a dictionary is not a string, otherwise such keys are skipped.
 
+   When *aware_datetime* is true and any field with type ``datetime.datetime``
+   is set as an :ref:`aware object <datetime-naive-aware>`, it will convert to
+   UTC timezone before writing it.
+
    A :exc:`TypeError` will be raised if the object is of an unsupported type or
    a container that contains objects of unsupported types.
 
@@ -113,8 +127,11 @@ This module defines the following functions:
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      The keyword-only parameter *aware_datetime* has been added.
 
-.. function:: dumps(value, \*, fmt=FMT_XML, sort_keys=True, skipkeys=False)
+
+.. function:: dumps(value, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
    Return *value* as a plist-formatted bytes object. See
    the documentation for :func:`dump` for an explanation of the keyword
@@ -122,64 +139,19 @@ This module defines the following functions:
 
    .. versionadded:: 3.4
 
-The following functions are deprecated:
-
-.. function:: readPlist(pathOrFile)
-
-   Read a plist file. *pathOrFile* may be either a file name or a (readable
-   and binary) file object. Returns the unpacked root object (which usually
-   is a dictionary).
-
-   This function calls :func:`load` to do the actual work, see the documentation
-   of :func:`that function <load>` for an explanation of the keyword arguments.
-
-   .. deprecated:: 3.4 Use :func:`load` instead.
-
-   .. versionchanged:: 3.7
-      Dict values in the result are now normal dicts.  You no longer can use
-      attribute access to access items of these dictionaries.
-
-
-.. function:: writePlist(rootObject, pathOrFile)
-
-   Write *rootObject* to an XML plist file. *pathOrFile* may be either a file name
-   or a (writable and binary) file object
-
-   .. deprecated:: 3.4 Use :func:`dump` instead.
-
-
-.. function:: readPlistFromBytes(data)
-
-   Read a plist data from a bytes object.  Return the root object.
-
-   See :func:`load` for a description of the keyword arguments.
-
-   .. deprecated:: 3.4 Use :func:`loads` instead.
-
-   .. versionchanged:: 3.7
-      Dict values in the result are now normal dicts.  You no longer can use
-      attribute access to access items of these dictionaries.
-
-
-.. function:: writePlistToBytes(rootObject)
-
-   Return *rootObject* as an XML plist-formatted bytes object.
-
-   .. deprecated:: 3.4 Use :func:`dumps` instead.
-
 
 The following classes are available:
 
-.. class:: Data(data)
+.. class:: UID(data)
 
-   Return a "data" wrapper object around the bytes object *data*.  This is used
-   in functions converting from/to plists to represent the ``<data>`` type
-   available in plists.
+   Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
+   encoded data, which contains UID (see PList manual).
 
-   It has one attribute, :attr:`data`, that can be used to retrieve the Python
-   bytes object stored in it.
+   .. attribute:: data
 
-   .. deprecated:: 3.4 Use a :class:`bytes` object instead.
+      Int value of the UID.  It must be in the range ``0 <= data < 2**64``.
+
+   .. versionadded:: 3.8
 
 
 The following constants are available:
@@ -198,10 +170,22 @@ The following constants are available:
    .. versionadded:: 3.4
 
 
+The module defines the following exceptions:
+
+.. exception:: InvalidFileException
+
+   Raised when a file cannot be parsed.
+
+   .. versionadded:: 3.4
+
+
 Examples
 --------
 
 Generating a plist::
+
+    import datetime
+    import plistlib
 
     pl = dict(
         aString = "Doodah",
@@ -216,13 +200,19 @@ Generating a plist::
         ),
         someData = b"<binary gunk>",
         someMoreData = b"<lots of binary gunk>" * 10,
-        aDate = datetime.datetime.fromtimestamp(time.mktime(time.gmtime())),
+        aDate = datetime.datetime.now()
     )
-    with open(fileName, 'wb') as fp:
-        dump(pl, fp)
+    print(plistlib.dumps(pl).decode())
 
 Parsing a plist::
 
-    with open(fileName, 'rb') as fp:
-        pl = load(fp)
-    print(pl["aKey"])
+    import plistlib
+
+    plist = b"""<plist version="1.0">
+    <dict>
+        <key>foo</key>
+        <string>bar</string>
+    </dict>
+    </plist>"""
+    pl = plistlib.loads(plist)
+    print(pl["foo"])

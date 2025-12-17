@@ -1,5 +1,5 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable
@@ -8,6 +8,8 @@
 
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
+
+**Source code:** :source:`Lib/curses`
 
 --------------
 
@@ -19,19 +21,17 @@ for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on
 Linux and the BSD variants of Unix.
 
+.. include:: ../includes/wasm-mobile-notavail.rst
+
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
-   Since version 5.4, the ncurses library decides how to interpret non-ASCII data
-   using the ``nl_langinfo`` function.  That means that you have to call
-   :func:`locale.setlocale` in the application and encode Unicode strings
-   using one of the system's available encodings.  This example uses the
-   system's default encoding::
+   Whenever the documentation mentions a *character* it can be specified
+   as an integer, a one-character Unicode string or a one-byte byte string.
 
-      import locale
-      locale.setlocale(locale.LC_ALL, '')
-      code = locale.getpreferredencoding()
-
-   Then use *code* as the encoding for :meth:`str.encode` calls.
+   Whenever the documentation mentions a *character string* it can be specified
+   as a Unicode string or a byte string.
 
 .. seealso::
 
@@ -47,9 +47,6 @@ Linux and the BSD variants of Unix.
    :ref:`curses-howto`
       Tutorial material on using curses with Python, by Andrew Kuchling and Eric
       Raymond.
-
-   The :source:`Tools/demo/` directory in the Python source distribution contains
-   some example programs using the curses bindings provided by this module.
 
 
 .. _curses-functions:
@@ -71,6 +68,21 @@ The module :mod:`curses` defines the following exception:
    to :const:`A_NORMAL`.
 
 The module :mod:`curses` defines the following functions:
+
+
+.. function:: assume_default_colors(fg, bg, /)
+
+   Allow use of default values for colors on terminals supporting this feature.
+   Use this to support transparency in your application.
+
+   * Assign terminal default foreground/background colors to color number ``-1``.
+     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
+     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
+     initialize pair *x* as default foreground on blue.
+
+   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+
+   .. versionadded:: 3.14
 
 
 .. function:: baudrate()
@@ -104,24 +116,25 @@ The module :mod:`curses` defines the following functions:
 .. function:: color_content(color_number)
 
    Return the intensity of the red, green, and blue (RGB) components in the color
-   *color_number*, which must be between ``0`` and :const:`COLORS`.  A 3-tuple is
-   returned, containing the R,G,B values for the given color, which will be between
+   *color_number*, which must be between ``0`` and ``COLORS - 1``.  Return a 3-tuple,
+   containing the R,G,B values for the given color, which will be between
    ``0`` (no component) and ``1000`` (maximum amount of component).
 
 
-.. function:: color_pair(color_number)
+.. function:: color_pair(pair_number)
 
-   Return the attribute value for displaying text in the specified color.  This
+   Return the attribute value for displaying text in the specified color pair.
+   Only the first 256 color pairs are supported. This
    attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`A_\*` attributes.  :func:`pair_number` is the counterpart
+   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
    to this function.
 
 
 .. function:: curs_set(visibility)
 
-   Set the cursor state.  *visibility* can be set to 0, 1, or 2, for invisible,
-   normal, or very visible.  If the terminal supports the visibility requested, the
-   previous cursor state is returned; otherwise, an exception is raised.  On many
+   Set the cursor state.  *visibility* can be set to ``0``, ``1``, or ``2``, for invisible,
+   normal, or very visible.  If the terminal supports the visibility requested, return the
+   previous cursor state; otherwise raise an exception.  On many
    terminals, the "visible" mode is an underline cursor and the "very visible" mode
    is a block cursor.
 
@@ -154,12 +167,12 @@ The module :mod:`curses` defines the following functions:
    representing the desired next state.  The :func:`doupdate` ground updates the
    physical screen to match the virtual screen.
 
-   The virtual screen may be updated by a :meth:`noutrefresh` call after write
-   operations such as :meth:`addstr` have been performed on a window.  The normal
-   :meth:`refresh` call is simply :meth:`noutrefresh` followed by :func:`doupdate`;
+   The virtual screen may be updated by a :meth:`~window.noutrefresh` call after write
+   operations such as :meth:`~window.addstr` have been performed on a window.  The normal
+   :meth:`~window.refresh` call is simply :meth:`!noutrefresh` followed by :func:`!doupdate`;
    if you have to update multiple windows, you can speed performance and perhaps
-   reduce screen flicker by issuing :meth:`noutrefresh` calls on all windows,
-   followed by a single :func:`doupdate`.
+   reduce screen flicker by issuing :meth:`!noutrefresh` calls on all windows,
+   followed by a single :func:`!doupdate`.
 
 
 .. function:: echo()
@@ -175,7 +188,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: erasechar()
 
-   Return the user's current erase character.  Under Unix operating systems this
+   Return the user's current erase character as a one-byte bytes object.  Under Unix operating systems this
    is a property of the controlling tty of the curses program, and is not set by
    the curses library itself.
 
@@ -183,9 +196,9 @@ The module :mod:`curses` defines the following functions:
 .. function:: filter()
 
    The :func:`.filter` routine, if used, must be called before :func:`initscr` is
-   called.  The effect is that, during those calls, :envvar:`LINES` is set to 1; the
-   capabilities clear, cup, cud, cud1, cuu1, cuu, vpa are disabled; and the home
-   string is set to the value of cr. The effect is that the cursor is confined to
+   called.  The effect is that, during those calls, :envvar:`LINES` is set to ``1``; the
+   capabilities ``clear``, ``cup``, ``cud``, ``cud1``, ``cuu1``, ``cuu``, ``vpa`` are disabled; and the ``home``
+   string is set to the value of ``cr``. The effect is that the cursor is confined to
    the current line, and so are screen updates.  This may be used for enabling
    character-at-a-time  line editing without touching the rest of the screen.
 
@@ -205,27 +218,31 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: getmouse()
 
-   After :meth:`getch` returns :const:`KEY_MOUSE` to signal a mouse event, this
-   method should be call to retrieve the queued mouse event, represented as a
+   After :meth:`~window.getch` returns :const:`KEY_MOUSE` to signal a mouse event, this
+   method should be called to retrieve the queued mouse event, represented as a
    5-tuple ``(id, x, y, z, bstate)``. *id* is an ID value used to distinguish
    multiple devices, and *x*, *y*, *z* are the event's coordinates.  (*z* is
    currently unused.)  *bstate* is an integer value whose bits will be set to
    indicate the type of event, and will be the bitwise OR of one or more of the
-   following constants, where *n* is the button number from 1 to 4:
+   following constants, where *n* is the button number from 1 to 5:
    :const:`BUTTONn_PRESSED`, :const:`BUTTONn_RELEASED`, :const:`BUTTONn_CLICKED`,
    :const:`BUTTONn_DOUBLE_CLICKED`, :const:`BUTTONn_TRIPLE_CLICKED`,
    :const:`BUTTON_SHIFT`, :const:`BUTTON_CTRL`, :const:`BUTTON_ALT`.
 
+   .. versionchanged:: 3.10
+      The ``BUTTON5_*`` constants are now exposed if they are provided by the
+      underlying curses library.
+
 
 .. function:: getsyx()
 
-   Return the current coordinates of the virtual screen cursor in y and x.  If
-   leaveok is currently true, then -1,-1 is returned.
+   Return the current coordinates of the virtual screen cursor as a tuple
+   ``(y, x)``.  If :meth:`leaveok <window.leaveok>` is currently ``True``, then return ``(-1, -1)``.
 
 
 .. function:: getwin(file)
 
-   Read window related data stored in the file by an earlier :func:`putwin` call.
+   Read window related data stored in the file by an earlier :func:`window.putwin` call.
    The routine then creates and initializes a new window using that data, returning
    the new window object.
 
@@ -234,6 +251,15 @@ The module :mod:`curses` defines the following functions:
 
    Return ``True`` if the terminal can display colors; otherwise, return ``False``.
 
+.. function:: has_extended_color_support()
+
+   Return ``True`` if the module supports extended colors; otherwise, return
+   ``False``. Extended color support allows more than 256 color pairs for
+   terminals that support more than 16 colors (e.g. xterm-256color).
+
+   Extended color support requires ncurses version 6.1 or later.
+
+   .. versionadded:: 3.10
 
 .. function:: has_ic()
 
@@ -260,7 +286,7 @@ The module :mod:`curses` defines the following functions:
 
    Used for half-delay mode, which is similar to cbreak mode in that characters
    typed by the user are immediately available to the program. However, after
-   blocking for *tenths* tenths of seconds, an exception is raised if nothing has
+   blocking for *tenths* tenths of seconds, raise an exception if nothing has
    been typed.  The value of *tenths* must be a number between ``1`` and ``255``.  Use
    :func:`nocbreak` to leave half-delay mode.
 
@@ -270,10 +296,10 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color, taking the number of the color to be changed
    followed by three RGB values (for the amounts of red, green, and blue
    components).  The value of *color_number* must be between ``0`` and
-   :const:`COLORS`.  Each of *r*, *g*, *b*, must be a value between ``0`` and
+   ``COLORS - 1``.  Each of *r*, *g*, *b*, must be a value between ``0`` and
    ``1000``.  When :func:`init_color` is used, all occurrences of that color on the
    screen immediately change to the new definition.  This function is a no-op on
-   most terminals; it is active only if :func:`can_change_color` returns ``1``.
+   most terminals; it is active only if :func:`can_change_color` returns ``True``.
 
 
 .. function:: init_pair(pair_number, fg, bg)
@@ -281,9 +307,12 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color-pair.  It takes three arguments: the number of
    the color-pair to be changed, the foreground color number, and the background
    color number.  The value of *pair_number* must be between ``1`` and
-   ``COLOR_PAIRS - 1`` (the ``0`` color pair is wired to white on black and cannot
-   be changed).  The value of *fg* and *bg* arguments must be between ``0`` and
-   :const:`COLORS`.  If the color-pair was previously initialized, the screen is
+   ``COLOR_PAIRS - 1`` (the ``0`` color pair can only be changed by
+   :func:`use_default_colors` and :func:`assume_default_colors`).
+   The value of *fg* and *bg* arguments must be between ``0`` and
+   ``COLORS - 1``, or, after calling :func:`!use_default_colors` or
+   :func:`!assume_default_colors`, ``-1``.
+   If the color-pair was previously initialized, the screen is
    refreshed and all occurrences of that color-pair are changed to the new
    definition.
 
@@ -313,46 +342,46 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: keyname(k)
 
-   Return the name of the key numbered *k*.  The name of a key generating printable
+   Return the name of the key numbered *k* as a bytes object.  The name of a key generating printable
    ASCII character is the key's character.  The name of a control-key combination
-   is a two-character string consisting of a caret followed by the corresponding
+   is a two-byte bytes object consisting of a caret (``b'^'``) followed by the corresponding
    printable ASCII character.  The name of an alt-key combination (128--255) is a
-   string consisting of the prefix 'M-' followed by the name of the corresponding
+   bytes object consisting of the prefix ``b'M-'`` followed by the name of the corresponding
    ASCII character.
 
 
 .. function:: killchar()
 
-   Return the user's current line kill character. Under Unix operating systems
+   Return the user's current line kill character as a one-byte bytes object. Under Unix operating systems
    this is a property of the controlling tty of the curses program, and is not set
    by the curses library itself.
 
 
 .. function:: longname()
 
-   Return a string containing the terminfo long name field describing the current
+   Return a bytes object containing the terminfo long name field describing the current
    terminal.  The maximum length of a verbose description is 128 characters.  It is
    defined only after the call to :func:`initscr`.
 
 
-.. function:: meta(yes)
+.. function:: meta(flag)
 
-   If *yes* is 1, allow 8-bit characters to be input. If *yes* is 0,  allow only
-   7-bit chars.
+   If *flag* is ``True``, allow 8-bit characters to be input.  If
+   *flag* is ``False``,  allow only 7-bit chars.
 
 
 .. function:: mouseinterval(interval)
 
    Set the maximum time in milliseconds that can elapse between press and release
    events in order for them to be recognized as a click, and return the previous
-   interval value.  The default value is 200 msec, or one fifth of a second.
+   interval value.  The default value is 200 milliseconds, or one fifth of a second.
 
 
 .. function:: mousemask(mousemask)
 
    Set the mouse events to be reported, and return a tuple ``(availmask,
    oldmask)``.   *availmask* indicates which of the specified mouse events can be
-   reported; on complete failure it returns 0.  *oldmask* is the previous value of
+   reported; on complete failure it returns ``0``.  *oldmask* is the previous value of
    the given window's mouse event mask.  If this function is never called, no mouse
    events are ever reported.
 
@@ -365,13 +394,13 @@ The module :mod:`curses` defines the following functions:
 .. function:: newpad(nlines, ncols)
 
    Create and return a pointer to a new pad data structure with the given number
-   of lines and columns.  A pad is returned as a window object.
+   of lines and columns.  Return a pad as a window object.
 
    A pad is like a window, except that it is not restricted by the screen size, and
    is not necessarily associated with a particular part of the screen.  Pads can be
    used when a large window is needed, and only a part of the window will be on the
    screen at one time.  Automatic refreshes of pads (such as from scrolling or
-   echoing of input) do not occur.  The :meth:`refresh` and :meth:`noutrefresh`
+   echoing of input) do not occur.  The :meth:`~window.refresh` and :meth:`~window.noutrefresh`
    methods of a pad require 6 arguments to specify the part of the pad to be
    displayed and the location on the screen to be used for the display. The
    arguments are *pminrow*, *pmincol*, *sminrow*, *smincol*, *smaxrow*, *smaxcol*; the *p*
@@ -419,9 +448,9 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: noqiflush()
 
-   When the :func:`noqiflush` routine is used, normal flush of input and output queues
-   associated with the INTR, QUIT and SUSP characters will not be done.  You may
-   want to call :func:`noqiflush` in a signal handler if you want output to
+   When the :func:`!noqiflush` routine is used, normal flush of input and output queues
+   associated with the ``INTR``, ``QUIT`` and ``SUSP`` characters will not be done.  You may
+   want to call :func:`!noqiflush` in a signal handler if you want output to
    continue as though the interrupt had not occurred, after the handler exits.
 
 
@@ -433,7 +462,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: pair_content(pair_number)
 
    Return a tuple ``(fg, bg)`` containing the colors for the requested color pair.
-   The value of *pair_number* must be between ``1`` and ``COLOR_PAIRS - 1``.
+   The value of *pair_number* must be between ``0`` and ``COLOR_PAIRS - 1``.
 
 
 .. function:: pair_number(attr)
@@ -442,14 +471,14 @@ The module :mod:`curses` defines the following functions:
    :func:`color_pair` is the counterpart to this function.
 
 
-.. function:: putp(string)
+.. function:: putp(str)
 
    Equivalent to ``tputs(str, 1, putchar)``; emit the value of a specified
    terminfo capability for the current terminal.  Note that the output of :func:`putp`
    always goes to standard output.
 
 
-.. function:: qiflush( [flag] )
+.. function:: qiflush([flag])
 
    If *flag* is ``False``, the effect is the same as calling :func:`noqiflush`. If
    *flag* is ``True``, or no argument is provided, the queues will be flushed when
@@ -486,7 +515,7 @@ The module :mod:`curses` defines the following functions:
    Backend function used by :func:`resizeterm`, performing most of the work;
    when resizing the windows, :func:`resize_term` blank-fills the areas that are
    extended.  The calling application should fill in these areas with
-   appropriate data.  The :func:`resize_term` function attempts to resize all
+   appropriate data.  The :func:`!resize_term` function attempts to resize all
    windows.  However, due to the calling convention of pads, it is not possible
    to resize these without additional interaction with the application.
 
@@ -503,19 +532,46 @@ The module :mod:`curses` defines the following functions:
    Save the current state of the terminal modes in a buffer, usable by
    :func:`resetty`.
 
+.. function:: get_escdelay()
+
+   Retrieves the value set by :func:`set_escdelay`.
+
+   .. versionadded:: 3.9
+
+.. function:: set_escdelay(ms)
+
+   Sets the number of milliseconds to wait after reading an escape character,
+   to distinguish between an individual escape character entered on the
+   keyboard from escape sequences sent by cursor and function keys.
+
+   .. versionadded:: 3.9
+
+.. function:: get_tabsize()
+
+   Retrieves the value set by :func:`set_tabsize`.
+
+   .. versionadded:: 3.9
+
+.. function:: set_tabsize(size)
+
+   Sets the number of columns used by the curses library when converting a tab
+   character to spaces as it adds the tab to a window.
+
+   .. versionadded:: 3.9
 
 .. function:: setsyx(y, x)
 
-   Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both -1, then
-   leaveok is set.
+   Set the virtual screen cursor to *y*, *x*. If *y* and *x* are both ``-1``, then
+   :meth:`leaveok <window.leaveok>` is set ``True``.
 
 
-.. function:: setupterm([termstr, fd])
+.. function:: setupterm(term=None, fd=-1)
 
-   Initialize the terminal.  *termstr* is a string giving the terminal name; if
-   omitted, the value of the :envvar:`TERM` environment variable will be used.  *fd* is the
+   Initialize the terminal.  *term* is a string giving
+   the terminal name, or ``None``; if omitted or ``None``, the value of the
+   :envvar:`TERM` environment variable will be used.  *fd* is the
    file descriptor to which any initialization sequences will be sent; if not
-   supplied, the file descriptor for ``sys.stdout`` will be used.
+   supplied or ``-1``, the file descriptor for ``sys.stdout`` will be used.
 
 
 .. function:: start_color()
@@ -540,13 +596,14 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: termname()
 
-   Return the value of the environment variable :envvar:`TERM`, truncated to 14 characters.
+   Return the value of the environment variable :envvar:`TERM`, as a bytes object,
+   truncated to 14 characters.
 
 
 .. function:: tigetflag(capname)
 
    Return the value of the Boolean capability corresponding to the terminfo
-   capability name *capname*.  The value ``-1`` is returned if *capname* is not a
+   capability name *capname* as an integer.  Return the value ``-1`` if *capname* is not a
    Boolean capability, or ``0`` if it is canceled or absent from the terminal
    description.
 
@@ -554,7 +611,7 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetnum(capname)
 
    Return the value of the numeric capability corresponding to the terminfo
-   capability name *capname*.  The value ``-2`` is returned if *capname* is not a
+   capability name *capname* as an integer.  Return the value ``-2`` if *capname* is not a
    numeric capability, or ``-1`` if it is canceled or absent from the terminal
    description.
 
@@ -562,13 +619,14 @@ The module :mod:`curses` defines the following functions:
 .. function:: tigetstr(capname)
 
    Return the value of the string capability corresponding to the terminfo
-   capability name *capname*.  ``None`` is returned if *capname* is not a string
-   capability, or is canceled or absent from the terminal description.
+   capability name *capname* as a bytes object.  Return ``None`` if *capname*
+   is not a terminfo "string capability", or is canceled or absent from the
+   terminal description.
 
 
 .. function:: tparm(str[, ...])
 
-   Instantiate the string *str* with the supplied parameters, where *str* should
+   Instantiate the bytes object *str* with the supplied parameters, where *str* should
    be a parameterized string obtained from the terminfo database.  E.g.
    ``tparm(tigetstr("cup"), 5, 3)`` could result in ``b'\033[6;4H'``, the exact
    result depending on terminal type.
@@ -588,34 +646,35 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: unctrl(ch)
 
-   Return a string which is a printable representation of the character *ch*.
-   Control characters are displayed as a caret followed by the character, for
-   example as ``^C``. Printing characters are left as they are.
+   Return a bytes object which is a printable representation of the character *ch*.
+   Control characters are represented as a caret followed by the character, for
+   example as ``b'^C'``. Printing characters are left as they are.
 
 
 .. function:: ungetch(ch)
 
-   Push *ch* so the next :meth:`getch` will return it.
+   Push *ch* so the next :meth:`~window.getch` will return it.
 
    .. note::
 
-      Only one *ch* can be pushed before :meth:`getch` is called.
+      Only one *ch* can be pushed before :meth:`!getch` is called.
 
 
 .. function:: update_lines_cols()
 
-   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+   Update the :const:`LINES` and :const:`COLS` module variables.
+   Useful for detecting manual screen resize.
 
    .. versionadded:: 3.5
 
 
 .. function:: unget_wch(ch)
 
-   Push *ch* so the next :meth:`get_wch` will return it.
+   Push *ch* so the next :meth:`~window.get_wch` will return it.
 
    .. note::
 
-      Only one *ch* can be pushed before :meth:`get_wch` is called.
+      Only one *ch* can be pushed before :meth:`!get_wch` is called.
 
    .. versionadded:: 3.3
 
@@ -638,21 +697,17 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: use_default_colors()
 
-   Allow use of default values for colors on terminals supporting this feature. Use
-   this to support transparency in your application.  The default color is assigned
-   to the color number -1. After calling this function,  ``init_pair(x,
-   curses.COLOR_RED, -1)`` initializes, for instance, color pair *x* to a red
-   foreground color on the default background.
+   Equivalent to ``assume_default_colors(-1, -1)``.
 
 
-.. function:: wrapper(func, ...)
+.. function:: wrapper(func, /, *args, **kwargs)
 
    Initialize curses and call another callable object, *func*, which should be the
    rest of your curses-using application.  If the application raises an exception,
    this function will restore the terminal to a sane state before re-raising the
    exception and generating a traceback.  The callable object *func* is then passed
    the main window 'stdscr' as its first argument, followed by any other arguments
-   passed to :func:`wrapper`.  Before calling *func*, :func:`wrapper` turns on
+   passed to :func:`!wrapper`.  Before calling *func*, :func:`!wrapper` turns on
    cbreak mode, turns off echo, enables the terminal keypad, and initializes colors
    if the terminal has color support.  On exit (whether normally or by exception)
    it restores cooked mode, turns on echo, and disables the terminal keypad.
@@ -663,37 +718,52 @@ The module :mod:`curses` defines the following functions:
 Window Objects
 --------------
 
-Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
-the following methods and attributes:
+.. class:: window
+
+   Window objects, as returned by :func:`initscr` and :func:`newwin` above, have
+   the following methods and attributes:
 
 
 .. method:: window.addch(ch[, attr])
             window.addch(y, x, ch[, attr])
 
+   Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
+   character previously painted at that location.  By default, the character
+   position and attributes are the current settings for the window object.
+
    .. note::
 
-      A *character* means a C character (an ASCII code), rather than a Python
-      character (a string of length 1). (This note is true whenever the
-      documentation mentions a character.) The built-in :func:`ord` is handy for
-      conveying strings to codes.
-
-   Paint character *ch* at ``(y, x)`` with attributes *attr*, overwriting any
-   character previously painter at that location.  By default, the character
-   position and attributes are the current settings for the window object.
+      Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the character is printed.
 
 
 .. method:: window.addnstr(str, n[, attr])
             window.addnstr(y, x, str, n[, attr])
 
-   Paint at most *n* characters of the  string *str* at ``(y, x)`` with attributes
+   Paint at most *n* characters of the character string *str* at
+   ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
 
 
 .. method:: window.addstr(str[, attr])
             window.addstr(y, x, str[, attr])
 
-   Paint the string *str* at ``(y, x)`` with attributes *attr*, overwriting
-   anything previously on the display.
+   Paint the character string *str* at ``(y, x)`` with attributes
+   *attr*, overwriting anything previously on the display.
+
+   .. note::
+
+      * Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+        Attempting to write to the lower right corner of a window, subwindow,
+        or pad will cause an exception to be raised after the string is printed.
+
+      * A `bug in ncurses <https://bugs.python.org/issue35924>`_, the backend
+        for this Python module, can cause SegFaults when resizing windows. This
+        is fixed in ncurses-6.1-20190511.  If you are stuck with an earlier
+        ncurses, you can avoid triggering this if you do not call :func:`addstr`
+        with a *str* that has embedded newlines.  Instead, call :func:`addstr`
+        separately for each line.
 
 
 .. method:: window.attroff(attr)
@@ -704,14 +774,14 @@ the following methods and attributes:
 
 .. method:: window.attron(attr)
 
-   Add attribute *attr* from the "background" set applied to all writes to the
+   Add attribute *attr* to the "background" set applied to all writes to the
    current window.
 
 
 .. method:: window.attrset(attr)
 
-   Set the "background" set of attributes to *attr*.  This set is initially 0 (no
-   attributes).
+   Set the "background" set of attributes to *attr*.  This set is initially
+   ``0`` (no attributes).
 
 
 .. method:: window.bkgd(ch[, attr])
@@ -741,8 +811,7 @@ the following methods and attributes:
 
    Draw a border around the edges of the window. Each parameter specifies  the
    character to use for a specific part of the border; see the table below for more
-   details.  The characters can be specified as integers or as one-character
-   strings.
+   details.
 
    .. note::
 
@@ -783,11 +852,11 @@ the following methods and attributes:
             window.chgat(y, x, num, attr)
 
    Set the attributes of *num* characters at the current cursor position, or at
-   position ``(y, x)`` if supplied. If no value of *num* is given or *num* = -1,
-   the attribute will  be set on all the characters to the end of the line.  This
-   function does not move the cursor. The changed line will be touched using the
-   :meth:`touchline` method so that the contents will be redisplayed by the next
-   window refresh.
+   position ``(y, x)`` if supplied. If *num* is not given or is ``-1``,
+   the attribute will be set on all the characters to the end of the line.  This
+   function moves cursor to position ``(y, x)`` if supplied. The changed line
+   will be touched using the :meth:`touchline` method so that the contents will
+   be redisplayed by the next window refresh.
 
 
 .. method:: window.clear()
@@ -796,9 +865,9 @@ the following methods and attributes:
    call to :meth:`refresh`.
 
 
-.. method:: window.clearok(yes)
+.. method:: window.clearok(flag)
 
-   If *yes* is 1, the next call to :meth:`refresh` will clear the window
+   If *flag* is ``True``, the next call to :meth:`refresh` will clear the window
    completely.
 
 
@@ -851,13 +920,16 @@ the following methods and attributes:
    determining what subset of the screen windows enclose the location of a mouse
    event.
 
+   .. versionchanged:: 3.10
+      Previously it returned ``1`` or ``0`` instead of ``True`` or ``False``.
+
 
 .. attribute:: window.encoding
 
    Encoding used to encode method arguments (Unicode strings and characters).
    The encoding attribute is inherited from the parent window when a subwindow
-   is created, for example with :meth:`window.subwin`. By default, the locale
-   encoding is used (see :func:`locale.getpreferredencoding`).
+   is created, for example with :meth:`window.subwin`.
+   By default, current locale encoding is used (see :func:`locale.getencoding`).
 
    .. versionadded:: 3.3
 
@@ -869,7 +941,7 @@ the following methods and attributes:
 
 .. method:: window.getbegyx()
 
-   Return a tuple ``(y, x)`` of co-ordinates of upper-left corner.
+   Return a tuple ``(y, x)`` of coordinates of upper-left corner.
 
 
 .. method:: window.getbkgd()
@@ -880,15 +952,16 @@ the following methods and attributes:
 .. method:: window.getch([y, x])
 
    Get a character. Note that the integer returned does *not* have to be in ASCII
-   range: function keys, keypad keys and so on return numbers higher than 256. In
-   no-delay mode, -1 is returned if there is no input, else :func:`getch` waits
-   until a key is pressed.
+   range: function keys, keypad keys and so on are represented by numbers higher
+   than 255.  In no-delay mode, return ``-1`` if there is no input, otherwise
+   wait until a key is pressed.
 
 
 .. method:: window.get_wch([y, x])
 
    Get a wide character. Return a character for most keys, or an integer for
    function keys, keypad keys, and other special keys.
+   In no-delay mode, raise an exception if there is no input.
 
    .. versionadded:: 3.3
 
@@ -897,7 +970,7 @@ the following methods and attributes:
 
    Get a character, returning a string instead of an integer, as :meth:`getch`
    does. Function keys, keypad keys and other special keys return a multibyte
-   string containing the key name.  In no-delay mode, an exception is raised if
+   string containing the key name.  In no-delay mode, raise an exception if
    there is no input.
 
 
@@ -909,13 +982,20 @@ the following methods and attributes:
 .. method:: window.getparyx()
 
    Return the beginning coordinates of this window relative to its parent window
-   into two integer variables y and x.  Return ``-1, -1`` if this window has no
+   as a tuple ``(y, x)``.  Return ``(-1, -1)`` if this window has no
    parent.
 
 
-.. method:: window.getstr([y, x])
+.. method:: window.getstr()
+            window.getstr(n)
+            window.getstr(y, x)
+            window.getstr(y, x, n)
 
-   Read a string from the user, with primitive line editing capacity.
+   Read a bytes object from the user, with primitive line editing capacity.
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.getyx()
@@ -939,9 +1019,9 @@ the following methods and attributes:
    insert/delete is enabled by default.
 
 
-.. method:: window.idlok(yes)
+.. method:: window.idlok(flag)
 
-   If called with *yes* equal to 1, :mod:`curses` will try and use hardware line
+   If *flag* is ``True``, :mod:`curses` will try and use hardware line
    editing facilities. Otherwise, line insertion/deletion are disabled.
 
 
@@ -1003,10 +1083,14 @@ the following methods and attributes:
 .. method:: window.instr([n])
             window.instr(y, x[, n])
 
-   Return a string of characters, extracted from the window starting at the
+   Return a bytes object of characters, extracted from the window starting at the
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.is_linetouched(line)
@@ -1022,20 +1106,20 @@ the following methods and attributes:
    :meth:`refresh`; otherwise return ``False``.
 
 
-.. method:: window.keypad(yes)
+.. method:: window.keypad(flag)
 
-   If *yes* is 1, escape sequences generated by some keys (keypad,  function keys)
-   will be interpreted by :mod:`curses`. If *yes* is 0, escape sequences will be
+   If *flag* is ``True``, escape sequences generated by some keys (keypad,  function keys)
+   will be interpreted by :mod:`curses`. If *flag* is ``False``, escape sequences will be
    left as is in the input stream.
 
 
-.. method:: window.leaveok(yes)
+.. method:: window.leaveok(flag)
 
-   If *yes* is 1, cursor is left where it is on update, instead of being at "cursor
+   If *flag* is ``True``, cursor is left where it is on update, instead of being at "cursor
    position."  This reduces cursor movement where possible. If possible the cursor
    will be made invisible.
 
-   If *yes* is 0, cursor will always be at "cursor position" after an update.
+   If *flag* is ``False``, cursor will always be at "cursor position" after an update.
 
 
 .. method:: window.move(new_y, new_x)
@@ -1055,16 +1139,16 @@ the following methods and attributes:
    Move the window so its upper-left corner is at ``(new_y, new_x)``.
 
 
-.. method:: window.nodelay(yes)
+.. method:: window.nodelay(flag)
 
-   If *yes* is ``1``, :meth:`getch` will be non-blocking.
+   If *flag* is ``True``, :meth:`getch` will be non-blocking.
 
 
-.. method:: window.notimeout(yes)
+.. method:: window.notimeout(flag)
 
-   If *yes* is ``1``, escape sequences will not be timed out.
+   If *flag* is ``True``, escape sequences will not be timed out.
 
-   If *yes* is ``0``, after a few milliseconds, an escape sequence will not be
+   If *flag* is ``False``, after a few milliseconds, an escape sequence will not be
    interpreted, and will be left in the input stream as is.
 
 
@@ -1153,8 +1237,8 @@ the following methods and attributes:
 
    Control what happens when the cursor of a window is moved off the edge of the
    window or scrolling region, either as a result of a newline action on the bottom
-   line, or typing the last character of the last line.  If *flag* is false, the
-   cursor is left on the bottom line.  If *flag* is true, the window is scrolled up
+   line, or typing the last character of the last line.  If *flag* is ``False``, the
+   cursor is left on the bottom line.  If *flag* is ``True``, the window is scrolled up
    one line.  Note that in order to get the physical scrolling effect on the
    terminal, it is also necessary to call :meth:`idlok`.
 
@@ -1202,7 +1286,7 @@ the following methods and attributes:
 
 .. method:: window.syncok(flag)
 
-   If called with *flag* set to ``True``, then :meth:`syncup` is called automatically
+   If *flag* is ``True``, then :meth:`syncup` is called automatically
    whenever there is a change in the window.
 
 
@@ -1216,9 +1300,9 @@ the following methods and attributes:
 
    Set blocking or non-blocking read behavior for the window.  If *delay* is
    negative, blocking read is used (which will wait indefinitely for input).  If
-   *delay* is zero, then non-blocking read is used, and -1 will be returned by
-   :meth:`getch` if no input is waiting.  If *delay* is positive, then
-   :meth:`getch` will block for *delay* milliseconds, and return -1 if there is
+   *delay* is zero, then non-blocking read is used, and :meth:`getch` will
+   return ``-1`` if no input is waiting.  If *delay* is positive, then
+   :meth:`getch` will block for *delay* milliseconds, and return ``-1`` if there is
    still no input at the end of that time.
 
 
@@ -1226,7 +1310,7 @@ the following methods and attributes:
 
    Pretend *count* lines have been changed, starting with line *start*.  If
    *changed* is supplied, it specifies whether the affected lines are marked as
-   having been changed (*changed*\ =1) or unchanged (*changed*\ =0).
+   having been changed (*changed*\ ``=True``) or unchanged (*changed*\ ``=False``).
 
 
 .. method:: window.touchwin()
@@ -1241,11 +1325,11 @@ the following methods and attributes:
    :meth:`refresh`.
 
 
-.. method:: window.vline(ch, n)
-            window.vline(y, x, ch, n)
+.. method:: window.vline(ch, n[, attr])
+            window.vline(y, x, ch, n[, attr])
 
    Display a vertical line starting at ``(y, x)`` with length *n* consisting of the
-   character *ch*.
+   character *ch* with attributes *attr*.
 
 
 Constants
@@ -1256,7 +1340,7 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: ERR
 
-   Some curses routines  that  return  an integer, such as  :func:`getch`, return
+   Some curses routines  that  return  an integer, such as :meth:`~window.getch`, return
    :const:`ERR` upon failure.
 
 
@@ -1268,53 +1352,86 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: version
 
-   A string representing the current version of the module.  Also available as
-   :const:`__version__`.
+   A bytes object representing the current version of the module.
+
+
+.. data:: ncurses_version
+
+   A named tuple containing the three components of the ncurses library
+   version: *major*, *minor*, and *patch*.  All values are integers.  The
+   components can also be accessed by name,  so ``curses.ncurses_version[0]``
+   is equivalent to ``curses.ncurses_version.major`` and so on.
+
+   Availability: if the ncurses library is used.
+
+   .. versionadded:: 3.8
+
+.. data:: COLORS
+
+   The maximum number of colors the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLOR_PAIRS
+
+   The maximum number of color pairs the terminal can support.
+   It is defined only after the call to :func:`start_color`.
+
+.. data:: COLS
+
+   The width of the screen, i.e., the number of columns.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
+.. data:: LINES
+
+   The height of the screen, i.e., the number of lines.
+   It is defined only after the call to :func:`initscr`.
+   Updated by :func:`update_lines_cols`, :func:`resizeterm` and
+   :func:`resize_term`.
+
 
 Some constants are available to specify character cell attributes.
 The exact constants available are system dependent.
 
-+------------------+-------------------------------+
-| Attribute        | Meaning                       |
-+==================+===============================+
-| ``A_ALTCHARSET`` | Alternate character set mode  |
-+------------------+-------------------------------+
-| ``A_BLINK``      | Blink mode                    |
-+------------------+-------------------------------+
-| ``A_BOLD``       | Bold mode                     |
-+------------------+-------------------------------+
-| ``A_DIM``        | Dim mode                      |
-+------------------+-------------------------------+
-| ``A_INVIS``      | Invisible or blank mode       |
-+------------------+-------------------------------+
-| ``A_ITALIC``     | Italic mode                   |
-+------------------+-------------------------------+
-| ``A_NORMAL``     | Normal attribute              |
-+------------------+-------------------------------+
-| ``A_PROTECT``    | Protected mode                |
-+------------------+-------------------------------+
-| ``A_REVERSE``    | Reverse background and        |
-|                  | foreground colors             |
-+------------------+-------------------------------+
-| ``A_STANDOUT``   | Standout mode                 |
-+------------------+-------------------------------+
-| ``A_UNDERLINE``  | Underline mode                |
-+------------------+-------------------------------+
-| ``A_HORIZONTAL`` | Horizontal highlight          |
-+------------------+-------------------------------+
-| ``A_LEFT``       | Left highlight                |
-+------------------+-------------------------------+
-| ``A_LOW``        | Low highlight                 |
-+------------------+-------------------------------+
-| ``A_RIGHT``      | Right highlight               |
-+------------------+-------------------------------+
-| ``A_TOP``        | Top highlight                 |
-+------------------+-------------------------------+
-| ``A_VERTICAL``   | Vertical highlight            |
-+------------------+-------------------------------+
-| ``A_CHARTEXT``   | Bit-mask to extract a         |
-|                  | character                     |
-+------------------+-------------------------------+
++------------------------+-------------------------------+
+| Attribute              | Meaning                       |
++========================+===============================+
+| .. data:: A_ALTCHARSET | Alternate character set mode  |
++------------------------+-------------------------------+
+| .. data:: A_BLINK      | Blink mode                    |
++------------------------+-------------------------------+
+| .. data:: A_BOLD       | Bold mode                     |
++------------------------+-------------------------------+
+| .. data:: A_DIM        | Dim mode                      |
++------------------------+-------------------------------+
+| .. data:: A_INVIS      | Invisible or blank mode       |
++------------------------+-------------------------------+
+| .. data:: A_ITALIC     | Italic mode                   |
++------------------------+-------------------------------+
+| .. data:: A_NORMAL     | Normal attribute              |
++------------------------+-------------------------------+
+| .. data:: A_PROTECT    | Protected mode                |
++------------------------+-------------------------------+
+| .. data:: A_REVERSE    | Reverse background and        |
+|                        | foreground colors             |
++------------------------+-------------------------------+
+| .. data:: A_STANDOUT   | Standout mode                 |
++------------------------+-------------------------------+
+| .. data:: A_UNDERLINE  | Underline mode                |
++------------------------+-------------------------------+
+| .. data:: A_HORIZONTAL | Horizontal highlight          |
++------------------------+-------------------------------+
+| .. data:: A_LEFT       | Left highlight                |
++------------------------+-------------------------------+
+| .. data:: A_LOW        | Low highlight                 |
++------------------------+-------------------------------+
+| .. data:: A_RIGHT      | Right highlight               |
++------------------------+-------------------------------+
+| .. data:: A_TOP        | Top highlight                 |
++------------------------+-------------------------------+
+| .. data:: A_VERTICAL   | Vertical highlight            |
++------------------------+-------------------------------+
 
 .. versionadded:: 3.7
    ``A_ITALIC`` was added.
@@ -1322,220 +1439,220 @@ The exact constants available are system dependent.
 Several constants are available to extract corresponding attributes returned
 by some methods.
 
-+------------------+-------------------------------+
-| Bit-mask         | Meaning                       |
-+==================+===============================+
-| ``A_ATTRIBUTES`` | Bit-mask to extract           |
-|                  | attributes                    |
-+------------------+-------------------------------+
-| ``A_CHARTEXT``   | Bit-mask to extract a         |
-|                  | character                     |
-+------------------+-------------------------------+
-| ``A_COLOR``      | Bit-mask to extract           |
-|                  | color-pair field information  |
-+------------------+-------------------------------+
++-------------------------+-------------------------------+
+| Bit-mask                | Meaning                       |
++=========================+===============================+
+|  .. data:: A_ATTRIBUTES | Bit-mask to extract           |
+|                         | attributes                    |
++-------------------------+-------------------------------+
+|  .. data:: A_CHARTEXT   | Bit-mask to extract a         |
+|                         | character                     |
++-------------------------+-------------------------------+
+|  .. data:: A_COLOR      | Bit-mask to extract           |
+|                         | color-pair field information  |
++-------------------------+-------------------------------+
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
 The exact keycaps available are system dependent.
 
 .. XXX this table is far too large! should it be alphabetized?
 
-+-------------------+--------------------------------------------+
-| Key constant      | Key                                        |
-+===================+============================================+
-| ``KEY_MIN``       | Minimum key value                          |
-+-------------------+--------------------------------------------+
-| ``KEY_BREAK``     | Break key (unreliable)                     |
-+-------------------+--------------------------------------------+
-| ``KEY_DOWN``      | Down-arrow                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_UP``        | Up-arrow                                   |
-+-------------------+--------------------------------------------+
-| ``KEY_LEFT``      | Left-arrow                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_RIGHT``     | Right-arrow                                |
-+-------------------+--------------------------------------------+
-| ``KEY_HOME``      | Home key (upward+left arrow)               |
-+-------------------+--------------------------------------------+
-| ``KEY_BACKSPACE`` | Backspace (unreliable)                     |
-+-------------------+--------------------------------------------+
-| ``KEY_F0``        | Function keys.  Up to 64 function keys are |
-|                   | supported.                                 |
-+-------------------+--------------------------------------------+
-| ``KEY_Fn``        | Value of function key *n*                  |
-+-------------------+--------------------------------------------+
-| ``KEY_DL``        | Delete line                                |
-+-------------------+--------------------------------------------+
-| ``KEY_IL``        | Insert line                                |
-+-------------------+--------------------------------------------+
-| ``KEY_DC``        | Delete character                           |
-+-------------------+--------------------------------------------+
-| ``KEY_IC``        | Insert char or enter insert mode           |
-+-------------------+--------------------------------------------+
-| ``KEY_EIC``       | Exit insert char mode                      |
-+-------------------+--------------------------------------------+
-| ``KEY_CLEAR``     | Clear screen                               |
-+-------------------+--------------------------------------------+
-| ``KEY_EOS``       | Clear to end of screen                     |
-+-------------------+--------------------------------------------+
-| ``KEY_EOL``       | Clear to end of line                       |
-+-------------------+--------------------------------------------+
-| ``KEY_SF``        | Scroll 1 line forward                      |
-+-------------------+--------------------------------------------+
-| ``KEY_SR``        | Scroll 1 line backward (reverse)           |
-+-------------------+--------------------------------------------+
-| ``KEY_NPAGE``     | Next page                                  |
-+-------------------+--------------------------------------------+
-| ``KEY_PPAGE``     | Previous page                              |
-+-------------------+--------------------------------------------+
-| ``KEY_STAB``      | Set tab                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_CTAB``      | Clear tab                                  |
-+-------------------+--------------------------------------------+
-| ``KEY_CATAB``     | Clear all tabs                             |
-+-------------------+--------------------------------------------+
-| ``KEY_ENTER``     | Enter or send (unreliable)                 |
-+-------------------+--------------------------------------------+
-| ``KEY_SRESET``    | Soft (partial) reset (unreliable)          |
-+-------------------+--------------------------------------------+
-| ``KEY_RESET``     | Reset or hard reset (unreliable)           |
-+-------------------+--------------------------------------------+
-| ``KEY_PRINT``     | Print                                      |
-+-------------------+--------------------------------------------+
-| ``KEY_LL``        | Home down or bottom (lower left)           |
-+-------------------+--------------------------------------------+
-| ``KEY_A1``        | Upper left of keypad                       |
-+-------------------+--------------------------------------------+
-| ``KEY_A3``        | Upper right of keypad                      |
-+-------------------+--------------------------------------------+
-| ``KEY_B2``        | Center of keypad                           |
-+-------------------+--------------------------------------------+
-| ``KEY_C1``        | Lower left of keypad                       |
-+-------------------+--------------------------------------------+
-| ``KEY_C3``        | Lower right of keypad                      |
-+-------------------+--------------------------------------------+
-| ``KEY_BTAB``      | Back tab                                   |
-+-------------------+--------------------------------------------+
-| ``KEY_BEG``       | Beg (beginning)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_CANCEL``    | Cancel                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_CLOSE``     | Close                                      |
-+-------------------+--------------------------------------------+
-| ``KEY_COMMAND``   | Cmd (command)                              |
-+-------------------+--------------------------------------------+
-| ``KEY_COPY``      | Copy                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_CREATE``    | Create                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_END``       | End                                        |
-+-------------------+--------------------------------------------+
-| ``KEY_EXIT``      | Exit                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_FIND``      | Find                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_HELP``      | Help                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MARK``      | Mark                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MESSAGE``   | Message                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_MOVE``      | Move                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_NEXT``      | Next                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_OPEN``      | Open                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_OPTIONS``   | Options                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_PREVIOUS``  | Prev (previous)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_REDO``      | Redo                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_REFERENCE`` | Ref (reference)                            |
-+-------------------+--------------------------------------------+
-| ``KEY_REFRESH``   | Refresh                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_REPLACE``   | Replace                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_RESTART``   | Restart                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_RESUME``    | Resume                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_SAVE``      | Save                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_SBEG``      | Shifted Beg (beginning)                    |
-+-------------------+--------------------------------------------+
-| ``KEY_SCANCEL``   | Shifted Cancel                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SCOMMAND``  | Shifted Command                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SCOPY``     | Shifted Copy                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SCREATE``   | Shifted Create                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SDC``       | Shifted Delete char                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SDL``       | Shifted Delete line                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SELECT``    | Select                                     |
-+-------------------+--------------------------------------------+
-| ``KEY_SEND``      | Shifted End                                |
-+-------------------+--------------------------------------------+
-| ``KEY_SEOL``      | Shifted Clear line                         |
-+-------------------+--------------------------------------------+
-| ``KEY_SEXIT``     | Shifted Exit                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SFIND``     | Shifted Find                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SHELP``     | Shifted Help                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SHOME``     | Shifted Home                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SIC``       | Shifted Input                              |
-+-------------------+--------------------------------------------+
-| ``KEY_SLEFT``     | Shifted Left arrow                         |
-+-------------------+--------------------------------------------+
-| ``KEY_SMESSAGE``  | Shifted Message                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SMOVE``     | Shifted Move                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SNEXT``     | Shifted Next                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SOPTIONS``  | Shifted Options                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SPREVIOUS`` | Shifted Prev                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SPRINT``    | Shifted Print                              |
-+-------------------+--------------------------------------------+
-| ``KEY_SREDO``     | Shifted Redo                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SREPLACE``  | Shifted Replace                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SRIGHT``    | Shifted Right arrow                        |
-+-------------------+--------------------------------------------+
-| ``KEY_SRSUME``    | Shifted Resume                             |
-+-------------------+--------------------------------------------+
-| ``KEY_SSAVE``     | Shifted Save                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SSUSPEND``  | Shifted Suspend                            |
-+-------------------+--------------------------------------------+
-| ``KEY_SUNDO``     | Shifted Undo                               |
-+-------------------+--------------------------------------------+
-| ``KEY_SUSPEND``   | Suspend                                    |
-+-------------------+--------------------------------------------+
-| ``KEY_UNDO``      | Undo                                       |
-+-------------------+--------------------------------------------+
-| ``KEY_MOUSE``     | Mouse event has occurred                   |
-+-------------------+--------------------------------------------+
-| ``KEY_RESIZE``    | Terminal resize event                      |
-+-------------------+--------------------------------------------+
-| ``KEY_MAX``       | Maximum key value                          |
-+-------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| Key constant            | Key                                        |
++=========================+============================================+
+| .. data:: KEY_MIN       | Minimum key value                          |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BREAK     | Break key (unreliable)                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DOWN      | Down-arrow                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_UP        | Up-arrow                                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_LEFT      | Left-arrow                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RIGHT     | Right-arrow                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_HOME      | Home key (upward+left arrow)               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BACKSPACE | Backspace (unreliable)                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_F0        | Function keys.  Up to 64 function keys are |
+|                         | supported.                                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_Fn        | Value of function key *n*                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DL        | Delete line                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_IL        | Insert line                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_DC        | Delete character                           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_IC        | Insert char or enter insert mode           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EIC       | Exit insert char mode                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CLEAR     | Clear screen                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EOS       | Clear to end of screen                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EOL       | Clear to end of line                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SF        | Scroll 1 line forward                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SR        | Scroll 1 line backward (reverse)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_NPAGE     | Next page                                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PPAGE     | Previous page                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_STAB      | Set tab                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CTAB      | Clear tab                                  |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CATAB     | Clear all tabs                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_ENTER     | Enter or send (unreliable)                 |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRESET    | Soft (partial) reset (unreliable)          |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESET     | Reset or hard reset (unreliable)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PRINT     | Print                                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_LL        | Home down or bottom (lower left)           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_A1        | Upper left of keypad                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_A3        | Upper right of keypad                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_B2        | Center of keypad                           |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_C1        | Lower left of keypad                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_C3        | Lower right of keypad                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BTAB      | Back tab                                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_BEG       | Beg (beginning)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CANCEL    | Cancel                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CLOSE     | Close                                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_COMMAND   | Cmd (command)                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_COPY      | Copy                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_CREATE    | Create                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_END       | End                                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_EXIT      | Exit                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_FIND      | Find                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_HELP      | Help                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MARK      | Mark                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MESSAGE   | Message                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MOVE      | Move                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_NEXT      | Next                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_OPEN      | Open                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_OPTIONS   | Options                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_PREVIOUS  | Prev (previous)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REDO      | Redo                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REFERENCE | Ref (reference)                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REFRESH   | Refresh                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_REPLACE   | Replace                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESTART   | Restart                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESUME    | Resume                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SAVE      | Save                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SBEG      | Shifted Beg (beginning)                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCANCEL   | Shifted Cancel                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCOMMAND  | Shifted Command                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCOPY     | Shifted Copy                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SCREATE   | Shifted Create                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SDC       | Shifted Delete char                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SDL       | Shifted Delete line                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SELECT    | Select                                     |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEND      | Shifted End                                |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEOL      | Shifted Clear line                         |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SEXIT     | Shifted Exit                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SFIND     | Shifted Find                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SHELP     | Shifted Help                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SHOME     | Shifted Home                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SIC       | Shifted Input                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SLEFT     | Shifted Left arrow                         |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SMESSAGE  | Shifted Message                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SMOVE     | Shifted Move                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SNEXT     | Shifted Next                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SOPTIONS  | Shifted Options                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SPREVIOUS | Shifted Prev                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SPRINT    | Shifted Print                              |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SREDO     | Shifted Redo                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SREPLACE  | Shifted Replace                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRIGHT    | Shifted Right arrow                        |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SRSUME    | Shifted Resume                             |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SSAVE     | Shifted Save                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SSUSPEND  | Shifted Suspend                            |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SUNDO     | Shifted Undo                               |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_SUSPEND   | Suspend                                    |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_UNDO      | Undo                                       |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MOUSE     | Mouse event has occurred                   |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_RESIZE    | Terminal resize event                      |
++-------------------------+--------------------------------------------+
+| .. data:: KEY_MAX       | Maximum key value                          |
++-------------------------+--------------------------------------------+
 
 On VT100s and their software emulations, such as X terminal emulators, there are
-normally at least four function keys (:const:`KEY_F1`, :const:`KEY_F2`,
-:const:`KEY_F3`, :const:`KEY_F4`) available, and the arrow keys mapped to
+normally at least four function keys (:const:`KEY_F1 <KEY_Fn>`, :const:`KEY_F2 <KEY_Fn>`,
+:const:`KEY_F3 <KEY_Fn>`, :const:`KEY_F4 <KEY_Fn>`) available, and the arrow keys mapped to
 :const:`KEY_UP`, :const:`KEY_DOWN`, :const:`KEY_LEFT` and :const:`KEY_RIGHT` in
 the obvious way.  If your machine has a PC keyboard, it is safe to expect arrow
 keys and twelve function keys (older PC keyboards may have only ten function
@@ -1557,6 +1674,8 @@ keys); also, the following keypad mappings are standard:
 | :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
+.. _curses-acs-codes:
+
 The following table lists characters from the alternate character set. These are
 inherited from the VT100 terminal, and will generally be  available on software
 emulations such as X terminals.  When there is no graphic available, curses
@@ -1566,117 +1685,143 @@ falls back on a crude printable ASCII approximation.
 
    These are available only after :func:`initscr` has  been called.
 
-+------------------+------------------------------------------+
-| ACS code         | Meaning                                  |
-+==================+==========================================+
-| ``ACS_BBSS``     | alternate name for upper right corner    |
-+------------------+------------------------------------------+
-| ``ACS_BLOCK``    | solid square block                       |
-+------------------+------------------------------------------+
-| ``ACS_BOARD``    | board of squares                         |
-+------------------+------------------------------------------+
-| ``ACS_BSBS``     | alternate name for horizontal line       |
-+------------------+------------------------------------------+
-| ``ACS_BSSB``     | alternate name for upper left corner     |
-+------------------+------------------------------------------+
-| ``ACS_BSSS``     | alternate name for top tee               |
-+------------------+------------------------------------------+
-| ``ACS_BTEE``     | bottom tee                               |
-+------------------+------------------------------------------+
-| ``ACS_BULLET``   | bullet                                   |
-+------------------+------------------------------------------+
-| ``ACS_CKBOARD``  | checker board (stipple)                  |
-+------------------+------------------------------------------+
-| ``ACS_DARROW``   | arrow pointing down                      |
-+------------------+------------------------------------------+
-| ``ACS_DEGREE``   | degree symbol                            |
-+------------------+------------------------------------------+
-| ``ACS_DIAMOND``  | diamond                                  |
-+------------------+------------------------------------------+
-| ``ACS_GEQUAL``   | greater-than-or-equal-to                 |
-+------------------+------------------------------------------+
-| ``ACS_HLINE``    | horizontal line                          |
-+------------------+------------------------------------------+
-| ``ACS_LANTERN``  | lantern symbol                           |
-+------------------+------------------------------------------+
-| ``ACS_LARROW``   | left arrow                               |
-+------------------+------------------------------------------+
-| ``ACS_LEQUAL``   | less-than-or-equal-to                    |
-+------------------+------------------------------------------+
-| ``ACS_LLCORNER`` | lower left-hand corner                   |
-+------------------+------------------------------------------+
-| ``ACS_LRCORNER`` | lower right-hand corner                  |
-+------------------+------------------------------------------+
-| ``ACS_LTEE``     | left tee                                 |
-+------------------+------------------------------------------+
-| ``ACS_NEQUAL``   | not-equal sign                           |
-+------------------+------------------------------------------+
-| ``ACS_PI``       | letter pi                                |
-+------------------+------------------------------------------+
-| ``ACS_PLMINUS``  | plus-or-minus sign                       |
-+------------------+------------------------------------------+
-| ``ACS_PLUS``     | big plus sign                            |
-+------------------+------------------------------------------+
-| ``ACS_RARROW``   | right arrow                              |
-+------------------+------------------------------------------+
-| ``ACS_RTEE``     | right tee                                |
-+------------------+------------------------------------------+
-| ``ACS_S1``       | scan line 1                              |
-+------------------+------------------------------------------+
-| ``ACS_S3``       | scan line 3                              |
-+------------------+------------------------------------------+
-| ``ACS_S7``       | scan line 7                              |
-+------------------+------------------------------------------+
-| ``ACS_S9``       | scan line 9                              |
-+------------------+------------------------------------------+
-| ``ACS_SBBS``     | alternate name for lower right corner    |
-+------------------+------------------------------------------+
-| ``ACS_SBSB``     | alternate name for vertical line         |
-+------------------+------------------------------------------+
-| ``ACS_SBSS``     | alternate name for right tee             |
-+------------------+------------------------------------------+
-| ``ACS_SSBB``     | alternate name for lower left corner     |
-+------------------+------------------------------------------+
-| ``ACS_SSBS``     | alternate name for bottom tee            |
-+------------------+------------------------------------------+
-| ``ACS_SSSB``     | alternate name for left tee              |
-+------------------+------------------------------------------+
-| ``ACS_SSSS``     | alternate name for crossover or big plus |
-+------------------+------------------------------------------+
-| ``ACS_STERLING`` | pound sterling                           |
-+------------------+------------------------------------------+
-| ``ACS_TTEE``     | top tee                                  |
-+------------------+------------------------------------------+
-| ``ACS_UARROW``   | up arrow                                 |
-+------------------+------------------------------------------+
-| ``ACS_ULCORNER`` | upper left corner                        |
-+------------------+------------------------------------------+
-| ``ACS_URCORNER`` | upper right corner                       |
-+------------------+------------------------------------------+
-| ``ACS_VLINE``    | vertical line                            |
-+------------------+------------------------------------------+
++------------------------+------------------------------------------+
+| ACS code               | Meaning                                  |
++========================+==========================================+
+| .. data:: ACS_BBSS     | alternate name for upper right corner    |
++------------------------+------------------------------------------+
+| .. data:: ACS_BLOCK    | solid square block                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_BOARD    | board of squares                         |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSBS     | alternate name for horizontal line       |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSSB     | alternate name for upper left corner     |
++------------------------+------------------------------------------+
+| .. data:: ACS_BSSS     | alternate name for top tee               |
++------------------------+------------------------------------------+
+| .. data:: ACS_BTEE     | bottom tee                               |
++------------------------+------------------------------------------+
+| .. data:: ACS_BULLET   | bullet                                   |
++------------------------+------------------------------------------+
+| .. data:: ACS_CKBOARD  | checker board (stipple)                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_DARROW   | arrow pointing down                      |
++------------------------+------------------------------------------+
+| .. data:: ACS_DEGREE   | degree symbol                            |
++------------------------+------------------------------------------+
+| .. data:: ACS_DIAMOND  | diamond                                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_GEQUAL   | greater-than-or-equal-to                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_HLINE    | horizontal line                          |
++------------------------+------------------------------------------+
+| .. data:: ACS_LANTERN  | lantern symbol                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_LARROW   | left arrow                               |
++------------------------+------------------------------------------+
+| .. data:: ACS_LEQUAL   | less-than-or-equal-to                    |
++------------------------+------------------------------------------+
+| .. data:: ACS_LLCORNER | lower left-hand corner                   |
++------------------------+------------------------------------------+
+| .. data:: ACS_LRCORNER | lower right-hand corner                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_LTEE     | left tee                                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_NEQUAL   | not-equal sign                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_PI       | letter pi                                |
++------------------------+------------------------------------------+
+| .. data:: ACS_PLMINUS  | plus-or-minus sign                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_PLUS     | big plus sign                            |
++------------------------+------------------------------------------+
+| .. data:: ACS_RARROW   | right arrow                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_RTEE     | right tee                                |
++------------------------+------------------------------------------+
+| .. data:: ACS_S1       | scan line 1                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S3       | scan line 3                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S7       | scan line 7                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_S9       | scan line 9                              |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBBS     | alternate name for lower right corner    |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBSB     | alternate name for vertical line         |
++------------------------+------------------------------------------+
+| .. data:: ACS_SBSS     | alternate name for right tee             |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSBB     | alternate name for lower left corner     |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSBS     | alternate name for bottom tee            |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSSB     | alternate name for left tee              |
++------------------------+------------------------------------------+
+| .. data:: ACS_SSSS     | alternate name for crossover or big plus |
++------------------------+------------------------------------------+
+| .. data:: ACS_STERLING | pound sterling                           |
++------------------------+------------------------------------------+
+| .. data:: ACS_TTEE     | top tee                                  |
++------------------------+------------------------------------------+
+| .. data:: ACS_UARROW   | up arrow                                 |
++------------------------+------------------------------------------+
+| .. data:: ACS_ULCORNER | upper left corner                        |
++------------------------+------------------------------------------+
+| .. data:: ACS_URCORNER | upper right corner                       |
++------------------------+------------------------------------------+
+| .. data:: ACS_VLINE    | vertical line                            |
++------------------------+------------------------------------------+
+
+The following table lists mouse button constants used by :meth:`getmouse`:
+
++----------------------------------+---------------------------------------------+
+| Mouse button constant            | Meaning                                     |
++==================================+=============================================+
+| .. data:: BUTTONn_PRESSED        | Mouse button *n* pressed                    |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_RELEASED       | Mouse button *n* released                   |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_CLICKED        | Mouse button *n* clicked                    |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_DOUBLE_CLICKED | Mouse button *n* double clicked             |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTONn_TRIPLE_CLICKED | Mouse button *n* triple clicked             |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_SHIFT           | Shift was down during button state change   |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_CTRL            | Control was down during button state change |
++----------------------------------+---------------------------------------------+
+| .. data:: BUTTON_ALT             | Control was down during button state change |
++----------------------------------+---------------------------------------------+
+
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 
-+-------------------+----------------------------+
-| Constant          | Color                      |
-+===================+============================+
-| ``COLOR_BLACK``   | Black                      |
-+-------------------+----------------------------+
-| ``COLOR_BLUE``    | Blue                       |
-+-------------------+----------------------------+
-| ``COLOR_CYAN``    | Cyan (light greenish blue) |
-+-------------------+----------------------------+
-| ``COLOR_GREEN``   | Green                      |
-+-------------------+----------------------------+
-| ``COLOR_MAGENTA`` | Magenta (purplish red)     |
-+-------------------+----------------------------+
-| ``COLOR_RED``     | Red                        |
-+-------------------+----------------------------+
-| ``COLOR_WHITE``   | White                      |
-+-------------------+----------------------------+
-| ``COLOR_YELLOW``  | Yellow                     |
-+-------------------+----------------------------+
++-------------------------+----------------------------+
+| Constant                | Color                      |
++=========================+============================+
+| .. data:: COLOR_BLACK   | Black                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_BLUE    | Blue                       |
++-------------------------+----------------------------+
+| .. data:: COLOR_CYAN    | Cyan (light greenish blue) |
++-------------------------+----------------------------+
+| .. data:: COLOR_GREEN   | Green                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_MAGENTA | Magenta (purplish red)     |
++-------------------------+----------------------------+
+| .. data:: COLOR_RED     | Red                        |
++-------------------------+----------------------------+
+| .. data:: COLOR_WHITE   | White                      |
++-------------------------+----------------------------+
+| .. data:: COLOR_YELLOW  | Yellow                     |
++-------------------------+----------------------------+
 
 
 :mod:`curses.textpad` --- Text input widget for curses programs
@@ -1782,19 +1927,19 @@ You can instantiate a :class:`Textbox` object as follows:
       Move operations do nothing if the cursor is at an edge where the movement
       is not possible.  The following synonyms are supported where possible:
 
-      +------------------------+------------------+
-      | Constant               | Keystroke        |
-      +========================+==================+
-      | :const:`KEY_LEFT`      | :kbd:`Control-B` |
-      +------------------------+------------------+
-      | :const:`KEY_RIGHT`     | :kbd:`Control-F` |
-      +------------------------+------------------+
-      | :const:`KEY_UP`        | :kbd:`Control-P` |
-      +------------------------+------------------+
-      | :const:`KEY_DOWN`      | :kbd:`Control-N` |
-      +------------------------+------------------+
-      | :const:`KEY_BACKSPACE` | :kbd:`Control-h` |
-      +------------------------+------------------+
+      +--------------------------------+------------------+
+      | Constant                       | Keystroke        |
+      +================================+==================+
+      | :const:`~curses.KEY_LEFT`      | :kbd:`Control-B` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_RIGHT`     | :kbd:`Control-F` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_UP`        | :kbd:`Control-P` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_DOWN`      | :kbd:`Control-N` |
+      +--------------------------------+------------------+
+      | :const:`~curses.KEY_BACKSPACE` | :kbd:`Control-h` |
+      +--------------------------------+------------------+
 
       All other keystrokes are treated as a command to insert the given
       character and move right (with line wrapping).

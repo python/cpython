@@ -2,15 +2,21 @@ import builtins
 import contextlib
 import errno
 import functools
-import importlib
 from importlib import machinery, util, invalidate_caches
+import marshal
 import os
 import os.path
 from test import support
+from test.support import import_helper
+from test.support import is_apple_mobile
+from test.support import os_helper
 import unittest
 import sys
 import tempfile
 import types
+
+# gh-116303: Skip test module dependent tests if test modules are unavailable
+import_helper.import_module("_testmultiphase")
 
 
 BUILTINS = types.SimpleNamespace()
@@ -21,25 +27,39 @@ if 'errno' in sys.builtin_module_names:
 if 'importlib' not in sys.builtin_module_names:
     BUILTINS.bad_name = 'importlib'
 
-EXTENSIONS = types.SimpleNamespace()
-EXTENSIONS.path = None
-EXTENSIONS.ext = None
-EXTENSIONS.filename = None
-EXTENSIONS.file_path = None
-EXTENSIONS.name = '_testcapi'
+if support.is_wasi:
+    # dlopen() is a shim for WASI as of WASI SDK which fails by default.
+    # We don't provide an implementation, so tests will fail.
+    # But we also don't want to turn off dynamic loading for those that provide
+    # a working implementation.
+    def _extension_details():
+        global EXTENSIONS
+        EXTENSIONS = None
+else:
+    EXTENSIONS = types.SimpleNamespace()
+    EXTENSIONS.path = None
+    EXTENSIONS.ext = None
+    EXTENSIONS.filename = None
+    EXTENSIONS.file_path = None
+    EXTENSIONS.name = '_testsinglephase'
 
-def _extension_details():
-    global EXTENSIONS
-    for path in sys.path:
-        for ext in machinery.EXTENSION_SUFFIXES:
-            filename = EXTENSIONS.name + ext
-            file_path = os.path.join(path, filename)
-            if os.path.exists(file_path):
-                EXTENSIONS.path = path
-                EXTENSIONS.ext = ext
-                EXTENSIONS.filename = filename
-                EXTENSIONS.file_path = file_path
-                return
+    def _extension_details():
+        global EXTENSIONS
+        for path in sys.path:
+            for ext in machinery.EXTENSION_SUFFIXES:
+                # Apple mobile platforms mechanically load .so files,
+                # but the findable files are labelled .fwork
+                if is_apple_mobile:
+                    ext = ext.replace(".so", ".fwork")
+
+                filename = EXTENSIONS.name + ext
+                file_path = os.path.join(path, filename)
+                if os.path.exists(file_path):
+                    EXTENSIONS.path = path
+                    EXTENSIONS.ext = ext
+                    EXTENSIONS.filename = filename
+                    EXTENSIONS.file_path = file_path
+                    return
 
 _extension_details()
 
@@ -47,8 +67,8 @@ _extension_details()
 def import_importlib(module_name):
     """Import a module from importlib both w/ and w/o _frozen_importlib."""
     fresh = ('importlib',) if '.' in module_name else ()
-    frozen = support.import_fresh_module(module_name)
-    source = support.import_fresh_module(module_name, fresh=fresh,
+    frozen = import_helper.import_fresh_module(module_name)
+    source = import_helper.import_fresh_module(module_name, fresh=fresh,
                                          blocked=('_frozen_importlib', '_frozen_importlib_external'))
     return {'Frozen': frozen, 'Source': source}
 
@@ -106,9 +126,19 @@ def case_insensitive_tests(test):
 
 def submodule(parent, name, pkg_dir, content=''):
     path = os.path.join(pkg_dir, name + '.py')
-    with open(path, 'w') as subfile:
+    with open(path, 'w', encoding='utf-8') as subfile:
         subfile.write(content)
     return '{}.{}'.format(parent, name), path
+
+
+def get_code_from_pyc(pyc_path):
+    """Reads a pyc file and returns the unmarshalled code object within.
+
+    No header validation is performed.
+    """
+    with open(pyc_path, 'rb') as pyc_f:
+        pyc_f.seek(16)
+        return marshal.load(pyc_f)
 
 
 @contextlib.contextmanager
@@ -120,9 +150,8 @@ def uncache(*names):
 
     """
     for name in names:
-        if name in ('sys', 'marshal', 'imp'):
-            raise ValueError(
-                "cannot uncache {0}".format(name))
+        if name in ('sys', 'marshal'):
+            raise ValueError("cannot uncache {}".format(name))
         try:
             del sys.modules[name]
         except KeyError:
@@ -140,9 +169,9 @@ def uncache(*names):
 @contextlib.contextmanager
 def temp_module(name, content='', *, pkg=False):
     conflicts = [n for n in sys.modules if n.partition('.')[0] == name]
-    with support.temp_cwd(None) as cwd:
+    with os_helper.temp_cwd(None) as cwd:
         with uncache(name, *conflicts):
-            with support.DirsOnSysPath(cwd):
+            with import_helper.DirsOnSysPath(cwd):
                 invalidate_caches()
 
                 location = os.path.join(cwd, name)
@@ -156,7 +185,7 @@ def temp_module(name, content='', *, pkg=False):
                         content = ''
                 if content is not None:
                     # not a namespace package
-                    with open(modpath, 'w') as modfile:
+                    with open(modpath, 'w', encoding='utf-8') as modfile:
                         modfile.write(content)
                 yield location
 
@@ -184,8 +213,7 @@ def import_state(**kwargs):
                 new_value = default
             setattr(sys, attr, new_value)
         if len(kwargs):
-            raise ValueError(
-                    'unrecognized arguments: {0}'.format(kwargs.keys()))
+            raise ValueError('unrecognized arguments: {}'.format(kwargs))
         yield
     finally:
         for attr, value in originals.items():
@@ -233,30 +261,6 @@ class _ImporterMock:
         self._uncache.__exit__(None, None, None)
 
 
-class mock_modules(_ImporterMock):
-
-    """Importer mock using PEP 302 APIs."""
-
-    def find_module(self, fullname, path=None):
-        if fullname not in self.modules:
-            return None
-        else:
-            return self
-
-    def load_module(self, fullname):
-        if fullname not in self.modules:
-            raise ImportError
-        else:
-            sys.modules[fullname] = self.modules[fullname]
-            if fullname in self.module_code:
-                try:
-                    self.module_code[fullname]()
-                except Exception:
-                    del sys.modules[fullname]
-                    raise
-            return self.modules[fullname]
-
-
 class mock_spec(_ImporterMock):
 
     """Importer mock using PEP 451 APIs."""
@@ -287,7 +291,7 @@ def writes_bytecode_files(fxn):
     """Decorator to protect sys.dont_write_bytecode from mutation and to skip
     tests that require it to be set to False."""
     if sys.dont_write_bytecode:
-        return lambda *args, **kwargs: None
+        return unittest.skip("relies on writing bytecode")(fxn)
     @functools.wraps(fxn)
     def wrapper(*args, **kwargs):
         original = sys.dont_write_bytecode
@@ -310,6 +314,17 @@ def ensure_bytecode_path(bytecode_path):
     except OSError as error:
         if error.errno != errno.EEXIST:
             raise
+
+
+@contextlib.contextmanager
+def temporary_pycache_prefix(prefix):
+    """Adjust and restore sys.pycache_prefix."""
+    _orig_prefix = sys.pycache_prefix
+    sys.pycache_prefix = prefix
+    try:
+        yield
+    finally:
+        sys.pycache_prefix = _orig_prefix
 
 
 @contextlib.contextmanager
@@ -353,7 +368,7 @@ def create_modules(*names):
                     os.mkdir(file_path)
                     created_paths.append(file_path)
             file_path = os.path.join(file_path, name_parts[-1] + '.py')
-            with open(file_path, 'w') as file:
+            with open(file_path, 'w', encoding='utf-8') as file:
                 file.write(source.format(name))
             created_paths.append(file_path)
             mapping[name] = file_path
@@ -367,7 +382,7 @@ def create_modules(*names):
             state_manager.__exit__(None, None, None)
         if uncache_manager is not None:
             uncache_manager.__exit__(None, None, None)
-        support.rmtree(temp_dir)
+        os_helper.rmtree(temp_dir)
 
 
 def mock_path_hook(*entries, importer):

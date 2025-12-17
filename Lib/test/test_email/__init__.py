@@ -38,7 +38,7 @@ class TestEmailBase(unittest.TestCase):
     ndiffAssertEqual = unittest.TestCase.assertEqual
 
     def _msgobj(self, filename):
-        with openfile(filename) as fp:
+        with openfile(filename, encoding="utf-8") as fp:
             return email.message_from_file(fp, policy=self.policy)
 
     def _str_msg(self, string, message=None, policy=None):

@@ -7,12 +7,13 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 """#"
 
+import ast
 import unittest
 import unicodedata
+import urllib.error
 
 from test import support
 from http.client import HTTPException
-from test.test_normalization import check_version
 
 try:
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX, UINT_MAX
@@ -25,7 +26,7 @@ class UnicodeNamesTest(unittest.TestCase):
         # Helper that put all \N escapes inside eval'd raw strings,
         # to make sure this script runs even if the compiler
         # chokes on \N escapes
-        res = eval(r'"\N{%s}"' % name)
+        res = ast.literal_eval(r'"\N{%s}"' % name)
         self.assertEqual(res, code)
         return res
 
@@ -100,6 +101,7 @@ class UnicodeNamesTest(unittest.TestCase):
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B734", "\U0002B734")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B740", "\U0002B740")
         self.checkletter("CJK UNIFIED IDEOGRAPH-2B81D", "\U0002B81D")
+        self.checkletter("CJK UNIFIED IDEOGRAPH-3134A", "\U0003134A")
 
     def test_bmp_characters(self):
         for code in range(0x10000):
@@ -172,25 +174,31 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def test_named_sequences_full(self):
         # Check all the named sequences
+        def check_version(testfile):
+            hdr = testfile.readline()
+            return unicodedata.unidata_version in hdr
         url = ("http://www.pythontest.net/unicode/%s/NamedSequences.txt" %
                unicodedata.unidata_version)
         try:
             testdata = support.open_urlresource(url, encoding="utf-8",
                                                 check=check_version)
-        except (OSError, HTTPException):
-            self.skipTest("Could not retrieve " + url)
-        self.addCleanup(testdata.close)
-        for line in testdata:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            seqname, codepoints = line.split(';')
-            codepoints = ''.join(chr(int(cp, 16)) for cp in codepoints.split())
-            self.assertEqual(unicodedata.lookup(seqname), codepoints)
-            with self.assertRaises(SyntaxError):
-                self.checkletter(seqname, None)
-            with self.assertRaises(KeyError):
-                unicodedata.ucd_3_2_0.lookup(seqname)
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            self.skipTest(f"Could not retrieve {url}: {exc!r}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Could not retrieve {url}: {exc!r}")
+        with testdata:
+            for line in testdata:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                seqname, codepoints = line.split(';')
+                codepoints = ''.join(chr(int(cp, 16)) for cp in codepoints.split())
+                self.assertEqual(unicodedata.lookup(seqname), codepoints)
+                with self.assertRaises(SyntaxError):
+                    self.checkletter(seqname, None)
+                with self.assertRaises(KeyError):
+                    unicodedata.ucd_3_2_0.lookup(seqname)
 
     def test_errors(self):
         self.assertRaises(TypeError, unicodedata.name)

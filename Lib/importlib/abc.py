@@ -1,5 +1,4 @@
 """Abstract base classes related to import."""
-from . import _bootstrap
 from . import _bootstrap_external
 from . import machinery
 try:
@@ -10,10 +9,17 @@ except ImportError as exc:
     _frozen_importlib = None
 try:
     import _frozen_importlib_external
-except ImportError as exc:
+except ImportError:
     _frozen_importlib_external = _bootstrap_external
+from ._abc import Loader
 import abc
-import warnings
+
+
+__all__ = [
+    'Loader', 'MetaPathFinder', 'PathEntryFinder',
+    'ResourceLoader', 'InspectLoader', 'ExecutionLoader',
+    'FileLoader', 'SourceLoader',
+]
 
 
 def _register(abstract_cls, *classes):
@@ -27,53 +33,12 @@ def _register(abstract_cls, *classes):
             abstract_cls.register(frozen_cls)
 
 
-class Finder(metaclass=abc.ABCMeta):
-
-    """Legacy abstract base class for import finders.
-
-    It may be subclassed for compatibility with legacy third party
-    reimplementations of the import system.  Otherwise, finder
-    implementations should derive from the more specific MetaPathFinder
-    or PathEntryFinder ABCs.
-
-    Deprecated since Python 3.3
-    """
-
-    @abc.abstractmethod
-    def find_module(self, fullname, path=None):
-        """An abstract method that should find a module.
-        The fullname is a str and the optional path is a str or None.
-        Returns a Loader object or None.
-        """
-
-
-class MetaPathFinder(Finder):
+class MetaPathFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for import finders on sys.meta_path."""
 
     # We don't define find_spec() here since that would break
     # hasattr checks we do to support backward compatibility.
-
-    def find_module(self, fullname, path):
-        """Return a loader for the module.
-
-        If no module is found, return None.  The fullname is a str and
-        the path is a list of strings or None.
-
-        This method is deprecated since Python 3.4 in favor of
-        finder.find_spec(). If find_spec() exists then backwards-compatible
-        functionality is provided for this method.
-
-        """
-        warnings.warn("MetaPathFinder.find_module() is deprecated since Python "
-                      "3.4 in favor of MetaPathFinder.find_spec()"
-                      "(available since 3.4)",
-                      DeprecationWarning,
-                      stacklevel=2)
-        if not hasattr(self, 'find_spec'):
-            return None
-        found = self.find_spec(fullname, path)
-        return found.loader if found is not None else None
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -84,46 +49,9 @@ _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
 
 
-class PathEntryFinder(Finder):
+class PathEntryFinder(metaclass=abc.ABCMeta):
 
     """Abstract base class for path entry finders used by PathFinder."""
-
-    # We don't define find_spec() here since that would break
-    # hasattr checks we do to support backward compatibility.
-
-    def find_loader(self, fullname):
-        """Return (loader, namespace portion) for the path entry.
-
-        The fullname is a str.  The namespace portion is a sequence of
-        path entries contributing to part of a namespace package. The
-        sequence may be empty.  If loader is not None, the portion will
-        be ignored.
-
-        The portion will be discarded if another path entry finder
-        locates the module as a normal module or package.
-
-        This method is deprecated since Python 3.4 in favor of
-        finder.find_spec(). If find_spec() is provided than backwards-compatible
-        functionality is provided.
-        """
-        warnings.warn("PathEntryFinder.find_loader() is deprecated since Python "
-                      "3.4 in favor of PathEntryFinder.find_spec() "
-                      "(available since 3.4)",
-                      DeprecationWarning,
-                      stacklevel=2)
-        if not hasattr(self, 'find_spec'):
-            return None, []
-        found = self.find_spec(fullname)
-        if found is not None:
-            if not found.submodule_search_locations:
-                portions = []
-            else:
-                portions = found.submodule_search_locations
-            return found.loader, portions
-        else:
-            return None, []
-
-    find_module = _bootstrap_external._find_module_shim
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -133,59 +61,15 @@ class PathEntryFinder(Finder):
 _register(PathEntryFinder, machinery.FileFinder)
 
 
-class Loader(metaclass=abc.ABCMeta):
-
-    """Abstract base class for import loaders."""
-
-    def create_module(self, spec):
-        """Return a module to initialize and into which to load.
-
-        This method should raise ImportError if anything prevents it
-        from creating a new module.  It may return None to indicate
-        that the spec should create the new module.
-        """
-        # By default, defer to default semantics for the new module.
-        return None
-
-    # We don't define exec_module() here since that would break
-    # hasattr checks we do to support backward compatibility.
-
-    def load_module(self, fullname):
-        """Return the loaded module.
-
-        The module must be added to sys.modules and have import-related
-        attributes set properly.  The fullname is a str.
-
-        ImportError is raised on failure.
-
-        This method is deprecated in favor of loader.exec_module(). If
-        exec_module() exists then it is used to provide a backwards-compatible
-        functionality for this method.
-
-        """
-        if not hasattr(self, 'exec_module'):
-            raise ImportError
-        return _bootstrap._load_module_shim(self, fullname)
-
-    def module_repr(self, module):
-        """Return a module's repr.
-
-        Used by the module type when the method does not raise
-        NotImplementedError.
-
-        This method is deprecated.
-
-        """
-        # The exception will cause ModuleType.__repr__ to ignore this method.
-        raise NotImplementedError
-
-
 class ResourceLoader(Loader):
 
     """Abstract base class for loaders which can return data from their
-    back-end storage.
+    back-end storage to facilitate reading data to perform an import.
 
     This ABC represents one of the optional protocols specified by PEP 302.
+
+    For directly loading resources, use TraversableResources instead. This class
+    primarily exists for backwards compatibility with other ABCs in this module.
 
     """
 
@@ -224,7 +108,7 @@ class InspectLoader(Loader):
         source = self.get_source(fullname)
         if source is None:
             return None
-        return self.source_to_code(source)
+        return self.source_to_code(source, '<string>', fullname)
 
     @abc.abstractmethod
     def get_source(self, fullname):
@@ -236,17 +120,16 @@ class InspectLoader(Loader):
         raise ImportError
 
     @staticmethod
-    def source_to_code(data, path='<string>'):
+    def source_to_code(data, path='<string>', fullname=None):
         """Compile 'data' into a code object.
 
         The 'data' argument can be anything that compile() can handle. The'path'
         argument should be where the data was retrieved (when applicable)."""
-        return compile(data, path, 'exec', dont_inherit=True)
+        return compile(data, path, 'exec', dont_inherit=True, module=fullname)
 
     exec_module = _bootstrap_external._LoaderBasics.exec_module
-    load_module = _bootstrap_external._LoaderBasics.load_module
 
-_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter, machinery.NamespaceLoader)
 
 
 class ExecutionLoader(InspectLoader):
@@ -279,11 +162,14 @@ class ExecutionLoader(InspectLoader):
         try:
             path = self.get_filename(fullname)
         except ImportError:
-            return self.source_to_code(source)
-        else:
-            return self.source_to_code(source, path)
+            path = '<string>'
+        return self.source_to_code(source, path, fullname)
 
-_register(ExecutionLoader, machinery.ExtensionFileLoader)
+_register(
+    ExecutionLoader,
+    machinery.ExtensionFileLoader,
+    machinery.AppleFrameworkLoader,
+)
 
 
 class FileLoader(_bootstrap_external.FileLoader, ResourceLoader, ExecutionLoader):
@@ -314,6 +200,10 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
+        import warnings
+        warnings.warn('SourceLoader.path_mtime is deprecated in favour of '
+                      'SourceLoader.path_stats().',
+                      DeprecationWarning, stacklevel=2)
         if self.path_stats.__func__ is SourceLoader.path_stats:
             raise OSError
         return int(self.path_stats(path)['mtime'])

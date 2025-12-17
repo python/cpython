@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.6, compared to 3.5.
-Python 3.6 was released on December 23, 2016.  See the
+Python 3.6 was released on December 23, 2016.  See the
 `changelog <https://docs.python.org/3.6/whatsnew/changelog.html>`_ for a full
 list of changes.
 
@@ -148,7 +148,7 @@ Security improvements:
 
 Windows improvements:
 
-* :ref:`PEP 528 <whatsnew36-pep529>` and :ref:`PEP 529 <whatsnew36-pep529>`,
+* :ref:`PEP 528 <whatsnew36-pep528>` and :ref:`PEP 529 <whatsnew36-pep529>`,
   Windows filesystem and console encoding changed to UTF-8.
 
 * The ``py.exe`` launcher, when used interactively, no longer prefers
@@ -162,10 +162,10 @@ Windows improvements:
 
 * A ``._pth`` file can be added to force isolated mode and fully specify
   all search paths to avoid registry and environment lookup. See
-  :ref:`the documentation <finding_modules>` for more information.
+  :ref:`the documentation <windows_finding_modules>` for more information.
 
 * A ``python36.zip`` file now works as a landmark to infer
-  :envvar:`PYTHONHOME`. See :ref:`the documentation <finding_modules>` for
+  :envvar:`PYTHONHOME`. See :ref:`the documentation <windows_finding_modules>` for
   more information.
 
 
@@ -238,8 +238,8 @@ and the ``__annotations__`` attribute.
       and Guido van Rossum. Implemented by Ivan Levkivskyi.
 
    Tools that use or will use the new syntax:
-   `mypy <http://github.com/python/mypy>`_,
-   `pytype <http://github.com/google/pytype>`_, PyCharm, etc.
+   `mypy <https://www.mypy-lang.org/>`_,
+   `pytype <https://github.com/google/pytype>`_, PyCharm, etc.
 
 
 .. _whatsnew36-pep515:
@@ -261,7 +261,7 @@ allowed.
 
 The :ref:`string formatting <formatspec>` language also now has support
 for the ``'_'`` option to signal the use of an underscore for a thousands
-separator for floating point presentation types and for integer
+separator for floating-point presentation types and for integer
 presentation type ``'d'``.  For integer presentation types ``'b'``,
 ``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
 digits::
@@ -511,10 +511,10 @@ correct.
 Prior to Python 3.6, data loss could result when using bytes paths on Windows.
 With this change, using bytes to represent paths is now supported on Windows,
 provided those bytes are encoded with the encoding returned by
-:func:`sys.getfilesystemencoding()`, which now defaults to ``'utf-8'``.
+:func:`sys.getfilesystemencoding`, which now defaults to ``'utf-8'``.
 
 Applications that do not use str to represent paths should use
-:func:`os.fsencode()` and :func:`os.fsdecode()` to ensure their bytes are
+:func:`os.fsencode` and :func:`os.fsdecode` to ensure their bytes are
 correctly encoded. To revert to the previous behaviour, set
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
 :func:`sys._enablelegacywindowsfsencoding`.
@@ -549,7 +549,7 @@ PEP 520: Preserving Class Attribute Definition Order
 
 Attributes in a class definition body have a natural ordering: the same
 order in which the names appear in the source.  This order is now
-preserved in the new class's :attr:`~object.__dict__` attribute.
+preserved in the new class's :attr:`~type.__dict__` attribute.
 
 Also, the effective default class *execution* namespace (returned from
 :ref:`type.__prepare__() <prepare>`) is now an insertion-order-preserving
@@ -650,8 +650,8 @@ compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
 * Detect writes before the start of a buffer (buffer underflows)
 * Detect writes after the end of a buffer (buffer overflows)
 * Check that the :term:`GIL <global interpreter lock>` is held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 Checking if the GIL is held is also a new feature of Python 3.6.
 
@@ -722,8 +722,8 @@ for the following events in the interpreter:
 * line of code executed.
 
 This can be used to instrument running interpreters in production,
-without the need to recompile specific debug builds or providing
-application-specific profiling/debugging code.
+without the need to recompile specific :ref:`debug builds <debug-build>` or
+providing application-specific profiling/debugging code.
 
 More details in :ref:`instrumentation`.
 
@@ -741,11 +741,11 @@ Some smaller changes made to the core Python language are:
 
 * A ``global`` or ``nonlocal`` statement must now textually appear
   before the first use of the affected name in the same scope.
-  Previously this was a ``SyntaxWarning``.
+  Previously this was a :exc:`SyntaxWarning`.
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
-  For example, if a class sets :meth:`__iter__` to ``None``, the class
+  For example, if a class sets :meth:`~object.__iter__` to ``None``, the class
   is not iterable.
   (Contributed by Andrew Barnert and Ivan Levkivskyi in :issue:`25958`.)
 
@@ -780,7 +780,7 @@ for managing secrets, such as account authentication, tokens, and similar.
 
   Note that the pseudo-random generators in the :mod:`random` module
   should *NOT* be used for security purposes.  Use :mod:`secrets`
-  on Python 3.6+ and :func:`os.urandom()` on Python 3.5 and earlier.
+  on Python 3.6+ and :func:`os.urandom` on Python 3.5 and earlier.
 
 .. seealso::
 
@@ -819,12 +819,12 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 (all backported to 3.5.x due to the provisional status):
 
 * The :func:`~asyncio.get_event_loop` function has been changed to
-  always return the currently running loop when called from couroutines
+  always return the currently running loop when called from coroutines
   and callbacks.
   (Contributed by Yury Selivanov in :issue:`28613`.)
 
 * The :func:`~asyncio.ensure_future` function and all functions that
-  use it, such as :meth:`loop.run_until_complete() <asyncio.BaseEventLoop.run_until_complete>`,
+  use it, such as :meth:`loop.run_until_complete() <asyncio.loop.run_until_complete>`,
   now accept all kinds of :term:`awaitable objects <awaitable>`.
   (Contributed by Yury Selivanov.)
 
@@ -836,18 +836,18 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   method to check if the transport is closing or closed.
   (Contributed by Yury Selivanov.)
 
-* The :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+* The :meth:`loop.create_server() <asyncio.loop.create_server>`
   method can now accept a list of hosts.
   (Contributed by Yann Sionneau.)
 
-* New :meth:`loop.create_future() <asyncio.BaseEventLoop.create_future>`
+* New :meth:`loop.create_future() <asyncio.loop.create_future>`
   method to create Future objects.  This allows alternative event
   loop implementations, such as
   `uvloop <https://github.com/MagicStack/uvloop>`_, to provide a faster
   :class:`asyncio.Future` implementation.
   (Contributed by Yury Selivanov in :issue:`27041`.)
 
-* New :meth:`loop.get_exception_handler() <asyncio.BaseEventLoop.get_exception_handler>`
+* New :meth:`loop.get_exception_handler() <asyncio.loop.get_exception_handler>`
   method to get the current exception handler.
   (Contributed by Yury Selivanov in :issue:`27040`.)
 
@@ -860,23 +860,23 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   has been improved.
   (Contributed by Mark Korenberg in :issue:`28370`.)
 
-* The :meth:`loop.getaddrinfo() <asyncio.BaseEventLoop.getaddrinfo>`
+* The :meth:`loop.getaddrinfo() <asyncio.loop.getaddrinfo>`
   method is optimized to avoid calling the system ``getaddrinfo``
   function if the address is already resolved.
   (Contributed by A. Jesse Jiryu Davis.)
 
-* The :meth:`loop.stop() <asyncio.BaseEventLoop.stop>`
+* The :meth:`loop.stop() <asyncio.loop.stop>`
   method has been changed to stop the loop immediately after
   the current iteration.  Any new callbacks scheduled as a result
   of the last iteration will be discarded.
   (Contributed by Guido van Rossum in :issue:`25593`.)
 
-* :meth:`Future.set_exception <asyncio.futures.Future.set_exception>`
+* :meth:`Future.set_exception <asyncio.Future.set_exception>`
   will now raise :exc:`TypeError` when passed an instance of
   the :exc:`StopIteration` exception.
   (Contributed by Chris Angelico in :issue:`26221`.)
 
-* New :meth:`loop.connect_accepted_socket() <asyncio.BaseEventLoop.connect_accepted_socket>`
+* New :meth:`loop.connect_accepted_socket() <asyncio.loop.connect_accepted_socket>`
   method to be used by servers that accept connections outside of asyncio,
   but that use asyncio to handle them.
   (Contributed by Jim Fulton in :issue:`27392`.)
@@ -884,7 +884,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
 * ``TCP_NODELAY`` flag is now set for all TCP transports by default.
   (Contributed by Yury Selivanov in :issue:`27456`.)
 
-* New :meth:`loop.shutdown_asyncgens() <asyncio.AbstractEventLoop.shutdown_asyncgens>`
+* New :meth:`loop.shutdown_asyncgens() <asyncio.loop.shutdown_asyncgens>`
   to properly close pending asynchronous generators before closing the
   loop.
   (Contributed by Yury Selivanov in :issue:`28003`.)
@@ -925,7 +925,7 @@ added to represent sized iterable container classes.
 (Contributed by Ivan Levkivskyi, docs by Neil Girdhar in :issue:`27598`.)
 
 The new :class:`~collections.abc.Reversible` abstract base class represents
-iterable classes that also provide the :meth:`__reversed__` method.
+iterable classes that also provide the :meth:`~object.__reversed__` method.
 (Contributed by Ivan Levkivskyi in :issue:`25987`.)
 
 The new :class:`~collections.abc.AsyncGenerator` abstract base class represents
@@ -934,7 +934,7 @@ asynchronous generators.
 
 The :func:`~collections.namedtuple` function now accepts an optional
 keyword argument *module*, which, when specified, is used for
-the ``__module__`` attribute of the returned named tuple class.
+the :attr:`~type.__module__` attribute of the returned named tuple class.
 (Contributed by Raymond Hettinger in :issue:`17941`.)
 
 The *verbose* and *rename* arguments for
@@ -960,8 +960,8 @@ contextlib
 
 The :class:`contextlib.AbstractContextManager` class has been added to
 provide an abstract base class for context managers.  It provides a
-sensible default implementation for `__enter__()` which returns
-``self`` and leaves `__exit__()` an abstract method.  A matching
+sensible default implementation for ``__enter__()`` which returns
+``self`` and leaves ``__exit__()`` an abstract method.  A matching
 class has been added to the :mod:`typing` module as
 :class:`typing.ContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
@@ -971,7 +971,7 @@ datetime
 --------
 
 The :class:`~datetime.datetime` and :class:`~datetime.time` classes have
-the new :attr:`~time.fold` attribute used to disambiguate local time
+the new :attr:`~datetime.time.fold` attribute used to disambiguate local time
 when necessary.  Many functions in the :mod:`datetime` have been
 updated to support local time disambiguation.
 See :ref:`Local Time Disambiguation <whatsnew36-pep495>` section for more
@@ -1012,7 +1012,7 @@ distutils
 ---------
 
 The ``default_format`` attribute has been removed from
-:class:`distutils.command.sdist.sdist` and the ``formats``
+``distutils.command.sdist.sdist`` and the ``formats``
 attribute defaults to ``['gztar']``. Although not anticipated,
 any code relying on the presence of ``default_format`` may
 need to be adapted. See :issue:`27819` for more details.
@@ -1052,12 +1052,12 @@ enum
 ----
 
 Two new enumeration base classes have been added to the :mod:`enum` module:
-:class:`~enum.Flag` and :class:`~enum.IntFlags`.  Both are used to define
+:class:`~enum.Flag` and :class:`~enum.IntFlag`.  Both are used to define
 constants that can be combined using the bitwise operators.
 (Contributed by Ethan Furman in :issue:`23591`.)
 
 Many standard library modules have been updated to use the
-:class:`~enum.IntFlags` class for their constants.
+:class:`~enum.IntFlag` class for their constants.
 
 The new :class:`enum.auto` value can be used to assign values to enum
 members automatically::
@@ -1142,6 +1142,58 @@ In compensation, the eventual result with be that some idlelib classes will be
 easier to use, with better APIs and docstrings explaining them.  Additional
 useful information will be added to idlelib when available.
 
+New in 3.6.2:
+
+Multiple fixes for autocompletion. (Contributed by Louie Lu in :issue:`15786`.)
+
+New in 3.6.3:
+
+Module Browser (on the File menu, formerly called Class Browser),
+now displays nested functions and classes in addition to top-level
+functions and classes.
+(Contributed by Guilherme Polo, Cheryl Sabella, and Terry Jan Reedy
+in :issue:`1612262`.)
+
+The IDLE features formerly implemented as extensions have been reimplemented
+as normal features.  Their settings have been moved from the Extensions tab
+to other dialog tabs.
+(Contributed by Charles Wohlganger and Terry Jan Reedy in :issue:`27099`.)
+
+The Settings dialog (Options, Configure IDLE) has been partly rewritten
+to improve both appearance and function.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in multiple issues.)
+
+New in 3.6.4:
+
+The font sample now includes a selection of non-Latin characters so that
+users can better see the effect of selecting a particular font.
+(Contributed by Terry Jan Reedy in :issue:`13802`.)
+The sample can be edited to include other characters.
+(Contributed by Serhiy Storchaka in :issue:`31860`.)
+
+New in 3.6.6:
+
+Editor code context option revised.  Box displays all context lines up to
+maxlines.  Clicking on a context line jumps the editor to that line.  Context
+colors for custom themes is added to Highlights tab of Settings dialog.
+(Contributed by Cheryl Sabella and Terry Jan Reedy in :issue:`33642`,
+:issue:`33768`, and :issue:`33679`.)
+
+On Windows, a new API call tells Windows that tk scales for DPI. On Windows
+8.1+ or 10, with DPI compatibility properties of the Python binary
+unchanged, and a monitor resolution greater than 96 DPI, this should
+make text and lines sharper.  It should otherwise have no effect.
+(Contributed by Terry Jan Reedy in :issue:`33656`.)
+
+New in 3.6.7:
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
+
 
 importlib
 ---------
@@ -1172,7 +1224,7 @@ generator expression scopes as if they were positional-only parameters called
 ``implicit0``. (Contributed by Jelle Zijlstra in :issue:`19611`.)
 
 To reduce code churn when upgrading from Python 2.7 and the legacy
-:func:`inspect.getargspec` API, the previously documented deprecation of
+:func:`!inspect.getargspec` API, the previously documented deprecation of
 :func:`inspect.getfullargspec` has been reversed. While this function is
 convenient for single/source Python 2/3 code bases, the richer
 :func:`inspect.signature` interface remains the recommended approach for new
@@ -1223,7 +1275,7 @@ See the summary of :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
 
 A new :meth:`~os.scandir.close` method allows explicitly closing a
 :func:`~os.scandir` iterator.  The :func:`~os.scandir` iterator now
-supports the :term:`context manager` protocol.  If a :func:`scandir`
+supports the :term:`context manager` protocol.  If a :func:`!scandir`
 iterator is neither exhausted nor explicitly closed a :exc:`ResourceWarning`
 will be emitted in its destructor.
 (Contributed by Serhiy Storchaka in :issue:`25994`.)
@@ -1264,7 +1316,7 @@ Storchaka in :issue:`24164`.)
 pickletools
 -----------
 
-:func:`pickletools.dis()` now outputs the implicit memo index for the
+:func:`pickletools.dis` now outputs the implicit memo index for the
 ``MEMOIZE`` opcode.
 (Contributed by Serhiy Storchaka in :issue:`25382`.)
 
@@ -1336,7 +1388,7 @@ are treated as punctuation.
 site
 ----
 
-When specifying paths to add to :attr:`sys.path` in a `.pth` file,
+When specifying paths to add to :data:`sys.path` in a ``.pth`` file,
 you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
@@ -1352,7 +1404,7 @@ socket
 ------
 
 The :func:`~socket.socket.ioctl` function now supports the
-:data:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
+:const:`~socket.SIO_LOOPBACK_FAST_PATH` control code.
 (Contributed by Daniel Stokes in :issue:`26536`.)
 
 The :meth:`~socket.socket.getsockopt` constants ``SO_DOMAIN``,
@@ -1364,13 +1416,13 @@ The :meth:`~socket.socket.setsockopt` now supports the
 (Contributed by Christian Heimes in :issue:`27744`.)
 
 The socket module now supports the address family
-:data:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
+:const:`~socket.AF_ALG` to interface with Linux Kernel crypto API. ``ALG_*``,
 ``SOL_ALG`` and :meth:`~socket.socket.sendmsg_afalg` were added.
 (Contributed by Christian Heimes in :issue:`27744` with support from
 Victor Stinner.)
 
 New Linux constants ``TCP_USER_TIMEOUT`` and ``TCP_CONGESTION`` were added.
-(Contributed by Omar Sandoval, issue:`26273`).
+(Contributed by Omar Sandoval, :issue:`26273`).
 
 
 socketserver
@@ -1382,7 +1434,7 @@ defined in :mod:`http.server`, :mod:`xmlrpc.server` and
 protocol.
 (Contributed by Aviv Palivoda in :issue:`26404`.)
 
-The :attr:`~socketserver.StreamRequestHandler.wfile` attribute of
+The :attr:`wfile <socketserver.DatagramRequestHandler.wfile>` attribute of
 :class:`~socketserver.StreamRequestHandler` classes now implements
 the :class:`io.BufferedIOBase` writable interface.  In particular,
 calling :meth:`~io.BufferedIOBase.write` is now guaranteed to send the
@@ -1413,13 +1465,17 @@ The new :meth:`~ssl.SSLContext.get_ciphers` method can be used to
 get a list of enabled ciphers in order of cipher priority.
 
 All constants and flags have been converted to :class:`~enum.IntEnum` and
-:class:`~enum.IntFlags`.
+:class:`~enum.IntFlag`.
 (Contributed by Christian Heimes in :issue:`28025`.)
 
 Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
 were added.
 (Contributed by Christian Heimes in :issue:`28085`.)
 
+Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :gh:`78851`.)
 
 statistics
 ----------
@@ -1468,15 +1524,15 @@ rather than the version that is being emulated for the process
 telnetlib
 ---------
 
-:class:`~telnetlib.Telnet` is now a context manager (contributed by
+:class:`!telnetlib.Telnet` is now a context manager (contributed by
 Stéphane Wirtel in :issue:`25485`).
 
 
 time
 ----
 
-The :class:`~time.struct_time` attributes :attr:`tm_gmtoff` and
-:attr:`tm_zone` are now available on all platforms.
+The :class:`~time.struct_time` attributes :attr:`!tm_gmtoff` and
+:attr:`!tm_zone` are now available on all platforms.
 
 
 timeit
@@ -1495,12 +1551,12 @@ between best and worst times.
 tkinter
 -------
 
-Added methods :meth:`~tkinter.Variable.trace_add`,
-:meth:`~tkinter.Variable.trace_remove` and :meth:`~tkinter.Variable.trace_info`
-in the :class:`tkinter.Variable` class.  They replace old methods
-:meth:`~tkinter.Variable.trace_variable`, :meth:`~tkinter.Variable.trace`,
-:meth:`~tkinter.Variable.trace_vdelete` and
-:meth:`~tkinter.Variable.trace_vinfo` that use obsolete Tcl commands and might
+Added methods :meth:`!Variable.trace_add`,
+:meth:`!Variable.trace_remove` and :meth:`!trace_info`
+in the :class:`!tkinter.Variable` class.  They replace old methods
+:meth:`!trace_variable`, :meth:`!trace`,
+:meth:`!trace_vdelete` and
+:meth:`!trace_vinfo` that use obsolete Tcl commands and might
 not work in future versions of Tcl.
 (Contributed by Serhiy Storchaka in :issue:`22115`).
 
@@ -1545,7 +1601,7 @@ to filter block traces by their address space (domain).
 typing
 ------
 
-Since the :mod:`typing` module is :term:`provisional <provisional api>`,
+Since the :mod:`typing` module is :term:`provisional <provisional API>`,
 all changes introduced in Python 3.6 have also been
 backported to Python 3.5.x.
 
@@ -1568,10 +1624,10 @@ mark class variables.  As introduced in :pep:`526`, a variable annotation
 wrapped in ClassVar indicates that a given attribute is intended to be used as
 a class variable and should not be set on instances of that class.
 (Contributed by Ivan Levkivskyi in `Github #280
-<https://github.com/python/typing/issues/280>`_.)
+<https://github.com/python/typing/pull/280>`_.)
 
 A new :const:`~typing.TYPE_CHECKING` constant that is assumed to be
-``True`` by the static type chekers, but is ``False`` at runtime.
+``True`` by the static type checkers, but is ``False`` at runtime.
 (Contributed by Guido van Rossum in `Github #230
 <https://github.com/python/typing/issues/230>`_.)
 
@@ -1592,7 +1648,7 @@ unicodedata
 -----------
 
 The :mod:`unicodedata` module now uses data from `Unicode 9.0.0
-<http://unicode.org/versions/Unicode9.0.0/>`_.
+<https://unicode.org/versions/Unicode9.0.0/>`_.
 (Contributed by Benjamin Peterson.)
 
 
@@ -1618,8 +1674,8 @@ urllib.request
 
 If a HTTP request has a file or iterable body (other than a
 bytes object) but no ``Content-Length`` header, rather than
-throwing an error, :class:`~urllib.request.AbstractHTTPHandler` now
-falls back to use chunked transfer encoding.
+throwing an error, :class:`AbstractHTTPHandler <urllib.request.HTTPHandler>`
+now falls back to use chunked transfer encoding.
 (Contributed by Demian Brecht and Rolf Krahl in :issue:`12319`.)
 
 
@@ -1645,7 +1701,7 @@ warnings
 A new optional *source* parameter has been added to the
 :func:`warnings.warn_explicit` function: the destroyed object which emitted a
 :exc:`ResourceWarning`. A *source* attribute has also been added to
-:class:`warnings.WarningMessage` (contributed by Victor Stinner in
+:class:`!warnings.WarningMessage` (contributed by Victor Stinner in
 :issue:`26568` and :issue:`26567`).
 
 When a :exc:`ResourceWarning` warning is logged, the :mod:`tracemalloc` module is now
@@ -1770,7 +1826,7 @@ Optimizations
   up to 80% faster. (Contributed by Josh Snider in :issue:`26574`).
 
 * Allocator functions of the :c:func:`PyMem_Malloc` domain
-  (:c:data:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
+  (:c:macro:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
   <pymalloc>` instead of :c:func:`malloc` function of the C library. The
   pymalloc allocator is optimized for objects smaller or equal to 512 bytes
   with a short lifetime, and use :c:func:`malloc` for larger memory blocks.
@@ -1813,7 +1869,7 @@ Build and C API Changes
   For more information, see :pep:`7` and :issue:`17884`.
 
 * Cross-compiling CPython with the Android NDK and the Android API level set to
-  21 (Android 5.0 Lollilop) or greater runs successfully. While Android is not
+  21 (Android 5.0 Lollipop) or greater runs successfully. While Android is not
   yet a supported platform, the Python test suite runs on the Android emulator
   with only about 16 tests failures. See the Android meta-issue :issue:`26865`.
 
@@ -1822,8 +1878,8 @@ Build and C API Changes
   (Original patch by Alecsandru Patrascu of Intel in :issue:`26359`.)
 
 * The :term:`GIL <global interpreter lock>` must now be held when allocator
-  functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
-  :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
+  functions of :c:macro:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
+  :c:macro:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
   failed.
@@ -1886,7 +1942,7 @@ Raising the :exc:`StopIteration` exception inside a generator will now
 generate a :exc:`DeprecationWarning`, and will trigger a :exc:`RuntimeError`
 in Python 3.7.  See :ref:`whatsnew-pep-479` for details.
 
-The :meth:`__aiter__` method is now expected to return an asynchronous
+The :meth:`~object.__aiter__` method is now expected to return an asynchronous
 iterator directly instead of returning an awaitable as previously.
 Doing the former will trigger a :exc:`DeprecationWarning`.  Backward
 compatibility will be removed in Python 3.7.
@@ -1909,14 +1965,14 @@ Deprecated Python modules, functions and methods
 asynchat
 ~~~~~~~~
 
-The :mod:`asynchat` has been deprecated in favor of :mod:`asyncio`.
+The :mod:`!asynchat` has been deprecated in favor of :mod:`asyncio`.
 (Contributed by Mariatta in :issue:`25002`.)
 
 
 asyncore
 ~~~~~~~~
 
-The :mod:`asyncore` has been deprecated in favor of :mod:`asyncio`.
+The :mod:`!asyncore` has been deprecated in favor of :mod:`asyncio`.
 (Contributed by Mariatta in :issue:`25002`.)
 
 
@@ -1934,7 +1990,7 @@ distutils
 ~~~~~~~~~
 
 The undocumented ``extra_path`` argument to the
-:class:`~distutils.Distribution` constructor is now considered deprecated
+``distutils.Distribution`` constructor is now considered deprecated
 and will raise a warning if set.   Support for this parameter will be
 removed in a future Python release.  See :issue:`27919` for details.
 
@@ -1950,15 +2006,15 @@ deprecated.
 importlib
 ~~~~~~~~~
 
-The :meth:`importlib.machinery.SourceFileLoader.load_module` and
-:meth:`importlib.machinery.SourcelessFileLoader.load_module` methods
+The ``importlib.machinery.SourceFileLoader.load_module`` and
+``importlib.machinery.SourcelessFileLoader.load_module`` methods
 are now deprecated. They were the only remaining implementations of
-:meth:`importlib.abc.Loader.load_module` in :mod:`importlib` that had not
+``importlib.abc.Loader.load_module`` in :mod:`importlib` that had not
 been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 
 The :class:`importlib.machinery.WindowsRegistryFinder` class is now
-deprecated. As of 3.6.0, it is still added to :attr:`sys.meta_path` by
+deprecated. As of 3.6.0, it is still added to :data:`sys.meta_path` by
 default (on Windows), but this may change in future releases.
 
 os
@@ -1997,8 +2053,10 @@ of OpenSSL. Other features are deprecated in favor of a different API.
 tkinter
 ~~~~~~~
 
-The :mod:`tkinter.tix` module is now deprecated.  :mod:`tkinter` users
+The :mod:`!tkinter.tix` module is now deprecated.  :mod:`tkinter` users
 should use :mod:`tkinter.ttk` instead.
+
+.. _whatsnew36-venv:
 
 venv
 ~~~~
@@ -2009,12 +2067,21 @@ connected to and thus what Python interpreter will be used by the virtual
 environment.  (Contributed by Brett Cannon in :issue:`25154`.)
 
 
+xml
+---
+
+* As mitigation against DTD and external entity retrieval, the
+  :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+  external entities by default.
+  (Contributed by Christian Heimes in :gh:`61441`.)
+
+
 Deprecated functions and types of the C API
 -------------------------------------------
 
-Undocumented functions :c:func:`PyUnicode_AsEncodedObject`,
-:c:func:`PyUnicode_AsDecodedObject`, :c:func:`PyUnicode_AsEncodedUnicode`
-and :c:func:`PyUnicode_AsDecodedUnicode` are deprecated now.
+Undocumented functions :c:func:`!PyUnicode_AsEncodedObject`,
+:c:func:`!PyUnicode_AsDecodedObject`, :c:func:`!PyUnicode_AsEncodedUnicode`
+and :c:func:`!PyUnicode_AsDecodedUnicode` are deprecated now.
 Use the :ref:`generic codec based API <codec-registry>` instead.
 
 
@@ -2065,7 +2132,8 @@ API and Feature Removals
   platform specific ``Lib/plat-*/`` directories, but were chronically out of
   date, inconsistently available across platforms, and unmaintained.  The
   script that created these modules is still available in the source
-  distribution at :source:`Tools/scripts/h2py.py`.
+  distribution at `Tools/scripts/h2py.py
+  <https://github.com/python/cpython/blob/v3.6.15/Tools/scripts/h2py.py>`_.
 
 * The deprecated ``asynchat.fifo`` class has been removed.
 
@@ -2105,14 +2173,15 @@ Changes in the Python API
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned.
 
-* The format of the ``co_lnotab`` attribute of code objects changed to support
+* The format of the :attr:`~codeobject.co_lnotab` attribute of code objects
+  changed to support
   a negative line number delta. By default, Python does not emit bytecode with
-  a negative line number delta. Functions using ``frame.f_lineno``,
+  a negative line number delta. Functions using :attr:`frame.f_lineno`,
   ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
-  Functions directly decoding ``co_lnotab`` should be updated to use a signed
+  Functions directly decoding :attr:`!co_lnotab` should be updated to use a signed
   8-bit integer type for the line number delta, but this is only required to
   support applications using a negative line number delta. See
-  ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
+  ``Objects/lnotab_notes.txt`` for the :attr:`!co_lnotab` format and how to decode
   it, and see the :pep:`511` for the rationale.
 
 * The functions in the :mod:`compileall` module now return booleans instead
@@ -2120,20 +2189,20 @@ Changes in the Python API
   booleans being a subclass of integers, this should only be an issue if you
   were doing identity checks for ``1`` or ``0``. See :issue:`25768`.
 
-* Reading the :attr:`~urllib.parse.SplitResult.port` attribute of
+* Reading the :attr:`!port` attribute of
   :func:`urllib.parse.urlsplit` and :func:`~urllib.parse.urlparse` results
   now raises :exc:`ValueError` for out-of-range values, rather than
   returning :const:`None`.  See :issue:`20059`.
 
-* The :mod:`imp` module now raises a :exc:`DeprecationWarning` instead of
+* The :mod:`!imp` module now raises a :exc:`DeprecationWarning` instead of
   :exc:`PendingDeprecationWarning`.
 
-* The following modules have had missing APIs added to their :attr:`__all__`
-  attributes to match the documented APIs:
-  :mod:`calendar`, :mod:`cgi`, :mod:`csv`,
+* The following modules have had missing APIs added to their
+  :attr:`~module.__all__` attributes to match the documented APIs:
+  :mod:`calendar`, :mod:`!cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
-  :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`smtpd`,
+  :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`!smtpd`,
   :mod:`subprocess`, :mod:`tarfile`, :mod:`threading` and
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.
@@ -2156,18 +2225,18 @@ Changes in the Python API
   the exception will stop a single-threaded server. (Contributed by
   Martin Panter in :issue:`23430`.)
 
-* :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
+* :func:`!spwd.getspnam` now raises a :exc:`PermissionError` instead of
   :exc:`KeyError` if the user doesn't have privileges.
 
 * The :meth:`socket.socket.close` method now raises an exception if
   an error (e.g. ``EBADF``) was reported by the underlying system call.
   (Contributed by Martin Panter in :issue:`26685`.)
 
-* The *decode_data* argument for the :class:`smtpd.SMTPChannel` and
-  :class:`smtpd.SMTPServer` constructors is now ``False`` by default.
+* The *decode_data* argument for the :class:`!smtpd.SMTPChannel` and
+  :class:`!smtpd.SMTPServer` constructors is now ``False`` by default.
   This means that the argument passed to
-  :meth:`~smtpd.SMTPServer.process_message` is now a bytes object by
-  default, and ``process_message()`` will be passed keyword arguments.
+  :meth:`!process_message` is now a bytes object by
+  default, and :meth:`!process_message` will be passed keyword arguments.
   Code that has already been updated in accordance with the deprecation
   warning generated by 3.5 will not be affected.
 
@@ -2184,19 +2253,23 @@ Changes in the Python API
 * As part of :pep:`487`, the handling of keyword arguments passed to
   :class:`type` (other than the metaclass hint, ``metaclass``) is now
   consistently delegated to :meth:`object.__init_subclass__`. This means that
-  :meth:`type.__new__` and :meth:`type.__init__` both now accept arbitrary
-  keyword arguments, but :meth:`object.__init_subclass__` (which is called from
-  :meth:`type.__new__`) will reject them by default. Custom metaclasses
-  accepting additional keyword arguments will need to adjust their calls to
-  :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
+  :meth:`type.__new__ <object.__new__>` and :meth:`type.__init__
+  <object.__init__>` both now accept arbitrary keyword arguments,
+  but :meth:`object.__init_subclass__` (which is called from
+  :meth:`type.__new__ <object.__new__>`) will reject them by default.
+  Custom metaclasses accepting additional keyword arguments will need to adjust
+  their calls to :meth:`type.__new__ <object.__new__>`
+  (whether direct or via :class:`super`) accordingly.
 
-* In :class:`distutils.command.sdist.sdist`, the ``default_format``
+* In ``distutils.command.sdist.sdist``, the ``default_format``
   attribute has been removed and is no longer honored. Instead, the
   gzipped tarfile format is the default on all platforms and no
   platform-specific selection is made.
   In environments where distributions are
   built on Windows and zip distributions are required, configure
-  the project with a ``setup.cfg`` file containing the following::
+  the project with a ``setup.cfg`` file containing the following:
+
+  .. code-block:: ini
 
     [sdist]
     formats=zip
@@ -2217,7 +2290,7 @@ Changes in the Python API
   :class:`~collections.OrderedDict`.
   (Contributed by Steve Holden in :issue:`27842`.)
 
-* The :const:`crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
+* The :const:`!crypt.METHOD_CRYPT` will no longer be added to ``crypt.methods``
   if unsupported by the platform.
   (Contributed by Victor Stinner in :issue:`25287`.)
 
@@ -2234,7 +2307,7 @@ Changes in the Python API
   real-world compatibility.
   (Contributed by Lita Cho in :issue:`21815`.)
 
-* The :func:`mmap.write() <mmap.write>` function now returns the number
+* The :func:`mmap.mmap.write` function now returns the number
   of bytes written like other write methods.
   (Contributed by Jakub Stasiak in :issue:`26335`.)
 
@@ -2259,7 +2332,19 @@ Changes in the Python API
   direct references from methods to the implicit ``__class__`` closure
   variable, the implicit ``__classcell__`` namespace entry must now be passed
   up to ``type.__new__`` for initialisation. Failing to do so will result in
-  a :exc:`DeprecationWarning` in 3.6 and a :exc:`RuntimeWarning` in the future.
+  a :exc:`DeprecationWarning` in Python 3.6 and a :exc:`RuntimeError` in
+  Python 3.8.
+
+* With the introduction of :exc:`ModuleNotFoundError`, import system consumers
+  may start expecting import system replacements to raise that more specific
+  exception when appropriate, rather than the less-specific :exc:`ImportError`.
+  To provide future compatibility with such consumers, implementers of
+  alternative import systems that completely replace :func:`__import__` will
+  need to update their implementations to raise the new subclass when a module
+  can't be found at all. Implementers of compliant plugins to the default
+  import system shouldn't need to make any changes, as the default import
+  system will raise the new subclass when appropriate.
+
 
 Changes in the C API
 --------------------
@@ -2283,26 +2368,130 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
   (Contributed by Demur Rumed with input and reviews from
   Serhiy Storchaka and Victor Stinner in :issue:`26647` and :issue:`28050`.)
 
-* The new :opcode:`FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
+* The new :opcode:`!FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
   of the  :ref:`formatted string literal <whatsnew36-pep498>` implementation.
   (Contributed by Eric Smith in :issue:`25483` and
   Serhiy Storchaka in :issue:`27078`.)
 
-* The new :opcode:`BUILD_CONST_KEY_MAP` opcode to optimize the creation
+* The new :opcode:`!BUILD_CONST_KEY_MAP` opcode to optimize the creation
   of dictionaries with constant keys.
   (Contributed by Serhiy Storchaka in :issue:`27140`.)
 
 * The function call opcodes have been heavily reworked for better performance
   and simpler implementation.
-  The :opcode:`MAKE_FUNCTION`, :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`BUILD_MAP_UNPACK_WITH_CALL` opcodes
+  The :opcode:`MAKE_FUNCTION`, :opcode:`!CALL_FUNCTION`,
+  :opcode:`!CALL_FUNCTION_KW` and :opcode:`!BUILD_MAP_UNPACK_WITH_CALL` opcodes
   have been modified, the new :opcode:`CALL_FUNCTION_EX` and
-  :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
+  :opcode:`!BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
   ``CALL_FUNCTION_VAR``, ``CALL_FUNCTION_VAR_KW`` and ``MAKE_CLOSURE`` opcodes
   have been removed.
   (Contributed by Demur Rumed in :issue:`27095`, and Serhiy Storchaka in
   :issue:`27213`, :issue:`28257`.)
 
-* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
+* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`!STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
+
+
+Notable changes in Python 3.6.2
+===============================
+
+New ``make regen-all`` build target
+-----------------------------------
+
+To simplify cross-compilation, and to ensure that CPython can reliably be
+compiled without requiring an existing version of Python to already be
+available, the autotools-based build system no longer attempts to implicitly
+recompile generated files based on file modification times.
+
+Instead, a new ``make regen-all`` command has been added to force regeneration
+of these files when desired (e.g. after an initial version of Python has
+already been built based on the pregenerated versions).
+
+More selective regeneration targets are also defined - see
+:source:`Makefile.pre.in` for details.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionadded:: 3.6.2
+
+
+Removal of ``make touch`` build target
+--------------------------------------
+
+The ``make touch`` build target previously used to request implicit regeneration
+of generated files by updating their modification times has been removed.
+
+It has been replaced by the new ``make regen-all`` target.
+
+(Contributed by Victor Stinner in :issue:`23404`.)
+
+.. versionchanged:: 3.6.2
+
+
+Notable changes in Python 3.6.4
+===============================
+
+The ``PyExc_RecursionErrorInst`` singleton that was part of the public API
+has been removed as its members being never cleared may cause a segfault
+during finalization of the interpreter.
+(Contributed by Xavier de Gaye in :issue:`22898` and :issue:`30697`.)
+
+
+Notable changes in Python 3.6.5
+===============================
+
+The :func:`locale.localeconv` function now sets temporarily the ``LC_CTYPE``
+locale to the ``LC_NUMERIC`` locale in some cases.
+(Contributed by Victor Stinner in :issue:`31900`.)
+
+
+Notable changes in Python 3.6.7
+===============================
+
+:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+external entities by default. See also :gh:`61441`.
+
+In 3.6.7 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
+when provided with input that does not have a trailing new line.  This behavior
+now matches what the C tokenizer does internally.
+(Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.6.10
+================================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
+
+Notable changes in Python 3.6.13
+================================
+
+Earlier Python versions allowed using both ``;`` and ``&`` as
+query parameter separators in :func:`urllib.parse.parse_qs` and
+:func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
+newer W3C recommendations, this has been changed to allow only a single
+separator key, with ``&`` as the default.  This change also affects
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
+functions internally. For more details, please see their respective
+documentation.
+(Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.6.14
+================================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates RFC 3986,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser :func:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :gh:`88048`)

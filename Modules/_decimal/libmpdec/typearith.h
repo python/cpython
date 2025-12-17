@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2020 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,11 +26,13 @@
  */
 
 
-#ifndef TYPEARITH_H
-#define TYPEARITH_H
+#ifndef LIBMPDEC_TYPEARITH_H_
+#define LIBMPDEC_TYPEARITH_H_
 
 
 #include "mpdecimal.h"
+
+#include <assert.h>
 
 
 /*****************************************************************************/
@@ -636,10 +638,10 @@ add_size_t_overflow(mpd_size_t a, mpd_size_t b, mpd_size_t *overflow)
 static inline mpd_size_t
 mul_size_t_overflow(mpd_size_t a, mpd_size_t b, mpd_size_t *overflow)
 {
-    mpd_uint_t lo;
+    mpd_uint_t hi, lo;
 
-    _mpd_mul_words((mpd_uint_t *)overflow, &lo, (mpd_uint_t)a,
-                   (mpd_uint_t)b);
+    _mpd_mul_words(&hi, &lo, (mpd_uint_t)a, (mpd_uint_t)b);
+    *overflow = (mpd_size_t)hi;
     return lo;
 }
 
@@ -663,7 +665,4 @@ mulmod_size_t(mpd_size_t a, mpd_size_t b, mpd_size_t m)
 }
 
 
-#endif /* TYPEARITH_H */
-
-
-
+#endif /* LIBMPDEC_TYPEARITH_H_ */

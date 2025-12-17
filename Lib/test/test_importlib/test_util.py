@@ -1,18 +1,36 @@
-from . import util
+from test.test_importlib import util
+
 abc = util.import_importlib('importlib.abc')
 init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
+from importlib import _bootstrap_external
 import os
 import pathlib
 import string
 import sys
 from test import support
+from test.support import os_helper
+import textwrap
 import types
 import unittest
+import unittest.mock
 import warnings
+
+try:
+    import _testsinglephase
+except ImportError:
+    _testsinglephase = None
+try:
+    import _testmultiphase
+except ImportError:
+    _testmultiphase = None
+try:
+    import _interpreters
+except ModuleNotFoundError:
+    _interpreters = None
 
 
 class DecodeSourceBytesTests:
@@ -106,258 +124,11 @@ class ModuleFromSpecTests:
         module = self.util.module_from_spec(spec)
         self.assertEqual(module.__file__, spec.origin)
 
-    def test___cached__(self):
-        spec = self.machinery.ModuleSpec('test', object())
-        spec.cached = 'some/path'
-        spec.has_location = True
-        module = self.util.module_from_spec(spec)
-        self.assertEqual(module.__cached__, spec.cached)
 
 (Frozen_ModuleFromSpecTests,
  Source_ModuleFromSpecTests
 ) = util.test_both(ModuleFromSpecTests, abc=abc, machinery=machinery,
                    util=importlib_util)
-
-
-class ModuleForLoaderTests:
-
-    """Tests for importlib.util.module_for_loader."""
-
-    @classmethod
-    def module_for_loader(cls, func):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            return cls.util.module_for_loader(func)
-
-    def test_warning(self):
-        # Should raise a PendingDeprecationWarning when used.
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', DeprecationWarning)
-            with self.assertRaises(DeprecationWarning):
-                func = self.util.module_for_loader(lambda x: x)
-
-    def return_module(self, name):
-        fxn = self.module_for_loader(lambda self, module: module)
-        return fxn(self, name)
-
-    def raise_exception(self, name):
-        def to_wrap(self, module):
-            raise ImportError
-        fxn = self.module_for_loader(to_wrap)
-        try:
-            fxn(self, name)
-        except ImportError:
-            pass
-
-    def test_new_module(self):
-        # Test that when no module exists in sys.modules a new module is
-        # created.
-        module_name = 'a.b.c'
-        with util.uncache(module_name):
-            module = self.return_module(module_name)
-            self.assertIn(module_name, sys.modules)
-        self.assertIsInstance(module, types.ModuleType)
-        self.assertEqual(module.__name__, module_name)
-
-    def test_reload(self):
-        # Test that a module is reused if already in sys.modules.
-        class FakeLoader:
-            def is_package(self, name):
-                return True
-            @self.module_for_loader
-            def load_module(self, module):
-                return module
-        name = 'a.b.c'
-        module = types.ModuleType('a.b.c')
-        module.__loader__ = 42
-        module.__package__ = 42
-        with util.uncache(name):
-            sys.modules[name] = module
-            loader = FakeLoader()
-            returned_module = loader.load_module(name)
-            self.assertIs(returned_module, sys.modules[name])
-            self.assertEqual(module.__loader__, loader)
-            self.assertEqual(module.__package__, name)
-
-    def test_new_module_failure(self):
-        # Test that a module is removed from sys.modules if added but an
-        # exception is raised.
-        name = 'a.b.c'
-        with util.uncache(name):
-            self.raise_exception(name)
-            self.assertNotIn(name, sys.modules)
-
-    def test_reload_failure(self):
-        # Test that a failure on reload leaves the module in-place.
-        name = 'a.b.c'
-        module = types.ModuleType(name)
-        with util.uncache(name):
-            sys.modules[name] = module
-            self.raise_exception(name)
-            self.assertIs(module, sys.modules[name])
-
-    def test_decorator_attrs(self):
-        def fxn(self, module): pass
-        wrapped = self.module_for_loader(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-    def test_false_module(self):
-        # If for some odd reason a module is considered false, still return it
-        # from sys.modules.
-        class FalseModule(types.ModuleType):
-            def __bool__(self): return False
-
-        name = 'mod'
-        module = FalseModule(name)
-        with util.uncache(name):
-            self.assertFalse(module)
-            sys.modules[name] = module
-            given = self.return_module(name)
-            self.assertIs(given, module)
-
-    def test_attributes_set(self):
-        # __name__, __loader__, and __package__ should be set (when
-        # is_package() is defined; undefined implicitly tested elsewhere).
-        class FakeLoader:
-            def __init__(self, is_package):
-                self._pkg = is_package
-            def is_package(self, name):
-                return self._pkg
-            @self.module_for_loader
-            def load_module(self, module):
-                return module
-
-        name = 'pkg.mod'
-        with util.uncache(name):
-            loader = FakeLoader(False)
-            module = loader.load_module(name)
-            self.assertEqual(module.__name__, name)
-            self.assertIs(module.__loader__, loader)
-            self.assertEqual(module.__package__, 'pkg')
-
-        name = 'pkg.sub'
-        with util.uncache(name):
-            loader = FakeLoader(True)
-            module = loader.load_module(name)
-            self.assertEqual(module.__name__, name)
-            self.assertIs(module.__loader__, loader)
-            self.assertEqual(module.__package__, name)
-
-
-(Frozen_ModuleForLoaderTests,
- Source_ModuleForLoaderTests
- ) = util.test_both(ModuleForLoaderTests, util=importlib_util)
-
-
-class SetPackageTests:
-
-    """Tests for importlib.util.set_package."""
-
-    def verify(self, module, expect):
-        """Verify the module has the expected value for __package__ after
-        passing through set_package."""
-        fxn = lambda: module
-        wrapped = self.util.set_package(fxn)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped()
-        self.assertTrue(hasattr(module, '__package__'))
-        self.assertEqual(expect, module.__package__)
-
-    def test_top_level(self):
-        # __package__ should be set to the empty string if a top-level module.
-        # Implicitly tests when package is set to None.
-        module = types.ModuleType('module')
-        module.__package__ = None
-        self.verify(module, '')
-
-    def test_package(self):
-        # Test setting __package__ for a package.
-        module = types.ModuleType('pkg')
-        module.__path__ = ['<path>']
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_submodule(self):
-        # Test __package__ for a module in a package.
-        module = types.ModuleType('pkg.mod')
-        module.__package__ = None
-        self.verify(module, 'pkg')
-
-    def test_setting_if_missing(self):
-        # __package__ should be set if it is missing.
-        module = types.ModuleType('mod')
-        if hasattr(module, '__package__'):
-            delattr(module, '__package__')
-        self.verify(module, '')
-
-    def test_leaving_alone(self):
-        # If __package__ is set and not None then leave it alone.
-        for value in (True, False):
-            module = types.ModuleType('mod')
-            module.__package__ = value
-            self.verify(module, value)
-
-    def test_decorator_attrs(self):
-        def fxn(module): pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            wrapped = self.util.set_package(fxn)
-        self.assertEqual(wrapped.__name__, fxn.__name__)
-        self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
-
-
-(Frozen_SetPackageTests,
- Source_SetPackageTests
- ) = util.test_both(SetPackageTests, util=importlib_util)
-
-
-class SetLoaderTests:
-
-    """Tests importlib.util.set_loader()."""
-
-    @property
-    def DummyLoader(self):
-        # Set DummyLoader on the class lazily.
-        class DummyLoader:
-            @self.util.set_loader
-            def load_module(self, module):
-                return self.module
-        self.__class__.DummyLoader = DummyLoader
-        return DummyLoader
-
-    def test_no_attribute(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        try:
-            del loader.module.__loader__
-        except AttributeError:
-            pass
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(loader, loader.load_module('blah').__loader__)
-
-    def test_attribute_is_None(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        loader.module.__loader__ = None
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(loader, loader.load_module('blah').__loader__)
-
-    def test_not_reset(self):
-        loader = self.DummyLoader()
-        loader.module = types.ModuleType('blah')
-        loader.module.__loader__ = 42
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertEqual(42, loader.load_module('blah').__loader__)
-
-
-(Frozen_SetLoaderTests,
- Source_SetLoaderTests
- ) = util.test_both(SetLoaderTests, util=importlib_util)
 
 
 class ResolveNameTests:
@@ -374,7 +145,7 @@ class ResolveNameTests:
 
     def test_no_package(self):
         # .bacon in ''
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('.bacon', '')
 
     def test_in_package(self):
@@ -389,7 +160,7 @@ class ResolveNameTests:
 
     def test_escape(self):
         # ..bacon in spam
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ImportError):
             self.util.resolve_name('..bacon', 'spam')
 
 
@@ -517,7 +288,7 @@ class FindSpecTests:
         with util.temp_module(name, pkg=True) as pkg_dir:
             fullname, _ = util.submodule(name, subname, pkg_dir)
             relname = '.' + subname
-            with self.assertRaises(ValueError):
+            with self.assertRaises(ImportError):
                 self.util.find_spec(relname)
             self.assertNotIn(name, sorted(sys.modules))
             self.assertNotIn(fullname, sorted(sys.modules))
@@ -543,7 +314,7 @@ class MagicNumberTests:
 
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
-        self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
+        self.assertEndsWith(self.util.MAGIC_NUMBER, b'\r\n')
 
 
 (Frozen_MagicNumberTests,
@@ -557,8 +328,8 @@ class PEP3147Tests:
 
     tag = sys.implementation.cache_tag
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
     def test_cache_from_source(self):
         # Given the path to a .py file, return the path to its PEP 3147
         # defined .pyc file (i.e. under __pycache__).
@@ -582,46 +353,11 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    def test_cache_from_source_debug_override(self):
-        # Given the path to a .py file, return the path to its PEP 3147/PEP 488
-        # defined .pyc file (i.e. under __pycache__).
-        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, False),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, True),
-                             self.util.cache_from_source(path, optimization=''))
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, False)
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, True)
-
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
         expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
-
-    def test_cache_from_source_override(self):
-        # When debug_override is not None, it can be any true-ish or false-ish
-        # value.
-        path = os.path.join('foo', 'bar', 'baz.py')
-        # However if the bool-ishness can't be determined, the exception
-        # propagates.
-        class Bearish:
-            def __bool__(self): raise RuntimeError
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, []),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, [17]),
-                             self.util.cache_from_source(path, optimization=''))
-            with self.assertRaises(RuntimeError):
-                self.util.cache_from_source('/foo/bar/baz.py', Bearish())
-
 
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
@@ -678,18 +414,17 @@ class PEP3147Tests:
             self.util.cache_from_source('\\foo\\bar\\baz/qux.py', optimization=''),
             '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag not be None')
-    def test_source_from_cache_path_like_arg(self):
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag not be None')
+    def test_cache_from_source_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', 'qux.py')
         expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
                               'qux.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache(self):
         # Given the path to a PEP 3147 defined .pyc file, return the path to
         # its source.  This tests the good path.
@@ -749,14 +484,98 @@ class PEP3147Tests:
         with self.assertRaises(ValueError):
             self.util.source_from_cache(path)
 
-    @unittest.skipUnless(sys.implementation.cache_tag is not None,
-                         'requires sys.implementation.cache_tag to not be '
-                         'None')
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_path_like_arg(self):
         path = pathlib.PurePath('foo', 'bar', 'baz', '__pycache__',
                                 'qux.{}.pyc'.format(self.tag))
         expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
         self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_pycache_prefix(self):
+        # If pycache_prefix is set, cache_from_source will return a bytecode
+        # path inside that directory (in a subdirectory mirroring the .py file's
+        # path) rather than in a __pycache__ dir next to the py file.
+        pycache_prefixes = [
+            os.path.join(os.path.sep, 'tmp', 'bytecode'),
+            os.path.join(os.path.sep, 'tmp', '\u2603'),  # non-ASCII in path!
+            os.path.join(os.path.sep, 'tmp', 'trailing-slash') + os.path.sep,
+        ]
+        drive = ''
+        if os.name == 'nt':
+            drive = 'C:'
+            pycache_prefixes = [
+                f'{drive}{prefix}' for prefix in pycache_prefixes]
+            pycache_prefixes += [r'\\?\C:\foo', r'\\localhost\c$\bar']
+        for pycache_prefix in pycache_prefixes:
+            with self.subTest(path=pycache_prefix):
+                path = drive + os.path.join(
+                    os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+                expect = os.path.join(
+                    pycache_prefix, 'foo', 'bar', 'baz',
+                    'qux.{}.pyc'.format(self.tag))
+                with util.temporary_pycache_prefix(pycache_prefix):
+                    self.assertEqual(
+                        self.util.cache_from_source(path, optimization=''),
+                        expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_respects_pycache_prefix_relative(self):
+        # If the .py path we are given is relative, we will resolve to an
+        # absolute path before prefixing with pycache_prefix, to avoid any
+        # possible ambiguity.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        root = os.path.splitdrive(os.getcwd())[0] + os.path.sep
+        expect = os.path.join(
+            pycache_prefix,
+            os.path.relpath(os.getcwd(), root),
+            'foo', 'bar', 'baz', f'qux.{self.tag}.pyc')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(
+                self.util.cache_from_source(path, optimization=''),
+                os.path.normpath(expect))
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_in_root_with_pycache_prefix(self):
+        # Regression test for gh-82916
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = 'qux.py'
+        expect = os.path.join(os.path.sep, 'tmp', 'bytecode',
+                              f'qux.{self.tag}.pyc')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            with os_helper.change_cwd('/'):
+                self.assertEqual(self.util.cache_from_source(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_inside_pycache_prefix(self):
+        # If pycache_prefix is set and the cache path we get is inside it,
+        # we return an absolute path to the py file based on the remainder of
+        # the path within pycache_prefix.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join(pycache_prefix, 'foo', 'bar', 'baz',
+                            f'qux.{self.tag}.pyc')
+        expect = os.path.join(os.path.sep, 'foo', 'bar', 'baz', 'qux.py')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(self.util.source_from_cache(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
+    def test_source_from_cache_outside_pycache_prefix(self):
+        # If pycache_prefix is set but the cache path we get is not inside
+        # it, just ignore it and handle the cache path according to the default
+        # behavior.
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                            f'qux.{self.tag}.pyc')
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            self.assertEqual(self.util.source_from_cache(path), expect)
 
 
 (Frozen_PEP3147Tests,
@@ -769,27 +588,25 @@ class MagicNumberTests(unittest.TestCase):
     Test release compatibility issues relating to importlib
     """
     @unittest.skipUnless(
-        sys.version_info.releaselevel in ('final', 'release'),
+        sys.version_info.releaselevel in ('candidate', 'final'),
         'only applies to candidate or final python release levels'
     )
     def test_magic_number(self):
-        """
-        Each python minor release should generally have a MAGIC_NUMBER
-        that does not change once the release reaches candidate status.
+        # Each python minor release should generally have a MAGIC_NUMBER
+        # that does not change once the release reaches candidate status.
 
-        Once a release reaches candidate status, the value of the constant
-        EXPECTED_MAGIC_NUMBER in this test should be changed.
-        This test will then check that the actual MAGIC_NUMBER matches
-        the expected value for the release.
+        # Once a release reaches candidate status, the value of the constant
+        # EXPECTED_MAGIC_NUMBER in this test should be changed.
+        # This test will then check that the actual MAGIC_NUMBER matches
+        # the expected value for the release.
 
-        In exceptional cases, it may be required to change the MAGIC_NUMBER
-        for a maintenance release. In this case the change should be
-        discussed in python-dev. If a change is required, community
-        stakeholders such as OS package maintainers must be notified
-        in advance. Such exceptional releases will then require an
-        adjustment to this test case.
-        """
-        EXPECTED_MAGIC_NUMBER = 3379
+        # In exceptional cases, it may be required to change the MAGIC_NUMBER
+        # for a maintenance release. In this case the change should be
+        # discussed in python-dev. If a change is required, community
+        # stakeholders such as OS package maintainers must be notified
+        # in advance. Such exceptional releases will then require an
+        # adjustment to this test case.
+        EXPECTED_MAGIC_NUMBER = 3625
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (
@@ -805,6 +622,198 @@ class MagicNumberTests(unittest.TestCase):
             "community stakeholders."
         )
         self.assertEqual(EXPECTED_MAGIC_NUMBER, actual, msg)
+
+
+@unittest.skipIf(_interpreters is None, 'subinterpreters required')
+class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
+
+    def run_with_own_gil(self, script):
+        interpid = _interpreters.create('isolated')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    def run_with_shared_gil(self, script):
+        interpid = _interpreters.create('legacy')
+        def ensure_destroyed():
+            try:
+                _interpreters.destroy(interpid)
+            except _interpreters.InterpreterNotFoundError:
+                pass
+        self.addCleanup(ensure_destroyed)
+        excsnap = _interpreters.exec(interpid, script)
+        if excsnap is not None:
+            if excsnap.type.__name__ == 'ImportError':
+                raise ImportError(excsnap.msg)
+
+    @unittest.skipIf(_testsinglephase is None, "test requires _testsinglephase module")
+    # gh-117649: single-phase init modules are not currently supported in
+    # subinterpreters in the free-threaded build
+    @support.expected_failure_if_gil_disabled()
+    def test_single_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testsinglephase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testsinglephase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    @support.requires_gil_enabled("gh-117649: not supported in free-threaded build")
+    def test_incomplete_multi_phase_init_module(self):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
+        prescript = textwrap.dedent(f'''
+            from importlib.util import spec_from_loader, module_from_spec
+            from importlib.machinery import {loader}
+
+            name = '_test_shared_gil_only'
+            filename = {_testmultiphase.__file__!r}
+            loader = {loader}(name, filename)
+            spec = spec_from_loader(name, loader)
+
+            ''')
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = prescript + textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                module = module_from_spec(spec)
+                loader.exec_module(module)
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            with self.assertRaises(ImportError):
+                self.run_with_own_gil(script)
+
+    @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
+    def test_complete_multi_phase_init_module(self):
+        script = textwrap.dedent('''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=True):
+                import _testmultiphase
+            ''')
+        with self.subTest('check disabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check disabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+        script = textwrap.dedent(f'''
+            from importlib.util import _incompatible_extension_module_restrictions
+            with _incompatible_extension_module_restrictions(disable_check=False):
+                import _testmultiphase
+            ''')
+        with self.subTest('check enabled, shared GIL'):
+            self.run_with_shared_gil(script)
+        with self.subTest('check enabled, per-interpreter GIL'):
+            self.run_with_own_gil(script)
+
+
+class PatchAtomicWrites:
+    def __init__(self, truncate_at_length, never_complete=False):
+        self.truncate_at_length = truncate_at_length
+        self.never_complete = never_complete
+        self.seen_write = False
+        self._children = []
+
+    def __enter__(self):
+        import _pyio
+
+        oldwrite = os.write
+
+        # Emulate an os.write that only writes partial data.
+        def write(fd, data):
+            if self.seen_write and self.never_complete:
+                return None
+            self.seen_write = True
+            return oldwrite(fd, data[:self.truncate_at_length])
+
+        # Need to patch _io to be _pyio, so that io.FileIO is affected by the
+        # os.write patch.
+        self.children = [
+            support.swap_attr(_bootstrap_external, '_io', _pyio),
+            support.swap_attr(os, 'write', write)
+        ]
+        for child in self.children:
+            child.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for child in self.children:
+            child.__exit__(exc_type, exc_val, exc_tb)
+
+
+class MiscTests(unittest.TestCase):
+
+    def test_atomic_write_retries_incomplete_writes(self):
+        truncate_at_length = 100
+        length = truncate_at_length * 2
+
+        with PatchAtomicWrites(truncate_at_length=truncate_at_length) as cm:
+            # Make sure we write something longer than the point where we
+            # truncate.
+            content = b'x' * length
+            _bootstrap_external._write_atomic(os_helper.TESTFN, content)
+        self.assertTrue(cm.seen_write)
+
+        self.assertEqual(os.stat(support.os_helper.TESTFN).st_size, length)
+        os.unlink(support.os_helper.TESTFN)
+
+    def test_atomic_write_errors_if_unable_to_complete(self):
+        truncate_at_length = 100
+
+        with (
+            PatchAtomicWrites(
+                truncate_at_length=truncate_at_length, never_complete=True,
+            ) as cm,
+            self.assertRaises(OSError)
+        ):
+            # Make sure we write something longer than the point where we
+            # truncate.
+            content = b'x' * (truncate_at_length * 2)
+            _bootstrap_external._write_atomic(os_helper.TESTFN, content)
+        self.assertTrue(cm.seen_write)
+
+        with self.assertRaises(OSError):
+            os.stat(support.os_helper.TESTFN) # Check that the file did not get written.
 
 
 if __name__ == '__main__':

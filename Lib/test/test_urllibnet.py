@@ -1,8 +1,12 @@
 import unittest
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
 
 import contextlib
 import socket
+import urllib.error
+import urllib.parse
 import urllib.request
 import os
 import email.message
@@ -15,17 +19,19 @@ support.requires('network')
 class URLTimeoutTest(unittest.TestCase):
     # XXX this test doesn't seem to test anything useful.
 
-    TIMEOUT = 30.0
-
     def setUp(self):
-        socket.setdefaulttimeout(self.TIMEOUT)
+        socket.setdefaulttimeout(support.INTERNET_TIMEOUT)
 
     def tearDown(self):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
-        with support.transient_internet("www.example.com"):
-            f = urllib.request.urlopen("http://www.example.com/")
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
+        domain = urllib.parse.urlparse(support.TEST_HTTP_URL).netloc
+        with socket_helper.transient_internet(domain):
+            f = urllib.request.urlopen(support.TEST_HTTP_URL)
             f.read()
 
 
@@ -46,10 +52,14 @@ class urlopenNetworkTests(unittest.TestCase):
 
     url = 'http://www.pythontest.net/'
 
+    def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
+        with socket_helper.transient_internet(resource):
             r = urllib.request.urlopen(*args, **kwargs)
             try:
                 yield r
@@ -61,8 +71,7 @@ class urlopenNetworkTests(unittest.TestCase):
         with self.urlopen(self.url) as open_url:
             for attr in ("read", "readline", "readlines", "fileno", "close",
                          "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                                "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_readlines(self):
@@ -91,15 +100,14 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
         URL = self.url + "XXXinvalidXXX"
-        with support.transient_internet(URL):
-            with self.assertWarns(DeprecationWarning):
-                open_url = urllib.request.FancyURLopener().open(URL)
-            try:
-                code = open_url.getcode()
-            finally:
-                open_url.close()
-            self.assertEqual(code, 404)
+        with socket_helper.transient_internet(URL):
+            with self.assertRaises(urllib.error.URLError) as e:
+                with urllib.request.urlopen(URL):
+                    pass
+            self.assertEqual(e.exception.code, 404)
+            e.exception.close()
 
+    @support.requires_resource('walltime')
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
@@ -142,15 +150,19 @@ class urlopenNetworkTests(unittest.TestCase):
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.request.urlretrieve using the network."""
 
+    def setUp(self):
+        # remove temporary files created by urlretrieve()
+        self.addCleanup(urllib.request.urlcleanup)
+
     @contextlib.contextmanager
     def urlretrieve(self, *args, **kwargs):
         resource = args[0]
-        with support.transient_internet(resource):
+        with socket_helper.transient_internet(resource):
             file_location, info = urllib.request.urlretrieve(*args, **kwargs)
             try:
                 yield file_location, info
             finally:
-                support.unlink(file_location)
+                os_helper.unlink(file_location)
 
     def test_basic(self):
         # Test basic functionality.
@@ -164,8 +176,8 @@ class urlretrieveNetworkTests(unittest.TestCase):
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
         with self.urlretrieve(self.logo,
-                              support.TESTFN) as (file_location, info):
-            self.assertEqual(file_location, support.TESTFN)
+                              os_helper.TESTFN) as (file_location, info):
+            self.assertEqual(file_location, os_helper.TESTFN)
             self.assertTrue(os.path.exists(file_location))
             with open(file_location, 'rb') as f:
                 self.assertTrue(f.read(), "reading from temporary file failed")
@@ -178,6 +190,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     logo = "http://www.pythontest.net/"
 
+    @support.requires_resource('walltime')
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):
             datevalue = fileheaders.get('Date')

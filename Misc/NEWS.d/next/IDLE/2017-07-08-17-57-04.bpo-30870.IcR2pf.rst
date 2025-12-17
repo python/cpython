@@ -1,2 +1,0 @@
-IDLE: In Settings dialog, select font with Up, Down keys as well as mouse.
-Initial patch by Louie Lu.

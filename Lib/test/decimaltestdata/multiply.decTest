@@ -533,7 +533,7 @@ mulx756 multiply  1e-777777777 -1e-411111111 -> -0E-1000000007 Underflow Subnorm
 mulx757 multiply -1e-777777777  1e-411111111 -> -0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 mulx758 multiply -1e-777777777 -1e-411111111 ->  0E-1000000007 Underflow Subnormal Inexact Rounded Clamped
 
--- 'subnormal' boundary (all hard underflow or overflow in base arithemtic)
+-- 'subnormal' boundary (all hard underflow or overflow in base arithmetic)
 precision: 9
 mulx760 multiply 1e-600000000 1e-400000001 -> 1E-1000000001 Subnormal
 mulx761 multiply 1e-600000000 1e-400000002 -> 1E-1000000002 Subnormal

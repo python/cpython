@@ -1,0 +1,114 @@
+name: Reusable Ubuntu
+
+on:
+  workflow_call:
+    inputs:
+      bolt-optimizations:
+        description: Whether to enable BOLT optimizations
+        required: false
+        type: boolean
+        default: false
+      free-threading:
+        description: Whether to use free-threaded mode
+        required: false
+        type: boolean
+        default: false
+      os:
+         description: OS to run the job
+         required: true
+         type: string
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  build-ubuntu-reusable:
+    name: build and test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
+    env:
+      OPENSSL_VER: 3.0.18
+      PYTHONSTRICTEXTENSIONBUILD: 1
+      TERM: linux
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Install Clang and BOLT
+      if: ${{ fromJSON(inputs.bolt-optimizations) }}
+      run: |
+        sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh 19
+        sudo apt-get install bolt-19
+        echo PATH="$(llvm-config-19 --bindir):$PATH" >> $GITHUB_ENV
+    - name: Configure OpenSSL env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v4
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ inputs.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Setup directory envs for out-of-tree builds
+      run: |
+        echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
+        echo "CPYTHON_BUILDDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-builddir)" >> "$GITHUB_ENV"
+    - name: Create directories for read-only out-of-tree builds
+      run: mkdir -p "$CPYTHON_RO_SRCDIR" "$CPYTHON_BUILDDIR"
+    - name: Bind mount sources read-only
+      run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Configure CPython out-of-tree
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      # `test_unpickle_module_race` writes to the source directory, which is
+      # read-only during builds — so we exclude it from profiling with BOLT.
+      run: >-
+        PROFILE_TASK='-m test --pgo --ignore test_unpickle_module_race'
+        ../cpython-ro-srcdir/configure
+        --config-cache
+        --with-pydebug
+        --enable-slower-safety
+        --enable-safety
+        --with-openssl="$OPENSSL_DIR"
+        ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
+        ${{ fromJSON(inputs.bolt-optimizations) && '--enable-bolt' || '' }}
+    - name: Build CPython out-of-tree
+      if: ${{ inputs.free-threading }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make -j
+    - name: Build CPython out-of-tree (for compiler warning check)
+      if: ${{ !inputs.free-threading }}
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: set -o pipefail; make -j --output-sync 2>&1 | tee compiler_output_ubuntu.txt
+    - name: Display build info
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: make pythoninfo
+    - name: Check compiler warnings
+      if: ${{ !inputs.free-threading }}
+      run: >-
+        python Tools/build/check_warnings.py
+        --compiler-output-file-path="${CPYTHON_BUILDDIR}/compiler_output_ubuntu.txt"
+        --warning-ignore-file-path "${GITHUB_WORKSPACE}/Tools/build/.warningignore_ubuntu"
+        --compiler-output-type=gcc
+        --fail-on-regression
+        --fail-on-improvement
+        --path-prefix="../cpython-ro-srcdir/"
+    - name: Remount sources writable for tests
+      # some tests write to srcdir, lack of pyc files slows down testing
+      run: sudo mount "$CPYTHON_RO_SRCDIR" -oremount,rw
+    - name: Tests
+      working-directory: ${{ env.CPYTHON_BUILDDIR }}
+      run: xvfb-run make ci

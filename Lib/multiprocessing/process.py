@@ -7,7 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = ['BaseProcess', 'current_process', 'active_children']
+__all__ = ['BaseProcess', 'current_process', 'active_children',
+           'parent_process']
 
 #
 # Imports
@@ -17,6 +18,7 @@ import os
 import sys
 import signal
 import itertools
+import threading
 from _weakrefset import WeakSet
 
 #
@@ -45,6 +47,13 @@ def active_children():
     _cleanup()
     return list(_children)
 
+
+def parent_process():
+    '''
+    Return process object representing the parent process
+    '''
+    return _parent_process
+
 #
 #
 #
@@ -52,7 +61,7 @@ def active_children():
 def _cleanup():
     # check for processes which have finished
     for p in list(_children):
-        if p._popen.poll() is not None:
+        if (child_popen := p._popen) and child_popen.poll() is not None:
             _children.discard(p)
 
 #
@@ -68,18 +77,19 @@ class BaseProcess(object):
     def _Popen(self):
         raise NotImplementedError
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None,
                  *, daemon=None):
         assert group is None, 'group argument must be None for now'
         count = next(_process_counter)
         self._identity = _current_process._identity + (count,)
         self._config = _current_process._config.copy()
         self._parent_pid = os.getpid()
+        self._parent_name = _current_process.name
         self._popen = None
         self._closed = False
         self._target = target
         self._args = tuple(args)
-        self._kwargs = dict(kwargs)
+        self._kwargs = dict(kwargs) if kwargs else {}
         self._name = name or type(self).__name__ + '-' + \
                      ':'.join(str(i) for i in self._identity)
         if daemon is not None:
@@ -115,12 +125,26 @@ class BaseProcess(object):
         del self._target, self._args, self._kwargs
         _children.add(self)
 
+    def interrupt(self):
+        '''
+        Terminate process; sends SIGINT signal
+        '''
+        self._check_closed()
+        self._popen.interrupt()
+
     def terminate(self):
         '''
         Terminate process; sends SIGTERM signal or uses TerminateProcess()
         '''
         self._check_closed()
         self._popen.terminate()
+
+    def kill(self):
+        '''
+        Terminate process; sends SIGKILL signal or uses TerminateProcess()
+        '''
+        self._check_closed()
+        self._popen.kill()
 
     def join(self, timeout=None):
         '''
@@ -141,10 +165,16 @@ class BaseProcess(object):
         if self is _current_process:
             return True
         assert self._parent_pid == os.getpid(), 'can only test a child process'
+
         if self._popen is None:
             return False
-        self._popen.poll()
-        return self._popen.returncode is None
+
+        returncode = self._popen.poll()
+        if returncode is None:
+            return True
+        else:
+            _children.discard(self)
+            return False
 
     def close(self):
         '''
@@ -234,6 +264,7 @@ class BaseProcess(object):
             raise ValueError("process not started") from None
 
     def __repr__(self):
+        exitcode = None
         if self is _current_process:
             status = 'started'
         elif self._closed:
@@ -243,25 +274,29 @@ class BaseProcess(object):
         elif self._popen is None:
             status = 'initial'
         else:
-            if self._popen.poll() is not None:
-                status = self.exitcode
+            exitcode = self._popen.poll()
+            if exitcode is not None:
+                status = 'stopped'
             else:
                 status = 'started'
 
-        if type(status) is int:
-            if status == 0:
-                status = 'stopped'
-            else:
-                status = 'stopped[%s]' % _exitcode_to_name.get(status, status)
-
-        return '<%s(%s, %s%s)>' % (type(self).__name__, self._name,
-                                   status, self.daemon and ' daemon' or '')
+        info = [type(self).__name__, 'name=%r' % self._name]
+        if self._popen is not None:
+            info.append('pid=%s' % self._popen.pid)
+        info.append('parent=%s' % self._parent_pid)
+        info.append(status)
+        if exitcode is not None:
+            exitcode = _exitcode_to_name.get(exitcode, exitcode)
+            info.append('exitcode=%s' % exitcode)
+        if self.daemon:
+            info.append('daemon')
+        return '<%s>' % ' '.join(info)
 
     ##
 
-    def _bootstrap(self):
+    def _bootstrap(self, parent_sentinel=None):
         from . import util, context
-        global _current_process, _process_counter, _children
+        global _current_process, _parent_process, _process_counter, _children
 
         try:
             if self._start_method is not None:
@@ -271,26 +306,26 @@ class BaseProcess(object):
             util._close_stdin()
             old_process = _current_process
             _current_process = self
+            _parent_process = _ParentProcess(
+                self._parent_name, self._parent_pid, parent_sentinel)
+            if threading._HAVE_THREAD_NATIVE_ID:
+                threading.main_thread()._set_native_id()
             try:
-                util._finalizer_registry.clear()
-                util._run_after_forkers()
+                self._after_fork()
             finally:
                 # delay finalization of the old process object until after
                 # _run_after_forkers() is executed
                 del old_process
             util.info('child process calling self.run()')
-            try:
-                self.run()
-                exitcode = 0
-            finally:
-                util._exit_function()
+            self.run()
+            exitcode = 0
         except SystemExit as e:
-            if not e.args:
-                exitcode = 1
-            elif isinstance(e.args[0], int):
-                exitcode = e.args[0]
+            if e.code is None:
+                exitcode = 0
+            elif isinstance(e.code, int):
+                exitcode = e.code
             else:
-                sys.stderr.write(str(e.args[0]) + '\n')
+                sys.stderr.write(str(e.code) + '\n')
                 exitcode = 1
         except:
             exitcode = 1
@@ -298,11 +333,18 @@ class BaseProcess(object):
             sys.stderr.write('Process %s:\n' % self.name)
             traceback.print_exc()
         finally:
+            threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
-            sys.stdout.flush()
-            sys.stderr.flush()
+            util._flush_std_streams()
 
         return exitcode
+
+    @staticmethod
+    def _after_fork():
+        from . import util
+        util._finalizer_registry.clear()
+        util._run_after_forkers()
+
 
 #
 # We subclass bytes to avoid accidental transmission of auth keys over network
@@ -317,6 +359,40 @@ class AuthenticationString(bytes):
                 'disallowed for security reasons'
                 )
         return AuthenticationString, (bytes(self),)
+
+
+#
+# Create object representing the parent process
+#
+
+class _ParentProcess(BaseProcess):
+
+    def __init__(self, name, pid, sentinel):
+        self._identity = ()
+        self._name = name
+        self._pid = pid
+        self._parent_pid = None
+        self._popen = None
+        self._closed = False
+        self._sentinel = sentinel
+        self._config = {}
+
+    def is_alive(self):
+        from multiprocessing.connection import wait
+        return not wait([self._sentinel], timeout=0)
+
+    @property
+    def ident(self):
+        return self._pid
+
+    def join(self, timeout=None):
+        '''
+        Wait until parent process terminates
+        '''
+        from multiprocessing.connection import wait
+        wait([self._sentinel], timeout=timeout)
+
+    pid = ident
 
 #
 # Create object representing the main process
@@ -346,6 +422,7 @@ class _MainProcess(BaseProcess):
         pass
 
 
+_parent_process = None
 _current_process = _MainProcess()
 _process_counter = itertools.count(1)
 _children = set()
@@ -359,7 +436,8 @@ _exitcode_to_name = {}
 
 for name, signum in list(signal.__dict__.items()):
     if name[:3]=='SIG' and '_' not in name:
-        _exitcode_to_name[-signum] = name
+        _exitcode_to_name[-signum] = f'-{name}'
+del name, signum
 
 # For debug and leak testing
 _dangling = WeakSet()

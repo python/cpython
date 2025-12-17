@@ -1,0 +1,209 @@
+name: JIT
+on:
+  pull_request:
+    paths:
+      - '**jit**'
+      - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/executor_cases.c.h'
+      - 'Python/optimizer_cases.c.h'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
+  push:
+    paths:
+      - '**jit**'
+      - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/executor_cases.c.h'
+      - 'Python/optimizer_cases.c.h'
+      - '!Python/perf_jit_trampoline.c'
+      - '!**/*.md'
+      - '!**/*.ini'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
+
+jobs:
+  interpreter:
+    name: Interpreter (Debug)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build tier two interpreter
+        run: |
+          ./configure --enable-experimental-jit=interpreter --with-pydebug
+          make all --jobs 4
+      - name: Test tier two interpreter
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+  jit:
+    name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
+    needs: interpreter
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - i686-pc-windows-msvc/msvc
+          - x86_64-pc-windows-msvc/msvc
+          - aarch64-pc-windows-msvc/msvc
+          - x86_64-apple-darwin/clang
+          - aarch64-apple-darwin/clang
+          - x86_64-unknown-linux-gnu/gcc
+          - aarch64-unknown-linux-gnu/gcc
+        debug:
+          - true
+          - false
+        llvm:
+          - 21
+        include:
+          - target: i686-pc-windows-msvc/msvc
+            architecture: Win32
+            runner: windows-2022
+          - target: x86_64-pc-windows-msvc/msvc
+            architecture: x64
+            runner: windows-2022
+          - target: aarch64-pc-windows-msvc/msvc
+            architecture: ARM64
+            runner: windows-11-arm
+          - target: x86_64-apple-darwin/clang
+            architecture: x86_64
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin/clang
+            architecture: aarch64
+            runner: macos-14
+          - target: x86_64-unknown-linux-gnu/gcc
+            architecture: x86_64
+            runner: ubuntu-24.04
+          - target: aarch64-unknown-linux-gnu/gcc
+            architecture: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # PCbuild downloads LLVM automatically:
+      - name: Windows
+        if: runner.os == 'Windows'
+        run: |
+          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install llvm@${{ matrix.llvm }}
+          export SDKROOT="$(xcrun --show-sdk-path)"
+          # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
+          # make sure we don't break downstream distributors (like uv):
+          export CFLAGS_JIT='-Werror=unguarded-availability'
+          export MACOSX_DEPLOYMENT_TARGET=10.15
+          ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
+          make all --jobs 4
+          ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
+          make all --jobs 4
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  jit-with-disabled-gil:
+    name: Free-Threaded (Debug)
+    needs: interpreter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 21
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build with JIT enabled and GIL disabled
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ./configure --enable-experimental-jit --with-pydebug --disable-gil
+          make all --jobs 4
+      - name: Run tests
+        run: |
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+        continue-on-error: true
+
+  no-opt-jit:
+    name: JIT without optimizations (Debug)
+    needs: interpreter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 21
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build with JIT
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ./configure --enable-experimental-jit --with-pydebug
+          make all --jobs 4
+      - name: Run tests without optimizations
+        run: |
+          PYTHON_UOPS_OPTIMIZE=0 ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+  tail-call-jit:
+    name: JIT with tail calling interpreter
+    needs: interpreter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        llvm:
+          - 21
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build with JIT and tailcall
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-${{ matrix.llvm }} ./configure --enable-experimental-jit --with-tail-call-interp --with-pydebug
+          make all --jobs 4

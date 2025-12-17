@@ -25,7 +25,6 @@
             <UpgradeVersion Property="DOWNGRADE" Minimum="$(var.Version)" IncludeMinimum="no" OnlyDetect="yes" />
             <UpgradeVersion Property="UPGRADE" Minimum="$(var.UpgradeMinimumVersion)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="no" />
         </Upgrade>
-        <?endif ?>
         
         <?ifdef CoreUpgradeCode ?>
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>
@@ -42,6 +41,7 @@
         <InstallExecuteSequence>
             <RemoveExistingProducts After="InstallInitialize" Overridable="yes">UPGRADE</RemoveExistingProducts>
         </InstallExecuteSequence>
+        <?endif ?>
     </Fragment>
     
     <Fragment>
@@ -53,11 +53,25 @@
     </Fragment>
     
     <Fragment>
-    <?ifdef InstallDirectoryGuidSeed ?>
         <Directory Id="TARGETDIR" Name="SourceDir">
+        <?ifdef InstallDirectoryGuidSeed ?>
             <Directory Id="InstallDirectory" ComponentGuidGenerationSeed="$(var.InstallDirectoryGuidSeed)" />
+        <?endif ?>
         </Directory>
-    <?endif ?>
+    </Fragment>
+
+    <Fragment>
+        <?ifdef PythonExeComponentGuid ?>
+        <!-- Locate TARGETDIR automatically assuming we have executables installed -->
+        <Property Id="TARGETDIR">
+            <ComponentSearch Id="PythonExe_Directory" Guid="$(var.PythonExeComponentGuid)">
+                <DirectorySearch Id="PythonExe_Directory" AssignToProperty="yes" Path=".">
+                    <FileSearch Id="PythonExe_DirectoryFile" Name="python.exe" />
+                </DirectorySearch>
+            </ComponentSearch>
+        </Property>
+        <?endif ?>
+        <Property Id="DetectTargetDir" Value="1" />
     </Fragment>
     
     <!-- Top-level directories -->
@@ -71,7 +85,9 @@
 
     <Fragment>
         <DirectoryRef Id="InstallDirectory">
-            <Directory Id="Doc" Name="Doc" />
+            <Directory Id="Doc" Name="Doc">
+                <Directory Id="Doc_html" Name="html" />
+            </Directory>
         </DirectoryRef>
     </Fragment>
 
@@ -105,12 +121,6 @@
         </DirectoryRef>
     </Fragment>
 
-    <Fragment>
-        <DirectoryRef Id="InstallDirectory">
-            <Directory Id="Tools" Name="Tools" />
-        </DirectoryRef>
-    </Fragment>
-    
     <!-- Start Menu folder -->
     <Fragment>
         <DirectoryRef Id="TARGETDIR">

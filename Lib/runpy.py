@@ -13,18 +13,21 @@ importers when locating support scripts as well as when importing modules.
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
 import importlib.util
-import types
-from pkgutil import read_code, get_importer
+import io
+import os
 
 __all__ = [
     "run_module", "run_path",
 ]
 
+# avoid 'import types' just for ModuleType
+ModuleType = type(sys)
+
 class _TempModule(object):
     """Temporarily replace a module in sys.modules with an empty namespace"""
     def __init__(self, mod_name):
         self.mod_name = mod_name
-        self.module = types.ModuleType(mod_name)
+        self.module = ModuleType(mod_name)
         self._saved_module = []
 
     def __enter__(self):
@@ -77,7 +80,6 @@ def _run_code(code, run_globals, init_globals=None,
             pkg_name = mod_spec.parent
     run_globals.update(__name__ = mod_name,
                        __file__ = fname,
-                       __cached__ = cached,
                        __doc__ = None,
                        __loader__ = loader,
                        __package__ = pkg_name,
@@ -131,6 +133,9 @@ def _get_module_details(mod_name, error=ImportError):
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding module specification for {!r} ({}: {})"
+        if mod_name.endswith(".py"):
+            msg += (f". Try using '{mod_name[:-3]}' instead of "
+                    f"'{mod_name}' as the module name.")
         raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
         raise error("No module named %s" % mod_name)
@@ -174,7 +179,6 @@ def _run_module_as_main(mod_name, alter_argv=True):
        At the very least, these variables in __main__ will be overwritten:
            __name__
            __file__
-           __cached__
            __loader__
            __package__
     """
@@ -194,9 +198,24 @@ def _run_module_as_main(mod_name, alter_argv=True):
 
 def run_module(mod_name, init_globals=None,
                run_name=None, alter_sys=False):
-    """Execute a module's code without importing it
+    """Execute a module's code without importing it.
 
-       Returns the resulting top level namespace dictionary
+       mod_name -- an absolute module name or package name.
+
+       Optional arguments:
+       init_globals -- dictionary used to pre-populate the module’s
+       globals dictionary before the code is executed.
+
+       run_name -- if not None, this will be used for setting __name__;
+       otherwise, __name__ will be set to mod_name + '__main__' if the
+       named module is a package and to just mod_name otherwise.
+
+       alter_sys -- if True, sys.argv[0] is updated with the value of
+       __file__ and sys.modules[__name__] is updated with a temporary
+       module object for the module being executed. Both are
+       restored to their original values before the function returns.
+
+       Returns the resulting module globals dictionary.
     """
     mod_name, mod_spec, code = _get_module_details(mod_name)
     if run_name is None:
@@ -226,41 +245,45 @@ def _get_main_module_details(error=ImportError):
         sys.modules[main_name] = saved_main
 
 
-def _get_code_from_file(run_name, fname):
+def _get_code_from_file(fname, module):
     # Check for a compiled file first
-    with open(fname, "rb") as f:
+    from pkgutil import read_code
+    code_path = os.path.abspath(fname)
+    with io.open_code(code_path) as f:
         code = read_code(f)
     if code is None:
         # That didn't work, so try it as normal source code
-        with open(fname, "rb") as f:
-            code = compile(f.read(), fname, 'exec')
-    return code, fname
+        with io.open_code(code_path) as f:
+            code = compile(f.read(), fname, 'exec', module=module)
+    return code
 
 def run_path(path_name, init_globals=None, run_name=None):
-    """Execute code located at the specified filesystem location
+    """Execute code located at the specified filesystem location.
 
-       Returns the resulting top level namespace dictionary
+       path_name -- filesystem location of a Python script, zipfile,
+       or directory containing a top level __main__.py script.
 
-       The file path may refer directly to a Python script (i.e.
-       one that could be directly executed with execfile) or else
-       it may refer to a zipfile or directory containing a top
-       level __main__.py script.
+       Optional arguments:
+       init_globals -- dictionary used to pre-populate the module’s
+       globals dictionary before the code is executed.
+
+       run_name -- if not None, this will be used to set __name__;
+       otherwise, '<run_path>' will be used for __name__.
+
+       Returns the resulting module globals dictionary.
     """
     if run_name is None:
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
+    from pkgutil import get_importer
     importer = get_importer(path_name)
-    # Trying to avoid importing imp so as to not consume the deprecation warning.
-    is_NullImporter = False
-    if type(importer).__module__ == 'imp':
-        if type(importer).__name__ == 'NullImporter':
-            is_NullImporter = True
-    if isinstance(importer, type(None)) or is_NullImporter:
+    path_name = os.fsdecode(path_name)
+    if isinstance(importer, type(None)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
-        code, fname = _get_code_from_file(run_name, path_name)
+        code = _get_code_from_file(path_name, run_name)
         return _run_module_code(code, init_globals, run_name,
-                                pkg_name=pkg_name, script_name=fname)
+                                pkg_name=pkg_name, script_name=path_name)
     else:
         # Finder is defined for path, so add it to
         # the start of sys.path

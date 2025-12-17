@@ -1,7 +1,24 @@
+# -*- coding: utf-8 -*-
+# There are tests here with unicode string literals and
+# identifiers. There's a code in ast.c that was added because of a
+# failure with a non-ascii-only expression.  So, I have tests for
+# that.  There are workarounds that would let me run tests for that
+# code without unicode identifiers and strings, but just using them
+# directly seems like the easiest and therefore safest thing to do.
+# Unicode identifiers in tests is allowed by PEP 3131.
+
 import ast
+import datetime
+import dis
+import os
+import re
 import types
 import decimal
 import unittest
+import warnings
+from test import support
+from test.support.os_helper import temp_cwd
+from test.support.script_helper import assert_python_failure, assert_python_ok
 
 a_global = 'global variable'
 
@@ -70,6 +87,483 @@ f'{a * x()}'"""
         # Make sure x was called.
         self.assertTrue(x.called)
 
+    def test_ast_line_numbers(self):
+        expr = """
+a = 10
+f'{a * x()}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 1)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        # check the binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+
+    def test_ast_line_numbers_multiple_formattedvalues(self):
+        expr = """
+f'no formatted values'
+f'eggs {a * x()} spam {b + y()}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `f'no formatted value'`
+        self.assertEqual(type(t.body[0]), ast.Expr)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 4)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
+        self.assertEqual(type(t.body[1].value.values[3]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 3)
+        self.assertEqual(t.body[1].value.values[2].lineno, 3)
+        self.assertEqual(t.body[1].value.values[3].lineno, 3)
+        # check the first binop location
+        binop1 = t.body[1].value.values[1].value
+        self.assertEqual(type(binop1), ast.BinOp)
+        self.assertEqual(type(binop1.left), ast.Name)
+        self.assertEqual(type(binop1.op), ast.Mult)
+        self.assertEqual(type(binop1.right), ast.Call)
+        self.assertEqual(binop1.lineno, 3)
+        self.assertEqual(binop1.left.lineno, 3)
+        self.assertEqual(binop1.right.lineno, 3)
+        self.assertEqual(binop1.col_offset, 8)
+        self.assertEqual(binop1.left.col_offset, 8)
+        self.assertEqual(binop1.right.col_offset, 12)
+        # check the second binop location
+        binop2 = t.body[1].value.values[3].value
+        self.assertEqual(type(binop2), ast.BinOp)
+        self.assertEqual(type(binop2.left), ast.Name)
+        self.assertEqual(type(binop2.op), ast.Add)
+        self.assertEqual(type(binop2.right), ast.Call)
+        self.assertEqual(binop2.lineno, 3)
+        self.assertEqual(binop2.left.lineno, 3)
+        self.assertEqual(binop2.right.lineno, 3)
+        self.assertEqual(binop2.col_offset, 23)
+        self.assertEqual(binop2.left.col_offset, 23)
+        self.assertEqual(binop2.right.col_offset, 27)
+
+    def test_ast_line_numbers_nested(self):
+        expr = """
+a = 10
+f'{a * f"-{x()}-"}'"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 1)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        # check the binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.JoinedStr)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+        # check the nested call location
+        self.assertEqual(len(binop.right.values), 3)
+        self.assertEqual(type(binop.right.values[0]), ast.Constant)
+        self.assertEqual(type(binop.right.values[0].value), str)
+        self.assertEqual(type(binop.right.values[1]), ast.FormattedValue)
+        self.assertEqual(type(binop.right.values[2]), ast.Constant)
+        self.assertEqual(type(binop.right.values[2].value), str)
+        self.assertEqual(binop.right.values[0].lineno, 3)
+        self.assertEqual(binop.right.values[1].lineno, 3)
+        self.assertEqual(binop.right.values[2].lineno, 3)
+        call = binop.right.values[1].value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 3)
+        self.assertEqual(call.col_offset, 11)
+
+    def test_ast_line_numbers_duplicate_expression(self):
+        expr = """
+a = 10
+f'{a * x()} {a * x()} {a * x()}'
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 5)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[1].value), str)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[3]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[3].value), str)
+        self.assertEqual(type(t.body[1].value.values[4]), ast.FormattedValue)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 3)
+        self.assertEqual(t.body[1].value.values[2].lineno, 3)
+        self.assertEqual(t.body[1].value.values[3].lineno, 3)
+        self.assertEqual(t.body[1].value.values[4].lineno, 3)
+        # check the first binop location
+        binop = t.body[1].value.values[0].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+        # check the second binop location
+        binop = t.body[1].value.values[2].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 13)
+        self.assertEqual(binop.left.col_offset, 13)
+        self.assertEqual(binop.right.col_offset, 17)
+        # check the third binop location
+        binop = t.body[1].value.values[4].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 3)
+        self.assertEqual(binop.left.lineno, 3)
+        self.assertEqual(binop.right.lineno, 3)
+        self.assertEqual(binop.col_offset, 23)
+        self.assertEqual(binop.left.col_offset, 23)
+        self.assertEqual(binop.right.col_offset, 27)
+
+    def test_ast_numbers_fstring_with_formatting(self):
+
+        t = ast.parse('f"Here is that pesky {xxx:.3f} again"')
+        self.assertEqual(len(t.body), 1)
+        self.assertEqual(t.body[0].lineno, 1)
+
+        self.assertEqual(type(t.body[0]), ast.Expr)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+
+        self.assertEqual(type(t.body[0].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[0].value.values[2]), ast.Constant)
+
+        _, expr, _ = t.body[0].value.values
+
+        name = expr.value
+        self.assertEqual(type(name), ast.Name)
+        self.assertEqual(name.lineno, 1)
+        self.assertEqual(name.end_lineno, 1)
+        self.assertEqual(name.col_offset, 22)
+        self.assertEqual(name.end_col_offset, 25)
+
+    def test_ast_line_numbers_multiline_fstring(self):
+        # See bpo-30465 for details.
+        expr = """
+a = 10
+f'''
+  {a
+     *
+       x()}
+non-important content
+'''
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        # check `a = 10`
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(t.body[0].lineno, 2)
+        # check `f'...'`
+        self.assertEqual(type(t.body[1]), ast.Expr)
+        self.assertEqual(type(t.body[1].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[1].value.values), 3)
+        self.assertEqual(type(t.body[1].value.values[0]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[0].value), str)
+        self.assertEqual(type(t.body[1].value.values[1]), ast.FormattedValue)
+        self.assertEqual(type(t.body[1].value.values[2]), ast.Constant)
+        self.assertEqual(type(t.body[1].value.values[2].value), str)
+        self.assertEqual(t.body[1].lineno, 3)
+        self.assertEqual(t.body[1].value.lineno, 3)
+        self.assertEqual(t.body[1].value.values[0].lineno, 3)
+        self.assertEqual(t.body[1].value.values[1].lineno, 4)
+        self.assertEqual(t.body[1].value.values[2].lineno, 6)
+        self.assertEqual(t.body[1].col_offset, 0)
+        self.assertEqual(t.body[1].value.col_offset, 0)
+        self.assertEqual(t.body[1].value.values[0].col_offset, 4)
+        self.assertEqual(t.body[1].value.values[1].col_offset, 2)
+        self.assertEqual(t.body[1].value.values[2].col_offset, 11)
+        # NOTE: the following lineno information and col_offset is correct for
+        # expressions within FormattedValues.
+        binop = t.body[1].value.values[1].value
+        self.assertEqual(type(binop), ast.BinOp)
+        self.assertEqual(type(binop.left), ast.Name)
+        self.assertEqual(type(binop.op), ast.Mult)
+        self.assertEqual(type(binop.right), ast.Call)
+        self.assertEqual(binop.lineno, 4)
+        self.assertEqual(binop.left.lineno, 4)
+        self.assertEqual(binop.right.lineno, 6)
+        self.assertEqual(binop.col_offset, 3)
+        self.assertEqual(binop.left.col_offset, 3)
+        self.assertEqual(binop.right.col_offset, 7)
+
+        expr = """
+a = f'''
+          {blech}
+    '''
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # Check f'...'
+        self.assertEqual(type(t.body[0]), ast.Assign)
+        self.assertEqual(type(t.body[0].value), ast.JoinedStr)
+        self.assertEqual(len(t.body[0].value.values), 3)
+        self.assertEqual(type(t.body[0].value.values[1]), ast.FormattedValue)
+        self.assertEqual(t.body[0].lineno, 2)
+        self.assertEqual(t.body[0].value.lineno, 2)
+        self.assertEqual(t.body[0].value.values[0].lineno, 2)
+        self.assertEqual(t.body[0].value.values[1].lineno, 3)
+        self.assertEqual(t.body[0].value.values[2].lineno, 3)
+        self.assertEqual(t.body[0].col_offset, 0)
+        self.assertEqual(t.body[0].value.col_offset, 4)
+        self.assertEqual(t.body[0].value.values[0].col_offset, 8)
+        self.assertEqual(t.body[0].value.values[1].col_offset, 10)
+        self.assertEqual(t.body[0].value.values[2].col_offset, 17)
+        # Check {blech}
+        self.assertEqual(t.body[0].value.values[1].value.lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.end_lineno, 3)
+        self.assertEqual(t.body[0].value.values[1].value.col_offset, 11)
+        self.assertEqual(t.body[0].value.values[1].value.end_col_offset, 16)
+
+    def test_ast_line_numbers_with_parentheses(self):
+        expr = """
+x = (
+    f" {test(t)}"
+)"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the joinedstr location
+        joinedstr = t.body[0].value
+        self.assertEqual(type(joinedstr), ast.JoinedStr)
+        self.assertEqual(joinedstr.lineno, 3)
+        self.assertEqual(joinedstr.end_lineno, 3)
+        self.assertEqual(joinedstr.col_offset, 4)
+        self.assertEqual(joinedstr.end_col_offset, 17)
+        # check the formatted value location
+        fv = t.body[0].value.values[1]
+        self.assertEqual(type(fv), ast.FormattedValue)
+        self.assertEqual(fv.lineno, 3)
+        self.assertEqual(fv.end_lineno, 3)
+        self.assertEqual(fv.col_offset, 7)
+        self.assertEqual(fv.end_col_offset, 16)
+        # check the test(t) location
+        call = t.body[0].value.values[1].value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 3)
+        self.assertEqual(call.end_lineno, 3)
+        self.assertEqual(call.col_offset, 8)
+        self.assertEqual(call.end_col_offset, 15)
+
+        expr = """
+x = (
+    u'wat',
+    u"wat",
+    b'wat',
+    b"wat",
+    f'wat',
+    f"wat",
+)
+
+y = (
+    u'''wat''',
+    u\"\"\"wat\"\"\",
+    b'''wat''',
+    b\"\"\"wat\"\"\",
+    f'''wat''',
+    f\"\"\"wat\"\"\",
+)
+        """
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 2)
+        x, y = t.body
+
+        # Check the single quoted string offsets first.
+        offsets = [
+            (elt.col_offset, elt.end_col_offset)
+            for elt in x.value.elts
+        ]
+        self.assertTrue(all(
+            offset == (4, 10)
+            for offset in offsets
+        ))
+
+        # Check the triple quoted string offsets.
+        offsets = [
+            (elt.col_offset, elt.end_col_offset)
+            for elt in y.value.elts
+        ]
+        self.assertTrue(all(
+            offset == (4, 14)
+            for offset in offsets
+        ))
+
+        expr = """
+x = (
+        'PERL_MM_OPT', (
+            f'wat'
+            f'some_string={f(x)} '
+            f'wat'
+        ),
+)
+"""
+        t = ast.parse(expr)
+        self.assertEqual(type(t), ast.Module)
+        self.assertEqual(len(t.body), 1)
+        # check the fstring
+        fstring = t.body[0].value.elts[1]
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 3)
+        wat1, middle, wat2 = fstring.values
+        # check the first wat
+        self.assertEqual(type(wat1), ast.Constant)
+        self.assertEqual(wat1.lineno, 4)
+        self.assertEqual(wat1.end_lineno, 5)
+        self.assertEqual(wat1.col_offset, 14)
+        self.assertEqual(wat1.end_col_offset, 26)
+        # check the call
+        call = middle.value
+        self.assertEqual(type(call), ast.Call)
+        self.assertEqual(call.lineno, 5)
+        self.assertEqual(call.end_lineno, 5)
+        self.assertEqual(call.col_offset, 27)
+        self.assertEqual(call.end_col_offset, 31)
+        # check the second wat
+        self.assertEqual(type(wat2), ast.Constant)
+        self.assertEqual(wat2.lineno, 5)
+        self.assertEqual(wat2.end_lineno, 6)
+        self.assertEqual(wat2.col_offset, 32)
+        # wat ends at the offset 17, but the whole f-string
+        # ends at the offset 18 (since the quote is part of the
+        # f-string but not the wat string)
+        self.assertEqual(wat2.end_col_offset, 17)
+        self.assertEqual(fstring.end_col_offset, 18)
+
+    def test_ast_fstring_empty_format_spec(self):
+        expr = "f'{expr:}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 0)
+
+    def test_ast_fstring_format_spec(self):
+        expr = "f'{1:{name}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 1)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name')
+
+        expr = "f'{1:{name1}{name2}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 2)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name1')
+
+        format_spec_value = format_spec.values[1]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name2')
+
+
     def test_docstring(self):
         def f():
             f'''Not a docstring'''
@@ -105,17 +599,69 @@ f'{a * x()}'"""
         self.assertEqual(f' ', ' ')
 
     def test_unterminated_string(self):
-        self.assertAllRaise(SyntaxError, 'f-string: unterminated string',
+        self.assertAllRaise(SyntaxError, 'unterminated string',
                             [r"""f'{"x'""",
                              r"""f'{"x}'""",
                              r"""f'{("x'""",
                              r"""f'{("x}'""",
                              ])
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_mismatched_parens(self):
-        self.assertAllRaise(SyntaxError, 'f-string: mismatched',
+        self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
                             ["f'{((}'",
                              ])
+        self.assertAllRaise(SyntaxError, r"closing parenthesis '\)' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4)}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"closing parenthesis '\]' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4]}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\['",
+                            ["f'{a[4}'",
+                            ])
+        self.assertAllRaise(SyntaxError, r"closing parenthesis '\}' "
+                            r"does not match opening parenthesis '\('",
+                            ["f'{a(4}'",
+                            ])
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*20 + "}'")
+
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    def test_fstring_nested_too_deeply(self):
+        def raises_syntax_or_memory_error(txt):
+            try:
+                eval(txt)
+            except SyntaxError:
+                pass
+            except MemoryError:
+                pass
+            except Exception as ex:
+                self.fail(f"Should raise SyntaxError or MemoryError, not {type(ex)}")
+            else:
+                self.fail("No exception raised")
+
+        raises_syntax_or_memory_error('f"{1+2:{1+2:{1+1:{1}}}}"')
+
+        def create_nested_fstring(n):
+            if n == 0:
+                return "1+1"
+            prev = create_nested_fstring(n-1)
+            return f'f"{{{prev}}}"'
+
+        raises_syntax_or_memory_error(create_nested_fstring(160))
+        raises_syntax_or_memory_error("f'{" + "("*100 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*1000 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*10_000 + "}'")
+
+    def test_syntax_error_in_nested_fstring(self):
+        # See gh-104016 for more information on this crash
+        self.assertAllRaise(SyntaxError,
+                            "invalid syntax",
+                            ['f"{1 1:' + ('{f"1:' * 199)])
 
     def test_double_braces(self):
         self.assertEqual(f'{{', '{')
@@ -179,8 +725,14 @@ f'{a * x()}'"""
         self.assertEqual(f'' '' f'', '')
         self.assertEqual(f'' '' f'' '', '')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{3' f'}'",  # can't concat to get a valid f-string
+        # This is not really [f'{'] + [f'}'] since we treat the inside
+        # of braces as a purely new context, so it is actually f'{ and
+        # then eval('  f') (a valid expression) and then }' which would
+        # constitute a valid f-string.
+        self.assertEqual(f'{' f'}', ' f')
+
+        self.assertAllRaise(SyntaxError, "expecting '}'",
+                            ['''f'{3' f"}"''',  # can't concat to get a valid f-string
                              ])
 
     def test_comments(self):
@@ -189,12 +741,49 @@ f'{a * x()}'"""
         self.assertEqual(f'{"#"}', '#')
         self.assertEqual(f'{d["#"]}', 'hash')
 
-        self.assertAllRaise(SyntaxError, "f-string expression part cannot include '#'",
-                            ["f'{1#}'",   # error because the expression becomes "(1#)"
-                             "f'{3(#)}'",
+        self.assertAllRaise(SyntaxError, "'{' was never closed",
+                            ["f'{1#}'",   # error because everything after '#' is a comment
                              "f'{#}'",
-                             "f'{)#}'",   # When wrapped in parens, this becomes
+                             "f'one: {1#}'",
+                             "f'{1# one} {2 this is a comment still#}'",
+                             ])
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
+                            ["f'{)#}'",   # When wrapped in parens, this becomes
                                           #  '()#)'.  Make sure that doesn't compile.
+                             ])
+        self.assertEqual(f'''A complex trick: {
+2  # two
+}''', 'A complex trick: 2')
+        self.assertEqual(f'''
+{
+40 # forty
++  # plus
+2  # two
+}''', '\n42')
+        self.assertEqual(f'''
+{
+40 # forty
++  # plus
+2  # two
+}''', '\n42')
+
+        self.assertEqual(f'''
+# this is not a comment
+{ # the following operation it's
+3 # this is a number
+* 2}''', '\n# this is not a comment\n6')
+        self.assertEqual(f'''
+{# f'a {comment}'
+86 # constant
+# nothing more
+}''', '\n86')
+
+        self.assertAllRaise(SyntaxError, r"f-string: valid expression required before '}'",
+                            ["""f'''
+{
+# only a comment
+}'''
+""", # this is equivalent to f'{}'
                              ])
 
     def test_many_expressions(self):
@@ -236,21 +825,17 @@ f'{a * x()}'"""
         self.assertEqual(f'{-10:-{"#"}1{0}x}', '      -0xa')
         self.assertEqual(f'{-10:{"-"}#{1}0{"x"}}', '      -0xa')
         self.assertEqual(f'{10:#{3 != {4:5} and width}x}', '       0xa')
+        self.assertEqual(f'result: {value:{width:{0}}.{precision:1}}', 'result:      12.35')
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError, "f-string: expecting ':' or '}'",
                             ["""f'{"s"!r{":10"}}'""",
-
                              # This looks like a nested format spec.
                              ])
 
-        self.assertAllRaise(SyntaxError, "invalid syntax",
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
                             [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
-                             ])
-
-        self.assertAllRaise(SyntaxError, "f-string: expressions nested too deeply",
-                            [# Can't nest format specifiers.
-                             "f'result: {value:{width:{0}}.{precision:1}}'",
                              ])
 
         self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
@@ -258,6 +843,16 @@ f'{a * x()}'"""
                              #  the : or ! itself.
                              """f'{"s"!{"r"}}'""",
                              ])
+
+    def test_custom_format_specifier(self):
+        class CustomFormat:
+            def __format__(self, format_spec):
+                return format_spec
+
+        self.assertEqual(f'{CustomFormat():\n}', '\n')
+        self.assertEqual(f'{CustomFormat():\u2603}', '☃')
+        with self.assertWarns(SyntaxWarning):
+            exec(r'f"{F():¯\_(ツ)_/¯}"', {'F': CustomFormat})
 
     def test_side_effect_order(self):
         class X:
@@ -271,20 +866,32 @@ f'{a * x()}'"""
         self.assertEqual(f'{x} {x}', '1 2')
 
     def test_missing_expression(self):
-        self.assertAllRaise(SyntaxError, 'f-string: empty expression not allowed',
+        self.assertAllRaise(SyntaxError,
+                            "f-string: valid expression required before '}'",
                             ["f'{}'",
                              "f'{ }'"
                              "f' {} '",
-                             "f'{!r}'",
-                             "f'{ !r}'",
                              "f'{10:{ }}'",
                              "f' { } '",
 
                              # The Python parser ignores also the following
                              # whitespace characters in additional to a space.
                              "f'''{\t\f\r\n}'''",
+                             ])
 
-                             # Catch the empty expression before the
+        self.assertAllRaise(SyntaxError,
+                            "f-string: valid expression required before '!'",
+                            ["f'{!r}'",
+                             "f'{ !r}'",
+                             "f'{!}'",
+                             "f'''{\t\f\r\n!a}'''",
+
+                             # Catch empty expression before the
+                             #  missing closing brace.
+                             "f'{!'",
+                             "f'{!s:'",
+
+                             # Catch empty expression before the
                              #  invalid conversion.
                              "f'{!x}'",
                              "f'{ !xr}'",
@@ -292,20 +899,30 @@ f'{a * x()}'"""
                              "f'{!x:a}'",
                              "f'{ !xr:}'",
                              "f'{ !xr:a}'",
+                             ])
 
-                             "f'{!}'",
-                             "f'{:}'",
-
-                             # We find the empty expression before the
-                             #  missing closing brace.
-                             "f'{!'",
-                             "f'{!s:'",
+        self.assertAllRaise(SyntaxError,
+                            "f-string: valid expression required before ':'",
+                            ["f'{:}'",
+                             "f'{ :!}'",
+                             "f'{:2}'",
+                             "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
-                             "f'{:x'",
+                             "F'{[F'{:'}[F'{:'}]]]",
+                             ])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: valid expression required before '='",
+                            ["f'{=}'",
+                             "f'{ =}'",
+                             "f'{ =:}'",
+                             "f'{   =!}'",
+                             "f'''{\t\f\r\n=}'''",
+                             "f'{='",
                              ])
 
         # Different error message is raised for other whitespace characters.
-        self.assertAllRaise(SyntaxError, 'invalid character in identifier',
+        self.assertAllRaise(SyntaxError, r"invalid non-printable character U\+00A0",
                             ["f'''{\xa0}'''",
                              "\xa0",
                              ])
@@ -313,22 +930,19 @@ f'{a * x()}'"""
     def test_parens_in_expressions(self):
         self.assertEqual(f'{3,}', '(3,)')
 
-        # Add these because when an expression is evaluated, parens
-        #  are added around it. But we shouldn't go from an invalid
-        #  expression to a valid one. The added parens are just
-        #  supposed to allow whitespace (including newlines).
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
                             ["f'{,}'",
-                             "f'{,}'",  # this is (,), which is an error
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+        self.assertAllRaise(SyntaxError, r"f-string: unmatched '\)'",
                             ["f'{3)+(4}'",
                              ])
 
-        self.assertAllRaise(SyntaxError, 'EOL while scanning string literal',
-                            ["f'{\n}'",
-                             ])
+    def test_newlines_before_syntax_error(self):
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
+                ["f'{.}'", "\nf'{.}'", "\n\nf'{.}'"])
 
     def test_backslashes_in_string_part(self):
         self.assertEqual(f'\t', '\t')
@@ -371,9 +985,12 @@ f'{a * x()}'"""
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
+        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+            value = eval(r"f'\g'")
+        self.assertEqual(value, '\\g')
         self.assertEqual(f'\\{6*7}', '\\42')
         self.assertEqual(fr'\{6*7}', '\\42')
 
@@ -390,27 +1007,53 @@ f'{a * x()}'"""
         # differently inside f-strings.
         self.assertAllRaise(SyntaxError, r"\(unicode error\) 'unicodeescape' codec can't decode bytes in position .*: malformed \\N character escape",
                             [r"f'\N'",
+                             r"f'\N '",
+                             r"f'\N  '",  # See bpo-46503.
                              r"f'\N{'",
                              r"f'\N{GREEK CAPITAL LETTER DELTA'",
 
                              # Here are the non-f-string versions,
                              #  which should give the same errors.
                              r"'\N'",
+                             r"'\N '",
+                             r"'\N  '",
                              r"'\N{'",
                              r"'\N{GREEK CAPITAL LETTER DELTA'",
                              ])
 
-    def test_no_backslashes_in_expression_part(self):
-        self.assertAllRaise(SyntaxError, 'f-string expression part cannot include a backslash',
-                            [r"f'{\'a\'}'",
-                             r"f'{\t3}'",
-                             r"f'{\}'",
-                             r"rf'{\'a\'}'",
-                             r"rf'{\t3}'",
-                             r"rf'{\}'",
-                             r"""rf'{"\N{LEFT CURLY BRACKET}"}'""",
-                             r"f'{\n}'",
+    def test_backslashes_in_expression_part(self):
+        self.assertEqual(f"{(
+                        1 +
+                        2
+        )}", "3")
+
+        self.assertEqual("\N{LEFT CURLY BRACKET}", '{')
+        self.assertEqual(f'{"\N{LEFT CURLY BRACKET}"}', '{')
+        self.assertEqual(rf'{"\N{LEFT CURLY BRACKET}"}', '{')
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: valid expression required before '}'",
+                            ["f'{\n}'",
                              ])
+
+    def test_invalid_backslashes_inside_fstring_context(self):
+        # All of these variations are invalid python syntax,
+        # so they are also invalid in f-strings as well.
+        cases = [
+            formatting.format(expr=expr)
+            for formatting in [
+                "{expr}",
+                "f'{{{expr}}}'",
+                "rf'{{{expr}}}'",
+            ]
+            for expr in [
+                r"\'a\'",
+                r"\t3",
+                r"\\"[0],
+            ]
+        ]
+        self.assertAllRaise(SyntaxError, 'unexpected character after line continuation',
+                            cases)
 
     def test_no_escapes_for_braces(self):
         """
@@ -434,19 +1077,94 @@ f'{a * x()}'"""
         self.assertEqual(f'{(lambda y:x*y)("8"):10}', "88888     ")
 
         # lambda doesn't work without parens, because the colon
-        #  makes the parser think it's a format_spec
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
+        # makes the parser think it's a format_spec
+        # emit warning if we can match a format_spec
+        self.assertAllRaise(SyntaxError,
+                            "f-string: lambda expressions are not allowed "
+                            "without parentheses",
                             ["f'{lambda x:x}'",
+                             "f'{lambda :x}'",
+                             "f'{lambda *arg, :x}'",
+                             "f'{1, lambda:x}'",
+                             "f'{lambda x:}'",
+                             "f'{lambda :}'",
                              ])
+        # Ensure the detection of invalid lambdas doesn't trigger detection
+        # for valid lambdas in the second error pass
+        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
+            compile("lambda name_3=f'{name_4}': {name_3}\n1 $ 1", "<string>", "exec")
+
+        # but don't emit the paren warning in general cases
+        with self.assertRaisesRegex(SyntaxError, "f-string: expecting a valid expression after '{'"):
+            eval("f'{+ lambda:None}'")
+
+    def test_valid_prefixes(self):
+        self.assertEqual(F'{1}', "1")
+        self.assertEqual(FR'{2}', "2")
+        self.assertEqual(fR'{3}', "3")
+
+    def test_roundtrip_raw_quotes(self):
+        self.assertEqual(fr"\'", "\\'")
+        self.assertEqual(fr'\"', '\\"')
+        self.assertEqual(fr'\"\'', '\\"\\\'')
+        self.assertEqual(fr'\'\"', '\\\'\\"')
+        self.assertEqual(fr'\"\'\"', '\\"\\\'\\"')
+        self.assertEqual(fr'\'\"\'', '\\\'\\"\\\'')
+        self.assertEqual(fr'\"\'\"\'', '\\"\\\'\\"\\\'')
+
+    def test_fstring_backslash_before_double_bracket(self):
+        deprecated_cases = [
+            (r"f'\{{\}}'",   '\\{\\}'),
+            (r"f'\{{'",      '\\{'),
+            (r"f'\{{{1+1}'", '\\{2'),
+            (r"f'\}}{1+1}'", '\\}2'),
+            (r"f'{1+1}\}}'", '2\\}')
+        ]
+        for case, expected_result in deprecated_cases:
+            with self.subTest(case=case, expected_result=expected_result):
+                with self.assertWarns(SyntaxWarning):
+                    result = eval(case)
+                self.assertEqual(result, expected_result)
+        self.assertEqual(fr'\{{\}}', '\\{\\}')
+        self.assertEqual(fr'\{{', '\\{')
+        self.assertEqual(fr'\{{{1+1}', '\\{2')
+        self.assertEqual(fr'\}}{1+1}', '\\}2')
+        self.assertEqual(fr'{1+1}\}}', '2\\}')
+
+    def test_fstring_backslash_before_double_bracket_warns_once(self):
+        with self.assertWarns(SyntaxWarning) as w:
+            eval(r"f'\{{'")
+        self.assertEqual(len(w.warnings), 1)
+        self.assertEqual(w.warnings[0].category, SyntaxWarning)
+
+    def test_fstring_backslash_prefix_raw(self):
+        self.assertEqual(f'\\', '\\')
+        self.assertEqual(f'\\\\', '\\\\')
+        self.assertEqual(fr'\\', r'\\')
+        self.assertEqual(fr'\\\\', r'\\\\')
+        self.assertEqual(rf'\\', r'\\')
+        self.assertEqual(rf'\\\\', r'\\\\')
+        self.assertEqual(Rf'\\', R'\\')
+        self.assertEqual(Rf'\\\\', R'\\\\')
+        self.assertEqual(fR'\\', R'\\')
+        self.assertEqual(fR'\\\\', R'\\\\')
+        self.assertEqual(FR'\\', R'\\')
+        self.assertEqual(FR'\\\\', R'\\\\')
+
+    def test_fstring_format_spec_greedy_matching(self):
+        self.assertEqual(f"{1:}}}", "1}")
+        self.assertEqual(f"{1:>3{5}}}}", "                                  1}")
 
     def test_yield(self):
         # Not terribly useful, but make sure the yield turns
         #  a function into a generator
         def fn(y):
             f'y:{yield y*2}'
+            f'{yield}'
 
         g = fn(4)
         self.assertEqual(next(g), 8)
+        self.assertEqual(next(g), None)
 
     def test_yield_send(self):
         def fn(x):
@@ -563,8 +1281,7 @@ f'{a * x()}'"""
         self.assertEqual(f'{f"{y}"*3}', '555')
 
     def test_invalid_string_prefixes(self):
-        self.assertAllRaise(SyntaxError, 'unexpected EOF while parsing',
-                            ["fu''",
+        single_quote_cases = ["fu''",
                              "uf''",
                              "Fu''",
                              "fU''",
@@ -585,8 +1302,10 @@ f'{a * x()}'"""
                              "bf''",
                              "bF''",
                              "Bf''",
-                             "BF''",
-                             ])
+                             "BF''",]
+        double_quote_cases = [case.replace("'", '"') for case in single_quote_cases]
+        self.assertAllRaise(SyntaxError, 'prefixes are incompatible',
+                            single_quote_cases + double_quote_cases)
 
     def test_leading_trailing_spaces(self):
         self.assertEqual(f'{ 3}', '3')
@@ -609,15 +1328,26 @@ f'{a * x()}'"""
         self.assertEqual(f'{3!=4!s}', 'True')
         self.assertEqual(f'{3!=4!s:.3}', 'Tru')
 
+    def test_equal_equal(self):
+        # Because an expression ending in = has special meaning,
+        # there's a special test for ==. Make sure it works.
+
+        self.assertEqual(f'{0==1}', 'False')
+
     def test_conversions(self):
         self.assertEqual(f'{3.14:10.10}', '      3.14')
-        self.assertEqual(f'{3.14!s:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!r:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!a:10.10}', '3.14      ')
+        self.assertEqual(f'{1.25!s:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!r:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!a:10.10}', '1.25      ')
 
         self.assertEqual(f'{"a"}', 'a')
         self.assertEqual(f'{"a"!r}', "'a'")
         self.assertEqual(f'{"a"!a}', "'a'")
+
+        # Conversions can have trailing whitespace after them since it
+        # does not provide any significance
+        self.assertEqual(f"{3!s  }", "3")
+        self.assertEqual(f'{1.25!s  :10.10}', '1.25      ')
 
         # Not a conversion.
         self.assertEqual(f'{"a!r"}', "a!r")
@@ -625,25 +1355,44 @@ f'{a * x()}'"""
         # Not a conversion, but show that ! is allowed in a format spec.
         self.assertEqual(f'{3.14:!<10.10}', '3.14!!!!!!')
 
-        self.assertAllRaise(SyntaxError, 'f-string: invalid conversion character',
-                            ["f'{3!g}'",
-                             "f'{3!A}'",
-                             "f'{3!3}'",
-                             "f'{3!G}'",
-                             "f'{3!!}'",
-                             "f'{3!:}'",
-                             "f'{3! s}'",  # no space before conversion char
+        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
+                            ["f'{3!'",
+                             "f'{3!s'",
                              ])
 
-        self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{x!s{y}}'",
-                             "f'{3!ss}'",
+        self.assertAllRaise(SyntaxError, 'f-string: missing conversion character',
+                            ["f'{3!}'",
+                             "f'{3!:'",
+                             "f'{3!:}'",
+                             ])
+
+        for conv_identifier in 'g', 'A', 'G', 'ä', 'ɐ':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character %r: "
+                                "expected 's', 'r', or 'a'" % conv_identifier,
+                                ["f'{3!" + conv_identifier + "}'"])
+
+        for conv_non_identifier in '3', '!':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: invalid conversion character",
+                                ["f'{3!" + conv_non_identifier + "}'"])
+
+        for conv in ' s', ' s ':
+            self.assertAllRaise(SyntaxError,
+                                "f-string: conversion type must come right after the"
+                                " exclamation mark",
+                                ["f'{3!" + conv + "}'"])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: invalid conversion character 'ss': "
+                            "expected 's', 'r', or 'a'",
+                            ["f'{3!ss}'",
                              "f'{3!ss:}'",
                              "f'{3!ss:s}'",
                              ])
 
     def test_assignment(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
+        self.assertAllRaise(SyntaxError, r'invalid syntax',
                             ["f'' = 3",
                              "f'{0}' = x",
                              "f'{x}' = x",
@@ -670,8 +1419,7 @@ f'{a * x()}'"""
                              ])
 
         self.assertAllRaise(SyntaxError, "f-string: expecting '}'",
-                            ["f'{3:{{>10}'",
-                             "f'{3'",
+                            ["f'{3'",
                              "f'{3!'",
                              "f'{3:'",
                              "f'{3!s'",
@@ -684,6 +1432,12 @@ f'{a * x()}'"""
                              "f'{{{'",
                              "f'{{}}{'",
                              "f'{'",
+                             "f'{i='",  # See gh-93418.
+                             ])
+
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expecting a valid expression after '{'",
+                            ["f'{3:{{>10}'",
                              ])
 
         # But these are just normal strings.
@@ -748,12 +1502,6 @@ f'{a * x()}'"""
         self.assertEqual('{d[a]}'.format(d=d), 'string')
         self.assertEqual('{d[0]}'.format(d=d), 'integer')
 
-    def test_invalid_expressions(self):
-        self.assertAllRaise(SyntaxError, 'invalid syntax',
-                            [r"f'{a[4)}'",
-                             r"f'{a(4]}'",
-                            ])
-
     def test_errors(self):
         # see issue 26287
         self.assertAllRaise(TypeError, 'unsupported',
@@ -764,6 +1512,16 @@ f'{a * x()}'"""
                             [r"f'{1000:j}'",
                              r"f'{1000:j}'",
                             ])
+
+    def test_filename_in_syntaxerror(self):
+        # see issue 38964
+        with temp_cwd() as cwd:
+            file_path = os.path.join(cwd, 't.py')
+            with open(file_path, 'w', encoding="utf-8") as f:
+                f.write('f"{a b}"') # This generates a SyntaxError
+            _, _, stderr = assert_python_failure(file_path,
+                                                 PYTHONIOENCODING='ascii')
+        self.assertIn(file_path.encode('ascii', 'backslashreplace'), stderr)
 
     def test_loop(self):
         for i in range(1000):
@@ -785,6 +1543,329 @@ f'{a * x()}'"""
         # See bpo-30682: this used to raise an assert in pydebug mode.
         self.assertEqual(eval('f"\\\n"'), '')
         self.assertEqual(eval('f"\\\r"'), '')
+
+    def test_debug_conversion(self):
+        x = 'A string'
+        self.assertEqual(f'{x=}', 'x=' + repr(x))
+        self.assertEqual(f'{x =}', 'x =' + repr(x))
+        self.assertEqual(f'{x=!s}', 'x=' + str(x))
+        self.assertEqual(f'{x=!r}', 'x=' + repr(x))
+        self.assertEqual(f'{x=!a}', 'x=' + ascii(x))
+
+        x = 2.71828
+        self.assertEqual(f'{x=:.2f}', 'x=' + format(x, '.2f'))
+        self.assertEqual(f'{x=:}', 'x=' + format(x, ''))
+        self.assertEqual(f'{x=!r:^20}', 'x=' + format(repr(x), '^20'))
+        self.assertEqual(f'{x=!s:^20}', 'x=' + format(str(x), '^20'))
+        self.assertEqual(f'{x=!a:^20}', 'x=' + format(ascii(x), '^20'))
+
+        x = 9
+        self.assertEqual(f'{3*x+15=}', '3*x+15=42')
+
+        # There is code in ast.c that deals with non-ascii expression values.  So,
+        # use a unicode identifier to trigger that.
+        tenπ = 31.4
+        self.assertEqual(f'{tenπ=:.2f}', 'tenπ=31.40')
+
+        # Also test with Unicode in non-identifiers.
+        self.assertEqual(f'{"Σ"=}', '"Σ"=\'Σ\'')
+
+        # Make sure nested fstrings still work.
+        self.assertEqual(f'{f"{3.1415=:.1f}":*^20}', '*****3.1415=3.1*****')
+
+        # Make sure text before and after an expression with = works
+        # correctly.
+        pi = 'π'
+        self.assertEqual(f'alpha α {pi=} ω omega', "alpha α pi='π' ω omega")
+
+        # Check multi-line expressions.
+        self.assertEqual(f'''{
+3
+=}''', '\n3\n=3')
+
+        # Since = is handled specially, make sure all existing uses of
+        # it still work.
+
+        self.assertEqual(f'{0==1}', 'False')
+        self.assertEqual(f'{0!=1}', 'True')
+        self.assertEqual(f'{0<=1}', 'True')
+        self.assertEqual(f'{0>=1}', 'False')
+        self.assertEqual(f'{(x:="5")}', '5')
+        self.assertEqual(x, '5')
+        self.assertEqual(f'{(x:=5)}', '5')
+        self.assertEqual(x, 5)
+        self.assertEqual(f'{"="}', '=')
+
+        x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.  See test_walrus: you need to use parens.
+        self.assertEqual(f'{x:=10}', '        20')
+
+        # Test named function parameters, to make sure '=' parsing works
+        # there.
+        def f(a):
+            nonlocal x
+            oldx = x
+            x = a
+            return oldx
+        x = 0
+        self.assertEqual(f'{f(a="3=")}', '0')
+        self.assertEqual(x, '3=')
+        self.assertEqual(f'{f(a=4)}', '3=')
+        self.assertEqual(x, 4)
+
+        # Check debug expressions in format spec
+        y = 20
+        self.assertEqual(f"{2:{y=}}", "yyyyyyyyyyyyyyyyyyy2")
+        self.assertEqual(f"{datetime.datetime.now():h1{y=}h2{y=}h3{y=}}",
+                         'h1y=20h2y=20h3y=20')
+
+        # Make sure __format__ is being called.
+        class C:
+            def __format__(self, s):
+                return f'FORMAT-{s}'
+            def __repr__(self):
+                return 'REPR'
+
+        self.assertEqual(f'{C()=}', 'C()=REPR')
+        self.assertEqual(f'{C()=!r}', 'C()=REPR')
+        self.assertEqual(f'{C()=:}', 'C()=FORMAT-')
+        self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
+        self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
+        self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
+        self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
+
+        self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
+
+        # Make sure leading and following text works.
+        x = 'foo'
+        self.assertEqual(f'X{x=}Y', 'Xx='+repr(x)+'Y')
+
+        # Make sure whitespace around the = works.
+        self.assertEqual(f'X{x  =}Y', 'Xx  ='+repr(x)+'Y')
+        self.assertEqual(f'X{x=  }Y', 'Xx=  '+repr(x)+'Y')
+        self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
+        self.assertEqual(f"sadsd {1 + 1 =  :{1 + 1:1d}f}", "sadsd 1 + 1 =  2.000000")
+
+        self.assertEqual(f"{1+2 = # my comment
+  }", '1+2 = \n  3')
+
+        self.assertEqual(f'{""" # booo
+  """=}', '""" # booo\n  """=\' # booo\\n  \'')
+
+        self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
+        self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+
+        self.assertEqual(f'{ # some comment goes here
+  """hello"""=}',  ' \n  """hello"""=\'hello\'')
+        self.assertEqual(f'{"""# this is not a comment
+        a""" # this is a comment
+        }', '# this is not a comment\n        a')
+
+        # These next lines contains tabs.  Backslash escapes don't
+        # work in f-strings.
+        # patchcheck doesn't like these tabs.  So the only way to test
+        # this will be to dynamically created and exec the f-strings.  But
+        # that's such a hassle I'll save it for another day.  For now, convert
+        # the tabs to spaces just to shut up patchcheck.
+        #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
+        #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
+
+    def test_debug_expressions_are_raw_strings(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("""f'{b"\\N{OX}"=}'"""), 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
+        self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
+        self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
+        self.assertEqual(f'{'\xc5'=}', r"'\xc5'='Å'")
+
+    def test_walrus(self):
+        x = 20
+        # This isn't an assignment expression, it's 'x', with a format
+        # spec of '=10'.
+        self.assertEqual(f'{x:=10}', '        20')
+
+        # This is an assignment expression, which requires parens.
+        self.assertEqual(f'{(x:=10)}', '10')
+        self.assertEqual(x, 10)
+
+    def test_invalid_syntax_error_message(self):
+        with self.assertRaisesRegex(SyntaxError,
+                                    "f-string: expecting '=', or '!', or ':', or '}'"):
+            compile("f'{a $ b}'", "?", "exec")
+
+    def test_with_two_commas_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify ',' with ','.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,,}'
+
+    def test_with_two_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify '_' with '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:__}'
+
+    def test_with_a_commas_and_an_underscore_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:,_}'
+
+    def test_with_an_underscore_and_a_comma_in_format_specifier(self):
+        error_msg = re.escape("Cannot specify both ',' and '_'.")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            f'{1:_,}'
+
+    def test_syntax_error_for_starred_expressions(self):
+        with self.assertRaisesRegex(SyntaxError, "can't use starred expression here"):
+            compile("f'{*a}'", "?", "exec")
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    "f-string: expecting a valid expression after '{'"):
+            compile("f'{**a}'", "?", "exec")
+
+    def test_not_closing_quotes(self):
+        self.assertAllRaise(SyntaxError, "unterminated f-string literal", ['f"', "f'"])
+        self.assertAllRaise(SyntaxError, "unterminated triple-quoted f-string literal",
+                            ['f"""', "f'''"])
+        # Ensure that the errors are reported at the correct line number.
+        data = '''\
+x = 1 + 1
+y = 2 + 2
+z = f"""
+sdfjnsdfjsdf
+sdfsdfs{1+
+2} dfigdf {3+
+4}sdufsd""
+'''
+        try:
+            compile(data, "?", "exec")
+        except SyntaxError as e:
+            self.assertEqual(e.text, 'z = f"""')
+            self.assertEqual(e.lineno, 3)
+    def test_syntax_error_after_debug(self):
+        self.assertAllRaise(SyntaxError, "f-string: expecting a valid expression after '{'",
+                            [
+                                "f'{1=}{;'",
+                                "f'{1=}{+;'",
+                                "f'{1=}{2}{;'",
+                                "f'{1=}{3}{;'",
+                            ])
+        self.assertAllRaise(SyntaxError, "f-string: expecting '=', or '!', or ':', or '}'",
+                            [
+                                "f'{1=}{1;'",
+                                "f'{1=}{1;}'",
+                            ])
+
+    def test_debug_in_file(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open('script.py', 'w') as f:
+                f.write(f"""\
+print(f'''{{
+3
+=}}''')""")
+
+            _, stdout, _ = assert_python_ok(script)
+        self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
+                         "3\n=3")
+
+    def test_syntax_warning_infinite_recursion_in_file(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open(script, 'w') as f:
+                f.write(r"print(f'\{1}')")
+
+            _, stdout, stderr = assert_python_ok(script)
+            self.assertIn(rb'\1', stdout)
+            self.assertEqual(len(stderr.strip().splitlines()), 2)
+
+    def test_fstring_without_formatting_bytecode(self):
+        # f-string without any formatting should emit the same bytecode
+        # as a normal string. See gh-99606.
+        def get_code(s):
+            return [(i.opname, i.oparg) for i in dis.get_instructions(s)]
+
+        for s in ["", "some string"]:
+            self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
+
+    def test_gh129093(self):
+        self.assertEqual(f'{1==2=}', '1==2=False')
+        self.assertEqual(f'{1 == 2=}', '1 == 2=False')
+        self.assertEqual(f'{1!=2=}', '1!=2=True')
+        self.assertEqual(f'{1 != 2=}', '1 != 2=True')
+
+        self.assertEqual(f'{(1) != 2=}', '(1) != 2=True')
+        self.assertEqual(f'{(1*2) != (3)=}', '(1*2) != (3)=True')
+
+        self.assertEqual(f'{1 != 2 == 3 != 4=}', '1 != 2 == 3 != 4=False')
+        self.assertEqual(f'{1 == 2 != 3 == 4=}', '1 == 2 != 3 == 4=False')
+
+        self.assertEqual(f'{f'{1==2=}'=}', "f'{1==2=}'='1==2=False'")
+        self.assertEqual(f'{f'{1 == 2=}'=}', "f'{1 == 2=}'='1 == 2=False'")
+        self.assertEqual(f'{f'{1!=2=}'=}', "f'{1!=2=}'='1!=2=True'")
+        self.assertEqual(f'{f'{1 != 2=}'=}', "f'{1 != 2=}'='1 != 2=True'")
+
+    def test_newlines_in_format_specifiers(self):
+        cases = [
+            """f'{1:d\n}'""",
+            """f'__{
+                1:d
+            }__'""",
+            '''f"{value:.
+               {'2f'}}"''',
+            '''f"{value:
+               {'.2f'}f}"''',
+            '''f"{value:
+                #{'x'}}"''',
+        ]
+        self.assertAllRaise(SyntaxError, "f-string: newlines are not allowed in format specifiers", cases)
+
+        valid_cases = [
+            """f'''__{
+                1:d
+            }__'''""",
+            """f'''{1:d\n}'''""",
+        ]
+
+        for case in valid_cases:
+            compile(case, "<string>", "exec")
+
+    def test_raw_fstring_format_spec(self):
+        # Test raw f-string format spec behavior (Issue #137314).
+        #
+        # Raw f-strings should preserve literal backslashes in format specifications,
+        # not interpret them as escape sequences.
+        class UnchangedFormat:
+            """Test helper that returns the format spec unchanged."""
+            def __format__(self, format):
+                return format
+
+        # Test basic escape sequences
+        self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
+        self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
+
+        # Test nested expressions with raw/non-raw combinations
+        self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
+        self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+
+        # Test continuation character in format specs
+        self.assertEqual(f"""{UnchangedFormat():{'a'\
+                        'b'}}""", 'ab')
+        self.assertEqual(rf"""{UnchangedFormat():{'a'\
+                         'b'}}""", 'ab')
+
+        # Test multiple format specs in same raw f-string
+        self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
+
+    def test_gh139516(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open(script, 'wb') as f:
+                f.write('''def f(a): pass\nf"{f(a=lambda: 'à'\n)}"'''.encode())
+            assert_python_ok(script)
+
 
 if __name__ == '__main__':
     unittest.main()

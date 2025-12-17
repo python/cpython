@@ -1,7 +1,10 @@
 /* -*- Mode: C; c-file-style: "python" -*- */
 
 #include <Python.h>
-#include <locale.h>
+#include "pycore_dtoa.h"          // _Py_dg_strtod()
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+
+#include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
    lower-case.  Returns 1 for a successful match, 0 otherwise. */
@@ -21,9 +24,6 @@ case_insensitive_match(const char *s, const char *t)
    return the NaN or Infinity as a double and set *endptr to point just beyond
    the successfully parsed portion of the string.  On failure, return -1.0 and
    set *endptr to point to the start of the string. */
-
-#ifndef PY_NO_SHORT_FLOAT_REPR
-
 double
 _Py_parse_inf_or_nan(const char *p, char **endptr)
 {
@@ -43,11 +43,11 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
         s += 3;
         if (case_insensitive_match(s, "inity"))
             s += 5;
-        retval = _Py_dg_infinity(negate);
+        retval = negate ? -INFINITY : INFINITY;
     }
     else if (case_insensitive_match(s, "nan")) {
         s += 3;
-        retval = _Py_dg_stdnan(negate);
+        retval = negate ? -fabs(Py_NAN) : fabs(Py_NAN);
     }
     else {
         s = p;
@@ -57,44 +57,6 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
     return retval;
 }
 
-#else
-
-double
-_Py_parse_inf_or_nan(const char *p, char **endptr)
-{
-    double retval;
-    const char *s;
-    int negate = 0;
-
-    s = p;
-    if (*s == '-') {
-        negate = 1;
-        s++;
-    }
-    else if (*s == '+') {
-        s++;
-    }
-    if (case_insensitive_match(s, "inf")) {
-        s += 3;
-        if (case_insensitive_match(s, "inity"))
-            s += 5;
-        retval = negate ? -Py_HUGE_VAL : Py_HUGE_VAL;
-    }
-#ifdef Py_NAN
-    else if (case_insensitive_match(s, "nan")) {
-        s += 3;
-        retval = negate ? -Py_NAN : Py_NAN;
-    }
-#endif
-    else {
-        s = p;
-        retval = -1.0;
-    }
-    *endptr = (char *)s;
-    return retval;
-}
-
-#endif
 
 /**
  * _PyOS_ascii_strtod:
@@ -125,7 +87,7 @@ _Py_parse_inf_or_nan(const char *p, char **endptr)
  * Return value: the #gdouble value.
  **/
 
-#ifndef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 1
 
 static double
 _PyOS_ascii_strtod(const char *nptr, char **endptr)
@@ -254,7 +216,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
         char *copy, *c;
         /* Create a copy of the input, with the '.' converted to the
            locale-specific decimal point */
-        copy = (char *)PyMem_MALLOC(end - digits_pos +
+        copy = (char *)PyMem_Malloc(end - digits_pos +
                                     1 + decimal_point_len);
         if (copy == NULL) {
             *endptr = (char *)nptr;
@@ -285,7 +247,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
                     (fail_pos - copy);
         }
 
-        PyMem_FREE(copy);
+        PyMem_Free(copy);
 
     }
     else {
@@ -324,7 +286,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
    string, -1.0 is returned and again ValueError is raised.
 
    On overflow (e.g., when trying to convert '1e500' on an IEEE 754 machine),
-   if overflow_exception is NULL then +-Py_HUGE_VAL is returned, and no Python
+   if overflow_exception is NULL then +-INFINITY is returned, and no Python
    exception is raised.  Otherwise, overflow_exception should point to
    a Python exception, this exception will be raised, -1.0 will be returned,
    and *endptr will point just past the end of the converted value.
@@ -342,9 +304,7 @@ PyOS_string_to_double(const char *s,
     char *fail_pos;
 
     errno = 0;
-    PyFPE_START_PROTECT("PyOS_string_to_double", return -1.0)
     x = _PyOS_ascii_strtod(s, &fail_pos);
-    PyFPE_END_PROTECT(x)
 
     if (errno == ENOMEM) {
         PyErr_NoMemory();
@@ -353,15 +313,15 @@ PyOS_string_to_double(const char *s,
     else if (!endptr && (fail_pos == s || *fail_pos != '\0'))
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (fail_pos == s)
         PyErr_Format(PyExc_ValueError,
                       "could not convert string to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else if (errno == ERANGE && fabs(x) >= 1.0 && overflow_exception)
         PyErr_Format(overflow_exception,
                       "value too large to convert to float: "
-                      "%.200s", s);
+                      "'%.200s'", s);
     else
         result = x;
 
@@ -391,11 +351,16 @@ _Py_string_to_number_with_underscores(
     char *dup, *end;
     PyObject *result;
 
+    assert(s[orig_len] == '\0');
+
     if (strchr(s, '_') == NULL) {
         return innerfunc(s, orig_len, arg);
     }
 
     dup = PyMem_Malloc(orig_len + 1);
+    if (dup == NULL) {
+        return PyErr_NoMemory();
+    }
     end = dup;
     prev = '\0';
     last = s + orig_len;
@@ -431,12 +396,12 @@ _Py_string_to_number_with_underscores(
   error:
     PyMem_Free(dup);
     PyErr_Format(PyExc_ValueError,
-		 "could not convert string to %s: "
-		 "%R", what, obj);
+                 "could not convert string to %s: "
+                 "%R", what, obj);
     return NULL;
 }
 
-#ifdef PY_NO_SHORT_FLOAT_REPR
+#if _PY_SHORT_FLOAT_REPR == 0
 
 /* Given a string that may have a decimal point in the current
    locale, change it back to a dot.  Since the string cannot get
@@ -597,7 +562,8 @@ Py_LOCAL_INLINE(char *)
 ensure_decimal_point(char* buffer, size_t buf_size, int precision)
 {
     int digit_count, insert_count = 0, convert_to_exp = 0;
-    char *chars_to_insert, *digits_start;
+    const char *chars_to_insert;
+    char *digits_start;
 
     /* search for the first non-digit character */
     char *p = buffer;
@@ -788,7 +754,7 @@ _PyOS_ascii_formatd(char       *buffer,
 
 /* The fallback code to use if _Py_dg_dtoa is not available. */
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,
@@ -876,7 +842,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
 
     */
 
-    if (Py_IS_NAN(val) || Py_IS_INFINITY(val))
+    if (isnan(val) || isinf(val))
         /* 3 for 'inf'/'nan', 1 for sign, 1 for '\0' */
         bufsize = 5;
     else {
@@ -894,10 +860,10 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
     }
 
     /* Handle nan and inf. */
-    if (Py_IS_NAN(val)) {
+    if (isnan(val)) {
         strcpy(buf, "nan");
         t = Py_DTST_NAN;
-    } else if (Py_IS_INFINITY(val)) {
+    } else if (isinf(val)) {
         if (copysign(1., val) == 1.)
             strcpy(buf, "inf");
         else
@@ -912,6 +878,18 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                       (flags & Py_DTSF_ALT ? "#" : ""), precision,
                       format_code);
         _PyOS_ascii_formatd(buf, bufsize, format, val, precision);
+
+        if (flags & Py_DTSF_NO_NEG_0 && buf[0] == '-') {
+            char *buf2 = buf + 1;
+            while (*buf2 == '0' || *buf2 == '.') {
+                ++buf2;
+            }
+            if (*buf2 == 0 || *buf2 == 'e') {
+                size_t len = buf2 - buf + strlen(buf2);
+                assert(buf[len] == 0);
+                memmove(buf, buf+1, len);
+            }
+        }
     }
 
     /* Add sign when requested.  It's convenient (esp. when formatting
@@ -936,7 +914,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
     return buf;
 }
 
-#else
+#else  // _PY_SHORT_FLOAT_REPR == 1
 
 /* _Py_dg_dtoa is available. */
 
@@ -991,8 +969,8 @@ static char *
 format_float_short(double d, char format_code,
                    int mode, int precision,
                    int always_add_sign, int add_dot_0_if_integer,
-                   int use_alt_formatting, const char * const *float_strings,
-                   int *type)
+                   int use_alt_formatting, int no_negative_zero,
+                   const char * const *float_strings, int *type)
 {
     char *buf = NULL;
     char *p = NULL;
@@ -1017,6 +995,11 @@ format_float_short(double d, char format_code,
     }
     assert(digits_end != NULL && digits_end >= digits);
     digits_len = digits_end - digits;
+
+    if (no_negative_zero && sign == 1 &&
+            (digits_len == 0 || (digits_len == 1 && digits[0] == '0'))) {
+        sign = 0;
+    }
 
     if (digits_len && !Py_ISDIGIT(digits[0])) {
         /* Infinities and nans here; adapt Gay's output,
@@ -1059,9 +1042,7 @@ format_float_short(double d, char format_code,
         else {
             /* shouldn't get here: Gay's code should always return
                something starting with a digit, an 'I',  or 'N' */
-            strncpy(p, "ERR", 3);
-            /* p += 3; */
-            assert(0);
+            Py_UNREACHABLE();
         }
         goto exit;
     }
@@ -1237,7 +1218,7 @@ format_float_short(double d, char format_code,
 }
 
 
-PyAPI_FUNC(char *) PyOS_double_to_string(double val,
+char * PyOS_double_to_string(double val,
                                          char format_code,
                                          int precision,
                                          int flags,
@@ -1253,7 +1234,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
     case 'E':
         float_strings = uc_float_strings;
         format_code = 'e';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'e':
         mode = 2;
         precision++;
@@ -1263,7 +1244,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
     case 'F':
         float_strings = uc_float_strings;
         format_code = 'f';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'f':
         mode = 3;
         break;
@@ -1272,7 +1253,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
     case 'G':
         float_strings = uc_float_strings;
         format_code = 'g';
-        /* Fall through. */
+        _Py_FALLTHROUGH;
     case 'g':
         mode = 2;
         /* precision 0 makes no sense for 'g' format; interpret as 1 */
@@ -1299,6 +1280,7 @@ PyAPI_FUNC(char *) PyOS_double_to_string(double val,
                               flags & Py_DTSF_SIGN,
                               flags & Py_DTSF_ADD_DOT_0,
                               flags & Py_DTSF_ALT,
+                              flags & Py_DTSF_NO_NEG_0,
                               float_strings, type);
 }
-#endif /* ifdef PY_NO_SHORT_FLOAT_REPR */
+#endif  // _PY_SHORT_FLOAT_REPR == 1

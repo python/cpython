@@ -1,5 +1,5 @@
-:mod:`winreg` --- Windows registry access
-=========================================
+:mod:`!winreg` --- Windows registry access
+==========================================
 
 .. module:: winreg
    :platform: Windows
@@ -13,6 +13,8 @@ These functions expose the Windows registry API to Python.  Instead of using an
 integer as the registry handle, a :ref:`handle object <handle-object>` is used
 to ensure that the handles are closed correctly, even if the programmer neglects
 to explicitly close them.
+
+.. availability:: Windows.
 
 .. _exception-changed:
 
@@ -53,6 +55,8 @@ This module offers the following functions:
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
 
+   .. audit-event:: winreg.ConnectRegistry computer_name,key winreg.ConnectRegistry
+
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
@@ -74,6 +78,10 @@ This module offers the following functions:
 
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
+
+   .. audit-event:: winreg.CreateKey key,sub_key,access winreg.CreateKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.CreateKey
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
@@ -103,6 +111,10 @@ This module offers the following functions:
    The return value is the handle of the opened key. If the function fails, an
    :exc:`OSError` exception is raised.
 
+   .. audit-event:: winreg.CreateKey key,sub_key,access winreg.CreateKeyEx
+
+   .. audit-event:: winreg.OpenKey/result key winreg.CreateKeyEx
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
@@ -124,6 +136,8 @@ This module offers the following functions:
    If the method succeeds, the entire key, including all of its values, is removed.
    If the method fails, an :exc:`OSError` exception is raised.
 
+   .. audit-event:: winreg.DeleteKey key,sub_key,access winreg.DeleteKey
+
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
@@ -131,12 +145,6 @@ This module offers the following functions:
 .. function:: DeleteKeyEx(key, sub_key, access=KEY_WOW64_64KEY, reserved=0)
 
    Deletes the specified key.
-
-   .. note::
-      The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
-      Windows API function, which is specific to 64-bit versions of Windows.
-      See the `RegDeleteKeyEx documentation
-      <https://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
 
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
@@ -147,9 +155,10 @@ This module offers the following functions:
 
    *reserved* is a reserved integer, and must be zero. The default is zero.
 
-   *access* is an integer that specifies an access mask that describes the desired
-   security access for the key.  Default is :const:`KEY_WOW64_64KEY`.  See
-   :ref:`Access Rights <access-rights>` for other allowed values.
+   *access* is an integer that specifies an access mask that describes the
+   desired security access for the key.  Default is :const:`KEY_WOW64_64KEY`.
+   On 32-bit Windows, the WOW64 constants are ignored.
+   See :ref:`Access Rights <access-rights>` for other allowed values.
 
    *This method can not delete keys with subkeys.*
 
@@ -158,10 +167,30 @@ This module offers the following functions:
 
    On unsupported Windows versions, :exc:`NotImplementedError` is raised.
 
+   .. audit-event:: winreg.DeleteKey key,sub_key,access winreg.DeleteKeyEx
+
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+
+.. function:: DeleteTree(key, sub_key=None)
+
+   Deletes the specified key and all its subkeys and values recursively.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that names the subkey to delete. If ``None``,
+   deletes all subkeys and values of the specified key.
+
+   This function deletes a key and all its descendants. If *sub_key* is
+   ``None``, all subkeys and values of the specified key are deleted.
+
+   .. audit-event:: winreg.DeleteTree key,sub_key winreg.DeleteTree
+
+   .. versionadded:: 3.15
 
 
 .. function:: DeleteValue(key, value)
@@ -172,6 +201,8 @@ This module offers the following functions:
    :ref:`HKEY_* constants <hkey-constants>`.
 
    *value* is a string that identifies the value to remove.
+
+   .. audit-event:: winreg.DeleteValue key,value winreg.DeleteValue
 
 
 .. function:: EnumKey(key, index)
@@ -186,6 +217,8 @@ This module offers the following functions:
    The function retrieves the name of one subkey each time it is called.  It is
    typically called repeatedly until an :exc:`OSError` exception is
    raised, indicating, no more values are available.
+
+   .. audit-event:: winreg.EnumKey key,index winreg.EnumKey
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
@@ -220,9 +253,14 @@ This module offers the following functions:
    |       | :meth:`SetValueEx`)                        |
    +-------+--------------------------------------------+
 
+   .. audit-event:: winreg.EnumValue key,index winreg.EnumValue
+
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
 
+
+.. index::
+   single: % (percent); environment variables expansion (Windows)
 
 .. function:: ExpandEnvironmentStrings(str)
 
@@ -231,6 +269,8 @@ This module offers the following functions:
 
       >>> ExpandEnvironmentStrings('%windir%')
       'C:\\Windows'
+
+   .. audit-event:: winreg.ExpandEnvironmentStrings str winreg.ExpandEnvironmentStrings
 
 
 .. function:: FlushKey(key)
@@ -268,13 +308,15 @@ This module offers the following functions:
    table (FAT) file system, the filename may not have an extension.
 
    A call to :func:`LoadKey` fails if the calling process does not have the
-   :const:`SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
+   :c:data:`!SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
    from permissions -- see the `RegLoadKey documentation
    <https://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
    more details.
 
    If *key* is a handle returned by :func:`ConnectRegistry`, then the path
    specified in *file_name* is relative to the remote computer.
+
+   .. audit-event:: winreg.LoadKey key,sub_key,file_name winreg.LoadKey
 
 
 .. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
@@ -296,6 +338,10 @@ This module offers the following functions:
    The result is a new handle to the specified key.
 
    If the function fails, :exc:`OSError` is raised.
+
+   .. audit-event:: winreg.OpenKey key,sub_key,access winreg.OpenKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.OpenKey
 
    .. versionchanged:: 3.2
       Allow the use of named arguments.
@@ -327,6 +373,8 @@ This module offers the following functions:
    |       | nanoseconds since Jan 1, 1601.              |
    +-------+---------------------------------------------+
 
+   .. audit-event:: winreg.QueryInfoKey key winreg.QueryInfoKey
+
 
 .. function:: QueryValue(key, sub_key)
 
@@ -340,9 +388,11 @@ This module offers the following functions:
    value set by the :func:`SetValue` method for the key identified by *key*.
 
    Values in the registry have name, type, and data components. This method
-   retrieves the data for a key's first value that has a NULL name. But the
+   retrieves the data for a key's first value that has a ``NULL`` name. But the
    underlying API call doesn't return the type, so always use
    :func:`QueryValueEx` if possible.
+
+   .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValue
 
 
 .. function:: QueryValueEx(key, value_name)
@@ -367,6 +417,8 @@ This module offers the following functions:
    |       | :meth:`SetValueEx`)                     |
    +-------+-----------------------------------------+
 
+   .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValueEx
+
 
 .. function:: SaveKey(key, file_name)
 
@@ -382,13 +434,15 @@ This module offers the following functions:
 
    If *key* represents a key on a remote computer, the path described by
    *file_name* is relative to the remote computer. The caller of this method must
-   possess the :const:`SeBackupPrivilege` security privilege.  Note that
+   possess the **SeBackupPrivilege** security privilege.  Note that
    privileges are different than permissions -- see the
    `Conflicts Between User Rights and Permissions documentation
    <https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
    for more details.
 
-   This function passes NULL for *security_attributes* to the API.
+   This function passes ``NULL`` for *security_attributes* to the API.
+
+   .. audit-event:: winreg.SaveKey key,file_name winreg.SaveKey
 
 
 .. function:: SetValue(key, sub_key, type, value)
@@ -415,6 +469,8 @@ This module offers the following functions:
 
    The key identified by the *key* parameter must have been opened with
    :const:`KEY_SET_VALUE` access.
+
+   .. audit-event:: winreg.SetValue key,sub_key,type,value winreg.SetValue
 
 
 .. function:: SetValueEx(key, value_name, reserved, type, value)
@@ -444,6 +500,8 @@ This module offers the following functions:
    bytes) should be stored as files with the filenames stored in the configuration
    registry.  This helps the registry perform efficiently.
 
+   .. audit-event:: winreg.SetValue key,sub_key,type,value winreg.SetValueEx
+
 
 .. function:: DisableReflectionKey(key)
 
@@ -453,12 +511,14 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
    <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit operating
    system.
 
    If the key is not on the reflection list, the function succeeds but has no
    effect.  Disabling reflection for a key does not affect reflection of any
    subkeys.
+
+   .. audit-event:: winreg.DisableReflectionKey key winreg.DisableReflectionKey
 
 
 .. function:: EnableReflectionKey(key)
@@ -468,10 +528,12 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
    <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit operating
    system.
 
    Restoring reflection for a key does not affect reflection of any subkeys.
+
+   .. audit-event:: winreg.EnableReflectionKey key winreg.EnableReflectionKey
 
 
 .. function:: QueryReflectionKey(key)
@@ -483,8 +545,10 @@ This module offers the following functions:
 
    Returns ``True`` if reflection is disabled.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
+
+   .. audit-event:: winreg.QueryReflectionKey key winreg.QueryReflectionKey
 
 
 .. _constants:
@@ -492,7 +556,7 @@ This module offers the following functions:
 Constants
 ------------------
 
-The following constants are defined for use in many :mod:`_winreg` functions.
+The following constants are defined for use in many :mod:`winreg` functions.
 
 .. _hkey-constants:
 
@@ -609,13 +673,12 @@ For more information, see `Accessing an Alternate Registry View
 .. data:: KEY_WOW64_64KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 64-bit registry view.
+   the 64-bit registry view. On 32-bit Windows, this constant is ignored.
 
 .. data:: KEY_WOW64_32KEY
 
    Indicates that an application on 64-bit Windows should operate on
-   the 32-bit registry view.
-
+   the 32-bit registry view. On 32-bit Windows, this constant is ignored.
 
 .. _value-types:
 
@@ -702,7 +765,7 @@ All registry functions in this module return one of these objects.
 All registry functions in this module which accept a handle object also accept
 an integer, however, use of the handle object is encouraged.
 
-Handle objects provide semantics for :meth:`__bool__` -- thus ::
+Handle objects provide semantics for :meth:`~object.__bool__` -- thus ::
 
    if handle:
        print("Yes")
@@ -710,8 +773,9 @@ Handle objects provide semantics for :meth:`__bool__` -- thus ::
 will print ``Yes`` if the handle is currently valid (has not been closed or
 detached).
 
-The object also support comparison semantics, so handle objects will compare
-true if they both reference the same underlying Windows handle value.
+The object also support equality comparison semantics, so handle objects will
+compare equal if they both reference the same underlying Windows handle value.
+Closed handle objects (those with a handle value of zero) always compare equal.
 
 Handle objects can be converted to an integer (e.g., using the built-in
 :func:`int` function), in which case the underlying Windows handle value is
@@ -738,8 +802,11 @@ integer handle, and also disconnect the Windows handle from the handle object.
    handle is not closed.  You would call this function when you need the
    underlying Win32 handle to exist beyond the lifetime of the handle object.
 
+   .. audit-event:: winreg.PyHKEY.Detach key winreg.PyHKEY.Detach
+
+
 .. method:: PyHKEY.__enter__()
-            PyHKEY.__exit__(\*exc_info)
+            PyHKEY.__exit__(*exc_info)
 
    The HKEY object implements :meth:`~object.__enter__` and
    :meth:`~object.__exit__` and thus supports the context protocol for the
@@ -751,3 +818,6 @@ integer handle, and also disconnect the Windows handle from the handle object.
    will automatically close *key* when control leaves the :keyword:`with` block.
 
 
+.. versionchanged:: 3.15
+   Handle objects are now compared by their underlying Windows handle value
+   instead of object identity for equality comparisons.

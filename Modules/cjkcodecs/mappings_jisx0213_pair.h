@@ -1,3 +1,4 @@
+// AUTO-GENERATED FILE FROM genmap_japanese.py: DO NOT EDIT
 #define JISX0213_ENCPAIRS 46
 #ifdef EXTERN_JISX0213_PAIR
 static const struct widedbcs_index *jisx0213_pair_decmap;

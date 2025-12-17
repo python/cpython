@@ -1,5 +1,5 @@
-:mod:`xml.dom.pulldom` --- Support for building partial DOM trees
-=================================================================
+:mod:`!xml.dom.pulldom` --- Support for building partial DOM trees
+==================================================================
 
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.
@@ -19,11 +19,24 @@ responsible for explicitly pulling events from the stream, looping over those
 events until either processing is finished or an error condition occurs.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.dom.pulldom` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
+
+.. versionchanged:: 3.7.1
+
+   The SAX parser no longer processes general external entities by default to
+   increase security by default. To enable processing of external entities,
+   pass a custom parser instance in::
+
+      from xml.dom.pulldom import parse
+      from xml.sax import make_parser
+      from xml.sax.handler import feature_external_ges
+
+      parser = make_parser()
+      parser.setFeature(feature_external_ges, True)
+      parse(filename, parser=parser)
 
 
 Example::
@@ -61,7 +74,7 @@ given point) or to make use of the :func:`DOMEventStream.expandNode` method
 and switch to DOM-related processing.
 
 
-.. class:: PullDom(documentFactory=None)
+.. class:: PullDOM(documentFactory=None)
 
    Subclass of :class:`xml.sax.handler.ContentHandler`.
 
@@ -100,6 +113,8 @@ DOMEventStream Objects
 
 .. class:: DOMEventStream(stream, parser, bufsize)
 
+   .. versionchanged:: 3.11
+      Support for :meth:`~object.__getitem__` method has been removed.
 
    .. method:: getEvent()
 
@@ -128,4 +143,3 @@ DOMEventStream Objects
                   print(node.toxml())
 
    .. method:: DOMEventStream.reset()
-

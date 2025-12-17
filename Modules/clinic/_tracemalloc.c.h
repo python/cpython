@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_tracemalloc_is_tracing__doc__,
 "is_tracing($module, /)\n"
 "--\n"
@@ -84,21 +86,28 @@ PyDoc_STRVAR(_tracemalloc_start__doc__,
 "trace to nframe.");
 
 #define _TRACEMALLOC_START_METHODDEF    \
-    {"start", (PyCFunction)_tracemalloc_start, METH_FASTCALL, _tracemalloc_start__doc__},
+    {"start", _PyCFunction_CAST(_tracemalloc_start), METH_FASTCALL, _tracemalloc_start__doc__},
 
 static PyObject *
-_tracemalloc_start_impl(PyObject *module, Py_ssize_t nframe);
+_tracemalloc_start_impl(PyObject *module, int nframe);
 
 static PyObject *
-_tracemalloc_start(PyObject *module, PyObject **args, Py_ssize_t nargs)
+_tracemalloc_start(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t nframe = 1;
+    int nframe = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "|n:start",
-        &nframe)) {
+    if (!_PyArg_CheckPositional("start", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    nframe = PyLong_AsInt(args[0]);
+    if (nframe == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = _tracemalloc_start_impl(module, nframe);
 
 exit:
@@ -185,4 +194,24 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_get_traced_memory_impl(module);
 }
-/*[clinic end generated code: output=c9a0111391b3ec45 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_tracemalloc_reset_peak__doc__,
+"reset_peak($module, /)\n"
+"--\n"
+"\n"
+"Set the peak size of memory blocks traced by tracemalloc to the current size.\n"
+"\n"
+"Do nothing if the tracemalloc module is not tracing memory allocations.");
+
+#define _TRACEMALLOC_RESET_PEAK_METHODDEF    \
+    {"reset_peak", (PyCFunction)_tracemalloc_reset_peak, METH_NOARGS, _tracemalloc_reset_peak__doc__},
+
+static PyObject *
+_tracemalloc_reset_peak_impl(PyObject *module);
+
+static PyObject *
+_tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tracemalloc_reset_peak_impl(module);
+}
+/*[clinic end generated code: output=9d4d884b156c2ddb input=a9049054013a1b77]*/

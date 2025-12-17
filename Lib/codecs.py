@@ -83,7 +83,7 @@ BOM64_BE = BOM_UTF32_BE
 class CodecInfo(tuple):
     """Codec details when looking up the codec registry"""
 
-    # Private API to allow Python 3.4 to blacklist the known non-Unicode
+    # Private API to allow Python 3.4 to denylist the known non-Unicode
     # codecs in the standard library. A more general mechanism to
     # reliably distinguish test encodings from other codecs will hopefully
     # be defined for Python 3.5
@@ -110,6 +110,9 @@ class CodecInfo(tuple):
         return "<%s.%s object for encoding %s at %#x>" % \
                 (self.__class__.__module__, self.__class__.__qualname__,
                  self.name, id(self))
+
+    def __getnewargs__(self):
+        return tuple(self)
 
 class Codec:
 
@@ -386,7 +389,7 @@ class StreamWriter(Codec):
 
     def reset(self):
 
-        """ Flushes and resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Calling this method should ensure that the data on the
             output is put into a clean state, that allows appending
@@ -413,6 +416,9 @@ class StreamWriter(Codec):
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ###
 
@@ -480,14 +486,16 @@ class StreamReader(Codec):
             self.charbuffer = self._empty_charbuffer.join(self.linebuffer)
             self.linebuffer = None
 
+        if chars < 0:
+            # For compatibility with other read() methods that take a
+            # single argument
+            chars = size
+
         # read until we get the required number of characters (if available)
         while True:
             # can the request be satisfied from the character buffer?
             if chars >= 0:
                 if len(self.charbuffer) >= chars:
-                    break
-            elif size >= 0:
-                if len(self.charbuffer) >= size:
                     break
             # we need more data
             if size < 0:
@@ -610,7 +618,7 @@ class StreamReader(Codec):
             method and are included in the list entries.
 
             sizehint, if given, is ignored since there is no efficient
-            way to finding the true end-of-line.
+            way of finding the true end-of-line.
 
         """
         data = self.read()
@@ -618,7 +626,7 @@ class StreamReader(Codec):
 
     def reset(self):
 
-        """ Resets the codec buffers used for keeping state.
+        """ Resets the codec buffers used for keeping internal state.
 
             Note that no stream repositioning should take place.
             This method is primarily intended to be able to recover
@@ -661,6 +669,9 @@ class StreamReader(Codec):
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ###
 
 class StreamReaderWriter:
@@ -698,13 +709,13 @@ class StreamReaderWriter:
 
         return self.reader.read(size)
 
-    def readline(self, size=None):
+    def readline(self, size=None, keepends=True):
 
-        return self.reader.readline(size)
+        return self.reader.readline(size, keepends)
 
-    def readlines(self, sizehint=None):
+    def readlines(self, sizehint=None, keepends=True):
 
-        return self.reader.readlines(sizehint)
+        return self.reader.readlines(sizehint, keepends)
 
     def __next__(self):
 
@@ -747,6 +758,9 @@ class StreamReaderWriter:
 
     def __exit__(self, type, value, tb):
         self.stream.close()
+
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
 
 ###
 
@@ -836,7 +850,7 @@ class StreamRecoder:
 
     def writelines(self, list):
 
-        data = ''.join(list)
+        data = b''.join(list)
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
@@ -844,6 +858,12 @@ class StreamRecoder:
 
         self.reader.reset()
         self.writer.reset()
+
+    def seek(self, offset, whence=0):
+        # Seeks must be propagated to both the readers and writers
+        # as they might need to reset their internal buffers.
+        self.reader.seek(offset, whence)
+        self.writer.seek(offset, whence)
 
     def __getattr__(self, name,
                     getattr=getattr):
@@ -858,10 +878,12 @@ class StreamRecoder:
     def __exit__(self, type, value, tb):
         self.stream.close()
 
+    def __reduce_ex__(self, proto):
+        raise TypeError("can't serialize %s" % self.__class__.__name__)
+
 ### Shortcuts
 
-def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
-
+def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
 
@@ -870,7 +892,8 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         codecs. Output is also codec dependent and will usually be
         Unicode as well.
 
-        Underlying encoded files are always opened in binary mode.
+        If encoding is not None, then the
+        underlying encoded files are always opened in binary mode.
         The default file mode is 'r', meaning to open the file in read mode.
 
         encoding specifies the encoding which is to be used for the
@@ -881,14 +904,18 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
         encoding error occurs.
 
         buffering has the same meaning as for the builtin open() API.
-        It defaults to line buffered.
+        It defaults to -1 which means that the default buffer size will
+        be used.
 
         The returned wrapped file object provides an extra attribute
         .encoding which allows querying the used encoding. This
         attribute is only available if an encoding was specified as
         parameter.
-
     """
+    import warnings
+    warnings.warn("codecs.open() is deprecated. Use open() instead.",
+                  DeprecationWarning, stacklevel=2)
+
     if encoding is not None and \
        'b' not in mode:
         # Force opening of the file in binary mode
@@ -896,11 +923,16 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=1):
     file = builtins.open(filename, mode, buffering)
     if encoding is None:
         return file
-    info = lookup(encoding)
-    srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
-    # Add attributes to simplify introspection
-    srw.encoding = encoding
-    return srw
+
+    try:
+        info = lookup(encoding)
+        srw = StreamReaderWriter(file, info.streamreader, info.streamwriter, errors)
+        # Add attributes to simplify introspection
+        srw.encoding = encoding
+        return srw
+    except:
+        file.close()
+        raise
 
 def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
 
@@ -1079,34 +1111,15 @@ def make_encoding_map(decoding_map):
 
 ### error handlers
 
-try:
-    strict_errors = lookup_error("strict")
-    ignore_errors = lookup_error("ignore")
-    replace_errors = lookup_error("replace")
-    xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
-    backslashreplace_errors = lookup_error("backslashreplace")
-    namereplace_errors = lookup_error("namereplace")
-except LookupError:
-    # In --disable-unicode builds, these error handler are missing
-    strict_errors = None
-    ignore_errors = None
-    replace_errors = None
-    xmlcharrefreplace_errors = None
-    backslashreplace_errors = None
-    namereplace_errors = None
+strict_errors = lookup_error("strict")
+ignore_errors = lookup_error("ignore")
+replace_errors = lookup_error("replace")
+xmlcharrefreplace_errors = lookup_error("xmlcharrefreplace")
+backslashreplace_errors = lookup_error("backslashreplace")
+namereplace_errors = lookup_error("namereplace")
 
 # Tell modulefinder that using codecs probably needs the encodings
 # package
 _false = 0
 if _false:
-    import encodings
-
-### Tests
-
-if __name__ == '__main__':
-
-    # Make stdout translate Latin-1 output into UTF-8 output
-    sys.stdout = EncodedFile(sys.stdout, 'latin-1', 'utf-8')
-
-    # Have stdin translate Latin-1 input into UTF-8 input
-    sys.stdin = EncodedFile(sys.stdin, 'utf-8', 'latin-1')
+    import encodings  # noqa: F401

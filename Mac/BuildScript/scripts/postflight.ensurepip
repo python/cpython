@@ -12,6 +12,11 @@ umask 022
 
 "${FWK}/bin/python${PYVER}" -E -s -m ensurepip --upgrade
 
+# bpo-33290: An earlier "pip3 install --upgrade pip" may have installed
+#     a "pip" in the fw bin directory.  For a py3 install, remove it.
+
+rm -f "${FWK}/bin/pip"
+
 "${FWK}/bin/python${PYVER}" -E -s -Wi \
     "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x badsyntax \
@@ -51,19 +56,19 @@ if [ -d /usr/local/bin ] ; then
 
         cd /usr/local/bin
 
-        # Create pipx.y and easy_install-x.y links if /usr/local/bin/pythonx.y
+        # Create pipx.y links if /usr/local/bin/pythonx.y
         #   is linked to this framework version
         install_links_if_our_fw "python${PYVER}" \
-                                    "pip${PYVER}" "easy_install-${PYVER}"
+                                    "pip${PYVER}"
 
         # Create pipx link if /usr/local/bin/pythonx is linked to this version
         install_links_if_our_fw "python${PYMAJOR}" \
                                     "pip${PYMAJOR}"
 
-        # Create pip and easy_install link if /usr/local/bin/python
+        # Create pip link if /usr/local/bin/python
         #   is linked to this version
         install_links_if_our_fw "python" \
-                                    "pip" "easy_install"
+                                    "pip"
     )
 fi
 exit 0

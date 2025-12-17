@@ -11,8 +11,8 @@ option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
 HTTPHandler performs HTTP GET and POST requests and deals with
 non-error returns.  The HTTPRedirectHandler automatically deals with
-HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
-deals with digest authentication.
+HTTP 301, 302, 303, 307, and 308 redirect errors, and the
+HTTPDigestAuthHandler deals with digest authentication.
 
 urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
@@ -64,7 +64,7 @@ opener = urllib.request.build_opener(proxy_support, authinfo,
 # install it
 urllib.request.install_opener(opener)
 
-f = urllib.request.urlopen('http://www.python.org/')
+f = urllib.request.urlopen('https://www.python.org/')
 """
 
 # XXX issues:
@@ -83,33 +83,31 @@ f = urllib.request.urlopen('http://www.python.org/')
 
 import base64
 import bisect
+import contextlib
 import email
 import hashlib
 import http.client
 import io
 import os
-import posixpath
 import re
 import socket
 import string
 import sys
 import time
 import tempfile
-import contextlib
-import warnings
 
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
-    splittype, splithost, splitport, splituser, splitpasswd,
-    splitattr, splitquery, splitvalue, splittag, to_bytes,
+    _splittype, _splithost, _splitport, _splituser, _splitpasswd,
+    _splitattr, _splitvalue, _splittag,
     unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
 # check for SSL
 try:
-    import ssl
+    import ssl  # noqa: F401
 except ImportError:
     _have_ssl = False
 else:
@@ -129,7 +127,7 @@ __all__ = [
     'urlopen', 'install_opener', 'build_opener',
     'pathname2url', 'url2pathname', 'getproxies',
     # Legacy interface
-    'urlretrieve', 'urlcleanup', 'URLopener', 'FancyURLopener',
+    'urlretrieve', 'urlcleanup',
 ]
 
 # used in User-Agent header sent
@@ -137,7 +135,7 @@ __version__ = '%d.%d' % sys.version_info[:2]
 
 _opener = None
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-            *, cafile=None, capath=None, cadefault=False, context=None):
+            *, context=None):
     '''Open the URL url, which can be either a string or a Request object.
 
     *data* must be an object specifying additional data to be sent to
@@ -155,26 +153,10 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     If *context* is specified, it must be a ssl.SSLContext instance describing
     the various SSL options. See HTTPSConnection for more details.
 
-    The optional *cafile* and *capath* parameters specify a set of trusted CA
-    certificates for HTTPS requests. cafile should point to a single file
-    containing a bundle of CA certificates, whereas capath should point to a
-    directory of hashed certificate files. More information can be found in
-    ssl.SSLContext.load_verify_locations().
 
-    The *cadefault* parameter is ignored.
-
-    This function always returns an object which can work as a context
-    manager and has methods such as
-
-    * geturl() - return the URL of the resource retrieved, commonly used to
-      determine if a redirect was followed
-
-    * info() - return the meta-information of the page, such as headers, in the
-      form of an email.message_from_string() instance (see Quick Reference to
-      HTTP Headers)
-
-    * getcode() - return the HTTP status code of the response.  Raises URLError
-      on errors.
+    This function always returns an object which can work as a
+    context manager and has the properties url, headers, and status.
+    See urllib.response.addinfourl for more detail on these properties.
 
     For HTTP and HTTPS URLs, this function returns a http.client.HTTPResponse
     object slightly modified. In addition to the three new methods above, the
@@ -182,8 +164,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     the reason phrase returned by the server --- instead of the response
     headers as it is specified in the documentation for HTTPResponse.
 
-    For FTP, file, and data URLs and requests explicitly handled by legacy
-    URLopener and FancyURLopener classes, this function returns a
+    For FTP, file, and data URLs, this function returns a
     urllib.response.addinfourl object.
 
     Note that None may be returned if no handler handles the request (though
@@ -196,23 +177,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     '''
     global _opener
-    if cafile or capath or cadefault:
-        import warnings
-        warnings.warn("cafile, cpath and cadefault are deprecated, use a "
-                      "custom context instead.", DeprecationWarning, 2)
-        if context is not None:
-            raise ValueError(
-                "You can't pass both context and any of cafile, capath, and "
-                "cadefault"
-            )
-        if not _have_ssl:
-            raise ValueError('SSL support not available')
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                             cafile=cafile,
-                                             capath=capath)
-        https_handler = HTTPSHandler(context=context)
-        opener = build_opener(https_handler)
-    elif context:
+    if context:
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif _opener is None:
@@ -242,7 +207,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     Returns a tuple containing the path to the newly created
     data file as well as the resulting HTTPMessage object.
     """
-    url_type, path = splittype(url)
+    url_type, path = _splittype(url)
 
     with contextlib.closing(urlopen(url, data)) as fp:
         headers = fp.info()
@@ -272,10 +237,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
             if reporthook:
                 reporthook(blocknum, bs, size)
 
-            while True:
-                block = fp.read(bs)
-                if not block:
-                    break
+            while block := fp.read(bs):
                 read += len(block)
                 tfp.write(block)
                 blocknum += 1
@@ -350,7 +312,7 @@ class Request:
     def full_url(self, url):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self._full_url = unwrap(url)
-        self._full_url, self.fragment = splittag(self._full_url)
+        self._full_url, self.fragment = _splittag(self._full_url)
         self._parse()
 
     @full_url.deleter
@@ -378,10 +340,10 @@ class Request:
         self.data = None
 
     def _parse(self):
-        self.type, rest = splittype(self._full_url)
+        self.type, rest = _splittype(self._full_url)
         if self.type is None:
             raise ValueError("unknown url type: %r" % self.full_url)
-        self.host, self.selector = splithost(rest)
+        self.host, self.selector = _splithost(rest)
         if self.host:
             self.host = unquote(self.host)
 
@@ -426,8 +388,7 @@ class Request:
         self.unredirected_hdrs.pop(header_name, None)
 
     def header_items(self):
-        hdrs = self.unredirected_hdrs.copy()
-        hdrs.update(self.headers)
+        hdrs = {**self.unredirected_hdrs, **self.headers}
         return list(hdrs.items())
 
 class OpenerDirector:
@@ -522,6 +483,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response
@@ -667,7 +629,7 @@ class HTTPRedirectHandler(BaseHandler):
         but another Handler might.
         """
         m = req.get_method()
-        if (not (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
+        if (not (code in (301, 302, 303, 307, 308) and m in ("GET", "HEAD")
             or code in (301, 302, 303) and m == "POST")):
             raise HTTPError(req.full_url, code, msg, headers, fp)
 
@@ -686,6 +648,7 @@ class HTTPRedirectHandler(BaseHandler):
         newheaders = {k: v for k, v in req.headers.items()
                       if k.lower() not in CONTENT_HEADERS}
         return Request(newurl,
+                       method="HEAD" if m == "HEAD" else "GET",
                        headers=newheaders,
                        origin_req_host=req.origin_req_host,
                        unverifiable=True)
@@ -754,7 +717,7 @@ class HTTPRedirectHandler(BaseHandler):
 
         return self.parent.open(new, timeout=req.timeout)
 
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
@@ -768,7 +731,7 @@ def _parse_proxy(proxy):
     According to RFC 3986, having an authority component means the URL must
     have two slashes after the scheme.
     """
-    scheme, r_scheme = splittype(proxy)
+    scheme, r_scheme = _splittype(proxy)
     if not r_scheme.startswith("/"):
         # authority
         scheme = None
@@ -779,13 +742,17 @@ def _parse_proxy(proxy):
             raise ValueError("proxy URL with no authority: %r" % proxy)
         # We have an authority, so for RFC 3986-compliant URLs (by ss 3.
         # and 3.3.), path is empty or starts with '/'
-        end = r_scheme.find("/", 2)
+        if '@' in r_scheme:
+            host_separator = r_scheme.find('@')
+            end = r_scheme.find("/", host_separator)
+        else:
+            end = r_scheme.find("/", 2)
         if end == -1:
             end = None
         authority = r_scheme[2:end]
-    userinfo, hostport = splituser(authority)
+    userinfo, hostport = _splituser(authority)
     if userinfo is not None:
-        user, password = splitpasswd(userinfo)
+        user, password = _splitpasswd(userinfo)
     else:
         user = password = None
     return scheme, user, password, hostport
@@ -800,6 +767,7 @@ class ProxyHandler(BaseHandler):
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in proxies.items():
+            type = type.lower()
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open:
                         meth(r, proxy, type))
@@ -872,7 +840,7 @@ class HTTPPasswordMgr:
             scheme = None
             authority = uri
             path = '/'
-        host, port = splitport(authority)
+        host, port = _splitport(authority)
         if default_port and port is None and scheme is not None:
             dport = {"http": 80,
                      "https": 443,
@@ -890,10 +858,10 @@ class HTTPPasswordMgr:
             return True
         if base[0] != test[0]:
             return False
-        common = posixpath.commonprefix((base[1], test[1]))
-        if len(common) == len(base[1]):
-            return True
-        return False
+        prefix = base[1]
+        if prefix[-1:] != '/':
+            prefix += '/'
+        return test[1].startswith(prefix)
 
 
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
@@ -908,9 +876,9 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.authenticated = {}
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
@@ -944,8 +912,15 @@ class AbstractBasicAuthHandler:
 
     # allow for double- and single-quoted realm values
     # (single quotes are a violation of the RFC, but appear in the wild)
-    rx = re.compile('(?:.*,)*[ \t]*([^ \t]+)[ \t]+'
-                    'realm=(["\']?)([^"\']*)\\2', re.I)
+    rx = re.compile('(?:^|,)'   # start of the string or ','
+                    '[ \t]*'    # optional whitespaces
+                    '([^ \t,]+)' # scheme like "Basic"
+                    '[ \t]+'    # mandatory whitespaces
+                    # realm=xxx
+                    # realm='xxx'
+                    # realm="xxx"
+                    'realm=(["\']?)([^"\']*)\\2',
+                    re.I)
 
     # XXX could pre-emptively send auth info already accepted (RFC 2617,
     # end of section 2, and section 1.2 immediately after "credentials"
@@ -957,27 +932,52 @@ class AbstractBasicAuthHandler:
         self.passwd = password_mgr
         self.add_password = self.passwd.add_password
 
+    def _parse_realm(self, header):
+        # parse WWW-Authenticate header: accept multiple challenges per header
+        found_challenge = False
+        for mo in AbstractBasicAuthHandler.rx.finditer(header):
+            scheme, quote, realm = mo.groups()
+            if quote not in ['"', "'"]:
+                import warnings
+                warnings.warn("Basic Auth Realm was unquoted",
+                              UserWarning, 3)
+
+            yield (scheme, realm)
+
+            found_challenge = True
+
+        if not found_challenge:
+            if header:
+                scheme = header.split()[0]
+            else:
+                scheme = ''
+            yield (scheme, None)
+
     def http_error_auth_reqed(self, authreq, host, req, headers):
         # host may be an authority (without userinfo) or a URL with an
         # authority
-        # XXX could be multiple headers
-        authreq = headers.get(authreq, None)
+        headers = headers.get_all(authreq)
+        if not headers:
+            # no header found
+            return
 
-        if authreq:
-            scheme = authreq.split()[0]
-            if scheme.lower() != 'basic':
-                raise ValueError("AbstractBasicAuthHandler does not"
-                                 " support the following scheme: '%s'" %
-                                 scheme)
-            else:
-                mo = AbstractBasicAuthHandler.rx.search(authreq)
-                if mo:
-                    scheme, quote, realm = mo.groups()
-                    if quote not in ['"',"'"]:
-                        warnings.warn("Basic Auth Realm was unquoted",
-                                      UserWarning, 2)
-                    if scheme.lower() == 'basic':
-                        return self.retry_http_basic_auth(host, req, realm)
+        unsupported = None
+        for header in headers:
+            for scheme, realm in self._parse_realm(header):
+                if scheme.lower() != 'basic':
+                    unsupported = scheme
+                    continue
+
+                if realm is not None:
+                    # Use the first matching Basic challenge.
+                    # Ignore following challenges even if they use the Basic
+                    # scheme.
+                    return self.retry_http_basic_auth(host, req, realm)
+
+        if unsupported is not None:
+            raise ValueError("AbstractBasicAuthHandler does not "
+                             "support the following scheme: %r"
+                             % (scheme,))
 
     def retry_http_basic_auth(self, host, req, realm):
         user, pw = self.passwd.find_user_password(realm, host)
@@ -1048,7 +1048,7 @@ _randombytes = os.urandom
 
 
 class AbstractDigestAuthHandler:
-    # Digest authentication is specified in RFC 2617.
+    # Digest authentication is specified in RFC 2617/7616.
 
     # XXX The client does not inspect the Authentication-Info header
     # in a successful response.
@@ -1143,7 +1143,11 @@ class AbstractDigestAuthHandler:
         A2 = "%s:%s" % (req.get_method(),
                         # XXX selector: what about proxies and full urls
                         req.selector)
-        if qop == 'auth':
+        # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
+        #     or `auth-int` to the response back. we use `auth` to send the response back.
+        if qop is None:
+            respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
+        elif 'auth' in qop.split(','):
             if nonce == self.last_nonce:
                 self.nonce_count += 1
             else:
@@ -1151,10 +1155,8 @@ class AbstractDigestAuthHandler:
                 self.last_nonce = nonce
             ncvalue = '%08x' % self.nonce_count
             cnonce = self.get_cnonce(nonce)
-            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, qop, H(A2))
+            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, 'auth', H(A2))
             respdig = KD(H(A1), noncebit)
-        elif qop is None:
-            respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         else:
             # XXX handle auth-int.
             raise URLError("qop '%s' is not supported." % qop)
@@ -1174,11 +1176,14 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
+        # algorithm names taken from RFC 7616 Section 6.1
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
-        elif algorithm == 'SHA':
+        elif algorithm == 'SHA':  # non-standard, retained for compatibility.
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
+        elif algorithm == 'SHA-256':
+            H = lambda x: hashlib.sha256(x.encode("ascii")).hexdigest()
         # XXX MD5-sess
         else:
             raise ValueError("Unsupported digest authentication "
@@ -1223,8 +1228,8 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
 class AbstractHTTPHandler(BaseHandler):
 
-    def __init__(self, debuglevel=0):
-        self._debuglevel = debuglevel
+    def __init__(self, debuglevel=None):
+        self._debuglevel = debuglevel if debuglevel is not None else http.client.HTTPConnection.debuglevel
 
     def set_http_debuglevel(self, level):
         self._debuglevel = level
@@ -1261,8 +1266,8 @@ class AbstractHTTPHandler(BaseHandler):
 
         sel_host = host
         if request.has_proxy():
-            scheme, sel = splittype(request.selector)
-            sel_host, sel_path = splithost(sel)
+            scheme, sel = _splittype(request.selector)
+            sel_host, sel_path = _splithost(sel)
         if not request.has_header('Host'):
             request.add_unredirected_header('Host', sel_host)
         for name, value in self.parent.addheaders:
@@ -1286,7 +1291,8 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.unredirected_hdrs)
-        headers.update((k, v) for k, v in req.headers.items() if k not in headers)
+        headers.update({k: v for k, v in req.headers.items()
+                        if k not in headers})
 
         # TODO(jhylton): Should this be redesigned to handle
         # persistent connections?
@@ -1349,14 +1355,19 @@ if hasattr(http.client, 'HTTPSConnection'):
 
     class HTTPSHandler(AbstractHTTPHandler):
 
-        def __init__(self, debuglevel=0, context=None, check_hostname=None):
+        def __init__(self, debuglevel=None, context=None, check_hostname=None):
+            debuglevel = debuglevel if debuglevel is not None else http.client.HTTPSConnection.debuglevel
             AbstractHTTPHandler.__init__(self, debuglevel)
+            if context is None:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+            if check_hostname is not None:
+                context.check_hostname = check_hostname
             self._context = context
-            self._check_hostname = check_hostname
 
         def https_open(self, req):
             return self.do_open(http.client.HTTPSConnection, req,
-                context=self._context, check_hostname=self._check_hostname)
+                                context=self._context)
 
         https_request = AbstractHTTPHandler.do_request_
 
@@ -1439,16 +1450,6 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def file_open(self, req):
-        url = req.selector
-        if url[:2] == '//' and url[2:3] != '/' and (req.host and
-                req.host != 'localhost'):
-            if not req.host in self.get_names():
-                raise URLError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(req)
-
     # names for the localhost
     names = None
     def get_names(self):
@@ -1465,35 +1466,41 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        host = req.host
-        filename = req.selector
-        localfile = url2pathname(filename)
+        localfile = url2pathname(req.full_url, require_scheme=True, resolve_host=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(filename)[0]
+            mtype = mimetypes.guess_file_type(localfile)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            if host:
-                host, port = splitport(host)
-            if not host or \
-                (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
-                return addinfourl(open(localfile, 'rb'), headers, origurl)
+            origurl = pathname2url(localfile, add_scheme=True)
+            return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
-            raise URLError(exp)
-        raise URLError('file not on local host')
+            raise URLError(exp, exp.filename)
 
-def _safe_gethostbyname(host):
+    file_open = open_local_file
+
+def _is_local_authority(authority, resolve):
+    # Compare hostnames
+    if not authority or authority == 'localhost':
+        return True
     try:
-        return socket.gethostbyname(host)
-    except socket.gaierror:
-        return None
+        hostname = socket.gethostname()
+    except (socket.gaierror, AttributeError):
+        pass
+    else:
+        if authority == hostname:
+            return True
+    # Compare IP addresses
+    if not resolve:
+        return False
+    try:
+        address = socket.gethostbyname(authority)
+    except (socket.gaierror, AttributeError, UnicodeEncodeError):
+        return False
+    return address in FileHandler().get_names()
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1502,16 +1509,16 @@ class FTPHandler(BaseHandler):
         host = req.host
         if not host:
             raise URLError('ftp error: no host given')
-        host, port = splitport(host)
+        host, port = _splitport(host)
         if port is None:
             port = ftplib.FTP_PORT
         else:
             port = int(port)
 
         # username/password handling
-        user, host = splituser(host)
+        user, host = _splituser(host)
         if user:
-            user, passwd = splitpasswd(user)
+            user, passwd = _splitpasswd(user)
         else:
             passwd = None
         host = unquote(host)
@@ -1522,17 +1529,18 @@ class FTPHandler(BaseHandler):
             host = socket.gethostbyname(host)
         except OSError as msg:
             raise URLError(msg)
-        path, attrs = splitattr(req.selector)
+        path, attrs = _splitattr(req.selector)
         dirs = path.split('/')
         dirs = list(map(unquote, dirs))
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
+        fw = None
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs, req.timeout)
             type = file and 'I' or 'D'
             for attr in attrs:
-                attr, value = splitvalue(attr)
+                attr, value = _splitvalue(attr)
                 if attr.lower() == 'type' and \
                    value in ('a', 'A', 'i', 'I', 'd', 'D'):
                     type = value.upper()
@@ -1545,9 +1553,12 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
-        except ftplib.all_errors as exp:
-            exc = URLError('ftp error: %r' % exp)
-            raise exc.with_traceback(sys.exc_info()[2])
+        except Exception as exp:
+            if fw is not None and not fw.keepalive:
+                fw.close()
+            if isinstance(exp, ftplib.all_errors):
+                raise URLError(f"ftp error: {exp}") from exp
+            raise
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1571,14 +1582,15 @@ class CacheFTPHandler(FTPHandler):
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         key = user, host, port, '/'.join(dirs), timeout
-        if key in self.cache:
-            self.timeout[key] = time.time() + self.delay
-        else:
-            self.cache[key] = ftpwrapper(user, passwd, host, port,
-                                         dirs, timeout)
-            self.timeout[key] = time.time() + self.delay
+        conn = self.cache.get(key)
+        if conn is None or not conn.keepalive:
+            if conn is not None:
+                conn.close()
+            conn = self.cache[key] = ftpwrapper(user, passwd, host, port,
+                                                dirs, timeout)
+        self.timeout[key] = time.time() + self.delay
         self.check_cache()
-        return self.cache[key]
+        return conn
 
     def check_cache(self):
         # first check for old ones
@@ -1637,684 +1649,80 @@ class DataHandler(BaseHandler):
         return addinfourl(io.BytesIO(data), headers, url)
 
 
-# Code move from the old urllib module
+# Code moved from the old urllib module
 
-MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
+def url2pathname(url, *, require_scheme=False, resolve_host=False):
+    """Convert the given file URL to a local file system path.
 
-# Helper for non-unix systems
-if os.name == 'nt':
-    from nturl2path import url2pathname, pathname2url
-else:
-    def url2pathname(pathname):
-        """OS-specific conversion from a relative URL of the 'file' scheme
-        to a file system path; not recommended for general use."""
-        return unquote(pathname)
+    The 'file:' scheme prefix must be omitted unless *require_scheme*
+    is set to true.
 
-    def pathname2url(pathname):
-        """OS-specific conversion from a file system path to a relative URL
-        of the 'file' scheme; not recommended for general use."""
-        return quote(pathname)
-
-
-ftpcache = {}
-
-
-class URLopener:
-    """Class to open URLs.
-    This is a class rather than just a subroutine because we may need
-    more than one set of global protocol-specific options.
-    Note -- this is a base class for those who don't want the
-    automatic handling of errors type 302 (relocated) and 401
-    (authorization needed)."""
-
-    __tempfiles = None
-
-    version = "Python-urllib/%s" % __version__
-
-    # Constructor
-    def __init__(self, proxies=None, **x509):
-        msg = "%(class)s style of invoking requests is deprecated. " \
-              "Use newer urlopen functions/methods" % {'class': self.__class__.__name__}
-        warnings.warn(msg, DeprecationWarning, stacklevel=3)
-        if proxies is None:
-            proxies = getproxies()
-        assert hasattr(proxies, 'keys'), "proxies must be a mapping"
-        self.proxies = proxies
-        self.key_file = x509.get('key_file')
-        self.cert_file = x509.get('cert_file')
-        self.addheaders = [('User-Agent', self.version), ('Accept', '*/*')]
-        self.__tempfiles = []
-        self.__unlink = os.unlink # See cleanup()
-        self.tempcache = None
-        # Undocumented feature: if you assign {} to tempcache,
-        # it is used to cache files retrieved with
-        # self.retrieve().  This is not enabled by default
-        # since it does not work for changing documents (and I
-        # haven't got the logic to check expiration headers
-        # yet).
-        self.ftpcache = ftpcache
-        # Undocumented feature: you can use a different
-        # ftp cache by assigning to the .ftpcache member;
-        # in case you want logically independent URL openers
-        # XXX This is not threadsafe.  Bah.
-
-    def __del__(self):
-        self.close()
-
-    def close(self):
-        self.cleanup()
-
-    def cleanup(self):
-        # This code sometimes runs when the rest of this module
-        # has already been deleted, so it can't use any globals
-        # or import anything.
-        if self.__tempfiles:
-            for file in self.__tempfiles:
-                try:
-                    self.__unlink(file)
-                except OSError:
-                    pass
-            del self.__tempfiles[:]
-        if self.tempcache:
-            self.tempcache.clear()
-
-    def addheader(self, *args):
-        """Add a header to be used by the HTTP interface only
-        e.g. u.addheader('Accept', 'sound/basic')"""
-        self.addheaders.append(args)
-
-    # External interface
-    def open(self, fullurl, data=None):
-        """Use URLopener().open(file) instead of open(file, 'r')."""
-        fullurl = unwrap(to_bytes(fullurl))
-        fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]|")
-        if self.tempcache and fullurl in self.tempcache:
-            filename, headers = self.tempcache[fullurl]
-            fp = open(filename, 'rb')
-            return addinfourl(fp, headers, fullurl)
-        urltype, url = splittype(fullurl)
-        if not urltype:
-            urltype = 'file'
-        if urltype in self.proxies:
-            proxy = self.proxies[urltype]
-            urltype, proxyhost = splittype(proxy)
-            host, selector = splithost(proxyhost)
-            url = (host, fullurl) # Signal special case to open_*()
+    The URL authority may be resolved with gethostbyname() if
+    *resolve_host* is set to true.
+    """
+    if not require_scheme:
+        url = 'file:' + url
+    scheme, authority, url = urlsplit(url)[:3]  # Discard query and fragment.
+    if scheme != 'file':
+        raise URLError("URL is missing a 'file:' scheme")
+    if os.name == 'nt':
+        if authority[1:2] == ':':
+            # e.g. file://c:/file.txt
+            url = authority + url
+        elif not _is_local_authority(authority, resolve_host):
+            # e.g. file://server/share/file.txt
+            url = '//' + authority + url
+        elif url[:3] == '///':
+            # e.g. file://///server/share/file.txt
+            url = url[1:]
         else:
-            proxy = None
-        name = 'open_' + urltype
-        self.type = urltype
-        name = name.replace('-', '_')
-        if not hasattr(self, name):
-            if proxy:
-                return self.open_unknown_proxy(proxy, fullurl, data)
-            else:
-                return self.open_unknown(fullurl, data)
-        try:
-            if data is None:
-                return getattr(self, name)(url)
-            else:
-                return getattr(self, name)(url, data)
-        except (HTTPError, URLError):
-            raise
-        except OSError as msg:
-            raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
-
-    def open_unknown(self, fullurl, data=None):
-        """Overridable interface to open unknown URL type."""
-        type, url = splittype(fullurl)
-        raise OSError('url error', 'unknown url type', type)
-
-    def open_unknown_proxy(self, proxy, fullurl, data=None):
-        """Overridable interface to open unknown URL type."""
-        type, url = splittype(fullurl)
-        raise OSError('url error', 'invalid proxy for %s' % type, proxy)
-
-    # External interface
-    def retrieve(self, url, filename=None, reporthook=None, data=None):
-        """retrieve(url) returns (filename, headers) for a local object
-        or (tempfilename, headers) for a remote object."""
-        url = unwrap(to_bytes(url))
-        if self.tempcache and url in self.tempcache:
-            return self.tempcache[url]
-        type, url1 = splittype(url)
-        if filename is None and (not type or type == 'file'):
-            try:
-                fp = self.open_local_file(url1)
-                hdrs = fp.info()
-                fp.close()
-                return url2pathname(splithost(url1)[1]), hdrs
-            except OSError as msg:
-                pass
-        fp = self.open(url, data)
-        try:
-            headers = fp.info()
-            if filename:
-                tfp = open(filename, 'wb')
-            else:
-                import tempfile
-                garbage, path = splittype(url)
-                garbage, path = splithost(path or "")
-                path, garbage = splitquery(path or "")
-                path, garbage = splitattr(path or "")
-                suffix = os.path.splitext(path)[1]
-                (fd, filename) = tempfile.mkstemp(suffix)
-                self.__tempfiles.append(filename)
-                tfp = os.fdopen(fd, 'wb')
-            try:
-                result = filename, headers
-                if self.tempcache is not None:
-                    self.tempcache[url] = result
-                bs = 1024*8
-                size = -1
-                read = 0
-                blocknum = 0
-                if "content-length" in headers:
-                    size = int(headers["Content-Length"])
-                if reporthook:
-                    reporthook(blocknum, bs, size)
-                while 1:
-                    block = fp.read(bs)
-                    if not block:
-                        break
-                    read += len(block)
-                    tfp.write(block)
-                    blocknum += 1
-                    if reporthook:
-                        reporthook(blocknum, bs, size)
-            finally:
-                tfp.close()
-        finally:
-            fp.close()
-
-        # raise exception if actual size does not match content-length header
-        if size >= 0 and read < size:
-            raise ContentTooShortError(
-                "retrieval incomplete: got only %i out of %i bytes"
-                % (read, size), result)
-
-        return result
-
-    # Each method named open_<type> knows how to open that type of URL
-
-    def _open_generic_http(self, connection_factory, url, data):
-        """Make an HTTP connection using connection_class.
-
-        This is an internal method that should be called from
-        open_http() or open_https().
-
-        Arguments:
-        - connection_factory should take a host name and return an
-          HTTPConnection instance.
-        - url is the url to retrieval or a host, relative-path pair.
-        - data is payload for a POST request or None.
-        """
-
-        user_passwd = None
-        proxy_passwd= None
-        if isinstance(url, str):
-            host, selector = splithost(url)
-            if host:
-                user_passwd, host = splituser(host)
-                host = unquote(host)
-            realhost = host
-        else:
-            host, selector = url
-            # check whether the proxy contains authorization information
-            proxy_passwd, host = splituser(host)
-            # now we proceed with the url we want to obtain
-            urltype, rest = splittype(selector)
-            url = rest
-            user_passwd = None
-            if urltype.lower() != 'http':
-                realhost = None
-            else:
-                realhost, rest = splithost(rest)
-                if realhost:
-                    user_passwd, realhost = splituser(realhost)
-                if user_passwd:
-                    selector = "%s://%s%s" % (urltype, realhost, rest)
-                if proxy_bypass(realhost):
-                    host = realhost
-
-        if not host: raise OSError('http error', 'no host given')
-
-        if proxy_passwd:
-            proxy_passwd = unquote(proxy_passwd)
-            proxy_auth = base64.b64encode(proxy_passwd.encode()).decode('ascii')
-        else:
-            proxy_auth = None
-
-        if user_passwd:
-            user_passwd = unquote(user_passwd)
-            auth = base64.b64encode(user_passwd.encode()).decode('ascii')
-        else:
-            auth = None
-        http_conn = connection_factory(host)
-        headers = {}
-        if proxy_auth:
-            headers["Proxy-Authorization"] = "Basic %s" % proxy_auth
-        if auth:
-            headers["Authorization"] =  "Basic %s" % auth
-        if realhost:
-            headers["Host"] = realhost
-
-        # Add Connection:close as we don't support persistent connections yet.
-        # This helps in closing the socket and avoiding ResourceWarning
-
-        headers["Connection"] = "close"
-
-        for header, value in self.addheaders:
-            headers[header] = value
-
-        if data is not None:
-            headers["Content-Type"] = "application/x-www-form-urlencoded"
-            http_conn.request("POST", selector, data, headers)
-        else:
-            http_conn.request("GET", selector, headers=headers)
-
-        try:
-            response = http_conn.getresponse()
-        except http.client.BadStatusLine:
-            # something went wrong with the HTTP status line
-            raise URLError("http protocol error: bad status line")
-
-        # According to RFC 2616, "2xx" code indicates that the client's
-        # request was successfully received, understood, and accepted.
-        if 200 <= response.status < 300:
-            return addinfourl(response, response.msg, "http:" + url,
-                              response.status)
-        else:
-            return self.http_error(
-                url, response.fp,
-                response.status, response.reason, response.msg, data)
-
-    def open_http(self, url, data=None):
-        """Use HTTP protocol."""
-        return self._open_generic_http(http.client.HTTPConnection, url, data)
-
-    def http_error(self, url, fp, errcode, errmsg, headers, data=None):
-        """Handle http errors.
-
-        Derived class can override this, or provide specific handlers
-        named http_error_DDD where DDD is the 3-digit error code."""
-        # First check if there's a specific handler for this error
-        name = 'http_error_%d' % errcode
-        if hasattr(self, name):
-            method = getattr(self, name)
-            if data is None:
-                result = method(url, fp, errcode, errmsg, headers)
-            else:
-                result = method(url, fp, errcode, errmsg, headers, data)
-            if result: return result
-        return self.http_error_default(url, fp, errcode, errmsg, headers)
-
-    def http_error_default(self, url, fp, errcode, errmsg, headers):
-        """Default error handler: close the connection and raise OSError."""
-        fp.close()
-        raise HTTPError(url, errcode, errmsg, headers, None)
-
-    if _have_ssl:
-        def _https_connection(self, host):
-            return http.client.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
-
-        def open_https(self, url, data=None):
-            """Use HTTPS protocol."""
-            return self._open_generic_http(self._https_connection, url, data)
-
-    def open_file(self, url):
-        """Use local file or FTP depending on form of URL."""
-        if not isinstance(url, str):
-            raise URLError('file error: proxy support for file protocol currently not implemented')
-        if url[:2] == '//' and url[2:3] != '/' and url[2:12].lower() != 'localhost/':
-            raise ValueError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(url)
-
-    def open_local_file(self, url):
-        """Use local file."""
-        import email.utils
-        import mimetypes
-        host, file = splithost(url)
-        localname = url2pathname(file)
-        try:
-            stats = os.stat(localname)
-        except OSError as e:
-            raise URLError(e.strerror, e.filename)
-        size = stats.st_size
-        modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-        mtype = mimetypes.guess_type(url)[0]
-        headers = email.message_from_string(
-            'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
-            (mtype or 'text/plain', size, modified))
-        if not host:
-            urlfile = file
-            if file[:1] == '/':
-                urlfile = 'file://' + file
-            return addinfourl(open(localname, 'rb'), headers, urlfile)
-        host, port = splitport(host)
-        if (not port
-           and socket.gethostbyname(host) in ((localhost(),) + thishost())):
-            urlfile = file
-            if file[:1] == '/':
-                urlfile = 'file://' + file
-            elif file[:2] == './':
-                raise ValueError("local file url may start with / or file:. Unknown url of type: %s" % url)
-            return addinfourl(open(localname, 'rb'), headers, urlfile)
-        raise URLError('local file error: not on local host')
-
-    def open_ftp(self, url):
-        """Use FTP protocol."""
-        if not isinstance(url, str):
-            raise URLError('ftp error: proxy support for ftp protocol currently not implemented')
-        import mimetypes
-        host, path = splithost(url)
-        if not host: raise URLError('ftp error: no host given')
-        host, port = splitport(host)
-        user, host = splituser(host)
-        if user: user, passwd = splitpasswd(user)
-        else: passwd = None
-        host = unquote(host)
-        user = unquote(user or '')
-        passwd = unquote(passwd or '')
-        host = socket.gethostbyname(host)
-        if not port:
-            import ftplib
-            port = ftplib.FTP_PORT
-        else:
-            port = int(port)
-        path, attrs = splitattr(path)
-        path = unquote(path)
-        dirs = path.split('/')
-        dirs, file = dirs[:-1], dirs[-1]
-        if dirs and not dirs[0]: dirs = dirs[1:]
-        if dirs and not dirs[0]: dirs[0] = '/'
-        key = user, host, port, '/'.join(dirs)
-        # XXX thread unsafe!
-        if len(self.ftpcache) > MAXFTPCACHE:
-            # Prune the cache, rather arbitrarily
-            for k in list(self.ftpcache):
-                if k != key:
-                    v = self.ftpcache[k]
-                    del self.ftpcache[k]
-                    v.close()
-        try:
-            if key not in self.ftpcache:
-                self.ftpcache[key] = \
-                    ftpwrapper(user, passwd, host, port, dirs)
-            if not file: type = 'D'
-            else: type = 'I'
-            for attr in attrs:
-                attr, value = splitvalue(attr)
-                if attr.lower() == 'type' and \
-                   value in ('a', 'A', 'i', 'I', 'd', 'D'):
-                    type = value.upper()
-            (fp, retrlen) = self.ftpcache[key].retrfile(file, type)
-            mtype = mimetypes.guess_type("ftp:" + url)[0]
-            headers = ""
-            if mtype:
-                headers += "Content-Type: %s\n" % mtype
-            if retrlen is not None and retrlen >= 0:
-                headers += "Content-Length: %d\n" % retrlen
-            headers = email.message_from_string(headers)
-            return addinfourl(fp, headers, "ftp:" + url)
-        except ftperrors() as exp:
-            raise URLError('ftp error %r' % exp).with_traceback(sys.exc_info()[2])
-
-    def open_data(self, url, data=None):
-        """Use "data" URL."""
-        if not isinstance(url, str):
-            raise URLError('data error: proxy support for data protocol currently not implemented')
-        # ignore POSTed data
-        #
-        # syntax of data URLs:
-        # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
-        # mediatype := [ type "/" subtype ] *( ";" parameter )
-        # data      := *urlchar
-        # parameter := attribute "=" value
-        try:
-            [type, data] = url.split(',', 1)
-        except ValueError:
-            raise OSError('data error', 'bad data URL')
-        if not type:
-            type = 'text/plain;charset=US-ASCII'
-        semi = type.rfind(';')
-        if semi >= 0 and '=' not in type[semi:]:
-            encoding = type[semi+1:]
-            type = type[:semi]
-        else:
-            encoding = ''
-        msg = []
-        msg.append('Date: %s'%time.strftime('%a, %d %b %Y %H:%M:%S GMT',
-                                            time.gmtime(time.time())))
-        msg.append('Content-type: %s' % type)
-        if encoding == 'base64':
-            # XXX is this encoding/decoding ok?
-            data = base64.decodebytes(data.encode('ascii')).decode('latin-1')
-        else:
-            data = unquote(data)
-        msg.append('Content-Length: %d' % len(data))
-        msg.append('')
-        msg.append(data)
-        msg = '\n'.join(msg)
-        headers = email.message_from_string(msg)
-        f = io.StringIO(msg)
-        #f.fileno = None     # needed for addinfourl
-        return addinfourl(f, headers, url)
+            if url[:1] == '/' and url[2:3] in (':', '|'):
+                # Skip past extra slash before DOS drive in URL path.
+                url = url[1:]
+            if url[1:2] == '|':
+                # Older URLs use a pipe after a drive letter
+                url = url[:1] + ':' + url[2:]
+        url = url.replace('/', '\\')
+    elif not _is_local_authority(authority, resolve_host):
+        raise URLError("file:// scheme is supported only on localhost")
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    return unquote(url, encoding=encoding, errors=errors)
 
 
-class FancyURLopener(URLopener):
-    """Derived class with handlers for errors we can handle (perhaps)."""
+def pathname2url(pathname, *, add_scheme=False):
+    """Convert the given local file system path to a file URL.
 
-    def __init__(self, *args, **kwargs):
-        URLopener.__init__(self, *args, **kwargs)
-        self.auth_cache = {}
-        self.tries = 0
-        self.maxtries = 10
-
-    def http_error_default(self, url, fp, errcode, errmsg, headers):
-        """Default error handling -- don't raise an exception."""
-        return addinfourl(fp, headers, "http:" + url, errcode)
-
-    def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
-        """Error 302 -- relocated (temporarily)."""
-        self.tries += 1
-        try:
-            if self.maxtries and self.tries >= self.maxtries:
-                if hasattr(self, "http_error_500"):
-                    meth = self.http_error_500
-                else:
-                    meth = self.http_error_default
-                return meth(url, fp, 500,
-                            "Internal Server Error: Redirect Recursion",
-                            headers)
-            result = self.redirect_internal(url, fp, errcode, errmsg,
-                                            headers, data)
-            return result
-        finally:
-            self.tries = 0
-
-    def redirect_internal(self, url, fp, errcode, errmsg, headers, data):
-        if 'location' in headers:
-            newurl = headers['location']
-        elif 'uri' in headers:
-            newurl = headers['uri']
-        else:
-            return
-        fp.close()
-
-        # In case the server sent a relative URL, join with original:
-        newurl = urljoin(self.type + ":" + url, newurl)
-
-        urlparts = urlparse(newurl)
-
-        # For security reasons, we don't allow redirection to anything other
-        # than http, https and ftp.
-
-        # We are using newer HTTPError with older redirect_internal method
-        # This older method will get deprecated in 3.3
-
-        if urlparts.scheme not in ('http', 'https', 'ftp', ''):
-            raise HTTPError(newurl, errcode,
-                            errmsg +
-                            " Redirection to url '%s' is not allowed." % newurl,
-                            headers, fp)
-
-        return self.open(newurl)
-
-    def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):
-        """Error 301 -- also relocated (permanently)."""
-        return self.http_error_302(url, fp, errcode, errmsg, headers, data)
-
-    def http_error_303(self, url, fp, errcode, errmsg, headers, data=None):
-        """Error 303 -- also relocated (essentially identical to 302)."""
-        return self.http_error_302(url, fp, errcode, errmsg, headers, data)
-
-    def http_error_307(self, url, fp, errcode, errmsg, headers, data=None):
-        """Error 307 -- relocated, but turn POST into error."""
-        if data is None:
-            return self.http_error_302(url, fp, errcode, errmsg, headers, data)
-        else:
-            return self.http_error_default(url, fp, errcode, errmsg, headers)
-
-    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None,
-            retry=False):
-        """Error 401 -- authentication required.
-        This function supports Basic authentication only."""
-        if 'www-authenticate' not in headers:
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        stuff = headers['www-authenticate']
-        match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
-        if not match:
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        scheme, realm = match.groups()
-        if scheme.lower() != 'basic':
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        if not retry:
-            URLopener.http_error_default(self, url, fp, errcode, errmsg,
-                    headers)
-        name = 'retry_' + self.type + '_basic_auth'
-        if data is None:
-            return getattr(self,name)(url, realm)
-        else:
-            return getattr(self,name)(url, realm, data)
-
-    def http_error_407(self, url, fp, errcode, errmsg, headers, data=None,
-            retry=False):
-        """Error 407 -- proxy authentication required.
-        This function supports Basic authentication only."""
-        if 'proxy-authenticate' not in headers:
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        stuff = headers['proxy-authenticate']
-        match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
-        if not match:
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        scheme, realm = match.groups()
-        if scheme.lower() != 'basic':
-            URLopener.http_error_default(self, url, fp,
-                                         errcode, errmsg, headers)
-        if not retry:
-            URLopener.http_error_default(self, url, fp, errcode, errmsg,
-                    headers)
-        name = 'retry_proxy_' + self.type + '_basic_auth'
-        if data is None:
-            return getattr(self,name)(url, realm)
-        else:
-            return getattr(self,name)(url, realm, data)
-
-    def retry_proxy_http_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
-        newurl = 'http://' + host + selector
-        proxy = self.proxies['http']
-        urltype, proxyhost = splittype(proxy)
-        proxyhost, proxyselector = splithost(proxyhost)
-        i = proxyhost.find('@') + 1
-        proxyhost = proxyhost[i:]
-        user, passwd = self.get_user_passwd(proxyhost, realm, i)
-        if not (user or passwd): return None
-        proxyhost = "%s:%s@%s" % (quote(user, safe=''),
-                                  quote(passwd, safe=''), proxyhost)
-        self.proxies['http'] = 'http://' + proxyhost + proxyselector
-        if data is None:
-            return self.open(newurl)
-        else:
-            return self.open(newurl, data)
-
-    def retry_proxy_https_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
-        newurl = 'https://' + host + selector
-        proxy = self.proxies['https']
-        urltype, proxyhost = splittype(proxy)
-        proxyhost, proxyselector = splithost(proxyhost)
-        i = proxyhost.find('@') + 1
-        proxyhost = proxyhost[i:]
-        user, passwd = self.get_user_passwd(proxyhost, realm, i)
-        if not (user or passwd): return None
-        proxyhost = "%s:%s@%s" % (quote(user, safe=''),
-                                  quote(passwd, safe=''), proxyhost)
-        self.proxies['https'] = 'https://' + proxyhost + proxyselector
-        if data is None:
-            return self.open(newurl)
-        else:
-            return self.open(newurl, data)
-
-    def retry_http_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
-        i = host.find('@') + 1
-        host = host[i:]
-        user, passwd = self.get_user_passwd(host, realm, i)
-        if not (user or passwd): return None
-        host = "%s:%s@%s" % (quote(user, safe=''),
-                             quote(passwd, safe=''), host)
-        newurl = 'http://' + host + selector
-        if data is None:
-            return self.open(newurl)
-        else:
-            return self.open(newurl, data)
-
-    def retry_https_basic_auth(self, url, realm, data=None):
-        host, selector = splithost(url)
-        i = host.find('@') + 1
-        host = host[i:]
-        user, passwd = self.get_user_passwd(host, realm, i)
-        if not (user or passwd): return None
-        host = "%s:%s@%s" % (quote(user, safe=''),
-                             quote(passwd, safe=''), host)
-        newurl = 'https://' + host + selector
-        if data is None:
-            return self.open(newurl)
-        else:
-            return self.open(newurl, data)
-
-    def get_user_passwd(self, host, realm, clear_cache=0):
-        key = realm + '@' + host.lower()
-        if key in self.auth_cache:
-            if clear_cache:
-                del self.auth_cache[key]
-            else:
-                return self.auth_cache[key]
-        user, passwd = self.prompt_user_passwd(host, realm)
-        if user or passwd: self.auth_cache[key] = (user, passwd)
-        return user, passwd
-
-    def prompt_user_passwd(self, host, realm):
-        """Override this in a GUI environment!"""
-        import getpass
-        try:
-            user = input("Enter username for %s at %s: " % (realm, host))
-            passwd = getpass.getpass("Enter password for %s in %s at %s: " %
-                (user, realm, host))
-            return user, passwd
-        except KeyboardInterrupt:
-            print()
-            return None, None
+    The 'file:' scheme prefix is omitted unless *add_scheme*
+    is set to true.
+    """
+    if os.name == 'nt':
+        pathname = pathname.replace('\\', '/')
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    scheme = 'file:' if add_scheme else ''
+    drive, root, tail = os.path.splitroot(pathname)
+    if drive:
+        # First, clean up some special forms. We are going to sacrifice the
+        # additional information anyway
+        if drive[:4] == '//?/':
+            drive = drive[4:]
+            if drive[:4].upper() == 'UNC/':
+                drive = '//' + drive[4:]
+        if drive[1:] == ':':
+            # DOS drive specified. Add three slashes to the start, producing
+            # an authority section with a zero-length authority, and a path
+            # section starting with a single slash.
+            drive = '///' + drive
+        drive = quote(drive, encoding=encoding, errors=errors, safe='/:')
+    elif root:
+        # Add explicitly empty authority to absolute path. If the path
+        # starts with exactly one slash then this change is mostly
+        # cosmetic, but if it begins with two or more slashes then this
+        # avoids interpreting the path as a URL authority.
+        root = '//' + root
+    tail = quote(tail, encoding=encoding, errors=errors)
+    return scheme + drive + root + tail
 
 
 # Utility functions
@@ -2404,8 +1812,7 @@ class ftpwrapper:
                 conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise URLError('ftp error: %r' % reason).with_traceback(
-                        sys.exc_info()[2])
+                    raise URLError(f'ftp error: {reason}') from reason
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')
@@ -2432,7 +1839,13 @@ class ftpwrapper:
         return (ftpobj, retrlen)
 
     def endtransfer(self):
+        if not self.busy:
+            return
         self.busy = 0
+        try:
+            self.ftp.voidresp()
+        except ftperrors():
+            pass
 
     def close(self):
         self.keepalive = False
@@ -2457,31 +1870,35 @@ def getproxies_environment():
     """Return a dictionary of scheme -> proxy server URL mappings.
 
     Scan the environment for variables named <scheme>_proxy;
-    this seems to be the standard convention.  If you need a
-    different way, you can pass a proxies dictionary to the
-    [Fancy]URLopener constructor.
-
+    this seems to be the standard convention.
     """
-    proxies = {}
     # in order to prefer lowercase variables, process environment in
     # two passes: first matches any, second pass matches lowercase only
-    for name, value in os.environ.items():
-        name = name.lower()
-        if value and name[-6:] == '_proxy':
-            proxies[name[:-6]] = value
+
+    # select only environment variables which end in (after making lowercase) _proxy
+    proxies = {}
+    environment = []
+    for name in os.environ:
+        # fast screen underscore position before more expensive case-folding
+        if len(name) > 5 and name[-6] == "_" and name[-5:].lower() == "proxy":
+            value = os.environ[name]
+            proxy_name = name[:-6].lower()
+            environment.append((name, value, proxy_name))
+            if value:
+                proxies[proxy_name] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
     # header from the client
     # If "proxy" is lowercase, it will still be used thanks to the next block
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
-    for name, value in os.environ.items():
+    for name, value, proxy_name in environment:
+        # not case-folded, checking here for lower-case env vars only
         if name[-6:] == '_proxy':
-            name = name.lower()
             if value:
-                proxies[name[:-6]] = value
+                proxies[proxy_name] = value
             else:
-                proxies.pop(name[:-6], None)
+                proxies.pop(proxy_name, None)
     return proxies
 
 def proxy_bypass_environment(host, proxies=None):
@@ -2497,24 +1914,26 @@ def proxy_bypass_environment(host, proxies=None):
     try:
         no_proxy = proxies['no']
     except KeyError:
-        return 0
+        return False
     # '*' is special case for always bypass
     if no_proxy == '*':
-        return 1
+        return True
+    host = host.lower()
     # strip port off host
-    hostonly, port = splitport(host)
+    hostonly, port = _splitport(host)
     # check if the host ends with any of the DNS suffixes
-    no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
-    for name in no_proxy_list:
+    for name in no_proxy.split(','):
+        name = name.strip()
         if name:
             name = name.lstrip('.')  # ignore leading dots
-            name = re.escape(name)
-            pattern = r'(.+\.)?%s$' % name
-            if (re.match(pattern, hostonly, re.I)
-                    or re.match(pattern, host, re.I)):
-                return 1
+            name = name.lower()
+            if hostonly == name or host == name:
+                return True
+            name = '.' + name
+            if hostonly.endswith(name) or host.endswith(name):
+                return True
     # otherwise, don't bypass
-    return 0
+    return False
 
 
 # This code tests an OSX specific data structure but is testable on all
@@ -2532,8 +1951,9 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
     }
     """
     from fnmatch import fnmatch
+    from ipaddress import AddressValueError, IPv4Address
 
-    hostonly, port = splitport(host)
+    hostonly, port = _splitport(host)
 
     def ip2num(ipAddr):
         parts = ipAddr.split('.')
@@ -2548,26 +1968,28 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
             return True
 
     hostIP = None
+    try:
+        hostIP = int(IPv4Address(hostonly))
+    except AddressValueError:
+        pass
 
     for value in proxy_settings.get('exceptions', ()):
         # Items in the list are strings like these: *.local, 169.254/16
         if not value: continue
 
         m = re.match(r"(\d+(?:\.\d+)*)(/\d+)?", value)
-        if m is not None:
-            if hostIP is None:
-                try:
-                    hostIP = socket.gethostbyname(hostonly)
-                    hostIP = ip2num(hostIP)
-                except OSError:
-                    continue
-
+        if m is not None and hostIP is not None:
             base = ip2num(m.group(1))
             mask = m.group(2)
             if mask is None:
                 mask = 8 * (m.group(1).count('.') + 1)
             else:
                 mask = int(mask[1:])
+
+            if mask < 0 or mask > 32:
+                # System libraries ignore invalid prefix lengths
+                continue
+
             mask = 32 - mask
 
             if (hostIP >> mask) == (base >> mask):
@@ -2576,6 +1998,31 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
         elif fnmatch(host, value):
             return True
 
+    return False
+
+
+# Same as _proxy_bypass_macosx_sysconf, testable on all platforms
+def _proxy_bypass_winreg_override(host, override):
+    """Return True if the host should bypass the proxy server.
+
+    The proxy override list is obtained from the Windows
+    Internet settings proxy override registry value.
+
+    An example of a proxy override value is:
+    "www.example.com;*.example.net; 192.168.0.1"
+    """
+    from fnmatch import fnmatch
+
+    host, _ = _splitport(host)
+    proxy_override = override.split(';')
+    for test in proxy_override:
+        test = test.strip()
+        # "<local>" should bypass the proxy server for all intranet addresses
+        if test == '<local>':
+            if '.' not in host:
+                return True
+        elif fnmatch(host, test):
+            return True
     return False
 
 
@@ -2635,22 +2082,26 @@ elif os.name == 'nt':
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-                if '=' in proxyServer:
-                    # Per-protocol settings
-                    for p in proxyServer.split(';'):
-                        protocol, address = p.split('=', 1)
-                        # See if address has a type:// prefix
-                        if not re.match('^([^/:]+)://', address):
-                            address = '%s://%s' % (protocol, address)
-                        proxies[protocol] = address
-                else:
-                    # Use one setting for all protocols
-                    if proxyServer[:5] == 'http:':
-                        proxies['http'] = proxyServer
-                    else:
-                        proxies['http'] = 'http://%s' % proxyServer
-                        proxies['https'] = 'https://%s' % proxyServer
-                        proxies['ftp'] = 'ftp://%s' % proxyServer
+                if '=' not in proxyServer and ';' not in proxyServer:
+                    # Use one setting for all protocols.
+                    proxyServer = 'http={0};https={0};ftp={0}'.format(proxyServer)
+                for p in proxyServer.split(';'):
+                    protocol, address = p.split('=', 1)
+                    # See if address has a type:// prefix
+                    if not re.match('(?:[^/:]+)://', address):
+                        # Add type:// prefix to address without specifying type
+                        if protocol in ('http', 'https', 'ftp'):
+                            # The default proxy type of Windows is HTTP
+                            address = 'http://' + address
+                        elif protocol == 'socks':
+                            address = 'socks://' + address
+                    proxies[protocol] = address
+                # Use SOCKS proxy for HTTP(S) protocols
+                if proxies.get('socks'):
+                    # The default SOCKS proxy type of Windows is SOCKS4
+                    address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
+                    proxies['http'] = proxies.get('http') or address
+                    proxies['https'] = proxies.get('https') or address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an
@@ -2673,7 +2124,7 @@ elif os.name == 'nt':
             import winreg
         except ImportError:
             # Std modules, so should be around - but you never know!
-            return 0
+            return False
         try:
             internetSettings = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                 r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
@@ -2683,40 +2134,10 @@ elif os.name == 'nt':
                                                      'ProxyOverride')[0])
             # ^^^^ Returned as Unicode but problems if not converted to ASCII
         except OSError:
-            return 0
+            return False
         if not proxyEnable or not proxyOverride:
-            return 0
-        # try to make a host list from name and IP address.
-        rawHost, port = splitport(host)
-        host = [rawHost]
-        try:
-            addr = socket.gethostbyname(rawHost)
-            if addr != rawHost:
-                host.append(addr)
-        except OSError:
-            pass
-        try:
-            fqdn = socket.getfqdn(rawHost)
-            if fqdn != rawHost:
-                host.append(fqdn)
-        except OSError:
-            pass
-        # make a check value list from the registry entry: replace the
-        # '<local>' string by the localhost entry and the corresponding
-        # canonical entry.
-        proxyOverride = proxyOverride.split(';')
-        # now check if we match one of the registry values.
-        for test in proxyOverride:
-            if test == '<local>':
-                if '.' not in rawHost:
-                    return 1
-            test = test.replace(".", r"\.")     # mask dots
-            test = test.replace("*", r".*")     # change glob sequence
-            test = test.replace("?", r".")      # change glob char
-            for val in host:
-                if re.match(test, val, re.I):
-                    return 1
-        return 0
+            return False
+        return _proxy_bypass_winreg_override(host, proxyOverride)
 
     def proxy_bypass(host):
         """Return True, if host should be bypassed.

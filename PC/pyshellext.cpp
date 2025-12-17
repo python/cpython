@@ -12,15 +12,14 @@
 #include <olectl.h>
 #include <strsafe.h>
 
-#include "pyshellext_h.h"
-
 #define DDWM_UPDATEWINDOW (WM_USER+3)
 
 static HINSTANCE hModule;
 static CLIPFORMAT cfDropDescription;
 static CLIPFORMAT cfDragWindow;
 
-static const LPCWSTR CLASS_SUBKEY = L"Software\\Classes\\CLSID\\{BEA218D2-6950-497B-9434-61683EC065FE}";
+#define CLASS_GUID "{BEA218D2-6950-497B-9434-61683EC065FE}"
+static const LPCWSTR CLASS_SUBKEY = L"Software\\Classes\\CLSID\\" CLASS_GUID;
 static const LPCWSTR DRAG_MESSAGE = L"Open with %1";
 
 using namespace Microsoft::WRL;
@@ -69,8 +68,6 @@ HRESULT FilenameListCchLengthW(LPCWSTR pszSource, size_t cchMax, size_t *pcchLen
 
 HRESULT FilenameListCchCopyA(STRSAFE_LPSTR pszDest, size_t cchDest, LPCSTR pszSource, LPCSTR pszSeparator) {
     HRESULT hr = S_OK;
-    size_t count = 0;
-    size_t length = 0;
 
     while (pszSource[0]) {
         STRSAFE_LPSTR newDest;
@@ -96,8 +93,6 @@ HRESULT FilenameListCchCopyA(STRSAFE_LPSTR pszDest, size_t cchDest, LPCSTR pszSo
 
 HRESULT FilenameListCchCopyW(STRSAFE_LPWSTR pszDest, size_t cchDest, LPCWSTR pszSource, LPCWSTR pszSeparator) {
     HRESULT hr = S_OK;
-    size_t count = 0;
-    size_t length = 0;
 
     while (pszSource[0]) {
         STRSAFE_LPWSTR newDest;
@@ -121,8 +116,7 @@ HRESULT FilenameListCchCopyW(STRSAFE_LPWSTR pszDest, size_t cchDest, LPCWSTR psz
     return hr;
 }
 
-
-class PyShellExt : public RuntimeClass<
+class DECLSPEC_UUID(CLASS_GUID) PyShellExt : public RuntimeClass<
     RuntimeClassFlags<ClassicCom>,
     IDropTarget,
     IPersistFile
@@ -172,6 +166,11 @@ private:
             return E_FAIL;
         }
         auto dd = (DROPDESCRIPTION*)GlobalLock(medium.hGlobal);
+        if (!dd) {
+            OutputDebugString(L"PyShellExt::UpdateDropDescription - failed to lock DROPDESCRIPTION hGlobal");
+            ReleaseStgMedium(&medium);
+            return E_FAIL;
+        }
         StringCchCopy(dd->szMessage, sizeof(dd->szMessage) / sizeof(dd->szMessage[0]), DRAG_MESSAGE);
         StringCchCopy(dd->szInsert, sizeof(dd->szInsert) / sizeof(dd->szInsert[0]), PathFindFileNameW(target));
         dd->type = DROPIMAGE_MOVE;
@@ -478,7 +477,7 @@ public:
     }
 
     STDMETHODIMP GetClassID(CLSID *pClassID) {
-        *pClassID = CLSID_PyShellExt;
+        *pClassID = __uuidof(PyShellExt);
         return S_OK;
     }
 };
@@ -495,7 +494,6 @@ STDAPI DllCanUnloadNow() {
 
 STDAPI DllRegisterServer() {
     LONG res;
-    SECURITY_ATTRIBUTES secattr = { sizeof(SECURITY_ATTRIBUTES), NULL, FALSE };
     LPSECURITY_ATTRIBUTES psecattr = NULL;
     HKEY key, ipsKey;
     WCHAR modname[MAX_PATH];

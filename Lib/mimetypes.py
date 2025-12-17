@@ -23,10 +23,11 @@ init([files]) -- parse a list of files, default knownfiles (on Windows, the
 read_mime_types(file) -- parse one file, return a dictionary or None
 """
 
-import os
-import sys
-import posixpath
-import urllib.parse
+try:
+    from _winapi import _mimetypes_read_windows_registry
+except ImportError:
+    _mimetypes_read_windows_registry = None
+
 try:
     import winreg as _winreg
 except ImportError:
@@ -34,7 +35,7 @@ except ImportError:
 
 __all__ = [
     "knownfiles", "inited", "MimeTypes",
-    "guess_type", "guess_all_extensions", "guess_extension",
+    "guess_type", "guess_file_type", "guess_all_extensions", "guess_extension",
     "add_type", "init", "read_mime_types",
     "suffix_map", "encodings_map", "types_map", "common_types"
 ]
@@ -66,13 +67,13 @@ class MimeTypes:
     def __init__(self, filenames=(), strict=True):
         if not inited:
             init()
-        self.encodings_map = encodings_map.copy()
-        self.suffix_map = suffix_map.copy()
+        self.encodings_map = _encodings_map_default.copy()
+        self.suffix_map = _suffix_map_default.copy()
         self.types_map = ({}, {}) # dict for (non-strict, strict)
         self.types_map_inv = ({}, {})
-        for (ext, type) in types_map.items():
+        for (ext, type) in _types_map_default.items():
             self.add_type(type, ext, True)
-        for (ext, type) in common_types.items():
+        for (ext, type) in _common_types_default.items():
             self.add_type(type, ext, False)
         for name in filenames:
             self.read(name, strict)
@@ -88,14 +89,28 @@ class MimeTypes:
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
+
+        Valid extensions are empty or start with a '.'.
         """
+        if ext and not ext.startswith('.'):
+            from warnings import _deprecated
+
+            _deprecated(
+                "Undotted extensions",
+                "Using undotted extensions is deprecated and "
+                "will raise a ValueError in Python {remove}",
+                remove=(3, 16),
+            )
+
+        if not type:
+            return
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
             exts.append(ext)
 
     def guess_type(self, url, strict=True):
-        """Guess the type of a file based on its URL.
+        """Guess the type of a file which is either a URL or a path-like object.
 
         Return value is a tuple (type, encoding) where type is None if
         the type can't be guessed (no or unknown suffix) or a string
@@ -110,10 +125,21 @@ class MimeTypes:
         mapped to '.tar.gz'.  (This is table-driven too, using the
         dictionary suffix_map.)
 
-        Optional `strict' argument when False adds a bunch of commonly found,
+        Optional 'strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
-        scheme, url = urllib.parse.splittype(url)
+        # Lazy import to improve module import time
+        import os
+        import urllib.parse
+
+        # TODO: Deprecate accepting file paths (in particular path-like objects).
+        url = os.fspath(url)
+        p = urllib.parse.urlparse(url)
+        if p.scheme and len(p.scheme) > 1:
+            scheme = p.scheme
+            url = p.path
+        else:
+            return self.guess_file_type(url, strict=strict)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -133,26 +159,43 @@ class MimeTypes:
             if '=' in type or '/' not in type:
                 type = 'text/plain'
             return type, None           # never compressed, so encoding is None
-        base, ext = posixpath.splitext(url)
-        while ext in self.suffix_map:
-            base, ext = posixpath.splitext(base + self.suffix_map[ext])
+
+        # Lazy import to improve module import time
+        import posixpath
+
+        return self._guess_file_type(url, strict, posixpath.splitext)
+
+    def guess_file_type(self, path, *, strict=True):
+        """Guess the type of a file based on its path.
+
+        Similar to guess_type(), but takes file path instead of URL.
+        """
+        # Lazy import to improve module import time
+        import os
+
+        path = os.fsdecode(path)
+        path = os.path.splitdrive(path)[1]
+        return self._guess_file_type(path, strict, os.path.splitext)
+
+    def _guess_file_type(self, path, strict, splitext):
+        base, ext = splitext(path)
+        while (ext_lower := ext.lower()) in self.suffix_map:
+            base, ext = splitext(base + self.suffix_map[ext_lower])
+        # encodings_map is case sensitive
         if ext in self.encodings_map:
             encoding = self.encodings_map[ext]
-            base, ext = posixpath.splitext(base)
+            base, ext = splitext(base)
         else:
             encoding = None
+        ext = ext.lower()
         types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
         types_map = self.types_map[False]
         if ext in types_map:
             return types_map[ext], encoding
-        elif ext.lower() in types_map:
-            return types_map[ext.lower()], encoding
         else:
             return None, encoding
 
@@ -162,13 +205,13 @@ class MimeTypes:
         Return value is a list of strings giving the possible filename
         extensions, including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data stream,
-        but would be mapped to the MIME type `type' by guess_type().
+        but would be mapped to the MIME type 'type' by guess_type().
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         type = type.lower()
-        extensions = self.types_map_inv[True].get(type, [])
+        extensions = list(self.types_map_inv[True].get(type, []))
         if not strict:
             for ext in self.types_map_inv[False].get(type, []):
                 if ext not in extensions:
@@ -181,11 +224,11 @@ class MimeTypes:
         Return value is a string giving a filename extension,
         including the leading dot ('.').  The extension is not
         guaranteed to have been associated with any particular data
-        stream, but would be mapped to the MIME type `type' by
-        guess_type().  If no extension can be guessed for `type', None
+        stream, but would be mapped to the MIME type 'type' by
+        guess_type().  If no extension can be guessed for 'type', None
         is returned.
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional 'strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
         extensions = self.guess_all_extensions(type, strict)
@@ -212,10 +255,7 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
-        while 1:
-            line = fp.readline()
-            if not line:
-                break
+        while line := fp.readline():
             words = line.split()
             for i in range(len(words)):
                 if words[i][0] == '#':
@@ -236,10 +276,21 @@ class MimeTypes:
         types.
         """
 
-        # Windows only
-        if not _winreg:
+        if not _mimetypes_read_windows_registry and not _winreg:
             return
 
+        add_type = self.add_type
+        if strict:
+            add_type = lambda type, ext: self.add_type(type, ext, True)
+
+        # Accelerated function if it is available
+        if _mimetypes_read_windows_registry:
+            _mimetypes_read_windows_registry(add_type)
+        elif _winreg:
+            self._read_windows_registry(add_type)
+
+    @classmethod
+    def _read_windows_registry(cls, add_type):
         def enum_types(mimedb):
             i = 0
             while True:
@@ -264,7 +315,7 @@ class MimeTypes:
                             subkey, 'Content Type')
                         if datatype != _winreg.REG_SZ:
                             continue
-                        self.add_type(mimetype, subkeyname, strict)
+                        add_type(mimetype, subkeyname)
                 except OSError:
                     continue
 
@@ -283,12 +334,22 @@ def guess_type(url, strict=True):
     to ".tar.gz".  (This is table-driven too, using the dictionary
     suffix_map).
 
-    Optional `strict' argument when false adds a bunch of commonly found, but
+    Optional 'strict' argument when false adds a bunch of commonly found, but
     non-standard types.
     """
     if _db is None:
         init()
     return _db.guess_type(url, strict)
+
+
+def guess_file_type(path, *, strict=True):
+    """Guess the type of a file based on its path.
+
+    Similar to guess_type(), but takes file path instead of URL.
+    """
+    if _db is None:
+        init()
+    return _db.guess_file_type(path, strict=strict)
 
 
 def guess_all_extensions(type, strict=True):
@@ -297,11 +358,11 @@ def guess_all_extensions(type, strict=True):
     Return value is a list of strings giving the possible filename
     extensions, including the leading dot ('.').  The extension is not
     guaranteed to have been associated with any particular data
-    stream, but would be mapped to the MIME type `type' by
-    guess_type().  If no extension can be guessed for `type', None
+    stream, but would be mapped to the MIME type 'type' by
+    guess_type().  If no extension can be guessed for 'type', None
     is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
@@ -314,10 +375,10 @@ def guess_extension(type, strict=True):
     Return value is a string giving a filename extension, including the
     leading dot ('.').  The extension is not guaranteed to have been
     associated with any particular data stream, but would be mapped to the
-    MIME type `type' by guess_type().  If no extension can be guessed for
-    `type', None is returned.
+    MIME type 'type' by guess_type().  If no extension can be guessed for
+    'type', None is returned.
 
-    Optional `strict' argument when false adds a bunch of commonly found,
+    Optional 'strict' argument when false adds a bunch of commonly found,
     but non-standard types.
     """
     if _db is None:
@@ -345,11 +406,22 @@ def init(files=None):
     global suffix_map, types_map, encodings_map, common_types
     global inited, _db
     inited = True    # so that MimeTypes.__init__() doesn't call us again
-    db = MimeTypes()
-    if files is None:
-        if _winreg:
-            db.read_windows_registry()
-        files = knownfiles
+
+    if files is None or _db is None:
+        db = MimeTypes()
+        # Quick return if not supported
+        db.read_windows_registry()
+
+        if files is None:
+            files = knownfiles
+        else:
+            files = knownfiles + list(files)
+    else:
+        db = _db
+
+    # Lazy import to improve module import time
+    import os
+
     for file in files:
         if os.path.isfile(file):
             db.read(file)
@@ -363,7 +435,7 @@ def init(files=None):
 
 def read_mime_types(file):
     try:
-        f = open(file)
+        f = open(file, encoding='utf-8')
     except OSError:
         return None
     with f:
@@ -373,12 +445,12 @@ def read_mime_types(file):
 
 
 def _default_mime_types():
-    global suffix_map
-    global encodings_map
-    global types_map
-    global common_types
+    global suffix_map, _suffix_map_default
+    global encodings_map, _encodings_map_default
+    global types_map, _types_map_default
+    global common_types, _common_types_default
 
-    suffix_map = {
+    suffix_map = _suffix_map_default = {
         '.svgz': '.svg.gz',
         '.tgz': '.tar.gz',
         '.taz': '.tar.gz',
@@ -387,211 +459,289 @@ def _default_mime_types():
         '.txz': '.tar.xz',
         }
 
-    encodings_map = {
+    encodings_map = _encodings_map_default = {
         '.gz': 'gzip',
         '.Z': 'compress',
         '.bz2': 'bzip2',
         '.xz': 'xz',
+        '.br': 'br',
         }
 
     # Before adding new types, make sure they are either registered with IANA,
-    # at http://www.iana.org/assignments/media-types
+    # at https://www.iana.org/assignments/media-types/media-types.xhtml
     # or extensions, i.e. using the x- prefix
 
-    # If you add to these, please keep them sorted!
-    types_map = {
-        '.a'      : 'application/octet-stream',
-        '.ai'     : 'application/postscript',
-        '.aif'    : 'audio/x-aiff',
-        '.aifc'   : 'audio/x-aiff',
-        '.aiff'   : 'audio/x-aiff',
-        '.au'     : 'audio/basic',
-        '.avi'    : 'video/x-msvideo',
-        '.bat'    : 'text/plain',
-        '.bcpio'  : 'application/x-bcpio',
-        '.bin'    : 'application/octet-stream',
-        '.bmp'    : 'image/x-ms-bmp',
-        '.c'      : 'text/plain',
-        # Duplicates :(
-        '.cdf'    : 'application/x-cdf',
-        '.cdf'    : 'application/x-netcdf',
-        '.cpio'   : 'application/x-cpio',
-        '.csh'    : 'application/x-csh',
-        '.css'    : 'text/css',
-        '.csv'    : 'text/csv',
-        '.dll'    : 'application/octet-stream',
+    # If you add to these, please keep them sorted by mime type.
+    # Make sure the entry with the preferred file extension for a particular mime type
+    # appears before any others of the same mimetype.
+    types_map = _types_map_default = {
+        '.js'     : 'text/javascript',
+        '.mjs'    : 'text/javascript',
+        '.epub'   : 'application/epub+zip',
+        '.gz'     : 'application/gzip',
+        '.json'   : 'application/json',
+        '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
-        '.dvi'    : 'application/x-dvi',
-        '.eml'    : 'message/rfc822',
-        '.eps'    : 'application/postscript',
-        '.etx'    : 'text/x-setext',
-        '.exe'    : 'application/octet-stream',
-        '.gif'    : 'image/gif',
-        '.gtar'   : 'application/x-gtar',
-        '.h'      : 'text/plain',
-        '.hdf'    : 'application/x-hdf',
-        '.htm'    : 'text/html',
-        '.html'   : 'text/html',
-        '.ico'    : 'image/vnd.microsoft.icon',
-        '.ief'    : 'image/ief',
-        '.jpe'    : 'image/jpeg',
-        '.jpeg'   : 'image/jpeg',
-        '.jpg'    : 'image/jpeg',
-        '.js'     : 'application/javascript',
-        '.ksh'    : 'text/plain',
-        '.latex'  : 'application/x-latex',
-        '.m1v'    : 'video/mpeg',
-        '.m3u'    : 'application/vnd.apple.mpegurl',
-        '.m3u8'   : 'application/vnd.apple.mpegurl',
-        '.man'    : 'application/x-troff-man',
-        '.me'     : 'application/x-troff-me',
-        '.mht'    : 'message/rfc822',
-        '.mhtml'  : 'message/rfc822',
-        '.mif'    : 'application/x-mif',
-        '.mov'    : 'video/quicktime',
-        '.movie'  : 'video/x-sgi-movie',
-        '.mp2'    : 'audio/mpeg',
-        '.mp3'    : 'audio/mpeg',
-        '.mp4'    : 'video/mp4',
-        '.mpa'    : 'video/mpeg',
-        '.mpe'    : 'video/mpeg',
-        '.mpeg'   : 'video/mpeg',
-        '.mpg'    : 'video/mpeg',
-        '.ms'     : 'application/x-troff-ms',
-        '.nc'     : 'application/x-netcdf',
-        '.nws'    : 'message/rfc822',
+        '.wiz'    : 'application/msword',
+        '.nq'     : 'application/n-quads',
+        '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
+        '.bin'    : 'application/octet-stream',
+        '.a'      : 'application/octet-stream',
         '.o'      : 'application/octet-stream',
         '.obj'    : 'application/octet-stream',
+        '.so'     : 'application/octet-stream',
         '.oda'    : 'application/oda',
-        '.p12'    : 'application/x-pkcs12',
-        '.p7c'    : 'application/pkcs7-mime',
-        '.pbm'    : 'image/x-portable-bitmap',
+        '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
-        '.pfx'    : 'application/x-pkcs12',
-        '.pgm'    : 'image/x-portable-graymap',
-        '.pl'     : 'text/plain',
-        '.png'    : 'image/png',
-        '.pnm'    : 'image/x-portable-anymap',
+        '.ai'     : 'application/pdf',
+        '.p7c'    : 'application/pkcs7-mime',
+        '.ps'     : 'application/postscript',
+        '.eps'    : 'application/postscript',
+        '.rtf'    : 'application/rtf',
+        '.texi'   : 'application/texinfo',
+        '.texinfo': 'application/texinfo',
+        '.toml'   : 'application/toml',
+        '.trig'   : 'application/trig',
+        '.m3u'    : 'application/vnd.apple.mpegurl',
+        '.m3u8'   : 'application/vnd.apple.mpegurl',
+        '.dll'    : 'application/vnd.microsoft.portable-executable',
+        '.exe'    : 'application/vnd.microsoft.portable-executable',
+        '.xls'    : 'application/vnd.ms-excel',
+        '.xlb'    : 'application/vnd.ms-excel',
+        '.eot'    : 'application/vnd.ms-fontobject',
+        '.ppt'    : 'application/vnd.ms-powerpoint',
         '.pot'    : 'application/vnd.ms-powerpoint',
         '.ppa'    : 'application/vnd.ms-powerpoint',
-        '.ppm'    : 'image/x-portable-pixmap',
         '.pps'    : 'application/vnd.ms-powerpoint',
-        '.ppt'    : 'application/vnd.ms-powerpoint',
-        '.ps'     : 'application/postscript',
         '.pwz'    : 'application/vnd.ms-powerpoint',
-        '.py'     : 'text/x-python',
+        '.odg'    : 'application/vnd.oasis.opendocument.graphics',
+        '.odp'    : 'application/vnd.oasis.opendocument.presentation',
+        '.ods'    : 'application/vnd.oasis.opendocument.spreadsheet',
+        '.odt'    : 'application/vnd.oasis.opendocument.text',
+        '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.rar'    : 'application/vnd.rar',
+        '.wasm'   : 'application/wasm',
+        '.7z'     : 'application/x-7z-compressed',
+        '.bcpio'  : 'application/x-bcpio',
+        '.cpio'   : 'application/x-cpio',
+        '.csh'    : 'application/x-csh',
+        '.deb'    : 'application/x-debian-package',
+        '.dvi'    : 'application/x-dvi',
+        '.gtar'   : 'application/x-gtar',
+        '.hdf'    : 'application/x-hdf',
+        '.h5'     : 'application/x-hdf5',
+        '.latex'  : 'application/x-latex',
+        '.mif'    : 'application/x-mif',
+        '.cdf'    : 'application/x-netcdf',
+        '.nc'     : 'application/x-netcdf',
+        '.p12'    : 'application/x-pkcs12',
+        '.php'    : 'application/x-httpd-php',
+        '.pfx'    : 'application/x-pkcs12',
+        '.ram'    : 'application/x-pn-realaudio',
         '.pyc'    : 'application/x-python-code',
         '.pyo'    : 'application/x-python-code',
-        '.qt'     : 'video/quicktime',
-        '.ra'     : 'audio/x-pn-realaudio',
-        '.ram'    : 'application/x-pn-realaudio',
-        '.ras'    : 'image/x-cmu-raster',
-        '.rdf'    : 'application/xml',
-        '.rgb'    : 'image/x-rgb',
-        '.roff'   : 'application/x-troff',
-        '.rtx'    : 'text/richtext',
-        '.sgm'    : 'text/x-sgml',
-        '.sgml'   : 'text/x-sgml',
+        '.rpm'    : 'application/x-rpm',
         '.sh'     : 'application/x-sh',
         '.shar'   : 'application/x-shar',
-        '.snd'    : 'audio/basic',
-        '.so'     : 'application/octet-stream',
-        '.src'    : 'application/x-wais-source',
+        '.swf'    : 'application/x-shockwave-flash',
         '.sv4cpio': 'application/x-sv4cpio',
         '.sv4crc' : 'application/x-sv4crc',
-        '.svg'    : 'image/svg+xml',
-        '.swf'    : 'application/x-shockwave-flash',
-        '.t'      : 'application/x-troff',
         '.tar'    : 'application/x-tar',
         '.tcl'    : 'application/x-tcl',
         '.tex'    : 'application/x-tex',
-        '.texi'   : 'application/x-texinfo',
-        '.texinfo': 'application/x-texinfo',
-        '.tif'    : 'image/tiff',
-        '.tiff'   : 'image/tiff',
+        '.roff'   : 'application/x-troff',
+        '.t'      : 'application/x-troff',
         '.tr'     : 'application/x-troff',
-        '.tsv'    : 'text/tab-separated-values',
-        '.txt'    : 'text/plain',
+        '.man'    : 'application/x-troff-man',
+        '.me'     : 'application/x-troff-me',
+        '.ms'     : 'application/x-troff-ms',
         '.ustar'  : 'application/x-ustar',
-        '.vcf'    : 'text/x-vcard',
-        '.wav'    : 'audio/x-wav',
-        '.webm'   : 'video/webm',
-        '.wiz'    : 'application/msword',
-        '.wsdl'   : 'application/xml',
-        '.xbm'    : 'image/x-xbitmap',
-        '.xlb'    : 'application/vnd.ms-excel',
-        # Duplicates :(
-        '.xls'    : 'application/excel',
-        '.xls'    : 'application/vnd.ms-excel',
-        '.xml'    : 'text/xml',
-        '.xpdl'   : 'application/xml',
-        '.xpm'    : 'image/x-xpixmap',
+        '.src'    : 'application/x-wais-source',
         '.xsl'    : 'application/xml',
-        '.xwd'    : 'image/x-xwindowdump',
+        '.rdf'    : 'application/xml',
+        '.wsdl'   : 'application/xml',
+        '.xpdl'   : 'application/xml',
+        '.yaml'   : 'application/yaml',
+        '.yml'    : 'application/yaml',
         '.zip'    : 'application/zip',
+        '.3gp'    : 'audio/3gpp',
+        '.3gpp'   : 'audio/3gpp',
+        '.3g2'    : 'audio/3gpp2',
+        '.3gpp2'  : 'audio/3gpp2',
+        '.aac'    : 'audio/aac',
+        '.adts'   : 'audio/aac',
+        '.loas'   : 'audio/aac',
+        '.ass'    : 'audio/aac',
+        '.au'     : 'audio/basic',
+        '.snd'    : 'audio/basic',
+        '.flac'   : 'audio/flac',
+        '.mka'    : 'audio/matroska',
+        '.m4a'    : 'audio/mp4',
+        '.mp3'    : 'audio/mpeg',
+        '.mp2'    : 'audio/mpeg',
+        '.ogg'    : 'audio/ogg',
+        '.opus'   : 'audio/opus',
+        '.aif'    : 'audio/x-aiff',
+        '.aifc'   : 'audio/x-aiff',
+        '.aiff'   : 'audio/x-aiff',
+        '.ra'     : 'audio/x-pn-realaudio',
+        '.wav'    : 'audio/vnd.wave',
+        '.weba'   : 'audio/webm',
+        '.otf'    : 'font/otf',
+        '.ttf'    : 'font/ttf',
+        '.woff'   : 'font/woff',
+        '.woff2'  : 'font/woff2',
+        '.avif'   : 'image/avif',
+        '.bmp'    : 'image/bmp',
+        '.emf'    : 'image/emf',
+        '.fits'   : 'image/fits',
+        '.g3'     : 'image/g3fax',
+        '.gif'    : 'image/gif',
+        '.ief'    : 'image/ief',
+        '.jp2'    : 'image/jp2',
+        '.jpg'    : 'image/jpeg',
+        '.jpe'    : 'image/jpeg',
+        '.jpeg'   : 'image/jpeg',
+        '.jpm'    : 'image/jpm',
+        '.jpx'    : 'image/jpx',
+        '.heic'   : 'image/heic',
+        '.heif'   : 'image/heif',
+        '.png'    : 'image/png',
+        '.svg'    : 'image/svg+xml',
+        '.t38'    : 'image/t38',
+        '.tiff'   : 'image/tiff',
+        '.tif'    : 'image/tiff',
+        '.tfx'    : 'image/tiff-fx',
+        '.ico'    : 'image/vnd.microsoft.icon',
+        '.webp'   : 'image/webp',
+        '.wmf'    : 'image/wmf',
+        '.ras'    : 'image/x-cmu-raster',
+        '.pnm'    : 'image/x-portable-anymap',
+        '.pbm'    : 'image/x-portable-bitmap',
+        '.pgm'    : 'image/x-portable-graymap',
+        '.ppm'    : 'image/x-portable-pixmap',
+        '.rgb'    : 'image/x-rgb',
+        '.xbm'    : 'image/x-xbitmap',
+        '.xpm'    : 'image/x-xpixmap',
+        '.xwd'    : 'image/x-xwindowdump',
+        '.eml'    : 'message/rfc822',
+        '.mht'    : 'message/rfc822',
+        '.mhtml'  : 'message/rfc822',
+        '.nws'    : 'message/rfc822',
+        '.gltf'   : 'model/gltf+json',
+        '.glb'    : 'model/gltf-binary',
+        '.stl'    : 'model/stl',
+        '.css'    : 'text/css',
+        '.csv'    : 'text/csv',
+        '.html'   : 'text/html',
+        '.htm'    : 'text/html',
+        '.md'     : 'text/markdown',
+        '.markdown': 'text/markdown',
+        '.n3'     : 'text/n3',
+        '.txt'    : 'text/plain',
+        '.bat'    : 'text/plain',
+        '.c'      : 'text/plain',
+        '.h'      : 'text/plain',
+        '.ksh'    : 'text/plain',
+        '.pl'     : 'text/plain',
+        '.srt'    : 'text/plain',
+        '.rtx'    : 'text/richtext',
+        '.tsv'    : 'text/tab-separated-values',
+        '.vtt'    : 'text/vtt',
+        '.py'     : 'text/x-python',
+        '.rst'    : 'text/x-rst',
+        '.etx'    : 'text/x-setext',
+        '.sgm'    : 'text/x-sgml',
+        '.sgml'   : 'text/x-sgml',
+        '.vcf'    : 'text/x-vcard',
+        '.xml'    : 'text/xml',
+        '.mkv'    : 'video/matroska',
+        '.mk3d'   : 'video/matroska-3d',
+        '.mp4'    : 'video/mp4',
+        '.mpeg'   : 'video/mpeg',
+        '.m1v'    : 'video/mpeg',
+        '.mpa'    : 'video/mpeg',
+        '.mpe'    : 'video/mpeg',
+        '.mpg'    : 'video/mpeg',
+        '.ogv'    : 'video/ogg',
+        '.mov'    : 'video/quicktime',
+        '.qt'     : 'video/quicktime',
+        '.webm'   : 'video/webm',
+        '.avi'    : 'video/vnd.avi',
+        '.m4v'    : 'video/x-m4v',
+        '.wmv'    : 'video/x-ms-wmv',
+        '.movie'  : 'video/x-sgi-movie',
         }
 
     # These are non-standard types, commonly found in the wild.  They will
     # only match if strict=0 flag is given to the API methods.
 
     # Please sort these too
-    common_types = {
-        '.jpg' : 'image/jpg',
-        '.mid' : 'audio/midi',
+    common_types = _common_types_default = {
+        '.apk' : 'application/vnd.android.package-archive',
         '.midi': 'audio/midi',
+        '.mid' : 'audio/midi',
+        '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
-        '.pict': 'image/pict',
-        '.rtf' : 'application/rtf',
-        '.xul' : 'text/xul'
+        '.xul' : 'text/xul',
         }
 
 
 _default_mime_types()
 
 
+def _parse_args(args):
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(
+        description='map filename extensions to MIME types', color=True
+    )
+    parser.add_argument(
+        '-e', '--extension',
+        action='store_true',
+        help='guess extension instead of type'
+    )
+    parser.add_argument(
+        '-l', '--lenient',
+        action='store_true',
+        help='additionally search for common but non-standard types'
+    )
+    parser.add_argument('type', nargs='+', help='a type to search')
+    args = parser.parse_args(args)
+    return args, parser.format_help()
+
+
+def _main(args=None):
+    """Run the mimetypes command-line interface and return a text to print."""
+    args, help_text = _parse_args(args)
+
+    results = []
+    if args.extension:
+        for gtype in args.type:
+            guess = guess_extension(gtype, not args.lenient)
+            if guess:
+                results.append(str(guess))
+            else:
+                results.append(f"error: unknown type {gtype}")
+        return results
+    else:
+        for gtype in args.type:
+            guess, encoding = guess_type(gtype, not args.lenient)
+            if guess:
+                results.append(f"type: {guess} encoding: {encoding}")
+            else:
+                results.append(f"error: media type unknown for {gtype}")
+        return results
+
+
 if __name__ == '__main__':
-    import getopt
+    import sys
 
-    USAGE = """\
-Usage: mimetypes.py [options] type
-
-Options:
-    --help / -h       -- print this message and exit
-    --lenient / -l    -- additionally search of some common, but non-standard
-                         types.
-    --extension / -e  -- guess extension instead of type
-
-More than one type argument may be given.
-"""
-
-    def usage(code, msg=''):
-        print(USAGE)
-        if msg: print(msg)
-        sys.exit(code)
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hle',
-                                   ['help', 'lenient', 'extension'])
-    except getopt.error as msg:
-        usage(1, msg)
-
-    strict = 1
-    extension = 0
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage(0)
-        elif opt in ('-l', '--lenient'):
-            strict = 0
-        elif opt in ('-e', '--extension'):
-            extension = 1
-    for gtype in args:
-        if extension:
-            guess = guess_extension(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print(guess)
-        else:
-            guess, encoding = guess_type(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print('type:', guess, 'encoding:', encoding)
+    results = _main()
+    print("\n".join(results))
+    sys.exit(any(result.startswith("error: ") for result in results))

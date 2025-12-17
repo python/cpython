@@ -1,5 +1,5 @@
-:mod:`tokenize` --- Tokenizer for Python source
-===============================================
+:mod:`!tokenize` --- Tokenizer for Python source
+================================================
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
@@ -13,13 +13,23 @@
 
 The :mod:`tokenize` module provides a lexical scanner for Python source code,
 implemented in Python.  The scanner in this module returns comments as tokens
-as well, making it useful for implementing "pretty-printers," including
+as well, making it useful for implementing "pretty-printers", including
 colorizers for on-screen displays.
 
-To simplify token stream handling, all :ref:`operators` and :ref:`delimiters`
-tokens are returned using the generic :data:`~token.OP` token type.  The exact
+To simplify token stream handling, all :ref:`operator <operators>` and
+:ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
+the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
+
+
+.. warning::
+
+   Note that the functions in this module are only designed to parse
+   syntactically valid Python code (code that does not raise when parsed
+   using :func:`ast.parse`).  The behavior of the functions in this module is
+   **undefined** when providing invalid Python code and it can change at any
+   point.
 
 Tokenizing Input
 ----------------
@@ -38,8 +48,8 @@ The primary entry point is a :term:`generator`:
    column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of
    ints specifying the row and column where the token ends in the source; and
    the line on which the token was found. The line passed (the last tuple item)
-   is the *logical* line; continuation lines are included.  The 5 tuple is
-   returned as a :term:`named tuple` with the field names:
+   is the *physical* line.  The 5 tuple is returned as a :term:`named tuple`
+   with the field names:
    ``type string start end line``.
 
    The returned :term:`named tuple` has an additional property named
@@ -56,6 +66,16 @@ The primary entry point is a :term:`generator`:
    :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
 
+.. function:: generate_tokens(readline)
+
+   Tokenize a source reading unicode strings instead of bytes.
+
+   Like :func:`.tokenize`, the *readline* argument is a callable returning
+   a single line of input. However, :func:`generate_tokens` expects *readline*
+   to return a str object rather than bytes.
+
+   The result is an iterator yielding named tuples, exactly like
+   :func:`.tokenize`. It does not yield an :data:`~token.ENCODING` token.
 
 All constants from the :mod:`token` module are also exported from
 :mod:`tokenize`.
@@ -71,14 +91,14 @@ write back the modified script.
     sequences with at least two elements, the token type and the token string.
     Any additional sequence elements are ignored.
 
-    The reconstructed script is returned as a single string.  The result is
-    guaranteed to tokenize back to match the input so that the conversion is
-    lossless and round-trips are assured.  The guarantee applies only to the
-    token type and token string as the spacing between tokens (column
-    positions) may change.
+    The result is guaranteed to tokenize back to match the input so that the
+    conversion is lossless and round-trips are assured.  The guarantee applies
+    only to the token type and token string as the spacing between tokens
+    (column positions) may change.
 
     It returns bytes, encoded using the :data:`~token.ENCODING` token, which
-    is the first token sequence output by :func:`.tokenize`.
+    is the first token sequence output by :func:`.tokenize`. If there is no
+    encoding token in the input, it returns a str instead.
 
 
 :func:`.tokenize` needs to detect the encoding of source files it tokenizes. The
@@ -127,11 +147,6 @@ function it uses to do this is available:
        2,
        3
 
-Note that unclosed single-quoted strings do not cause an error to be
-raised. They are tokenized as :data:`~token.ERRORTOKEN`, followed by the
-tokenization of their contents.
-
-
 .. _tokenize-cli:
 
 Command-Line Usage
@@ -150,11 +165,11 @@ The following options are accepted:
 
 .. program:: tokenize
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    show this help message and exit
 
-.. cmdoption:: -e, --exact
+.. option:: -e, --exact
 
    display token names using the exact type
 
@@ -217,7 +232,7 @@ will be tokenized to the following output where the first column is the range
 of the line/column coordinates where the token is found, the second column is
 the name of the token, and the final column is the value of the token (if any)
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize hello.py
     0,0-0,0:            ENCODING       'utf-8'
@@ -243,7 +258,7 @@ the name of the token, and the final column is the value of the token (if any)
 
 The exact token type names can be displayed using the :option:`-e` option:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
     $ python -m tokenize -e hello.py
     0,0-0,0:            ENCODING       'utf-8'
@@ -266,3 +281,22 @@ The exact token type names can be displayed using the :option:`-e` option:
     4,10-4,11:          RPAR           ')'
     4,11-4,12:          NEWLINE        '\n'
     5,0-5,0:            ENDMARKER      ''
+
+Example of tokenizing a file programmatically, reading unicode
+strings instead of bytes with :func:`generate_tokens`::
+
+    import tokenize
+
+    with tokenize.open('hello.py') as f:
+        tokens = tokenize.generate_tokens(f.readline)
+        for token in tokens:
+            print(token)
+
+Or reading bytes directly with :func:`.tokenize`::
+
+    import tokenize
+
+    with open('hello.py', 'rb') as f:
+        tokens = tokenize.tokenize(f.readline)
+        for token in tokens:
+            print(token)

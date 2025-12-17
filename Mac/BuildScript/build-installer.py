@@ -1,30 +1,38 @@
 #!/usr/bin/env python
 """
-This script is used to build "official" universal installers on Mac OS X.
-It requires at least Mac OS X 10.5, Xcode 3, and the 10.4u SDK for
-32-bit builds.  64-bit or four-way universal builds require at least
-OS X 10.5 and the 10.5 SDK.
+This script is used to build "official" universal installers on macOS.
 
-Please ensure that this script keeps working with Python 2.5, to avoid
-bootstrap issues (/usr/bin/python is Python 2.5 on OSX 10.5).  Sphinx,
-which is used to build the documentation, currently requires at least
-Python 2.4.  However, as of Python 3.4.1, Doc builds require an external
-sphinx-build and the current versions of Sphinx now require at least
-Python 2.6.
+NEW for 3.10 and backports:
+- support universal2 variant with arm64 and x86_64 archs
+- enable clang optimizations when building on 10.15+
 
-In addition to what is supplied with OS X 10.5+ and Xcode 3+, the script
-requires an installed version of git and a third-party version of
-Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets) or Tcl/TK 8.5
-(for 10.6 or later) installed in /Library/Frameworks.  When installed,
-the Python built by this script will attempt to dynamically link first to
-Tcl and Tk frameworks in /Library/Frameworks if available otherwise fall
-back to the ones in /System/Library/Framework.  For the build, we recommend
-installing the most recent ActiveTcl 8.4 or 8.5 version.
+NEW for 3.9.0 and backports:
+- 2.7 end-of-life issues:
+    - Python 3 installs now update the Current version link
+      in /Library/Frameworks/Python.framework/Versions
+- fully support running under Python 3 as well as 2.7
+- support building on newer macOS systems with SIP
+- fully support building on macOS 10.9+
+- support 10.6+ on best effort
+- support bypassing docs build by supplying a prebuilt
+    docs html tarball in the third-party source library,
+    in the format and filename conventional of those
+    downloadable from python.org:
+        python-3.x.y-docs-html.tar.bz2
 
-32-bit-only installer builds are still possible on OS X 10.4 with Xcode 2.5
-and the installation of additional components, such as a newer Python
-(2.5 is needed for Python parser updates), git, and for the documentation
-build either svn (pre-3.4.1) or sphinx-build (3.4.1 and later).
+NEW for 3.7.0:
+- support Intel 64-bit-only () and 32-bit-only installer builds
+- build and use internal Tcl/Tk 8.6 for 10.6+ builds
+- deprecate use of explicit SDK (--sdk-path=) since all but the oldest
+  versions of Xcode support implicit setting of an SDK via environment
+  variables (SDKROOT and friends, see the xcrun man page for more info).
+  The SDK stuff was primarily needed for building universal installers
+  for 10.4; so as of 3.7.0, building installers for 10.4 is no longer
+  supported with build-installer.
+- use generic "gcc" as compiler (CC env var) rather than "gcc-4.2"
+
+TODO:
+- test building with SDKROOT and DEVELOPER_DIR xcrun env variables
 
 Usage: see USAGE variable in the script.
 """
@@ -45,14 +53,15 @@ STAT_0o775 = ( stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
 INCLUDE_TIMESTAMP = 1
 VERBOSE = 1
 
-from plistlib import Plist
+RUNNING_ON_PYTHON2 = sys.version_info.major == 2
 
-try:
+if RUNNING_ON_PYTHON2:
     from plistlib import writePlist
-except ImportError:
-    # We're run using python2.3
-    def writePlist(plist, path):
-        plist.write(path)
+else:
+    from plistlib import dump
+    def writePlist(path, plist):
+        with open(plist, 'wb') as fp:
+            dump(path, fp)
 
 def shellQuote(value):
     """
@@ -111,32 +120,21 @@ WORKDIR = "/tmp/_py"
 DEPSRC = os.path.join(WORKDIR, 'third-party')
 DEPSRC = os.path.expanduser('~/Universal/other-sources')
 
-# Location of the preferred SDK
-
-### There are some issues with the SDK selection below here,
-### The resulting binary doesn't work on all platforms that
-### it should. Always default to the 10.4u SDK until that
-### issue is resolved.
-###
-##if int(os.uname()[2].split('.')[0]) == 8:
-##    # Explicitly use the 10.4u (universal) SDK when
-##    # building on 10.4, the system headers are not
-##    # useable for a universal build
-##    SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
-##else:
-##    SDKPATH = "/"
-
-SDKPATH = "/Developer/SDKs/MacOSX10.4u.sdk"
-
-universal_opts_map = { '32-bit': ('i386', 'ppc',),
+universal_opts_map = { 'universal2': ('arm64', 'x86_64'),
+                       '32-bit': ('i386', 'ppc',),
                        '64-bit': ('x86_64', 'ppc64',),
                        'intel':  ('i386', 'x86_64'),
+                       'intel-32':  ('i386',),
+                       'intel-64':  ('x86_64',),
                        '3-way':  ('ppc', 'i386', 'x86_64'),
                        'all':    ('i386', 'ppc', 'x86_64', 'ppc64',) }
 default_target_map = {
+        'universal2': '10.9',
         '64-bit': '10.5',
         '3-way': '10.5',
         'intel': '10.5',
+        'intel-32': '10.4',
+        'intel-64': '10.5',
         'all': '10.5',
 }
 
@@ -154,17 +152,21 @@ SRCDIR = os.path.dirname(
         ))))
 
 # $MACOSX_DEPLOYMENT_TARGET -> minimum OS X level
-DEPTARGET = '10.3'
+DEPTARGET = '10.5'
 
 def getDeptargetTuple():
     return tuple([int(n) for n in DEPTARGET.split('.')[0:2]])
 
+def getBuildTuple():
+    return tuple([int(n) for n in platform.mac_ver()[0].split('.')[0:2]])
+
 def getTargetCompilers():
     target_cc_map = {
-        '10.3': ('gcc-4.0', 'g++-4.0'),
         '10.4': ('gcc-4.0', 'g++-4.0'),
-        '10.5': ('gcc-4.2', 'g++-4.2'),
-        '10.6': ('gcc-4.2', 'g++-4.2'),
+        '10.5': ('gcc', 'g++'),
+        '10.6': ('gcc', 'g++'),
+        '10.7': ('gcc', 'g++'),
+        '10.8': ('gcc', 'g++'),
     }
     return target_cc_map.get(DEPTARGET, ('clang', 'clang++') )
 
@@ -180,9 +182,9 @@ USAGE = textwrap.dedent("""\
     -b DIR
     --build-dir=DIR:     Create build here (default: %(WORKDIR)r)
     --third-party=DIR:   Store third-party sources here (default: %(DEPSRC)r)
-    --sdk-path=DIR:      Location of the SDK (default: %(SDKPATH)r)
+    --sdk-path=DIR:      Location of the SDK (deprecated, use SDKROOT env variable)
     --src-dir=DIR:       Location of the Python sources (default: %(SRCDIR)r)
-    --dep-target=10.n    OS X deployment target (default: %(DEPTARGET)r)
+    --dep-target=10.n    macOS deployment target (default: %(DEPTARGET)r)
     --universal-archs=x  universal architectures (options: %(UNIVERSALOPTS)r, default: %(UNIVERSALARCHS)r)
 """)% globals()
 
@@ -193,6 +195,39 @@ USAGE = textwrap.dedent("""\
 #                       '/Library/Frameworks/Tcl.framework/Versions/8.5/Tcl',
 #                       '/Library/Frameworks/Tk.framework/Versions/8.5/Tk']
 EXPECTED_SHARED_LIBS = {}
+
+# Are we building and linking with our own copy of Tcl/TK?
+#   For now, do so if deployment target is 10.6+.
+def internalTk():
+    return getDeptargetTuple() >= (10, 6)
+
+# Do we use 8.6.8 when building our own copy
+# of Tcl/Tk or a modern version.
+#   We use the old version when building on
+#   old versions of macOS due to build issues.
+def useOldTk():
+    return getBuildTuple() < (10, 15)
+
+
+def tweak_tcl_build(basedir, archList):
+    with open("Makefile", "r") as fp:
+        contents = fp.readlines()
+
+    # For reasons I don't understand the tcl configure script
+    # decides that some stdlib symbols aren't present, before
+    # deciding that strtod is broken.
+    new_contents = []
+    for line in contents:
+        if line.startswith("COMPAT_OBJS"):
+            # note: the space before strtod.o is intentional,
+            # the detection of a broken strtod results in
+            # "fixstrod.o" on this line.
+            for nm in ("strstr.o", "strtoul.o", " strtod.o"):
+                line = line.replace(nm, "")
+        new_contents.append(line)
+
+    with open("Makefile", "w") as fp:
+        fp.writelines(new_contents)
 
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
@@ -205,33 +240,43 @@ THIRD_PARTY_LIBS = []
 def library_recipes():
     result = []
 
-    LT_10_5 = bool(getDeptargetTuple() < (10, 5))
-
     # Since Apple removed the header files for the deprecated system
     # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
     # have much choice but to build our own copy here, too.
 
     result.extend([
           dict(
-              name="OpenSSL 1.0.2k",
-              url="https://www.openssl.org/source/openssl-1.0.2k.tar.gz",
-              checksum='f965fc0bf01bf882b31314b61391ae65',
-              patches=[
-                  "openssl_sdk_makedepend.patch",
-                   ],
+              name="OpenSSL 3.5.4",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.5.4/openssl-3.5.4.tar.gz",
+              checksum="967311f84955316969bdb1d8d4b983718ef42338639c621ec4c34fddef355e99",
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
           ),
     ])
 
-#   Disable for now
-    if False:   # if getDeptargetTuple() > (10, 5):
+    if internalTk():
+        if useOldTk():
+            tcl_tk_ver='8.6.8'
+            tcl_checksum='81656d3367af032e0ae6157eff134f89'
+
+            tk_checksum='5e0faecba458ee1386078fb228d008ba'
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
+
+        else:
+            tcl_tk_ver='9.0.2'
+            tcl_checksum='e074c6a8d9ba2cddf914ba97b6677a552d7a52a3ca102924389a05ccb249b520'
+
+            tk_checksum='76fb852b2f167592fe8b41aa6549ce4e486dbf3b259a269646600e3894517c76'
+            tk_patches = []
+
+
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
-              name="Tcl 8.5.15",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tcl8.5.15-src.tar.gz",
-              checksum='f3df162f92c69b254079c4d0af7a690f',
+              name="Tcl %s"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
+              checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -239,18 +284,17 @@ def library_recipes():
                     '--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib'%(getVersion(),),
               ],
               useLDFlags=False,
+              buildrecipe=tweak_tcl_build,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.5'%(getVersion())),
+                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
                   },
               ),
           dict(
-              name="Tk 8.5.15",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tk8.5.15-src.tar.gz",
-              checksum='55b8e33f903210a4e1c8bce0f820657f',
-              patches=[
-                  "issue19373_tk_8_5_15_source.patch",
-                   ],
+              name="Tk %s"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
+              checksum=tk_checksum,
+              patches=tk_patches,
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -261,8 +305,8 @@ def library_recipes():
               useLDFlags=False,
               install='make TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s && make install TCL_LIBRARY=%(TCL_LIBRARY)s TK_LIBRARY=%(TK_LIBRARY)s DESTDIR=%(DESTDIR)s'%{
                   "DESTDIR": shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.5'%(getVersion())),
-                  "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.5'%(getVersion())),
+                  "TCL_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tcl8.6'%(getVersion())),
+                  "TK_LIBRARY": shellQuote('/Library/Frameworks/Python.framework/Versions/%s/lib/tk8.6'%(getVersion())),
                   },
                 ),
         ])
@@ -270,9 +314,9 @@ def library_recipes():
     if PYTHON_3:
         result.extend([
           dict(
-              name="XZ 5.2.2",
-              url="http://tukaani.org/xz/xz-5.2.2.tar.gz",
-              checksum='7cf6a8544a7dae8e8106fdf7addfa28c',
+              name="XZ 5.2.3",
+              url="http://tukaani.org/xz/xz-5.2.3.tar.gz",
+              checksum='ef68674fb47a8b8e741b34e429d86e9d',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
@@ -281,32 +325,32 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="NCurses 5.9",
-              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz",
-              checksum='8cb9c412e5f2d96bc6f459aa8c6282a1',
+              name="NCurses 6.5",
+              url="https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+              checksum="136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
               configure_pre=[
+                  "--datadir=/usr/share",
+                  "--disable-lib-suffixes",
+                  "--disable-db-install",
+                  "--disable-mixed-case",
+                  "--enable-overwrite",
                   "--enable-widec",
+                  f"--libdir=/Library/Frameworks/Python.framework/Versions/{getVersion()}/lib",
+                  "--sharedstatedir=/usr/com",
+                  "--sysconfdir=/etc",
+                  "--with-default-terminfo-dir=/usr/share/terminfo",
+                  "--with-shared",
+                  "--with-terminfo-dirs=/usr/share/terminfo",
+                  "--without-ada",
                   "--without-cxx",
                   "--without-cxx-binding",
-                  "--without-ada",
-                  "--without-curses-h",
-                  "--enable-shared",
-                  "--with-shared",
+                  "--without-cxx-shared",
                   "--without-debug",
-                  "--without-normal",
-                  "--without-tests",
                   "--without-manpages",
-                  "--datadir=/usr/share",
-                  "--sysconfdir=/etc",
-                  "--sharedstatedir=/usr/com",
-                  "--with-terminfo-dirs=/usr/share/terminfo",
-                  "--with-default-terminfo-dir=/usr/share/terminfo",
-                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
+                  "--without-normal",
+                  "--without-progs",
+                  "--without-tests",
               ],
-              patchscripts=[
-                  ("ftp://invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
-                   "f54bf02a349f96a7c4f0d00922f3a0d4"),
-                   ],
               useLDFlags=False,
               install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -315,65 +359,31 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.14.2",
-              url="https://www.sqlite.org/2016/sqlite-autoconf-3140200.tar.gz",
-              checksum='90c53cacb811db27f990b8292bd96159',
+              name="SQLite 3.50.4",
+              url="https://www.sqlite.org/2025/sqlite-autoconf-3500400.tar.gz",
+              checksum="a3db587a1b92ee5ddac2f66b3edb41b26f9c867275782d46c3a088977d6a5b18",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
                             '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
-                 '%s' % ('','-DSQLITE_WITHOUT_ZONEMALLOC ')[LT_10_5]),
+                            ),
               configure_pre=[
                   '--enable-threadsafe',
-                  '--enable-shared=no',
-                  '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
-          ),
-        ])
-
-    if getDeptargetTuple() < (10, 5):
-        result.extend([
-          dict(
-              name="Bzip2 1.0.6",
-              url="http://bzip.org/1.0.6/bzip2-1.0.6.tar.gz",
-              checksum='00b516f4704d4a7cb50a1d97e6e8e15b',
-              configure=None,
-              install='make install CC=%s CXX=%s, PREFIX=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-                  SDKPATH,
-              ),
+              ],
+              install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
-              name="ZLib 1.2.3",
-              url="http://www.gzip.org/zlib/zlib-1.2.3.tar.gz",
-              checksum='debc62758716a169df9f62e6ab2bc634',
-              configure=None,
-              install='make install CC=%s CXX=%s, prefix=%s/usr/local/ CFLAGS="-arch %s -isysroot %s"'%(
-                  CC, CXX,
-                  shellQuote(os.path.join(WORKDIR, 'libraries')),
-                  ' -arch '.join(ARCHLIST),
-                  SDKPATH,
-              ),
-          ),
-          dict(
-              # Note that GNU readline is GPL'd software
-              name="GNU Readline 6.1.2",
-              url="http://ftp.gnu.org/pub/gnu/readline/readline-6.1.tar.gz" ,
-              checksum='fc2f7e714fe792db1ce6ddc4c9fb4ef3',
-              patchlevel='0',
-              patches=[
-                  # The readline maintainers don't do actual micro releases, but
-                  # just ship a set of patches.
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-001',
-                   'c642f2e84d820884b0bf9fd176bc6c3f'),
-                  ('http://ftp.gnu.org/pub/gnu/readline/readline-6.1-patches/readline61-002',
-                   '1a76781a1ea734e831588285db7ec9b1'),
+              name="libmpdec 4.0.1",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz",
+              checksum="96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8",
+              configure_pre=[
+                  "--disable-cxx",
+                  "MACHINE=universal",
               ]
           ),
         ])
@@ -394,6 +404,14 @@ def library_recipes():
 
     return result
 
+def compilerCanOptimize():
+    """
+    Return True iff the default Xcode version can use PGO and LTO
+    """
+    # bpo-42235: The version check is pretty conservative, can be
+    # adjusted after testing
+    mac_ver = tuple(map(int, platform.mac_ver()[0].split('.')))
+    return mac_ver >= (10, 15)
 
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
@@ -405,8 +423,7 @@ def pkg_recipes():
             source="/Library/Frameworks/Python.framework",
             readme="""\
                 This package installs Python.framework, that is the python
-                interpreter and the standard library. This also includes Python
-                wrappers for lots of Mac OS X API's.
+                interpreter and the standard library.
             """,
             postflight="scripts/postflight.framework",
             selected='selected',
@@ -444,7 +461,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -482,24 +499,6 @@ def pkg_recipes():
             selected='selected',
         ),
     ]
-
-    if getDeptargetTuple() < (10, 4) and not PYTHON_3:
-        result.append(
-            dict(
-                name="PythonSystemFixes",
-                long_name="Fix system Python",
-                readme="""\
-                    This package updates the system python installation on
-                    Mac OS X 10.3 to ensure that you can build new python extensions
-                    using that copy of python after installing this version.
-                    """,
-                postflight="../Tools/fixapplepython23.py",
-                topdir="/Library/Frameworks/Python.framework",
-                source="/empty-dir",
-                required=False,
-                selected=unselected_for_python3,
-            )
-        )
 
     return result
 
@@ -565,55 +564,54 @@ def checkEnvironment():
     Check that we're running on a supported system.
     """
 
-    if sys.version_info[0:2] < (2, 4):
-        fatal("This script must be run with Python 2.4 or later")
+    if sys.version_info[0:2] < (2, 7):
+        fatal("This script must be run with Python 2.7 (or later)")
 
     if platform.system() != 'Darwin':
-        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
+        fatal("This script should be run on a macOS 10.5 (or later) system")
 
     if int(platform.release().split('.')[0]) < 8:
-        fatal("This script should be run on a Mac OS X 10.4 (or later) system")
-
-    if not os.path.exists(SDKPATH):
-        fatal("Please install the latest version of Xcode and the %s SDK"%(
-            os.path.basename(SDKPATH[:-4])))
+        fatal("This script should be run on a macOS 10.5 (or later) system")
 
     # Because we only support dynamic load of only one major/minor version of
+    # Tcl/Tk, if we are not using building and using our own private copy of
     # Tcl/Tk, ensure:
-    # 1. there are no user-installed frameworks of Tcl/Tk with version
-    #       higher than the Apple-supplied system version in
-    #       SDKROOT/System/Library/Frameworks
-    # 2. there is a user-installed framework (usually ActiveTcl) in (or linked
-    #       in) SDKROOT/Library/Frameworks with the same version as the system
-    #       version. This allows users to choose to install a newer patch level.
+    # 1. there is a user-installed framework (usually ActiveTcl) in (or linked
+    #       in) SDKROOT/Library/Frameworks.  As of Python 3.7.0, we no longer
+    #       enforce that the version of the user-installed framework also
+    #       exists in the system-supplied Tcl/Tk frameworks.  Time to support
+    #       Tcl/Tk 8.6 even if Apple does not.
+    if not internalTk():
+        frameworks = {}
+        for framework in ['Tcl', 'Tk']:
+            fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
+            libfw = os.path.join('/', fwpth)
+            usrfw = os.path.join(os.getenv('HOME'), fwpth)
+            frameworks[framework] = os.readlink(libfw)
+            if not os.path.exists(libfw):
+                fatal("Please install a link to a current %s %s as %s so "
+                        "the user can override the system framework."
+                        % (framework, frameworks[framework], libfw))
+            if os.path.exists(usrfw):
+                fatal("Please rename %s to avoid possible dynamic load issues."
+                        % usrfw)
 
-    frameworks = {}
-    for framework in ['Tcl', 'Tk']:
-        fwpth = 'Library/Frameworks/%s.framework/Versions/Current' % framework
-        sysfw = os.path.join(SDKPATH, 'System', fwpth)
-        libfw = os.path.join(SDKPATH, fwpth)
-        usrfw = os.path.join(os.getenv('HOME'), fwpth)
-        frameworks[framework] = os.readlink(sysfw)
-        if not os.path.exists(libfw):
-            fatal("Please install a link to a current %s %s as %s so "
-                    "the user can override the system framework."
-                    % (framework, frameworks[framework], libfw))
-        if os.readlink(libfw) != os.readlink(sysfw):
-            fatal("Version of %s must match %s" % (libfw, sysfw) )
-        if os.path.exists(usrfw):
-            fatal("Please rename %s to avoid possible dynamic load issues."
-                    % usrfw)
+        if frameworks['Tcl'] != frameworks['Tk']:
+            fatal("The Tcl and Tk frameworks are not the same version.")
 
-    if frameworks['Tcl'] != frameworks['Tk']:
-        fatal("The Tcl and Tk frameworks are not the same version.")
+        print(" -- Building with external Tcl/Tk %s frameworks"
+                    % frameworks['Tk'])
 
-    # add files to check after build
-    EXPECTED_SHARED_LIBS['_tkinter.so'] = [
-            "/Library/Frameworks/Tcl.framework/Versions/%s/Tcl"
-                % frameworks['Tcl'],
-            "/Library/Frameworks/Tk.framework/Versions/%s/Tk"
-                % frameworks['Tk'],
-            ]
+        # add files to check after build
+        EXPECTED_SHARED_LIBS['_tkinter.so'] = [
+                "/Library/Frameworks/Tcl.framework/Versions/%s/Tcl"
+                    % frameworks['Tcl'],
+                "/Library/Frameworks/Tk.framework/Versions/%s/Tk"
+                    % frameworks['Tk'],
+                ]
+    else:
+        print(" -- Building private copy of Tcl/Tk")
+    print("")
 
     # Remove inherited environment variables which might influence build
     environ_var_prefixes = ['CPATH', 'C_INCLUDE_', 'DYLD_', 'LANG', 'LC_',
@@ -635,16 +633,12 @@ def checkEnvironment():
         base_path = base_path + ':' + OLD_DEVELOPER_TOOLS
     os.environ['PATH'] = base_path
     print("Setting default PATH: %s"%(os.environ['PATH']))
-    # Ensure ws have access to git and to sphinx-build.
-    # You may have to create links in /usr/bin for them.
-    runCommand('git --version')
-    runCommand('sphinx-build --version')
 
 def parseOptions(args=None):
     """
     Parse arguments and update global settings.
     """
-    global WORKDIR, DEPSRC, SDKPATH, SRCDIR, DEPTARGET
+    global WORKDIR, DEPSRC, SRCDIR, DEPTARGET
     global UNIVERSALOPTS, UNIVERSALARCHS, ARCHLIST, CC, CXX
     global FW_VERSION_PREFIX
     global FW_SSL_DIRECTORY
@@ -677,7 +671,7 @@ def parseOptions(args=None):
             DEPSRC=v
 
         elif k in ('--sdk-path',):
-            SDKPATH=v
+            print(" WARNING: --sdk-path is no longer supported")
 
         elif k in ('--src-dir',):
             SRCDIR=v
@@ -693,7 +687,7 @@ def parseOptions(args=None):
                 if deptarget is None:
                     # Select alternate default deployment
                     # target
-                    DEPTARGET = default_target_map.get(v, '10.3')
+                    DEPTARGET = default_target_map.get(v, '10.5')
             else:
                 raise NotImplementedError(v)
 
@@ -702,7 +696,6 @@ def parseOptions(args=None):
 
     SRCDIR=os.path.abspath(SRCDIR)
     WORKDIR=os.path.abspath(WORKDIR)
-    SDKPATH=os.path.abspath(SDKPATH)
     DEPSRC=os.path.abspath(DEPSRC)
 
     CC, CXX = getTargetCompilers()
@@ -713,7 +706,6 @@ def parseOptions(args=None):
     print("-- Settings:")
     print("   * Source directory:    %s" % SRCDIR)
     print("   * Build directory:     %s" % WORKDIR)
-    print("   * SDK location:        %s" % SDKPATH)
     print("   * Third-party source:  %s" % DEPSRC)
     print("   * Deployment target:   %s" % DEPTARGET)
     print("   * Universal archs:     %s" % str(ARCHLIST))
@@ -744,6 +736,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -809,10 +805,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """
@@ -833,22 +835,28 @@ def build_universal_openssl(basedir, archList):
         arch_opts = {
             "i386": ["darwin-i386-cc"],
             "x86_64": ["darwin64-x86_64-cc", "enable-ec_nistp_64_gcc_128"],
+            "arm64": ["darwin64-arm64-cc"],
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
+
+        # Somewhere between OpenSSL 1.1.0j and 1.1.1c, changes cause the
+        # "enable-ec_nistp_64_gcc_128" option to get compile errors when
+        # building on our 10.6 gcc-4.2 environment.  There have been other
+        # reports of projects running into this when using older compilers.
+        # So, for now, do not try to use "enable-ec_nistp_64_gcc_128" when
+        # building for 10.6.
+        if getDeptargetTuple() == (10, 6):
+            arch_opts['x86_64'].remove('enable-ec_nistp_64_gcc_128')
+
         configure_opts = [
-            "no-krb5",
             "no-idea",
             "no-mdc2",
             "no-rc5",
             "no-zlib",
-            "enable-tlsext",
-            "no-ssl2",
             "no-ssl3",
-            "no-ssl3-method",
             # "enable-unit-test",
             "shared",
-            "--install_prefix=%s"%shellQuote(archbase),
             "--prefix=%s"%os.path.join("/", *FW_VERSION_PREFIX),
             "--openssldir=%s"%os.path.join("/", *FW_SSL_DIRECTORY),
         ]
@@ -856,9 +864,9 @@ def build_universal_openssl(basedir, archList):
             configure_opts.append("no-asm")
         runCommand(" ".join(["perl", "Configure"]
                         + arch_opts[arch] + configure_opts))
-        runCommand("make depend OSX_SDK=%s" % SDKPATH)
-        runCommand("make all OSX_SDK=%s" % SDKPATH)
-        runCommand("make install_sw OSX_SDK=%s" % SDKPATH)
+        runCommand("make depend")
+        runCommand("make all")
+        runCommand("make install_sw DESTDIR=%s"%shellQuote(archbase))
         # runCommand("make test")
         return
 
@@ -1017,27 +1025,24 @@ def buildRecipe(recipe, basedir, archList):
 
         if recipe.get('useLDFlags', 1):
             configure_args.extend([
-                "CFLAGS=%s-mmacosx-version-min=%s -arch %s -isysroot %s "
+                "CFLAGS=%s-mmacosx-version-min=%s -arch %s "
                             "-I%s/usr/local/include"%(
                         recipe.get('extra_cflags', ''),
                         DEPTARGET,
                         ' -arch '.join(archList),
-                        shellQuote(SDKPATH)[1:-1],
                         shellQuote(basedir)[1:-1],),
-                "LDFLAGS=-mmacosx-version-min=%s -isysroot %s -L%s/usr/local/lib -arch %s"%(
+                "LDFLAGS=-mmacosx-version-min=%s -L%s/usr/local/lib -arch %s"%(
                     DEPTARGET,
-                    shellQuote(SDKPATH)[1:-1],
                     shellQuote(basedir)[1:-1],
                     ' -arch '.join(archList)),
             ])
         else:
             configure_args.extend([
-                "CFLAGS=%s-mmacosx-version-min=%s -arch %s -isysroot %s "
+                "CFLAGS=%s-mmacosx-version-min=%s -arch %s "
                             "-I%s/usr/local/include"%(
                         recipe.get('extra_cflags', ''),
                         DEPTARGET,
                         ' -arch '.join(archList),
-                        shellQuote(SDKPATH)[1:-1],
                         shellQuote(basedir)[1:-1],),
             ])
 
@@ -1082,21 +1087,47 @@ def buildLibraries():
 
 def buildPythonDocs():
     # This stores the documentation as Resources/English.lproj/Documentation
-    # inside the framwork. pydoc and IDLE will pick it up there.
+    # inside the framework. pydoc and IDLE will pick it up there.
     print("Install python documentation")
     rootDir = os.path.join(WORKDIR, '_root')
     buildDir = os.path.join('../../Doc')
     docdir = os.path.join(rootDir, 'pydocs')
     curDir = os.getcwd()
     os.chdir(buildDir)
-    # The Doc build changed for 3.4 (technically, for 3.4.1) and for 2.7.9
     runCommand('make clean')
-    # Assume sphinx-build is on our PATH, checked in checkEnvironment
-    runCommand('make html')
+
+    # Search third-party source directory for a pre-built version of the docs.
+    #   Use the naming convention of the docs.python.org html downloads:
+    #       python-3.9.0b1-docs-html.tar.bz2
+    doctarfiles = [ f for f in os.listdir(DEPSRC)
+        if f.startswith('python-'+getFullVersion())
+        if f.endswith('-docs-html.tar.bz2') ]
+    if doctarfiles:
+        doctarfile = doctarfiles[0]
+        if not os.path.exists('build'):
+            os.mkdir('build')
+        # if build directory existed, it was emptied by make clean, above
+        os.chdir('build')
+        # Extract the first archive found for this version into build
+        runCommand('tar xjf %s'%shellQuote(os.path.join(DEPSRC, doctarfile)))
+        # see if tar extracted a directory ending in -docs-html
+        archivefiles = [ f for f in os.listdir('.')
+            if f.endswith('-docs-html')
+            if os.path.isdir(f) ]
+        if archivefiles:
+            archivefile = archivefiles[0]
+            # make it our 'Docs/build/html' directory
+            print(' -- using pre-built python documentation from %s'%archivefile)
+            os.rename(archivefile, 'html')
+        os.chdir(buildDir)
+
+    htmlDir = os.path.join('build', 'html')
+    if not os.path.exists(htmlDir):
+        # Create virtual environment for docs builds with blurb and sphinx
+        runCommand('make venv')
+        runCommand('make html PYTHON=venv/bin/python')
+    os.rename(htmlDir, docdir)
     os.chdir(curDir)
-    if not os.path.exists(docdir):
-        os.mkdir(docdir)
-    os.rename(os.path.join(buildDir, 'build', 'html'), docdir)
 
 
 def buildPython():
@@ -1115,10 +1146,6 @@ def buildPython():
     curdir = os.getcwd()
     os.chdir(buildDir)
 
-    # Not sure if this is still needed, the original build script
-    # claims that parts of the install assume python.exe exists.
-    os.symlink('python', os.path.join(buildDir, 'python.exe'))
-
     # Extract the version from the configure file, needed to calculate
     # several paths.
     version = getVersion()
@@ -1126,44 +1153,103 @@ def buildPython():
     # Since the extra libs are not in their installed framework location
     # during the build, augment the library path so that the interpreter
     # will find them during its extension import sanity checks.
-    os.environ['DYLD_LIBRARY_PATH'] = os.path.join(WORKDIR,
-                                        'libraries', 'usr', 'local', 'lib')
+
     print("Running configure...")
-    runCommand("%s -C --enable-framework --enable-universalsdk=%s "
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
+    runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
+               "--with-system-libmpdec "
                "--with-universal-archs=%s "
+               "%s "
+               "%s "
+               "%s "
+               "%s "
                "%s "
                "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
-        shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
+        shellQuote(os.path.join(SRCDIR, 'configure')),
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
         (' ', '--without-ensurepip ')[PYTHON_3],
+        (' ', "--with-openssl='%s/libraries/usr/local'"%(
+                            shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
+        (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
-    print("Running make")
-    runCommand("make")
+    # As of macOS 10.11 with SYSTEM INTEGRITY PROTECTION, DYLD_*
+    # environment variables are no longer automatically inherited
+    # by child processes from their parents. We used to just set
+    # DYLD_LIBRARY_PATH, pointing to the third-party libs,
+    # in build-installer.py's process environment and it was
+    # passed through the make utility into the environment of
+    # setup.py. Instead, we now append DYLD_LIBRARY_PATH to
+    # the existing RUNSHARED configuration value when we call
+    # make for extension module builds.
 
-    print("Running make install")
-    runCommand("make install DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    runshared_for_make = "".join([
+            " RUNSHARED=",
+            "'",
+            grepValue("Makefile", "RUNSHARED"),
+            ' DYLD_LIBRARY_PATH=',
+            os.path.join(WORKDIR, 'libraries', 'usr', 'local', 'lib'),
+            "'" ])
 
-    print("Running make frameworkinstallextras")
-    runCommand("make frameworkinstallextras DESTDIR=%s"%(
-        shellQuote(rootDir)))
+    # Look for environment value BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS
+    # and, if defined, append its value to the make command.  This allows
+    # us to pass in version control tags, like GITTAG, to a build from a
+    # tarball rather than from a vcs checkout, thus eliminating the need
+    # to have a working copy of the vcs program on the build machine.
+    #
+    # A typical use might be:
+    #      export BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS=" \
+    #                         GITVERSION='echo 123456789a' \
+    #                         GITTAG='echo v3.6.0' \
+    #                         GITBRANCH='echo 3.6'"
 
-    del os.environ['DYLD_LIBRARY_PATH']
+    make_extras = os.getenv("BUILDINSTALLER_BUILDPYTHON_MAKE_EXTRAS")
+    if make_extras:
+        make_cmd = "make " + make_extras + runshared_for_make
+    else:
+        make_cmd = "make" + runshared_for_make
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
+
+    make_cmd = "make install DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
+
+    make_cmd = "make frameworkinstallextras DESTDIR=%s %s"%(
+        shellQuote(rootDir),
+        runshared_for_make)
+    print("Running " + make_cmd)
+    runCommand(make_cmd)
+
     print("Copying required shared libraries")
     if os.path.exists(os.path.join(WORKDIR, 'libraries', 'Library')):
-        runCommand("mv %s/* %s"%(
-            shellQuote(os.path.join(
+        build_lib_dir = os.path.join(
                 WORKDIR, 'libraries', 'Library', 'Frameworks',
-                'Python.framework', 'Versions', getVersion(),
-                'lib')),
-            shellQuote(os.path.join(WORKDIR, '_root', 'Library', 'Frameworks',
-                'Python.framework', 'Versions', getVersion(),
-                'lib'))))
+                'Python.framework', 'Versions', getVersion(), 'lib')
+        fw_lib_dir = os.path.join(
+                WORKDIR, '_root', 'Library', 'Frameworks',
+                'Python.framework', 'Versions', getVersion(), 'lib')
+        if internalTk():
+            # move Tcl and Tk pkgconfig files
+            runCommand("mv %s/pkgconfig/* %s/pkgconfig"%(
+                        shellQuote(build_lib_dir),
+                        shellQuote(fw_lib_dir) ))
+            runCommand("rm -r %s/pkgconfig"%(
+                        shellQuote(build_lib_dir), ))
+        runCommand("mv %s/* %s"%(
+                    shellQuote(build_lib_dir),
+                    shellQuote(fw_lib_dir) ))
 
     frmDir = os.path.join(rootDir, 'Library', 'Frameworks', 'Python.framework')
     frmDirVersioned = os.path.join(frmDir, 'Versions', version)
@@ -1214,7 +1300,8 @@ def buildPython():
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()[1]
+                ABIFLAGS=ln.split()
+                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
         fp.close()
@@ -1265,17 +1352,24 @@ def buildPython():
     import pprint
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
-        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
+        path = os.path.join(path_to_lib,
+            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
     data = fp.read()
     fp.close()
     # create build_time_vars dict
-    exec(data)
+    if RUNNING_ON_PYTHON2:
+        exec(data)
+    else:
+        g_dict = {}
+        l_dict = {}
+        exec(data, g_dict, l_dict)
+        build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == type(''):
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')
@@ -1302,12 +1396,6 @@ def buildPython():
                    os.path.join(usr_local_bin, fn))
 
     os.chdir(curdir)
-
-    if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidentally mess
-        # with an already installed version of python 2
-        os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
-                            'Python.framework', 'Versions', 'Current'))
 
 def patchFile(inPath, outPath):
     data = fileContents(inPath)
@@ -1395,7 +1483,7 @@ def packageFromRecipe(targetDir, recipe):
 
         vers = getFullVersion()
         major, minor = getVersionMajorMinor()
-        pl = Plist(
+        pl = dict(
                 CFBundleGetInfoString="Python.%s %s"%(pkgname, vers,),
                 CFBundleIdentifier='org.python.Python.%s'%(pkgname,),
                 CFBundleName='Python.%s'%(pkgname,),
@@ -1413,11 +1501,11 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 
-        pl = Plist(
+        pl = dict(
                     IFPkgDescriptionDescription=readme,
                     IFPkgDescriptionTitle=recipe.get('long_name', "Python.%s"%(pkgname,)),
                     IFPkgDescriptionVersion=vers,
@@ -1433,7 +1521,7 @@ def makeMpkgPlist(path):
     vers = getFullVersion()
     major, minor = getVersionMajorMinor()
 
-    pl = Plist(
+    pl = dict(
             CFBundleGetInfoString="Python %s"%(vers,),
             CFBundleIdentifier='org.python.Python',
             CFBundleName='Python',
@@ -1486,7 +1574,7 @@ def buildInstaller():
     os.mkdir(rsrcDir)
 
     makeMpkgPlist(os.path.join(pkgroot, 'Info.plist'))
-    pl = Plist(
+    pl = dict(
                 IFPkgDescriptionTitle="Python",
                 IFPkgDescriptionVersion=getVersion(),
             )
@@ -1518,19 +1606,65 @@ def buildDMG():
     if os.path.exists(outdir):
         shutil.rmtree(outdir)
 
+    # We used to use the deployment target as the last characters of the
+    # installer file name. With the introduction of weaklinked installer
+    # variants, we may have two variants with the same file name, i.e.
+    # both ending in '10.9'.  To avoid this, we now use the major/minor
+    # version numbers of the macOS version we are building on.
+    # Also, as of macOS 11, operating system version numbering has
+    # changed from three components to two, i.e.
+    #   10.14.1, 10.14.2, ...
+    #   10.15.1, 10.15.2, ...
+    #   11.1, 11.2, ...
+    #   12.1, 12.2, ...
+    # (A further twist is that, when running on macOS 11, binaries built
+    # on older systems may be shown an operating system version of 10.16
+    # instead of 11.  We should not run into that situation here.)
+    # Also we should use "macos" instead of "macosx" going forward.
+    #
+    # To maintain compatibility for legacy variants, the file name for
+    # builds on macOS 10.15 and earlier remains:
+    #   python-3.x.y-macosx10.z.{dmg->pkg}
+    #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}
+    # and for builds on macOS 11+:
+    #   python-3.x.y-macosz.{dmg->pkg}
+    #   e.g. python-3.9.4-macos11.{dmg->pkg}
+
+    build_tuple = getBuildTuple()
+    if build_tuple[0] < 11:
+        os_name = 'macosx'
+        build_system_version = '%s.%s' % build_tuple
+    else:
+        os_name = 'macos'
+        build_system_version = str(build_tuple[0])
     imagepath = os.path.join(outdir,
-                    'python-%s-macosx%s'%(getFullVersion(),DEPTARGET))
+                    'python-%s-%s%s'%(getFullVersion(),os_name,build_system_version))
     if INCLUDE_TIMESTAMP:
         imagepath = imagepath + '-%04d-%02d-%02d'%(time.localtime()[:3])
     imagepath = imagepath + '.dmg'
 
     os.mkdir(outdir)
+
+    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
+    # when hdiutil create fails with  "Resource busy".  For now, just retry
+    # the create a few times and hope that it eventually works.
+
     volname='Python %s'%(getFullVersion())
-    runCommand("hdiutil create -format UDRW -volname %s -srcfolder %s %s"%(
+    cmd = ("hdiutil create -format UDRW -volname %s -srcfolder %s -size 100m %s"%(
             shellQuote(volname),
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath + ".tmp.dmg" )))
-
+    for i in range(5):
+        fd = os.popen(cmd, 'r')
+        data = fd.read()
+        xit = fd.close()
+        if not xit:
+            break
+        sys.stdout.write(data)
+        print(" -- retrying hdiutil create")
+        time.sleep(5)
+    else:
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))
@@ -1613,7 +1747,7 @@ def main():
     fn = os.path.join(folder, "ReadMe.rtf")
     patchFile("resources/ReadMe.rtf",  fn)
     fn = os.path.join(folder, "Update Shell Profile.command")
-    patchScript("scripts/postflight.patch-profile",  fn)
+    patchScript("resources/update_shell_profile.command",  fn)
     fn = os.path.join(folder, "Install Certificates.command")
     patchScript("resources/install_certificates.command",  fn)
     os.chmod(folder, STAT_0o755)

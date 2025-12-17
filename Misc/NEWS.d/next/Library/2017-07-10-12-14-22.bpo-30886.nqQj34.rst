@@ -1,3 +1,0 @@
-Fix multiprocessing.Queue.join_thread(): it now waits until the thread
-completes, even if the thread was started by the same process which created
-the queue.

@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""      turtle-example-suite:
-
-        tdemo_fractalCurves.py
+"""turtledemo/fractalcurves.py
 
 This program draws two fractal-curve-designs:
 (1) A hilbert curve (in a box)
@@ -12,7 +9,7 @@ methods are taken from the PythonCard example
 scripts for turtle-graphics.
 """
 from turtle import *
-from time import sleep, clock
+from time import sleep, perf_counter as clock
 
 class CurvesTurtle(Pen):
     # example derived from

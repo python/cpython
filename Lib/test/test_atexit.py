@@ -1,157 +1,142 @@
-import sys
-import unittest
-import io
 import atexit
+import os
+import subprocess
+import textwrap
+import unittest
 from test import support
-
-### helpers
-def h1():
-    print("h1")
-
-def h2():
-    print("h2")
-
-def h3():
-    print("h3")
-
-def h4(*args, **kwargs):
-    print("h4", args, kwargs)
-
-def raise1():
-    raise TypeError
-
-def raise2():
-    raise SystemError
-
-def exit():
-    raise SystemExit
-
+from test.support import SuppressCrashReport, script_helper
+from test.support import os_helper
+from test.support import threading_helper
 
 class GeneralTest(unittest.TestCase):
+    def test_general(self):
+        # Run _test_atexit.py in a subprocess since it calls atexit._clear()
+        script = support.findfile("_test_atexit.py")
+        script_helper.run_test_script(script)
 
-    def setUp(self):
-        self.save_stdout = sys.stdout
-        self.save_stderr = sys.stderr
-        self.stream = io.StringIO()
-        sys.stdout = sys.stderr = self.stream
-        atexit._clear()
+class FunctionalTest(unittest.TestCase):
+    def test_shutdown(self):
+        # Actually test the shutdown mechanism in a subprocess
+        code = textwrap.dedent("""
+            import atexit
 
-    def tearDown(self):
-        sys.stdout = self.save_stdout
-        sys.stderr = self.save_stderr
-        atexit._clear()
+            def f(msg):
+                print(msg)
 
-    def test_args(self):
-        # be sure args are handled properly
-        atexit.register(h1)
-        atexit.register(h4)
-        atexit.register(h4, 4, kw="abc")
-        atexit._run_exitfuncs()
+            atexit.register(f, "one")
+            atexit.register(f, "two")
+        """)
+        res = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(res.out.decode().splitlines(), ["two", "one"])
+        self.assertFalse(res.err)
 
-        self.assertEqual(self.stream.getvalue(),
-                            "h4 (4,) {'kw': 'abc'}\nh4 () {}\nh1\n")
+    def test_atexit_instances(self):
+        # bpo-42639: It is safe to have more than one atexit instance.
+        code = textwrap.dedent("""
+            import sys
+            import atexit as atexit1
+            del sys.modules['atexit']
+            import atexit as atexit2
+            del sys.modules['atexit']
 
-    def test_badargs(self):
-        atexit.register(lambda: 1, 0, 0, (x for x in (1,2)), 0, 0)
-        self.assertRaises(TypeError, atexit._run_exitfuncs)
+            assert atexit2 is not atexit1
 
-    def test_order(self):
-        # be sure handlers are executed in reverse order
-        atexit.register(h1)
-        atexit.register(h2)
-        atexit.register(h3)
-        atexit._run_exitfuncs()
+            atexit1.register(print, "atexit1")
+            atexit2.register(print, "atexit2")
+        """)
+        res = script_helper.assert_python_ok("-c", code)
+        self.assertEqual(res.out.decode().splitlines(), ["atexit2", "atexit1"])
+        self.assertFalse(res.err)
 
-        self.assertEqual(self.stream.getvalue(), "h3\nh2\nh1\n")
+    @threading_helper.requires_working_threading()
+    @support.requires_resource("cpu")
+    @unittest.skipUnless(support.Py_GIL_DISABLED, "only meaningful without the GIL")
+    def test_atexit_thread_safety(self):
+        # GH-126907: atexit was not thread safe on the free-threaded build
+        source = """
+        from threading import Thread
 
-    def test_raise(self):
-        # be sure raises are handled properly
-        atexit.register(raise1)
-        atexit.register(raise2)
+        def dummy():
+            pass
 
-        self.assertRaises(TypeError, atexit._run_exitfuncs)
 
-    def test_raise_unnormalized(self):
-        # Issue #10756: Make sure that an unnormalized exception is
-        # handled properly
-        atexit.register(lambda: 1 / 0)
+        def thready():
+            for _ in range(100):
+                atexit.register(dummy)
+                atexit._clear()
+                atexit.register(dummy)
+                atexit.unregister(dummy)
+                atexit._run_exitfuncs()
 
-        self.assertRaises(ZeroDivisionError, atexit._run_exitfuncs)
-        self.assertIn("ZeroDivisionError", self.stream.getvalue())
 
-    def test_exit(self):
-        # be sure a SystemExit is handled properly
-        atexit.register(exit)
+        threads = [Thread(target=thready) for _ in range(10)]
+        for thread in threads:
+            thread.start()
 
-        self.assertRaises(SystemExit, atexit._run_exitfuncs)
-        self.assertEqual(self.stream.getvalue(), '')
+        for thread in threads:
+            thread.join()
+        """
 
-    def test_print_tracebacks(self):
-        # Issue #18776: the tracebacks should be printed when errors occur.
-        def f():
-            1/0  # one
-        def g():
-            1/0  # two
-        def h():
-            1/0  # three
-        atexit.register(f)
-        atexit.register(g)
-        atexit.register(h)
+        # atexit._clear() has some evil side effects, and we don't
+        # want them to affect the rest of the tests.
+        script_helper.assert_python_ok("-c", textwrap.dedent(source))
 
-        self.assertRaises(ZeroDivisionError, atexit._run_exitfuncs)
-        stderr = self.stream.getvalue()
-        self.assertEqual(stderr.count("ZeroDivisionError"), 3)
-        self.assertIn("# one", stderr)
-        self.assertIn("# two", stderr)
-        self.assertIn("# three", stderr)
+    @threading_helper.requires_working_threading()
+    def test_thread_created_in_atexit(self):
+        source =  """if True:
+        import atexit
+        import threading
+        import time
 
-    def test_stress(self):
-        a = [0]
-        def inc():
-            a[0] += 1
 
-        for i in range(128):
-            atexit.register(inc)
-        atexit._run_exitfuncs()
+        def run():
+            print(24)
+            time.sleep(1)
+            print(42)
 
-        self.assertEqual(a[0], 128)
+        @atexit.register
+        def start_thread():
+            threading.Thread(target=run).start()
+        """
+        return_code, stdout, stderr = script_helper.assert_python_ok("-c", source)
+        self.assertEqual(return_code, 0)
+        self.assertEqual(stdout, f"24{os.linesep}42{os.linesep}".encode("utf-8"))
+        self.assertEqual(stderr, b"")
 
-    def test_clear(self):
-        a = [0]
-        def inc():
-            a[0] += 1
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_thread_created_in_atexit_subinterpreter(self):
+        try:
+            from concurrent import interpreters
+        except ImportError:
+            self.skipTest("subinterpreters are not available")
 
-        atexit.register(inc)
-        atexit._clear()
-        atexit._run_exitfuncs()
+        read, write = os.pipe()
+        source = f"""if True:
+        import atexit
+        import threading
+        import time
+        import os
 
-        self.assertEqual(a[0], 0)
+        def run():
+            os.write({write}, b'spanish')
+            time.sleep(1)
+            os.write({write}, b'inquisition')
 
-    def test_unregister(self):
-        a = [0]
-        def inc():
-            a[0] += 1
-        def dec():
-            a[0] -= 1
+        @atexit.register
+        def start_thread():
+            threading.Thread(target=run).start()
+        """
+        interp = interpreters.create()
+        try:
+            interp.exec(source)
 
-        for i in range(4):
-            atexit.register(inc)
-        atexit.register(dec)
-        atexit.unregister(inc)
-        atexit._run_exitfuncs()
-
-        self.assertEqual(a[0], -1)
-
-    def test_bound_methods(self):
-        l = []
-        atexit.register(l.append, 5)
-        atexit._run_exitfuncs()
-        self.assertEqual(l, [5])
-
-        atexit.unregister(l.append)
-        atexit._run_exitfuncs()
-        self.assertEqual(l, [5])
-
+            # Close the interpreter to invoke atexit callbacks
+            interp.close()
+            self.assertEqual(os.read(read, 100), b"spanishinquisition")
+        finally:
+            os.close(read)
+            os.close(write)
 
 @support.cpython_only
 class SubinterpreterTest(unittest.TestCase):
@@ -161,13 +146,13 @@ class SubinterpreterTest(unittest.TestCase):
         # take care to free callbacks in its per-subinterpreter module
         # state.
         n = atexit._ncallbacks()
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import atexit
             def f():
                 pass
             atexit.register(f)
             del atexit
-            """
+        """)
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
@@ -176,16 +161,66 @@ class SubinterpreterTest(unittest.TestCase):
         # Similar to the above, but with a refcycle through the atexit
         # module.
         n = atexit._ncallbacks()
-        code = r"""if 1:
+        code = textwrap.dedent(r"""
             import atexit
             def f():
                 pass
             atexit.register(f)
             atexit.__atexit = atexit
-            """
+        """)
         ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
+
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    def test_callback_on_subinterpreter_teardown(self):
+        # This tests if a callback is called on
+        # subinterpreter teardown.
+        expected = b"The test has passed!"
+        r, w = os.pipe()
+
+        code = textwrap.dedent(r"""
+            import os
+            import atexit
+            def callback():
+                os.write({:d}, b"The test has passed!")
+            atexit.register(callback)
+        """.format(w))
+        ret = support.run_in_subinterp(code)
+        os.close(w)
+        self.assertEqual(os.read(r, len(expected)), expected)
+        os.close(r)
+
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    def test_atexit_with_low_memory(self):
+        # gh-140080: Test that setting low memory after registering an atexit
+        # callback doesn't cause an infinite loop during finalization.
+        code = textwrap.dedent("""
+            import atexit
+            import _testcapi
+
+            def callback():
+                print("hello")
+
+            atexit.register(callback)
+            # Simulate low memory condition
+            _testcapi.set_nomemory(0)
+        """)
+
+        with os_helper.temp_dir() as temp_dir:
+            script = script_helper.make_script(temp_dir, 'test_atexit_script', code)
+            with SuppressCrashReport():
+                with script_helper.spawn_python(script,
+                                                stderr=subprocess.PIPE) as proc:
+                    proc.wait()
+                    stdout = proc.stdout.read()
+                    stderr = proc.stderr.read()
+
+        self.assertIn(proc.returncode, (0, 1))
+        self.assertNotIn(b"hello", stdout)
+        self.assertIn(b"MemoryError", stderr)
 
 
 if __name__ == "__main__":

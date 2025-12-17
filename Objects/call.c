@@ -1,74 +1,68 @@
 #include "Python.h"
-#include "frameobject.h"
-
-
-int
-_PyObject_HasFastCall(PyObject *callable)
-{
-    if (PyFunction_Check(callable)) {
-        return 1;
-    }
-    else if (PyCFunction_Check(callable)) {
-        return !(PyCFunction_GET_FLAGS(callable) & METH_VARARGS);
-    }
-    else {
-        assert (PyCallable_Check(callable));
-        return 0;
-    }
-}
+#include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_dict.h"          // _PyDict_FromItems()
+#include "pycore_function.h"      // _PyFunction_Vectorcall() definition
+#include "pycore_modsupport.h"    // _Py_VaBuildStack()
+#include "pycore_object.h"        // _PyCFunctionWithKeywords_TrampolineCall()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
 
 static PyObject *
-null_error(void)
+null_error(PyThreadState *tstate)
 {
-    if (!PyErr_Occurred())
-        PyErr_SetString(PyExc_SystemError,
-                        "null argument to internal routine");
+    if (!_PyErr_Occurred(tstate)) {
+        _PyErr_SetString(tstate, PyExc_SystemError,
+                         "null argument to internal routine");
+    }
     return NULL;
 }
 
 
 PyObject*
-_Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
+_Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
+                        PyObject *result, const char *where)
 {
-    int err_occurred = (PyErr_Occurred() != NULL);
-
     assert((callable != NULL) ^ (where != NULL));
 
     if (result == NULL) {
-        if (!err_occurred) {
+        if (!_PyErr_Occurred(tstate)) {
             if (callable)
-                PyErr_Format(PyExc_SystemError,
-                             "%R returned NULL without setting an error",
-                             callable);
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "%R returned NULL without setting an exception",
+                              callable);
             else
-                PyErr_Format(PyExc_SystemError,
-                             "%s returned NULL without setting an error",
-                             where);
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "%s returned NULL without setting an exception",
+                              where);
 #ifdef Py_DEBUG
-            /* Ensure that the bug is caught in debug mode */
-            Py_FatalError("a function returned NULL without setting an error");
+            /* Ensure that the bug is caught in debug mode.
+               Py_FatalError() logs the SystemError exception raised above. */
+            Py_FatalError("a function returned NULL without setting an exception");
 #endif
             return NULL;
         }
     }
     else {
-        if (err_occurred) {
+        if (_PyErr_Occurred(tstate)) {
             Py_DECREF(result);
 
             if (callable) {
-                _PyErr_FormatFromCause(PyExc_SystemError,
-                        "%R returned a result with an error set",
-                        callable);
+                _PyErr_FormatFromCauseTstate(
+                    tstate, PyExc_SystemError,
+                    "%R returned a result with an exception set", callable);
             }
             else {
-                _PyErr_FormatFromCause(PyExc_SystemError,
-                        "%s returned a result with an error set",
-                        where);
+                _PyErr_FormatFromCauseTstate(
+                    tstate, PyExc_SystemError,
+                    "%s returned a result with an exception set", where);
             }
 #ifdef Py_DEBUG
-            /* Ensure that the bug is caught in debug mode */
-            Py_FatalError("a function returned a result with an error set");
+            /* Ensure that the bug is caught in debug mode.
+               Py_FatalError() logs the SystemError exception raised above. */
+            Py_FatalError("a function returned a result with an exception set");
 #endif
             return NULL;
         }
@@ -77,139 +71,267 @@ _Py_CheckFunctionResult(PyObject *callable, PyObject *result, const char *where)
 }
 
 
-/* --- Core PyObject call functions ------------------------------- */
-
-PyObject *
-_PyObject_FastCallDict(PyObject *callable, PyObject **args, Py_ssize_t nargs,
-                       PyObject *kwargs)
+int
+_Py_CheckSlotResult(PyObject *obj, const char *slot_name, int success)
 {
-    /* _PyObject_FastCallDict() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-
-    assert(callable != NULL);
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    if (PyFunction_Check(callable)) {
-        return _PyFunction_FastCallDict(callable, args, nargs, kwargs);
-    }
-    else if (PyCFunction_Check(callable)) {
-        return _PyCFunction_FastCallDict(callable, args, nargs, kwargs);
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!success) {
+        if (!_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s failed "
+                                 "without setting an exception",
+                                 slot_name, Py_TYPE(obj)->tp_name);
+        }
     }
     else {
-        PyObject *argstuple, *result;
-        ternaryfunc call;
-
-        /* Slow-path: build a temporary tuple */
-        call = callable->ob_type->tp_call;
-        if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
-            return NULL;
+        if (_PyErr_Occurred(tstate)) {
+            _Py_FatalErrorFormat(__func__,
+                                 "Slot %s of type %s succeeded "
+                                 "with an exception set",
+                                 slot_name, Py_TYPE(obj)->tp_name);
         }
-
-        argstuple = _PyStack_AsTuple(args, nargs);
-        if (argstuple == NULL) {
-            return NULL;
-        }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            Py_DECREF(argstuple);
-            return NULL;
-        }
-
-        result = (*call)(callable, argstuple, kwargs);
-
-        Py_LeaveRecursiveCall();
-        Py_DECREF(argstuple);
-
-        result = _Py_CheckFunctionResult(callable, result, NULL);
-        return result;
     }
+    return 1;
+}
+
+
+/* --- Core PyObject call functions ------------------------------- */
+
+/* Call a callable Python object without any arguments */
+PyObject *
+PyObject_CallNoArgs(PyObject *func)
+{
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, func, NULL, 0, NULL);
 }
 
 
 PyObject *
-_PyObject_FastCallKeywords(PyObject *callable, PyObject **stack, Py_ssize_t nargs,
-                           PyObject *kwnames)
+_PyObject_VectorcallDictTstate(PyThreadState *tstate, PyObject *callable,
+                               PyObject *const *args, size_t nargsf,
+                               PyObject *kwargs)
 {
-    /* _PyObject_FastCallKeywords() must not be called with an exception set,
+    assert(callable != NULL);
+
+    /* PyObject_VectorcallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
-    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+    assert(nargs == 0 || args != NULL);
+    assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    /* kwnames must only contains str strings, no subclass, and all keys must
-       be unique: these checks are implemented in Python/ceval.c and
-       _PyArg_ParseStackAndKeywords(). */
-
-    if (PyFunction_Check(callable)) {
-        return _PyFunction_FastCallKeywords(callable, stack, nargs, kwnames);
+    vectorcallfunc func = PyVectorcall_Function(callable);
+    if (func == NULL) {
+        /* Use tp_call instead */
+        return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
     }
-    if (PyCFunction_Check(callable)) {
-        return _PyCFunction_FastCallKeywords(callable, stack, nargs, kwnames);
+
+    PyObject *res;
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
+        res = func(callable, args, nargsf, NULL);
     }
     else {
-        /* Slow-path: build a temporary tuple for positional arguments and a
-           temporary dictionary for keyword arguments (if any) */
-
-        ternaryfunc call;
-        PyObject *argstuple;
-        PyObject *kwdict, *result;
-        Py_ssize_t nkwargs;
-
-        nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-        assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-
-        call = callable->ob_type->tp_call;
-        if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+        PyObject *kwnames;
+        PyObject *const *newargs;
+        newargs = _PyStack_UnpackDict(tstate,
+                                      args, nargs,
+                                      kwargs, &kwnames);
+        if (newargs == NULL) {
             return NULL;
         }
+        res = func(callable, newargs,
+                   nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+        _PyStack_UnpackDict_Free(newargs, nargs, kwnames);
+    }
+    return _Py_CheckFunctionResult(tstate, callable, res, NULL);
+}
 
-        argstuple = _PyStack_AsTuple(stack, nargs);
-        if (argstuple == NULL) {
-            return NULL;
+
+PyObject *
+PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
+                       size_t nargsf, PyObject *kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_VectorcallDictTstate(tstate, callable, args, nargsf, kwargs);
+}
+
+static void
+object_is_not_callable(PyThreadState *tstate, PyObject *callable)
+{
+    if (Py_IS_TYPE(callable, &PyModule_Type)) {
+        // >>> import pprint
+        // >>> pprint(thing)
+        // Traceback (most recent call last):
+        //   File "<stdin>", line 1, in <module>
+        // TypeError: 'module' object is not callable. Did you mean: 'pprint.pprint(...)'?
+        PyObject *name = PyModule_GetNameObject(callable);
+        if (name == NULL) {
+            _PyErr_Clear(tstate);
+            goto basic_type_error;
         }
+        PyObject *attr;
+        int res = PyObject_GetOptionalAttr(callable, name, &attr);
+        if (res < 0) {
+            _PyErr_Clear(tstate);
+        }
+        else if (res > 0 && PyCallable_Check(attr)) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "'%.200s' object is not callable. "
+                          "Did you mean: '%U.%U(...)'?",
+                          Py_TYPE(callable)->tp_name, name, name);
+            Py_DECREF(attr);
+            Py_DECREF(name);
+            return;
+        }
+        Py_XDECREF(attr);
+        Py_DECREF(name);
+    }
+basic_type_error:
+    _PyErr_Format(tstate, PyExc_TypeError, "'%.200s' object is not callable",
+                  Py_TYPE(callable)->tp_name);
+}
 
-        if (nkwargs > 0) {
-            kwdict = _PyStack_AsDict(stack + nargs, kwnames);
+
+PyObject *
+_PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+                     PyObject *const *args, Py_ssize_t nargs,
+                     PyObject *keywords)
+{
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    assert(keywords == NULL || PyTuple_Check(keywords) || PyDict_Check(keywords));
+
+    /* Slow path: build a temporary tuple for positional arguments and a
+     * temporary dictionary for keyword arguments (if any) */
+    ternaryfunc call = Py_TYPE(callable)->tp_call;
+    if (call == NULL) {
+        object_is_not_callable(tstate, callable);
+        return NULL;
+    }
+
+    PyObject *argstuple = PyTuple_FromArray(args, nargs);
+    if (argstuple == NULL) {
+        return NULL;
+    }
+
+    PyObject *kwdict;
+    if (keywords == NULL || PyDict_Check(keywords)) {
+        kwdict = keywords;
+    }
+    else {
+        if (PyTuple_GET_SIZE(keywords)) {
+            assert(args != NULL);
+            kwdict = _PyStack_AsDict(args + nargs, keywords);
             if (kwdict == NULL) {
                 Py_DECREF(argstuple);
                 return NULL;
             }
         }
         else {
-            kwdict = NULL;
+            keywords = kwdict = NULL;
         }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            Py_DECREF(argstuple);
-            Py_XDECREF(kwdict);
-            return NULL;
-        }
-
-        result = (*call)(callable, argstuple, kwdict);
-
-        Py_LeaveRecursiveCall();
-
-        Py_DECREF(argstuple);
-        Py_XDECREF(kwdict);
-
-        result = _Py_CheckFunctionResult(callable, result, NULL);
-        return result;
     }
+
+    PyObject *result = NULL;
+    if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object") == 0)
+    {
+        result = _PyCFunctionWithKeywords_TrampolineCall(
+            (PyCFunctionWithKeywords)call, callable, argstuple, kwdict);
+        _Py_LeaveRecursiveCallTstate(tstate);
+    }
+
+    Py_DECREF(argstuple);
+    if (kwdict != keywords) {
+        Py_DECREF(kwdict);
+    }
+
+    return _Py_CheckFunctionResult(tstate, callable, result, NULL);
+}
+
+
+vectorcallfunc
+PyVectorcall_Function(PyObject *callable)
+{
+    return _PyVectorcall_FunctionInline(callable);
+}
+
+
+static PyObject *
+_PyVectorcall_Call(PyThreadState *tstate, vectorcallfunc func,
+                   PyObject *callable, PyObject *tuple, PyObject *kwargs)
+{
+    assert(func != NULL);
+
+    Py_ssize_t nargs = PyTuple_GET_SIZE(tuple);
+
+    /* Fast path for no keywords */
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
+        return func(callable, _PyTuple_ITEMS(tuple), nargs, NULL);
+    }
+
+    /* Convert arguments & call */
+    PyObject *const *args;
+    PyObject *kwnames;
+    args = _PyStack_UnpackDict(tstate,
+                               _PyTuple_ITEMS(tuple), nargs,
+                               kwargs, &kwnames);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *result = func(callable, args,
+                            nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    _PyStack_UnpackDict_Free(args, nargs, kwnames);
+
+    return _Py_CheckFunctionResult(tstate, callable, result, NULL);
 }
 
 
 PyObject *
-PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    /* get vectorcallfunc as in _PyVectorcall_Function, but without
+     * the Py_TPFLAGS_HAVE_VECTORCALL check */
+    Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
+    if (offset <= 0) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%.200s' object does not support vectorcall",
+                      Py_TYPE(callable)->tp_name);
+        return NULL;
+    }
+    assert(PyCallable_Check(callable));
+
+    vectorcallfunc func;
+    memcpy(&func, (char *) callable + offset, sizeof(func));
+    if (func == NULL) {
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%.200s' object does not support vectorcall",
+                      Py_TYPE(callable)->tp_name);
+        return NULL;
+    }
+
+    return _PyVectorcall_Call(tstate, func, callable, tuple, kwargs);
+}
+
+
+PyObject *
+PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, callable,
+                                      args, nargsf, kwnames);
+}
+
+
+PyObject *
+_PyObject_Call(PyThreadState *tstate, PyObject *callable,
+               PyObject *args, PyObject *kwargs)
 {
     ternaryfunc call;
     PyObject *result;
@@ -217,608 +339,119 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     /* PyObject_Call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    if (PyFunction_Check(callable)) {
-        return _PyFunction_FastCallDict(callable,
-                                        &PyTuple_GET_ITEM(args, 0),
-                                        PyTuple_GET_SIZE(args),
-                                        kwargs);
-    }
-    else if (PyCFunction_Check(callable)) {
-        return PyCFunction_Call(callable, args, kwargs);
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
+    vectorcallfunc vector_func = PyVectorcall_Function(callable);
+    if (vector_func != NULL) {
+        return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
     }
     else {
-        call = callable->ob_type->tp_call;
+        call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+            object_is_not_callable(tstate, callable);
             return NULL;
         }
 
-        if (Py_EnterRecursiveCall(" while calling a Python object"))
+        if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
             return NULL;
+        }
 
         result = (*call)(callable, args, kwargs);
 
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCallTstate(tstate);
 
-        return _Py_CheckFunctionResult(callable, result, NULL);
+        return _Py_CheckFunctionResult(tstate, callable, result, NULL);
     }
+}
+
+PyObject *
+PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyObject_Call(tstate, callable, args, kwargs);
+}
+
+
+/* Function removed in the Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject *)
+PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    return PyObject_Call(callable, args, kwargs);
+}
+
+
+PyObject *
+PyObject_CallOneArg(PyObject *func, PyObject *arg)
+{
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, func);
+    assert(arg != NULL);
+    PyObject *_args[2];
+    PyObject **args = _args + 1;  // For PY_VECTORCALL_ARGUMENTS_OFFSET
+    args[0] = arg;
+    PyThreadState *tstate = _PyThreadState_GET();
+    size_t nargsf = 1 | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
 
 /* --- PyFunction call functions ---------------------------------- */
 
-static PyObject* _Py_HOT_FUNCTION
-function_code_fastcall(PyCodeObject *co, PyObject **args, Py_ssize_t nargs,
-                       PyObject *globals)
-{
-    PyFrameObject *f;
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject **fastlocals;
-    Py_ssize_t i;
-    PyObject *result;
-
-    assert(globals != NULL);
-    /* XXX Perhaps we should create a specialized
-       _PyFrame_New_NoTrack() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
-    assert(tstate != NULL);
-    f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
-    if (f == NULL) {
-        return NULL;
-    }
-
-    fastlocals = f->f_localsplus;
-
-    for (i = 0; i < nargs; i++) {
-        Py_INCREF(*args);
-        fastlocals[i] = *args++;
-    }
-    result = PyEval_EvalFrameEx(f,0);
-
-    if (Py_REFCNT(f) > 1) {
-        Py_DECREF(f);
-        _PyObject_GC_TRACK(f);
-    }
-    else {
-        ++tstate->recursion_depth;
-        Py_DECREF(f);
-        --tstate->recursion_depth;
-    }
-    return result;
-}
-
-
 PyObject *
-_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
-                         PyObject *kwargs)
+_PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
+                       size_t nargsf, PyObject *kwnames)
 {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject *kwtuple, **k;
-    PyObject **d;
-    Py_ssize_t nd, nk;
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    if (co->co_kwonlyargcount == 0 &&
-        (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
-    {
-        /* Fast paths */
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(co, args, nargs, globals);
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            args = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, args, PyTuple_GET_SIZE(argdefs),
-                                          globals);
-        }
-    }
-
-    nk = (kwargs != NULL) ? PyDict_GET_SIZE(kwargs) : 0;
-    if (nk != 0) {
-        Py_ssize_t pos, i;
-
-        /* bpo-29318, bpo-27840: Caller and callee functions must not share
-           the dictionary: kwargs must be copied. */
-        kwtuple = PyTuple_New(2 * nk);
-        if (kwtuple == NULL) {
-            return NULL;
-        }
-
-        k = &PyTuple_GET_ITEM(kwtuple, 0);
-        pos = i = 0;
-        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
-            /* We must hold strong references because keyword arguments can be
-               indirectly modified while the function is called:
-               see issue #2016 and test_extcall */
-            Py_INCREF(k[i]);
-            Py_INCREF(k[i+1]);
-            i += 2;
-        }
-        nk = i / 2;
-    }
-    else {
-        kwtuple = NULL;
-        k = NULL;
-    }
-
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = PyTuple_GET_SIZE(argdefs);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
-
-    result = _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                      args, nargs,
-                                      k, k + 1, nk, 2,
-                                      d, nd, kwdefs,
-                                      closure, name, qualname);
-    Py_XDECREF(kwtuple);
-    return result;
-}
-
-PyObject *
-_PyFunction_FastCallKeywords(PyObject *func, PyObject **stack,
-                             Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject **d;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nd;
-
     assert(PyFunction_Check(func));
+    PyFunctionObject *f = (PyFunctionObject *)func;
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     assert(nargs >= 0);
-    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-    /* kwnames must only contains str strings, no subclass, and all keys must
-       be unique */
-
-    if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
-        co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
-    {
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(co, stack, nargs, globals);
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            stack = &PyTuple_GET_ITEM(argdefs, 0);
-            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
-                                          globals);
-        }
-    }
-
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
-
-    if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = PyTuple_GET_SIZE(argdefs);
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(nargs == 0 || stack != NULL);
+    EVAL_CALL_STAT_INC(EVAL_CALL_FUNCTION_VECTORCALL);
+    if (((PyCodeObject *)f->func_code)->co_flags & CO_OPTIMIZED) {
+        return _PyEval_Vector(tstate, f, NULL, stack, nargs, kwnames);
     }
     else {
-        d = NULL;
-        nd = 0;
-    }
-    return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                    stack, nargs,
-                                    nkwargs ? &PyTuple_GET_ITEM(kwnames, 0) : NULL,
-                                    stack + nargs,
-                                    nkwargs, 1,
-                                    d, (int)nd, kwdefs,
-                                    closure, name, qualname);
-}
-
-
-/* --- PyCFunction call functions --------------------------------- */
-
-PyObject *
-_PyMethodDef_RawFastCallDict(PyMethodDef *method, PyObject *self, PyObject **args,
-                             Py_ssize_t nargs, PyObject *kwargs)
-{
-    /* _PyMethodDef_RawFastCallDict() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-
-    assert(method != NULL);
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PyCFunction meth = method->ml_meth;
-    int flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-    PyObject *result = NULL;
-
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
-        return NULL;
-    }
-
-    switch (flags)
-    {
-    case METH_NOARGS:
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-
-        if (nargs != 0) {
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes no arguments (%zd given)",
-                method->ml_name, nargs);
-            goto exit;
-        }
-
-        result = (*meth) (self, NULL);
-        break;
-
-    case METH_O:
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-
-        if (nargs != 1) {
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes exactly one argument (%zd given)",
-                method->ml_name, nargs);
-            goto exit;
-        }
-
-        result = (*meth) (self, args[0]);
-        break;
-
-    case METH_VARARGS:
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-        /* fall through next case */
-
-    case METH_VARARGS | METH_KEYWORDS:
-    {
-        /* Slow-path: create a temporary tuple for positional arguments */
-        PyObject *argstuple = _PyStack_AsTuple(args, nargs);
-        if (argstuple == NULL) {
-            goto exit;
-        }
-
-        if (flags & METH_KEYWORDS) {
-            result = (*(PyCFunctionWithKeywords)meth) (self, argstuple, kwargs);
-        }
-        else {
-            result = (*meth) (self, argstuple);
-        }
-        Py_DECREF(argstuple);
-        break;
-    }
-
-    case METH_FASTCALL:
-    {
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            goto no_keyword_error;
-        }
-
-        result = (*(_PyCFunctionFast)meth) (self, args, nargs);
-        break;
-    }
-
-    case METH_FASTCALL | METH_KEYWORDS:
-    {
-        PyObject **stack;
-        PyObject *kwnames;
-        _PyCFunctionFastWithKeywords fastmeth = (_PyCFunctionFastWithKeywords)meth;
-
-        if (_PyStack_UnpackDict(args, nargs, kwargs, &stack, &kwnames) < 0) {
-            goto exit;
-        }
-
-        result = (*fastmeth) (self, stack, nargs, kwnames);
-        if (stack != args) {
-            PyMem_Free(stack);
-        }
-        Py_XDECREF(kwnames);
-        break;
-    }
-
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyMethodDef_RawFastCallDict. "
-                        "METH_OLDARGS is no longer supported!");
-        goto exit;
-    }
-
-    goto exit;
-
-no_keyword_error:
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes no keyword arguments",
-                 method->ml_name);
-
-exit:
-    Py_LeaveRecursiveCall();
-    return result;
-}
-
-
-PyObject *
-_PyCFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs,
-                          PyObject *kwargs)
-{
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-
-    result = _PyMethodDef_RawFastCallDict(((PyCFunctionObject*)func)->m_ml,
-                                          PyCFunction_GET_SELF(func),
-                                          args, nargs, kwargs);
-    result = _Py_CheckFunctionResult(func, result, NULL);
-    return result;
-}
-
-
-PyObject *
-_PyMethodDef_RawFastCallKeywords(PyMethodDef *method, PyObject *self, PyObject **args,
-                                 Py_ssize_t nargs, PyObject *kwnames)
-{
-    /* _PyMethodDef_RawFastCallKeywords() must not be called with an exception set,
-       because it can clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-
-    assert(method != NULL);
-    assert(nargs >= 0);
-    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
-    /* kwnames must only contains str strings, no subclass, and all keys must
-       be unique */
-
-    PyCFunction meth = method->ml_meth;
-    int flags = method->ml_flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST);
-    Py_ssize_t nkwargs = kwnames == NULL ? 0 : PyTuple_GET_SIZE(kwnames);
-    PyObject *result = NULL;
-
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
-        return NULL;
-    }
-
-    switch (flags)
-    {
-    case METH_NOARGS:
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-
-        if (nargs != 0) {
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes no arguments (%zd given)",
-                method->ml_name, nargs);
-            goto exit;
-        }
-
-        result = (*meth) (self, NULL);
-        break;
-
-    case METH_O:
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-
-        if (nargs != 1) {
-            PyErr_Format(PyExc_TypeError,
-                "%.200s() takes exactly one argument (%zd given)",
-                method->ml_name, nargs);
-            goto exit;
-        }
-
-        result = (*meth) (self, args[0]);
-        break;
-
-    case METH_FASTCALL:
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-        result = ((_PyCFunctionFast)meth) (self, args, nargs);
-        break;
-
-    case METH_FASTCALL | METH_KEYWORDS:
-        /* Fast-path: avoid temporary dict to pass keyword arguments */
-        result = ((_PyCFunctionFastWithKeywords)meth) (self, args, nargs, kwnames);
-        break;
-
-    case METH_VARARGS:
-        if (nkwargs) {
-            goto no_keyword_error;
-        }
-        /* fall through next case */
-
-    case METH_VARARGS | METH_KEYWORDS:
-    {
-        /* Slow-path: create a temporary tuple for positional arguments
-           and a temporary dict for keyword arguments */
-        PyObject *argtuple;
-
-        argtuple = _PyStack_AsTuple(args, nargs);
-        if (argtuple == NULL) {
-            goto exit;
-        }
-
-        if (flags & METH_KEYWORDS) {
-            PyObject *kwdict;
-
-            if (nkwargs > 0) {
-                kwdict = _PyStack_AsDict(args + nargs, kwnames);
-                if (kwdict == NULL) {
-                    Py_DECREF(argtuple);
-                    goto exit;
-                }
-            }
-            else {
-                kwdict = NULL;
-            }
-
-            result = (*(PyCFunctionWithKeywords)meth) (self, argtuple, kwdict);
-            Py_XDECREF(kwdict);
-        }
-        else {
-            result = (*meth) (self, argtuple);
-        }
-        Py_DECREF(argtuple);
-        break;
-    }
-
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "Bad call flags in _PyCFunction_FastCallKeywords. "
-                        "METH_OLDARGS is no longer supported!");
-        goto exit;
-    }
-
-    goto exit;
-
-no_keyword_error:
-    PyErr_Format(PyExc_TypeError,
-                 "%.200s() takes no keyword arguments",
-                 method->ml_name);
-
-exit:
-    Py_LeaveRecursiveCall();
-    return result;
-}
-
-
-PyObject *
-_PyCFunction_FastCallKeywords(PyObject *func, PyObject **args,
-                              Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *result;
-
-    assert(func != NULL);
-    assert(PyCFunction_Check(func));
-
-    result = _PyMethodDef_RawFastCallKeywords(((PyCFunctionObject*)func)->m_ml,
-                                              PyCFunction_GET_SELF(func),
-                                              args, nargs, kwnames);
-    result = _Py_CheckFunctionResult(func, result, NULL);
-    return result;
-}
-
-
-static PyObject *
-cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    assert(!PyErr_Occurred());
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-    PyObject *self = PyCFunction_GET_SELF(func);
-    PyObject *result;
-
-    if (PyCFunction_GET_FLAGS(func) & METH_KEYWORDS) {
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*(PyCFunctionWithKeywords)meth)(self, args, kwargs);
-
-        Py_LeaveRecursiveCall();
-    }
-    else {
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         ((PyCFunctionObject*)func)->m_ml->ml_name);
-            return NULL;
-        }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*meth)(self, args);
-
-        Py_LeaveRecursiveCall();
-    }
-
-    return _Py_CheckFunctionResult(func, result, NULL);
-}
-
-
-PyObject *
-PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    /* first try METH_VARARGS to pass directly args tuple unchanged.
-       _PyMethodDef_RawFastCallDict() creates a new temporary tuple
-       for METH_VARARGS. */
-    if (PyCFunction_GET_FLAGS(func) & METH_VARARGS) {
-        return cfunction_call_varargs(func, args, kwargs);
-    }
-    else {
-        return _PyCFunction_FastCallDict(func,
-                                         &PyTuple_GET_ITEM(args, 0),
-                                         PyTuple_GET_SIZE(args),
-                                         kwargs);
+        return _PyEval_Vector(tstate, f, f->func_globals, stack, nargs, kwnames);
     }
 }
-
 
 /* --- More complex call functions -------------------------------- */
 
 /* External interface to call any callable object.
-   The args must be a tuple or NULL.  The kwargs must be a dict or NULL. */
-PyObject *
+   The args must be a tuple or NULL.  The kwargs must be a dict or NULL.
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallObjectWithKeywords(PyObject *callable,
                               PyObject *args, PyObject *kwargs)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     /* PyEval_CallObjectWithKeywords() must not be called with an exception
        set. It raises a new exception if parameters are invalid or if
        PyTuple_New() fails, and so the original exception is lost. */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
     if (args != NULL && !PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "argument list must be a tuple");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "argument list must be a tuple");
         return NULL;
     }
 
     if (kwargs != NULL && !PyDict_Check(kwargs)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "keyword list must be a dictionary");
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "keyword list must be a dictionary");
         return NULL;
     }
 
     if (args == NULL) {
-        return _PyObject_FastCallDict(callable, NULL, 0, kwargs);
+        return _PyObject_VectorcallDictTstate(tstate, callable,
+                                              NULL, 0, kwargs);
     }
     else {
-        return PyObject_Call(callable, args, kwargs);
+        return _PyObject_Call(tstate, callable, args, kwargs);
     }
 }
 
@@ -826,59 +459,31 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
 PyObject *
 PyObject_CallObject(PyObject *callable, PyObject *args)
 {
-    return PyEval_CallObjectWithKeywords(callable, args, NULL);
-}
-
-
-/* Positional arguments are obj followed by args:
-   call callable(obj, *args, **kwargs) */
-PyObject *
-_PyObject_FastCall_Prepend(PyObject *callable,
-                           PyObject *obj, PyObject **args, Py_ssize_t nargs)
-{
-    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **args2;
-    PyObject *result;
-
-    nargs++;
-    if (nargs <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
-        args2 = small_stack;
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(!_PyErr_Occurred(tstate));
+    if (args == NULL) {
+        return _PyObject_CallNoArgsTstate(tstate, callable);
     }
-    else {
-        args2 = PyMem_Malloc(nargs * sizeof(PyObject *));
-        if (args2 == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
+    if (!PyTuple_Check(args)) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "argument list must be a tuple");
+        return NULL;
     }
-
-    /* use borrowed references */
-    args2[0] = obj;
-    memcpy(&args2[1],
-           args,
-           (nargs - 1)* sizeof(PyObject *));
-
-    result = _PyObject_FastCall(callable, args2, nargs);
-    if (args2 != small_stack) {
-        PyMem_Free(args2);
-    }
-    return result;
+    return _PyObject_Call(tstate, callable, args, NULL);
 }
 
 
 /* Call callable(obj, *args, **kwargs). */
 PyObject *
-_PyObject_Call_Prepend(PyObject *callable,
+_PyObject_Call_Prepend(PyThreadState *tstate, PyObject *callable,
                        PyObject *obj, PyObject *args, PyObject *kwargs)
 {
-    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
-    PyObject **stack;
-    Py_ssize_t argcount;
-    PyObject *result;
-
     assert(PyTuple_Check(args));
 
-    argcount = PyTuple_GET_SIZE(args);
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
+    PyObject **stack;
+
+    Py_ssize_t argcount = PyTuple_GET_SIZE(args);
     if (argcount + 1 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
     }
@@ -893,12 +498,12 @@ _PyObject_Call_Prepend(PyObject *callable,
     /* use borrowed references */
     stack[0] = obj;
     memcpy(&stack[1],
-              &PyTuple_GET_ITEM(args, 0),
-              argcount * sizeof(PyObject *));
+           _PyTuple_ITEMS(args),
+           argcount * sizeof(PyObject *));
 
-    result = _PyObject_FastCallDict(callable,
-                                    stack, argcount + 1,
-                                    kwargs);
+    PyObject *result = _PyObject_VectorcallDictTstate(tstate, callable,
+                                                      stack, argcount + 1,
+                                                      kwargs);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }
@@ -909,8 +514,8 @@ _PyObject_Call_Prepend(PyObject *callable,
 /* --- Call with a format string ---------------------------------- */
 
 static PyObject *
-_PyObject_CallFunctionVa(PyObject *callable, const char *format,
-                         va_list va, int is_size_t)
+_PyObject_CallFunctionVa(PyThreadState *tstate, PyObject *callable,
+                         const char *format, va_list va)
 {
     PyObject* small_stack[_PY_FASTCALL_SMALL_STACK];
     const Py_ssize_t small_stack_len = Py_ARRAY_LENGTH(small_stack);
@@ -919,37 +524,33 @@ _PyObject_CallFunctionVa(PyObject *callable, const char *format,
     PyObject *result;
 
     if (callable == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
     if (!format || !*format) {
-        return _PyObject_CallNoArg(callable);
+        return _PyObject_CallNoArgsTstate(tstate, callable);
     }
 
-    if (is_size_t) {
-        stack = _Py_VaBuildStack_SizeT(small_stack, small_stack_len,
-                                       format, va, &nargs);
-    }
-    else {
-        stack = _Py_VaBuildStack(small_stack, small_stack_len,
-                                 format, va, &nargs);
-    }
+    stack = _Py_VaBuildStack(small_stack, small_stack_len,
+                             format, va, &nargs);
     if (stack == NULL) {
         return NULL;
     }
-
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
     if (nargs == 1 && PyTuple_Check(stack[0])) {
         /* Special cases for backward compatibility:
            - PyObject_CallFunction(func, "O", tuple) calls func(*tuple)
            - PyObject_CallFunction(func, "(OOO)", arg1, arg2, arg3) calls
              func(*(arg1, arg2, arg3)): func(arg1, arg2, arg3) */
         PyObject *args = stack[0];
-        result = _PyObject_FastCall(callable,
-                                    &PyTuple_GET_ITEM(args, 0),
-                                    PyTuple_GET_SIZE(args));
+        result = _PyObject_VectorcallTstate(tstate, callable,
+                                            _PyTuple_ITEMS(args),
+                                            PyTuple_GET_SIZE(args),
+                                            NULL);
     }
     else {
-        result = _PyObject_FastCall(callable, stack, nargs);
+        result = _PyObject_VectorcallTstate(tstate, callable,
+                                            stack, nargs, NULL);
     }
 
     for (i = 0; i < nargs; ++i) {
@@ -967,9 +568,10 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list va;
     PyObject *result;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     va_start(va, format);
-    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    result = _PyObject_CallFunctionVa(tstate, callable, format, va);
     va_end(va);
 
     return result;
@@ -977,30 +579,33 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
 
 
 /* PyEval_CallFunction is exact copy of PyObject_CallFunction.
- * This function is kept for backward compatibility.
- */
-PyObject *
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list va;
     PyObject *result;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     va_start(va, format);
-    result = _PyObject_CallFunctionVa(callable, format, va, 0);
+    result = _PyObject_CallFunctionVa(tstate, callable, format, va);
     va_end(va);
 
     return result;
 }
 
 
-PyObject *
+/* _PyObject_CallFunction_SizeT is exact copy of PyObject_CallFunction.
+ * This function must be kept because it is part of the stable ABI.
+ */
+PyAPI_FUNC(PyObject *)  /* abi_only */
 _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 {
-    va_list va;
-    PyObject *result;
+    PyThreadState *tstate = _PyThreadState_GET();
 
+    va_list va;
     va_start(va, format);
-    result = _PyObject_CallFunctionVa(callable, format, va, 1);
+    PyObject *result = _PyObject_CallFunctionVa(tstate, callable, format, va);
     va_end(va);
 
     return result;
@@ -1008,37 +613,36 @@ _PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 
 
 static PyObject*
-callmethod(PyObject* callable, const char *format, va_list va, int is_size_t)
+callmethod(PyThreadState *tstate, PyObject* callable, const char *format, va_list va)
 {
     assert(callable != NULL);
-
     if (!PyCallable_Check(callable)) {
-        PyErr_Format(PyExc_TypeError,
-                     "attribute of type '%.200s' is not callable",
-                     Py_TYPE(callable)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "attribute of type '%.200s' is not callable",
+                      Py_TYPE(callable)->tp_name);
         return NULL;
     }
 
-    return _PyObject_CallFunctionVa(callable, format, va, is_size_t);
+    return _PyObject_CallFunctionVa(tstate, callable, format, va);
 }
-
 
 PyObject *
 PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
-    va_list va;
-    PyObject *callable, *retval;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (obj == NULL || name == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
-    callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL)
+    PyObject *callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL) {
         return NULL;
+    }
 
+    va_list va;
     va_start(va, format);
-    retval = callmethod(callable, format, va, 0);
+    PyObject *retval = callmethod(tstate, callable, format, va);
     va_end(va);
 
     Py_DECREF(callable);
@@ -1047,24 +651,47 @@ PyObject_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 
 
 /* PyEval_CallMethod is exact copy of PyObject_CallMethod.
- * This function is kept for backward compatibility.
- */
-PyObject *
+   Function removed in Python 3.13 API but kept in the stable ABI. */
+PyAPI_FUNC(PyObject*)
 PyEval_CallMethod(PyObject *obj, const char *name, const char *format, ...)
 {
-    va_list va;
-    PyObject *callable, *retval;
-
+    PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
-    callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL)
+    PyObject *callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL) {
         return NULL;
+    }
 
+    va_list va;
     va_start(va, format);
-    retval = callmethod(callable, format, va, 0);
+    PyObject *retval = callmethod(tstate, callable, format, va);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
+}
+
+
+PyObject *
+_PyObject_CallMethod(PyObject *obj, PyObject *name,
+                     const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (obj == NULL || name == NULL) {
+        return null_error(tstate);
+    }
+
+    PyObject *callable = PyObject_GetAttr(obj, name);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va);
     va_end(va);
 
     Py_DECREF(callable);
@@ -1076,68 +703,60 @@ PyObject *
 _PyObject_CallMethodId(PyObject *obj, _Py_Identifier *name,
                        const char *format, ...)
 {
-    va_list va;
-    PyObject *callable, *retval;
-
+    PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
-    callable = _PyObject_GetAttrId(obj, name);
-    if (callable == NULL)
-        return NULL;
-
-    va_start(va, format);
-    retval = callmethod(callable, format, va, 0);
-    va_end(va);
-
-    Py_DECREF(callable);
-    return retval;
-}
-
-
-PyObject *
-_PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
-                           const char *format, ...)
-{
-    va_list va;
-    PyObject *callable, *retval;
-
-    if (obj == NULL || name == NULL) {
-        return null_error();
-    }
-
-    callable = PyObject_GetAttrString(obj, name);
-    if (callable == NULL)
-        return NULL;
-
-    va_start(va, format);
-    retval = callmethod(callable, format, va, 1);
-    va_end(va);
-
-    Py_DECREF(callable);
-    return retval;
-}
-
-
-PyObject *
-_PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
-                             const char *format, ...)
-{
-    va_list va;
-    PyObject *callable, *retval;
-
-    if (obj == NULL || name == NULL) {
-        return null_error();
-    }
-
-    callable = _PyObject_GetAttrId(obj, name);
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    PyObject *callable = _PyObject_GetAttrId(obj, name);
+_Py_COMP_DIAG_POP
     if (callable == NULL) {
         return NULL;
     }
 
+    va_list va;
     va_start(va, format);
-    retval = callmethod(callable, format, va, 1);
+    PyObject *retval = callmethod(tstate, callable, format, va);
+    va_end(va);
+
+    Py_DECREF(callable);
+    return retval;
+}
+
+
+PyObject * _PyObject_CallMethodFormat(PyThreadState *tstate, PyObject *callable,
+                                      const char *format, ...)
+{
+    assert(callable != NULL);
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va);
+    va_end(va);
+    return retval;
+}
+
+
+// _PyObject_CallMethod_SizeT is exact copy of PyObject_CallMethod.
+// This function must be kept because it is part of the stable ABI.
+PyAPI_FUNC(PyObject *)  /* abi_only */
+_PyObject_CallMethod_SizeT(PyObject *obj, const char *name,
+                           const char *format, ...)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (obj == NULL || name == NULL) {
+        return null_error(tstate);
+    }
+
+    PyObject *callable = PyObject_GetAttrString(obj, name);
+    if (callable == NULL) {
+        return NULL;
+    }
+
+    va_list va;
+    va_start(va, format);
+    PyObject *retval = callmethod(tstate, callable, format, va);
     va_end(va);
 
     Py_DECREF(callable);
@@ -1148,7 +767,8 @@ _PyObject_CallMethodId_SizeT(PyObject *obj, _Py_Identifier *name,
 /* --- Call with "..." arguments ---------------------------------- */
 
 static PyObject *
-object_vacall(PyObject *callable, va_list vargs)
+object_vacall(PyThreadState *tstate, PyObject *base,
+              PyObject *callable, va_list vargs)
 {
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
@@ -1158,12 +778,12 @@ object_vacall(PyObject *callable, va_list vargs)
     va_list countva;
 
     if (callable == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
     /* Count the number of arguments */
     va_copy(countva, vargs);
-    nargs = 0;
+    nargs = base ? 1 : 0;
     while (1) {
         PyObject *arg = va_arg(countva, PyObject *);
         if (arg == NULL) {
@@ -1185,12 +805,22 @@ object_vacall(PyObject *callable, va_list vargs)
         }
     }
 
-    for (i = 0; i < nargs; ++i) {
+    i = 0;
+    if (base) {
+        stack[i++] = base;
+    }
+
+    for (; i < nargs; ++i) {
         stack[i] = va_arg(vargs, PyObject *);
     }
 
+#ifdef Py_STATS
+    if (PyFunction_Check(callable)) {
+        EVAL_CALL_STAT_INC(EVAL_CALL_API);
+    }
+#endif
     /* Call the function */
-    result = _PyObject_FastCall(callable, stack, nargs);
+    result = _PyObject_VectorcallTstate(tstate, callable, stack, nargs, NULL);
 
     if (stack != small_stack) {
         PyMem_Free(stack);
@@ -1200,50 +830,67 @@ object_vacall(PyObject *callable, va_list vargs)
 
 
 PyObject *
-PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
+PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
+                           size_t nargsf, PyObject *kwnames)
 {
-    va_list vargs;
-    PyObject *result;
+    assert(name != NULL);
+    assert(args != NULL);
+    assert(PyVectorcall_NARGS(nargsf) >= 1);
 
-    if (callable == NULL || name == NULL) {
-        return null_error();
-    }
-
-    callable = PyObject_GetAttr(callable, name);
-    if (callable == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    /* Use args[0] as "self" argument */
+    int unbound = _PyObject_GetMethodStackRef(tstate, args[0], name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
 
-    va_start(vargs, name);
-    result = object_vacall(callable, vargs);
-    va_end(vargs);
-
-    Py_DECREF(callable);
+    if (unbound) {
+        /* We must remove PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * that would be interpreted as allowing to change args[-1] */
+        nargsf &= ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    }
+    else {
+        /* Skip "self". We can keep PY_VECTORCALL_ARGUMENTS_OFFSET since
+         * args[-1] in the onward call is args[0] here. */
+        args++;
+        nargsf--;
+    }
+    EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_METHOD, callable);
+    PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
+                                                  args, nargsf, kwnames);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
 
 PyObject *
-_PyObject_CallMethodIdObjArgs(PyObject *obj,
-                              struct _Py_Identifier *name, ...)
+PyObject_CallMethodObjArgs(PyObject *obj, PyObject *name, ...)
 {
-    va_list vargs;
-    PyObject *callable, *result;
-
+    PyThreadState *tstate = _PyThreadState_GET();
     if (obj == NULL || name == NULL) {
-        return null_error();
+        return null_error(tstate);
     }
 
-    callable = _PyObject_GetAttrId(obj, name);
-    if (callable == NULL) {
+    _PyCStackRef method;
+    _PyThreadState_PushCStackRef(tstate, &method);
+    int is_method = _PyObject_GetMethodStackRef(tstate, obj, name, &method.ref);
+    if (PyStackRef_IsNull(method.ref)) {
+        _PyThreadState_PopCStackRef(tstate, &method);
         return NULL;
     }
+    PyObject *callable = PyStackRef_AsPyObjectBorrow(method.ref);
+    obj = is_method ? obj : NULL;
 
+    va_list vargs;
     va_start(vargs, name);
-    result = object_vacall(callable, vargs);
+    PyObject *result = object_vacall(tstate, obj, callable, vargs);
     va_end(vargs);
 
-    Py_DECREF(callable);
+    _PyThreadState_PopCStackRef(tstate, &method);
     return result;
 }
 
@@ -1251,11 +898,12 @@ _PyObject_CallMethodIdObjArgs(PyObject *obj,
 PyObject *
 PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     va_list vargs;
     PyObject *result;
 
     va_start(vargs, callable);
-    result = object_vacall(callable, vargs);
+    result = object_vacall(tstate, NULL, callable, vargs);
     va_end(vargs);
 
     return result;
@@ -1264,133 +912,121 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* --- PyStack functions ------------------------------------------ */
 
-/* Issue #29234: Inlining _PyStack_AsTuple() into callers increases their
-   stack consumption, Disable inlining to optimize the stack consumption. */
-PyObject* _Py_NO_INLINE
-_PyStack_AsTuple(PyObject **stack, Py_ssize_t nargs)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    args = PyTuple_New(nargs);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=0; i < nargs; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i, item);
-    }
-    return args;
-}
-
-
-PyObject*
-_PyStack_AsTupleSlice(PyObject **stack, Py_ssize_t nargs,
-                      Py_ssize_t start, Py_ssize_t end)
-{
-    PyObject *args;
-    Py_ssize_t i;
-
-    assert(0 <= start);
-    assert(end <= nargs);
-    assert(start <= end);
-
-    args = PyTuple_New(end - start);
-    if (args == NULL) {
-        return NULL;
-    }
-
-    for (i=start; i < end; i++) {
-        PyObject *item = stack[i];
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(args, i - start, item);
-    }
-    return args;
-}
-
-
 PyObject *
-_PyStack_AsDict(PyObject **values, PyObject *kwnames)
+_PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
 {
     Py_ssize_t nkwargs;
-    PyObject *kwdict;
-    Py_ssize_t i;
 
     assert(kwnames != NULL);
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    kwdict = _PyDict_NewPresized(nkwargs);
-    if (kwdict == NULL) {
-        return NULL;
-    }
-
-    for (i = 0; i < nkwargs; i++) {
-        PyObject *key = PyTuple_GET_ITEM(kwnames, i);
-        PyObject *value = *values++;
-        /* If key already exists, replace it with the new value */
-        if (PyDict_SetItem(kwdict, key, value)) {
-            Py_DECREF(kwdict);
-            return NULL;
-        }
-    }
-    return kwdict;
+    return _PyDict_FromItems(&PyTuple_GET_ITEM(kwnames, 0), 1,
+                             values, 1, nkwargs);
 }
 
 
-int
-_PyStack_UnpackDict(PyObject **args, Py_ssize_t nargs, PyObject *kwargs,
-                    PyObject ***p_stack, PyObject **p_kwnames)
+/* Convert (args, nargs, kwargs: dict) into a (stack, nargs, kwnames: tuple).
+
+   Allocate a new argument vector and keyword names tuple. Return the argument
+   vector; return NULL with exception set on error. Return the keyword names
+   tuple in *p_kwnames.
+
+   This also checks that all keyword names are strings. If not, a TypeError is
+   raised.
+
+   The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
+
+   When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames) */
+PyObject *const *
+_PyStack_UnpackDict(PyThreadState *tstate,
+                    PyObject *const *args, Py_ssize_t nargs,
+                    PyObject *kwargs, PyObject **p_kwnames)
 {
-    PyObject **stack, **kwstack;
-    Py_ssize_t nkwargs;
-    Py_ssize_t pos, i;
-    PyObject *key, *value;
-    PyObject *kwnames;
-
     assert(nargs >= 0);
-    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+    assert(kwargs != NULL);
+    assert(PyDict_Check(kwargs));
 
-    if (kwargs == NULL || (nkwargs = PyDict_GET_SIZE(kwargs)) == 0) {
-        *p_stack = args;
-        *p_kwnames = NULL;
-        return 0;
+    Py_ssize_t nkwargs = PyDict_GET_SIZE(kwargs);
+    /* Check for overflow in the PyMem_Malloc() call below. The subtraction
+     * in this check cannot overflow: both maxnargs and nkwargs are
+     * non-negative signed integers, so their difference fits in the type. */
+    Py_ssize_t maxnargs = PY_SSIZE_T_MAX / sizeof(args[0]) - 1;
+    if (nargs > maxnargs - nkwargs) {
+        _PyErr_NoMemory(tstate);
+        return NULL;
     }
 
-    if ((size_t)nargs > PY_SSIZE_T_MAX / sizeof(stack[0]) - (size_t)nkwargs) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    stack = PyMem_Malloc((nargs + nkwargs) * sizeof(stack[0]));
+    /* Add 1 to support PY_VECTORCALL_ARGUMENTS_OFFSET */
+    PyObject **stack = PyMem_Malloc((1 + nargs + nkwargs) * sizeof(args[0]));
     if (stack == NULL) {
-        PyErr_NoMemory();
-        return -1;
+        _PyErr_NoMemory(tstate);
+        return NULL;
     }
 
-    kwnames = PyTuple_New(nkwargs);
+    PyObject *kwnames = PyTuple_New(nkwargs);
     if (kwnames == NULL) {
         PyMem_Free(stack);
-        return -1;
+        return NULL;
     }
 
-    /* Copy position arguments (borrowed references) */
-    memcpy(stack, args, nargs * sizeof(stack[0]));
+    stack++;  /* For PY_VECTORCALL_ARGUMENTS_OFFSET */
 
-    kwstack = stack + nargs;
-    pos = i = 0;
+    /* Copy positional arguments */
+    for (Py_ssize_t i = 0; i < nargs; i++) {
+        stack[i] = Py_NewRef(args[i]);
+    }
+
+    PyObject **kwstack = stack + nargs;
     /* This loop doesn't support lookup function mutating the dictionary
        to change its size. It's a deliberate choice for speed, this function is
        called in the performance critical hot code. */
+    Py_ssize_t pos = 0, i = 0;
+    PyObject *key, *value;
+    unsigned long keys_are_strings = Py_TPFLAGS_UNICODE_SUBCLASS;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
-        Py_INCREF(key);
-        PyTuple_SET_ITEM(kwnames, i, key);
-        /* The stack contains borrowed references */
-        kwstack[i] = value;
+        keys_are_strings &= Py_TYPE(key)->tp_flags;
+        PyTuple_SET_ITEM(kwnames, i, Py_NewRef(key));
+        kwstack[i] = Py_NewRef(value);
         i++;
     }
 
-    *p_stack = stack;
+    /* keys_are_strings has the value Py_TPFLAGS_UNICODE_SUBCLASS if that
+     * flag is set for all keys. Otherwise, keys_are_strings equals 0.
+     * We do this check once at the end instead of inside the loop above
+     * because it simplifies the deallocation in the failing case.
+     * It happens to also make the loop above slightly more efficient. */
+    if (!keys_are_strings) {
+        _PyErr_SetString(tstate, PyExc_TypeError,
+                         "keywords must be strings");
+        _PyStack_UnpackDict_Free(stack, nargs, kwnames);
+        return NULL;
+    }
+
     *p_kwnames = kwnames;
-    return 0;
+    return stack;
+}
+
+void
+_PyStack_UnpackDict_Free(PyObject *const *stack, Py_ssize_t nargs,
+                         PyObject *kwnames)
+{
+    Py_ssize_t n = PyTuple_GET_SIZE(kwnames) + nargs;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        Py_DECREF(stack[i]);
+    }
+    _PyStack_UnpackDict_FreeNoDecRef(stack, kwnames);
+}
+
+void
+_PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
+{
+    PyMem_Free((PyObject **)stack - 1);
+    Py_DECREF(kwnames);
+}
+
+// Export for the stable ABI
+#undef PyVectorcall_NARGS
+Py_ssize_t
+PyVectorcall_NARGS(size_t n)
+{
+    return _PyVectorcall_NARGS(n);
 }

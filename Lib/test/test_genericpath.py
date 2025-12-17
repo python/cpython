@@ -1,14 +1,19 @@
 """
-Tests common to genericpath, macpath, ntpath and posixpath
+Tests common to genericpath, ntpath and posixpath
 """
 
+import copy
 import genericpath
 import os
+import pickle
 import sys
 import unittest
 import warnings
 from test import support
-android_not_root = support.android_not_root
+from test.support import os_helper
+from test.support import warnings_helper
+from test.support.script_helper import assert_python_ok
+from test.support.os_helper import FakePath
 
 
 def create_file(filename, data=b'foo'):
@@ -89,15 +94,15 @@ class GenericTest:
         for s1 in testlist:
             for s2 in testlist:
                 p = commonprefix([s1, s2])
-                self.assertTrue(s1.startswith(p))
-                self.assertTrue(s2.startswith(p))
+                self.assertStartsWith(s1, p)
+                self.assertStartsWith(s2, p)
                 if s1 != s2:
                     n = len(p)
                     self.assertNotEqual(s1[n:n+1], s2[n:n+1])
 
     def test_getsize(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         create_file(filename, b'Hello')
         self.assertEqual(self.pathmodule.getsize(filename), 5)
@@ -107,8 +112,8 @@ class GenericTest:
         self.assertEqual(self.pathmodule.getsize(filename), 12)
 
     def test_filetime(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
 
         create_file(filename, b'foo')
 
@@ -125,18 +130,37 @@ class GenericTest:
         )
 
     def test_exists(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        bfilename = os.fsencode(filename)
+        self.addCleanup(os_helper.unlink, filename)
 
         self.assertIs(self.pathmodule.exists(filename), False)
+        self.assertIs(self.pathmodule.exists(bfilename), False)
 
-        with open(filename, "xb") as f:
-            f.write(b"foo")
+        self.assertIs(self.pathmodule.lexists(filename), False)
+        self.assertIs(self.pathmodule.lexists(bfilename), False)
+
+        create_file(filename)
 
         self.assertIs(self.pathmodule.exists(filename), True)
+        self.assertIs(self.pathmodule.exists(bfilename), True)
 
-        if not self.pathmodule == genericpath:
-            self.assertIs(self.pathmodule.lexists(filename), True)
+        self.assertIs(self.pathmodule.exists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.exists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.exists(bfilename + b'\x00'), False)
+
+        self.assertIs(self.pathmodule.lexists(filename), True)
+        self.assertIs(self.pathmodule.lexists(bfilename), True)
+
+        self.assertIs(self.pathmodule.lexists(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
+
+        # Keyword arguments are accepted
+        self.assertIs(self.pathmodule.exists(path=filename), True)
+        self.assertIs(self.pathmodule.lexists(path=filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_exists_fd(self):
@@ -148,43 +172,67 @@ class GenericTest:
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
 
-    def test_isdir_file(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+    def test_exists_bool(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor'):
+                self.pathmodule.exists(fd)
+
+    def test_isdir(self):
+        filename = os_helper.TESTFN
+        bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isdir(filename), False)
+        self.assertIs(self.pathmodule.isdir(bfilename), False)
 
-        create_file(filename)
-        self.assertIs(self.pathmodule.isdir(filename), False)
+        self.assertIs(self.pathmodule.isdir(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.isdir(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.isdir(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.isdir(bfilename + b'\x00'), False)
 
-    def test_isdir_dir(self):
-        filename = support.TESTFN
-        self.addCleanup(support.rmdir, filename)
-        self.assertIs(self.pathmodule.isdir(filename), False)
+        try:
+            create_file(filename)
+            self.assertIs(self.pathmodule.isdir(filename), False)
+            self.assertIs(self.pathmodule.isdir(bfilename), False)
+        finally:
+            os_helper.unlink(filename)
 
-        os.mkdir(filename)
-        self.assertIs(self.pathmodule.isdir(filename), True)
+        try:
+            os.mkdir(filename)
+            self.assertIs(self.pathmodule.isdir(filename), True)
+            self.assertIs(self.pathmodule.isdir(bfilename), True)
+        finally:
+            os_helper.rmdir(filename)
 
-    def test_isfile_file(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+    def test_isfile(self):
+        filename = os_helper.TESTFN
+        bfilename = os.fsencode(filename)
         self.assertIs(self.pathmodule.isfile(filename), False)
+        self.assertIs(self.pathmodule.isfile(bfilename), False)
 
-        create_file(filename)
-        self.assertIs(self.pathmodule.isfile(filename), True)
+        self.assertIs(self.pathmodule.isfile(filename + '\udfff'), False)
+        self.assertIs(self.pathmodule.isfile(bfilename + b'\xff'), False)
+        self.assertIs(self.pathmodule.isfile(filename + '\x00'), False)
+        self.assertIs(self.pathmodule.isfile(bfilename + b'\x00'), False)
 
-    def test_isfile_dir(self):
-        filename = support.TESTFN
-        self.addCleanup(support.rmdir, filename)
-        self.assertIs(self.pathmodule.isfile(filename), False)
+        try:
+            create_file(filename)
+            self.assertIs(self.pathmodule.isfile(filename), True)
+            self.assertIs(self.pathmodule.isfile(bfilename), True)
+        finally:
+            os_helper.unlink(filename)
 
-        os.mkdir(filename)
-        self.assertIs(self.pathmodule.isfile(filename), False)
+        try:
+            os.mkdir(filename)
+            self.assertIs(self.pathmodule.isfile(filename), False)
+            self.assertIs(self.pathmodule.isfile(bfilename), False)
+        finally:
+            os_helper.rmdir(filename)
 
     def test_samefile(self):
-        file1 = support.TESTFN
-        file2 = support.TESTFN + "2"
-        self.addCleanup(support.unlink, file1)
-        self.addCleanup(support.unlink, file2)
+        file1 = os_helper.TESTFN
+        file2 = os_helper.TESTFN + "2"
+        self.addCleanup(os_helper.unlink, file1)
+        self.addCleanup(os_helper.unlink, file2)
 
         create_file(file1)
         self.assertTrue(self.pathmodule.samefile(file1, file1))
@@ -195,10 +243,10 @@ class GenericTest:
         self.assertRaises(TypeError, self.pathmodule.samefile)
 
     def _test_samefile_on_link_func(self, func):
-        test_fn1 = support.TESTFN
-        test_fn2 = support.TESTFN + "2"
-        self.addCleanup(support.unlink, test_fn1)
-        self.addCleanup(support.unlink, test_fn2)
+        test_fn1 = os_helper.TESTFN
+        test_fn2 = os_helper.TESTFN + "2"
+        self.addCleanup(os_helper.unlink, test_fn1)
+        self.addCleanup(os_helper.unlink, test_fn2)
 
         create_file(test_fn1)
 
@@ -209,19 +257,22 @@ class GenericTest:
         create_file(test_fn2)
         self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2))
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_samefile_on_symlink(self):
         self._test_samefile_on_link_func(os.symlink)
 
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
+    @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_samefile_on_link(self):
-        self._test_samefile_on_link_func(os.link)
+        try:
+            self._test_samefile_on_link_func(os.link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
     def test_samestat(self):
-        test_fn1 = support.TESTFN
-        test_fn2 = support.TESTFN + "2"
-        self.addCleanup(support.unlink, test_fn1)
-        self.addCleanup(support.unlink, test_fn2)
+        test_fn1 = os_helper.TESTFN
+        test_fn2 = os_helper.TESTFN + "2"
+        self.addCleanup(os_helper.unlink, test_fn1)
+        self.addCleanup(os_helper.unlink, test_fn2)
 
         create_file(test_fn1)
         stat1 = os.stat(test_fn1)
@@ -234,10 +285,10 @@ class GenericTest:
         self.assertRaises(TypeError, self.pathmodule.samestat)
 
     def _test_samestat_on_link_func(self, func):
-        test_fn1 = support.TESTFN + "1"
-        test_fn2 = support.TESTFN + "2"
-        self.addCleanup(support.unlink, test_fn1)
-        self.addCleanup(support.unlink, test_fn2)
+        test_fn1 = os_helper.TESTFN + "1"
+        test_fn2 = os_helper.TESTFN + "2"
+        self.addCleanup(os_helper.unlink, test_fn1)
+        self.addCleanup(os_helper.unlink, test_fn2)
 
         create_file(test_fn1)
         func(test_fn1, test_fn2)
@@ -249,17 +300,20 @@ class GenericTest:
         self.assertFalse(self.pathmodule.samestat(os.stat(test_fn1),
                                                   os.stat(test_fn2)))
 
-    @support.skip_unless_symlink
+    @os_helper.skip_unless_symlink
     def test_samestat_on_symlink(self):
         self._test_samestat_on_link_func(os.symlink)
 
-    @unittest.skipIf(android_not_root, "hard links not allowed, non root user")
+    @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_samestat_on_link(self):
-        self._test_samestat_on_link_func(os.link)
+        try:
+            self._test_samestat_on_link_func(os.link)
+        except PermissionError as e:
+            self.skipTest('os.link(): %s' % e)
 
     def test_sameopenfile(self):
-        filename = support.TESTFN
-        self.addCleanup(support.unlink, filename)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
         create_file(filename)
 
         with open(filename, "rb", 0) as fp1:
@@ -268,6 +322,21 @@ class GenericTest:
                 fd2 = fp2.fileno()
                 self.assertTrue(self.pathmodule.sameopenfile(fd1, fd2))
 
+    def test_realpath_mode_values(self):
+        for name in 'ALL_BUT_LAST', 'ALLOW_MISSING':
+            with self.subTest(name):
+                mode = getattr(self.pathmodule, name)
+                self.assertEqual(repr(mode), 'os.path.' + name)
+                self.assertEqual(str(mode), 'os.path.' + name)
+                self.assertTrue(mode)
+                self.assertIs(copy.copy(mode), mode)
+                self.assertIs(copy.deepcopy(mode), mode)
+                for proto in range(pickle.HIGHEST_PROTOCOL+1):
+                    with self.subTest(protocol=proto):
+                        pickled = pickle.dumps(mode, proto)
+                        unpickled = pickle.loads(pickled)
+                        self.assertIs(unpickled, mode)
+
 
 class TestGenericTest(GenericTest, unittest.TestCase):
     # Issue 16852: GenericTest can't inherit from unittest.TestCase
@@ -275,18 +344,30 @@ class TestGenericTest(GenericTest, unittest.TestCase):
     # and is only meant to be inherited by others.
     pathmodule = genericpath
 
-    def test_null_bytes(self):
+    def test_invalid_paths(self):
         for attr in GenericTest.common_attributes:
             # os.path.commonprefix doesn't raise ValueError
             if attr == 'commonprefix':
                 continue
+            func = getattr(self.pathmodule, attr)
             with self.subTest(attr=attr):
-                with self.assertRaises(ValueError) as cm:
-                    getattr(self.pathmodule, attr)('/tmp\x00abcds')
-                self.assertIn('embedded null', str(cm.exception))
+                if attr in ('exists', 'isdir', 'isfile'):
+                    func('/tmp\udfffabcds')
+                    func(b'/tmp\xffabcds')
+                    func('/tmp\x00abcds')
+                    func(b'/tmp\x00abcds')
+                else:
+                    with self.assertRaises((OSError, UnicodeEncodeError)):
+                        func('/tmp\udfffabcds')
+                    with self.assertRaises((OSError, UnicodeDecodeError)):
+                        func(b'/tmp\xffabcds')
+                    with self.assertRaisesRegex(ValueError, 'embedded null'):
+                        func('/tmp\x00abcds')
+                    with self.assertRaisesRegex(ValueError, 'embedded null'):
+                        func(b'/tmp\x00abcds')
 
 # Following TestCase is not supposed to be run from test_genericpath.
-# It is inherited by other test modules (macpath, ntpath, posixpath).
+# It is inherited by other test modules (ntpath, posixpath).
 
 class CommonTest(GenericTest):
     common_attributes = GenericTest.common_attributes + [
@@ -325,10 +406,8 @@ class CommonTest(GenericTest):
         self.assertEqual(splitdrive(b":foo:bar"), (b"", b":foo:bar"))
 
     def test_expandvars(self):
-        if self.pathmodule.__name__ == 'macpath':
-            self.skipTest('macpath.expandvars is a stub')
         expandvars = self.pathmodule.expandvars
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.clear()
             env["foo"] = "bar"
             env["{foo"] = "baz1"
@@ -357,16 +436,14 @@ class CommonTest(GenericTest):
             self.assertEqual(expandvars(b"$foo$foo"), b"barbar")
             self.assertEqual(expandvars(b"$bar$bar"), b"$bar$bar")
 
-    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
+    @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_expandvars_nonascii(self):
-        if self.pathmodule.__name__ == 'macpath':
-            self.skipTest('macpath.expandvars is a stub')
         expandvars = self.pathmodule.expandvars
         def check(value, expected):
             self.assertEqual(expandvars(value), expected)
-        with support.EnvironmentVarGuard() as env:
+        with os_helper.EnvironmentVarGuard() as env:
             env.clear()
-            nonascii = support.FS_NONASCII
+            nonascii = os_helper.FS_NONASCII
             env['spam'] = nonascii
             env[nonascii] = 'ham' + nonascii
             check(nonascii, nonascii)
@@ -384,6 +461,19 @@ class CommonTest(GenericTest):
             check(os.fsencode('$bar%s bar' % nonascii),
                   os.fsencode('$bar%s bar' % nonascii))
             check(b'$spam}bar', os.fsencode('%s}bar' % nonascii))
+
+    @support.requires_resource('cpu')
+    def test_expandvars_large(self):
+        expandvars = self.pathmodule.expandvars
+        with os_helper.EnvironmentVarGuard() as env:
+            env.clear()
+            env["A"] = "B"
+            n = 100_000
+            self.assertEqual(expandvars('$A'*n), 'B'*n)
+            self.assertEqual(expandvars('${A}'*n), 'B'*n)
+            self.assertEqual(expandvars('$A!'*n), 'B!'*n)
+            self.assertEqual(expandvars('${A}A'*n), 'BA'*n)
+            self.assertEqual(expandvars('${'*10*n), '${'*10*n)
 
     def test_abspath(self):
         self.assertIn("foo", self.pathmodule.abspath("foo"))
@@ -411,6 +501,10 @@ class CommonTest(GenericTest):
         for path in ('', '.', '/', '\\', '///foo/.//bar//'):
             self.assertIsInstance(self.pathmodule.normpath(path), str)
 
+    def test_normpath_issue106242(self):
+        for path in ('\x00', 'foo\x00bar', '\x00\x00', '\x00foo', 'foo\x00'):
+            self.assertEqual(self.pathmodule.normpath(path), path)
+
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode
         # with both ASCII and non-ASCII cwds.
@@ -425,31 +519,35 @@ class CommonTest(GenericTest):
             # FS encoding is probably ASCII
             pass
         else:
-            with support.temp_cwd(unicwd):
+            with os_helper.temp_cwd(unicwd):
                 for path in ('', 'fuu', 'f\xf9\xf9', '/fuu', 'U:\\'):
                     self.assertIsInstance(abspath(path), str)
 
     def test_nonascii_abspath(self):
-        if (support.TESTFN_UNDECODABLE
-        # Mac OS X denies the creation of a directory with an invalid
-        # UTF-8 name. Windows allows creating a directory with an
-        # arbitrary bytes name, but fails to enter this directory
-        # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin')):
-            name = support.TESTFN_UNDECODABLE
-        elif support.TESTFN_NONASCII:
-            name = support.TESTFN_NONASCII
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            # Apple platforms and Emscripten/WASI deny the creation of a
+            # directory with an invalid UTF-8 name. Windows allows creating a
+            # directory with an arbitrary bytes name, but fails to enter this
+            # directory (when the bytes name is used).
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            } and not support.is_apple
+        ):
+            name = os_helper.TESTFN_UNDECODABLE
+        elif os_helper.TESTFN_NONASCII:
+            name = os_helper.TESTFN_NONASCII
         else:
-            self.skipTest("need support.TESTFN_NONASCII")
+            self.skipTest("need os_helper.TESTFN_NONASCII")
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with support.temp_cwd(name):
+            with os_helper.temp_cwd(name):
                 self.test_abspath()
 
     def test_join_errors(self):
         # Check join() raises friendly TypeErrors.
-        with support.check_warnings(('', BytesWarning), quiet=True):
+        with warnings_helper.check_warnings(('', BytesWarning), quiet=True):
             errmsg = "Can't mix strings and bytes in path components"
             with self.assertRaisesRegex(TypeError, errmsg):
                 self.pathmodule.join(b'bytes', 'str')
@@ -469,8 +567,8 @@ class CommonTest(GenericTest):
 
     def test_relpath_errors(self):
         # Check relpath() raises friendly TypeErrors.
-        with support.check_warnings(('', (BytesWarning, DeprecationWarning)),
-                                    quiet=True):
+        with warnings_helper.check_warnings(
+                ('', (BytesWarning, DeprecationWarning)), quiet=True):
             errmsg = "Can't mix strings and bytes in path components"
             with self.assertRaisesRegex(TypeError, errmsg):
                 self.pathmodule.relpath(b'bytes', 'str')
@@ -483,22 +581,16 @@ class CommonTest(GenericTest):
             with self.assertRaisesRegex(TypeError, 'bytearray'):
                 self.pathmodule.relpath(bytearray(b'foo'), bytearray(b'bar'))
 
+    def test_import(self):
+        assert_python_ok('-S', '-c', 'import ' + self.pathmodule.__name__)
+
 
 class PathLikeTests(unittest.TestCase):
 
-    class PathLike:
-        def __init__(self, path=''):
-            self.path = path
-        def __fspath__(self):
-            if isinstance(self.path, BaseException):
-                raise self.path
-            else:
-                return self.path
-
     def setUp(self):
-        self.file_name = support.TESTFN.lower()
-        self.file_path = self.PathLike(support.TESTFN)
-        self.addCleanup(support.unlink, self.file_name)
+        self.file_name = os_helper.TESTFN
+        self.file_path = FakePath(os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, self.file_name)
         create_file(self.file_name, b"test_genericpath.PathLikeTests")
 
     def assertPathEqual(self, func):
@@ -530,5 +622,5 @@ class PathLikeTests(unittest.TestCase):
         self.assertTrue(os.path.samefile(self.file_path, self.file_name))
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     unittest.main()

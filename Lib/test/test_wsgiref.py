@@ -1,5 +1,6 @@
 from unittest import mock
 from test import support
+from test.support import socket_helper
 from test.test_httpservers import NoLogRequestHandler
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
@@ -18,6 +19,7 @@ import os
 import re
 import signal
 import sys
+import threading
 import unittest
 
 
@@ -78,41 +80,26 @@ def run_amock(app=hello_app, data=b"GET / HTTP/1.0\n\n"):
 
     return out.getvalue(), err.getvalue()
 
-def compare_generic_iter(make_it,match):
-    """Utility to compare a generic 2.1/2.2+ iterator with an iterable
 
-    If running under Python 2.2+, this tests the iterator using iter()/next(),
-    as well as __getitem__.  'make_it' must be a function returning a fresh
+def compare_generic_iter(make_it, match):
+    """Utility to compare a generic iterator with an iterable
+
+    This tests the iterator using iter()/next().
+    'make_it' must be a function returning a fresh
     iterator to be tested (since this may test the iterator twice)."""
 
     it = make_it()
-    n = 0
+    if not iter(it) is it:
+        raise AssertionError
     for item in match:
-        if not it[n]==item: raise AssertionError
-        n+=1
+        if not next(it) == item:
+            raise AssertionError
     try:
-        it[n]
-    except IndexError:
+        next(it)
+    except StopIteration:
         pass
     else:
-        raise AssertionError("Too many items from __getitem__",it)
-
-    try:
-        iter, StopIteration
-    except NameError:
-        pass
-    else:
-        # Only test iter mode under 2.2+
-        it = make_it()
-        if not iter(it) is it: raise AssertionError
-        for item in match:
-            if not next(it) == item: raise AssertionError
-        try:
-            next(it)
-        except StopIteration:
-            pass
-        else:
-            raise AssertionError("Too many items from .__next__()", it)
+        raise AssertionError("Too many items from .__next__()", it)
 
 
 class IntegrationTests(TestCase):
@@ -122,7 +109,7 @@ class IntegrationTests(TestCase):
                 sys.version.split()[0])
         self.assertEqual(out,
             ("HTTP/1.0 200 OK\r\n"
-            "Server: WSGIServer/0.2 " + pyver +"\r\n"
+            "Server: WSGIServer " + pyver + "\r\n"
             "Content-Type: text/plain\r\n"
             "Date: Mon, 05 Jun 2006 18:49:54 GMT\r\n" +
             (has_length and  "Content-Length: 13\r\n" or "") +
@@ -150,7 +137,7 @@ class IntegrationTests(TestCase):
     def test_request_length(self):
         out, err = run_amock(data=b"GET " + (b"x" * 65537) + b" HTTP/1.0\n\n")
         self.assertEqual(out.splitlines()[0],
-                         b"HTTP/1.0 414 Request-URI Too Long")
+                         b"HTTP/1.0 414 URI Too Long")
 
     def test_validated_hello(self):
         out, err = run_amock(validator(hello_app))
@@ -162,9 +149,9 @@ class IntegrationTests(TestCase):
             start_response("200 OK", ('Content-Type','text/plain'))
             return ["Hello, world!"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2],
             "AssertionError: Headers (('Content-Type', 'text/plain')) must"
@@ -187,9 +174,9 @@ class IntegrationTests(TestCase):
         for status, exc_message in tests:
             with self.subTest(status=status):
                 out, err = run_amock(create_bad_app(status))
-                self.assertTrue(out.endswith(
+                self.assertEndsWith(out,
                     b"A server error occurred.  Please contact the administrator."
-                ))
+                )
                 self.assertEqual(err.splitlines()[-2], exc_message)
 
     def test_wsgi_input(self):
@@ -198,9 +185,9 @@ class IntegrationTests(TestCase):
             s("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
             return [b"data"]
         out, err = run_amock(validator(bad_app))
-        self.assertTrue(out.endswith(
+        self.assertEndsWith(out,
             b"A server error occurred.  Please contact the administrator."
-        ))
+        )
         self.assertEqual(
             err.splitlines()[-2], "AssertionError"
         )
@@ -213,13 +200,13 @@ class IntegrationTests(TestCase):
                 ])
             return [b"data"]
         out, err = run_amock(validator(app))
-        self.assertTrue(err.endswith('"GET / HTTP/1.0" 200 4\n'))
+        self.assertEndsWith(err, '"GET / HTTP/1.0" 200 4\n')
         ver = sys.version.split()[0].encode('ascii')
         py  = python_implementation().encode('ascii')
         pyver = py + b"/" + ver
         self.assertEqual(
                 b"HTTP/1.0 200 OK\r\n"
-                b"Server: WSGIServer/0.2 "+ pyver + b"\r\n"
+                b"Server: WSGIServer " + pyver + b"\r\n"
                 b"Content-Type: text/plain; charset=utf-8\r\n"
                 b"Date: Wed, 24 Dec 2008 13:29:32 GMT\r\n"
                 b"\r\n"
@@ -253,7 +240,6 @@ class IntegrationTests(TestCase):
         # BaseHandler._write() and _flush() have to write all data, even if
         # it takes multiple send() calls.  Test this by interrupting a send()
         # call with a Unix signal.
-        threading = support.import_module("threading")
         pthread_kill = support.get_attribute(signal, "pthread_kill")
 
         def app(environ, start_response):
@@ -263,7 +249,7 @@ class IntegrationTests(TestCase):
         class WsgiHandler(NoLogRequestHandler, WSGIRequestHandler):
             pass
 
-        server = make_server(support.HOST, 0, app, handler_class=WsgiHandler)
+        server = make_server(socket_helper.HOST, 0, app, handler_class=WsgiHandler)
         self.addCleanup(server.server_close)
         interrupted = threading.Event()
 
@@ -540,32 +526,62 @@ class TestHandler(ErrorHandler):
 
 
 class HandlerTests(TestCase):
-
-    def checkEnvironAttrs(self, handler):
-        env = handler.environ
-        for attr in [
-            'version','multithread','multiprocess','run_once','file_wrapper'
-        ]:
-            if attr=='file_wrapper' and handler.wsgi_file_wrapper is None:
-                continue
-            self.assertEqual(getattr(handler,'wsgi_'+attr),env['wsgi.'+attr])
-
-    def checkOSEnviron(self,handler):
-        empty = {}; setup_testing_defaults(empty)
-        env = handler.environ
-        from os import environ
-        for k,v in environ.items():
-            if k not in empty:
-                self.assertEqual(env[k],v)
-        for k,v in empty.items():
-            self.assertIn(k, env)
+    # testEnviron() can produce long error message
+    maxDiff = 80 * 50
 
     def testEnviron(self):
-        h = TestHandler(X="Y")
-        h.setup_environ()
-        self.checkEnvironAttrs(h)
-        self.checkOSEnviron(h)
-        self.assertEqual(h.environ["X"],"Y")
+        os_environ = {
+            # very basic environment
+            'HOME': '/my/home',
+            'PATH': '/my/path',
+            'LANG': 'fr_FR.UTF-8',
+
+            # set some WSGI variables
+            'SCRIPT_NAME': 'test_script_name',
+            'SERVER_NAME': 'test_server_name',
+        }
+
+        with support.swap_attr(TestHandler, 'os_environ', os_environ):
+            # override X and HOME variables
+            handler = TestHandler(X="Y", HOME="/override/home")
+            handler.setup_environ()
+
+        # Check that wsgi_xxx attributes are copied to wsgi.xxx variables
+        # of handler.environ
+        for attr in ('version', 'multithread', 'multiprocess', 'run_once',
+                     'file_wrapper'):
+            self.assertEqual(getattr(handler, 'wsgi_' + attr),
+                             handler.environ['wsgi.' + attr])
+
+        # Test handler.environ as a dict
+        expected = {}
+        setup_testing_defaults(expected)
+        # Handler inherits os_environ variables which are not overridden
+        # by SimpleHandler.add_cgi_vars() (SimpleHandler.base_env)
+        for key, value in os_environ.items():
+            if key not in expected:
+                expected[key] = value
+        expected.update({
+            # X doesn't exist in os_environ
+            "X": "Y",
+            # HOME is overridden by TestHandler
+            'HOME': "/override/home",
+
+            # overridden by setup_testing_defaults()
+            "SCRIPT_NAME": "",
+            "SERVER_NAME": "127.0.0.1",
+
+            # set by BaseHandler.setup_environ()
+            'wsgi.input': handler.get_stdin(),
+            'wsgi.errors': handler.get_stderr(),
+            'wsgi.version': (1, 0),
+            'wsgi.run_once': False,
+            'wsgi.url_scheme': 'http',
+            'wsgi.multithread': True,
+            'wsgi.multiprocess': True,
+            'wsgi.file_wrapper': util.FileWrapper,
+        })
+        self.assertDictEqual(handler.environ, expected)
 
     def testCGIEnviron(self):
         h = BaseCGIHandler(None,None,None,{})
@@ -779,6 +795,61 @@ class HandlerTests(TestCase):
             b"\r\n"
             b"Hello, world!",
             written)
+
+    def testClientConnectionTerminations(self):
+        environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
+        for exception in (
+            ConnectionAbortedError,
+            BrokenPipeError,
+            ConnectionResetError,
+        ):
+            with self.subTest(exception=exception):
+                class AbortingWriter:
+                    def write(self, b):
+                        raise exception
+
+                stderr = StringIO()
+                h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
+                h.run(hello_app)
+
+                self.assertFalse(stderr.getvalue())
+
+    def testDontResetInternalStateOnException(self):
+        class CustomException(ValueError):
+            pass
+
+        # We are raising CustomException here to trigger an exception
+        # during the execution of SimpleHandler.finish_response(), so
+        # we can easily test that the internal state of the handler is
+        # preserved in case of an exception.
+        class AbortingWriter:
+            def write(self, b):
+                raise CustomException
+
+        stderr = StringIO()
+        environ = {"SERVER_PROTOCOL": "HTTP/1.0"}
+        h = SimpleHandler(BytesIO(), AbortingWriter(), stderr, environ)
+        h.run(hello_app)
+
+        self.assertIn("CustomException", stderr.getvalue())
+
+        # Test that the internal state of the handler is preserved.
+        self.assertIsNotNone(h.result)
+        self.assertIsNotNone(h.headers)
+        self.assertIsNotNone(h.status)
+        self.assertIsNotNone(h.environ)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        from wsgiref import simple_server
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(simple_server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

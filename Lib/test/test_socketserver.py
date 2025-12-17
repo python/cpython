@@ -8,53 +8,44 @@ import os
 import select
 import signal
 import socket
-import tempfile
+import threading
 import unittest
 import socketserver
 
 import test.support
-from test.support import reap_children, reap_threads, verbose
-try:
-    import threading
-except ImportError:
-    threading = None
+from test.support import reap_children, verbose
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import threading_helper
+from test.support import warnings_helper
+
 
 test.support.requires("network")
+test.support.requires_working_socket(module=True)
+
 
 TEST_STR = b"hello world\n"
-HOST = test.support.HOST
+HOST = socket_helper.HOST
 
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
                                             'requires Unix sockets')
-HAVE_FORKING = hasattr(os, "fork")
+HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
-
-def signal_alarm(n):
-    """Call signal.alarm when it exists (i.e. not on Windows)."""
-    if hasattr(signal, 'alarm'):
-        signal.alarm(n)
 
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
-def receive(sock, n, timeout=20):
+def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     r, w, x = _real_select([sock], [], [], timeout)
     if sock in r:
         return sock.recv(n)
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS and HAVE_FORKING:
-    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
-                                  socketserver.UnixStreamServer):
-        pass
 
-    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
-                                    socketserver.UnixDatagramServer):
-        pass
-
-
+@warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
@@ -62,23 +53,22 @@ def simple_subprocess(testcase):
     if pid == 0:
         # Don't raise an exception; it would be caught by the test harness.
         os._exit(72)
-    yield None
-    pid2, status = os.waitpid(pid, 0)
-    testcase.assertEqual(pid2, pid)
-    testcase.assertEqual(72 << 8, status)
+    try:
+        yield None
+    except:
+        raise
+    finally:
+        test.support.wait_process(pid, exitcode=72)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
 class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:
@@ -94,8 +84,7 @@ class SocketServerTest(unittest.TestCase):
         else:
             # XXX: We need a way to tell AF_UNIX to pick its own name
             # like AF_INET provides port==0.
-            dir = None
-            fn = tempfile.mktemp(prefix='unix_socket.', dir=dir)
+            fn = socket_helper.create_unix_domain_name()
             self.test_files.append(fn)
             return fn
 
@@ -111,11 +100,16 @@ class SocketServerTest(unittest.TestCase):
                 self.wfile.write(line)
 
         if verbose: print("creating server")
-        server = MyServer(addr, MyHandler)
+        try:
+            server = MyServer(addr, MyHandler)
+        except PermissionError as e:
+            # Issue 29184: cannot bind() a Unix socket on Android.
+            self.skipTest('Cannot create server (%s, %s): %s' %
+                          (svrcls, addr, e))
         self.assertEqual(server.server_address, server.socket.getsockname())
         return server
 
-    @reap_threads
+    @threading_helper.reap_threads
     def run_server(self, svrcls, hdlrbase, testfunc):
         server = self.make_server(self.pickaddr(svrcls.address_family),
                                   svrcls, hdlrbase)
@@ -144,30 +138,32 @@ class SocketServerTest(unittest.TestCase):
         t.join()
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
+        if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
+            # bpo-31151: Check that ForkingMixIn.server_close() waits until
+            # all children completed
+            self.assertFalse(server.active_children)
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
-        s = socket.socket(proto, socket.SOCK_STREAM)
-        s.connect(addr)
-        s.sendall(TEST_STR)
-        buf = data = receive(s, 100)
-        while data and b'\n' not in buf:
-            data = receive(s, 100)
-            buf += data
-        self.assertEqual(buf, TEST_STR)
-        s.close()
+        with socket.socket(proto, socket.SOCK_STREAM) as s:
+            s.connect(addr)
+            s.sendall(TEST_STR)
+            buf = data = receive(s, 100)
+            while data and b'\n' not in buf:
+                data = receive(s, 100)
+                buf += data
+            self.assertEqual(buf, TEST_STR)
 
     def dgram_examine(self, proto, addr):
-        s = socket.socket(proto, socket.SOCK_DGRAM)
-        if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
-            s.bind(self.pickaddr(proto))
-        s.sendto(TEST_STR, addr)
-        buf = data = receive(s, 100)
-        while data and b'\n' not in buf:
-            data = receive(s, 100)
-            buf += data
-        self.assertEqual(buf, TEST_STR)
-        s.close()
+        with socket.socket(proto, socket.SOCK_DGRAM) as s:
+            if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
+                s.bind(self.pickaddr(proto))
+            s.sendto(TEST_STR, addr)
+            buf = data = receive(s, 100)
+            while data and b'\n' not in buf:
+                data = receive(s, 100)
+                buf += data
+            self.assertEqual(buf, TEST_STR)
 
     def test_TCPServer(self):
         self.run_server(socketserver.TCPServer,
@@ -179,6 +175,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingTCPServer(self):
         with simple_subprocess(self):
@@ -198,11 +195,12 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
-            self.run_server(ForkingUnixStreamServer,
+            self.run_server(socketserver.ForkingUnixStreamServer,
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
@@ -216,6 +214,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
@@ -224,25 +223,30 @@ class SocketServerTest(unittest.TestCase):
                             self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_UnixDatagramServer(self):
         self.run_server(socketserver.UnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
     @requires_unix_sockets
+    @unittest.skipIf(test.support.is_apple_mobile and test.support.on_github_actions,
+                     "gh-140702: Test fails regularly on iOS simulator on GitHub Actions")
     def test_ThreadingUnixDatagramServer(self):
         self.run_server(socketserver.ThreadingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
-        self.run_server(ForkingUnixDatagramServer,
+        self.run_server(socketserver.ForkingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
-    @reap_threads
+    @threading_helper.reap_threads
     def test_shutdown(self):
         # Issue #2302: shutdown() should always succeed in making an
         # other thread leave serve_forever().
@@ -268,6 +272,13 @@ class SocketServerTest(unittest.TestCase):
             t.join()
             s.server_close()
 
+    def test_close_immediately(self):
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), lambda: None)
+        server.server_close()
+
     def test_tcpserver_bind_leak(self):
         # Issue #22435: the server socket wouldn't be closed if bind()/listen()
         # failed.
@@ -291,7 +302,7 @@ class ErrorHandlerTest(unittest.TestCase):
     KeyboardInterrupt are not passed."""
 
     def tearDown(self):
-        test.support.unlink(test.support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
 
     def test_sync_handled(self):
         BaseErrorTestServer(ValueError)
@@ -302,28 +313,31 @@ class ErrorHandlerTest(unittest.TestCase):
             BaseErrorTestServer(SystemExit)
         self.check_result(handled=False)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_handled(self):
         ThreadingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_threading_not_handled(self):
-        ThreadingErrorTestServer(SystemExit)
-        self.check_result(handled=False)
+        with threading_helper.catch_threading_exception() as cm:
+            ThreadingErrorTestServer(SystemExit)
+            self.check_result(handled=False)
 
+            self.assertIs(cm.exc_type, SystemExit)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_handled(self):
         ForkingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_not_handled(self):
         ForkingErrorTestServer(SystemExit)
         self.check_result(handled=False)
 
     def check_result(self, handled):
-        with open(test.support.TESTFN) as log:
+        with open(os_helper.TESTFN) as log:
             expected = 'Handler called\n' + 'Error handled\n' * handled
             self.assertEqual(log.read(), expected)
 
@@ -341,7 +355,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
         self.wait_done()
 
     def handle_error(self, request, client_address):
-        with open(test.support.TESTFN, 'a') as log:
+        with open(os_helper.TESTFN, 'a') as log:
             log.write('Error handled\n')
 
     def wait_done(self):
@@ -350,7 +364,7 @@ class BaseErrorTestServer(socketserver.TCPServer):
 
 class BadHandler(socketserver.BaseRequestHandler):
     def handle(self):
-        with open(test.support.TESTFN, 'a') as log:
+        with open(os_helper.TESTFN, 'a') as log:
             log.write('Handler called\n')
         raise self.server.exception('Test error')
 
@@ -371,10 +385,7 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
 
 if HAVE_FORKING:
     class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-        def wait_done(self):
-            [child] = self.active_children
-            os.waitpid(child, 0)
-            self.active_children.clear()
+        pass
 
 
 class SocketWriterTest(unittest.TestCase):
@@ -395,7 +406,6 @@ class SocketWriterTest(unittest.TestCase):
         self.assertIsInstance(server.wfile, io.BufferedIOBase)
         self.assertEqual(server.wfile_fileno, server.request_fileno)
 
-    @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_write(self):
         # Test that wfile.write() sends data immediately, and that it does
         # not truncate sends when interrupted by a Unix signal
@@ -487,6 +497,32 @@ class MiscTestCase(unittest.TestCase):
         server.handle_request()
         self.assertEqual(server.shutdown_called, 1)
         server.server_close()
+
+    def test_threads_reaped(self):
+        """
+        In #37193, users reported a memory leak
+        due to the saving of every request thread. Ensure that
+        not all threads are kept forever.
+        """
+        class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            pass
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        for n in range(10):
+            with socket.create_connection(server.server_address):
+                server.handle_request()
+        self.assertLess(len(server._threads), 10)
+        server.server_close()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(socketserver, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import zipapp
 import zipfile
+from test.support import requires_zlib
+from test.support import os_helper
 
 from unittest.mock import patch
 
@@ -53,6 +55,97 @@ class ZipAppTest(unittest.TestCase):
             self.assertIn('foo/', z.namelist())
             self.assertIn('bar/', z.namelist())
 
+    def test_create_sorted_archive(self):
+        # Test that zipapps order their files by name
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(str(source), target)
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "bin/", "bin/baz", "bin/qux", "zed.py"])
+
+    def test_create_archive_with_filter(self):
+        # Test packing a directory and using filter to specify
+        # which files to include.
+        def skip_pyc_files(path):
+            return path.suffix != '.pyc'
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        (source / 'test.pyc').touch()
+        target = self.tmpdir / 'source.pyz'
+
+        zipapp.create_archive(source, target, filter=skip_pyc_files)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+            self.assertNotIn('test.pyc', z.namelist())
+
+    def test_create_archive_self_insertion(self):
+        # When creating an archive, we shouldn't
+        # include the archive in the list of files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        target = self.tmpdir / 'target.pyz'
+
+        zipapp.create_archive(source, target)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 2)
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+
+    def test_target_overwrites_source_file(self):
+        # The target cannot be one of the files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+
+        with self.assertRaises(zipapp.ZipAppError):
+            zipapp.create_archive(source, target)
+
+    def test_target_overwrites_filtered_source_file(self):
+        # If there's a filter that excludes the target,
+        # the overwrite check shouldn't trigger.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+        pyz_filter = lambda p: not p.match('*.pyz')
+        zipapp.create_archive(source, target, filter=pyz_filter)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 1)
+            self.assertIn('__main__.py', z.namelist())
+
+    def test_create_archive_filter_exclude_dir(self):
+        # Test packing a directory and using a filter to exclude a
+        # subdirectory (ensures that the path supplied to include
+        # is relative to the source location, as expected).
+        def skip_dummy_dir(path):
+            return path.parts[0] != 'dummy'
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        (source / 'dummy').mkdir()
+        (source / 'dummy' / 'test2.py').touch()
+        target = self.tmpdir / 'source.pyz'
+
+        zipapp.create_archive(source, target, filter=skip_dummy_dir)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 2)
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+
     def test_create_archive_default_target(self):
         # Test packing a directory to the default name.
         source = self.tmpdir / 'source'
@@ -61,6 +154,21 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source))
         expected_target = self.tmpdir / 'source.pyz'
         self.assertTrue(expected_target.is_file())
+
+    @requires_zlib()
+    def test_create_archive_with_compression(self):
+        # Test packing a directory into a compressed archive.
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        target = self.tmpdir / 'source.pyz'
+
+        zipapp.create_archive(source, target, compressed=True)
+        with zipfile.ZipFile(target, 'r') as z:
+            for name in ('__main__.py', 'test.py'):
+                self.assertEqual(z.getinfo(name).compress_type,
+                                 zipfile.ZIP_DEFLATED)
 
     def test_no_main(self):
         # Test that packing a directory with no __main__.py fails.
@@ -151,7 +259,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(str(source), target, interpreter='python')
-        self.assertTrue(target.getvalue().startswith(b'#!python\n'))
+        self.assertStartsWith(target.getvalue(), b'#!python\n')
 
     def test_read_shebang(self):
         # Test that we can read the shebang line correctly.
@@ -192,16 +300,17 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target), interpreter='python')
         new_target = io.BytesIO()
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
-    def test_read_from_pathobj(self):
-        # Test that we can copy an archive using a pathlib.Path object
+    def test_read_from_pathlike_obj(self):
+        # Test that we can copy an archive using a path-like object
         # for the source.
         source = self.tmpdir / 'source'
         source.mkdir()
         (source / '__main__.py').touch()
-        target1 = self.tmpdir / 'target1.pyz'
-        target2 = self.tmpdir / 'target2.pyz'
+        source = os_helper.FakePath(str(source))
+        target1 = os_helper.FakePath(str(self.tmpdir / 'target1.pyz'))
+        target2 = os_helper.FakePath(str(self.tmpdir / 'target2.pyz'))
         zipapp.create_archive(source, target1, interpreter='python')
         zipapp.create_archive(target1, target2, interpreter='python2.7')
         self.assertEqual(zipapp.get_interpreter(target2), 'python2.7')
@@ -217,7 +326,7 @@ class ZipAppTest(unittest.TestCase):
         new_target = io.BytesIO()
         temp_archive.seek(0)
         zipapp.create_archive(temp_archive, new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_remove_shebang(self):
         # Test that we can remove the shebang from a file.
@@ -247,6 +356,7 @@ class ZipAppTest(unittest.TestCase):
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
     def test_shebang_is_executable(self):
         # Test that an archive with a shebang line is made executable.
         source = self.tmpdir / 'source'
@@ -311,7 +421,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(original)]
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     def test_cmdline_copy_change_main(self):
@@ -321,7 +431,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(original), '-o', str(target), '-m', 'foo:bar']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -331,7 +441,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a zero returm code.
+        # Program should exit with a zero return code.
         self.assertEqual(cm.exception.code, 0)
         self.assertEqual(mock_stdout.getvalue(), "Interpreter: <none>\n")
 
@@ -341,7 +451,7 @@ class ZipAppCmdlineTest(unittest.TestCase):
         args = [str(target), '--info']
         with self.assertRaises(SystemExit) as cm:
             zipapp.main(args)
-        # Program should exit with a non-zero returm code.
+        # Program should exit with a non-zero return code.
         self.assertTrue(cm.exception.code)
 
 

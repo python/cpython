@@ -11,11 +11,11 @@
 
 This article explains the new features in Python 2.5.  The final release of
 Python 2.5 is scheduled for August 2006; :pep:`356` describes the planned
-release schedule.
+release schedule.  Python 2.5 was released on September 19, 2006.
 
 The changes in Python 2.5 are an interesting mix of language and library
 improvements. The library enhancements will be more important to Python's user
-community, I think, because several widely-useful packages were added.  New
+community, I think, because several widely useful packages were added.  New
 modules include ElementTree for XML processing (:mod:`xml.etree`),
 the SQLite database module (:mod:`sqlite`), and the :mod:`ctypes`
 module for calling C functions.
@@ -229,7 +229,7 @@ required packages. ::
         )
 
 Another new enhancement to the Python package index at
-https://pypi.python.org is storing source and binary archives for a
+https://pypi.org is storing source and binary archives for a
 package.  The new :command:`upload` Distutils command will upload a package to
 the repository.
 
@@ -256,7 +256,7 @@ Package uploading was implemented by Martin von Löwis and Richard Jones.
 PEP 328: Absolute and Relative Imports
 ======================================
 
-The simpler part of PEP 328 was implemented in Python 2.4: parentheses could now
+The simpler part of :pep:`328` was implemented in Python 2.4: parentheses could now
 be used to enclose the names imported from a module using the ``from ... import
 ...`` statement, making it easier to import many different names.
 
@@ -330,7 +330,7 @@ statement, only the ``from ... import`` form.
    :pep:`328` - Imports: Multi-Line and Absolute/Relative
       PEP written by Aahz; implemented by Thomas Wouters.
 
-   https://pylib.readthedocs.org/
+   https://pylib.readthedocs.io/
       The py library by Holger Krekel, which contains the :mod:`py.std` package.
 
 .. ======================================================================
@@ -370,7 +370,7 @@ PEP 341: Unified try/except/finally
 Until Python 2.5, the :keyword:`try` statement came in two flavours. You could
 use a :keyword:`finally` block to ensure that code is always executed, or one or
 more :keyword:`except` blocks to catch  specific exceptions.  You couldn't
-combine both :keyword:`except` blocks and a :keyword:`finally` block, because
+combine both :keyword:`!except` blocks and a :keyword:`!finally` block, because
 generating the right bytecode for the combined version was complicated and it
 wasn't clear what the semantics of the combined statement should be.
 
@@ -435,10 +435,10 @@ When you call ``counter(10)``, the result is an iterator that returns the values
 from 0 up to 9.  On encountering the :keyword:`yield` statement, the iterator
 returns the provided value and suspends the function's execution, preserving the
 local variables. Execution resumes on the following call to the iterator's
-:meth:`next` method, picking up after the :keyword:`yield` statement.
+:meth:`next` method, picking up after the :keyword:`!yield` statement.
 
 In Python 2.3, :keyword:`yield` was a statement; it didn't return any value.  In
-2.5, :keyword:`yield` is now an expression, returning a value that can be
+2.5, :keyword:`!yield` is now an expression, returning a value that can be
 assigned to a variable or otherwise operated on::
 
    val = (yield i)
@@ -448,8 +448,9 @@ when you're doing something with the returned value, as in the above example.
 The parentheses aren't always necessary, but it's easier to always add them
 instead of having to remember when they're needed.
 
-(:pep:`342` explains the exact rules, which are that a :keyword:`yield`\
--expression must always be parenthesized except when it occurs at the top-level
+(:pep:`342` explains the exact rules, which are that a
+:keyword:`yield`\ -expression must always be parenthesized except when it
+occurs at the top-level
 expression on the right-hand side of an assignment.  This means you can write
 ``val = yield i`` but have to use parentheses when there's an operation, as in
 ``val = (yield i) + 12``.)
@@ -457,7 +458,7 @@ expression on the right-hand side of an assignment.  This means you can write
 Values are sent into a generator by calling its ``send(value)`` method.  The
 generator's code is then resumed and the :keyword:`yield` expression returns the
 specified *value*.  If the regular :meth:`next` method is called, the
-:keyword:`yield` returns :const:`None`.
+:keyword:`!yield` returns :const:`None`.
 
 Here's the previous example, modified to allow changing the value of the
 internal counter. ::
@@ -529,7 +530,7 @@ chance to run.  The syntactic restriction that you couldn't mix :keyword:`yield`
 statements with a ``try...finally`` suite has therefore been removed.  This
 seems like a minor bit of language trivia, but using generators and
 ``try...finally`` is actually necessary in order to implement the
-:keyword:`with` statement described by PEP 343.  I'll look at this new statement
+:keyword:`with` statement described by :pep:`343`.  I'll look at this new statement
 in the following  section.
 
 Another even more esoteric effect of this change: previously, the
@@ -550,7 +551,7 @@ exhausted.
    https://en.wikipedia.org/wiki/Coroutine
       The Wikipedia entry for  coroutines.
 
-   http://www.sidhe.org/~dan/blog/archives/000178.html
+   https://web.archive.org/web/20160321211320/http://www.sidhe.org/~dan/blog/archives/000178.html
       An explanation of coroutines from a Perl point of view, written by Dan Sugalski.
 
 .. ======================================================================
@@ -574,15 +575,15 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`~object.__enter__` and :meth:`~object.__exit__`
 methods.
 
-The object's :meth:`__enter__` is called before *with-block* is executed and
+The object's :meth:`~object.__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -608,7 +609,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
@@ -643,7 +644,7 @@ Writing Context Managers
 ------------------------
 
 Under the hood, the ':keyword:`with`' statement is fairly complicated. Most
-people will only use ':keyword:`with`' in company with existing objects and
+people will only use ':keyword:`!with`' in company with existing objects and
 don't need to know these details, so you can skip the rest of this section if
 you like.  Authors of new objects will need to understand the details of the
 underlying implementation and should keep reading.
@@ -651,10 +652,10 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`~object.__enter__` and :meth:`~object.__exit__`
   methods.
 
-* The context manager's :meth:`__enter__` method is called.  The value returned
+* The context manager's :meth:`~object.__enter__` method is called.  The value returned
   is assigned to *VAR*.  If no ``'as VAR'`` clause is present, the value is simply
   discarded.
 
@@ -668,7 +669,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -702,7 +703,7 @@ rolled back if there's an exception. Here's the basic interface for
        def rollback (self):
            "Rolls back current transaction"
 
-The :meth:`__enter__` method is pretty easy, having only to start a new
+The :meth:`~object.__enter__` method is pretty easy, having only to start a new
 transaction.  For this application the resulting cursor object would be a useful
 result, so the method will return it.  The user can then add ``as cursor`` to
 their ':keyword:`with`' statement to bind the cursor to a variable name. ::
@@ -714,7 +715,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -747,11 +748,11 @@ are useful for writing objects for use with the ':keyword:`with`' statement.
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
-:meth:`__enter__` method, and the value yielded will be the method's return
+:meth:`~object.__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
-:keyword:`as` clause, if any.  The code after the :keyword:`yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
-be raised by the :keyword:`yield` statement.
+:keyword:`!as` clause, if any.  The code after the :keyword:`yield` will be
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
+be raised by the :keyword:`!yield` statement.
 
 Our database example from the previous section could be written  using this
 decorator as::
@@ -775,7 +776,7 @@ decorator as::
 
 The :mod:`contextlib` module also has a ``nested(mgr1, mgr2, ...)`` function
 that combines a number of context managers so you don't need to write nested
-':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
+':keyword:`with`' statements.  In this example, the single ':keyword:`!with`'
 statement both starts a database transaction and acquires a thread lock::
 
    lock = threading.Lock()
@@ -871,18 +872,18 @@ PEP 353: Using ssize_t as the index type
 ========================================
 
 A wide-ranging change to Python's C API, using a new  :c:type:`Py_ssize_t` type
-definition instead of :c:type:`int`,  will permit the interpreter to handle more
+definition instead of :c:expr:`int`,  will permit the interpreter to handle more
 data on 64-bit platforms. This change doesn't affect Python's capacity on 32-bit
 platforms.
 
-Various pieces of the Python interpreter used C's :c:type:`int` type to store
+Various pieces of the Python interpreter used C's :c:expr:`int` type to store
 sizes or counts; for example, the number of items in a list or tuple were stored
-in an :c:type:`int`.  The C compilers for most 64-bit platforms still define
-:c:type:`int` as a 32-bit type, so that meant that lists could only hold up to
+in an :c:expr:`int`.  The C compilers for most 64-bit platforms still define
+:c:expr:`int` as a 32-bit type, so that meant that lists could only hold up to
 ``2**31 - 1`` = 2147483647 items. (There are actually a few different
 programming models that 64-bit C compilers can use -- see
-http://www.unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
-most commonly available model leaves :c:type:`int` as 32 bits.)
+https://unix.org/version2/whatsnew/lp64_wp.html for a discussion -- but the
+most commonly available model leaves :c:expr:`int` as 32 bits.)
 
 A limit of 2147483647 items doesn't really matter on a 32-bit platform because
 you'll run out of memory before hitting the length limit. Each list item
@@ -894,7 +895,7 @@ It's possible to address that much memory on a 64-bit platform, however.  The
 pointers for a list that size would only require 16 GiB of space, so it's not
 unreasonable that Python programmers might construct lists that large.
 Therefore, the Python interpreter had to be changed to use some type other than
-:c:type:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
+:c:expr:`int`, and this will be a 64-bit type on 64-bit platforms.  The change
 will cause incompatibilities on 64-bit machines, so it was deemed worth making
 the transition now, while the number of 64-bit users is still relatively small.
 (In 5 or 10 years, we may *all* be on 64-bit machines, and the transition would
@@ -908,7 +909,7 @@ may therefore need to have some variables changed to :c:type:`Py_ssize_t`.
 
 The :c:func:`PyArg_ParseTuple` and :c:func:`Py_BuildValue` functions have a new
 conversion code, ``n``, for :c:type:`Py_ssize_t`.   :c:func:`PyArg_ParseTuple`'s
-``s#`` and ``t#`` still output :c:type:`int` by default, but you can define the
+``s#`` and ``t#`` still output :c:expr:`int` by default, but you can define the
 macro  :c:macro:`PY_SSIZE_T_CLEAN` before including :file:`Python.h`  to make
 them return :c:type:`Py_ssize_t`.
 
@@ -953,7 +954,7 @@ The return value must be either a Python integer or long integer. The
 interpreter will check that the type returned is correct, and raises a
 :exc:`TypeError` if this requirement isn't met.
 
-A corresponding :attr:`nb_index` slot was added to the C-level
+A corresponding :c:member:`~PyNumberMethods.nb_index` slot was added to the C-level
 :c:type:`PyNumberMethods` structure to let C extensions implement this protocol.
 ``PyNumber_Index(obj)`` can be used in extension code to call the
 :meth:`__index__` function and retrieve its result.
@@ -1166,10 +1167,10 @@ marked in the following list.
 
 * It's now illegal to mix iterating over a file  with ``for line in file`` and
   calling  the file object's :meth:`read`/:meth:`readline`/:meth:`readlines`
-  methods.  Iteration uses an internal buffer and the  :meth:`read\*` methods
+  methods.  Iteration uses an internal buffer and the  :meth:`!read\*` methods
   don't use that buffer.   Instead they would return the data following the
   buffer, causing the data to appear out of order.  Mixing iteration and these
-  methods will now trigger a :exc:`ValueError` from the :meth:`read\*` method.
+  methods will now trigger a :exc:`ValueError` from the :meth:`!read\*` method.
   (Implemented by Thomas Wouters.)
 
   .. Patch 1397960
@@ -1221,7 +1222,7 @@ Here's a partial list of the most notable changes, sorted alphabetically by
 module name. Consult the :file:`Misc/NEWS` file in the source tree for a more
 complete list of changes, or look through the SVN logs for all the details.
 
-* The :mod:`audioop` module now supports the a-LAW encoding, and the code for
+* The :mod:`!audioop` module now supports the a-LAW encoding, and the code for
   u-LAW encoding has been improved.  (Contributed by Lars Immisch.)
 
 * The :mod:`codecs` module gained support for incremental codecs.  The
@@ -1276,12 +1277,12 @@ complete list of changes, or look through the SVN logs for all the details.
   with the new ':keyword:`with`' statement.  See section :ref:`contextlibmod`
   for more about this module.
 
-* New module: The :mod:`cProfile` module is a C implementation of  the existing
-  :mod:`profile` module that has much lower overhead. The module's interface is
-  the same as :mod:`profile`: you run ``cProfile.run('main()')`` to profile a
+* New module: The :mod:`!cProfile` module is a C implementation of  the existing
+  :mod:`!profile` module that has much lower overhead. The module's interface is
+  the same as :mod:`!profile`: you run ``cProfile.run('main()')`` to profile a
   function, can save profile data to a file, etc.  It's not yet known if the
   Hotshot profiler, which is also written in C but doesn't match the
-  :mod:`profile` module's interface, will continue to be maintained in future
+  :mod:`!profile` module's interface, will continue to be maintained in future
   versions of Python.  (Contributed by Armin Rigo.)
 
   Also, the :mod:`pstats` module for analyzing the data measured by the profiler
@@ -1292,7 +1293,7 @@ complete list of changes, or look through the SVN logs for all the details.
   received several enhancements and a number of bugfixes.  You can now set the
   maximum size in bytes of a field by calling the
   ``csv.field_size_limit(new_limit)`` function; omitting the *new_limit*
-  argument will return the currently-set limit.  The :class:`reader` class now has
+  argument will return the currently set limit.  The :class:`reader` class now has
   a :attr:`line_num` attribute that counts the number of physical lines read from
   the source; records can span multiple physical lines, so :attr:`line_num` is not
   the same as the number of records read.
@@ -1346,7 +1347,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`input` function to allow opening files in binary or :term:`universal
   newlines` mode.  Another new parameter, *openhook*, lets you use a function
   other than :func:`open`  to open the input files.  Once you're iterating over
-  the set of files, the :class:`FileInput` object's new :meth:`fileno` returns
+  the set of files, the :class:`FileInput` object's new :meth:`~fileinput.fileno` returns
   the file descriptor for the currently opened file. (Contributed by Georg
   Brandl.)
 
@@ -1421,13 +1422,13 @@ complete list of changes, or look through the SVN logs for all the details.
   (Contributed by Gregory K. Johnson.  Funding was provided by Google's 2005
   Summer of Code.)
 
-* New module: the :mod:`msilib` module allows creating Microsoft Installer
+* New module: the :mod:`!msilib` module allows creating Microsoft Installer
   :file:`.msi` files and CAB files.  Some support for reading the :file:`.msi`
   database is also included. (Contributed by Martin von Löwis.)
 
-* The :mod:`nis` module now supports accessing domains other than the system
-  default domain by supplying a *domain* argument to the :func:`nis.match` and
-  :func:`nis.maps` functions. (Contributed by Ben Bell.)
+* The :mod:`!nis` module now supports accessing domains other than the system
+  default domain by supplying a *domain* argument to the :func:`!nis.match` and
+  :func:`!nis.maps` functions. (Contributed by Ben Bell.)
 
 * The :mod:`operator` module's :func:`itemgetter`  and :func:`attrgetter`
   functions now support multiple fields.   A call such as
@@ -1447,10 +1448,10 @@ complete list of changes, or look through the SVN logs for all the details.
   return times that are precise to fractions of a second; not all systems support
   such precision.)
 
-  Constants named :attr:`os.SEEK_SET`, :attr:`os.SEEK_CUR`, and
-  :attr:`os.SEEK_END` have been added; these are the parameters to the
+  Constants named :const:`os.SEEK_SET`, :const:`os.SEEK_CUR`, and
+  :const:`os.SEEK_END` have been added; these are the parameters to the
   :func:`os.lseek` function.  Two new constants for locking are
-  :attr:`os.O_SHLOCK` and :attr:`os.O_EXLOCK`.
+  :const:`os.O_SHLOCK` and :const:`os.O_EXLOCK`.
 
   Two new functions, :func:`wait3` and :func:`wait4`, were added.  They're similar
   the :func:`waitpid` function which waits for a child process to exit and returns
@@ -1477,13 +1478,13 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch 790710
 
-* The :mod:`pickle` and :mod:`cPickle` modules no longer accept a return value
-  of ``None`` from the :meth:`__reduce__` method; the method must return a tuple
+* The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a return value
+  of ``None`` from the :meth:`~object.__reduce__` method; the method must return a tuple
   of arguments instead.  The ability to return ``None`` was deprecated in Python
   2.4, so this completes the removal of the feature.
 
 * The :mod:`pkgutil` module, containing various utility functions for finding
-  packages, was enhanced to support PEP 302's import hooks and now also works for
+  packages, was enhanced to support :pep:`302`'s import hooks and now also works for
   packages stored in ZIP-format archives. (Contributed by Phillip J. Eby.)
 
 * The pybench benchmark suite by Marc-André Lemburg is now included in the
@@ -1518,7 +1519,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #1472854
 
-* The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now have a
+* The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now have a
   :attr:`rpc_paths` attribute that constrains XML-RPC operations to a limited set
   of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.  Setting
   :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path checking.
@@ -1541,7 +1542,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :meth:`getproto` accessor methods to retrieve the family, type, and protocol
   values for the socket.
 
-* New module: the :mod:`spwd` module provides functions for accessing the shadow
+* New module: the :mod:`!spwd` module provides functions for accessing the shadow
   password database on systems that support  shadow passwords.
 
 * The :mod:`struct` is now faster because it  compiles format strings into
@@ -1601,7 +1602,7 @@ complete list of changes, or look through the SVN logs for all the details.
 
 * The :mod:`unicodedata` module has been updated to use version 4.1.0 of the
   Unicode character database.  Version 3.2.0 is required  by some specifications,
-  so it's still available as  :attr:`unicodedata.ucd_3_2_0`.
+  so it's still available as  :data:`unicodedata.ucd_3_2_0`.
 
 * New module: the  :mod:`uuid` module generates  universally unique identifiers
   (UUIDs) according to :rfc:`4122`.  The RFC defines several different UUID
@@ -1649,9 +1650,9 @@ complete list of changes, or look through the SVN logs for all the details.
 
   .. Patch #754022
 
-* The :mod:`xmlrpclib` module now supports returning  :class:`~datetime.datetime` objects
-  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`loads`
-  function or the :class:`Unmarshaller` class to enable this feature. (Contributed
+* The :mod:`xmlrpclib <xmlrpc.client>` module now supports returning  :class:`~datetime.datetime` objects
+  for the XML-RPC date type.  Supply  ``use_datetime=True`` to the :func:`~xmlrpc.client.loads`
+  function or the :class:`!Unmarshaller` class to enable this feature. (Contributed
   by Skip Montanaro.)
 
   .. Patch 1120353
@@ -1679,7 +1680,7 @@ The ctypes package
 
 The :mod:`ctypes` package, written by Thomas Heller, has been added  to the
 standard library.  :mod:`ctypes` lets you call arbitrary functions  in shared
-libraries or DLLs.  Long-time users may remember the :mod:`dl` module, which
+libraries or DLLs.  Long-time users may remember the :mod:`!dl` module, which
 provides functions for loading shared libraries and calling functions in them.
 The :mod:`ctypes` package is much fancier.
 
@@ -1694,7 +1695,7 @@ attributes of the :class:`CDLL` object.   ::
    result = libc.printf("Line of output\n")
 
 Type constructors for the various C types are provided: :func:`c_int`,
-:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:type:`char
+:func:`c_float`, :func:`c_double`, :func:`c_char_p` (equivalent to :c:expr:`char
 \*`), and so forth.  Unlike Python's types, the C versions are all mutable; you
 can assign to their :attr:`value` attribute to change the wrapped value.  Python
 integers and strings will be automatically converted to the corresponding C
@@ -1723,8 +1724,8 @@ attribute of the function object to  change this::
 :mod:`ctypes` also provides a wrapper for Python's C API  as the
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
-calling into the interpreter's code.   There's a :class:`py_object()` type
-constructor that will create a  :c:type:`PyObject \*` pointer.  A simple usage::
+calling into the interpreter's code.   There's a :class:`~ctypes.py_object` type
+constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
 
@@ -1733,7 +1734,7 @@ constructor that will create a  :c:type:`PyObject \*` pointer.  A simple usage::
              ctypes.py_object("abc"),  ctypes.py_object(1))
    # d is now {'abc', 1}.
 
-Don't forget to use :class:`py_object()`; if it's omitted you end  up with a
+Don't forget to use :func:`~ctypes.py_object`; if it's omitted you end  up with a
 segmentation fault.
 
 :mod:`ctypes` has been around for a while, but people still write  and
@@ -1745,8 +1746,8 @@ modules, now that :mod:`ctypes` is included with core Python.
 
 .. seealso::
 
-   http://starship.python.net/crew/theller/ctypes/
-      The ctypes web page, with a tutorial, reference, and FAQ.
+   https://web.archive.org/web/20180410025338/http://starship.python.net/crew/theller/ctypes/
+      The pre-stdlib ctypes web page, with a tutorial, reference, and FAQ.
 
    The documentation  for the :mod:`ctypes` module.
 
@@ -1766,7 +1767,7 @@ included.
 
 The rest of this section will provide a brief overview of using ElementTree.
 Full documentation for ElementTree is available at
-http://effbot.org/zone/element-index.htm.
+https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm.
 
 ElementTree represents an XML document as a tree of element nodes. The text
 content of the document is stored as the :attr:`text` and :attr:`tail`
@@ -1864,7 +1865,7 @@ read the package's official documentation for more details.
 
 .. seealso::
 
-   http://effbot.org/zone/element-index.htm
+   https://web.archive.org/web/20201124024954/http://effbot.org/zone/element-index.htm
       Official documentation for ElementTree.
 
 .. ======================================================================
@@ -1876,12 +1877,12 @@ The hashlib package
 -------------------
 
 A new :mod:`hashlib` module, written by Gregory P. Smith,  has been added to
-replace the :mod:`md5` and :mod:`sha` modules.  :mod:`hashlib` adds support for
+replace the :mod:`!md5` and :mod:`!sha` modules.  :mod:`hashlib` adds support for
 additional secure hashes (SHA-224, SHA-256, SHA-384, and SHA-512). When
 available, the module uses OpenSSL for fast platform optimized implementations
 of algorithms.
 
-The old :mod:`md5` and :mod:`sha` modules still exist as wrappers around hashlib
+The old :mod:`!md5` and :mod:`!sha` modules still exist as wrappers around hashlib
 to preserve backwards compatibility.  The new module's interface is very close
 to that of the old modules, but not identical. The most significant difference
 is that the constructor functions for creating new hashing objects are named
@@ -1929,7 +1930,7 @@ with the same digest state.
 The sqlite3 package
 -------------------
 
-The pysqlite module (http://www.pysqlite.org), a wrapper for the SQLite embedded
+The pysqlite module (https://www.pysqlite.org), a wrapper for the SQLite embedded
 database, has been added to the standard library under the package name
 :mod:`sqlite3`.
 
@@ -2018,7 +2019,7 @@ https://www.sqlite.org.
 
 .. seealso::
 
-   http://www.pysqlite.org
+   https://www.pysqlite.org
       The pysqlite web page.
 
    https://www.sqlite.org
@@ -2043,7 +2044,7 @@ between web servers and Python web applications and is described in :pep:`333`.
 The :mod:`wsgiref` package is a reference implementation of the WSGI
 specification.
 
-.. XXX should this be in a PEP 333 section instead?
+.. XXX should this be in a :pep:`333` section instead?
 
 The package includes a basic HTTP server that will run a WSGI application; this
 server is useful for debugging but isn't intended for  production use.  Setting
@@ -2064,7 +2065,7 @@ up a server takes only a few lines of code::
 
 .. seealso::
 
-   http://www.wsgi.org
+   https://web.archive.org/web/20160331090247/http://wsgi.readthedocs.org/en/latest/
       A central web site for WSGI-related resources.
 
    :pep:`333` - Python Web Server Gateway Interface v1.0
@@ -2092,7 +2093,7 @@ Changes to Python's build process and to the C API include:
 
 * The largest change to the C API came from :pep:`353`, which modifies the
   interpreter to use a :c:type:`Py_ssize_t` type definition instead of
-  :c:type:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
+  :c:expr:`int`.  See the earlier section :ref:`pep-353` for a discussion of this
   change.
 
 * The design of the bytecode compiler has changed a great deal,  no longer
@@ -2118,9 +2119,9 @@ Changes to Python's build process and to the C API include:
   the various AST nodes in :file:`Parser/Python.asdl`.  A Python script reads this
   file and generates a set of C structure definitions in
   :file:`Include/Python-ast.h`.  The :c:func:`PyParser_ASTFromString` and
-  :c:func:`PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
+  :c:func:`!PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
   Python source as input and return the root of an AST representing the contents.
-  This AST can then be turned into a code object by :c:func:`PyAST_Compile`.  For
+  This AST can then be turned into a code object by :c:func:`!PyAST_Compile`.  For
   more information, read the source code, and then ask questions on python-dev.
 
   The AST code was developed under Jeremy Hylton's management, and implemented by
@@ -2150,8 +2151,8 @@ Changes to Python's build process and to the C API include:
 
   Previously these different families all reduced to the platform's
   :c:func:`malloc` and :c:func:`free` functions.  This meant  it didn't matter if
-  you got things wrong and allocated memory with the :c:func:`PyMem` function but
-  freed it with the :c:func:`PyObject` function.  With 2.5's changes to obmalloc,
+  you got things wrong and allocated memory with the ``PyMem`` function but
+  freed it with the ``PyObject`` function.  With 2.5's changes to obmalloc,
   these families now do different things and mismatches will probably result in a
   segfault.  You should carefully test your C extension modules with Python 2.5.
 
@@ -2168,10 +2169,10 @@ Changes to Python's build process and to the C API include:
 
 * Two new macros can be used to indicate C functions that are local to the
   current file so that a faster calling convention can be used.
-  ``Py_LOCAL(type)`` declares the function as returning a value of the
+  :c:macro:`Py_LOCAL` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
-  ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
-  function be inlined.  If :c:func:`PY_LOCAL_AGGRESSIVE` is defined before
+  :c:macro:`Py_LOCAL_INLINE` does the same thing and also requests the
+  function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
   optimizations actually make the code faster.  (Contributed by Fredrik Lundh at
@@ -2180,7 +2181,7 @@ Changes to Python's build process and to the C API include:
 * ``PyErr_NewException(name, base, dict)`` can now accept a tuple of base
   classes as its *base* argument.  (Contributed by Georg Brandl.)
 
-* The :c:func:`PyErr_Warn` function for issuing warnings is now deprecated in
+* The :c:func:`!PyErr_Warn` function for issuing warnings is now deprecated in
   favour of ``PyErr_WarnEx(category, message, stacklevel)`` which lets you
   specify the number of stack frames separating this function and the caller.  A
   *stacklevel* of 1 is the function calling :c:func:`PyErr_WarnEx`, 2 is the
@@ -2190,7 +2191,7 @@ Changes to Python's build process and to the C API include:
   compiled with a C++ compiler without errors.   (Implemented by Anthony Baxter,
   Martin von Löwis, Skip Montanaro.)
 
-* The :c:func:`PyRange_New` function was removed.  It was never documented, never
+* The :c:func:`!PyRange_New` function was removed.  It was never documented, never
   used in the core code, and had dangerously lax error checking.  In the unlikely
   case that your extensions were using it, you can replace it by something like
   the following::
@@ -2252,26 +2253,26 @@ code:
   appeared.  In Python 2.5, the argument must be exactly one %char specifier with
   no surrounding text.
 
-* Library: The :mod:`pickle` and :mod:`cPickle` modules no longer accept a
-  return value of ``None`` from the :meth:`__reduce__` method; the method must
+* Library: The :mod:`pickle` and :mod:`!cPickle` modules no longer accept a
+  return value of ``None`` from the :meth:`~object.__reduce__` method; the method must
   return a tuple of arguments instead.  The modules also no longer accept the
   deprecated *bin* keyword parameter.
 
-* Library: The :mod:`SimpleXMLRPCServer` and :mod:`DocXMLRPCServer`  classes now
+* Library: The :mod:`SimpleXMLRPCServer <xmlrpc.server>` and :mod:`DocXMLRPCServer <xmlrpc.server>`  classes now
   have a :attr:`rpc_paths` attribute that constrains XML-RPC operations to a
   limited set of URL paths; the default is to allow only ``'/'`` and ``'/RPC2'``.
   Setting  :attr:`rpc_paths` to ``None`` or an empty tuple disables  this path
   checking.
 
-* C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:type:`int` to
+* C API: Many functions now use :c:type:`Py_ssize_t`  instead of :c:expr:`int` to
   allow processing more data on 64-bit machines.  Extension code may need to make
   the same change to avoid warnings and to support 64-bit machines.  See the
   earlier section :ref:`pep-353` for a discussion of this change.
 
 * C API:  The obmalloc changes mean that  you must be careful to not mix usage
-  of the :c:func:`PyMem_\*` and :c:func:`PyObject_\*` families of functions. Memory
-  allocated with  one family's :c:func:`\*_Malloc` must be  freed with the
-  corresponding family's :c:func:`\*_Free` function.
+  of the ``PyMem_*`` and ``PyObject_*`` families of functions. Memory
+  allocated with  one family's ``*_Malloc`` must be  freed with the
+  corresponding family's ``*_Free`` function.
 
 .. ======================================================================
 

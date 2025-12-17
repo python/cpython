@@ -2,6 +2,11 @@
 Design and History FAQ
 ======================
 
+.. only:: html
+
+   .. contents::
+
+
 Why does Python use indentation for grouping of statements?
 -----------------------------------------------------------
 
@@ -19,14 +24,16 @@ programmers will encounter a fragment of code like this::
    z++;
 
 Only the ``x++`` statement is executed if the condition is true, but the
-indentation leads you to believe otherwise.  Even experienced C programmers will
-sometimes stare at it a long time wondering why ``y`` is being decremented even
+indentation leads many to believe otherwise.  Even experienced C programmers will
+sometimes stare at it a long time wondering as to why ``y`` is being decremented even
 for ``x > y``.
 
 Because there are no begin/end brackets, Python is much less prone to
 coding-style conflicts.  In C there are many different ways to place the braces.
-If you're used to reading and writing code that uses one style, you will feel at
-least slightly uneasy when reading (or being required to write) another style.
+After becoming used to reading and writing code using a particular style,
+it is normal to feel somewhat uneasy when reading (or being required to write)
+in a different one.
+
 
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
@@ -63,7 +70,7 @@ operations. This means that as far as floating-point operations are concerned,
 Python behaves like many popular languages including C and Java.
 
 Many numbers that can be written easily in decimal notation cannot be expressed
-exactly in binary floating-point.  For example, after::
+exactly in binary floating point.  For example, after::
 
     >>> x = 1.2
 
@@ -80,7 +87,7 @@ which is exactly::
 The typical precision of 53 bits provides Python floats with 15--16
 decimal digits of accuracy.
 
-For a fuller explanation, please see the :ref:`floating point arithmetic
+For a fuller explanation, please see the :ref:`floating-point arithmetic
 <tut-fp-issues>` chapter in the Python tutorial.
 
 
@@ -122,7 +129,7 @@ reference or call the method from a particular class.  In C++, if you want to
 use a method from a base class which is overridden in a derived class, you have
 to use the ``::`` operator -- in Python you can write
 ``baseclass.methodname(self, <argument list>)``.  This is particularly useful
-for :meth:`__init__` methods, and in general in cases where a derived class
+for :meth:`~object.__init__` methods, and in general in cases where a derived class
 method wants to extend the base class method of the same name and thus has to
 call the base class method somehow.
 
@@ -141,93 +148,45 @@ variables and instance variables live in two different namespaces, and you need
 to tell Python which namespace to use.
 
 
+.. _why-can-t-i-use-an-assignment-in-an-expression:
+
 Why can't I use an assignment in an expression?
 -----------------------------------------------
 
-Many people used to C or Perl complain that they want to use this C idiom:
+Starting in Python 3.8, you can!
 
-.. code-block:: c
+Assignment expressions using the walrus operator ``:=`` assign a variable in an
+expression::
 
-   while (line = readline(f)) {
-       // do something with line
-   }
+   while chunk := fp.read(200):
+      print(chunk)
 
-where in Python you're forced to write this::
-
-   while True:
-       line = f.readline()
-       if not line:
-           break
-       ...  # do something with line
-
-The reason for not allowing assignment in Python expressions is a common,
-hard-to-find bug in those other languages, caused by this construct:
-
-.. code-block:: c
-
-    if (x = 0) {
-        // error handling
-    }
-    else {
-        // code that only works for nonzero x
-    }
-
-The error is a simple typo: ``x = 0``, which assigns 0 to the variable ``x``,
-was written while the comparison ``x == 0`` is certainly what was intended.
-
-Many alternatives have been proposed.  Most are hacks that save some typing but
-use arbitrary or cryptic syntax or keywords, and fail the simple criterion for
-language change proposals: it should intuitively suggest the proper meaning to a
-human reader who has not yet been introduced to the construct.
-
-An interesting phenomenon is that most experienced Python programmers recognize
-the ``while True`` idiom and don't seem to be missing the assignment in
-expression construct much; it's only newcomers who express a strong desire to
-add this to the language.
-
-There's an alternative way of spelling this that seems attractive but is
-generally less robust than the "while True" solution::
-
-   line = f.readline()
-   while line:
-       ...  # do something with line...
-       line = f.readline()
-
-The problem with this is that if you change your mind about exactly how you get
-the next line (e.g. you want to change it into ``sys.stdin.readline()``) you
-have to remember to change two places in your program -- the second occurrence
-is hidden at the bottom of the loop.
-
-The best approach is to use iterators, making it possible to loop through
-objects using the ``for`` statement.  For example, :term:`file objects
-<file object>` support the iterator protocol, so you can write simply::
-
-   for line in f:
-       ...  # do something with line...
+See :pep:`572` for more information.
 
 
 
 Why does Python use methods for some functionality (e.g. list.index()) but functions for other (e.g. len(list))?
 ----------------------------------------------------------------------------------------------------------------
 
-The major reason is history. Functions were used for those operations that were
-generic for a group of types and which were intended to work even for objects
-that didn't have methods at all (e.g. tuples).  It is also convenient to have a
-function that can readily be applied to an amorphous collection of objects when
-you use the functional features of Python (``map()``, ``zip()`` et al).
+As Guido said:
 
-In fact, implementing ``len()``, ``max()``, ``min()`` as a built-in function is
-actually less code than implementing them as methods for each type.  One can
-quibble about individual cases but it's a part of Python, and it's too late to
-make such fundamental changes now. The functions have to remain to avoid massive
-code breakage.
+    (a) For some operations, prefix notation just reads better than
+    postfix -- prefix (and infix!) operations have a long tradition in
+    mathematics which likes notations where the visuals help the
+    mathematician thinking about a problem. Compare the easy with which we
+    rewrite a formula like x*(a+b) into x*a + x*b to the clumsiness of
+    doing the same thing using a raw OO notation.
 
-.. XXX talk about protocols?
+    (b) When I read code that says len(x) I *know* that it is asking for
+    the length of something. This tells me two things: the result is an
+    integer, and the argument is some kind of container. To the contrary,
+    when I read x.len(), I have to already know that x is some kind of
+    container implementing an interface or inheriting from a class that
+    has a standard len(). Witness the confusion we occasionally have when
+    a class that is not implementing a mapping has a get() or keys()
+    method, or something that isn't a file has a write() method.
 
-.. note::
-
-   For string operations, Python has moved from external functions (the
-   ``string`` module) to methods.  However, ``len()`` is still a function.
+    -- https://mail.python.org/pipermail/python-3000/2006-November/004643.html
 
 
 Why is join() a string method instead of a list or tuple method?
@@ -273,7 +232,8 @@ Similar methods exist for bytes and bytearray objects.
 How fast are exceptions?
 ------------------------
 
-A try/except block is extremely efficient if no exceptions are raised.  Actually
+A :keyword:`try`/:keyword:`except` block is extremely efficient if no exceptions
+are raised.  Actually
 catching an exception is expensive.  In versions of Python prior to 2.0 it was
 common to use this idiom::
 
@@ -299,21 +259,19 @@ is evaluated in all cases.
 Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
-You can do this easily enough with a sequence of ``if... elif... elif... else``.
-There have been some proposals for switch statement syntax, but there is no
-consensus (yet) on whether and how to do range tests.  See :pep:`275` for
-complete details and the current status.
+In general, structured switch statements execute one block of code
+when an expression has a particular value or set of values.
+Since Python 3.10 one can easily match literal values, or constants
+within a namespace, with a ``match ... case`` statement.
+An older alternative is a sequence of ``if... elif... elif... else``.
 
 For cases where you need to choose from a very large number of possibilities,
 you can create a dictionary mapping case values to functions to call.  For
 example::
 
-   def function_1(...):
-       ...
-
    functions = {'a': function_1,
                 'b': function_2,
-                'c': self.method_1, ...}
+                'c': self.method_1}
 
    func = functions[value]
    func()
@@ -321,18 +279,21 @@ example::
 For calling methods on objects, you can simplify yet further by using the
 :func:`getattr` built-in to retrieve methods with a particular name::
 
-   def visit_a(self, ...):
-       ...
-   ...
+   class MyVisitor:
+       def visit_a(self):
+           ...
 
-   def dispatch(self, value):
-       method_name = 'visit_' + str(value)
-       method = getattr(self, method_name)
-       method()
+       def dispatch(self, value):
+           method_name = 'visit_' + str(value)
+           method = getattr(self, method_name)
+           method()
 
 It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
 source, an attacker would be able to call any method on your object.
+
+Imitating switch with fallthrough, as with C's switch-case-default,
+is possible, much harder, and less needed.
 
 
 Can't you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?
@@ -343,7 +304,7 @@ each Python stack frame.  Also, extensions can call back into Python at almost
 random moments.  Therefore, a complete threads implementation requires thread
 support for C.
 
-Answer 2: Fortunately, there is `Stackless Python <http://www.stackless.com>`_,
+Answer 2: Fortunately, there is `Stackless Python <https://github.com/stackless-dev/stackless/wiki>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
 
 
@@ -358,7 +319,7 @@ you're too lazy to define a function.
 
 Functions are already first class objects in Python, and can be declared in a
 local scope.  Therefore the only advantage of using a lambda instead of a
-locally-defined function is that you don't need to invent a name for the
+locally defined function is that you don't need to invent a name for the
 function -- but that's just a local variable to which the function object (which
 is exactly the same type of object that a lambda expression yields) is assigned!
 
@@ -366,11 +327,10 @@ is exactly the same type of object that a lambda expression yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-`Cython <http://cython.org/>`_ compiles a modified version of Python with
-optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
+`Cython <https://cython.org/>`_ compiles a modified version of Python with
+optional annotations into C extensions.  `Nuitka <https://nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
-Python language. For compiling to Java you can consider
-`VOC <https://voc.readthedocs.io>`_.
+Python language.
 
 
 How does Python manage memory?
@@ -384,8 +344,8 @@ cycles and deletes the objects involved. The :mod:`gc` module provides functions
 to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
-Other implementations (such as `Jython <http://www.jython.org>`_ or
-`PyPy <http://www.pypy.org>`_), however, can rely on a different mechanism
+Other implementations (such as `Jython <https://www.jython.org>`_ or
+`PyPy <https://pypy.org>`_), however, can rely on a different mechanism
 such as a full-blown garbage collector.  This difference can cause some
 subtle porting problems if your Python code depends on the behavior of the
 reference counting implementation.
@@ -398,7 +358,7 @@ will probably run out of file descriptors::
        c = f.read(1)
 
 Indeed, using CPython's reference counting and destructor scheme, each new
-assignment to *f* closes the previous file.  With a traditional GC, however,
+assignment to ``f`` closes the previous file.  With a traditional GC, however,
 those file objects will only get collected (and closed) at varying and possibly
 long intervals.
 
@@ -422,10 +382,10 @@ Python to work with it.)
 
 Traditional GC also becomes a problem when Python is embedded into other
 applications.  While in a standalone Python it's fine to replace the standard
-malloc() and free() with versions provided by the GC library, an application
-embedding Python may want to have its *own* substitute for malloc() and free(),
+``malloc()`` and ``free()`` with versions provided by the GC library, an application
+embedding Python may want to have its *own* substitute for ``malloc()`` and ``free()``,
 and may not want Python's.  Right now, CPython works with anything that
-implements malloc() and free() properly.
+implements ``malloc()`` and ``free()`` properly.
 
 
 Why isn't all memory freed when CPython exits?
@@ -447,28 +407,31 @@ Why are there separate tuple and list data types?
 
 Lists and tuples, while similar in many respects, are generally used in
 fundamentally different ways.  Tuples can be thought of as being similar to
-Pascal records or C structs; they're small collections of related data which may
+Pascal ``records`` or C ``structs``; they're small collections of related data which may
 be of different types which are operated on as a group.  For example, a
 Cartesian coordinate is appropriately represented as a tuple of two or three
 numbers.
 
 Lists, on the other hand, are more like arrays in other languages.  They tend to
 hold a varying number of objects all of which have the same type and which are
-operated on one-by-one.  For example, ``os.listdir('.')`` returns a list of
+operated on one-by-one.  For example, :func:`os.listdir('.') <os.listdir>`
+returns a list of
 strings representing the files in the current directory.  Functions which
 operate on this output would generally not break if you added another file or
 two to the directory.
 
-Tuples are immutable, meaning that once a tuple has been created, you can't
-replace any of its elements with a new value.  Lists are mutable, meaning that
-you can always change a list's elements.  Only immutable elements can be used as
-dictionary keys, and hence only tuples and not lists can be used as keys.
+Tuples are :term:`immutable`, meaning that once a tuple has been created, you can't
+replace any of its elements with a new value.  Lists are :term:`mutable`, meaning that
+you can always change a list's elements.  Only :term:`hashable` objects can
+be used as dictionary keys. Most immutable types are hashable, which is why
+tuples, but not lists, can be used as keys. Note, however, that a tuple is
+only hashable if all of its elements are hashable.
 
 
-How are lists implemented?
---------------------------
+How are lists implemented in CPython?
+-------------------------------------
 
-Python's lists are really variable-length arrays, not Lisp-style linked lists.
+CPython's lists are really variable-length arrays, not Lisp-style linked lists.
 The implementation uses a contiguous array of references to other objects, and
 keeps a pointer to this array and the array's length in a list head structure.
 
@@ -481,25 +444,21 @@ when the array must be grown, some extra space is allocated so the next few
 times don't require an actual resize.
 
 
-How are dictionaries implemented?
----------------------------------
+How are dictionaries implemented in CPython?
+--------------------------------------------
 
-Python's dictionaries are implemented as resizable hash tables.  Compared to
+CPython's dictionaries are implemented as resizable hash tables.  Compared to
 B-trees, this gives better performance for lookup (the most common operation by
 far) under most circumstances, and the implementation is simpler.
 
 Dictionaries work by computing a hash code for each key stored in the dictionary
 using the :func:`hash` built-in function.  The hash code varies widely depending
-on the key and a per-process seed; for example, "Python" could hash to
--539294296 while "python", a string that differs by a single bit, could hash
-to 1142331976.  The hash code is then used to calculate a location in an
+on the key and a per-process seed; for example, ``'Python'`` could hash to
+``-539294296`` while ``'python'``, a string that differs by a single bit, could hash
+to ``1142331976``.  The hash code is then used to calculate a location in an
 internal array where the value will be stored.  Assuming that you're storing
 keys that all have different hash values, this means that dictionaries take
-constant time -- O(1), in computer science notation -- to retrieve a key.  It
-also means that no sorted order of the keys is maintained, and traversing the
-array as the ``.keys()`` and ``.items()`` do will output the dictionary's
-content in some arbitrary jumbled order that can change with every invocation of
-a program.
+constant time -- *O*\ (1), in Big-O notation -- to retrieve a key.
 
 
 Why must dictionary keys be immutable?
@@ -526,7 +485,7 @@ Some unacceptable solutions that have been proposed:
      mydict = {[1, 2]: '12'}
      print(mydict[[1, 2]])
 
-  would raise a KeyError exception because the id of the ``[1, 2]`` used in the
+  would raise a :exc:`KeyError` exception because the id of the ``[1, 2]`` used in the
   second line differs from that in the first line.  In other words, dictionary
   keys should be compared using ``==``, not using :keyword:`is`.
 
@@ -547,7 +506,8 @@ Some unacceptable solutions that have been proposed:
 
 There is a trick to get around this if you need to, but use it at your own risk:
 You can wrap a mutable structure inside a class instance which has both a
-:meth:`__eq__` and a :meth:`__hash__` method.  You must then make sure that the
+:meth:`~object.__eq__` and a :meth:`~object.__hash__` method.
+You must then make sure that the
 hash value for all such wrapper objects that reside in a dictionary (or other
 hash based structure), remain fixed while the object is in the dictionary (or
 other structure). ::
@@ -578,7 +538,7 @@ is True``) then ``hash(o1) == hash(o2)`` (ie, ``o1.__hash__() == o2.__hash__()``
 regardless of whether the object is in a dictionary or not.  If you fail to meet
 these restrictions dictionaries and other hash based structures will misbehave.
 
-In the case of ListWrapper, whenever the wrapper object is in a dictionary the
+In the case of :class:`!ListWrapper`, whenever the wrapper object is in a dictionary the
 wrapped list must not change to avoid anomalies.  Don't do this unless you are
 prepared to think hard about the requirements and the consequences of not
 meeting them correctly.  Consider yourself warned.
@@ -618,8 +578,7 @@ whether an instance or a class implements a particular ABC.  The
 :class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
-by an appropriate test discipline for components.  There is also a tool,
-PyChecker, which can be used to find problems due to subclassing.
+by an appropriate test discipline for components.
 
 A good test suite for a module can both provide a regression test and serve as a
 module interface specification and a set of examples.  Many Python modules can
@@ -632,24 +591,32 @@ exhaustive test suites that exercise every line of code in a module.
 An appropriate testing discipline can help build large complex applications in
 Python as well as having interface specifications would.  In fact, it can be
 better because an interface specification cannot test certain properties of a
-program.  For example, the :meth:`append` method is expected to add new elements
+program.  For example, the :meth:`list.append` method is expected to add new elements
 to the end of some internal list; an interface specification cannot test that
-your :meth:`append` implementation will actually do this correctly, but it's
+your :meth:`list.append` implementation will actually do this correctly, but it's
 trivial to check this property in a test suite.
 
-Writing test suites is very helpful, and you might want to design your code with
-an eye to making it easily tested.  One increasingly popular technique,
-test-directed development, calls for writing parts of the test suite first,
-before you write any of the actual code.  Of course Python allows you to be
-sloppy and not write test cases at all.
+Writing test suites is very helpful, and you might want to design your code to
+make it easily tested. One increasingly popular technique, test-driven
+development, calls for writing parts of the test suite first, before you write
+any of the actual code.  Of course Python allows you to be sloppy and not write
+test cases at all.
 
 
 Why is there no goto?
 ---------------------
 
-You can use exceptions to provide a "structured goto" that even works across
+In the 1970s people realized that unrestricted goto could lead
+to messy "spaghetti" code that was hard to understand and revise.
+In a high-level language, it is also unneeded as long as there
+are ways to branch (in Python, with :keyword:`if` statements and :keyword:`or`,
+:keyword:`and`, and :keyword:`if`/:keyword:`else` expressions) and loop (with :keyword:`while`
+and :keyword:`for` statements, possibly containing :keyword:`continue` and :keyword:`break`).
+
+One can also use exceptions to provide a "structured goto"
+that works even across
 function calls.  Many feel that exceptions can conveniently emulate all
-reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
+reasonable uses of the ``go`` or ``goto`` constructs of C, Fortran, and other
 languages.  For example::
 
    class label(Exception): pass  # declare a label
@@ -663,7 +630,7 @@ languages.  For example::
    ...
 
 This doesn't allow you to jump into the middle of a loop, but that's usually
-considered an abuse of goto anyway.  Use sparingly.
+considered an abuse of ``goto`` anyway.  Use sparingly.
 
 
 Why can't raw strings (r-strings) end with a backslash?
@@ -695,8 +662,8 @@ If you're trying to build a pathname for a DOS command, try e.g. one of ::
 Why doesn't Python have a "with" statement for attribute assignments?
 ---------------------------------------------------------------------
 
-Python has a 'with' statement that wraps the execution of a block, calling code
-on the entrance and exit from the block.  Some language have a construct that
+Python has a :keyword:`with` statement that wraps the execution of a block, calling code
+on the entrance and exit from the block.  Some languages have a construct that
 looks like this::
 
    with obj:
@@ -722,13 +689,13 @@ For instance, take the following incomplete snippet::
        with a:
            print(x)
 
-The snippet assumes that "a" must have a member attribute called "x".  However,
+The snippet assumes that ``a`` must have a member attribute called ``x``. However,
 there is nothing in Python that tells the interpreter this. What should happen
-if "a" is, let us say, an integer?  If there is a global variable named "x",
-will it be used inside the with block?  As you see, the dynamic nature of Python
+if ``a`` is, let us say, an integer?  If there is a global variable named ``x``,
+will it be used inside the :keyword:`with` block?  As you see, the dynamic nature of Python
 makes such choices much harder.
 
-The primary benefit of "with" and similar language features (reduction of code
+The primary benefit of :keyword:`with` and similar language features (reduction of code
 volume) can, however, easily be achieved in Python by assignment.  Instead of::
 
    function(args).mydict[index][index].a = 21
@@ -745,6 +712,20 @@ write this::
 This also has the side-effect of increasing execution speed because name
 bindings are resolved at run-time in Python, and the second version only needs
 to perform the resolution once.
+
+Similar proposals that would introduce syntax to further reduce code volume,
+such as using a 'leading dot', have been rejected in favour of explicitness (see
+https://mail.python.org/pipermail/python-ideas/2016-May/040070.html).
+
+
+Why don't generators support the with statement?
+------------------------------------------------
+
+For technical reasons, a generator used directly as a context manager
+would not work correctly.  When, as is most common, a generator is used as
+an iterator run to completion, no closing is needed.  When it is, wrap
+it as :func:`contextlib.closing(generator) <contextlib.closing>`
+in the :keyword:`with` statement.
 
 
 Why are colons required for the if/while/def/class statements?

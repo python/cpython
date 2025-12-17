@@ -1,0 +1,83 @@
+{
+    "image": "ghcr.io/python/devcontainer:latest",
+    "onCreateCommand": [
+        // Install common tooling.
+        "dnf",
+        "install",
+        "-y",
+        // For umask fix below.
+        "/usr/bin/setfacl"
+    ],
+    "updateContentCommand": {
+        // Using the shell for `nproc` usage.
+        "python": "./configure --config-cache --with-pydebug && make -s -j `nproc`",
+        "docs": [
+            "make",
+            "--directory",
+            "Doc",
+            "venv",
+            "html"
+        ]
+    },
+    "postCreateCommand": {
+        // https://github.com/orgs/community/discussions/26026
+        "umask fix: workspace": ["sudo", "setfacl", "-bnR", "."],
+        "umask fix: /tmp": ["sudo", "setfacl", "-bnR", "/tmp"]
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Highlighting for Parser/Python.asdl.
+                "brettcannon.zephyr-asdl",
+                // Highlighting for configure.ac.
+                "maelvalais.autoconf",
+                // C auto-complete.
+                "ms-vscode.cpptools",
+                // To view HTML build of docs.
+                "ms-vscode.live-server",
+                // Python auto-complete.
+                "ms-python.python"
+            ],
+            "settings": {
+                "C_Cpp.default.compilerPath": "/usr/bin/clang",
+                "C_Cpp.default.cStandard": "c11",
+                "C_Cpp.default.defines": [
+                    "CONFIG_64",
+                    "Py_BUILD_CORE"
+                ],
+                "C_Cpp.default.includePath": [
+                    "${workspaceFolder}/*",
+                    "${workspaceFolder}/Include/**"
+                ],
+                // https://github.com/microsoft/vscode-cpptools/issues/10732
+                "C_Cpp.errorSquiggles": "disabled",
+                "editor.insertSpaces": true,
+                "editor.rulers": [
+                    80
+                ],
+                "editor.tabSize": 4,
+                "editor.trimAutoWhitespace": true,
+                "files.associations": {
+                    "*.h": "c"
+                },
+                "files.encoding": "utf8",
+                "files.eol": "\n",
+                "files.insertFinalNewline": true,
+                "files.trimTrailingWhitespace": true,
+                "python.analysis.diagnosticSeverityOverrides": {
+                    // Complains about shadowing the stdlib w/ the stdlib.
+                    "reportShadowedImports": "none",
+                    // Doesn't like _frozen_importlib.
+                    "reportMissingImports": "none"
+                },
+                "python.analysis.extraPaths": [
+                    "Lib"
+                ],
+                "python.defaultInterpreterPath": "./python",
+                "[restructuredtext]": {
+                    "editor.tabSize": 3
+                }
+            }
+        }
+    }
+}

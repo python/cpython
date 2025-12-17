@@ -128,6 +128,27 @@ class TestBase(unittest.TestCase):
             x = [e for e, i in augmented] # a stable sort of s
             check("stability", x, s)
 
+    def test_small_stability(self):
+        from itertools import product
+        from operator import itemgetter
+
+        # Exhaustively test stability across all lists of small lengths
+        # and only a few distinct elements.
+        # This can provoke edge cases that randomization is unlikely to find.
+        # But it can grow very expensive quickly, so don't overdo it.
+        NELTS = 3
+        MAXSIZE = 9
+
+        pick0 = itemgetter(0)
+        for length in range(MAXSIZE + 1):
+            # There are NELTS ** length distinct lists.
+            for t in product(range(NELTS), repeat=length):
+                xs = list(zip(t, range(length)))
+                # Stability forced by index in each element.
+                forced = sorted(xs)
+                # Use key= to hide the index from compares.
+                native = sorted(xs, key=pick0)
+                self.assertEqual(forced, native)
 #==============================================================================
 
 class TestBugs(unittest.TestCase):
@@ -258,6 +279,131 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         self.assertEqual(data, copy1)
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
+
+#==============================================================================
+def check_against_PyObject_RichCompareBool(self, L):
+    ## The idea here is to exploit the fact that unsafe_tuple_compare uses
+    ## PyObject_RichCompareBool for the second elements of tuples. So we have,
+    ## for (most) L, sorted(L) == [y[1] for y in sorted([(0,x) for x in L])]
+    ## This will work as long as __eq__ => not __lt__ for all the objects in L,
+    ## which holds for all the types used below.
+    ##
+    ## Testing this way ensures that the optimized implementation remains consistent
+    ## with the naive implementation, even if changes are made to any of the
+    ## richcompares.
+    ##
+    ## This function tests sorting for three lists (it randomly shuffles each one):
+    ##                        1. L
+    ##                        2. [(x,) for x in L]
+    ##                        3. [((x,),) for x in L]
+
+    random.seed(0)
+    random.shuffle(L)
+    L_1 = L[:]
+    L_2 = [(x,) for x in L]
+    L_3 = [((x,),) for x in L]
+    for L in [L_1, L_2, L_3]:
+        optimized = sorted(L)
+        reference = [y[1] for y in sorted([(0,x) for x in L])]
+        for (opt, ref) in zip(optimized, reference):
+            self.assertIs(opt, ref)
+            #note: not assertEqual! We want to ensure *identical* behavior.
+
+class TestOptimizedCompares(unittest.TestCase):
+    def test_safe_object_compare(self):
+        heterogeneous_lists = [[0, 'foo'],
+                               [0.0, 'foo'],
+                               [('foo',), 'foo']]
+        for L in heterogeneous_lists:
+            self.assertRaises(TypeError, L.sort)
+            self.assertRaises(TypeError, [(x,) for x in L].sort)
+            self.assertRaises(TypeError, [((x,),) for x in L].sort)
+
+        float_int_lists = [[1,1.1],
+                           [1<<70,1.1],
+                           [1.1,1],
+                           [1.1,1<<70]]
+        for L in float_int_lists:
+            check_against_PyObject_RichCompareBool(self, L)
+
+    def test_unsafe_object_compare(self):
+
+        # This test is by ppperry. It ensures that unsafe_object_compare is
+        # verifying ms->key_richcompare == tp->richcompare before comparing.
+
+        class WackyComparator(int):
+            def __lt__(self, other):
+                elem.__class__ = WackyList2
+                return int.__lt__(self, other)
+
+        class WackyList1(list):
+            pass
+
+        class WackyList2(list):
+            def __lt__(self, other):
+                raise ValueError
+
+        L = [WackyList1([WackyComparator(i), i]) for i in range(10)]
+        elem = L[-1]
+        with self.assertRaises(ValueError):
+            L.sort()
+
+        L = [WackyList1([WackyComparator(i), i]) for i in range(10)]
+        elem = L[-1]
+        with self.assertRaises(ValueError):
+            [(x,) for x in L].sort()
+
+        # The following test is also by ppperry. It ensures that
+        # unsafe_object_compare handles Py_NotImplemented appropriately.
+        class PointlessComparator:
+            def __lt__(self, other):
+                return NotImplemented
+        L = [PointlessComparator(), PointlessComparator()]
+        self.assertRaises(TypeError, L.sort)
+        self.assertRaises(TypeError, [(x,) for x in L].sort)
+
+        # The following tests go through various types that would trigger
+        # ms->key_compare = unsafe_object_compare
+        lists = [list(range(100)) + [(1<<70)],
+                 [str(x) for x in range(100)] + ['\uffff'],
+                 [bytes(x) for x in range(100)],
+                 [cmp_to_key(lambda x,y: x<y)(x) for x in range(100)]]
+        for L in lists:
+            check_against_PyObject_RichCompareBool(self, L)
+
+    def test_unsafe_latin_compare(self):
+        check_against_PyObject_RichCompareBool(self, [str(x) for
+                                                      x in range(100)])
+
+    def test_unsafe_long_compare(self):
+        check_against_PyObject_RichCompareBool(self, [x for
+                                                      x in range(100)])
+
+    def test_unsafe_float_compare(self):
+        check_against_PyObject_RichCompareBool(self, [float(x) for
+                                                      x in range(100)])
+
+    def test_unsafe_tuple_compare(self):
+        # This test was suggested by Tim Peters. It verifies that the tuple
+        # comparison respects the current tuple compare semantics, which do not
+        # guarantee that x < x <=> (x,) < (x,)
+        #
+        # Note that we don't have to put anything in tuples here, because
+        # the check function does a tuple test automatically.
+
+        check_against_PyObject_RichCompareBool(self, [float('nan')]*100)
+        check_against_PyObject_RichCompareBool(self, [float('nan') for
+                                                      _ in range(100)])
+
+    def test_not_all_tuples(self):
+        self.assertRaises(TypeError, [(1.0, 1.0), (False, "A"), 6].sort)
+        self.assertRaises(TypeError, [('a', 1), (1, 'a')].sort)
+        self.assertRaises(TypeError, [(1, 'a'), ('a', 1)].sort)
+
+    def test_none_in_tuples(self):
+        expected = [(None, 1), (None, 2)]
+        actual = sorted([(None, 2), (None, 1)])
+        self.assertEqual(actual, expected)
 
 #==============================================================================
 

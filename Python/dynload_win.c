@@ -2,59 +2,19 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_add_relfile()
+#include "pycore_importdl.h"      // dl_funcptr
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#ifdef HAVE_DIRECT_H
-#include <direct.h>
-#endif
-#include <ctype.h>
-
-#include "importdl.h"
-#include "patchlevel.h"
+#include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
-
-// "activation context" magic - see dl_nt.c...
-#if HAVE_SXS
-extern ULONG_PTR _Py_ActivateActCtx();
-void _Py_DeactivateActCtx(ULONG_PTR cookie);
-#endif
-
-#ifdef _DEBUG
-#define PYD_DEBUG_SUFFIX "_d"
-#else
-#define PYD_DEBUG_SUFFIX ""
-#endif
-
-#ifdef PYD_PLATFORM_TAG
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
-#else
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
-#endif
-
-#define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
 
 const char *_PyImport_DynLoadFiletab[] = {
     PYD_TAGGED_SUFFIX,
     PYD_UNTAGGED_SUFFIX,
     NULL
 };
-
-/* Case insensitive string compare, to avoid any dependencies on particular
-   C RTL implementations */
-
-static int strcasecmp (const char *string1, const char *string2)
-{
-    int first, second;
-
-    do {
-        first  = tolower(*string1);
-        second = tolower(*string2);
-        string1++;
-        string2++;
-    } while (first && first == second);
-
-    return (first - second);
-}
-
 
 /* Function to return the name of the "python" DLL that the supplied module
    directly imports.  Looks through the list of imported modules and
@@ -147,19 +107,20 @@ static char *GetPythonImport (HINSTANCE hModule)
                 !strncmp(import_name,"python",6)) {
                 char *pch;
 
-#ifndef _DEBUG
-                /* In a release version, don't claim that python3.dll is
-                   a Python DLL. */
+                /* Don't claim that python3.dll is a Python DLL. */
+#ifdef Py_DEBUG
+                if (strcmp(import_name, "python3_d.dll") == 0) {
+#else
                 if (strcmp(import_name, "python3.dll") == 0) {
+#endif
                     import_data += 20;
                     continue;
                 }
-#endif
 
                 /* Ensure python prefix is followed only
                    by numbers to the end of the basename */
                 pch = import_name + 6;
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                 while (*pch && pch[0] != '_' && pch[1] != 'd' && pch[2] != '.') {
 #else
                 while (*pch && *pch != '.') {
@@ -184,19 +145,74 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
+#ifdef Py_ENABLE_SHARED
+/* Load python3.dll before loading any extension module that might refer
+   to it. That way, we can be sure that always the python3.dll corresponding
+   to this python DLL is loaded, not a python3.dll that might be on the path
+   by chance.
+   Return whether the DLL was found.
+*/
+extern HMODULE PyWin_DLLhModule;
+static int
+_Py_CheckPython3(void)
+{
+    static int python3_checked = 0;
+    static HANDLE hPython3;
+    #define MAXPATHLEN 512
+    wchar_t py3path[MAXPATHLEN+1];
+    if (python3_checked) {
+        return hPython3 != NULL;
+    }
+    python3_checked = 1;
+
+    /* If there is a python3.dll next to the python3y.dll,
+       use that DLL */
+    if (PyWin_DLLhModule && GetModuleFileNameW(PyWin_DLLhModule, py3path, MAXPATHLEN)) {
+        wchar_t *p = wcsrchr(py3path, L'\\');
+        if (p) {
+            wcscpy(p + 1, PY3_DLLNAME);
+            hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+            if (hPython3 != NULL) {
+                return 1;
+            }
+        }
+    }
+
+    /* If we can locate python3.dll in our application dir,
+       use that DLL */
+    hPython3 = LoadLibraryExW(PY3_DLLNAME, NULL, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
+    if (hPython3 != NULL) {
+        return 1;
+    }
+
+    /* For back-compat, also search {sys.prefix}\DLLs, though
+       that has not been a normal install layout for a while */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyConfig *config = (PyConfig*)_PyInterpreterState_GetConfig(interp);
+    assert(config->prefix);
+    if (config->prefix) {
+        wcscpy_s(py3path, MAXPATHLEN, config->prefix);
+        if (py3path[0] && _Py_add_relfile(py3path, L"DLLs\\" PY3_DLLNAME, MAXPATHLEN) >= 0) {
+            hPython3 = LoadLibraryExW(py3path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        }
+    }
+    return hPython3 != NULL;
+    #undef MAXPATHLEN
+}
+#endif /* Py_ENABLE_SHARED */
+
 dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                                               const char *shortname,
                                               PyObject *pathname, FILE *fp)
 {
     dl_funcptr p;
     char funcname[258], *import_python;
-    const wchar_t *wpathname;
 
-#ifndef _DEBUG
+#ifdef Py_ENABLE_SHARED
     _Py_CheckPython3();
-#endif
+#endif /* Py_ENABLE_SHARED */
 
-    wpathname = _PyUnicode_AsUnicode(pathname);
+    wchar_t *wpathname = PyUnicode_AsWideCharString(pathname, NULL);
     if (wpathname == NULL)
         return NULL;
 
@@ -204,28 +220,28 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
 
     {
         HINSTANCE hDLL = NULL;
+#ifdef MS_WINDOWS_DESKTOP
         unsigned int old_mode;
-#if HAVE_SXS
-        ULONG_PTR cookie = 0;
-#endif
 
         /* Don't display a message box when Python can't load a DLL */
         old_mode = SetErrorMode(SEM_FAILCRITICALERRORS);
-
-#if HAVE_SXS
-        cookie = _Py_ActivateActCtx();
 #endif
-        /* We use LoadLibraryEx so Windows looks for dependent DLLs
-            in directory of pathname first. */
-        /* XXX This call doesn't exist in Windows CE */
+
+        /* bpo-36085: We use LoadLibraryEx with restricted search paths
+           to avoid DLL preloading attacks and enable use of the
+           AddDllDirectory function. We add SEARCH_DLL_LOAD_DIR to
+           ensure DLLs adjacent to the PYD are preferred. */
+        Py_BEGIN_ALLOW_THREADS
         hDLL = LoadLibraryExW(wpathname, NULL,
-                              LOAD_WITH_ALTERED_SEARCH_PATH);
-#if HAVE_SXS
-        _Py_DeactivateActCtx(cookie);
-#endif
+                              LOAD_LIBRARY_SEARCH_DEFAULT_DIRS |
+                              LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+        Py_END_ALLOW_THREADS
+        PyMem_Free(wpathname);
 
+#ifdef MS_WINDOWS_DESKTOP
         /* restore old error mode settings */
         SetErrorMode(old_mode);
+#endif
 
         if (hDLL==NULL){
             PyObject *message;
@@ -254,8 +270,8 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                This should not happen if called correctly. */
             if (theLength == 0) {
                 message = PyUnicode_FromFormat(
-                    "DLL load failed with error code %d",
-                    errorCode);
+                    "DLL load failed with error code %u while importing %s",
+                    errorCode, shortname);
             } else {
                 /* For some reason a \r\n
                    is appended to the text */
@@ -265,8 +281,8 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
                     theLength -= 2;
                     theInfo[theLength] = '\0';
                 }
-                message = PyUnicode_FromString(
-                    "DLL load failed: ");
+                message = PyUnicode_FromFormat(
+                    "DLL load failed while importing %s: ", shortname);
 
                 PyUnicode_AppendAndDel(&message,
                     PyUnicode_FromWideChar(
@@ -284,7 +300,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             char buffer[256];
 
             PyOS_snprintf(buffer, sizeof(buffer),
-#ifdef _DEBUG
+#ifdef Py_DEBUG
                           "python%d%d_d.dll",
 #else
                           "python%d%d.dll",
@@ -293,16 +309,20 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
             import_python = GetPythonImport(hDLL);
 
             if (import_python &&
-                strcasecmp(buffer,import_python)) {
+                _stricmp(buffer,import_python)) {
                 PyErr_Format(PyExc_ImportError,
                              "Module use of %.150s conflicts "
                              "with this version of Python.",
                              import_python);
+                Py_BEGIN_ALLOW_THREADS
                 FreeLibrary(hDLL);
+                Py_END_ALLOW_THREADS
                 return NULL;
             }
         }
+        Py_BEGIN_ALLOW_THREADS
         p = GetProcAddress(hDLL, funcname);
+        Py_END_ALLOW_THREADS
     }
 
     return p;

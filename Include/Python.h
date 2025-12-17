@@ -1,82 +1,97 @@
+// Entry point of the Python C API.
+// C extensions should only #include <Python.h>, and not include directly
+// the other Python header files included by <Python.h>.
+
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
-/* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
-/* Include nearly all Python header files */
+// Since this is a "meta-include" file, "#ifdef __cplusplus / extern "C" {"
+// is not needed.
 
+
+// Include Python header files
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"
 
-#include <limits.h>
 
-#ifndef UCHAR_MAX
-#error "Something's broken.  UCHAR_MAX should be defined in limits.h."
+// Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
+#include <assert.h>               // assert()
+#include <inttypes.h>             // uintptr_t
+#include <limits.h>               // INT_MAX
+#include <math.h>                 // HUGE_VAL
+#include <stdarg.h>               // va_list
+#include <wchar.h>                // wchar_t
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>          // ssize_t
 #endif
 
-#if UCHAR_MAX != 255
-#error "Python's source code assumes C's unsigned char is an 8-bit type."
+// <errno.h>, <stdio.h>, <stdlib.h> and <string.h> headers are no longer used
+// by Python, but kept for the backward compatibility of existing third party C
+// extensions. They are not included by limited C API version 3.11 and newer.
+//
+// The <ctype.h> and <unistd.h> headers are not included by limited C API
+// version 3.13 and newer.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  include <errno.h>              // errno
+#  include <stdio.h>              // FILE*
+#  include <stdlib.h>             // getenv()
+#  include <string.h>             // memcpy()
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030d0000
+#  include <ctype.h>              // tolower()
+#  ifndef MS_WINDOWS
+#    include <unistd.h>           // close()
+#  endif
 #endif
 
-#if defined(__sgi) && defined(WITH_THREAD) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
+#if defined(Py_GIL_DISABLED)
+#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
+#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
+#  endif
+
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
+
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
 #endif
 
-#include <stdio.h>
-#ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
-#endif
 
-#include <string.h>
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#include <stdlib.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
-/* For size_t? */
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>
-#endif
-
-/* CAUTION:  Build setups should ensure that NDEBUG is defined on the
- * compiler command line when building Python in release mode; else
- * assert() calls won't be removed.
- */
-#include <assert.h>
-
+// Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
-
-#include "pyatomic.h"
-
-/* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
- *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
- */
-#if defined(Py_DEBUG) && defined(WITH_PYMALLOC) && !defined(PYMALLOC_DEBUG)
-#define PYMALLOC_DEBUG
-#endif
-#if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
-#error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
-#endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
-
+#include "pytypedefs.h"
+#include "pybuffer.h"
+#include "pystats.h"
+#include "pyatomic.h"
+#include "cpython/pylock.h"
+#include "critical_section.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
-
-#include "pydebug.h"
-
+#include "cpython/pydebug.h"
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
+#include "pyerrors.h"
 #include "longobject.h"
-#include "longintrepr.h"
+#include "cpython/longintrepr.h"
 #include "boolobject.h"
 #include "floatobject.h"
 #include "complexobject.h"
@@ -85,52 +100,56 @@
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
-#include "odictobject.h"
+#include "cpython/odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
+#include "cpython/monitoring.h"
+#include "cpython/funcobject.h"
+#include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
+#include "cpython/code.h"
+#include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
-#include "genobject.h"
+#include "cpython/initconfig.h"
+#include "pystate.h"
+#include "cpython/genobject.h"
 #include "descrobject.h"
+#include "genericaliasobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-#include "namespaceobject.h"
-
+#include "cpython/picklebufobject.h"
+#include "cpython/pytime.h"
 #include "codecs.h"
-#include "pyerrors.h"
-
-#include "pystate.h"
-
-#include "pyarena.h"
+#include "pythread.h"
+#include "cpython/context.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#include "audit.h"
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
-
 #include "abstract.h"
 #include "bltinmodule.h"
-
-#include "eval.h"
-
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
-#include "dtoa.h"
 #include "fileutils.h"
-#include "pyfpe.h"
+#include "cpython/pyfpe.h"
+#include "cpython/tracemalloc.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */

@@ -1,13 +1,22 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-buildbot        Batchfiles for running on Windows buildslaves.
+build           Automatically generated directory by the build system
+                contain build artifacts and intermediate files.
 
-ccbench         A Python threads-based concurrency benchmark. (*)
+buildbot        Batchfiles for running on Windows buildbot workers.
 
-demo            Several Python programming demos.
+c-analyzer      Tools to check no new global variables have been added.
+
+cases_generator Tooling to generate interpreters.
+
+clinic          A preprocessor for CPython C files in order to automate
+                the boilerplate involved with writing argument parsing
+                code for "builtins".
 
 freeze          Create a stand-alone executable from a Python program.
+
+ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
 
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
@@ -17,23 +26,32 @@ i18n            Tools for internationalization. pygettext.py
                 and msgfmt.py generates a binary message catalog
                 from a catalog in text format.
 
-iobench         Benchmark for the new Python I/O system. (*)
+importbench     A set of micro-benchmarks for various import scenarios.
+
+inspection      Tooling for PEP-678 "Safe external debugger interface for CPython".
+
+jit             Tooling for building the JIT.
+
+lockbench       Benchmarks for PyMutex and critical sections.
 
 msi             Support for packaging Python as an MSI package on Windows.
 
-parser          Un-parsing tool to generate code from an AST.
+nuget           Files for the NuGet package manager for .NET.
 
-pynche          A Tkinter-based color editor.
+patchcheck      Tools for checking and applying patches to the Python source code
+                and verifying the integrity of patch files.
 
-scripts         A number of useful single-file programs, e.g. tabnanny.py
-                by Tim Peters, which checks for inconsistent mixing of
-                tabs and spaces, and 2to3, which converts Python 2 code
-                to Python 3 code.
+peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-stringbench     A suite of micro-benchmarks for various operations on
-                strings (both 8-bit and unicode). (*)
+pixi-packages   Pixi package definitions for downstream from-source builds.
 
-test2to3        A demonstration of how to use 2to3 transparently in setup.py.
+scripts         A number of useful single-file programs, e.g. run_tests.py
+                which runs the Python test suite.
+
+ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
+                tests against multiple installations of OpenSSL and LibreSSL.
+
+tsan            Utilities for building CPython with thread-sanitizer.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
@@ -42,5 +60,7 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
 
+wasm            Config and helpers to facilitate cross compilation of CPython
+                to WebAssembly (WASM).
 
-(*) A generic benchmark suite is maintained separately at https://github.com/python/performance
+Note: The pynche color editor has moved to https://gitlab.com/warsaw/pynche

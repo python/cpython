@@ -7,6 +7,8 @@ from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
+from test.support import ALWAYS_EQ
+from test.support import warnings_helper
 
 
 DITTO = object()
@@ -203,6 +205,22 @@ class TestDateHeader(TestHeaderBase):
         self.assertEqual(len(h.defects), 1)
         self.assertIsInstance(h.defects[0], errors.HeaderMissingRequiredValue)
 
+    def test_invalid_date_format(self):
+        s = 'Not a date header'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
+    def test_invalid_date_value(self):
+        s = 'Tue, 06 Jun 2017 27:39:33 +0600'
+        h = self.make_header('date', s)
+        self.assertEqual(h, s)
+        self.assertIsNone(h.datetime)
+        self.assertEqual(len(h.defects), 1)
+        self.assertIsInstance(h.defects[0], errors.InvalidDateDefect)
+
     def test_datetime_read_only(self):
         h = self.make_header('date', self.datestring)
         with self.assertRaises(AttributeError):
@@ -229,14 +247,22 @@ class TestContentTypeHeader(TestHeaderBase):
         defects =  args[1] if l>1 else []
         decoded =  args[2] if l>2 and args[2] is not DITTO else source
         header = 'Content-Type:' + ' ' if source else ''
-        folded = args[3] if l>3 else header + source + '\n'
-        h = self.make_header('Content-Type', source)
+        folded = args[3] if l>3 else header + decoded + '\n'
+        # Both rfc2231 test cases with utf-8%E2%80%9D raise warnings,
+        # clear encoding cache to ensure test isolation.
+        if 'utf-8%E2%80%9D' in source and 'ascii' not in source:
+            import encodings
+            encodings._cache.clear()
+            with warnings_helper.check_warnings(('', DeprecationWarning)):
+                h = self.make_header('Content-Type', source)
+        else:
+            h = self.make_header('Content-Type', source)
         self.assertEqual(h.content_type, content_type)
         self.assertEqual(h.maintype, maintype)
         self.assertEqual(h.subtype, subtype)
         self.assertEqual(h.params, parmdict)
         with self.assertRaises(TypeError):
-            h.params['abc'] = 'xyz'   # params is read-only.
+            h.params['abc'] = 'xyz'   # make sure params is read-only.
         self.assertDefectsEqual(h.defects, defects)
         self.assertEqual(h, decoded)
         self.assertEqual(h.fold(policy=policy.default), folded)
@@ -373,9 +399,10 @@ class TestContentTypeHeader(TestHeaderBase):
             'text/plain; Charset="utf-8"'),
 
         # Since this is pretty much the ur-mimeheader, we'll put all the tests
-        # that exercise the parameter parsing and formatting here.
-        #
-        # XXX: question: is minimal quoting preferred?
+        # that exercise the parameter parsing and formatting here.  Note that
+        # when we refold we may canonicalize, so things like whitespace,
+        # quoting, and rfc2231 encoding may change from what was in the input
+        # header.
 
         'unquoted_param_value': (
             'text/plain; title=foo',
@@ -384,7 +411,8 @@ class TestContentTypeHeader(TestHeaderBase):
             'plain',
             {'title': 'foo'},
             [],
-            'text/plain; title="foo"'),
+            'text/plain; title="foo"',
+            ),
 
         'param_value_with_tspecials': (
             'text/plain; title="(bar)foo blue"',
@@ -415,7 +443,8 @@ class TestContentTypeHeader(TestHeaderBase):
             'mixed',
             {'boundary': 'CPIMSSMTPC06p5f3tG'},
             [],
-            'Multipart/mixed; boundary="CPIMSSMTPC06p5f3tG"'),
+            'Multipart/mixed; boundary="CPIMSSMTPC06p5f3tG"',
+            ),
 
         'spaces_around_semis': (
             ('image/jpeg; name="wibble.JPG" ; x-mac-type="4A504547" ; '
@@ -429,12 +458,29 @@ class TestContentTypeHeader(TestHeaderBase):
             [],
             ('image/jpeg; name="wibble.JPG"; x-mac-type="4A504547"; '
                 'x-mac-creator="474B4F4E"'),
-            # XXX: it could be that we will eventually prefer to fold starting
-            # from the decoded value, in which case these spaces and similar
-            # spaces in other tests will be wrong.
-            ('Content-Type: image/jpeg; name="wibble.JPG" ; '
-                'x-mac-type="4A504547" ;\n'
+            ('Content-Type: image/jpeg; name="wibble.JPG";'
+                ' x-mac-type="4A504547";\n'
              ' x-mac-creator="474B4F4E"\n'),
+            ),
+
+        'lots_of_mime_params': (
+            ('image/jpeg; name="wibble.JPG"; x-mac-type="4A504547"; '
+                'x-mac-creator="474B4F4E"; x-extrastuff="make it longer"'),
+            'image/jpeg',
+            'image',
+            'jpeg',
+            {'name': 'wibble.JPG',
+             'x-mac-type': '4A504547',
+             'x-mac-creator': '474B4F4E',
+             'x-extrastuff': 'make it longer'},
+            [],
+            ('image/jpeg; name="wibble.JPG"; x-mac-type="4A504547"; '
+                'x-mac-creator="474B4F4E"; x-extrastuff="make it longer"'),
+            # In this case the whole of the MimeParameters does *not* fit
+            # one one line, so we break at a lower syntactic level.
+            ('Content-Type: image/jpeg; name="wibble.JPG";'
+                ' x-mac-type="4A504547";\n'
+             ' x-mac-creator="474B4F4E"; x-extrastuff="make it longer"\n'),
             ),
 
         'semis_inside_quotes': (
@@ -460,19 +506,25 @@ class TestContentTypeHeader(TestHeaderBase):
             [],
             r'image/jpeg; name="Jim \"Bob\" Jill"'),
 
-        # XXX: This test works except for the refolding of the header.  I'll
-        # deal with that bug when I deal with the other folding bugs.
-        #'non_ascii_in_params': (
-        #    ('foo\xa7/bar; b\xa7r=two; '
-        #        'baz=thr\xa7e'.encode('latin-1').decode('us-ascii',
-        #                                                'surrogateescape')),
-        #    'foo\uFFFD/bar',
-        #    'foo\uFFFD',
-        #    'bar',
-        #    {'b\uFFFDr': 'two', 'baz': 'thr\uFFFDe'},
-        #    [errors.UndecodableBytesDefect]*3,
-        #    'foo�/bar; b�r="two"; baz="thr�e"',
-        #    ),
+        'non_ascii_in_params': (
+            ('foo\xa7/bar; b\xa7r=two; '
+                'baz=thr\xa7e'.encode('latin-1').decode('us-ascii',
+                                                        'surrogateescape')),
+            'foo\uFFFD/bar',
+            'foo\uFFFD',
+            'bar',
+            {'b\uFFFDr': 'two', 'baz': 'thr\uFFFDe'},
+            [errors.UndecodableBytesDefect]*3,
+            'foo�/bar; b�r="two"; baz="thr�e"',
+            # XXX Two bugs here: the mime type is not allowed to be an encoded
+            # word, and we shouldn't be emitting surrogates in the parameter
+            # names.  But I don't know what the behavior should be here, so I'm
+            # punting for now.  In practice this is unlikely to be encountered
+            # since headers with binary in them only come from a binary source
+            # and are almost certain to be re-emitted without refolding.
+            'Content-Type: =?unknown-8bit?q?foo=A7?=/bar; b\udca7r="two";\n'
+            " baz*=unknown-8bit''thr%A7e\n",
+            ),
 
         # RFC 2231 parameter tests.
 
@@ -494,19 +546,20 @@ class TestContentTypeHeader(TestHeaderBase):
             [],
             r'image/jpeg; bar="baz\"foobar\"baz"'),
 
-        # XXX: This test works except for the refolding of the header.  I'll
-        # deal with that bug when I deal with the other folding bugs.
-        #'non_ascii_rfc2231_value': (
-        #    ('text/plain; charset=us-ascii; '
-        #     "title*=us-ascii'en'This%20is%20"
-        #     'not%20f\xa7n').encode('latin-1').decode('us-ascii',
-        #                                             'surrogateescape'),
-        #    'text/plain',
-        #    'text',
-        #    'plain',
-        #    {'charset': 'us-ascii', 'title': 'This is not f\uFFFDn'},
-        #     [errors.UndecodableBytesDefect],
-        #     'text/plain; charset="us-ascii"; title="This is not f�n"'),
+        'non_ascii_rfc2231_value': (
+            ('text/plain; charset=us-ascii; '
+             "title*=us-ascii'en'This%20is%20"
+             'not%20f\xa7n').encode('latin-1').decode('us-ascii',
+                                                     'surrogateescape'),
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'us-ascii', 'title': 'This is not f\uFFFDn'},
+             [errors.UndecodableBytesDefect],
+             'text/plain; charset="us-ascii"; title="This is not f�n"',
+            'Content-Type: text/plain; charset="us-ascii";\n'
+            " title*=unknown-8bit''This%20is%20not%20f%A7n\n",
+            ),
 
         'rfc2231_encoded_charset': (
             'text/plain; charset*=ansi-x3.4-1968\'\'us-ascii',
@@ -529,8 +582,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'This is ***fun*** is it not.pdf'},
             [],
             'text/plain; name="This is ***fun*** is it not.pdf"',
-            ('Content-Type: text/plain;\tname*0*=\'\'This%20is%20;\n'
-             '\tname*1*=%2A%2A%2Afun%2A%2A%2A%20;\tname*2="is it not.pdf"\n'),
             ),
 
         # Make sure we also handle it if there are spurious double quotes.
@@ -545,9 +596,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'This is even more ***fun*** is it not.pdf'},
             [errors.InvalidHeaderDefect]*2,
             'text/plain; name="This is even more ***fun*** is it not.pdf"',
-            ('Content-Type: text/plain;\t'
-                'name*0*="us-ascii\'\'This%20is%20even%20more%20";\n'
-             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it not.pdf"\n'),
             ),
 
         'rfc2231_single_quote_inside_double_quotes': (
@@ -562,9 +610,8 @@ class TestContentTypeHeader(TestHeaderBase):
             [errors.InvalidHeaderDefect]*2,
             ('text/plain; charset="us-ascii"; '
                'title="This is really ***fun*** isn\'t it!"'),
-            ('Content-Type: text/plain; charset=us-ascii;\n'
-             '\ttitle*0*="us-ascii\'en\'This%20is%20really%20";\n'
-             '\ttitle*1*="%2A%2A%2Afun%2A%2A%2A%20";\ttitle*2="isn\'t it!"\n'),
+            ('Content-Type: text/plain; charset="us-ascii";\n'
+                ' title="This is really ***fun*** isn\'t it!"\n'),
             ),
 
         'rfc2231_single_quote_in_value_with_charset_and_lang': (
@@ -576,9 +623,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': "Frank's Document"},
             [errors.InvalidHeaderDefect]*2,
             'application/x-foo; name="Frank\'s Document"',
-            ('Content-Type: application/x-foo;\t'
-                'name*0*="us-ascii\'en-us\'Frank\'s";\n'
-             ' name*1*=" Document"\n'),
             ),
 
         'rfc2231_single_quote_in_non_encoded_value': (
@@ -590,9 +634,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': "us-ascii'en-us'Frank's Document"},
             [],
             'application/x-foo; name="us-ascii\'en-us\'Frank\'s Document"',
-            ('Content-Type: application/x-foo;\t'
-                'name*0="us-ascii\'en-us\'Frank\'s";\n'
-             ' name*1=" Document"\n'),
              ),
 
         'rfc2231_no_language_or_charset': (
@@ -615,12 +656,8 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'This is even more ***fun*** is it.pdf'},
             [errors.InvalidHeaderDefect]*2,
             'text/plain; name="This is even more ***fun*** is it.pdf"',
-            ('Content-Type: text/plain;\t'
-                'name*0*="\'\'This%20is%20even%20more%20";\n'
-             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
             ),
 
-        # XXX: see below...the first name line here should be *0 not *0*.
         'rfc2231_partly_encoded': (
             ("text/plain;"
                 '\tname*0*="\'\'This%20is%20even%20more%20";'
@@ -632,9 +669,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'This is even more ***fun*** is it.pdf'},
             [errors.InvalidHeaderDefect]*2,
             'text/plain; name="This is even more ***fun*** is it.pdf"',
-            ('Content-Type: text/plain;\t'
-                'name*0*="\'\'This%20is%20even%20more%20";\n'
-             '\tname*1*="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
             ),
 
         'rfc2231_partly_encoded_2': (
@@ -647,10 +681,11 @@ class TestContentTypeHeader(TestHeaderBase):
             'plain',
             {'name': 'This is even more %2A%2A%2Afun%2A%2A%2A%20is it.pdf'},
             [errors.InvalidHeaderDefect],
-            'text/plain; name="This is even more %2A%2A%2Afun%2A%2A%2A%20is it.pdf"',
-            ('Content-Type: text/plain;\t'
-                'name*0*="\'\'This%20is%20even%20more%20";\n'
-             '\tname*1="%2A%2A%2Afun%2A%2A%2A%20";\tname*2="is it.pdf"\n'),
+            ('text/plain;'
+             ' name="This is even more %2A%2A%2Afun%2A%2A%2A%20is it.pdf"'),
+            ('Content-Type: text/plain;\n'
+             ' name="This is even more %2A%2A%2Afun%2A%2A%2A%20is'
+                ' it.pdf"\n'),
             ),
 
         'rfc2231_unknown_charset_treated_as_ascii': (
@@ -669,9 +704,12 @@ class TestContentTypeHeader(TestHeaderBase):
             'plain',
             {'charset': 'utf-8\uFFFD\uFFFD\uFFFD'},
             [errors.UndecodableBytesDefect],
-            'text/plain; charset="utf-8\uFFFD\uFFFD\uFFFD"'),
+            'text/plain; charset="utf-8\uFFFD\uFFFD\uFFFD"',
+            "Content-Type: text/plain;"
+            " charset*=unknown-8bit''utf-8%F1%F2%F3\n",
+            ),
 
-        'rfc2231_utf_8_in_supposedly_ascii_charset_parameter_value': (
+        'rfc2231_utf8_in_supposedly_ascii_charset_parameter_value': (
             "text/plain; charset*=ascii''utf-8%E2%80%9D",
             'text/plain',
             'text',
@@ -679,9 +717,23 @@ class TestContentTypeHeader(TestHeaderBase):
             {'charset': 'utf-8”'},
             [errors.UndecodableBytesDefect],
             'text/plain; charset="utf-8”"',
+            # XXX Should folding change the charset to utf8?  Currently it just
+            # reproduces the original, which is arguably fine.
+            "Content-Type: text/plain;"
+            " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
-            # XXX: if the above were *re*folded, it would get tagged as utf-8
-            # instead of ascii in the param, since it now contains non-ASCII.
+
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
 
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
@@ -694,9 +746,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'My Document For You'},
             [errors.InvalidHeaderDefect],
             'application/x-foo; name="My Document For You"',
-            ('Content-Type: application/x-foo;\t'
-                'name*0*="us-ascii\'en-us\'My";\n'
-             '\tname*1=" Document";\tname*2=" For You"\n'),
             ),
 
         # My reading of the RFC is that this is an invalid header.  The RFC
@@ -713,11 +762,6 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': 'My Document For You'},
             [errors.InvalidHeaderDefect]*3,
             'application/x-foo; name="My Document For You"',
-            ("Content-Type: application/x-foo;\tname*0=us-ascii'en-us'My;\t"
-                # XXX: the newline is in the wrong place, come back and fix
-                # this when the rest of tests pass.
-                'name*1*=" Document"\n;'
-             '\tname*2*=" For You"\n'),
             ),
 
         # XXX: I would say this one should default to ascii/en for the
@@ -730,8 +774,7 @@ class TestContentTypeHeader(TestHeaderBase):
         # charset'lang'value pattern exactly *and* there is at least one
         # encoded segment.  Implementing that algorithm will require some
         # refactoring, so I haven't done it (yet).
-
-        'rfc2231_qouted_unencoded_then_encoded_segments': (
+        'rfc2231_quoted_unencoded_then_encoded_segments': (
             ('application/x-foo;'
                 '\tname*0="us-ascii\'en-us\'My";'
                 '\tname*1*=" Document";'
@@ -742,9 +785,25 @@ class TestContentTypeHeader(TestHeaderBase):
             {'name': "us-ascii'en-us'My Document For You"},
             [errors.InvalidHeaderDefect]*2,
             'application/x-foo; name="us-ascii\'en-us\'My Document For You"',
-            ('Content-Type: application/x-foo;\t'
-                'name*0="us-ascii\'en-us\'My";\n'
-             '\tname*1*=" Document";\tname*2*=" For You"\n'),
+            ),
+
+        # Make sure our folding algorithm produces multiple sections correctly.
+        # We could mix encoded and non-encoded segments, but we don't, we just
+        # make them all encoded.  It might be worth fixing that, since the
+        # sections can get used for wrapping ascii text.
+        'rfc2231_folded_segments_correctly_formatted': (
+            ('application/x-foo;'
+                '\tname="' + "with spaces"*8 + '"'),
+            'application/x-foo',
+            'application',
+            'x-foo',
+            {'name': "with spaces"*8},
+            [],
+            'application/x-foo; name="' + "with spaces"*8 + '"',
+            "Content-Type: application/x-foo;\n"
+            " name*0*=us-ascii''with%20spaceswith%20spaceswith%20spaceswith"
+                "%20spaceswith;\n"
+            " name*1*=%20spaceswith%20spaceswith%20spaceswith%20spaces\n"
             ),
 
     }
@@ -787,6 +846,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit',
             [errors.InvalidHeaderDefect]),
 
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
+
     }
 
 
@@ -827,8 +891,8 @@ class TestContentDisposition(TestHeaderBase):
             [],
             ('attachment; filename="genome.jpeg"; '
                  'modification-date="Wed, 12 Feb 1997 16:29:51 -0500"'),
-            ('Content-Disposition: attachment; filename=genome.jpeg;\n'
-             '  modification-date="Wed, 12 Feb 1997 16:29:51 -0500";\n'),
+            ('Content-Disposition: attachment; filename="genome.jpeg";\n'
+             ' modification-date="Wed, 12 Feb 1997 16:29:51 -0500"\n'),
             ),
 
         'no_value': (
@@ -851,6 +915,25 @@ class TestContentDisposition(TestHeaderBase):
             {'filename': 'foo'},
             [errors.InvalidHeaderDefect]),
 
+        'invalid_parameter_value_with_fws_between_ew': (
+            'attachment; filename="=?UTF-8?Q?Schulbesuchsbest=C3=A4ttigung=2E?='
+            '               =?UTF-8?Q?pdf?="',
+            'attachment',
+            {'filename': 'Schulbesuchsbestättigung.pdf'},
+            [errors.InvalidHeaderDefect]*3,
+            ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
+            ('Content-Disposition: attachment;\n'
+             ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
+            ),
+
+        'parameter_value_with_fws_between_tokens': (
+            'attachment; filename="File =?utf-8?q?Name?= With Spaces.pdf"',
+            'attachment',
+            {'filename': 'File Name With Spaces.pdf'},
+            [errors.InvalidHeaderDefect],
+            'attachment; filename="File Name With Spaces.pdf"',
+            ('Content-Disposition: attachment; filename="File Name With Spaces.pdf"\n'),
+            )
     }
 
 
@@ -873,7 +956,7 @@ class TestMIMEVersionHeader(TestHeaderBase):
         if source:
             source = ' ' + source
         self.assertEqual(h.fold(policy=policy.default),
-                        'MIME-Version:' + source + '\n')
+                         'MIME-Version:' + source + '\n')
 
     version_string_params = {
 
@@ -1159,13 +1242,34 @@ class TestAddressHeader(TestHeaderBase):
 
         'rfc2047_atom_in_quoted_string_is_decoded':
             ('"=?utf-8?q?=C3=89ric?=" <foo@example.com>',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
             'Éric <foo@example.com>',
             'Éric',
             'foo@example.com',
             'foo',
             'example.com',
             None),
+
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
 
         }
 
@@ -1414,6 +1518,25 @@ class TestAddressAndGroup(TestEmailBase):
     #    with self.assertRaises(ValueError):
     #        Address('foo', 'wők', 'example.com')
 
+    def test_crlf_in_constructor_args_raises(self):
+        cases = (
+            dict(display_name='foo\r'),
+            dict(display_name='foo\n'),
+            dict(display_name='foo\r\n'),
+            dict(domain='example.com\r'),
+            dict(domain='example.com\n'),
+            dict(domain='example.com\r\n'),
+            dict(username='wok\r'),
+            dict(username='wok\n'),
+            dict(username='wok\r\n'),
+            dict(addr_spec='wok@example.com\r'),
+            dict(addr_spec='wok@example.com\n'),
+            dict(addr_spec='wok@example.com\r\n')
+        )
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
+                Address(**kwargs)
+
     def test_non_ascii_username_in_addr_spec_raises(self):
         with self.assertRaises(ValueError):
             Address('foo', addr_spec='wők@example.com')
@@ -1503,8 +1626,50 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertEqual(m['to'], 'foo bar:;')
         self.assertEqual(m['to'].addresses, g.addresses)
 
+    def test_address_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        self.assertEqual(Address('foo', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('baz', 'bar', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'baz', 'example.com'), a)
+        self.assertNotEqual(Address('foo', 'bar', 'baz'), a)
+        self.assertFalse(a == object())
+        self.assertTrue(a == ALWAYS_EQ)
+
+    def test_group_comparison(self):
+        a = Address('foo', 'bar', 'example.com')
+        g = Group('foo bar', [a])
+        self.assertEqual(Group('foo bar', (a,)), g)
+        self.assertNotEqual(Group('baz', [a]), g)
+        self.assertNotEqual(Group('foo bar', []), g)
+        self.assertFalse(g == object())
+        self.assertTrue(g == ALWAYS_EQ)
+
 
 class TestFolding(TestHeaderBase):
+
+    def test_address_display_names(self):
+        """Test the folding and encoding of address headers."""
+        for name, result in (
+                ('Foo Bar, France', '"Foo Bar, France"'),
+                ('Foo Bar (France)', '"Foo Bar (France)"'),
+                ('Foo Bar, España', 'Foo =?utf-8?q?Bar=2C_Espa=C3=B1a?='),
+                ('Foo Bar (España)', 'Foo Bar =?utf-8?b?KEVzcGHDsWEp?='),
+                ('Foo, Bar España', '=?utf-8?q?Foo=2C_Bar_Espa=C3=B1a?='),
+                ('Foo, Bar [España]', '=?utf-8?q?Foo=2C_Bar_=5BEspa=C3=B1a=5D?='),
+                ('Foo Bär, France', 'Foo =?utf-8?q?B=C3=A4r=2C?= France'),
+                ('Foo Bär <France>', 'Foo =?utf-8?q?B=C3=A4r_=3CFrance=3E?='),
+                (
+                    'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
+                    'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
+                    '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?_adipiscing=2E_Suspendisse'
+                    '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
+                    '?q?p=C3=B4tenti=2E?=',
+                    ),
+                ):
+            h = self.make_header('To', Address(name, addr_spec='a@b.com'))
+            self.assertEqual(h.fold(policy=policy.default),
+                                    'To: %s <a@b.com>\n' % result)
 
     def test_short_unstructured(self):
         h = self.make_header('subject', 'this is a test')
@@ -1546,15 +1711,39 @@ class TestFolding(TestHeaderBase):
             'singlewordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: thisisaverylonglineconsistingofasinglewordthatwontfit\n')
+            'Subject: \n'
+            ' =?utf-8?q?thisisa?=\n'
+            ' =?utf-8?q?verylon?=\n'
+            ' =?utf-8?q?glineco?=\n'
+            ' =?utf-8?q?nsistin?=\n'
+            ' =?utf-8?q?gofasin?=\n'
+            ' =?utf-8?q?gleword?=\n'
+            ' =?utf-8?q?thatwon?=\n'
+            ' =?utf-8?q?tfit?=\n'
+            )
 
     def test_fold_unstructured_with_two_overlong_words(self):
         h = self.make_header('Subject', 'thisisaverylonglineconsistingofa'
             'singlewordthatwontfit plusanotherverylongwordthatwontfit')
         self.assertEqual(
             h.fold(policy=policy.default.clone(max_line_length=20)),
-            'Subject: thisisaverylonglineconsistingofasinglewordthatwontfit\n'
-                ' plusanotherverylongwordthatwontfit\n')
+            'Subject: \n'
+            ' =?utf-8?q?thisisa?=\n'
+            ' =?utf-8?q?verylon?=\n'
+            ' =?utf-8?q?glineco?=\n'
+            ' =?utf-8?q?nsistin?=\n'
+            ' =?utf-8?q?gofasin?=\n'
+            ' =?utf-8?q?gleword?=\n'
+            ' =?utf-8?q?thatwon?=\n'
+            ' =?utf-8?q?tfit_pl?=\n'
+            ' =?utf-8?q?usanoth?=\n'
+            ' =?utf-8?q?erveryl?=\n'
+            ' =?utf-8?q?ongword?=\n'
+            ' =?utf-8?q?thatwon?=\n'
+            ' =?utf-8?q?tfit?=\n'
+            )
+
+    # XXX Need test for when max_line_length is less than the chrome size.
 
     def test_fold_unstructured_with_slightly_long_word(self):
         h = self.make_header('Subject', 'thislongwordislessthanmaxlinelen')
@@ -1590,6 +1779,59 @@ class TestFolding(TestHeaderBase):
         self.assertEqual(h.fold(policy=policy.default),
                         'Date: Sat, 02 Feb 2002 17:00:06 -0800\n')
 
+    def test_fold_overlong_words_using_RFC2047(self):
+        h = self.make_header(
+            'X-Report-Abuse',
+            '<https://www.mailitapp.com/report_abuse.php?'
+              'mid=xxx-xxx-xxxxxxxxxxxxxxxxxxxxxxxx==-xxx-xx-xx>')
+        self.assertEqual(
+            h.fold(policy=policy.default),
+            'X-Report-Abuse: =?utf-8?q?=3Chttps=3A//www=2Emailitapp=2E'
+                'com/report=5Fabuse?=\n'
+            ' =?utf-8?q?=2Ephp=3Fmid=3Dxxx-xxx-xxxx'
+                'xxxxxxxxxxxxxxxxxxxx=3D=3D-xxx-xx-xx?=\n'
+            ' =?utf-8?q?=3E?=\n')
+
+    def test_message_id_header_is_not_folded(self):
+        h = self.make_header(
+            'Message-ID',
+            '<somemessageidlongerthan@maxlinelength.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID: <somemessageidlongerthan@maxlinelength.com>\n')
+
+        # Test message-id isn't folded when id-right is no-fold-literal.
+        h = self.make_header(
+            'Message-ID',
+            '<somemessageidlongerthan@[127.0.0.0.0.0.0.0.0.1]>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID: <somemessageidlongerthan@[127.0.0.0.0.0.0.0.0.1]>\n')
+
+        # Test message-id isn't folded when id-right is non-ascii characters.
+        h = self.make_header('Message-ID', '<ईमेल@wők.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=30)),
+            'Message-ID: <ईमेल@wők.com>\n')
+
+        # Test message-id is folded without breaking the msg-id token into
+        # encoded words, *even* if they don't fit into max_line_length.
+        h = self.make_header('Message-ID', '<ईमेलfromMessage@wők.com>')
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
+
+    def test_fold_references(self):
+        h = self.make_header(
+            'References',
+            '<referenceid1thatislongerthan@maxlinelength.com> '
+            '<referenceid2thatislongerthan@maxlinelength.com>'
+            )
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'References: '
+            '<referenceid1thatislongerthan@maxlinelength.com>\n'
+            ' <referenceid2thatislongerthan@maxlinelength.com>\n')
 
 
 if __name__ == '__main__':

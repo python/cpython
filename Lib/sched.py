@@ -11,7 +11,7 @@ substituting time and sleep from built-in module time, or you can
 implement simulated time by writing your own functions.  This can
 also be used to integrate scheduling with STDWIN events; the delay
 function is allowed to modify the queue.  Time can be expressed as
-integers or floating point numbers, as long as it is consistent.
+integers or floating-point numbers, as long as it is consistent.
 
 Events are specified by tuples (time, priority, action, argument, kwargs).
 As in UNIX, lower priority numbers mean higher priority; in this
@@ -26,26 +26,19 @@ has another way to reference private data (besides global variables).
 import time
 import heapq
 from collections import namedtuple
-try:
-    import threading
-except ImportError:
-    import dummy_threading as threading
+from itertools import count
+import threading
 from time import monotonic as _time
 
 __all__ = ["scheduler"]
 
-class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
-    __slots__ = []
-    def __eq__(s, o): return (s.time, s.priority) == (o.time, o.priority)
-    def __lt__(s, o): return (s.time, s.priority) <  (o.time, o.priority)
-    def __le__(s, o): return (s.time, s.priority) <= (o.time, o.priority)
-    def __gt__(s, o): return (s.time, s.priority) >  (o.time, o.priority)
-    def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
-
+Event = namedtuple('Event', 'time, priority, sequence, action, argument, kwargs')
 Event.time.__doc__ = ('''Numeric type compatible with the return value of the
 timefunc function passed to the constructor.''')
 Event.priority.__doc__ = ('''Events scheduled for the same time will be executed
 in the order of their priority.''')
+Event.sequence.__doc__ = ('''A continually increasing sequence number that
+    separates events if time and priority are equal.''')
 Event.action.__doc__ = ('''Executing the event means executing
 action(*argument, **kwargs)''')
 Event.argument.__doc__ = ('''argument is a sequence holding the positional
@@ -64,6 +57,7 @@ class scheduler:
         self._lock = threading.RLock()
         self.timefunc = timefunc
         self.delayfunc = delayfunc
+        self._sequence_generator = count()
 
     def enterabs(self, time, priority, action, argument=(), kwargs=_sentinel):
         """Enter a new event in the queue at an absolute time.
@@ -74,8 +68,10 @@ class scheduler:
         """
         if kwargs is _sentinel:
             kwargs = {}
-        event = Event(time, priority, action, argument, kwargs)
+
         with self._lock:
+            event = Event(time, priority, next(self._sequence_generator),
+                          action, argument, kwargs)
             heapq.heappush(self._queue, event)
         return event # The ID
 
@@ -139,7 +135,8 @@ class scheduler:
             with lock:
                 if not q:
                     break
-                time, priority, action, argument, kwargs = q[0]
+                (time, priority, sequence, action,
+                 argument, kwargs) = q[0]
                 now = timefunc()
                 if time > now:
                     delay = True

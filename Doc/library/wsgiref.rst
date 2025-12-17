@@ -1,11 +1,13 @@
-:mod:`wsgiref` --- WSGI Utilities and Reference Implementation
-==============================================================
+:mod:`!wsgiref` --- WSGI Utilities and Reference Implementation
+===============================================================
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
 
 .. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
 .. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
+
+**Source code:** :source:`Lib/wsgiref`
 
 --------------
 
@@ -23,11 +25,12 @@ an existing framework.
 be used to add WSGI support to a web server or framework.  It provides utilities
 for manipulating WSGI environment variables and response headers, base classes
 for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
+types for static type checking,
 and a validation tool that checks WSGI servers and applications for conformance
 to the WSGI specification (:pep:`3333`).
 
-See https://wsgi.readthedocs.org/ for more information about WSGI, and links to
-tutorials and other resources.
+See `wsgi.readthedocs.io <https://wsgi.readthedocs.io/>`_ for more information about WSGI, and links
+to tutorials and other resources.
 
 .. XXX If you're just trying to write a web application...
 
@@ -43,7 +46,9 @@ This module provides a variety of utility functions for working with WSGI
 environments.  A WSGI environment is a dictionary containing HTTP request
 variables as described in :pep:`3333`.  All of the functions taking an *environ*
 parameter expect a WSGI-compliant dictionary to be supplied; please see
-:pep:`3333` for a detailed specification.
+:pep:`3333` for a detailed specification and
+:data:`~wsgiref.types.WSGIEnvironment` for a type alias that can be used
+in type annotations.
 
 
 .. function:: guess_scheme(environ)
@@ -54,7 +59,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This function is useful when creating a gateway that wraps CGI or a CGI-like
    protocol such as FastCGI.  Typically, servers providing such protocols will
-   include a ``HTTPS`` variable with a value of "1" "yes", or "on" when a request
+   include a ``HTTPS`` variable with a value of "1", "yes", or "on" when a request
    is received via SSL.  So, this function returns "https" if such a value is
    found, and "http" otherwise.
 
@@ -114,7 +119,8 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
-   Example usage::
+   Example usage (see also :func:`~wsgiref.simple_server.demo_app`
+   for another example)::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
@@ -144,15 +150,16 @@ also provides these miscellaneous utilities:
 
 .. function:: is_hop_by_hop(header_name)
 
-   Return true if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
+   Return ``True`` if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
    :rfc:`2616`.
 
 
 .. class:: FileWrapper(filelike, blksize=8192)
 
-   A wrapper to convert a file-like object to an :term:`iterator`.  The resulting objects
-   support both :meth:`__getitem__` and :meth:`__iter__` iteration styles, for
-   compatibility with Python 2.1 and Jython. As the object is iterated over, the
+   A concrete implementation of the :class:`wsgiref.types.FileWrapper`
+   protocol used to convert a file-like object to an :term:`iterator`.
+   The resulting objects
+   are :term:`iterable`\ s. As the object is iterated over, the
    optional *blksize* parameter will be repeatedly passed to the *filelike*
    object's :meth:`read` method to obtain bytestrings to yield.  When :meth:`read`
    returns an empty bytestring, iteration is ended and is not resumable.
@@ -173,6 +180,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
+   .. versionchanged:: 3.11
+      Support for :meth:`~object.__getitem__` method has been removed.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -193,8 +202,9 @@ manipulation of WSGI response headers using a mapping-like interface.
    an empty list.
 
    :class:`Headers` objects support typical mapping operations including
-   :meth:`__getitem__`, :meth:`get`, :meth:`__setitem__`, :meth:`setdefault`,
-   :meth:`__delitem__` and :meth:`__contains__`.  For each of
+   :meth:`~object.__getitem__`, :meth:`~dict.get`, :meth:`~object.__setitem__`,
+   :meth:`~dict.setdefault`,
+   :meth:`~object.__delitem__` and :meth:`~object.__contains__`.  For each of
    these methods, the key is the header name (treated case-insensitively), and the
    value is the first value associated with that header name.  Setting a header
    deletes any existing values for that header, then adds a new value at the end of
@@ -303,6 +313,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
    as :mod:`wsgiref.simple_server`) is able to run a simple WSGI application
    correctly.
 
+   The *start_response* callable should follow the :class:`.StartResponse` protocol.
+
 
 .. class:: WSGIServer(server_address, RequestHandlerClass)
 
@@ -327,7 +339,7 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIServer.get_app()
 
-      Returns the currently-set application callable.
+      Returns the currently set application callable.
 
    Normally, however, you do not need to use these additional methods, as
    :meth:`set_app` is normally called by :func:`make_server`, and the
@@ -348,7 +360,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
    .. method:: WSGIRequestHandler.get_environ()
 
-      Returns a dictionary containing the WSGI environment for a request.  The default
+      Return a :data:`~wsgiref.types.WSGIEnvironment` dictionary for a
+      request.  The default
       implementation copies the contents of the :class:`WSGIServer` object's
       :attr:`base_environ` dictionary attribute and then adds various headers derived
       from the HTTP request.  Each call to this method should return a new dictionary
@@ -397,7 +410,7 @@ Paste" library.
    Wrap *application* and return a new WSGI application object.  The returned
    application will forward all requests to the original *application*, and will
    check that both the *application* and the server invoking it are conforming to
-   the WSGI specification and to RFC 2616.
+   the WSGI specification and to :rfc:`2616`.
 
    Any detected nonconformance results in an :exc:`AssertionError` being raised;
    note, however, that how these errors are handled is server-dependent.  For
@@ -478,8 +491,8 @@ input, output, and error streams.
    rarely used and is not guaranteed by WSGI. On IIS<7, though, the
    setting can only be made on a vhost level, affecting all other script
    mappings, many of which break when exposed to the ``PATH_TRANSLATED`` bug.
-   For this reason IIS<7 is almost never deployed with the fix. (Even IIS7
-   rarely uses it because there is still no UI for it.)
+   For this reason IIS<7 is almost never deployed with the fix (Even IIS7
+   rarely uses it because there is still no UI for it.).
 
    There is no way for CGI code to tell whether the option was set, so a
    separate handler class is provided.  It is used in the same way as
@@ -511,8 +524,10 @@ input, output, and error streams.
    want to subclass this instead of :class:`BaseCGIHandler`.
 
    This class is a subclass of :class:`BaseHandler`.  It overrides the
-   :meth:`__init__`, :meth:`get_stdin`, :meth:`get_stderr`, :meth:`add_cgi_vars`,
-   :meth:`_write`, and :meth:`_flush` methods to support explicitly setting the
+   :meth:`!__init__`, :meth:`~BaseHandler.get_stdin`,
+   :meth:`~BaseHandler.get_stderr`, :meth:`~BaseHandler.add_cgi_vars`,
+   :meth:`~BaseHandler._write`, and :meth:`~BaseHandler._flush` methods to
+   support explicitly setting the
    environment and streams via the constructor.  The supplied environment and
    streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
    :attr:`environ` attributes.
@@ -557,13 +572,15 @@ input, output, and error streams.
 
    .. method:: BaseHandler.get_stdin()
 
-      Return an input stream object suitable for use as the ``wsgi.input`` of the
+      Return an object compatible with :class:`~wsgiref.types.InputStream`
+      suitable for use as the ``wsgi.input`` of the
       request currently being processed.
 
 
    .. method:: BaseHandler.get_stderr()
 
-      Return an output stream object suitable for use as the ``wsgi.errors`` of the
+      Return an object compatible with :class:`~wsgiref.types.ErrorStream`
+      suitable for use as the ``wsgi.errors`` of the
       request currently being processed.
 
 
@@ -633,7 +650,7 @@ input, output, and error streams.
 
    .. method:: BaseHandler.setup_environ()
 
-      Set the :attr:`environ` attribute to a fully-populated WSGI environment.  The
+      Set the :attr:`environ` attribute to a fully populated WSGI environment.  The
       default implementation uses all of the above methods and attributes, plus the
       :meth:`get_stdin`, :meth:`get_stderr`, and :meth:`add_cgi_vars` methods and the
       :attr:`wsgi_file_wrapper` attribute.  It also inserts a ``SERVER_SOFTWARE`` key
@@ -663,9 +680,11 @@ input, output, and error streams.
       This method is a WSGI application to generate an error page for the user.  It is
       only invoked if an error occurs before headers are sent to the client.
 
-      This method can access the current error information using ``sys.exc_info()``,
+      This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
-      described in the "Error Handling" section of :pep:`3333`).
+      described in the "Error Handling" section of :pep:`3333`). In particular,
+      the *start_response* callable should follow the :class:`.StartResponse`
+      protocol.
 
       The default implementation just uses the :attr:`error_status`,
       :attr:`error_headers`, and :attr:`error_body` attributes to generate an output
@@ -702,8 +721,9 @@ input, output, and error streams.
 
    .. attribute:: BaseHandler.wsgi_file_wrapper
 
-      A ``wsgi.file_wrapper`` factory, or ``None``.  The default value of this
-      attribute is the :class:`wsgiref.util.FileWrapper` class.
+      A ``wsgi.file_wrapper`` factory, compatible with
+      :class:`wsgiref.types.FileWrapper`, or ``None``.  The default value
+      of this attribute is the :class:`wsgiref.util.FileWrapper` class.
 
 
    .. method:: BaseHandler.sendfile()
@@ -737,7 +757,7 @@ input, output, and error streams.
 
 .. function:: read_environ()
 
-   Transcode CGI variables from ``os.environ`` to PEP 3333 "bytes in unicode"
+   Transcode CGI variables from ``os.environ`` to :pep:`3333` "bytes in unicode"
    strings, returning a new dictionary.  This function is used by
    :class:`CGIHandler` and :class:`IISCGIHandler` in place of directly using
    ``os.environ``, which is not necessarily WSGI-compliant on all platforms
@@ -753,29 +773,127 @@ input, output, and error streams.
    .. versionadded:: 3.2
 
 
+:mod:`wsgiref.types` -- WSGI types for static type checking
+-----------------------------------------------------------
+
+.. module:: wsgiref.types
+   :synopsis: WSGI types for static type checking
+
+
+This module provides various types for static type checking as described
+in :pep:`3333`.
+
+.. versionadded:: 3.11
+
+
+.. class:: StartResponse
+
+   A :class:`typing.Protocol` describing :pep:`start_response()
+   <3333#the-start-response-callable>`
+   callables (:pep:`3333`).
+
+.. data:: WSGIEnvironment
+
+   A type alias describing a WSGI environment dictionary.
+
+.. data:: WSGIApplication
+
+   A type alias describing a WSGI application callable.
+
+.. class:: InputStream()
+
+   A :class:`typing.Protocol` describing a :pep:`WSGI Input Stream
+   <3333#input-and-error-streams>`.
+
+.. class:: ErrorStream()
+
+   A :class:`typing.Protocol` describing a :pep:`WSGI Error Stream
+   <3333#input-and-error-streams>`.
+
+.. class:: FileWrapper()
+
+   A :class:`typing.Protocol` describing a :pep:`file wrapper
+   <3333#optional-platform-specific-file-handling>`.
+   See :class:`wsgiref.util.FileWrapper` for a concrete implementation of this
+   protocol.
+
+
 Examples
 --------
 
-This is a working "Hello World" WSGI application::
+This is a working "Hello World" WSGI application, where the *start_response*
+callable should follow the :class:`.StartResponse` protocol::
 
+   """
+   Every WSGI application must have an application object - a callable
+   object that accepts two arguments. For that purpose, we're going to
+   use a function (note that you're not limited to a function, you can
+   use a class for example). The first argument passed to the function
+   is a dictionary containing CGI-style environment variables and the
+   second variable is the callable object.
+   """
    from wsgiref.simple_server import make_server
 
-   # Every WSGI application must have an application object - a callable
-   # object that accepts two arguments. For that purpose, we're going to
-   # use a function (note that you're not limited to a function, you can
-   # use a class for example). The first argument passed to the function
-   # is a dictionary containing CGI-style environment variables and the
-   # second variable is the callable object (see PEP 333).
+
    def hello_world_app(environ, start_response):
-       status = '200 OK'  # HTTP Status
-       headers = [('Content-type', 'text/plain; charset=utf-8')]  # HTTP Headers
+       status = "200 OK"  # HTTP Status
+       headers = [("Content-type", "text/plain; charset=utf-8")]  # HTTP Headers
        start_response(status, headers)
 
        # The returned object is going to be printed
        return [b"Hello World"]
 
-   with make_server('', 8000, hello_world_app) as httpd:
+   with make_server("", 8000, hello_world_app) as httpd:
        print("Serving on port 8000...")
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+
+Example of a WSGI application serving the current directory, accept optional
+directory and port number (default: 8000) on the command line::
+
+    """
+    Small wsgiref based web server. Takes a path to serve from and an
+    optional port number (defaults to 8000), then tries to serve files.
+    MIME types are guessed from the file names, 404 errors are raised
+    if the file is not found.
+    """
+    import mimetypes
+    import os
+    import sys
+    from wsgiref import simple_server, util
+
+
+    def app(environ, respond):
+        # Get the file name and MIME type
+        fn = os.path.join(path, environ["PATH_INFO"][1:])
+        if "." not in fn.split(os.path.sep)[-1]:
+            fn = os.path.join(fn, "index.html")
+        mime_type = mimetypes.guess_file_type(fn)[0]
+
+        # Return 200 OK if file exists, otherwise 404 Not Found
+        if os.path.exists(fn):
+            respond("200 OK", [("Content-Type", mime_type)])
+            return util.FileWrapper(open(fn, "rb"))
+        else:
+            respond("404 Not Found", [("Content-Type", "text/plain")])
+            return [b"not found"]
+
+
+    if __name__ == "__main__":
+        # Get the path and port from command-line arguments
+        path = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
+        port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
+
+        # Make and start the server until control-c
+        httpd = simple_server.make_server("", port, app)
+        print(f"Serving {path} on port {port}, control-C to stop")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("Shutting down.")
+            httpd.server_close()
+
+

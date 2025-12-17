@@ -17,10 +17,13 @@ document the API functions in detail.
    veryhigh.rst
    refcounting.rst
    exceptions.rst
+   extension-modules.rst
    utilities.rst
    abstract.rst
    concrete.rst
    init.rst
+   init_config.rst
    memory.rst
    objimpl.rst
    apiabiversion.rst
+   monitoring.rst

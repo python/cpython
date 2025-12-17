@@ -20,23 +20,15 @@
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
     <ItemGroup>
-        <InstallFiles Include="$(tcltkDir)bin\*.dll" Exclude="$(tcltkDir)bin\*g.dll">
-            <SourceBase>$(tcltkDir)</SourceBase>
+        <InstallFiles Include="$(TclTkLibraryDir)\**\*">
+            <SourceBase>$(TclTkLibraryDir)</SourceBase>
             <Source>!(bindpath.tcltk)</Source>
-            <TargetBase>$(tcltkDir)bin</TargetBase>
-            <Target_>DLLs\</Target_>
-            <Group>tcltk_dlls</Group>
-        </InstallFiles>
-
-        <InstallFiles Include="$(tcltkDir)lib\**\*">
-            <SourceBase>$(tcltkDir)</SourceBase>
-            <Source>!(bindpath.tcltk)</Source>
-            <TargetBase>$(tcltkDir)lib</TargetBase>
+            <TargetBase>$(TclTkLibraryDir)</TargetBase>
             <Target_>tcl\</Target_>
             <Group>tcltk_lib</Group>
         </InstallFiles>
 
-        <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\idlelib\**\*;$(PySourcePath)Lib\turtledemo\**\*"
+        <InstallFiles Include="$(PySourcePath)Lib\tkinter\**\*;$(PySourcePath)Lib\idlelib\**\*;$(PySourcePath)Lib\turtledemo\**\*;$(PySourcePath)Lib\turtle.py"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;$(PySourcePath)Lib\**\*.pyo">
             <SourceBase>$(PySourcePath)</SourceBase>
             <Source>!(bindpath.src)</Source>

@@ -1,12 +1,15 @@
 import unittest
 from test import support
+from test.support import import_helper
 import binascii
+import copy
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, is_s390x
 
-zlib = support.import_module('zlib')
+
+zlib = import_helper.import_module('zlib')
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),
@@ -14,6 +17,50 @@ requires_Compress_copy = unittest.skipUnless(
 requires_Decompress_copy = unittest.skipUnless(
         hasattr(zlib.decompressobj(), "copy"),
         'requires Decompress.copy()')
+
+
+def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+    # Register "1.2.3" as "1.2.3.0"
+    # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+    v = zlib_version.split('-', 1)[0].split('.')
+    if len(v) < 4:
+        v.append('0')
+    elif not v[-1].isnumeric():
+        v[-1] = '0'
+    return tuple(map(int, v))
+
+
+ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
+
+
+# bpo-46623: When a hardware accelerator is used (currently only on s390x),
+# using different ways to compress data with zlib can produce different
+# compressed data.
+# Simplified test_pair() code:
+#
+#   def func1(data):
+#       return zlib.compress(data)
+#
+#   def func2(data)
+#       co = zlib.compressobj()
+#       x1 = co.compress(data)
+#       x2 = co.flush()
+#       return x1 + x2
+#
+# On s390x if zlib uses a hardware accelerator, func1() creates a single
+# "final" compressed block whereas func2() produces 3 compressed blocks (the
+# last one is a final block). On other platforms with no accelerator, func1()
+# and func2() produce the same compressed data made of a single (final)
+# compressed block.
+#
+# Only the compressed data is different, the decompression returns the original
+# data:
+#
+#   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
+#
+# To simplify the skip condition, make the assumption that s390x always has an
+# accelerator, and nothing else has it.
+HW_ACCELERATED = is_s390x
 
 
 class VersionTestCase(unittest.TestCase):
@@ -72,7 +119,115 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(binascii.crc32(b'spam'), zlib.crc32(b'spam'))
 
 
-# Issue #10276 - check that inputs >=4GB are handled correctly.
+class ChecksumCombineMixin:
+    """Mixin class for testing checksum combination."""
+
+    N = 1000
+    default_iv: int
+
+    def parse_iv(self, iv):
+        """Parse an IV value.
+
+        - The default IV is returned if *iv* is None.
+        - A random IV is returned if *iv* is -1.
+        - Otherwise, *iv* is returned as is.
+        """
+        if iv is None:
+            return self.default_iv
+        if iv == -1:
+            return random.randint(1, 0x80000000)
+        return iv
+
+    def checksum(self, data, init=None):
+        """Compute the checksum of data with a given initial value.
+
+        The *init* value is parsed by ``parse_iv``.
+        """
+        iv = self.parse_iv(init)
+        return self._checksum(data, iv)
+
+    def _checksum(self, data, init):
+        raise NotImplementedError
+
+    def combine(self, a, b, blen):
+        """Combine two checksums together."""
+        raise NotImplementedError
+
+    def get_random_data(self, data_len, *, iv=None):
+        """Get a triplet (data, iv, checksum)."""
+        data = random.randbytes(data_len)
+        init = self.parse_iv(iv)
+        checksum = self.checksum(data, init)
+        return data, init, checksum
+
+    def test_combine_empty(self):
+        for _ in range(self.N):
+            a, iv, checksum = self.get_random_data(32, iv=-1)
+            res = self.combine(iv, self.checksum(a), len(a))
+            self.assertEqual(res, checksum)
+
+    def test_combine_no_iv(self):
+        for _ in range(self.N):
+            a, _, chk_a = self.get_random_data(32)
+            b, _, chk_b = self.get_random_data(64)
+            res = self.combine(chk_a, chk_b, len(b))
+            self.assertEqual(res, self.checksum(a + b))
+
+    def test_combine_no_iv_invalid_length(self):
+        a, _, chk_a = self.get_random_data(32)
+        b, _, chk_b = self.get_random_data(64)
+        checksum = self.checksum(a + b)
+        for invalid_len in [1, len(a), 48, len(b) + 1, 191]:
+            invalid_res = self.combine(chk_a, chk_b, invalid_len)
+            self.assertNotEqual(invalid_res, checksum)
+
+        self.assertRaises(TypeError, self.combine, 0, 0, "len")
+
+    def test_combine_with_iv(self):
+        for _ in range(self.N):
+            a, iv_a, chk_a_with_iv = self.get_random_data(32, iv=-1)
+            chk_a_no_iv = self.checksum(a)
+            b, iv_b, chk_b_with_iv = self.get_random_data(64, iv=-1)
+            chk_b_no_iv = self.checksum(b)
+
+            # We can represent c = COMBINE(CHK(a, iv_a), CHK(b, iv_b)) as:
+            #
+            #   c = CHK(CHK(b'', iv_a) + CHK(a) + CHK(b'', iv_b) + CHK(b))
+            #     = COMBINE(
+            #           COMBINE(CHK(b'', iv_a), CHK(a)),
+            #           COMBINE(CHK(b'', iv_b), CHK(b)),
+            #       )
+            #     = COMBINE(COMBINE(iv_a, CHK(a)), COMBINE(iv_b, CHK(b)))
+            tmp0 = self.combine(iv_a, chk_a_no_iv, len(a))
+            tmp1 = self.combine(iv_b, chk_b_no_iv, len(b))
+            expected = self.combine(tmp0, tmp1, len(b))
+            checksum = self.combine(chk_a_with_iv, chk_b_with_iv, len(b))
+            self.assertEqual(checksum, expected)
+
+
+class CRC32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 0
+
+    def _checksum(self, data, init):
+        return zlib.crc32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.crc32_combine(a, b, blen)
+
+
+class Adler32CombineTestCase(ChecksumCombineMixin, unittest.TestCase):
+
+    default_iv = 1
+
+    def _checksum(self, data, init):
+        return zlib.adler32(data, init)
+
+    def combine(self, a, b, blen):
+        return zlib.adler32_combine(a, b, blen)
+
+
+# Issue #10276 - check that inputs >=4 GiB are handled correctly.
 class ChecksumBigBufferTestCase(unittest.TestCase):
 
     @bigmemtest(size=_4G + 4, memuse=1, dry_run=False)
@@ -126,15 +281,20 @@ class ExceptionTestCase(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        # Ensure that the type disallows instantiation (bpo-43916)
+        support.check_disallow_instantiation(self, type(zlib.compressobj()))
+        support.check_disallow_instantiation(self, type(zlib.decompressobj()))
+
 
 class BaseCompressTestCase(object):
     def check_big_compress_buffer(self, size, compress_func):
         _1M = 1024 * 1024
-        # Generate 10MB worth of random, and expand it by repeating it.
+        # Generate 10 MiB worth of random, and expand it by repeating it.
         # The assumption is that zlib's memory is not big enough to exploit
         # such spread out redundancy.
-        data = b''.join([random.getrandbits(8 * _1M).to_bytes(_1M, 'little')
-                        for i in range(10)])
+        data = random.randbytes(_1M * 10)
         data = data * (size // len(data) + 1)
         try:
             compress_func(data)
@@ -178,7 +338,10 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         # compress more data
         data = HAMLET_SCENE * 128
         x = zlib.compress(data)
-        self.assertEqual(zlib.compress(bytearray(data)), x)
+        # With hardware acceleration, the compressed bytes
+        # might not be identical.
+        if not HW_ACCELERATED:
+            self.assertEqual(zlib.compress(bytearray(data)), x)
         for ob in x, bytearray(x):
             self.assertEqual(zlib.decompress(ob), data)
 
@@ -235,7 +398,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             x1 = co.compress(data)
             x2 = co.flush()
             self.assertRaises(zlib.error, co.flush) # second flush should not work
-            self.assertEqual(x1 + x2, datazip)
+            # With hardware acceleration, the compressed bytes might not
+            # be identical.
+            if not HW_ACCELERATED:
+                self.assertEqual(x1 + x2, datazip)
         for v1, v2 in ((x1, x2), (bytearray(x1), bytearray(x2))):
             dco = zlib.decompressobj()
             y1 = dco.decompress(v1 + v2)
@@ -434,22 +600,29 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_flushes(self):
         # Test flush() with the various options, using all the
         # different levels in order to provide more variations.
-        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH']
+        sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
+                    'Z_PARTIAL_FLUSH']
+
+        # Z_BLOCK has a known failure prior to 1.2.5.3
+        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
+            sync_opt.append('Z_BLOCK')
+
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
                     if hasattr(zlib, opt)]
         data = HAMLET_SCENE * 8
 
         for sync in sync_opt:
             for level in range(10):
-                obj = zlib.compressobj( level )
-                a = obj.compress( data[:3000] )
-                b = obj.flush( sync )
-                c = obj.compress( data[3000:] )
-                d = obj.flush()
-                self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
-                                 data, ("Decompress failed: flush "
-                                        "mode=%i, level=%i") % (sync, level))
-                del obj
+                with self.subTest(sync=sync, level=level):
+                    obj = zlib.compressobj( level )
+                    a = obj.compress( data[:3000] )
+                    b = obj.flush( sync )
+                    c = obj.compress( data[3000:] )
+                    d = obj.flush()
+                    self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
+                                     data, ("Decompress failed: flush "
+                                            "mode=%i, level=%i") % (sync, level))
+                    del obj
 
     @unittest.skipUnless(hasattr(zlib, 'Z_SYNC_FLUSH'),
                          'requires zlib.Z_SYNC_FLUSH')
@@ -464,18 +637,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         # Try 17K of data
         # generate random data stream
-        try:
-            # In 2.3 and later, WichmannHill is the RNG of the bug report
-            gen = random.WichmannHill()
-        except AttributeError:
-            try:
-                # 2.2 called it Random
-                gen = random.Random()
-            except AttributeError:
-                # others might simply have a single RNG
-                gen = random
-        gen.seed(1)
-        data = genblock(1, 17 * 1024, generator=gen)
+        data = random.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -625,23 +787,24 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test copying a compression object
         data0 = HAMLET_SCENE
         data1 = bytes(str(HAMLET_SCENE, "ascii").swapcase(), "ascii")
-        c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
-        bufs0 = []
-        bufs0.append(c0.compress(data0))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            c0 = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
+            bufs0 = []
+            bufs0.append(c0.compress(data0))
 
-        c1 = c0.copy()
-        bufs1 = bufs0[:]
+            c1 = func(c0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(c0.compress(data0))
-        bufs0.append(c0.flush())
-        s0 = b''.join(bufs0)
+            bufs0.append(c0.compress(data0))
+            bufs0.append(c0.flush())
+            s0 = b''.join(bufs0)
 
-        bufs1.append(c1.compress(data1))
-        bufs1.append(c1.flush())
-        s1 = b''.join(bufs1)
+            bufs1.append(c1.compress(data1))
+            bufs1.append(c1.flush())
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(zlib.decompress(s0),data0+data0)
-        self.assertEqual(zlib.decompress(s1),data0+data1)
+            self.assertEqual(zlib.decompress(s0),data0+data0)
+            self.assertEqual(zlib.decompress(s1),data0+data1)
 
     @requires_Compress_copy
     def test_badcompresscopy(self):
@@ -650,6 +813,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         c.compress(HAMLET_SCENE)
         c.flush()
         self.assertRaises(ValueError, c.copy)
+        self.assertRaises(ValueError, copy.copy, c)
+        self.assertRaises(ValueError, copy.deepcopy, c)
 
     @requires_Decompress_copy
     def test_decompresscopy(self):
@@ -659,21 +824,22 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         # Test type of return value
         self.assertIsInstance(comp, bytes)
 
-        d0 = zlib.decompressobj()
-        bufs0 = []
-        bufs0.append(d0.decompress(comp[:32]))
+        for func in lambda c: c.copy(), copy.copy, copy.deepcopy:
+            d0 = zlib.decompressobj()
+            bufs0 = []
+            bufs0.append(d0.decompress(comp[:32]))
 
-        d1 = d0.copy()
-        bufs1 = bufs0[:]
+            d1 = func(d0)
+            bufs1 = bufs0[:]
 
-        bufs0.append(d0.decompress(comp[32:]))
-        s0 = b''.join(bufs0)
+            bufs0.append(d0.decompress(comp[32:]))
+            s0 = b''.join(bufs0)
 
-        bufs1.append(d1.decompress(comp[32:]))
-        s1 = b''.join(bufs1)
+            bufs1.append(d1.decompress(comp[32:]))
+            s1 = b''.join(bufs1)
 
-        self.assertEqual(s0,s1)
-        self.assertEqual(s0,data)
+            self.assertEqual(s0,s1)
+            self.assertEqual(s0,data)
 
     @requires_Decompress_copy
     def test_baddecompresscopy(self):
@@ -683,6 +849,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         d.decompress(data)
         d.flush()
         self.assertRaises(ValueError, d.copy)
+        self.assertRaises(ValueError, copy.copy, d)
+        self.assertRaises(ValueError, copy.deepcopy, d)
 
     def test_compresspickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -750,11 +918,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        # Register "1.2.3" as "1.2.3.0"
-        v = (zlib.ZLIB_RUNTIME_VERSION + ".0").split(".", 4)
-        supports_wbits_0 = int(v[0]) > 1 or int(v[0]) == 1 \
-            and (int(v[1]) > 2 or int(v[1]) == 2
-            and (int(v[2]) > 3 or int(v[2]) == 3 and int(v[3]) >= 5))
+        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
@@ -800,20 +964,13 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj(32 + 15)
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
-
-def genblock(seed, length, step=1024, generator=random):
-    """length-byte stream of random data from a seed (in step-byte blocks)."""
-    if seed is not None:
-        generator.seed(seed)
-    randint = generator.randint
-    if length < step or step < 2:
-        step = length
-    blocks = bytes()
-    for i in range(0, length, step):
-        blocks += bytes(randint(0, 255) for x in range(step))
-    return blocks
-
-
+        for wbits in (-15, 15, 31):
+            with self.subTest(wbits=wbits):
+                expected = HAMLET_SCENE
+                actual = zlib.decompress(
+                    zlib.compress(HAMLET_SCENE, wbits=wbits), wbits=wbits
+                )
+                self.assertEqual(expected, actual)
 
 def choose_lines(source, number, seed=None, generator=random):
     """Return a list of number lines randomly chosen from the source"""
@@ -821,7 +978,6 @@ def choose_lines(source, number, seed=None, generator=random):
         generator.seed(seed)
     sources = source.split('\n')
     return [generator.choice(sources) for n in range(number)]
-
 
 
 HAMLET_SCENE = b"""
@@ -889,9 +1045,191 @@ LAERTES
 """
 
 
+class ZlibDecompressorTest(unittest.TestCase):
+    # Test adopted from test_bz2.py
+    TEXT = HAMLET_SCENE
+    DATA = zlib.compress(HAMLET_SCENE)
+    BAD_DATA = b"Not a valid deflate block"
+    BIG_TEXT = DATA * ((128 * 1024 // len(DATA)) + 1)
+    BIG_DATA = zlib.compress(BIG_TEXT)
+
+    def test_Constructor(self):
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, "ASDA")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, "notbytes")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, b"bytes", 5)
+
+    def testDecompress(self):
+        zlibd = zlib._ZlibDecompressor()
+        self.assertRaises(TypeError, zlibd.decompress)
+        text = zlibd.decompress(self.DATA)
+        self.assertEqual(text, self.TEXT)
+
+    def testDecompressChunks10(self):
+        zlibd = zlib._ZlibDecompressor()
+        text = b''
+        n = 0
+        while True:
+            str = self.DATA[n*10:(n+1)*10]
+            if not str:
+                break
+            text += zlibd.decompress(str)
+            n += 1
+        self.assertEqual(text, self.TEXT)
+
+    def testDecompressUnusedData(self):
+        zlibd = zlib._ZlibDecompressor()
+        unused_data = b"this is unused data"
+        text = zlibd.decompress(self.DATA+unused_data)
+        self.assertEqual(text, self.TEXT)
+        self.assertEqual(zlibd.unused_data, unused_data)
+
+    def testEOFError(self):
+        zlibd = zlib._ZlibDecompressor()
+        text = zlibd.decompress(self.DATA)
+        self.assertRaises(EOFError, zlibd.decompress, b"anything")
+        self.assertRaises(EOFError, zlibd.decompress, b"")
+
+    @support.skip_if_pgo_task
+    @bigmemtest(size=_4G + 100, memuse=3.3)
+    def testDecompress4G(self, size):
+        # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
+        blocksize = min(10 * 1024 * 1024, size)
+        block = random.randbytes(blocksize)
+        try:
+            data = block * ((size-1) // blocksize + 1)
+            compressed = zlib.compress(data)
+            zlibd = zlib._ZlibDecompressor()
+            decompressed = zlibd.decompress(compressed)
+            self.assertTrue(decompressed == data)
+        finally:
+            data = None
+            compressed = None
+            decompressed = None
+
+    def testPickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError):
+                pickle.dumps(zlib._ZlibDecompressor(), proto)
+
+    def testDecompressorChunksMaxsize(self):
+        zlibd = zlib._ZlibDecompressor()
+        max_length = 100
+        out = []
+
+        # Feed some input
+        len_ = len(self.BIG_DATA) - 64
+        out.append(zlibd.decompress(self.BIG_DATA[:len_],
+                                  max_length=max_length))
+        self.assertFalse(zlibd.needs_input)
+        self.assertEqual(len(out[-1]), max_length)
+
+        # Retrieve more data without providing more input
+        out.append(zlibd.decompress(b'', max_length=max_length))
+        self.assertFalse(zlibd.needs_input)
+        self.assertEqual(len(out[-1]), max_length)
+
+        # Retrieve more data while providing more input
+        out.append(zlibd.decompress(self.BIG_DATA[len_:],
+                                  max_length=max_length))
+        self.assertLessEqual(len(out[-1]), max_length)
+
+        # Retrieve remaining uncompressed data
+        while not zlibd.eof:
+            out.append(zlibd.decompress(b'', max_length=max_length))
+            self.assertLessEqual(len(out[-1]), max_length)
+
+        out = b"".join(out)
+        self.assertEqual(out, self.BIG_TEXT)
+        self.assertEqual(zlibd.unused_data, b"")
+
+    def test_decompressor_inputbuf_1(self):
+        # Test reusing input buffer after moving existing
+        # contents to beginning
+        zlibd = zlib._ZlibDecompressor()
+        out = []
+
+        # Create input buffer and fill it
+        self.assertEqual(zlibd.decompress(self.DATA[:100],
+                                        max_length=0), b'')
+
+        # Retrieve some results, freeing capacity at beginning
+        # of input buffer
+        out.append(zlibd.decompress(b'', 2))
+
+        # Add more data that fits into input buffer after
+        # moving existing data to beginning
+        out.append(zlibd.decompress(self.DATA[100:105], 15))
+
+        # Decompress rest of data
+        out.append(zlibd.decompress(self.DATA[105:]))
+        self.assertEqual(b''.join(out), self.TEXT)
+
+    def test_decompressor_inputbuf_2(self):
+        # Test reusing input buffer by appending data at the
+        # end right away
+        zlibd = zlib._ZlibDecompressor()
+        out = []
+
+        # Create input buffer and empty it
+        self.assertEqual(zlibd.decompress(self.DATA[:200],
+                                        max_length=0), b'')
+        out.append(zlibd.decompress(b''))
+
+        # Fill buffer with new data
+        out.append(zlibd.decompress(self.DATA[200:280], 2))
+
+        # Append some more data, not enough to require resize
+        out.append(zlibd.decompress(self.DATA[280:300], 2))
+
+        # Decompress rest of data
+        out.append(zlibd.decompress(self.DATA[300:]))
+        self.assertEqual(b''.join(out), self.TEXT)
+
+    def test_decompressor_inputbuf_3(self):
+        # Test reusing input buffer after extending it
+
+        zlibd = zlib._ZlibDecompressor()
+        out = []
+
+        # Create almost full input buffer
+        out.append(zlibd.decompress(self.DATA[:200], 5))
+
+        # Add even more data to it, requiring resize
+        out.append(zlibd.decompress(self.DATA[200:300], 5))
+
+        # Decompress rest of data
+        out.append(zlibd.decompress(self.DATA[300:]))
+        self.assertEqual(b''.join(out), self.TEXT)
+
+    def test_failure(self):
+        zlibd = zlib._ZlibDecompressor()
+        self.assertRaises(Exception, zlibd.decompress, self.BAD_DATA * 30)
+        # Previously, a second call could crash due to internal inconsistency
+        self.assertRaises(Exception, zlibd.decompress, self.BAD_DATA * 30)
+
+    @support.refcount_test
+    def test_refleaks_in___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        zlibd = zlib._ZlibDecompressor()
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            zlibd.__init__()
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+
 class CustomInt:
-    def __int__(self):
+    def __index__(self):
         return 100
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(zlib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

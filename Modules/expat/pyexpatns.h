@@ -26,7 +26,7 @@
  * http://lxr.mozilla.org/seamonkey/source/modules/libimg/png/mozpngconf.h#115
  *
  * The list of relevant exported symbols can be had with this command:
- * 
+ *
        nm pyexpat.so \
            | grep -v " [a-zBUA] " \
            | grep -v "_fini\|_init\|initpyexpat"
@@ -38,6 +38,9 @@
 #ifndef PYEXPATNS_H
 #define PYEXPATNS_H
 
+#define testingAccountingGetCountBytesDirect PyExpat_testingAccountingGetCountBytesDirect
+#define testingAccountingGetCountBytesIndirect PyExpat_testingAccountingGetCountBytesIndirect
+#define unsignedCharToPrintable PyExpat_unsignedCharToPrintable
 #define XML_DefaultCurrent              PyExpat_XML_DefaultCurrent
 #define XML_ErrorString                 PyExpat_XML_ErrorString
 #define XML_ExpatVersion                PyExpat_XML_ExpatVersion
@@ -79,8 +82,12 @@
 #define XmlPrologStateInit              PyExpat_XmlPrologStateInit
 #define XmlPrologStateInitExternalEntity    PyExpat_XmlPrologStateInitExternalEntity
 #define XML_ResumeParser                PyExpat_XML_ResumeParser
+#define XML_SetAllocTrackerActivationThreshold PyExpat_XML_SetAllocTrackerActivationThreshold
+#define XML_SetAllocTrackerMaximumAmplification PyExpat_XML_SetAllocTrackerMaximumAmplification
 #define XML_SetAttlistDeclHandler       PyExpat_XML_SetAttlistDeclHandler
 #define XML_SetBase                     PyExpat_XML_SetBase
+#define XML_SetBillionLaughsAttackProtectionActivationThreshold PyExpat_XML_SetBillionLaughsAttackProtectionActivationThreshold
+#define XML_SetBillionLaughsAttackProtectionMaximumAmplification PyExpat_XML_SetBillionLaughsAttackProtectionMaximumAmplification
 #define XML_SetCdataSectionHandler      PyExpat_XML_SetCdataSectionHandler
 #define XML_SetCharacterDataHandler     PyExpat_XML_SetCharacterDataHandler
 #define XML_SetCommentHandler           PyExpat_XML_SetCommentHandler
@@ -103,6 +110,7 @@
 #define XML_SetNotStandaloneHandler     PyExpat_XML_SetNotStandaloneHandler
 #define XML_SetParamEntityParsing       PyExpat_XML_SetParamEntityParsing
 #define XML_SetProcessingInstructionHandler PyExpat_XML_SetProcessingInstructionHandler
+#define XML_SetReparseDeferralEnabled   PyExpat_XML_SetReparseDeferralEnabled
 #define XML_SetReturnNSTriplet          PyExpat_XML_SetReturnNSTriplet
 #define XML_SetSkippedEntityHandler     PyExpat_XML_SetSkippedEntityHandler
 #define XML_SetStartCdataSectionHandler PyExpat_XML_SetStartCdataSectionHandler

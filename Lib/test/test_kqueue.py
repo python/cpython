@@ -5,8 +5,11 @@ import errno
 import os
 import select
 import socket
+from test import support
 import time
 import unittest
+
+from test.support import warnings_helper
 
 if not hasattr(select, "kqueue"):
     raise unittest.SkipTest("test works only on BSD")
@@ -110,9 +113,7 @@ class TestKQueue(unittest.TestCase):
 
 
     def test_queue_event(self):
-        serverSocket = socket.socket()
-        serverSocket.bind(('127.0.0.1', 0))
-        serverSocket.listen()
+        serverSocket = socket.create_server(('127.0.0.1', 0))
         client = socket.socket()
         client.setblocking(False)
         try:
@@ -208,6 +209,30 @@ class TestKQueue(unittest.TestCase):
         b.close()
         kq.close()
 
+    def test_issue30058(self):
+        # changelist must be an iterable
+        kq = select.kqueue()
+        a, b = socket.socketpair()
+        ev = select.kevent(a, select.KQ_FILTER_READ, select.KQ_EV_ADD | select.KQ_EV_ENABLE)
+
+        kq.control([ev], 0)
+        # not a list
+        kq.control((ev,), 0)
+        # __len__ is not consistent with __iter__
+        class BadList:
+            def __len__(self):
+                return 0
+            def __iter__(self):
+                for i in range(100):
+                    yield ev
+        kq.control(BadList(), 0)
+        # doesn't have __len__
+        kq.control(iter([ev]), 0)
+
+        a.close()
+        b.close()
+        kq.close()
+
     def test_close(self):
         open_file = open(__file__, "rb")
         self.addCleanup(open_file.close)
@@ -233,6 +258,24 @@ class TestKQueue(unittest.TestCase):
         kqueue = select.kqueue()
         self.addCleanup(kqueue.close)
         self.assertEqual(os.get_inheritable(kqueue.fileno()), False)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.requires_fork()
+    def test_fork(self):
+        # gh-110395: kqueue objects must be closed after fork
+        kqueue = select.kqueue()
+        if (pid := os.fork()) == 0:
+            try:
+                self.assertTrue(kqueue.closed)
+                with self.assertRaisesRegex(ValueError, "closed kqueue"):
+                    kqueue.fileno()
+            except:
+                os._exit(1)
+            finally:
+                os._exit(0)
+        else:
+            support.wait_process(pid, exitcode=0)
+            self.assertFalse(kqueue.closed)  # child done, we're still open.
 
 
 if __name__ == "__main__":

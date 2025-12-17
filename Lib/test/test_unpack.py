@@ -1,3 +1,7 @@
+import doctest
+import unittest
+
+
 doctests = """
 
 Unpack tuple
@@ -11,6 +15,13 @@ Unpack list
 
     >>> l = [4, 5, 6]
     >>> a, b, c = l
+    >>> a == 4 and b == 5 and c == 6
+    True
+
+Unpack dict
+
+    >>> d = {4: 'four', 5: 'five', 6: 'six'}
+    >>> a, b, c = d
     >>> a == 4 and b == 5 and c == 6
     True
 
@@ -55,21 +66,21 @@ Unpacking non-sequence
     >>> a, b, c = 7
     Traceback (most recent call last):
       ...
-    TypeError: 'int' object is not iterable
+    TypeError: cannot unpack non-iterable int object
 
 Unpacking tuple of wrong size
 
     >>> a, b = t
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2, got 3)
 
 Unpacking tuple of wrong size
 
     >>> a, b = l
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 2)
+    ValueError: too many values to unpack (expected 2, got 3)
 
 Unpacking sequence too short
 
@@ -129,23 +140,83 @@ Unpacking non-iterables should raise TypeError
     >>> () = 42
     Traceback (most recent call last):
       ...
-    TypeError: 'int' object is not iterable
+    TypeError: cannot unpack non-iterable int object
 
 Unpacking to an empty iterable should raise ValueError
 
     >>> () = [42]
     Traceback (most recent call last):
       ...
-    ValueError: too many values to unpack (expected 0)
+    ValueError: too many values to unpack (expected 0, got 1)
 
+Unpacking a larger iterable should raise ValuleError, but it
+should not entirely consume the iterable
+
+    >>> it = iter(range(100))
+    >>> x, y, z = it
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3)
+    >>> next(it)
+    4
+
+Unpacking unbalanced dict
+
+    >>> d = {4: 'four', 5: 'five', 6: 'six', 7: 'seven'}
+    >>> a, b, c = d
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3, got 4)
+
+Ensure that custom `__len__()` is NOT called when showing the error message
+
+    >>> class LengthTooLong:
+    ...     def __len__(self):
+    ...         return 5
+    ...     def __getitem__(self, i):
+    ...         return i*2
+    ...
+    >>> x, y, z = LengthTooLong()
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3)
+
+For evil cases like these as well, no actual count to be shown
+
+    >>> class BadLength:
+    ...     def __len__(self):
+    ...         return 1
+    ...     def __getitem__(self, i):
+    ...         return i*2
+    ...
+    >>> x, y, z = BadLength()
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 3)
 """
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=False):
-    from test import support
-    from test import test_unpack
-    support.run_doctest(test_unpack, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
+
+class TestCornerCases(unittest.TestCase):
+    def test_extended_oparg_not_ignored(self):
+        # https://github.com/python/cpython/issues/91625
+        target = "(" + "y,"*400 + ")"
+        code = f"""def unpack_400(x):
+            {target} = x
+            return y
+        """
+        ns = {}
+        exec(code, ns)
+        unpack_400 = ns["unpack_400"]
+        # Warm up the function for quickening (PEP 659)
+        for _ in range(30):
+            y = unpack_400(range(400))
+            self.assertEqual(y, 399)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

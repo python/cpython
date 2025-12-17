@@ -1,38 +1,366 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _stable:
 
-***********************************
+***********************
+C API and ABI Stability
+***********************
+
+Unless documented otherwise, Python's C API is covered by the Backwards
+Compatibility Policy, :pep:`387`.
+Most changes to it are source-compatible (typically by only adding new API).
+Changing existing API or removing API is only done after a deprecation period
+or to fix serious issues.
+
+CPython's Application Binary Interface (ABI) is forward- and
+backwards-compatible across a minor release (if these are compiled the same
+way; see :ref:`stable-abi-platform` below).
+So, code compiled for Python 3.10.0 will work on 3.10.8 and vice versa,
+but will need to be compiled separately for 3.9.x and 3.11.x.
+
+There are two tiers of C API with different stability expectations:
+
+- :ref:`Unstable API <unstable-c-api>`, may change in minor versions without
+  a deprecation period. It is marked by the ``PyUnstable`` prefix in names.
+- :ref:`Limited API <limited-c-api>`, is compatible across several minor releases.
+  When :c:macro:`Py_LIMITED_API` is defined, only this subset is exposed
+  from ``Python.h``.
+
+These are discussed in more detail below.
+
+Names prefixed by an underscore, such as ``_Py_InternalState``,
+are private API that can change without notice even in patch releases.
+If you need to use this API, consider reaching out to
+`CPython developers <https://discuss.python.org/c/core-dev/c-api/30>`_
+to discuss adding public API for your use case.
+
+.. _unstable-c-api:
+
+Unstable C API
+==============
+
+.. index:: single: PyUnstable
+
+Any API named with the ``PyUnstable`` prefix exposes CPython implementation
+details, and may change in every minor release (e.g. from 3.9 to 3.10) without
+any deprecation warnings.
+However, it will not change in a bugfix release (e.g. from 3.10.0 to 3.10.1).
+
+It is generally intended for specialized, low-level tools like debuggers.
+
+Projects that use this API are expected to follow
+CPython development and spend extra effort adjusting to changes.
+
+.. _stable-application-binary-interface:
+
 Stable Application Binary Interface
-***********************************
+===================================
 
-Traditionally, the C API of Python will change with every release.  Most changes
-will be source-compatible, typically by only adding API, rather than changing
-existing API or removing API (although some interfaces do get removed after
-being deprecated first).
+For simplicity, this document talks about *extensions*, but the Limited API
+and Stable ABI work the same way for all uses of the API – for example,
+embedding Python.
 
-Unfortunately, the API compatibility does not extend to binary compatibility
-(the ABI). The reason is primarily the evolution of struct definitions, where
-addition of a new field, or changing the type of a field, might not break the
-API, but can break the ABI.  As a consequence, extension modules need to be
-recompiled for every Python release (although an exception is possible on Unix
-when none of the affected interfaces are used). In addition, on Windows,
-extension modules link with a specific pythonXY.dll and need to be recompiled to
-link with a newer one.
+.. _limited-c-api:
 
-Since Python 3.2, a subset of the API has been declared to guarantee a stable
-ABI. Extension modules wishing to use this API (called "limited API") need to
-define ``Py_LIMITED_API``. A number of interpreter details then become hidden
-from the extension module; in return, a module is built that works on any 3.x
-version (x>=2) without recompilation.
+Limited C API
+-------------
 
-In some cases, the stable ABI needs to be extended with new functions.
-Extension modules wishing to use these new APIs need to set ``Py_LIMITED_API``
-to the ``PY_VERSION_HEX`` value (see :ref:`apiabiversion`) of the minimum Python
-version they want to support (e.g. ``0x03030000`` for Python 3.3). Such modules
-will work on all subsequent Python releases, but fail to load (because of
-missing symbols) on the older releases.
+Python 3.2 introduced the *Limited API*, a subset of Python's C API.
+Extensions that only use the Limited API can be
+compiled once and be loaded on multiple versions of Python.
+Contents of the Limited API are :ref:`listed below <limited-api-list>`.
 
-As of Python 3.2, the set of functions available to the limited API is
-documented in :pep:`384`.  In the C API documentation, API elements that are not
-part of the limited API are marked as "Not part of the limited API."
+.. c:macro:: Py_LIMITED_API
+
+   Define this macro before including ``Python.h`` to opt in to only use
+   the Limited API, and to select the Limited API version.
+
+   Define ``Py_LIMITED_API`` to the value of :c:macro:`PY_VERSION_HEX`
+   corresponding to the lowest Python version your extension supports.
+   The extension will be ABI-compatible with all Python 3 releases
+   from the specified one onward, and can use Limited API introduced up to that
+   version.
+
+   Rather than using the ``PY_VERSION_HEX`` macro directly, hardcode a minimum
+   minor version (e.g. ``0x030A0000`` for Python 3.10) for stability when
+   compiling with future Python versions.
+
+   You can also define ``Py_LIMITED_API`` to ``3``. This works the same as
+   ``0x03020000`` (Python 3.2, the version that introduced Limited API).
+
+
+.. _stable-abi:
+
+Stable ABI
+----------
+
+To enable this, Python provides a *Stable ABI*: a set of symbols that will
+remain ABI-compatible across Python 3.x versions.
+
+.. note::
+
+   The Stable ABI prevents ABI issues, like linker errors due to missing
+   symbols or data corruption due to changes in structure layouts or function
+   signatures.
+   However, other changes in Python can change the *behavior* of extensions.
+   See Python's Backwards Compatibility Policy (:pep:`387`) for details.
+
+The Stable ABI contains symbols exposed in the :ref:`Limited API
+<limited-c-api>`, but also other ones – for example, functions necessary to
+support older versions of the Limited API.
+
+On Windows, extensions that use the Stable ABI should be linked against
+``python3.dll`` rather than a version-specific library such as
+``python39.dll``.
+
+On some platforms, Python will look for and load shared library files named
+with the ``abi3`` tag (e.g. ``mymodule.abi3.so``).
+It does not check if such extensions conform to a Stable ABI.
+The user (or their packaging tools) need to ensure that, for example,
+extensions built with the 3.10+ Limited API are not installed for lower
+versions of Python.
+
+All functions in the Stable ABI are present as functions in Python's shared
+library, not solely as macros. This makes them usable from languages that don't
+use the C preprocessor.
+
+
+Limited API Scope and Performance
+---------------------------------
+
+The goal for the Limited API is to allow everything that is possible with the
+full C API, but possibly with a performance penalty.
+
+For example, while :c:func:`PyList_GetItem` is available, its “unsafe” macro
+variant :c:func:`PyList_GET_ITEM` is not.
+The macro can be faster because it can rely on version-specific implementation
+details of the list object.
+
+Without ``Py_LIMITED_API`` defined, some C API functions are inlined or
+replaced by macros.
+Defining ``Py_LIMITED_API`` disables this inlining, allowing stability as
+Python's data structures are improved, but possibly reducing performance.
+
+By leaving out the ``Py_LIMITED_API`` definition, it is possible to compile
+a Limited API extension with a version-specific ABI. This can improve
+performance for that Python version, but will limit compatibility.
+Compiling with ``Py_LIMITED_API`` will then yield an extension that can be
+distributed where a version-specific one is not available – for example,
+for prereleases of an upcoming Python version.
+
+
+Limited API Caveats
+-------------------
+
+Note that compiling with ``Py_LIMITED_API`` is *not* a complete guarantee that
+code conforms to the :ref:`Limited API <limited-c-api>` or the :ref:`Stable ABI
+<stable-abi>`. ``Py_LIMITED_API`` only covers definitions, but an API also
+includes other issues, such as expected semantics.
+
+One issue that ``Py_LIMITED_API`` does not guard against is calling a function
+with arguments that are invalid in a lower Python version.
+For example, consider a function that starts accepting ``NULL`` for an
+argument. In Python 3.9, ``NULL`` now selects a default behavior, but in
+Python 3.8, the argument will be used directly, causing a ``NULL`` dereference
+and crash. A similar argument works for fields of structs.
+
+Another issue is that some struct fields are currently not hidden when
+``Py_LIMITED_API`` is defined, even though they're part of the Limited API.
+
+For these reasons, we recommend testing an extension with *all* minor Python
+versions it supports, and preferably to build with the *lowest* such version.
+
+We also recommend reviewing documentation of all used API to check
+if it is explicitly part of the Limited API. Even with ``Py_LIMITED_API``
+defined, a few private declarations are exposed for technical reasons (or
+even unintentionally, as bugs).
+
+Also note that the Limited API is not necessarily stable: compiling with
+``Py_LIMITED_API`` with Python 3.8 means that the extension will
+run with Python 3.12, but it will not necessarily *compile* with Python 3.12.
+In particular, parts of the Limited API may be deprecated and removed,
+provided that the Stable ABI stays stable.
+
+
+.. _stable-abi-platform:
+
+Platform Considerations
+=======================
+
+ABI stability depends not only on Python, but also on the compiler used,
+lower-level libraries and compiler options. For the purposes of
+the :ref:`Stable ABI <stable-abi>`, these details define a “platform”. They
+usually depend on the OS type and processor architecture
+
+It is the responsibility of each particular distributor of Python
+to ensure that all Python versions on a particular platform are built
+in a way that does not break the Stable ABI.
+This is the case with Windows and macOS releases from ``python.org`` and many
+third-party distributors.
+
+
+ABI Checking
+============
+
+.. versionadded:: 3.15
+
+Python includes a rudimentary check for ABI compatibility.
+
+This check is not comprehensive.
+It only guards against common cases of incompatible modules being
+installed for the wrong interpreter.
+It also does not take :ref:`platform incompatibilities <stable-abi-platform>`
+into account.
+It can only be done after an extension is successfully loaded.
+
+Despite these limitations, it is recommended that extension modules use this
+mechanism, so that detectable incompatibilities raise exceptions rather than
+crash.
+
+Most modules can use this check via the :c:data:`Py_mod_abi`
+slot and the :c:macro:`PyABIInfo_VAR` macro, for example like this:
+
+.. code-block:: c
+
+   PyABIInfo_VAR(abi_info);
+
+   static PyModuleDef_Slot mymodule_slots[] = {
+      {Py_mod_abi, &abi_info},
+      ...
+   };
+
+
+The full API is described below for advanced use cases.
+
+.. c:function:: int PyABIInfo_Check(PyABIInfo *info, const char *module_name)
+
+   Verify that the given *info* is compatible with the currently running
+   interpreter.
+
+   Return 0 on success. On failure, raise an exception and return -1.
+
+   If the ABI is incompatible, the raised exception will be :py:exc:`ImportError`.
+
+   The *module_name* argument can be ``NULL``, or point to a NUL-terminated
+   UTF-8-encoded string used for error messages.
+
+   Note that if *info* describes the ABI that the current code uses (as defined
+   by :c:macro:`PyABIInfo_VAR`, for example), using any other Python C API
+   may lead to crashes.
+   In particular, it is not safe to examine the raised exception.
+
+   .. versionadded:: 3.15
+
+.. c:macro:: PyABIInfo_VAR(NAME)
+
+   Define a static :c:struct:`PyABIInfo` variable with the given *NAME* that
+   describes the ABI that the current code will use.
+   This macro expands to:
+
+   .. code-block:: c
+
+      static PyABIInfo NAME = {
+          1, 0,
+          PyABIInfo_DEFAULT_FLAGS,
+          PY_VERSION_HEX,
+          PyABIInfo_DEFAULT_ABI_VERSION
+      }
+
+   .. versionadded:: 3.15
+
+.. c:type:: PyABIInfo
+
+   .. c:member:: uint8_t abiinfo_major_version
+
+      The major version of :c:struct:`PyABIInfo`. Can be set to:
+
+      * ``0`` to skip all checking, or
+      * ``1`` to specify this version of :c:struct:`!PyABIInfo`.
+
+   .. c:member:: uint8_t abiinfo_minor_version
+
+      The minor version of :c:struct:`PyABIInfo`.
+      Must be set to ``0``; larger values are reserved for backwards-compatible
+      future versions of :c:struct:`!PyABIInfo`.
+
+   .. c:member:: uint16_t flags
+
+      .. c:namespace:: NULL
+
+      This field is usually set to the following macro:
+
+      .. c:macro:: PyABIInfo_DEFAULT_FLAGS
+
+         Default flags, based on current values of macros such as
+         :c:macro:`Py_LIMITED_API` and :c:macro:`Py_GIL_DISABLED`.
+
+      Alternately, the field can be set to the following flags, combined
+      by bitwise OR.
+      Unused bits must be set to zero.
+
+      ABI variant -- one of:
+
+         .. c:macro:: PyABIInfo_STABLE
+
+            Specifies that the stable ABI is used.
+
+         .. c:macro:: PyABIInfo_INTERNAL
+
+            Specifies ABI specific to a particular build of CPython.
+            Internal use only.
+
+      Free-threading compatibility -- one of:
+
+         .. c:macro:: PyABIInfo_FREETHREADED
+
+            Specifies ABI compatible with free-threading builds of CPython.
+            (That is, ones compiled with :option:`--disable-gil`; with ``t``
+            in :py:data:`sys.abiflags`)
+
+         .. c:macro:: PyABIInfo_GIL
+
+            Specifies ABI compatible with non-free-threading builds of CPython
+            (ones compiled *without* :option:`--disable-gil`).
+
+   .. c:member:: uint32_t build_version
+
+      The version of the Python headers used to build the code, in the format
+      used by :c:macro:`PY_VERSION_HEX`.
+
+      This can be set to ``0`` to skip any checks related to this field.
+      This option is meant mainly for projects that do not use the CPython
+      headers directly, and do not emulate a specific version of them.
+
+   .. c:member:: uint32_t abi_version
+
+      The ABI version.
+
+      For the Stable ABI, this field should be the value of
+      :c:macro:`Py_LIMITED_API`
+      (except if :c:macro:`Py_LIMITED_API` is ``3``; use
+      :c:expr:`Py_PACK_VERSION(3, 2)` in that case).
+
+      Otherwise, it should be set to :c:macro:`PY_VERSION_HEX`.
+
+      It can also be set to ``0`` to skip any checks related to this field.
+
+      .. c:namespace:: NULL
+
+      .. c:macro:: PyABIInfo_DEFAULT_ABI_VERSION
+
+         The value that should be used for this field, based on current
+         values of macros such as :c:macro:`Py_LIMITED_API`,
+         :c:macro:`PY_VERSION_HEX` and :c:macro:`Py_GIL_DISABLED`.
+
+   .. versionadded:: 3.15
+
+
+.. _limited-api-list:
+
+Contents of Limited API
+=======================
+
+
+Currently, the :ref:`Limited API <limited-c-api>` includes the following items:
+
+.. limited-api-list::

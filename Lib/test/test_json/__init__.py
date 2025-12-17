@@ -4,10 +4,12 @@ import doctest
 import unittest
 
 from test import support
+from test.support import import_helper
+
 
 # import json with and without accelerations
-cjson = support.import_fresh_module('json', fresh=['_json'])
-pyjson = support.import_fresh_module('json', blocked=['_json'])
+cjson = import_helper.import_fresh_module('json', fresh=['_json'])
+pyjson = import_helper.import_fresh_module('json', blocked=['_json'])
 # JSONDecodeError is cached inside the _json module
 cjson.JSONDecodeError = cjson.decoder.JSONDecodeError = json.JSONDecodeError
 
@@ -43,6 +45,16 @@ class TestCTest(CTest):
         self.assertEqual(self.json.encoder.c_make_encoder.__module__, '_json')
         self.assertEqual(self.json.encoder.encode_basestring_ascii.__module__,
                          '_json')
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(json, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def load_tests(loader, _, pattern):

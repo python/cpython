@@ -4,39 +4,47 @@ Contributing to Python
 Build Status
 ------------
 
-- master
+- `Buildbot status overview <https://buildbot.python.org/#/release_status>`_
 
-  + `Stable buildbots <http://buildbot.python.org/3.x.stable/>`_
+- `GitHub Actions status <https://github.com/python/cpython/actions/workflows/build.yml>`_
 
-- 3.6
 
-  + `Stable buildbots <http://buildbot.python.org/3.6.stable/>`_
-
-- 3.5
-
-  + `Stable buildbots <http://buildbot.python.org/3.5.stable/>`_
-
-- 2.7
-
-  + `Stable buildbots <http://buildbot.python.org/2.7.stable/>`_
+Thank You
+---------
+First off, thanks for contributing to the maintenance of the Python programming
+language and the CPython interpreter! Even if your contribution is not
+ultimately accepted, the fact you put time and effort into helping out is
+greatly appreciated.
 
 
 Contribution Guidelines
 -----------------------
-Please read the `devguide <https://cpython-devguide.readthedocs.io/>`_ for
+Please read the `devguide <https://devguide.python.org/>`_ for
 guidance on how to contribute to this project. The documentation covers
 everything from how to build the code to submitting a pull request. There are
 also suggestions on how you can most effectively help the project.
 
 Please be aware that our workflow does deviate slightly from the typical GitHub
 project. Details on how to properly submit a pull request are covered in
-`Lifecycle of a Pull Request <https://cpython-devguide.readthedocs.io/pullrequest.html>`_.
-One key point is to keep comments on GitHub to only those related to the reviewing
-the code in the pull request. All other discussions -- e.g. about the issue being
-fixed -- should happen on bugs.python.org.
+`Lifecycle of a Pull Request <https://devguide.python.org/getting-started/pull-request-lifecycle.html>`_.
+We utilize various bots and status checks to help with this, so do follow the
+comments they leave and their "Details" links, respectively.
 
-If you are making a code contribution or large documentation contribution,
-please feel free to add yourself to the ``Misc/ACKS`` file alphabetically.
+The final key part of our workflow is that all discussions that are not
+directly related to the code in the pull request should happen on
+`GitHub Issues <https://github.com/python/cpython/issues>`__, generally in the
+pull request's parent issue.
+
+
+Setting Expectations
+--------------------
+Due to the fact that this project is run by volunteers,
+unfortunately we cannot make any guarantees as to if
+or when a core developer will get around to reviewing your pull request.
+If no core developer has done a review or responded to changes made because of a
+"changes requested" review within a month, you can ask for someone to
+review your pull request via a post in the `Core Development Discourse
+category <https://discuss.python.org/c/core-dev/23>`__.
 
 
 Code of Conduct
