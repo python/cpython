@@ -40,7 +40,7 @@ _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 _special_method_names = _opcode.get_special_method_names()
 _common_constants = [builtins.AssertionError, builtins.NotImplementedError,
-                     builtins.tuple, builtins.all, builtins.any]
+                     builtins.tuple, builtins.all, builtins.any, builtins.list]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]

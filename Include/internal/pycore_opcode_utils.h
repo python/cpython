@@ -73,7 +73,8 @@ extern "C" {
 #define CONSTANT_BUILTIN_TUPLE 2
 #define CONSTANT_BUILTIN_ALL 3
 #define CONSTANT_BUILTIN_ANY 4
-#define NUM_COMMON_CONSTANTS 5
+#define CONSTANT_BUILTIN_LIST 5
+#define NUM_COMMON_CONSTANTS 6
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0
