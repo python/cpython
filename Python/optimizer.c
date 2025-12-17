@@ -1977,7 +1977,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
 #else
         fprintf(out, "        <tr><td port=\"i%d\" border=\"1\" >%s op0=%" PRIu64 "</td></tr>\n", i, opname, inst->operand0);
 #endif
-        if (inst->opcode == _EXIT_TRACE || inst->opcode == _JUMP_TO_TOP) {
+        if (base_opcode == _EXIT_TRACE || base_opcode == _JUMP_TO_TOP) {
             break;
         }
     }
@@ -1990,7 +1990,7 @@ executor_to_gv(_PyExecutorObject *executor, FILE *out)
     for (uint32_t i = 0; i < executor->code_size; i++) {
         _PyUOpInstruction const *inst = &executor->trace[i];
         uint16_t base_opcode = _PyUop_Uncached[inst->opcode];
-        uint16_t flags = _PyUop_Flags[inst->opcode];
+        uint16_t flags = _PyUop_Flags[base_opcode];
         _PyExitData *exit = NULL;
         if (base_opcode == _EXIT_TRACE) {
             exit = (_PyExitData *)inst->operand0;
