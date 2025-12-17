@@ -556,6 +556,20 @@ class ContextTest(unittest.TestCase):
 
         ctx.run(fun)
 
+    def test_context_eq_reentrant_contextvar_set(self):
+        var = contextvars.ContextVar("v")
+        ctx1 = contextvars.Context()
+        ctx2 = contextvars.Context()
+
+        class ReentrantEq:
+            def __eq__(self, other):
+                ctx1.run(lambda: var.set(object()))
+                return True
+
+        ctx1.run(var.set, ReentrantEq())
+        ctx2.run(var.set, object())
+        ctx1 == ctx2
+
 
 # HAMT Tests
 
