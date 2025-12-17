@@ -287,7 +287,9 @@ atexit_unregister(PyObject *module, PyObject *func)
             continue;
         }
 
-        int eq = PyObject_RichCompareBool(cb->func, func, Py_EQ);
+        PyObject *to_compare = Py_NewRef(cb->func);
+        int eq = PyObject_RichCompareBool(to_compare, func, Py_EQ);
+        Py_DECREF(to_compare);
         if (eq < 0) {
             return NULL;
         }
