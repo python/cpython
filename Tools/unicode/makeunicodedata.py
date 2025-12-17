@@ -79,10 +79,10 @@ BIDIRECTIONAL_NAMES = [ "", "L", "LRE", "LRO", "R", "AL", "RLE", "RLO",
     "PDF", "EN", "ES", "ET", "AN", "CS", "NSM", "BN", "B", "S", "WS",
     "ON", "LRI", "RLI", "FSI", "PDI" ]
 
-GRAPHEME_CLUSTER_NAMES = [ 'CR', 'LF', 'Control', 'Extend', 'ZWJ',
+# "Any" needs to be the first entry, see the comment in makeunicodedata
+GRAPHEME_CLUSTER_NAMES = [ 'Any', 'CR', 'LF', 'Control', 'Extend', 'ZWJ',
     'Regional_Indicator', 'Prepend', 'SpacingMark', 'L', 'V', 'T',
-    'LV', 'LVT', 'E_Base', 'E_Modifier', 'Glue_After_Zwj', 'E_Base_GAZ',
-    'Any' ]
+    'LV', 'LVT', 'E_Base', 'E_Modifier', 'Glue_After_Zwj', 'E_Base_GAZ' ]
 
 # "N" needs to be the first entry, see the comment in makeunicodedata
 EASTASIANWIDTH_NAMES = [ "N", "H", "W", "Na", "A", "F" ]
@@ -154,7 +154,8 @@ def makeunicodedata(unicode, trace):
     # EastAsianWidth.txt
     # see https://unicode.org/reports/tr11/#Unassigned
     assert EASTASIANWIDTH_NAMES[0] == "N"
-    dummy = (0, 0, 0, 0, 0, 0, GRAPHEME_CLUSTER_NAMES.index('Any'))
+    assert GRAPHEME_CLUSTER_NAMES[0] == "Any"
+    dummy = (0, 0, 0, 0, 0, 0, 0)
     table = [dummy]
     cache = {0: dummy}
     index = [0] * len(unicode.chars)

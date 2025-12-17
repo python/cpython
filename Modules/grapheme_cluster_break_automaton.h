@@ -1,4 +1,5 @@
 typedef enum {
+    Any,
     CR,
     LF,
     Control,
@@ -16,7 +17,6 @@ typedef enum {
     E_Modifier,
     Glue_After_Zwj,
     E_Base_GAZ,
-    Any,
     eot
 } GraphemeClusterBreakType;
 
