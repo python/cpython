@@ -1697,6 +1697,19 @@ class LargeArrayTest(unittest.TestCase):
 
         self.assertEqual(len(victim), 0)
 
+        # Test case where array is shrunk but not completely cleared
+        victim2 = array.array('b', [1, 2, 3])
+
+        class ShrinkIndex:
+            def __index__(self):
+                # Pop two elements, making array size 1, so index 1 is out of bounds
+                victim2.pop()
+                victim2.pop()
+                return 0
+
+        with self.assertRaises(IndexError):
+            victim2[1] = ShrinkIndex()
+
 
 if __name__ == "__main__":
     unittest.main()

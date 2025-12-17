@@ -222,10 +222,10 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity after PyArg_Parse which may call user-defined
+    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
      * __index__ on v, which might modify the array buffer. See gh-142555.
      */
-    if (i >= 0 && ap->ob_item == NULL) {
+    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
         return -1;
