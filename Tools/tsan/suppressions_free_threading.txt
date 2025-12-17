@@ -23,9 +23,6 @@ race_top:write_thread_id
 # gh-129068: race on shared range iterators (test_free_threading.test_zip.ZipThreading.test_threading)
 race_top:rangeiter_next
 
-# gh-129748: test.test_free_threading.test_slots.TestSlots.test_object
-race_top:mi_block_set_nextx
-
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
 
