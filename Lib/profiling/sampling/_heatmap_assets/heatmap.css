@@ -5,6 +5,18 @@
    This file extends the shared foundation with heatmap-specific styles.
    ========================================================================== */
 
+/* Heatmap heat colors - using base.css colors with 60% opacity */
+[data-theme="dark"] {
+  --heat-1: rgba(90, 123, 167, 0.60);
+  --heat-2: rgba(106, 148, 168, 0.60);
+  --heat-3: rgba(122, 172, 172, 0.60);
+  --heat-4: rgba(142, 196, 152, 0.60);
+  --heat-5: rgba(168, 216, 136, 0.60);
+  --heat-6: rgba(200, 222, 122, 0.60);
+  --heat-7: rgba(244, 212, 93, 0.60);
+  --heat-8: rgba(255, 122, 69, 0.60);
+}
+
 /* --------------------------------------------------------------------------
    Layout Overrides (Heatmap-specific)
    -------------------------------------------------------------------------- */
