@@ -1,1 +1,1 @@
-Fix reference cycle in exhausted generator frames
+Fix reference cycle in exhausted generator frames. Patch by Savannah Ostrowski.
