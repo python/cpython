@@ -432,6 +432,15 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
         return;
     }
+    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location >> 12);
+    if (page_delta >= -(1L << 20) &&
+        page_delta < (1L << 20))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
+        patch_aarch64_21rx(location, relaxed);
+        loc32[1] = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
+        return;
+    }
     relaxed = value - (uintptr_t)location;
     if ((relaxed & 0x3) == 0 &&
         (int64_t)relaxed >= -(1L << 19) &&
