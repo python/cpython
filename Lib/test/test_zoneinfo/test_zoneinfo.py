@@ -1559,16 +1559,17 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         class EvilZoneInfo(self.klass):
             pass
 
+        # Must be set after the class creation.
         EvilZoneInfo._weak_cache = BombDescriptor()
 
-        zone1 = EvilZoneInfo("America/Los_Angeles")
-
-        self.assertEqual(str(zone1), "America/Los_Angeles")
+        key = "America/Los_Angeles"
+        zone1 = EvilZoneInfo(key)
+        self.assertEqual(str(zone1), key)
 
         EvilZoneInfo.clear_cache()
-
-        zone2 = EvilZoneInfo("America/Los_Angeles")
-        self.assertEqual(str(zone2), "America/Los_Angeles")
+        zone2 = EvilZoneInfo(key)
+        self.assertEqual(str(zone2), key)
+        self.assertIsNot(zone2, zone1)
 
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
