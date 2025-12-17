@@ -167,24 +167,23 @@ def makeunicodedata(unicode, trace):
 
     for char in unicode.chars:
         record = unicode.table[char]
+        eastasianwidth = EASTASIANWIDTH_NAMES.index(unicode.widths[char] or 'N')
+        graphemebreak = GRAPHEME_CLUSTER_NAMES.index(unicode.grapheme_breaks[char] or 'Any')
         if record:
             # extract database properties
             category = CATEGORY_NAMES.index(record.general_category)
             combining = int(record.canonical_combining_class)
             bidirectional = BIDIRECTIONAL_NAMES.index(record.bidi_class)
             mirrored = record.bidi_mirrored == "Y"
-            eastasianwidth = EASTASIANWIDTH_NAMES.index(record.east_asian_width)
             normalizationquickcheck = record.quick_check
-            graphemebreak = record.grapheme_break
             item = (
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck, graphemebreak
                 )
-        elif unicode.widths[char] is not None:
+        elif eastasianwidth or unicode.grapheme_breaks[char] is not None:
             # an unassigned but reserved character, with a known
-            # east_asian_width
-            eastasianwidth = EASTASIANWIDTH_NAMES.index(unicode.widths[char])
-            item = (0, 0, 0, 0, eastasianwidth, 0, GRAPHEME_CLUSTER_NAMES.index('Any'))
+            # east_asian_width or grapheme_break
+            item = (0, 0, 0, 0, eastasianwidth, 0, graphemebreak)
         else:
             continue
 
@@ -910,11 +909,9 @@ class UcdRecord:
     # We store them as a bitmask.
     quick_check: int
 
-    grapheme_break: int
-
 
 def from_row(row: List[str]) -> UcdRecord:
-    return UcdRecord(*row, None, set(), 0, GRAPHEME_CLUSTER_NAMES.index('Any'))
+    return UcdRecord(*row, None, set(), 0)
 
 
 # --------------------------------------------------------------------
@@ -1090,9 +1087,10 @@ class UnicodeData:
                     cf[c] = [int(char, 16) for char in data[2].split()]
 
         if version != "3.2.0":
+            grapheme_breaks = [None] * 0x110000
             for char, (prop,) in UcdFile(GRAPHEME_CLUSTER_BREAK, version).expanded():
-                if table[char] is not None:
-                    table[char].grapheme_break = GRAPHEME_CLUSTER_NAMES.index(prop)
+                grapheme_breaks[char] = prop
+            self.grapheme_breaks = grapheme_breaks
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1
