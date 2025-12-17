@@ -88,7 +88,8 @@ copy_stack_chunks(RemoteUnwinderObject *unwinder,
         return -1;
     }
 
-    while (chunk_addr != 0) {
+    const size_t MAX_STACK_CHUNKS = 4096;
+    while (chunk_addr != 0 && count < MAX_STACK_CHUNKS) {
         // Grow array if needed
         if (count >= max_chunks) {
             max_chunks *= 2;
@@ -128,6 +129,7 @@ void *
 find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr)
 {
     for (size_t i = 0; i < chunks->count; ++i) {
+        assert(chunks->chunks[i].size > offsetof(_PyStackChunk, data));
         uintptr_t base = chunks->chunks[i].remote_addr + offsetof(_PyStackChunk, data);
         size_t payload = chunks->chunks[i].size - offsetof(_PyStackChunk, data);
 
@@ -209,7 +211,13 @@ parse_frame_object(
 #endif
 
     *address_of_code_object = code_object;
-    return parse_code_object(unwinder, result, code_object, instruction_pointer, previous_frame, tlbc_index);
+
+    CodeObjectContext code_ctx = {
+        .code_addr = code_object,
+        .instruction_pointer = instruction_pointer,
+        .tlbc_index = tlbc_index,
+    };
+    return parse_code_object(unwinder, result, &code_ctx);
 }
 
 int
@@ -246,7 +254,12 @@ parse_frame_from_chunks(
     }
 #endif
 
-    return parse_code_object(unwinder, result, code_object, instruction_pointer, previous_frame, tlbc_index);
+    CodeObjectContext code_ctx = {
+        .code_addr = code_object,
+        .instruction_pointer = instruction_pointer,
+        .tlbc_index = tlbc_index,
+    };
+    return parse_code_object(unwinder, result, &code_ctx);
 }
 
 /* ============================================================================
@@ -256,105 +269,80 @@ parse_frame_from_chunks(
 int
 process_frame_chain(
     RemoteUnwinderObject *unwinder,
-    uintptr_t initial_frame_addr,
-    StackChunkList *chunks,
-    PyObject *frame_info,
-    uintptr_t base_frame_addr,
-    uintptr_t gc_frame,
-    uintptr_t last_profiled_frame,
-    int *stopped_at_cached_frame,
-    uintptr_t *frame_addrs,      // optional: C array to receive frame addresses
-    Py_ssize_t *num_addrs,       // in/out: current count / updated count
-    Py_ssize_t max_addrs,        // max capacity of frame_addrs array
-    uintptr_t *out_last_frame_addr)  // optional: receives last frame address visited
+    FrameWalkContext *ctx)
 {
-    uintptr_t frame_addr = initial_frame_addr;
+    uintptr_t frame_addr = ctx->frame_addr;
     uintptr_t prev_frame_addr = 0;
-    uintptr_t last_frame_addr = 0;  // Track last frame visited for validation
+    uintptr_t last_frame_addr = 0;
     const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
+    assert(MAX_FRAMES > 0 && MAX_FRAMES < 10000);
 
-    // Initialize output parameters
-    if (stopped_at_cached_frame) {
-        *stopped_at_cached_frame = 0;
-    }
-    if (out_last_frame_addr) {
-        *out_last_frame_addr = 0;
-    }
+    ctx->stopped_at_cached_frame = 0;
+    ctx->last_frame_visited = 0;
 
-    // Quick check: if current_frame == last_profiled_frame, entire stack is unchanged
-    if (last_profiled_frame != 0 && initial_frame_addr == last_profiled_frame) {
-        if (stopped_at_cached_frame) {
-            *stopped_at_cached_frame = 1;
-        }
+    if (ctx->last_profiled_frame != 0 && ctx->frame_addr == ctx->last_profiled_frame) {
+        ctx->stopped_at_cached_frame = 1;
         return 0;
     }
 
     while ((void*)frame_addr != NULL) {
-        // Check if we've reached the cached frame - if so, stop here
-        if (last_profiled_frame != 0 && frame_addr == last_profiled_frame) {
-            if (stopped_at_cached_frame) {
-                *stopped_at_cached_frame = 1;
-            }
+        if (ctx->last_profiled_frame != 0 && frame_addr == ctx->last_profiled_frame) {
+            ctx->stopped_at_cached_frame = 1;
             break;
         }
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
-        last_frame_addr = frame_addr;  // Remember this frame address
+        last_frame_addr = frame_addr;
 
         if (++frame_count > MAX_FRAMES) {
             PyErr_SetString(PyExc_RuntimeError, "Too many stack frames (possible infinite loop)");
             set_exception_cause(unwinder, PyExc_RuntimeError, "Frame chain iteration limit exceeded");
             return -1;
         }
+        assert(frame_count <= MAX_FRAMES);
 
-        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, chunks) < 0) {
+        if (parse_frame_from_chunks(unwinder, &frame, frame_addr, &next_frame_addr, &stackpointer, ctx->chunks) < 0) {
             PyErr_Clear();
             uintptr_t address_of_code_object = 0;
-            if (parse_frame_object(unwinder, &frame, frame_addr, &address_of_code_object ,&next_frame_addr) < 0) {
+            if (parse_frame_object(unwinder, &frame, frame_addr, &address_of_code_object, &next_frame_addr) < 0) {
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to parse frame object in chain");
                 return -1;
             }
         }
-        if (frame == NULL && PyList_GET_SIZE(frame_info) == 0) {
+        if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
             const char *e = "Failed to parse initial frame in chain";
             PyErr_SetString(PyExc_RuntimeError, e);
             return -1;
         }
         PyObject *extra_frame = NULL;
-        // This frame kicked off the current GC collection:
-        if (unwinder->gc && frame_addr == gc_frame) {
+        if (unwinder->gc && frame_addr == ctx->gc_frame) {
             _Py_DECLARE_STR(gc, "<GC>");
             extra_frame = &_Py_STR(gc);
         }
-        // Otherwise, check for native frames to insert:
         else if (unwinder->native &&
-                 // We've reached an interpreter trampoline frame:
                  frame == NULL &&
-                 // Bottommost frame is always native, so skip that one:
                  next_frame_addr &&
-                 // Only suppress native frames if GC tracking is enabled and the next frame will be a GC frame:
-                 !(unwinder->gc && next_frame_addr == gc_frame))
+                 !(unwinder->gc && next_frame_addr == ctx->gc_frame))
         {
             _Py_DECLARE_STR(native, "<native>");
             extra_frame = &_Py_STR(native);
         }
         if (extra_frame) {
-            // Use "~" as file, None as location (synthetic frame), None as opcode
             PyObject *extra_frame_info = make_frame_info(
                 unwinder, _Py_LATIN1_CHR('~'), Py_None, extra_frame, Py_None);
             if (extra_frame_info == NULL) {
                 return -1;
             }
-            if (PyList_Append(frame_info, extra_frame_info) < 0) {
+            if (PyList_Append(ctx->frame_info, extra_frame_info) < 0) {
                 Py_DECREF(extra_frame_info);
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append extra frame");
                 return -1;
             }
-            // Extra frames use 0 as address (they're synthetic)
-            if (frame_addrs && *num_addrs < max_addrs) {
-                frame_addrs[(*num_addrs)++] = 0;
+            if (ctx->frame_addrs && ctx->num_addrs < ctx->max_addrs) {
+                assert(ctx->num_addrs >= 0);
+                ctx->frame_addrs[ctx->num_addrs++] = 0;
             }
             Py_DECREF(extra_frame_info);
         }
@@ -367,14 +355,14 @@ process_frame_chain(
                 return -1;
             }
 
-            if (PyList_Append(frame_info, frame) < 0) {
+            if (PyList_Append(ctx->frame_info, frame) < 0) {
                 Py_DECREF(frame);
                 set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to append frame");
                 return -1;
             }
-            // Track the address for this frame
-            if (frame_addrs && *num_addrs < max_addrs) {
-                frame_addrs[(*num_addrs)++] = frame_addr;
+            if (ctx->frame_addrs && ctx->num_addrs < ctx->max_addrs) {
+                assert(ctx->num_addrs >= 0);
+                ctx->frame_addrs[ctx->num_addrs++] = frame_addr;
             }
             Py_DECREF(frame);
         }
@@ -383,21 +371,14 @@ process_frame_chain(
         frame_addr = next_frame_addr;
     }
 
-    // Validate we reached the base frame (sentinel at bottom of stack)
-    // Only validate if we walked the full chain (didn't stop at cached frame)
-    // and base_frame_addr is provided (non-zero)
-    int stopped_early = stopped_at_cached_frame && *stopped_at_cached_frame;
-    if (!stopped_early && base_frame_addr != 0 && last_frame_addr != base_frame_addr) {
+    if (!ctx->stopped_at_cached_frame && ctx->base_frame_addr != 0 && last_frame_addr != ctx->base_frame_addr) {
         PyErr_Format(PyExc_RuntimeError,
             "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
-            base_frame_addr, last_frame_addr);
+            ctx->base_frame_addr, last_frame_addr);
         return -1;
     }
 
-    // Set output parameter for caller (needed for cache validation)
-    if (out_last_frame_addr) {
-        *out_last_frame_addr = last_frame_addr;
-    }
+    ctx->last_frame_visited = last_frame_addr;
 
     return 0;
 }
@@ -410,8 +391,11 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
 {
     uintptr_t current_interp = unwinder->interpreter_addr;
     uintptr_t zero = 0;
+    const size_t MAX_INTERPRETERS = 256;
+    size_t interp_count = 0;
 
-    while (current_interp != 0) {
+    while (current_interp != 0 && interp_count < MAX_INTERPRETERS) {
+        interp_count++;
         // Get first thread in this interpreter
         uintptr_t tstate_addr;
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
@@ -425,7 +409,10 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
         }
 
         // Iterate all threads in this interpreter
-        while (tstate_addr != 0) {
+        const size_t MAX_THREADS_PER_INTERP = 8192;
+        size_t thread_count = 0;
+        while (tstate_addr != 0 && thread_count < MAX_THREADS_PER_INTERP) {
+            thread_count++;
             // Clear last_profiled_frame
             uintptr_t lpf_addr = tstate_addr + unwinder->debug_offsets.thread_state.last_profiled_frame;
             if (_Py_RemoteDebug_WriteRemoteMemory(&unwinder->handle, lpf_addr,
@@ -468,16 +455,13 @@ clear_last_profiled_frames(RemoteUnwinderObject *unwinder)
 static int
 try_full_cache_hit(
     RemoteUnwinderObject *unwinder,
-    uintptr_t frame_addr,
-    uintptr_t last_profiled_frame,
-    uint64_t thread_id,
-    PyObject *frame_info)
+    const FrameWalkContext *ctx,
+    uint64_t thread_id)
 {
-    if (!unwinder->frame_cache || last_profiled_frame == 0) {
+    if (!unwinder->frame_cache || ctx->last_profiled_frame == 0) {
         return 0;
     }
-    // Full hit only if current frame == last profiled frame
-    if (frame_addr != last_profiled_frame) {
+    if (ctx->frame_addr != ctx->last_profiled_frame) {
         return 0;
     }
 
@@ -486,22 +470,19 @@ try_full_cache_hit(
         return 0;
     }
 
-    // Verify first address matches (sanity check)
-    if (entry->num_addrs == 0 || entry->addrs[0] != frame_addr) {
+    if (entry->num_addrs == 0 || entry->addrs[0] != ctx->frame_addr) {
         return 0;
     }
 
-    // Always read the current frame from memory to get updated line number
     PyObject *current_frame = NULL;
     uintptr_t code_object_addr = 0;
     uintptr_t previous_frame = 0;
-    int parse_result = parse_frame_object(unwinder, &current_frame, frame_addr,
+    int parse_result = parse_frame_object(unwinder, &current_frame, ctx->frame_addr,
                                           &code_object_addr, &previous_frame);
     if (parse_result < 0) {
         return -1;
     }
 
-    // Get cached parent frames first (before modifying frame_info)
     Py_ssize_t cached_size = PyList_GET_SIZE(entry->frame_list);
     PyObject *parent_slice = NULL;
     if (cached_size > 1) {
@@ -512,9 +493,8 @@ try_full_cache_hit(
         }
     }
 
-    // Now safe to modify frame_info - add current frame if valid
     if (current_frame != NULL) {
-        if (PyList_Append(frame_info, current_frame) < 0) {
+        if (PyList_Append(ctx->frame_info, current_frame) < 0) {
             Py_DECREF(current_frame);
             Py_XDECREF(parent_slice);
             return -1;
@@ -523,10 +503,9 @@ try_full_cache_hit(
         STATS_ADD(unwinder, frames_read_from_memory, 1);
     }
 
-    // Extend with cached parent frames
     if (parent_slice) {
-        Py_ssize_t cur_size = PyList_GET_SIZE(frame_info);
-        int result = PyList_SetSlice(frame_info, cur_size, cur_size, parent_slice);
+        Py_ssize_t cur_size = PyList_GET_SIZE(ctx->frame_info);
+        int result = PyList_SetSlice(ctx->frame_info, cur_size, cur_size, parent_slice);
         Py_DECREF(parent_slice);
         if (result < 0) {
             return -1;
@@ -543,72 +522,67 @@ try_full_cache_hit(
 int
 collect_frames_with_cache(
     RemoteUnwinderObject *unwinder,
-    uintptr_t frame_addr,
-    StackChunkList *chunks,
-    PyObject *frame_info,
-    uintptr_t base_frame_addr,
-    uintptr_t gc_frame,
-    uintptr_t last_profiled_frame,
+    FrameWalkContext *ctx,
     uint64_t thread_id)
 {
-    // Fast path: check for full cache hit first (no allocations needed)
-    int full_hit = try_full_cache_hit(unwinder, frame_addr, last_profiled_frame,
-                                       thread_id, frame_info);
+    int full_hit = try_full_cache_hit(unwinder, ctx, thread_id);
     if (full_hit != 0) {
-        return full_hit < 0 ? -1 : 0;  // Either error or success
+        return full_hit < 0 ? -1 : 0;
     }
 
-    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
-    Py_ssize_t num_addrs = 0;
-    Py_ssize_t frames_before = PyList_GET_SIZE(frame_info);
-    uintptr_t last_frame_visited = 0;
+    Py_ssize_t frames_before = PyList_GET_SIZE(ctx->frame_info);
 
-    int stopped_at_cached = 0;
-    if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, base_frame_addr, gc_frame,
-                            last_profiled_frame, &stopped_at_cached,
-                            addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES,
-                            &last_frame_visited) < 0) {
+    if (process_frame_chain(unwinder, ctx) < 0) {
         return -1;
     }
 
-    // Track frames read from memory (frames added by process_frame_chain)
-    STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(frame_info) - frames_before);
+    STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(ctx->frame_info) - frames_before);
 
-    // If stopped at cached frame, extend with cached continuation (both frames and addresses)
-    if (stopped_at_cached) {
-        Py_ssize_t frames_before_cache = PyList_GET_SIZE(frame_info);
-        int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id, last_profiled_frame,
-                                                         frame_info, addrs, &num_addrs,
-                                                         FRAME_CACHE_MAX_FRAMES);
+    if (ctx->stopped_at_cached_frame) {
+        Py_ssize_t frames_before_cache = PyList_GET_SIZE(ctx->frame_info);
+        int cache_result = frame_cache_lookup_and_extend(unwinder, thread_id, ctx->last_profiled_frame,
+                                                         ctx->frame_info, ctx->frame_addrs, &ctx->num_addrs,
+                                                         ctx->max_addrs);
         if (cache_result < 0) {
             return -1;
         }
         if (cache_result == 0) {
-            // Cache miss - continue walking from last_profiled_frame to get the rest
             STATS_INC(unwinder, frame_cache_misses);
-            Py_ssize_t frames_before_walk = PyList_GET_SIZE(frame_info);
-            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, base_frame_addr, gc_frame,
-                                    0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES,
-                                    &last_frame_visited) < 0) {
+            Py_ssize_t frames_before_walk = PyList_GET_SIZE(ctx->frame_info);
+
+            FrameWalkContext continue_ctx = {
+                .frame_addr = ctx->last_profiled_frame,
+                .base_frame_addr = ctx->base_frame_addr,
+                .gc_frame = ctx->gc_frame,
+                .last_profiled_frame = 0,
+                .chunks = ctx->chunks,
+                .frame_info = ctx->frame_info,
+                .frame_addrs = ctx->frame_addrs,
+                .num_addrs = ctx->num_addrs,
+                .max_addrs = ctx->max_addrs,
+            };
+            if (process_frame_chain(unwinder, &continue_ctx) < 0) {
                 return -1;
             }
-            STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(frame_info) - frames_before_walk);
+            ctx->num_addrs = continue_ctx.num_addrs;
+            ctx->last_frame_visited = continue_ctx.last_frame_visited;
+
+            STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(ctx->frame_info) - frames_before_walk);
         } else {
-            // Partial cache hit - cache was validated when stored, so we trust it
+            // Partial cache hit - cached stack was validated as complete when stored,
+            // so set last_frame_visited to base_frame_addr for validation in frame_cache_store
+            ctx->last_frame_visited = ctx->base_frame_addr;
             STATS_INC(unwinder, frame_cache_partial_hits);
-            STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(frame_info) - frames_before_cache);
+            STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(ctx->frame_info) - frames_before_cache);
         }
     } else {
-        if (last_profiled_frame == 0) {
-            // No cache involvement (no last_profiled_frame or cache disabled)
+        if (ctx->last_profiled_frame == 0) {
             STATS_INC(unwinder, frame_cache_misses);
         }
     }
 
-    // Store in cache - frame_cache_store validates internally that we have a
-    // complete stack (reached base_frame_addr) before actually storing
-    if (frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs,
-                          base_frame_addr, last_frame_visited) < 0) {
+    if (frame_cache_store(unwinder, thread_id, ctx->frame_info, ctx->frame_addrs, ctx->num_addrs,
+                          ctx->base_frame_addr, ctx->last_frame_visited) < 0) {
         return -1;
     }
 

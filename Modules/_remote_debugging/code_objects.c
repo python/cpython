@@ -76,6 +76,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
         PyErr_SetString(PyExc_RuntimeError, "TLBC array size exceeds maximum limit");
         return 0; // Invalid size
     }
+    assert(tlbc_size > 0 && tlbc_size <= MAX_TLBC_SIZE);
 
     // Allocate and read the entire TLBC array
     size_t array_data_size = tlbc_size * sizeof(void*);
@@ -156,8 +157,11 @@ parse_linetable(const uintptr_t addrq, const char* linetable, int firstlineno, L
     const uint8_t* ptr = (const uint8_t*)(linetable);
     uintptr_t addr = 0;
     int computed_line = firstlineno;  // Running accumulator, separate from output
+    const size_t MAX_LINETABLE_ENTRIES = 65536;
+    size_t entry_count = 0;
 
-    while (*ptr != '\0') {
+    while (*ptr != '\0' && entry_count < MAX_LINETABLE_ENTRIES) {
+        entry_count++;
         uint8_t first_byte = *(ptr++);
         uint8_t code = (first_byte >> 3) & 15;
         size_t length = (first_byte & 7) + 1;
@@ -277,12 +281,9 @@ make_frame_info(RemoteUnwinderObject *unwinder, PyObject *file, PyObject *locati
 int
 parse_code_object(RemoteUnwinderObject *unwinder,
                   PyObject **result,
-                  uintptr_t address,
-                  uintptr_t instruction_pointer,
-                  uintptr_t *previous_frame,
-                  int32_t tlbc_index)
+                  const CodeObjectContext *ctx)
 {
-    void *key = (void *)address;
+    void *key = (void *)ctx->code_addr;
     CachedCodeMetadata *meta = NULL;
     PyObject *func = NULL;
     PyObject *file = NULL;
@@ -291,9 +292,9 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 #ifdef Py_GIL_DISABLED
     // In free threading builds, code object addresses might have the low bit set
     // as a flag, so we need to mask it off to get the real address
-    uintptr_t real_address = address & (~1);
+    uintptr_t real_address = ctx->code_addr & (~1);
 #else
-    uintptr_t real_address = address;
+    uintptr_t real_address = ctx->code_addr;
 #endif
 
     if (unwinder && unwinder->code_object_cache != NULL) {
@@ -360,12 +361,12 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         linetable = NULL;
     }
 
-    uintptr_t ip = instruction_pointer;
+    uintptr_t ip = ctx->instruction_pointer;
     ptrdiff_t addrq;
 
 #ifdef Py_GIL_DISABLED
     // Handle thread-local bytecode (TLBC) in free threading builds
-    if (tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
+    if (ctx->tlbc_index == 0 || unwinder->debug_offsets.code_object.co_tlbc == 0 || unwinder == NULL) {
         // No TLBC or no unwinder - use main bytecode directly
         addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
         goto done_tlbc;
@@ -383,10 +384,12 @@ parse_code_object(RemoteUnwinderObject *unwinder,
         tlbc_entry = get_tlbc_cache_entry(unwinder, real_address, unwinder->tlbc_generation);
     }
 
-    if (tlbc_entry && tlbc_index < tlbc_entry->tlbc_array_size) {
+    if (tlbc_entry && ctx->tlbc_index < tlbc_entry->tlbc_array_size) {
+        assert(ctx->tlbc_index >= 0);
+        assert(tlbc_entry->tlbc_array_size > 0);
         // Use cached TLBC data
         uintptr_t *entries = (uintptr_t *)((char *)tlbc_entry->tlbc_array + sizeof(Py_ssize_t));
-        uintptr_t tlbc_bytecode_addr = entries[tlbc_index];
+        uintptr_t tlbc_bytecode_addr = entries[ctx->tlbc_index];
 
         if (tlbc_bytecode_addr != 0) {
             // Calculate offset from TLBC bytecode
@@ -401,8 +404,6 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 done_tlbc:
 #else
     // Non-free-threaded build, always use the main bytecode
-    (void)tlbc_index; // Suppress unused parameter warning
-    (void)unwinder;   // Suppress unused parameter warning
     addrq = (uint16_t *)ip - (uint16_t *)meta->addr_code_adaptive;
 #endif
     ;  // Empty statement to avoid C23 extension warning

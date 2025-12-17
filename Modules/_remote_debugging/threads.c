@@ -23,6 +23,8 @@ iterate_threads(
 ) {
     uintptr_t thread_state_addr;
     unsigned long tid = 0;
+    const size_t MAX_THREADS = 8192;
+    size_t thread_count = 0;
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
@@ -34,7 +36,8 @@ iterate_threads(
         return -1;
     }
 
-    while (thread_state_addr != 0) {
+    while (thread_state_addr != 0 && thread_count < MAX_THREADS) {
+        thread_count++;
         if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                     &unwinder->handle,
                     thread_state_addr + (uintptr_t)unwinder->debug_offsets.thread_state.native_thread_id,
@@ -425,12 +428,24 @@ unwind_stack_for_thread(
         }
     }
 
+    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
+    FrameWalkContext ctx = {
+        .frame_addr = frame_addr,
+        .base_frame_addr = base_frame_addr,
+        .gc_frame = gc_frame,
+        .chunks = &chunks,
+        .frame_info = frame_info,
+        .frame_addrs = addrs,
+        .num_addrs = 0,
+        .max_addrs = FRAME_CACHE_MAX_FRAMES,
+    };
+    assert(ctx.max_addrs == FRAME_CACHE_MAX_FRAMES);
+
     if (unwinder->cache_frames) {
         // Use cache to avoid re-reading unchanged parent frames
-        uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, ts,
+        ctx.last_profiled_frame = GET_MEMBER(uintptr_t, ts,
             unwinder->debug_offsets.thread_state.last_profiled_frame);
-        if (collect_frames_with_cache(unwinder, frame_addr, &chunks, frame_info,
-                                      base_frame_addr, gc_frame, last_profiled_frame, tid) < 0) {
+        if (collect_frames_with_cache(unwinder, &ctx, tid) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
@@ -443,8 +458,7 @@ unwind_stack_for_thread(
         }
     } else {
         // No caching - process entire frame chain with base_frame validation
-        if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
-                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0, NULL) < 0) {
+        if (process_frame_chain(unwinder, &ctx) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
             goto error;
         }
