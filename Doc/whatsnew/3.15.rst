@@ -75,8 +75,7 @@ Summary -- Release highlights
   <whatsnew315-pep782>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * The :ref:`JIT compiler <whatsnew315-jit>` has been significantly upgraded,
-  with 3-4% geometric mean performance improvement on the `pyperformance
-  <https://github.com/python/pyperformance>`__ benchmarks.
+  with 3-4% geometric mean performance improvement
 
 
 New features
@@ -855,11 +854,12 @@ csv
 
 .. _whatsnew315-jit:
 
-Upgraded JIT Compiler
+Upgraded JIT compiler
 =====================
 
-Results from the pyperformance benchmark suite report
-`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`_
+Results from the `pyperformance
+  <https://github.com/python/pyperformance>`__ benchmark suite report
+`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
 geometric mean performance improvement for the JIT over the standard CPython
 interpreter built with all optimizations enabled. The speedups for JIT
 builds versus no JIT builds range from roughly 20% slowdown to over
@@ -869,7 +869,7 @@ x86-64 Linux and AArch64 macOS systems.
 .. attention::
     These results are not yet final.
 
-The major upgrades to the JIT are as follows:
+The major upgrades to the JIT are:
 
 * LLVM 21 build-time dependency
 * New tracing frontend
@@ -877,17 +877,18 @@ The major upgrades to the JIT are as follows:
 * More JIT optimizations
 * Better machine code generation
 
-.. rubric:: LLVM 21 Build-Time Dependency
+.. rubric:: LLVM 21 build-time dependency
 
 The JIT compiler now uses LLVM 21 for build-time stencil generation. As
 always, LLVM is only needed when building CPython with the JIT enabled;
 end users running Python do not need LLVM installed. Instructions for
-installing LLVM can be found in the JIT compiler documentation
-(:file:`Tools/jit/README.md`) for all supported platforms.
+installing LLVM can be found in the `JIT compiler documentation
+<https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
+for all supported platforms.
 
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
-.. rubric:: A New Tracing Frontend
+.. rubric:: A new tracing frontend
 
 The JIT compiler now supports significantly more bytecode operations and
 control flow than in Python 3.14, enabling speedups on a wider variety of
@@ -898,9 +899,9 @@ that records actual execution paths through code, rather than estimating
 them as the previous implementation did.
 
 (Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
-Mark Shannon :gh:`141703`.)
+Mark Shannon in :gh:`141703`.)
 
-.. rubric:: Basic Register Allocation in the JIT
+.. rubric:: Basic register allocation in the JIT
 
 A basic form of register allocation has been added to the JIT compiler's
 optimizer. This allows the JIT compiler to avoid certain stack operations
@@ -909,7 +910,7 @@ more efficient traces by avoiding reads and writes to memory.
 
 (Contributed by Mark Shannon in :gh:`135379`.)
 
-.. rubric:: More JIT Optimizations
+.. rubric:: More JIT optimizations
 
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
@@ -923,7 +924,7 @@ reduces the cost of most operations in Python.
 (Contributed by Ken Jin, Donghee Na, Nadeshiko Manju, Savannah Ostrowski,
 Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
 
-.. rubric:: Better Machine Code Generation
+.. rubric:: Better machine code generation
 
 The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
