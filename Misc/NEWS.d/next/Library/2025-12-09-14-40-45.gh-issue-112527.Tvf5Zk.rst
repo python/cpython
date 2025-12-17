@@ -1,2 +1,0 @@
-The help text for required options in :mod:`argparse` no
-longer extended with " (default: None)".

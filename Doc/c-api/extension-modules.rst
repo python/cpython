@@ -29,7 +29,7 @@ and must be named after the module name plus an extension listed in
 Extension export hook
 .....................
 
-.. versionadded:: next
+.. versionadded:: 3.15
 
    Support for the :samp:`PyModExport_{<name>}` export hook was added in Python
    3.15. The older way of defining modules is still available: consult either
@@ -191,7 +191,7 @@ the :c:data:`Py_mod_multiple_interpreters` slot.
 ``PyInit`` function
 ...................
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    This functionality is :term:`soft deprecated`.
    It will not get new features, but there are no plans to remove it.
@@ -272,7 +272,7 @@ For example, a module called ``spam`` would be defined like this::
 Legacy single-phase initialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    Single-phase initialization is :term:`soft deprecated`.
    It is a legacy mechanism to initialize extension
@@ -282,7 +282,7 @@ Legacy single-phase initialization
    However, there are no plans to remove support for it.
 
 In single-phase initialization, the old-style
-:ref:`initializaton function <extension-pyinit>` (``PyInit_modulename``)
+:ref:`initialization function <extension-pyinit>` (``PyInit_modulename``)
 should create, populate and return a module object.
 This is typically done using :c:func:`PyModule_Create` and functions like
 :c:func:`PyModule_AddObjectRef`.
