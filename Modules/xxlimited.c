@@ -160,7 +160,8 @@ Xxo_get_data(PyObject *self)
 // This is the implementation of Xxo.__new__; it takes arbitrary positional
 // and keyword arguments.
 static PyObject *
-Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+Xxo_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
     // Validate that we did not get any arguments.
     if ((args != NULL && PyObject_Length(args))
         || (kwargs != NULL && PyObject_Length(kwargs)))
