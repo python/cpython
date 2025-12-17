@@ -5465,11 +5465,11 @@ class TestHelpFlexi(HelpTestCase):
                         * bullet
 
         title:
-        short help text
-
-        Longer help text, containing useful contextual information for the var in
-        question
-        * and a bullet
+          short help text
+  
+          Longer help text, containing useful contextual information for the var in
+          question
+          * and a bullet
 
           --bar BAR   bar help
         '''
