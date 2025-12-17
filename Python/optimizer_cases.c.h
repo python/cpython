@@ -664,12 +664,12 @@
                 assert(PyUnicode_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-                if (res_o == NULL) {
+                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                if (PyStackRef_IsNull(res)) {
                     JUMP_TO_LABEL(error);
                 }
                 l_stackref = left;
                 r_stackref = right;
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 l = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(l_stackref));

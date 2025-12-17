@@ -750,13 +750,13 @@ dummy_func(
 
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            if (res_o == NULL) {
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            if (PyStackRef_IsNull(res)) {
                 ERROR_NO_POP();
             }
             l = left;
             r = right;
             INPUTS_DEAD();
-            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(BINARY_OP_ADD_UNICODE) =

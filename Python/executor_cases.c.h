@@ -4200,13 +4200,13 @@
             assert(PyUnicode_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            if (res_o == NULL) {
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            if (PyStackRef_IsNull(res)) {
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
             l = left;
             r = right;
-            res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4234,7 +4234,8 @@
             assert(PyUnicode_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            if (res_o == NULL) {
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            if (PyStackRef_IsNull(res)) {
                 stack_pointer[0] = right;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
@@ -4243,7 +4244,6 @@
             }
             l = left;
             r = right;
-            res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
@@ -4272,7 +4272,8 @@
             assert(PyUnicode_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            if (res_o == NULL) {
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            if (PyStackRef_IsNull(res)) {
                 stack_pointer[0] = left;
                 stack_pointer[1] = right;
                 stack_pointer += 2;
@@ -4282,7 +4283,6 @@
             }
             l = left;
             r = right;
-            res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = r;
             _tos_cache1 = l;
             _tos_cache0 = res;
