@@ -210,6 +210,8 @@ class LiveStatsCollector(Collector):
         # Trend tracking (initialized after colors are set up)
         self._trend_tracker = None
 
+        self._seen_locations = set()
+
     @property
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
@@ -305,15 +307,18 @@ class LiveStatsCollector(Collector):
 
         # Get per-thread data if tracking per-thread
         thread_data = self._get_or_create_thread_data(thread_id) if thread_id is not None else None
+        self._seen_locations.clear()
 
         # Process each frame in the stack to track cumulative calls
         # frame.location is (lineno, end_lineno, col_offset, end_col_offset), int, or None
         for frame in frames:
             lineno = extract_lineno(frame.location)
             location = (frame.filename, lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
-            if thread_data:
-                thread_data.result[location]["cumulative_calls"] += 1
+            if location not in self._seen_locations:
+                self._seen_locations.add(location)
+                self.result[location]["cumulative_calls"] += 1
+                if thread_data:
+                    thread_data.result[location]["cumulative_calls"] += 1
 
         # The top frame gets counted as an inline call (directly executing)
         top_frame = frames[0]
@@ -371,11 +376,13 @@ class LiveStatsCollector(Collector):
                     thread_data.gc_frame_samples += stats["gc_samples"]
 
         # Process frames using pre-selected iterator
+        frames_processed = False
         for frames, thread_id in self._get_frame_iterator(stack_frames):
             if not frames:
                 continue
 
             self.process_frames(frames, thread_id=thread_id)
+            frames_processed = True
 
             # Track thread IDs
             if thread_id is not None and thread_id not in self.thread_ids:
@@ -388,6 +395,8 @@ class LiveStatsCollector(Collector):
         if has_gc_frame:
             self.gc_frame_samples += 1
 
+        # Count as successful - the sample worked even if no frames matched the filter
+        # (e.g., in --mode exception when no thread has an active exception)
         self.successful_samples += 1
         self.total_samples += 1
 
@@ -659,9 +668,11 @@ class LiveStatsCollector(Collector):
             total_time = direct_calls * self.sample_interval_sec
             cumulative_time = cumulative_calls * self.sample_interval_sec
 
-            # Calculate sample percentages
-            sample_pct = (direct_calls / self.total_samples * 100) if self.total_samples > 0 else 0
-            cumul_pct = (cumulative_calls / self.total_samples * 100) if self.total_samples > 0 else 0
+            # Calculate sample percentages using successful_samples as denominator
+            # This ensures percentages are relative to samples that actually had data,
+            # not all sampling attempts (important for filtered modes like --mode exception)
+            sample_pct = (direct_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
+            cumul_pct = (cumulative_calls / self.successful_samples * 100) if self.successful_samples > 0 else 0
 
             # Calculate trends for all columns using TrendTracker
             trends = {}
@@ -684,7 +695,9 @@ class LiveStatsCollector(Collector):
                     "cumulative_calls": cumulative_calls,
                     "total_time": total_time,
                     "cumulative_time": cumulative_time,
-                    "trends": trends,  # Dictionary of trends for all columns
+                    "sample_pct": sample_pct,
+                    "cumul_pct": cumul_pct,
+                    "trends": trends,
                 }
             )
 
@@ -696,21 +709,9 @@ class LiveStatsCollector(Collector):
         elif self.sort_by == "cumtime":
             stats_list.sort(key=lambda x: x["cumulative_time"], reverse=True)
         elif self.sort_by == "sample_pct":
-            stats_list.sort(
-                key=lambda x: (x["direct_calls"] / self.total_samples * 100)
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["sample_pct"], reverse=True)
         elif self.sort_by == "cumul_pct":
-            stats_list.sort(
-                key=lambda x: (
-                    x["cumulative_calls"] / self.total_samples * 100
-                )
-                if self.total_samples > 0
-                else 0,
-                reverse=True,
-            )
+            stats_list.sort(key=lambda x: x["cumul_pct"], reverse=True)
 
         return stats_list
 

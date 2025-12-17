@@ -748,8 +748,8 @@ depending on the system error code.
 
    .. attribute:: characters_written
 
-      An integer containing the number of characters written to the stream
-      before it blocked.  This attribute is available when using the
+      An integer containing the number of **bytes** written to the stream
+      before it blocked. This attribute is available when using the
       buffered I/O classes from the :mod:`io` module.
 
 .. exception:: ChildProcessError

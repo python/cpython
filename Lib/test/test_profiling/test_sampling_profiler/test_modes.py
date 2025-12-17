@@ -14,12 +14,13 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 
-from test.support import requires_subprocess
+from test.support import requires_remote_subprocess_debugging
 
 from .helpers import test_subprocess
 from .mocks import MockFrameInfo, MockInterpreterInfo
 
 
+@requires_remote_subprocess_debugging()
 class TestCpuModeFiltering(unittest.TestCase):
     """Test CPU mode filtering functionality (--mode=cpu)."""
 
@@ -124,7 +125,6 @@ class TestCpuModeFiltering(unittest.TestCase):
             idle_key, collector_no_skip.result
         )  # Idle thread should be included
 
-    @requires_subprocess()
     def test_cpu_mode_integration_filtering(self):
         """Integration test: CPU mode should only capture active threads, not idle ones."""
         # Script with one mostly-idle thread and one CPU-active thread
@@ -158,20 +158,15 @@ cpu_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2.0,
-                        mode=1,  # CPU mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False, mode=1)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2.0,
+                    mode=1,  # CPU mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False, mode=1)
 
                 cpu_mode_output = captured_output.getvalue()
 
@@ -180,20 +175,15 @@ cpu_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2.0,
-                        mode=0,  # Wall-clock mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2.0,
+                    mode=0,  # Wall-clock mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False)
 
                 wall_mode_output = captured_output.getvalue()
 
@@ -244,6 +234,7 @@ cpu_thread.join()
         self.assertIn("CPU mode", output)
 
 
+@requires_remote_subprocess_debugging()
 class TestGilModeFiltering(unittest.TestCase):
     """Test GIL mode filtering functionality (--mode=gil)."""
 
@@ -261,6 +252,7 @@ class TestGilModeFiltering(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             try:
@@ -322,6 +314,7 @@ class TestGilModeFiltering(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             try:
@@ -335,7 +328,6 @@ class TestGilModeFiltering(unittest.TestCase):
         self.assertEqual(call_args.kwargs.get("mode"), 2)  # GIL mode
         self.assertEqual(call_args.kwargs.get("duration_sec"), 5)
 
-    @requires_subprocess()
     def test_gil_mode_integration_behavior(self):
         """Integration test: GIL mode should capture GIL-holding threads."""
         # Create a test script with GIL-releasing operations
@@ -369,20 +361,15 @@ cpu_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2.0,
-                        mode=2,  # GIL mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2.0,
+                    mode=2,  # GIL mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False)
 
                 gil_mode_output = captured_output.getvalue()
 
@@ -391,20 +378,15 @@ cpu_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=0.5,
-                        mode=0,  # Wall-clock mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=0.5,
+                    mode=0,  # Wall-clock mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False)
 
                 wall_mode_output = captured_output.getvalue()
 
@@ -434,6 +416,7 @@ cpu_thread.join()
             _parse_mode("invalid")
 
 
+@requires_remote_subprocess_debugging()
 class TestExceptionModeFiltering(unittest.TestCase):
     """Test exception mode filtering functionality (--mode=exception)."""
 
@@ -451,6 +434,7 @@ class TestExceptionModeFiltering(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             try:
@@ -512,6 +496,7 @@ class TestExceptionModeFiltering(unittest.TestCase):
 
         with (
             mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.cli._is_process_running", return_value=True),
             mock.patch("profiling.sampling.cli.sample") as mock_sample,
         ):
             try:
@@ -530,7 +515,6 @@ class TestExceptionModeFiltering(unittest.TestCase):
         from profiling.sampling.constants import PROFILING_MODE_EXCEPTION
         self.assertEqual(PROFILING_MODE_EXCEPTION, 4)
 
-    @requires_subprocess()
     def test_exception_mode_integration_filtering(self):
         """Integration test: Exception mode should only capture threads with active exceptions."""
         # Script with one thread handling an exception and one normal thread
@@ -570,20 +554,15 @@ exception_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2.0,
-                        mode=4,  # Exception mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False, mode=4)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=True)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2.0,
+                    mode=4,  # Exception mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False, mode=4)
 
                 exception_mode_output = captured_output.getvalue()
 
@@ -592,20 +571,15 @@ exception_thread.join()
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
             ):
-                try:
-                    collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
-                    profiling.sampling.sample.sample(
-                        subproc.process.pid,
-                        collector,
-                        duration_sec=2.0,
-                        mode=0,  # Wall-clock mode
-                        all_threads=True,
-                    )
-                    collector.print_stats(show_summary=False)
-                except (PermissionError, RuntimeError) as e:
-                    self.skipTest(
-                        "Insufficient permissions for remote profiling"
-                    )
+                collector = PstatsCollector(sample_interval_usec=5000, skip_idle=False)
+                profiling.sampling.sample.sample(
+                    subproc.process.pid,
+                    collector,
+                    duration_sec=2.0,
+                    mode=0,  # Wall-clock mode
+                    all_threads=True,
+                )
+                collector.print_stats(show_summary=False)
 
                 wall_mode_output = captured_output.getvalue()
 

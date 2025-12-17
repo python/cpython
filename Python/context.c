@@ -190,7 +190,7 @@ context_switched(PyThreadState *ts)
 }
 
 
-static int
+int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
@@ -220,7 +220,7 @@ PyContext_Enter(PyObject *octx)
 }
 
 
-static int
+int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)

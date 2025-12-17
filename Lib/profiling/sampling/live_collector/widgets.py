@@ -308,31 +308,21 @@ class HeaderWidget(Widget):
 
     def draw_efficiency_bar(self, line, width):
         """Draw sample efficiency bar showing success/failure rates."""
-        success_pct = (
-            self.collector.successful_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
-        failed_pct = (
-            self.collector.failed_samples
-            / max(1, self.collector.total_samples)
-        ) * 100
+        # total_samples = successful_samples + failed_samples, so percentages add to 100%
+        total = max(1, self.collector.total_samples)
+        success_pct = (self.collector.successful_samples / total) * 100
+        failed_pct = (self.collector.failed_samples / total) * 100
 
         col = 0
         self.add_str(line, col, "Efficiency:", curses.A_BOLD)
         col += 11
 
-        label = f" {success_pct:>5.2f}% good, {failed_pct:>4.2f}% failed"
+        label = f" {success_pct:>5.2f}% good, {failed_pct:>5.2f}% failed"
         available_width = width - col - len(label) - 3
 
         if available_width >= MIN_BAR_WIDTH:
             bar_width = min(MAX_EFFICIENCY_BAR_WIDTH, available_width)
-            success_fill = int(
-                (
-                    self.collector.successful_samples
-                    / max(1, self.collector.total_samples)
-                )
-                * bar_width
-            )
+            success_fill = int((self.collector.successful_samples / total) * bar_width)
             failed_fill = bar_width - success_fill
 
             self.add_str(line, col, "[", curses.A_NORMAL)
@@ -396,6 +386,8 @@ class HeaderWidget(Widget):
             total_samples = max(1, thread_data.sample_count)
             pct_gc = (thread_data.gc_frame_samples / total_samples) * 100
         else:
+            # Use total_samples for GC percentage since gc_frame_samples is tracked
+            # across ALL samples (via thread status), not just successful ones
             total_samples = max(1, self.collector.total_samples)
             pct_gc = (self.collector.gc_frame_samples / total_samples) * 100
 
@@ -529,10 +521,7 @@ class HeaderWidget(Widget):
                 continue
 
             func_name = func_data["func"][2]
-            func_pct = (
-                func_data["direct_calls"]
-                / max(1, self.collector.total_samples)
-            ) * 100
+            func_pct = func_data["sample_pct"]
 
             # Medal emoji
             if col + 3 < width - 15:
@@ -765,18 +754,9 @@ class TableWidget(Widget):
             cumulative_calls = stat["cumulative_calls"]
             total_time = stat["total_time"]
             cumulative_time = stat["cumulative_time"]
+            sample_pct = stat["sample_pct"]
+            cum_pct = stat["cumul_pct"]
             trends = stat.get("trends", {})
-
-            sample_pct = (
-                (direct_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
-            cum_pct = (
-                (cumulative_calls / self.collector.total_samples * 100)
-                if self.collector.total_samples > 0
-                else 0
-            )
 
             # Check if this row is selected
             is_selected = show_opcodes and row_idx == selected_row

@@ -5,6 +5,7 @@ import importlib.resources
 import json
 import linecache
 import os
+import sys
 
 from ._css_utils import get_combined_css
 from .collector import Collector, extract_lineno
@@ -393,6 +394,9 @@ class FlamegraphCollector(StackTraceCollector):
         # Let CSS control size; keep markup simple
         logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Tachyon logo"/>'
         html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
+        html_template = html_template.replace(
+            "<!-- PYTHON_VERSION -->", f"{sys.version_info.major}.{sys.version_info.minor}"
+        )
 
         d3_js = d3_path.read_text(encoding="utf-8")
         fg_css = fg_css_path.read_text(encoding="utf-8")

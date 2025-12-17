@@ -719,6 +719,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(readline)
         STRUCT_FOR_ID(readonly)
         STRUCT_FOR_ID(real)
+        STRUCT_FOR_ID(recursive)
         STRUCT_FOR_ID(reducer_override)
         STRUCT_FOR_ID(registry)
         STRUCT_FOR_ID(rel_tol)

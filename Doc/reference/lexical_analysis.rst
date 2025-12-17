@@ -1231,7 +1231,7 @@ Whitespace is significant in these situations:
   string contents.
 * In ``fstring_replacement_field``, if ``f_debug_specifier`` is present,
   all whitespace after the opening brace until the ``f_debug_specifier``,
-  as well as whitespace immediatelly following ``f_debug_specifier``,
+  as well as whitespace immediately following ``f_debug_specifier``,
   is retained as part of the expression.
 
   .. impl-detail::
