@@ -15,6 +15,7 @@ from collections.abc import Mapping
 from test import support
 from test.support import import_helper, threading_helper
 from test.support.script_helper import assert_python_ok
+from test import mapping_tests
 
 
 class ClearTest(unittest.TestCase):
@@ -221,6 +222,56 @@ class FrameAttrsTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.f_lineno
 
+    def test_f_generator(self):
+        # Test f_generator in different contexts.
+
+        def t0():
+            def nested():
+                frame = sys._getframe()
+                return frame.f_generator
+
+            def gen():
+                yield nested()
+
+            g = gen()
+            try:
+                return next(g)
+            finally:
+                g.close()
+
+        def t1():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        def t2():
+            frame = sys._getframe()
+            yield frame.f_generator
+
+        async def t3():
+            frame = sys._getframe()
+            return frame.f_generator
+
+        # For regular functions f_generator is None
+        self.assertIsNone(t0())
+        self.assertIsNone(t1())
+
+        # For generators f_generator is equal to self
+        g = t2()
+        try:
+            frame_g = next(g)
+            self.assertIs(g, frame_g)
+        finally:
+            g.close()
+
+        # Ditto for coroutines
+        c = t3()
+        try:
+            c.send(None)
+        except StopIteration as ex:
+            self.assertIs(ex.value, c)
+        else:
+            raise AssertionError('coroutine did not exit')
+
 
 class ReprTest(unittest.TestCase):
     """
@@ -294,6 +345,12 @@ class TestFrameLocals(unittest.TestCase):
         f()
         self.assertEqual(x, 2)
         self.assertEqual(y, 3)
+
+    def test_closure_with_inline_comprehension(self):
+        lambda: k
+        k = 1
+        lst = [locals() for k in [0]]
+        self.assertEqual(lst[0]['k'], 0)
 
     def test_as_dict(self):
         x = 1
@@ -396,14 +453,40 @@ class TestFrameLocals(unittest.TestCase):
     def test_delete(self):
         x = 1
         d = sys._getframe().f_locals
-        with self.assertRaises(TypeError):
+
+        # This needs to be tested before f_extra_locals is created
+        with self.assertRaisesRegex(KeyError, 'non_exist'):
+            del d['non_exist']
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        with self.assertRaisesRegex(ValueError, 'local variables'):
             del d['x']
 
         with self.assertRaises(AttributeError):
             d.clear()
 
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             d.pop('x')
+
+        with self.assertRaises(ValueError):
+            d.pop('x', None)
+
+        # 'm', 'n' is stored in f_extra_locals
+        d['m'] = 1
+        d['n'] = 1
+
+        with self.assertRaises(KeyError):
+            d.pop('non_exist')
+
+        del d['m']
+        self.assertEqual(d.pop('n'), 1)
+
+        self.assertNotIn('m', d)
+        self.assertNotIn('n', d)
+
+        self.assertEqual(d.pop('n', 2), 2)
 
     @support.cpython_only
     def test_sizeof(self):
@@ -430,6 +513,169 @@ class TestFrameLocals(unittest.TestCase):
             case _:
                 kind = "other"
         self.assertEqual(kind, "mapping")
+
+    def _x_stringlikes(self):
+        class StringSubclass(str):
+            pass
+
+        class ImpostorX:
+            def __hash__(self):
+                return hash('x')
+
+            def __eq__(self, other):
+                return other == 'x'
+
+        return StringSubclass('x'), ImpostorX(), 'x'
+
+    def test_proxy_key_stringlikes_overwrite(self):
+        def f(obj):
+            x = 1
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            return (
+                list(proxy.keys()),
+                dict(proxy),
+                proxy
+            )
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+
+                keys_snapshot, proxy_snapshot, proxy = f(obj)
+                expected_keys = ['obj', 'x', 'proxy']
+                expected_dict = {'obj': 'x', 'x': 2, 'proxy': proxy}
+                self.assertEqual(proxy.keys(),  expected_keys)
+                self.assertEqual(proxy, expected_dict)
+                self.assertEqual(keys_snapshot,  expected_keys)
+                self.assertEqual(proxy_snapshot, expected_dict)
+
+    def test_proxy_key_stringlikes_ftrst_write(self):
+        def f(obj):
+            proxy = sys._getframe().f_locals
+            proxy[obj] = 2
+            self.assertEqual(x, 2)
+            x = 1
+
+        for obj in self._x_stringlikes():
+            with self.subTest(cls=type(obj).__name__):
+                f(obj)
+
+    def test_proxy_key_unhashables(self):
+        class StringSubclass(str):
+            __hash__ = None
+
+        class ObjectSubclass:
+            __hash__ = None
+
+        proxy = sys._getframe().f_locals
+
+        for obj in StringSubclass('x'), ObjectSubclass():
+            with self.subTest(cls=type(obj).__name__):
+                with self.assertRaises(TypeError):
+                    proxy[obj]
+                with self.assertRaises(TypeError):
+                    proxy[obj] = 0
+
+    def test_constructor(self):
+        FrameLocalsProxy = type([sys._getframe().f_locals
+                                 for x in range(1)][0])
+        self.assertEqual(FrameLocalsProxy.__name__, 'FrameLocalsProxy')
+
+        def make_frame():
+            x = 1
+            y = 2
+            return sys._getframe()
+
+        proxy = FrameLocalsProxy(make_frame())
+        self.assertEqual(proxy, {'x': 1, 'y': 2})
+
+        # constructor expects 1 frame argument
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy()     # no arguments
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(123)  # wrong type
+        with self.assertRaises(TypeError):
+            FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
+
+    def test_overwrite_locals(self):
+        # Verify we do not crash if we overwrite a local passed as an argument
+        # from an ancestor in the call stack.
+        def f():
+            xs = [1, 2, 3]
+            ys = [4, 5, 6]
+            return g(xs)
+
+        def g(xs):
+            f = sys._getframe()
+            f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
+            return xs[1]
+
+        self.assertEqual(f(), 2)
+
+
+class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):
+    """Test that FrameLocalsProxy behaves like a Mapping (with exceptions)"""
+
+    def _f(*args, **kwargs):
+        def _f():
+            return sys._getframe().f_locals
+        return _f()
+    type2test = _f
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_constructor(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: del proxy[key] fails')
+    def test_write(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.popitem')
+    def test_popitem(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.pop')
+    def test_pop(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.clear')
+    def test_clear(self):
+        pass
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.fromkeys')
+    def test_fromkeys(self):
+        pass
+
+    # no del
+    def test_getitem(self):
+        mapping_tests.BasicTestMappingProtocol.test_getitem(self)
+        d = self._full_mapping({'a': 1, 'b': 2})
+        self.assertEqual(d['a'], 1)
+        self.assertEqual(d['b'], 2)
+        d['c'] = 3
+        d['a'] = 4
+        self.assertEqual(d['c'], 3)
+        self.assertEqual(d['a'], 4)
+
+    @unittest.skipIf(True, 'Unlike a mapping: no proxy.update')
+    def test_update(self):
+        pass
+
+    # proxy.copy returns a regular dict
+    def test_copy(self):
+        d = self._full_mapping({1:1, 2:2, 3:3})
+        self.assertEqual(d.copy(), {1:1, 2:2, 3:3})
+        d = self._empty_mapping()
+        self.assertEqual(d.copy(), d)
+        self.assertRaises(TypeError, d.copy, None)
+
+        self.assertIsInstance(d.copy(), dict)
+
+    @unittest.skipIf(True, 'Locals proxies for different frames never compare as equal')
+    def test_eq(self):
+        pass
+
 
 class TestFrameCApi(unittest.TestCase):
     def test_basic(self):
@@ -549,51 +795,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             self.assertIs(catcher.unraisable.exc_type, TypeError)
         self.assertIsNone(weak())
 
-@unittest.skipIf(_testcapi is None, 'need _testcapi')
-class TestCAPI(unittest.TestCase):
-    def getframe(self):
-        return sys._getframe()
-
-    def test_frame_getters(self):
-        frame = self.getframe()
-        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
-        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
-        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
-        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
-
-    def test_getvar(self):
-        current_frame = sys._getframe()
-        x = 1
-        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
-        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvar(current_frame, "y")
-        with self.assertRaises(NameError):
-            _testcapi.frame_getvarstring(current_frame, b"y")
-
-        # wrong name type
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, b'x')
-        with self.assertRaises(TypeError):
-            _testcapi.frame_getvar(current_frame, 123)
-
-    def getgenframe(self):
-        yield sys._getframe()
-
-    def test_frame_get_generator(self):
-        gen = self.getgenframe()
-        frame = next(gen)
-        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
-
-    def test_frame_fback_api(self):
-        """Test that accessing `f_back` does not cause a segmentation fault on
-        a frame created with `PyFrame_New` (GH-99110)."""
-        def dummy():
-            pass
-
-        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
-        # The following line should not cause a segmentation fault.
-        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()

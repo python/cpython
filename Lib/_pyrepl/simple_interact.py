@@ -26,17 +26,13 @@ allowing multiline input and multiline history entries.
 from __future__ import annotations
 
 import _sitebuiltins
-import linecache
 import functools
+import os
 import sys
 import code
+import warnings
 
-from .readline import _get_reader, multiline_input
-
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any
+from .readline import _get_reader, multiline_input, append_history_file
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -50,7 +46,9 @@ def check() -> str:
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        if term := os.environ.get("TERM", ""):
+            term = f"; TERM={term}"
+        return str(str(e) or repr(e) or "unknown error") + term
     return ""
 
 
@@ -74,8 +72,9 @@ REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
-    "help": "help",
+    "help": _sitebuiltins._Helper(),
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
 
@@ -111,6 +110,10 @@ def run_multiline_interactive_console(
     more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
+    _is_x_showrefcount_set = sys._xoptions.get("showrefcount")
+    _is_pydebug_build = hasattr(sys, "gettotalrefcount")
+    show_ref_count = _is_x_showrefcount_set and _is_pydebug_build
+
     def maybe_run_command(statement: str) -> bool:
         statement = statement.strip()
         if statement in console.locals or statement not in REPL_COMMANDS:
@@ -120,21 +123,13 @@ def run_multiline_interactive_console(
         reader.history.pop()  # skip internal commands in history
         command = REPL_COMMANDS[statement]
         if callable(command):
-            command()
+            # Make sure that history does not change because of commands
+            with reader.suspend_history():
+                command()
             return True
-
-        if isinstance(command, str):
-            # Internal readline commands require a prepared reader like
-            # inside multiline_input.
-            reader.prepare()
-            reader.refresh()
-            reader.do_cmd((command, [statement]))
-            reader.restore()
-            return True
-
         return False
 
-    while 1:
+    while True:
         try:
             try:
                 sys.stdout.flush()
@@ -152,21 +147,34 @@ def run_multiline_interactive_console(
                 continue
 
             input_name = f"<python-input-{input_n}>"
-            linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
+            try:
+                append_history_file()
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                warnings.warn(f"failed to open the history file for writing: {e}")
+
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
-            if r.last_command and 'isearch' in r.last_command.__name__:
-                r.isearch_direction = ''
-                r.console.forgetinput()
-                r.pop_input_trans()
-                r.dirty = True
+            r.cmpltn_reset()
+            if r.input_trans is r.isearch_trans:
+                r.do_cmd(("isearch-end", [""]))
+            r.pos = len(r.get_unicode())
+            r.dirty = True
             r.refresh()
-            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:
             console.write("\nMemoryError\n")
             console.resetbuffer()
+        except SystemExit:
+            raise
+        except:
+            console.showtraceback()
+            console.resetbuffer()
+        if show_ref_count:
+            console.write(
+                f"[{sys.gettotalrefcount()} refs,"
+                f" {sys.getallocatedblocks()} blocks]\n"
+            )

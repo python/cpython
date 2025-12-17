@@ -16,20 +16,21 @@ Documentation bugs
 ==================
 
 If you find a bug in this documentation or would like to propose an improvement,
-please submit a bug report on the :ref:`tracker <using-the-tracker>`.  If you
+please submit a bug report on the :ref:`issue tracker <using-the-tracker>`.  If you
 have a suggestion on how to fix it, include that as well.
+
+.. only:: translation
+
+   If the bug or suggested improvement concerns the translation of this
+   documentation, submit the report to the
+   `translation’s repository <TRANSLATION_REPO_>`_ instead.
 
 You can also open a discussion item on our
 `Documentation Discourse forum <https://discuss.python.org/c/documentation/26>`_.
 
 If you find a bug in the theme (HTML / CSS / JavaScript) of the
-documentation, please submit a bug report on the `python-doc-theme bug
+documentation, please submit a bug report on the `python-doc-theme issue
 tracker <https://github.com/python/python-docs-theme>`_.
-
-If you're short on time, you can also email documentation bug reports to
-docs@python.org (behavioral bugs can be sent to python-list@python.org).
-'docs@' is a mailing list run by volunteers; your request will be noticed,
-though it may take a while to be processed.
 
 .. seealso::
 
@@ -42,8 +43,8 @@ though it may take a while to be processed.
    `Helping with Documentation <https://devguide.python.org/docquality/#helping-with-documentation>`_
       Comprehensive guide for individuals that are interested in contributing to Python documentation.
 
-   `Documentation Translations <https://devguide.python.org/documentation/translating/>`_
-      A list of GitHub pages for documentation translation and their primary contacts.
+   `Documentation Translations <https://devguide.python.org/documentation/translations/translating/#translation-coordinators>`_
+      A list of GitHub pages for documentation translation and their coordination teams.
 
 
 .. _using-the-tracker:

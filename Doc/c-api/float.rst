@@ -2,20 +2,20 @@
 
 .. _floatobjects:
 
-Floating Point Objects
+Floating-Point Objects
 ======================
 
-.. index:: pair: object; floating point
+.. index:: pair: object; floating-point
 
 
 .. c:type:: PyFloatObject
 
-   This subtype of :c:type:`PyObject` represents a Python floating point object.
+   This subtype of :c:type:`PyObject` represents a Python floating-point object.
 
 
 .. c:var:: PyTypeObject PyFloat_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python floating point
+   This instance of :c:type:`PyTypeObject` represents the Python floating-point
    type.  This is the same object as :class:`float` in the Python layer.
 
 
@@ -45,7 +45,7 @@ Floating Point Objects
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
 
    Return a C :c:expr:`double` representation of the contents of *pyfloat*.  If
-   *pyfloat* is not a Python floating point object but has a :meth:`~object.__float__`
+   *pyfloat* is not a Python floating-point object but has a :meth:`~object.__float__`
    method, this method will first be called to convert *pyfloat* into a float.
    If :meth:`!__float__` is not defined then it falls back to :meth:`~object.__index__`.
    This method returns ``-1.0`` upon failure, so one should call
@@ -78,6 +78,111 @@ Floating Point Objects
    Return the minimum normalized positive float *DBL_MIN* as C :c:expr:`double`.
 
 
+.. c:macro:: Py_INFINITY
+
+   This macro expands a to constant expression of type :c:expr:`double`, that
+   represents the positive infinity.
+
+   It is equivalent to the :c:macro:`!INFINITY` macro from the C11 standard
+   ``<math.h>`` header.
+
+   .. deprecated:: 3.15
+      The macro is :term:`soft deprecated`.
+
+
+.. c:macro:: Py_NAN
+
+   This macro expands a to constant expression of type :c:expr:`double`, that
+   represents a quiet not-a-number (qNaN) value.
+
+   On most platforms, this is equivalent to the :c:macro:`!NAN` macro from
+   the C11 standard ``<math.h>`` header.
+
+
+.. c:macro:: Py_HUGE_VAL
+
+   Equivalent to :c:macro:`!INFINITY`.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.
+
+
+.. c:macro:: Py_MATH_E
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.e` constant.
+
+
+.. c:macro:: Py_MATH_El
+
+   High precision (long double) definition of :data:`~math.e` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
+.. c:macro:: Py_MATH_PI
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.pi` constant.
+
+
+.. c:macro:: Py_MATH_PIl
+
+   High precision (long double) definition of :data:`~math.pi` constant.
+
+   .. deprecated-removed:: 3.15 3.20
+
+
+.. c:macro:: Py_MATH_TAU
+
+   The definition (accurate for a :c:expr:`double` type) of the :data:`math.tau` constant.
+
+   .. versionadded:: 3.6
+
+
+.. c:macro:: Py_RETURN_NAN
+
+   Return :data:`math.nan` from a function.
+
+   On most platforms, this is equivalent to ``return PyFloat_FromDouble(NAN)``.
+
+
+.. c:macro:: Py_RETURN_INF(sign)
+
+   Return :data:`math.inf` or :data:`-math.inf <math.inf>` from a function,
+   depending on the sign of *sign*.
+
+   On most platforms, this is equivalent to the following::
+
+      return PyFloat_FromDouble(copysign(INFINITY, sign));
+
+
+.. c:macro:: Py_IS_FINITE(X)
+
+   Return ``1`` if the given floating-point number *X* is finite,
+   that is, it is normal, subnormal or zero, but not infinite or NaN.
+   Return ``0`` otherwise.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isfinite` instead.
+
+
+.. c:macro:: Py_IS_INFINITY(X)
+
+   Return ``1`` if the given floating-point number *X* is positive or negative
+   infinity.  Return ``0`` otherwise.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isinf` instead.
+
+
+.. c:macro:: Py_IS_NAN(X)
+
+   Return ``1`` if the given floating-point number *X* is a not-a-number (NaN)
+   value.  Return ``0`` otherwise.
+
+   .. deprecated:: 3.14
+      The macro is :term:`soft deprecated`.  Use :c:macro:`!isnan` instead.
+
+
 Pack and Unpack functions
 -------------------------
 
@@ -95,6 +200,9 @@ IEEE 754 binary64 double precision format, although the packing of INFs and
 NaNs (if such things exist on the platform) isn't handled correctly, and
 attempting to unpack a bytes string containing an IEEE INF or NaN will raise an
 exception.
+
+Note that NaNs type may not be preserved on IEEE platforms (signaling NaN become
+quiet NaN), for example on x86 systems in 32-bit mode.
 
 On non-IEEE platforms with more precision, or larger dynamic range, than IEEE
 754 supports, not all values can be packed; on non-IEEE platforms with less
@@ -121,15 +229,15 @@ There are two problems on non-IEEE platforms:
 * What this does is undefined if *x* is a NaN or infinity.
 * ``-0.0`` and ``+0.0`` produce the same bytes string.
 
-.. c:function:: int PyFloat_Pack2(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack2(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary16 half-precision format.
 
-.. c:function:: int PyFloat_Pack4(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack4(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary32 single precision format.
 
-.. c:function:: int PyFloat_Pack8(double x, unsigned char *p, int le)
+.. c:function:: int PyFloat_Pack8(double x, char *p, int le)
 
    Pack a C double as the IEEE 754 binary64 double precision format.
 
@@ -151,14 +259,14 @@ Return value: The unpacked double.  On error, this is ``-1.0`` and
 Note that on a non-IEEE platform this will refuse to unpack a bytes string that
 represents a NaN or infinity.
 
-.. c:function:: double PyFloat_Unpack2(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack2(const char *p, int le)
 
    Unpack the IEEE 754 binary16 half-precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack4(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack4(const char *p, int le)
 
    Unpack the IEEE 754 binary32 single precision format as a C double.
 
-.. c:function:: double PyFloat_Unpack8(const unsigned char *p, int le)
+.. c:function:: double PyFloat_Unpack8(const char *p, int le)
 
    Unpack the IEEE 754 binary64 double precision format as a C double.

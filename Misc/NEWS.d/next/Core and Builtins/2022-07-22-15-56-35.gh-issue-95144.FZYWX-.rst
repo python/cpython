@@ -1,2 +1,0 @@
-Improve the error message from ``a in b`` when ``b`` is not a container
-to mention the term "container".

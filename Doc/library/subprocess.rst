@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -608,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -618,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -626,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -649,7 +649,7 @@ functions.
 
       If specified, *env* must provide any variables required for the program to
       execute.  On Windows, in order to run a `side-by-side assembly`_ the
-      specified *env* **must** include a valid :envvar:`SystemRoot`.
+      specified *env* **must** include a valid ``%SystemRoot%``.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
@@ -831,7 +831,9 @@ Instances of the :class:`Popen` class have the following methods:
 
    If the process does not terminate after *timeout* seconds, a
    :exc:`TimeoutExpired` exception will be raised.  Catching this exception and
-   retrying communication will not lose any output.
+   retrying communication will not lose any output.  Supplying *input* to a
+   subsequent post-timeout :meth:`communicate` call is in undefined behavior
+   and may become an error in the future.
 
    The child process is not killed if the timeout expires, so in order to
    cleanup properly a well-behaved application should kill the child process and
@@ -843,6 +845,11 @@ Instances of the :class:`Popen` class have the following methods:
       except TimeoutExpired:
           proc.kill()
           outs, errs = proc.communicate()
+
+   After a call to :meth:`~Popen.communicate` raises :exc:`TimeoutExpired`, do
+   not call :meth:`~Popen.wait`. Use an additional :meth:`~Popen.communicate`
+   call to finish handling pipes and populate the :attr:`~Popen.returncode`
+   attribute.
 
    .. note::
 
@@ -1126,7 +1133,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: NORMAL_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have an normal priority. (default)
+   will have a normal priority. (default)
 
    .. versionadded:: 3.7
 
@@ -1473,7 +1480,7 @@ handling consistency are valid for these functions.
 
    Return ``(exitcode, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
+   Execute the string *cmd* in a shell with :func:`check_output` and
    return a 2-tuple ``(exitcode, output)``.
    *encoding* and *errors* are used to decode output;
    see the notes on :ref:`frequently-used-arguments` for more details.
@@ -1525,6 +1532,24 @@ handling consistency are valid for these functions.
 Notes
 -----
 
+.. _subprocess-timeout-behavior:
+
+Timeout Behavior
+^^^^^^^^^^^^^^^^
+
+When using the ``timeout`` parameter in functions like :func:`run`,
+:meth:`Popen.wait`, or :meth:`Popen.communicate`,
+users should be aware of the following behaviors:
+
+1. **Process Creation Delay**: The initial process creation itself cannot be interrupted
+   on many platform APIs. This means that even when specifying a timeout, you are not
+   guaranteed to see a timeout exception until at least after however long process
+   creation takes.
+
+2. **Extremely Small Timeout Values**: Setting very small timeout values (such as a few
+   milliseconds) may result in almost immediate :exc:`TimeoutExpired` exceptions because
+   process creation and system scheduling inherently require time.
+
 .. _converting-argument-sequence:
 
 Converting an argument sequence to a string on Windows
@@ -1561,36 +1586,22 @@ runtime):
       Module which provides function to parse and escape command lines.
 
 
-.. _disable_vfork:
 .. _disable_posix_spawn:
 
-Disabling use of ``vfork()`` or ``posix_spawn()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Disable use of ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly unusual situation where you need to
-prevent ``vfork()`` from being used by Python, you can set the
-:const:`subprocess._USE_VFORK` attribute to a false value.
-
-::
-
-   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
-
-Setting this has no impact on use of ``posix_spawn()`` which could use
-``vfork()`` internally within its libc implementation.  There is a similar
-:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
-that.
-
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 
-It is safe to set these to false on any Python version. They will have no
-effect on older versions when unsupported. Do not assume the attributes are
-available to read. Despite their names, a true value does not indicate that the
+It is safe to set this to false on any Python version. It will have no
+effect on older or newer versions where unsupported. Do not assume the attribute
+is available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
@@ -1598,4 +1609,3 @@ reproduce the issue you were seeing. Link to that issue from a comment in your
 code.
 
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
-.. versionadded:: 3.11 ``_USE_VFORK``

@@ -277,7 +277,7 @@ cause any runtime effects with ``from __future__ import annotations``.
 .. section: Core and Builtins
 
 :exc:`SyntaxError` exceptions raised by the interpreter will highlight the
-full error range of the expression that consistutes the syntax error itself,
+full error range of the expression that constitutes the syntax error itself,
 instead of just where the problem is detected. Patch by Pablo Galindo.
 
 ..
@@ -402,8 +402,8 @@ the heap. Should speed up dispatch in the interpreter.
 .. nonce: eUn4p5
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) and class methods
-(:func:`@classmethod <classmethod>`) now inherit the method attributes
+Static methods (:deco:`staticmethod`) and class methods
+(:deco:`classmethod`) now inherit the method attributes
 (``__module__``, ``__name__``, ``__qualname__``, ``__doc__``,
 ``__annotations__``) and have a new ``__wrapped__`` attribute. Patch by
 Victor Stinner.
@@ -454,7 +454,7 @@ file locations.
 .. nonce: VSF3vg
 .. section: Core and Builtins
 
-Static methods (:func:`@staticmethod <staticmethod>`) are now callable as
+Static methods (:deco:`staticmethod`) are now callable as
 regular functions. Patch by Victor Stinner.
 
 ..
@@ -941,7 +941,7 @@ result from ``entry_points()`` as deprecated.
 
 ..
 
-.. gh: 47383
+.. gh-issue: 47383
 .. date: 2021-04-08-19-32-26
 .. nonce: YI1hdL
 .. section: Library
@@ -958,7 +958,7 @@ Patch by Jelle Zijlstra.
 .. nonce: nnVd3h
 .. section: Library
 
-Add an ``encoding`` parameter :func:`logging.fileConfig()`.
+Add an ``encoding`` parameter :func:`logging.fileConfig`.
 
 ..
 
@@ -1270,7 +1270,7 @@ Fix thread locks in zlib module may go wrong in rare case. Patch by Ma Lin.
 .. nonce: oi6Kdb
 .. section: Library
 
-Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace()`. Patch
+Fix dataclasses with ``InitVar``\s and :func:`~dataclasses.replace`. Patch
 by Claudiu Popa.
 
 ..
@@ -1310,11 +1310,11 @@ functions in the :mod:`os` module.
 .. nonce: 9adF3E
 .. section: Library
 
-:func:`os.path.expanduser()` now refuses to guess Windows home directories
+:func:`os.path.expanduser` now refuses to guess Windows home directories
 if the basename of current user's home directory does not match their
 username.
 
-:meth:`pathlib.Path.expanduser()` and :meth:`~pathlib.Path.home()` now
+:meth:`pathlib.Path.expanduser` and :meth:`~pathlib.Path.home` now
 consistently raise :exc:`RuntimeError` exception when a home directory
 cannot be resolved. Previously a :exc:`KeyError` exception could be raised
 on Windows when the ``"USERNAME"``  environment variable was unset.
@@ -1516,7 +1516,7 @@ Adds additional arguments to :func:`os.startfile` function.
 .. nonce: F0Cg6X
 .. section: Windows
 
-Avoid raising errors from :meth:`pathlib.Path.exists()` when passed an
+Avoid raising errors from :meth:`pathlib.Path.exists` when passed an
 invalid filename.
 
 ..

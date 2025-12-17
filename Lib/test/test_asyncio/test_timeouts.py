@@ -9,7 +9,7 @@ from test.test_asyncio.utils import await_without_task
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
@@ -220,7 +220,7 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                         # Pretend the loop is busy for a while.
                         time.sleep(0.1)
                         await asyncio.sleep(1)
-                # TimeoutError was cought by (2)
+                # TimeoutError was caught by (2)
                 await asyncio.sleep(10) # This sleep should be interrupted by (1)
         t1 = loop.time()
         self.assertTrue(t0 <= t1 <= t0 + 1)

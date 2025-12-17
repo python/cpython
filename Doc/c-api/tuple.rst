@@ -33,12 +33,27 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_New(Py_ssize_t len)
 
-   Return a new tuple object of size *len*, or ``NULL`` on failure.
+   Return a new tuple object of size *len*,
+   or ``NULL`` with an exception set on failure.
+
+
+.. c:function:: PyObject* PyTuple_FromArray(PyObject *const *array, Py_ssize_t size)
+
+   Create a tuple of *size* items and copy references from *array* to the new
+   tuple.
+
+   *array* can be NULL if *size* is ``0``.
+
+   On success, return a new reference.
+   On error, set an exception and return ``NULL``.
+
+   .. versionadded:: 3.15
 
 
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
-   Return a new tuple object of size *n*, or ``NULL`` on failure. The tuple values
+   Return a new tuple object of size *n*,
+   or ``NULL`` with an exception set on failure. The tuple values
    are initialized to the subsequent *n* C arguments pointing to Python objects.
    ``PyTuple_Pack(2, a, b)`` is equivalent to ``Py_BuildValue("(OO)", a, b)``.
 
@@ -46,12 +61,12 @@ Tuple Objects
 .. c:function:: Py_ssize_t PyTuple_Size(PyObject *p)
 
    Take a pointer to a tuple object, and return the size of that tuple.
+   On error, return ``-1`` with an exception set.
 
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
 
-   Return the size of the tuple *p*, which must be non-``NULL`` and point to a tuple;
-   no error checking is performed.
+   Like :c:func:`PyTuple_Size`, but without error checking.
 
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
@@ -74,8 +89,10 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
 
    Return the slice of the tuple pointed to by *p* between *low* and *high*,
-   or ``NULL`` on failure.  This is the equivalent of the Python expression
-   ``p[low:high]``.  Indexing from the end of the tuple is not supported.
+   or ``NULL`` with an exception set on failure.
+
+   This is the equivalent of the Python expression ``p[low:high]``.
+   Indexing from the end of the tuple is not supported.
 
 
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -131,8 +148,11 @@ Tuple Objects
 Struct Sequence Objects
 -----------------------
 
-Struct sequence objects are the C equivalent of :func:`~collections.namedtuple`
-objects, i.e. a sequence whose items can also be accessed through attributes.
+A struct sequence object is a :term:`named tuple`, that is, a sequence
+whose items can also be accessed through attributes.
+It is similar to :func:`collections.namedtuple`, but provides a slightly
+different interface.
+
 To create a struct sequence, you first have to create a specific struct sequence
 type.
 
@@ -140,6 +160,8 @@ type.
 
    Create a new struct sequence type from the data in *desc*, described below. Instances
    of the resulting type can be created with :c:func:`PyStructSequence_New`.
+
+   Return ``NULL`` with an exception set on failure.
 
 
 .. c:function:: void PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
@@ -149,8 +171,8 @@ type.
 
 .. c:function:: int PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
 
-   The same as ``PyStructSequence_InitType``, but returns ``0`` on success and ``-1`` on
-   failure.
+   Like :c:func:`PyStructSequence_InitType`, but returns ``0`` on success
+   and ``-1`` with an exception set on failure.
 
    .. versionadded:: 3.4
 
@@ -161,7 +183,8 @@ type.
 
    .. c:member:: const char *name
 
-      Name of the struct sequence type.
+      Fully qualified name of the type; null-terminated UTF-8 encoded.
+      The name must contain the module name.
 
    .. c:member:: const char *doc
 
@@ -206,6 +229,8 @@ type.
 
    Creates an instance of *type*, which must have been created with
    :c:func:`PyStructSequence_NewType`.
+
+   Return ``NULL`` with an exception set on failure.
 
 
 .. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)

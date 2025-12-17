@@ -14,16 +14,13 @@ typedef struct {
     /* Number of items in the dictionary */
     Py_ssize_t ma_used;
 
-    /* Dictionary version: globally unique, value change each time
-       the dictionary is modified */
-#ifdef Py_BUILD_CORE
-    /* Bits 0-7 are for dict watchers.
+    /* This is a private field for CPython's internal use.
+     * Bits 0-7 are for dict watchers.
      * Bits 8-11 are for the watched mutation counter (used by tier2 optimization)
-     * The remaining bits (12-63) are the actual version tag. */
-    uint64_t ma_version_tag;
-#else
-    Py_DEPRECATED(3.12) uint64_t ma_version_tag;
-#endif
+     * Bits 12-31 are currently unused
+     * Bits 32-63 are a unique id in the free threading build (used for per-thread refcounting)
+     */
+    uint64_t _ma_watcher_tag;
 
     PyDictKeysObject *ma_keys;
 
@@ -41,16 +38,6 @@ PyAPI_FUNC(PyObject *) _PyDict_GetItem_KnownHash(PyObject *mp, PyObject *key,
 Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
-
-// Inserts `key` with a value `default_value`, if `key` is not already present
-// in the dictionary.  If `result` is not NULL, then the value associated
-// with `key` is returned in `*result` (either the existing value, or the now
-// inserted `default_value`).
-// Returns:
-//   -1 on error
-//    0 if `key` was not present and `default_value` was inserted
-//    1 if `key` was present and `default_value` was not inserted
-PyAPI_FUNC(int) PyDict_SetDefaultRef(PyObject *mp, PyObject *key, PyObject *default_value, PyObject **result);
 
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
@@ -71,7 +58,12 @@ PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 
 PyAPI_FUNC(int) PyDict_Pop(PyObject *dict, PyObject *key, PyObject **result);
 PyAPI_FUNC(int) PyDict_PopString(PyObject *dict, const char *key, PyObject **result);
-PyAPI_FUNC(PyObject *) _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value);
+
+// Use PyDict_Pop() instead
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_Pop(
+    PyObject *dict,
+    PyObject *key,
+    PyObject *default_value);
 
 /* Dictionary watchers */
 

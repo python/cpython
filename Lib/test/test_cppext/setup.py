@@ -3,6 +3,7 @@
 import os
 import platform
 import shlex
+import sys
 import sysconfig
 from test import support
 
@@ -19,18 +20,34 @@ if not support.MS_WINDOWS:
         # warnings
         '-Werror',
     ]
+
+    CPPFLAGS_PEDANTIC = [
+        # Ask for strict(er) compliance with the standard.
+        # We cannot do this for c++03 unlimited API, since several headers in
+        # Include/cpython/ use commas at end of `enum` declarations, a C++11
+        # feature for which GCC has no narrower option than -Wpedantic itself.
+        '-pedantic-errors',
+
+        # We also use `long long`, a C++11 feature we can enable individually.
+        '-Wno-long-long',
+    ]
 else:
     # MSVC compiler flags
     CPPFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]
+    CPPFLAGS_PEDANTIC = []
 
 
 def main():
     cppflags = list(CPPFLAGS)
     std = os.environ.get("CPYTHON_TEST_CPP_STD", "")
     module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
+    limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
+    internal = bool(int(os.environ.get("TEST_INTERNAL_C_API", "0")))
 
     cppflags = list(CPPFLAGS)
     cppflags.append(f'-DMODULE_NAME={module_name}')
@@ -41,6 +58,10 @@ def main():
             cppflags.append(f'/std:{std}')
         else:
             cppflags.append(f'-std={std}')
+
+        if limited or (std != 'c++03'):
+            # See CPPFLAGS_PEDANTIC docstring
+            cppflags.extend(CPPFLAGS_PEDANTIC)
 
     # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
     # option emits a C++ compiler warning. Remove "-std11" option from the
@@ -56,6 +77,14 @@ def main():
         cmd = shlex.join(cmd)
         # CC env var overrides sysconfig CC variable in setuptools
         os.environ['CC'] = cmd
+
+    # Define Py_LIMITED_API macro
+    if limited:
+        version = sys.hexversion
+        cppflags.append(f'-DPy_LIMITED_API={version:#x}')
+
+    if internal:
+        cppflags.append('-DTEST_INTERNAL_C_API=1')
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []

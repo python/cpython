@@ -1,5 +1,6 @@
 import doctest
 import unittest
+import itertools
 from test import support
 from test.support import threading_helper, script_helper
 from itertools import *
@@ -15,26 +16,6 @@ import sys
 import struct
 import threading
 import gc
-import warnings
-
-def pickle_deprecated(testfunc):
-    """ Run the test three times.
-    First, verify that a Deprecation Warning is raised.
-    Second, run normally but with DeprecationWarnings temporarily disabled.
-    Third, run with warnings promoted to errors.
-    """
-    def inner(self):
-        with self.assertWarns(DeprecationWarning):
-            testfunc(self)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            testfunc(self)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=DeprecationWarning)
-            with self.assertRaises((DeprecationWarning, AssertionError, SystemError)):
-                testfunc(self)
-
-    return inner
 
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
@@ -514,6 +495,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(2, zip('abc',count(-3))), [('a', -3), ('b', -2)])
         self.assertRaises(TypeError, count, 2, 3, 4)
         self.assertRaises(TypeError, count, 'a')
+        self.assertEqual(take(3, count(maxsize)),
+                        [maxsize, maxsize + 1, maxsize + 2])
         self.assertEqual(take(10, count(maxsize-5)),
                          list(range(maxsize-5, maxsize+5)))
         self.assertEqual(take(10, count(-maxsize-5)),
@@ -536,6 +519,15 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(next(c), -8)
         self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(repr(count(10.0)), 'count(10.0)')
+
+        self.assertEqual(repr(count(maxsize)), f'count({maxsize})')
+        c = count(maxsize - 1)
+        self.assertEqual(repr(c), f'count({maxsize - 1})')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize})')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 1})')
+
         self.assertEqual(type(next(count(10.0))), float)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             # Test repr
@@ -560,6 +552,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(take(20, count(-maxsize-15, 3)), take(20, range(-maxsize-15,-maxsize+100, 3)))
         self.assertEqual(take(3, count(10, maxsize+5)),
                          list(range(10, 10+3*(maxsize+5), maxsize+5)))
+        self.assertEqual(take(3, count(maxsize, 2)),
+                         [maxsize, maxsize + 2, maxsize + 4])
+        self.assertEqual(take(3, count(maxsize, maxsize)),
+                         [maxsize, 2 * maxsize, 3 * maxsize])
+        self.assertEqual(take(3, count(-maxsize, maxsize)),
+                        [-maxsize, 0, maxsize])
         self.assertEqual(take(3, count(2, 1.25)), [2, 3.25, 4.5])
         self.assertEqual(take(3, count(2, 3.25-4j)), [2, 5.25-4j, 8.5-8j])
         self.assertEqual(take(3, count(Decimal('1.1'), Decimal('.1'))),
@@ -589,6 +587,20 @@ class TestBasicOps(unittest.TestCase):
         c = count(10, 1.0)
         self.assertEqual(type(next(c)), int)
         self.assertEqual(type(next(c)), float)
+
+        c = count(maxsize -2, 2)
+        self.assertEqual(repr(c), f'count({maxsize - 2}, 2)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, 2)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize + 2}, 2)')
+
+        c = count(maxsize + 1, -1)
+        self.assertEqual(repr(c), f'count({maxsize + 1}, -1)')
+        next(c)  # c is now at masize
+        self.assertEqual(repr(c), f'count({maxsize}, -1)')
+        next(c)
+        self.assertEqual(repr(c), f'count({maxsize - 1}, -1)')
 
     @threading_helper.requires_working_threading()
     def test_count_threading(self, step=1):
@@ -1012,12 +1024,16 @@ class TestBasicOps(unittest.TestCase):
                 else:
                     return
 
-        def product2(*args, **kwds):
+        def product2(*iterables, repeat=1):
             'Pure python version used in docs'
-            pools = list(map(tuple, args)) * kwds.get('repeat', 1)
+            if repeat < 0:
+                raise ValueError('repeat argument cannot be negative')
+            pools = [tuple(pool) for pool in iterables] * repeat
+
             result = [[]]
             for pool in pools:
                 result = [x+[y] for x in result for y in pool]
+
             for prod in result:
                 yield tuple(prod)
 
@@ -1265,10 +1281,11 @@ class TestBasicOps(unittest.TestCase):
             self.assertEqual(len(result), n)
             self.assertEqual([list(x) for x in result], [list('abc')]*n)
 
-        # tee pass-through to copyable iterator
+        # tee objects are independent (see bug gh-123884)
         a, b = tee('abc')
         c, d = tee(a)
-        self.assertTrue(a is c)
+        e, f = tee(c)
+        self.assertTrue(len({a, b, c, d, e, f}) == 6)
 
         # test tee_new
         t1, t2 = tee('abc')
@@ -1278,7 +1295,7 @@ class TestBasicOps(unittest.TestCase):
         t3 = tnew(t1)
         self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
 
-        # test that tee objects are weak referencable
+        # test that tee objects are weak referenceable
         a, b = tee(range(10))
         p = weakref.proxy(a)
         self.assertEqual(getattr(p, '__class__'), type(b))
@@ -1774,20 +1791,37 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         # Begin tee() recipe ###########################################
 
         def tee(iterable, n=2):
-            iterator = iter(iterable)
-            shared_link = [None, None]
-            return tuple(_tee(iterator, shared_link) for _ in range(n))
+            if n < 0:
+                raise ValueError
+            if n == 0:
+                return ()
+            iterator = _tee(iterable)
+            result = [iterator]
+            for _ in range(n - 1):
+                result.append(_tee(iterator))
+            return tuple(result)
 
-        def _tee(iterator, link):
-            try:
-                while True:
-                    if link[1] is None:
-                        link[0] = next(iterator)
-                        link[1] = [None, None]
-                    value, link = link
-                    yield value
-            except StopIteration:
-                return
+        class _tee:
+
+            def __init__(self, iterable):
+                it = iter(iterable)
+                if isinstance(it, _tee):
+                    self.iterator = it.iterator
+                    self.link = it.link
+                else:
+                    self.iterator = it
+                    self.link = [None, None]
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                link = self.link
+                if link[1] is None:
+                    link[0] = next(self.iterator)
+                    link[1] = [None, None]
+                value, self.link = link
+                return value
 
         # End tee() recipe #############################################
 
@@ -1833,12 +1867,10 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         self.assertRaises(TypeError, tee, [1,2], 'x')
         self.assertRaises(TypeError, tee, [1,2], 3, 'x')
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # tee object should be instantiable
-            a, b = tee('abc')
-            c = type(a)('def')
-            self.assertEqual(list(c), list('def'))
+        # tee object should be instantiable
+        a, b = tee('abc')
+        c = type(a)('def')
+        self.assertEqual(list(c), list('def'))
 
         # test long-lagged and multi-way split
         a, b, c = tee(range(2000), 3)
@@ -1849,11 +1881,9 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         self.assertEqual(list(a), list(range(100,2000)))
         self.assertEqual(list(c), list(range(2,2000)))
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # test invalid values of n
-            self.assertRaises(TypeError, tee, 'abc', 'invalid')
-            self.assertRaises(ValueError, tee, [], -1)
+        # test invalid values of n
+        self.assertRaises(TypeError, tee, 'abc', 'invalid')
+        self.assertRaises(ValueError, tee, [], -1)
 
         for n in range(5):
             result = tee('abc', n)
@@ -1861,21 +1891,19 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
             self.assertEqual(len(result), n)
             self.assertEqual([list(x) for x in result], [list('abc')]*n)
 
+        # tee objects are independent (see bug gh-123884)
+        a, b = tee('abc')
+        c, d = tee(a)
+        e, f = tee(c)
+        self.assertTrue(len({a, b, c, d, e, f}) == 6)
 
-        # Tests not applicable to the tee() recipe
-        if False:
-            # tee pass-through to copyable iterator
-            a, b = tee('abc')
-            c, d = tee(a)
-            self.assertTrue(a is c)
-
-            # test tee_new
-            t1, t2 = tee('abc')
-            tnew = type(t1)
-            self.assertRaises(TypeError, tnew)
-            self.assertRaises(TypeError, tnew, 10)
-            t3 = tnew(t1)
-            self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
+        # test tee_new
+        t1, t2 = tee('abc')
+        tnew = type(t1)
+        self.assertRaises(TypeError, tnew)
+        self.assertRaises(TypeError, tnew, 10)
+        t3 = tnew(t1)
+        self.assertTrue(list(t1) == list(t2) == list(t3) == list('abc'))
 
         # test that tee objects are weak referencable
         a, b = tee(range(10))
@@ -2437,10 +2465,10 @@ class SubclassWithKwargsTest(unittest.TestCase):
                     subclass(*args, newarg=3)
 
         for cls, args, result in testcases:
-            # Constructors of repeat, zip, compress accept keyword arguments.
+            # Constructors of repeat, zip, map, compress accept keyword arguments.
             # Their subclasses need overriding __new__ to support new
             # keyword arguments.
-            if cls in [repeat, zip, compress]:
+            if cls in [repeat, zip, map, compress]:
                 continue
             with self.subTest(cls):
                 class subclass_with_init(cls):
@@ -2504,7 +2532,7 @@ class SizeofTest(unittest.TestCase):
 
 
 def load_tests(loader, tests, pattern):
-    tests.addTest(doctest.DocTestSuite())
+    tests.addTest(doctest.DocTestSuite(itertools))
     return tests
 
 

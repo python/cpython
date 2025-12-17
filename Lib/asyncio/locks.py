@@ -341,9 +341,9 @@ class Condition(_ContextManagerMixin, mixins._LoopBoundMixin):
                 fut.set_result(False)
 
     def notify_all(self):
-        """Wake up all threads waiting on this condition. This method acts
-        like notify(), but wakes up all waiting threads instead of one. If the
-        calling thread has not acquired the lock when this method is called,
+        """Wake up all tasks waiting on this condition. This method acts
+        like notify(), but wakes up all waiting tasks instead of one. If the
+        calling task has not acquired the lock when this method is called,
         a RuntimeError is raised.
         """
         self.notify(len(self._waiters))
@@ -485,7 +485,7 @@ class Barrier(mixins._LoopBoundMixin):
     def __init__(self, parties):
         """Create a barrier, initialised to 'parties' tasks."""
         if parties < 1:
-            raise ValueError('parties must be > 0')
+            raise ValueError('parties must be >= 1')
 
         self._cond = Condition() # notify all tasks when state changes
 

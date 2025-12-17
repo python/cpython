@@ -692,8 +692,8 @@ image data. Add *background* and *grayscale* parameters to
 Add the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
 from one image to other image, possibly with pixel zooming and/or
 subsampling. Add *from_coords* parameter to :class:`!PhotoImage` methods
-:meth:`!copy()`, :meth:`!zoom()` and :meth:`!subsample()`. Add *zoom* and
-*subsample* parameters to :class:`!PhotoImage` method :meth:`!copy()`.
+:meth:`!copy`, :meth:`!zoom` and :meth:`!subsample`. Add *zoom* and
+*subsample* parameters to :class:`!PhotoImage` method :meth:`!copy`.
 
 ..
 
@@ -1213,7 +1213,7 @@ changed from ``'r'`` to ``'rb'``.
 .. nonce: eeS6w7
 .. section: Library
 
-Fix :func:`inspect.signature()` to correctly handle parameter defaults on
+Fix :func:`inspect.signature` to correctly handle parameter defaults on
 methods in extension modules that use names defined in the module namespace.
 
 ..
@@ -1315,7 +1315,7 @@ Hamdan.
 .. section: Library
 
 Adjust ``logging.LogRecord`` to use ``time.time_ns()`` and fix minor bug
-related to floating point math.
+related to floating-point math.
 
 ..
 

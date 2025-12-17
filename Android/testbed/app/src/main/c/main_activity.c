@@ -3,6 +3,7 @@
 #include <jni.h>
 #include <pthread.h>
 #include <Python.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -13,6 +14,13 @@ static void throw_runtime_exception(JNIEnv *env, const char *message) {
         env,
         (*env)->FindClass(env, "java/lang/RuntimeException"),
         message);
+}
+
+static void throw_errno(JNIEnv *env, const char *error_prefix) {
+    char error_message[1024];
+    snprintf(error_message, sizeof(error_message),
+             "%s: %s", error_prefix, strerror(errno));
+    throw_runtime_exception(env, error_message);
 }
 
 
@@ -34,9 +42,12 @@ typedef struct {
     int pipe[2];
 } StreamInfo;
 
+// The FILE member can't be initialized here because stdout and stderr are not
+// compile-time constants. Instead, it's initialized immediately before the
+// redirection.
 static StreamInfo STREAMS[] = {
-    {stdout, STDOUT_FILENO, ANDROID_LOG_INFO, "native.stdout", {-1, -1}},
-    {stderr, STDERR_FILENO, ANDROID_LOG_WARN, "native.stderr", {-1, -1}},
+    {NULL, STDOUT_FILENO, ANDROID_LOG_INFO, "native.stdout", {-1, -1}},
+    {NULL, STDERR_FILENO, ANDROID_LOG_WARN, "native.stderr", {-1, -1}},
     {NULL, -1, ANDROID_LOG_UNKNOWN, NULL, {-1, -1}},
 };
 
@@ -84,64 +95,108 @@ static char *redirect_stream(StreamInfo *si) {
     return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_redirectStdioToLogcat(
+JNIEXPORT void JNICALL Java_org_python_testbed_PythonTestRunner_redirectStdioToLogcat(
     JNIEnv *env, jobject obj
 ) {
+    STREAMS[0].file = stdout;
+    STREAMS[1].file = stderr;
     for (StreamInfo *si = STREAMS; si->file; si++) {
         char *error_prefix;
         if ((error_prefix = redirect_stream(si))) {
-            char error_message[1024];
-            snprintf(error_message, sizeof(error_message),
-                     "%s: %s", error_prefix, strerror(errno));
-            throw_runtime_exception(env, error_message);
+            throw_errno(env, error_prefix);
             return;
         }
     }
 }
 
 
-// --- Python intialization ----------------------------------------------------
+// --- Python initialization ---------------------------------------------------
 
-static PyStatus set_config_string(
-    JNIEnv *env, PyConfig *config, wchar_t **config_str, jstring value
-) {
-    const char *value_utf8 = (*env)->GetStringUTFChars(env, value, NULL);
-    PyStatus status = PyConfig_SetBytesString(config, config_str, value_utf8);
-    (*env)->ReleaseStringUTFChars(env, value, value_utf8);
-    return status;
+static char *init_signals() {
+    // Some tests use SIGUSR1, but that's blocked by default in an Android app in
+    // order to make it available to `sigwait` in the Signal Catcher thread.
+    // (https://cs.android.com/android/platform/superproject/+/android14-qpr3-release:art/runtime/signal_catcher.cc).
+    // That thread's functionality is only useful for debugging the JVM, so disabling
+    // it should not weaken the tests.
+    //
+    // There's no safe way of stopping the thread completely (#123982), but simply
+    // unblocking SIGUSR1 is enough to fix most tests.
+    //
+    // However, in tests that generate multiple different signals in quick
+    // succession, it's possible for SIGUSR1 to arrive while the main thread is busy
+    // running the C-level handler for a different signal. In that case, the SIGUSR1
+    // may be sent to the Signal Catcher thread instead, which will generate a log
+    // message containing the text "reacting to signal".
+    //
+    // Such tests may need to be changed in one of the following ways:
+    //   * Use a signal other than SIGUSR1 (e.g. test_stress_delivery_simultaneous in
+    //     test_signal.py).
+    //   * Send the signal to a specific thread rather than the whole process (e.g.
+    //     test_signals in test_threadsignals.py.
+    sigset_t set;
+    if (sigemptyset(&set)) {
+        return "sigemptyset";
+    }
+    if (sigaddset(&set, SIGUSR1)) {
+        return "sigaddset";
+    }
+    if ((errno = pthread_sigmask(SIG_UNBLOCK, &set, NULL))) {
+        return "pthread_sigmask";
+    }
+    return NULL;
 }
 
 static void throw_status(JNIEnv *env, PyStatus status) {
     throw_runtime_exception(env, status.err_msg ? status.err_msg : "");
 }
 
-JNIEXPORT void JNICALL Java_org_python_testbed_MainActivity_runPython(
-    JNIEnv *env, jobject obj, jstring home, jstring runModule
+JNIEXPORT int JNICALL Java_org_python_testbed_PythonTestRunner_runPython(
+    JNIEnv *env, jobject obj, jstring home, jarray args
 ) {
+    const char *home_utf8 = (*env)->GetStringUTFChars(env, home, NULL);
+    char cwd[PATH_MAX];
+    snprintf(cwd, sizeof(cwd), "%s/%s", home_utf8, "cwd");
+    if (chdir(cwd)) {
+        throw_errno(env, "chdir");
+        return 1;
+    }
+
+    char *error_prefix;
+    if ((error_prefix = init_signals())) {
+        throw_errno(env, error_prefix);
+        return 1;
+    }
+
     PyConfig config;
     PyStatus status;
-    PyConfig_InitIsolatedConfig(&config);
+    PyConfig_InitPythonConfig(&config);
 
-    status = set_config_string(env, &config, &config.home, home);
-    if (PyStatus_Exception(status)) {
+    jsize argc = (*env)->GetArrayLength(env, args);
+    const char *argv[argc + 1];
+    for (int i = 0; i < argc; i++) {
+        jobject arg = (*env)->GetObjectArrayElement(env, args, i);
+        argv[i] = (*env)->GetStringUTFChars(env, arg, NULL);
+    }
+    argv[argc] = NULL;
+
+    // PyConfig_SetBytesArgv "must be called before other methods, since the
+    // preinitialization configuration depends on command line arguments"
+    if (PyStatus_Exception(status = PyConfig_SetBytesArgv(&config, argc, (char**)argv))) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
-    status = set_config_string(env, &config, &config.run_module, runModule);
+    status = PyConfig_SetBytesString(&config, &config.home, home_utf8);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
-
-    // Some tests generate SIGPIPE and SIGXFSZ, which should be ignored.
-    config.install_signal_handlers = 1;
 
     status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         throw_status(env, status);
-        return;
+        return 1;
     }
 
-    Py_RunMain();
+    return Py_RunMain();
 }

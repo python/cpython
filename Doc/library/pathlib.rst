@@ -178,8 +178,8 @@ we also call *flavours*:
    A subclass of :class:`PurePath`, this path flavour represents non-Windows
    filesystem paths::
 
-      >>> PurePosixPath('/etc')
-      PurePosixPath('/etc')
+      >>> PurePosixPath('/etc/hosts')
+      PurePosixPath('/etc/hosts')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -188,8 +188,8 @@ we also call *flavours*:
    A subclass of :class:`PurePath`, this path flavour represents Windows
    filesystem paths, including `UNC paths`_::
 
-      >>> PureWindowsPath('c:/Program Files/')
-      PureWindowsPath('c:/Program Files')
+      >>> PureWindowsPath('c:/', 'Users', 'Ximénez')
+      PureWindowsPath('c:/Users/Ximénez')
       >>> PureWindowsPath('//server/share/file')
       PureWindowsPath('//server/share/file')
 
@@ -311,7 +311,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -542,20 +542,6 @@ Pure paths provide the following methods and properties:
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
 
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
-
 .. method:: PurePath.joinpath(*pathsegments)
 
    Calling this method is equivalent to combining the path with each of
@@ -783,8 +769,8 @@ calls on path objects.  There are three ways to instantiate concrete paths:
    A subclass of :class:`Path` and :class:`PurePosixPath`, this class
    represents concrete non-Windows filesystem paths::
 
-      >>> PosixPath('/etc')
-      PosixPath('/etc')
+      >>> PosixPath('/etc/hosts')
+      PosixPath('/etc/hosts')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -798,8 +784,8 @@ calls on path objects.  There are three ways to instantiate concrete paths:
    A subclass of :class:`Path` and :class:`PureWindowsPath`, this class
    represents concrete Windows filesystem paths::
 
-      >>> WindowsPath('c:/Program Files/')
-      WindowsPath('c:/Program Files')
+      >>> WindowsPath('c:/', 'Users', 'Ximénez')
+      WindowsPath('c:/Users/Ximénez')
 
    *pathsegments* is specified similarly to :class:`PurePath`.
 
@@ -871,6 +857,12 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`ValueError` is raised.
+
 
 .. method:: Path.as_uri()
 
@@ -886,9 +878,11 @@ conforming to :rfc:`8089`.
       >>> p.as_uri()
       'file:///c:/Windows'
 
-   For historical reasons, this method is also available from
-   :class:`PurePath` objects. However, its use of :func:`os.fsencode` makes
-   it strictly impure.
+   .. deprecated-removed:: 3.14 3.19
+
+      Calling this method from :class:`PurePath` rather than :class:`Path` is
+      possible but deprecated. The method's use of :func:`os.fsencode` makes
+      it strictly impure.
 
 
 Expanding and resolving paths
@@ -997,10 +991,10 @@ Querying file type and status
 
 .. versionchanged:: 3.8
 
-   :meth:`~Path.exists()`, :meth:`~Path.is_dir()`, :meth:`~Path.is_file()`,
-   :meth:`~Path.is_mount()`, :meth:`~Path.is_symlink()`,
-   :meth:`~Path.is_block_device()`, :meth:`~Path.is_char_device()`,
-   :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
+   :meth:`~Path.exists`, :meth:`~Path.is_dir`, :meth:`~Path.is_file`,
+   :meth:`~Path.is_mount`, :meth:`~Path.is_symlink`,
+   :meth:`~Path.is_block_device`, :meth:`~Path.is_char_device`,
+   :meth:`~Path.is_fifo`, :meth:`~Path.is_socket` now return ``False``
    instead of raising an exception for paths that contain characters
    unrepresentable at the OS level.
 
@@ -1016,7 +1010,7 @@ Querying file type and status
 
 .. method:: Path.stat(*, follow_symlinks=True)
 
-   Return a :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
+   Return an :class:`os.stat_result` object containing information about this path, like :func:`os.stat`.
    The result is looked up at each call to this method.
 
    This method normally follows symlinks; to stat a symlink add the argument
@@ -1175,6 +1169,38 @@ Querying file type and status
       True
 
    .. versionadded:: 3.5
+
+
+.. attribute:: Path.info
+
+   A :class:`~pathlib.types.PathInfo` object that supports querying file type
+   information. The object exposes methods that cache their results, which can
+   help reduce the number of system calls needed when switching on file type.
+   For example::
+
+      >>> p = Path('src')
+      >>> if p.info.is_symlink():
+      ...     print('symlink')
+      ... elif p.info.is_dir():
+      ...     print('directory')
+      ... elif p.info.exists():
+      ...     print('something else')
+      ... else:
+      ...     print('not found')
+      ...
+      directory
+
+   If the path was generated from :meth:`Path.iterdir` then this attribute is
+   initialized with some information about the file type gleaned from scanning
+   the parent directory. Merely accessing :attr:`Path.info` does not perform
+   any filesystem queries.
+
+   To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
+   :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
+   this attribute. There is no way to reset the cache; instead you can create
+   a new path object with an empty info cache via ``p = Path(p)``.
+
+   .. versionadded:: 3.14
 
 
 Reading and writing files
@@ -1385,7 +1411,7 @@ Reading directories
    This can be used to prune the search, or to impose a specific order of visiting,
    or even to inform :meth:`Path.walk` about directories the caller creates or
    renames before it resumes :meth:`Path.walk` again. Modifying *dirnames* when
-   *top_down* is false has no effect on the behavior of :meth:`Path.walk()` since the
+   *top_down* is false has no effect on the behavior of :meth:`Path.walk` since the
    directories in *dirnames* have already been generated by the time *dirnames*
    is yielded to the caller.
 
@@ -1536,50 +1562,41 @@ Creating files and directories
       available. In previous versions, :exc:`NotImplementedError` was raised.
 
 
-Copying, renaming and deleting
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Copying, moving and deleting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
-   Copy the contents of this file to the *target* file. If *target* specifies
-   a file that already exists, it will be replaced.
+   Copy this file or directory tree to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.
 
-   If *follow_symlinks* is false, and this file is a symbolic link, *target*
-   will be created as a symbolic link. If *follow_symlinks* is true and this
-   file is a symbolic link, *target* will be a copy of the symlink target.
+   If the source is a file, the target will be replaced if it is an existing
+   file. If the source is a symlink and *follow_symlinks* is true (the
+   default), the symlink's target is copied. Otherwise, the symlink is
+   recreated at the destination.
 
-   If *preserve_metadata* is false (the default), only the file data is
-   guaranteed to be copied. Set *preserve_metadata* to true to ensure that the
-   file mode (permissions), flags, last access and modification times, and
-   extended attributes are copied where supported. This argument has no effect
-   on Windows, where metadata is always preserved when copying.
+   If *preserve_metadata* is false (the default), only directory structures
+   and file data are guaranteed to be copied. Set *preserve_metadata* to true
+   to ensure that file and directory permissions, flags, last access and
+   modification times, and extended attributes are copied where supported.
+   This argument has no effect when copying files on Windows (where
+   metadata is always preserved).
+
+   .. note::
+      Where supported by the operating system and file system, this method
+      performs a lightweight copy, where data blocks are only copied when
+      modified. This is known as copy-on-write.
 
    .. versionadded:: 3.14
 
 
-.. method:: Path.copytree(target, *, follow_symlinks=True, dirs_exist_ok=False, \
-                          ignore=None, on_error=None)
+.. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
+                           preserve_metadata=False)
 
-   Recursively copy this directory tree to the given destination.
-
-   If a symlink is encountered in the source tree, and *follow_symlinks* is
-   true (the default), the symlink's target is copied. Otherwise, the symlink
-   is recreated in the destination tree.
-
-   If the destination is an existing directory and *dirs_exist_ok* is false
-   (the default), a :exc:`FileExistsError` is raised. Otherwise, the copying
-   operation will continue if it encounters existing directories, and files
-   within the destination tree will be overwritten by corresponding files from
-   the source tree.
-
-   If *ignore* is given, it should be a callable accepting one argument: a
-   file or directory path within the source tree. The callable may return true
-   to suppress copying of the path.
-
-   If *on_error* is given, it should be a callable accepting one argument: an
-   instance of :exc:`OSError`. The callable may re-raise the exception or do
-   nothing, in which case the copying operation continues. If *on_error* isn't
-   given, exceptions are propagated to the caller.
+   Copy this file or directory tree into the given *target_dir*, which should
+   be an existing directory. Other arguments are handled identically to
+   :meth:`Path.copy`. Returns a new :class:`!Path` instance pointing to the
+   copy.
 
    .. versionadded:: 3.14
 
@@ -1623,6 +1640,32 @@ Copying, renaming and deleting
 
    .. versionchanged:: 3.8
       Added return value, return the new :class:`!Path` instance.
+
+
+.. method:: Path.move(target)
+
+   Move this file or directory tree to the given *target*, and return a new
+   :class:`!Path` instance pointing to *target*.
+
+   If the *target* doesn't exist it will be created. If both this path and the
+   *target* are existing files, then the target is overwritten. If both paths
+   point to the same file or directory, or the *target* is a non-empty
+   directory, then :exc:`OSError` is raised.
+
+   If both paths are on the same filesystem, the move is performed with
+   :func:`os.replace`. Otherwise, this path is copied (preserving metadata and
+   symlinks) and then deleted.
+
+   .. versionadded:: 3.14
+
+
+.. method:: Path.move_into(target_dir)
+
+   Move this file or directory tree into the given *target_dir*, which should
+   be an existing directory. Returns a new :class:`!Path` instance pointing to
+   the moved path.
+
+   .. versionadded:: 3.14
 
 
 .. method:: Path.unlink(missing_ok=False)
@@ -1724,9 +1767,12 @@ The following wildcards are supported in patterns for
 ``?``
   Matches one non-separator character.
 ``[seq]``
-  Matches one character in *seq*.
+  Matches one character in *seq*, where *seq* is a sequence of characters.
+  Range expressions are supported; for example, ``[a-z]`` matches any lowercase ASCII letter.
+  Multiple ranges can be combined: ``[a-zA-Z0-9_]`` matches any ASCII letter, digit, or underscore.
+
 ``[!seq]``
-  Matches one character not in *seq*.
+  Matches one character not in *seq*, where *seq* follows the same rules as above.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
@@ -1828,39 +1874,107 @@ Corresponding tools
 Below is a table mapping various :mod:`os` functions to their corresponding
 :class:`PurePath`/:class:`Path` equivalent.
 
-====================================   ==============================
-:mod:`os` and :mod:`os.path`           :mod:`pathlib`
-====================================   ==============================
-:func:`os.path.abspath`                :meth:`Path.absolute`
-:func:`os.path.realpath`               :meth:`Path.resolve`
-:func:`os.chmod`                       :meth:`Path.chmod`
-:func:`os.mkdir`                       :meth:`Path.mkdir`
-:func:`os.makedirs`                    :meth:`Path.mkdir`
-:func:`os.rename`                      :meth:`Path.rename`
-:func:`os.replace`                     :meth:`Path.replace`
-:func:`os.rmdir`                       :meth:`Path.rmdir`
-:func:`os.remove`, :func:`os.unlink`   :meth:`Path.unlink`
-:func:`os.getcwd`                      :func:`Path.cwd`
-:func:`os.path.exists`                 :meth:`Path.exists`
-:func:`os.path.expanduser`             :meth:`Path.expanduser` and
-                                       :meth:`Path.home`
-:func:`os.listdir`                     :meth:`Path.iterdir`
-:func:`os.walk`                        :meth:`Path.walk`
-:func:`os.path.isdir`                  :meth:`Path.is_dir`
-:func:`os.path.isfile`                 :meth:`Path.is_file`
-:func:`os.path.islink`                 :meth:`Path.is_symlink`
-:func:`os.link`                        :meth:`Path.hardlink_to`
-:func:`os.symlink`                     :meth:`Path.symlink_to`
-:func:`os.readlink`                    :meth:`Path.readlink`
-:func:`os.path.relpath`                :meth:`PurePath.relative_to`
-:func:`os.stat`                        :meth:`Path.stat`,
-                                       :meth:`Path.owner`,
-                                       :meth:`Path.group`
-:func:`os.path.isabs`                  :meth:`PurePath.is_absolute`
-:func:`os.path.join`                   :func:`PurePath.joinpath`
-:func:`os.path.basename`               :attr:`PurePath.name`
-:func:`os.path.dirname`                :attr:`PurePath.parent`
-:func:`os.path.samefile`               :meth:`Path.samefile`
-:func:`os.path.splitext`               :attr:`PurePath.stem` and
-                                       :attr:`PurePath.suffix`
-====================================   ==============================
+=====================================   ==============================================
+:mod:`os` and :mod:`os.path`            :mod:`pathlib`
+=====================================   ==============================================
+:func:`os.path.dirname`                 :attr:`PurePath.parent`
+:func:`os.path.basename`                :attr:`PurePath.name`
+:func:`os.path.splitext`                :attr:`PurePath.stem`, :attr:`PurePath.suffix`
+:func:`os.path.join`                    :meth:`PurePath.joinpath`
+:func:`os.path.isabs`                   :meth:`PurePath.is_absolute`
+:func:`os.path.relpath`                 :meth:`PurePath.relative_to` [1]_
+:func:`os.path.expanduser`              :meth:`Path.expanduser` [2]_
+:func:`os.path.realpath`                :meth:`Path.resolve`
+:func:`os.path.abspath`                 :meth:`Path.absolute` [3]_
+:func:`os.path.exists`                  :meth:`Path.exists`
+:func:`os.path.isfile`                  :meth:`Path.is_file`
+:func:`os.path.isdir`                   :meth:`Path.is_dir`
+:func:`os.path.islink`                  :meth:`Path.is_symlink`
+:func:`os.path.isjunction`              :meth:`Path.is_junction`
+:func:`os.path.ismount`                 :meth:`Path.is_mount`
+:func:`os.path.samefile`                :meth:`Path.samefile`
+:func:`os.getcwd`                       :meth:`Path.cwd`
+:func:`os.stat`                         :meth:`Path.stat`
+:func:`os.lstat`                        :meth:`Path.lstat`
+:func:`os.listdir`                      :meth:`Path.iterdir`
+:func:`os.walk`                         :meth:`Path.walk` [4]_
+:func:`os.mkdir`, :func:`os.makedirs`   :meth:`Path.mkdir`
+:func:`os.link`                         :meth:`Path.hardlink_to`
+:func:`os.symlink`                      :meth:`Path.symlink_to`
+:func:`os.readlink`                     :meth:`Path.readlink`
+:func:`os.rename`                       :meth:`Path.rename`
+:func:`os.replace`                      :meth:`Path.replace`
+:func:`os.remove`, :func:`os.unlink`    :meth:`Path.unlink`
+:func:`os.rmdir`                        :meth:`Path.rmdir`
+:func:`os.chmod`                        :meth:`Path.chmod`
+:func:`os.lchmod`                       :meth:`Path.lchmod`
+=====================================   ==============================================
+
+.. rubric:: Footnotes
+
+.. [1] :func:`os.path.relpath` calls :func:`~os.path.abspath` to make paths
+   absolute and remove "``..``" parts, whereas :meth:`PurePath.relative_to`
+   is a lexical operation that raises :exc:`ValueError` when its inputs'
+   anchors differ (e.g. if one path is absolute and the other relative.)
+.. [2] :func:`os.path.expanduser` returns the path unchanged if the home
+   directory can't be resolved, whereas :meth:`Path.expanduser` raises
+   :exc:`RuntimeError`.
+.. [3] :func:`os.path.abspath` removes "``..``" components without resolving
+   symlinks, which may change the meaning of the path, whereas
+   :meth:`Path.absolute` leaves any "``..``" components in the path.
+.. [4] :func:`os.walk` always follows symlinks when categorizing paths into
+   *dirnames* and *filenames*, whereas :meth:`Path.walk` categorizes all
+   symlinks into *filenames* when *follow_symlinks* is false (the default.)
+
+
+Protocols
+---------
+
+.. module:: pathlib.types
+   :synopsis: pathlib types for static type checking
+
+
+The :mod:`pathlib.types` module provides types for static type checking.
+
+.. versionadded:: 3.14
+
+
+.. class:: PathInfo()
+
+   A :class:`typing.Protocol` describing the
+   :attr:`Path.info <pathlib.Path.info>` attribute. Implementations may
+   return cached results from their methods.
+
+   .. method:: exists(*, follow_symlinks=True)
+
+      Return ``True`` if the path is an existing file or directory, or any
+      other kind of file; return ``False`` if the path doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` for symlinks without
+      checking if their targets exist.
+
+   .. method:: is_dir(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a directory, or a symbolic link pointing
+      to a directory; return ``False`` if the path is (or points to) any other
+      kind of file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a directory (without following symlinks); return ``False`` if the
+      path is any other kind of file, or if it doesn't exist.
+
+   .. method:: is_file(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a file, or a symbolic link pointing to
+      a file; return ``False`` if the path is (or points to) a directory or
+      other non-file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a file (without following symlinks); return ``False`` if the path
+      is a directory or other non-file, or if it doesn't exist.
+
+   .. method:: is_symlink()
+
+      Return ``True`` if the path is a symbolic link (even if broken); return
+      ``False`` if the path is a directory or any kind of file, or if it
+      doesn't exist.

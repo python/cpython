@@ -633,7 +633,8 @@ class SMTPServer(asyncore.dispatcher):
                              " be set to True at the same time")
         asyncore.dispatcher.__init__(self, map=map)
         try:
-            gai_results = socket.getaddrinfo(*localaddr,
+            family = 0 if socket.has_ipv6 else socket.AF_INET
+            gai_results = socket.getaddrinfo(*localaddr, family=family,
                                              type=socket.SOCK_STREAM)
             self.create_socket(gai_results[0][0], gai_results[0][1])
             # try to re-use a server port if possible

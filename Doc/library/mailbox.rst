@@ -587,12 +587,27 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    remarks:
 
 
-   .. method:: get_file(key)
+   .. method:: get_bytes(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_file(key, from_=False)
 
       Using the file after calling :meth:`~Mailbox.flush` or
       :meth:`~Mailbox.close` on the :class:`!mbox` instance may yield
       unpredictable results or raise an exception.
 
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_string(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
 
    .. method:: lock()
                unlock()
@@ -851,11 +866,21 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    remarks:
 
 
-   .. method:: get_file(key)
+   .. method:: get_bytes(key, from_=False)
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
+
+   .. method:: get_file(key, from_=False)
 
       Using the file after calling :meth:`~Mailbox.flush` or
       :meth:`~Mailbox.close` on the :class:`!MMDF` instance may yield
       unpredictable results or raise an exception.
+
+      Note: This method has an extra parameter (*from_*) compared with other classes.
+      The first line of an mbox file entry is the Unix "From " line.
+      If *from_* is False, the first line of the file is dropped.
 
 
    .. method:: lock()
@@ -892,7 +917,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
    copied; furthermore, any format-specific information is converted insofar as
    possible if *message* is a :class:`!Message` instance. If *message* is a string,
    a byte string,
-   or a file, it should contain an :rfc:`2822`\ -compliant message, which is read
+   or a file, it should contain an :rfc:`5322`\ -compliant message, which is read
    and parsed.  Files should be open in binary mode, but text mode files
    are accepted for backward compatibility.
 
@@ -1387,7 +1412,7 @@ When an :class:`!MHMessage` instance is created based upon a
 
    .. method:: get_visible()
 
-      Return an :class:`Message` instance whose headers are the message's
+      Return a :class:`Message` instance whose headers are the message's
       visible headers and whose body is empty.
 
 

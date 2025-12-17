@@ -49,7 +49,8 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END_STRING), # end of string
+    r"\z": (AT, AT_END_STRING), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
 
 FLAGS = {
@@ -454,7 +455,6 @@ def _parse_sub(source, state, verbose, nested):
     items = []
     itemsappend = items.append
     sourcematch = source.match
-    start = source.tell()
     while True:
         itemsappend(_parse(source, state, verbose, nested + 1,
                            not nested and not items))
@@ -807,14 +807,6 @@ def _parse(source, state, verbose, nested, first=False):
                             state.grouprefpos[condgroup] = (
                                 source.tell() - len(condname) - 1
                             )
-                        if not (condname.isdecimal() and condname.isascii()):
-                            import warnings
-                            warnings.warn(
-                                "bad character in group name %s at position %d" %
-                                (repr(condname) if source.istext else ascii(condname),
-                                 source.tell() - len(condname) - 1),
-                                DeprecationWarning, stacklevel=nested + 6
-                            )
                     state.checklookbehindgroup(condgroup, source)
                     item_yes = _parse(source, state, verbose, nested + 1)
                     if source.match("|"):
@@ -1038,14 +1030,6 @@ def parse_template(source, pattern):
                     if index >= MAXGROUPS:
                         raise s.error("invalid group reference %d" % index,
                                       len(name) + 1)
-                    if not (name.isdecimal() and name.isascii()):
-                        import warnings
-                        warnings.warn(
-                            "bad character in group name %s at position %d" %
-                            (repr(name) if s.istext else ascii(name),
-                             s.tell() - len(name) - 1),
-                            DeprecationWarning, stacklevel=5
-                        )
                 addgroup(index, len(name) + 1)
             elif c == "0":
                 if s.next in OCTDIGITS:

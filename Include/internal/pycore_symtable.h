@@ -58,6 +58,7 @@ typedef struct {
                .end_col_offset = (n)->end_col_offset }
 
 static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
+static const _Py_SourceLocation NEXT_LOCATION = {-2, -2, -2, -2};
 
 /* __future__ information */
 typedef struct {
@@ -82,8 +83,6 @@ struct symtable {
     PyObject *st_private;           /* name of current class or NULL */
     _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 };
 
 typedef struct _symtable_entry {
@@ -106,9 +105,6 @@ typedef struct _symtable_entry {
     const char *ste_scope_info;
 
     int ste_nested;      /* true if block is nested */
-    unsigned ste_free : 1;        /* true if block has free variables */
-    unsigned ste_child_free : 1;  /* true if a child block has free vars,
-                                     including free refs to globals */
     unsigned ste_generator : 1;   /* true if namespace is a generator */
     unsigned ste_coroutine : 1;   /* true if namespace is a coroutine */
     unsigned ste_annotations_used : 1;  /* true if there are any annotations in this scope */
@@ -126,6 +122,11 @@ typedef struct _symtable_entry {
     unsigned ste_comp_iter_target : 1; /* true if visiting comprehension target */
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
+    unsigned ste_has_docstring : 1; /* true if docstring present */
+    unsigned ste_method : 1; /* true if block is a function block defined in class scope */
+    unsigned ste_has_conditional_annotations : 1; /* true if block has conditionally executed annotations */
+    unsigned ste_in_conditional_block : 1; /* set while we are inside a conditionally executed block */
+    unsigned ste_in_unevaluated_annotation : 1; /* set while we are processing an annotation that will not be evaluated */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */
@@ -174,6 +175,7 @@ extern PyObject* _Py_Mangle(PyObject *p, PyObject *name);
 */
 #define SCOPE_OFFSET 12
 #define SCOPE_MASK (DEF_GLOBAL | DEF_LOCAL | DEF_PARAM | DEF_NONLOCAL)
+#define SYMBOL_TO_SCOPE(S) (((S) >> SCOPE_OFFSET) & SCOPE_MASK)
 
 #define LOCAL 1
 #define GLOBAL_EXPLICIT 2
@@ -186,7 +188,8 @@ extern struct symtable* _Py_SymtableStringObjectFlags(
     const char *str,
     PyObject *filename,
     int start,
-    PyCompilerFlags *flags);
+    PyCompilerFlags *flags,
+    PyObject *module);
 
 int _PyFuture_FromAST(
     struct _mod * mod,

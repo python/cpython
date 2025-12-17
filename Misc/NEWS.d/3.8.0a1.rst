@@ -224,7 +224,7 @@ positives from posix, socket, time, test_io, and test_faulthandler.
 .. nonce: 9vMWSP
 .. section: Core and Builtins
 
-Fix an assertion error in :func:`format` in debug build for floating point
+Fix an assertion error in :func:`format` in debug build for floating-point
 formatting with "n" format, zero padding and small width. Release build is
 not impacted. Patch by Karthikeyan Singaravelan.
 
@@ -625,7 +625,7 @@ Spytz.
 
 The C function ``property_descr_get()`` uses a "cached" tuple to optimize
 function calls. But this tuple can be discovered in debug mode with
-:func:`sys.getobjects()`. Remove the optimization, it's not really worth it
+:func:`sys.getobjects`. Remove the optimization, it's not really worth it
 and it causes 3 different crashes last years.
 
 ..
@@ -2850,8 +2850,8 @@ allow for tweaking of protocols and also to add support by default for
 .. nonce: 37IdsA
 .. section: Library
 
-Fixed integer overflow in the :meth:`~hashlib.shake.digest()` and
-:meth:`~hashlib.shake.hexdigest()` methods for the SHAKE algorithm in the
+Fixed integer overflow in the :meth:`~hashlib.shake.digest` and
+:meth:`~hashlib.shake.hexdigest` methods for the SHAKE algorithm in the
 :mod:`hashlib` module.
 
 ..
@@ -3211,10 +3211,10 @@ bytes objects. (microoptimization)
 .. nonce: i-F_E5
 .. section: Library
 
-Add :func:`~unittest.addModuleCleanup()` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support cleanups
-for :func:`~unittest.setUpModule()` and
-:meth:`~unittest.TestCase.setUpClass()`. Patch by Lisa Roach.
+Add :func:`~unittest.addModuleCleanup` and
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support cleanups
+for :func:`~unittest.setUpModule` and
+:meth:`~unittest.TestCase.setUpClass`. Patch by Lisa Roach.
 
 ..
 
@@ -3458,7 +3458,7 @@ Running the :mod:`trace` module no longer creates the ``trace.cover`` file.
 .. section: Library
 
 Fix crash when an ``ABC``-derived class with invalid ``__subclasses__`` is
-passed as the second argument to :func:`issubclass()`. Patch by Alexey
+passed as the second argument to :func:`issubclass`. Patch by Alexey
 Izbyshev.
 
 ..
@@ -3664,7 +3664,7 @@ Add pure Python fallback for functools.reduce. Patch by Robert Wright.
 .. section: Library
 
 The default asyncio task class now always has a name which can be get or set
-using two new methods (:meth:`~asyncio.Task.get_name()` and
+using two new methods (:meth:`~asyncio.Task.get_name` and
 :meth:`~asyncio.Task.set_name`) and is visible in the :func:`repr` output.
 An initial name can also be set using the new ``name`` keyword argument to
 :func:`asyncio.create_task` or the
@@ -4152,12 +4152,12 @@ Convert content length to string before putting to header.
 :func:`~os.path.exists`, :func:`~os.path.lexists`, :func:`~os.path.isdir`,
 :func:`~os.path.isfile`, :func:`~os.path.islink`, and
 :func:`~os.path.ismount`, and :mod:`pathlib.Path` methods that return a
-boolean result like :meth:`~pathlib.Path.exists()`,
-:meth:`~pathlib.Path.is_dir()`, :meth:`~pathlib.Path.is_file()`,
-:meth:`~pathlib.Path.is_mount()`, :meth:`~pathlib.Path.is_symlink()`,
-:meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+boolean result like :meth:`~pathlib.Path.exists`,
+:meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.is_file`,
+:meth:`~pathlib.Path.is_mount`, :meth:`~pathlib.Path.is_symlink`,
+:meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclasses :exc:`UnicodeEncodeError` and
 :exc:`UnicodeDecodeError` for paths that contain characters or bytes
 unrepresentable at the OS level.
@@ -5269,7 +5269,7 @@ performance and smaller size compared to protocol 3 introduced in Python
 .. section: Library
 
 Improved error handling and fixed a reference leak in
-:func:`os.posix_spawn()`.
+:func:`os.posix_spawn`.
 
 ..
 
@@ -5857,7 +5857,7 @@ collections.ChainMap() preserves the order of the underlying mappings.
 .. nonce: -T77_c
 .. section: Library
 
-:func:`fnmatch.translate()` no longer produces patterns which contain set
+:func:`fnmatch.translate` no longer produces patterns which contain set
 operations. Sets starting with '[' or containing '--', '&&', '~~' or '||'
 will be interpreted differently in regular expressions in future versions.
 Currently they emit warnings. fnmatch.translate() now avoids producing

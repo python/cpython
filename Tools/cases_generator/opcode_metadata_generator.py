@@ -19,13 +19,14 @@ from generators_common import (
     cflags,
 )
 from cwriter import CWriter
+from dataclasses import dataclass
 from typing import TextIO
 from stack import get_stack_effect
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
 OPARG_KINDS = {
-    "OPARG_FULL": 0,
+    "OPARG_SIMPLE": 0,
     "OPARG_CACHE_1": 1,
     "OPARG_CACHE_2": 2,
     "OPARG_CACHE_4": 4,
@@ -34,6 +35,9 @@ OPARG_KINDS = {
     "OPARG_SAVE_RETURN_OFFSET": 7,
     # Skip 8 as the other powers of 2 are sizes
     "OPARG_REPLACED": 9,
+    "OPERAND1_1": 10,
+    "OPERAND1_2": 11,
+    "OPERAND1_4": 12,
 }
 
 FLAGS = [
@@ -49,9 +53,12 @@ FLAGS = [
     "ESCAPES",
     "EXIT",
     "PURE",
-    "PASSTHROUGH",
-    "OPARG_AND_1",
+    "SYNC_SP",
     "ERROR_NO_POP",
+    "NO_SAVE_IP",
+    "PERIODIC",
+    "UNPREDICTABLE_JUMP",
+    "NEEDS_GUARD_IP",
 ]
 
 
@@ -91,10 +98,11 @@ def emit_stack_effect_function(
 def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     popped_data: list[tuple[str, str]] = []
     pushed_data: list[tuple[str, str]] = []
+
     def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
-        pushed = (stack.top_offset - stack.base_offset).to_c()
+        pushed = (stack.logical_sp - stack.base_offset).to_c()
         popped_data.append((inst.name, popped))
         pushed_data.append((inst.name, pushed))
 
@@ -151,7 +159,13 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
         if inst.family is not None:
             deopt = inst.family.name
         deopts.append((inst.name, deopt))
-    deopts.append(("INSTRUMENTED_LINE", "INSTRUMENTED_LINE"))
+    defined = set(analysis.opmap.values())
+    for i in range(256):
+        if i not in defined:
+            deopts.append((f'{i}', f'{i}'))
+
+    assert len(deopts) == 256
+    assert len(set(x[0] for x in deopts)) == 256
     for name, deopt in sorted(deopts):
         out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
@@ -179,7 +193,6 @@ def generate_name_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit(f"const char *_PyOpcode_OpName[{table_size}] = {{\n")
     names = list(analysis.instructions) + list(analysis.pseudos)
-    names.append("INSTRUMENTED_LINE")
     for name in sorted(names):
         out.emit(f'[{name}] = "{name}",\n')
     out.emit("};\n")
@@ -190,8 +203,8 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
     table_size = 256 + len(analysis.pseudos)
     out.emit("struct opcode_metadata {\n")
     out.emit("uint8_t valid_entry;\n")
-    out.emit("int8_t instr_format;\n")
-    out.emit("int16_t flags;\n")
+    out.emit("uint8_t instr_format;\n")
+    out.emit("uint32_t flags;\n")
     out.emit("};\n\n")
     out.emit(
         f"extern const struct opcode_metadata _PyOpcode_opcode_metadata[{table_size}];\n"
@@ -217,41 +230,48 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
-    expansions_table: dict[str, list[tuple[str, int, int]]] = {}
+    expansions_table: dict[str, list[tuple[str, str, int]]] = {}
     for inst in sorted(analysis.instructions.values(), key=lambda t: t.name):
         offset: int = 0  # Cache effect offset
-        expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
+        expansions: list[tuple[str, str, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
             pieces = inst.name.split("_")
-            assert len(pieces) == 4, f"{inst.name} doesn't look like a super-instr"
-            name1 = "_".join(pieces[:2])
-            name2 = "_".join(pieces[2:])
+            assert len(pieces) % 2 == 0, f"{inst.name} doesn't look like a super-instr"
+            parts_per_piece = int(len(pieces) / 2)
+            name1 = "_".join(pieces[:parts_per_piece])
+            name2 = "_".join(pieces[parts_per_piece:])
             assert name1 in analysis.instructions, f"{name1} doesn't match any instr"
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]
             instr2 = analysis.instructions[name2]
-            assert (
-                len(instr1.parts) == 1
-            ), f"{name1} is not a good superinstruction part"
-            assert (
-                len(instr2.parts) == 1
-            ), f"{name2} is not a good superinstruction part"
-            expansions.append((instr1.parts[0].name, OPARG_KINDS["OPARG_TOP"], 0))
-            expansions.append((instr2.parts[0].name, OPARG_KINDS["OPARG_BOTTOM"], 0))
+            for part in instr1.parts:
+                expansions.append((part.name, "OPARG_TOP", 0))
+            for part in instr2.parts:
+                expansions.append((part.name, "OPARG_BOTTOM", 0))
         elif not is_viable_expansion(inst):
             continue
         else:
             for part in inst.parts:
                 size = part.size
-                if part.name == "_SAVE_RETURN_OFFSET":
-                    size = OPARG_KINDS["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
                     # Skip specializations
                     if "specializing" in part.annotations:
                         continue
+                    # Add the primary expansion.
+                    fmt = "OPARG_SIMPLE"
+                    if part.name == "_SAVE_RETURN_OFFSET":
+                        fmt = "OPARG_SAVE_RETURN_OFFSET"
+                    elif part.caches:
+                        fmt = str(part.caches[0].size)
                     if "replaced" in part.annotations:
-                        size = OPARG_KINDS["OPARG_REPLACED"]
-                    expansions.append((part.name, size, offset if size else 0))
+                        fmt = "OPARG_REPLACED"
+                    expansions.append((part.name, fmt, offset))
+                    if len(part.caches) > 1:
+                        # Add expansion for the second operand
+                        internal_offset = 0
+                        for cache in part.caches[:-1]:
+                            internal_offset += cache.size
+                        expansions.append((part.name, f"OPERAND1_{part.caches[-1].size}", offset+internal_offset))
                 offset += part.size
         expansions_table[inst.name] = expansions
     max_uops = max(len(ex) for ex in expansions_table.values())
@@ -306,6 +326,7 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
     table_size = len(analysis.pseudos)
     max_targets = max(len(pseudo.targets) for pseudo in analysis.pseudos.values())
     out.emit("struct pseudo_targets {\n")
+    out.emit(f"uint8_t as_sequence;\n")
     out.emit(f"uint8_t targets[{max_targets + 1}];\n")
     out.emit("};\n")
     out.emit(
@@ -316,10 +337,11 @@ def generate_pseudo_targets(analysis: Analysis, out: CWriter) -> None:
         f"const struct pseudo_targets _PyOpcode_PseudoTargets[{table_size}] = {{\n"
     )
     for pseudo in analysis.pseudos.values():
+        as_sequence = "1" if pseudo.as_sequence else "0"
         targets = ["0"] * (max_targets + 1)
         for i, target in enumerate(pseudo.targets):
             targets[i] = target.name
-        out.emit(f"[{pseudo.name}-256] = {{ {{ {', '.join(targets)} }} }},\n")
+        out.emit(f"[{pseudo.name}-256] = {{ {as_sequence}, {{ {', '.join(targets)} }} }},\n")
     out.emit("};\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n")
     out.emit("static inline bool\n")

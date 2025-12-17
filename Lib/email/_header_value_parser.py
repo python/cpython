@@ -92,9 +92,19 @@ TOKEN_ENDS = TSPECIALS | WSP
 ASPECIALS = TSPECIALS | set("*'%")
 ATTRIBUTE_ENDS = ASPECIALS | WSP
 EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
+NLSET = {'\n', '\r'}
+SPECIALSNL = SPECIALS | NLSET
+
+
+def make_quoted_pairs(value):
+    """Escape dquote and backslash for use within a quoted-string."""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"')
+
 
 def quote_string(value):
-    return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
+    escaped = make_quoted_pairs(value)
+    return f'"{escaped}"'
+
 
 # Match a RFC 2047 word, looks like =?utf-8?q?someword?=
 rfc2047_matcher = re.compile(r'''
@@ -786,6 +796,10 @@ class MimeParameters(TokenList):
                         value = urllib.parse.unquote(value, encoding='latin-1')
                     else:
                         try:
+                            # Explicitly look up the codec for warning generation, see gh-140030
+                            # Can be removed in 3.17
+                            import codecs
+                            codecs.lookup(charset)
                             value = value.decode(charset, 'surrogateescape')
                         except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
@@ -864,6 +878,12 @@ class MessageID(MsgID):
 class InvalidMessageID(MessageID):
     token_type = 'invalid-message-id'
 
+class MessageIDList(TokenList):
+    token_type = 'message-id-list'
+
+    @property
+    def message_ids(self):
+        return [x for x in self if x.token_type=='msg-id']
 
 class Header(TokenList):
     token_type = 'header'
@@ -1010,6 +1030,8 @@ def _get_ptext_to_endchars(value, endchars):
     a flag that is True iff there were any quoted printables decoded.
 
     """
+    if not value:
+        return '', '', False
     fragment, *remainder = _wsp_splitter(value, 1)
     vchars = []
     escape = False
@@ -1043,7 +1065,7 @@ def get_fws(value):
     fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
     return fws, newvalue
 
-def get_encoded_word(value):
+def get_encoded_word(value, terminal_type='vtext'):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
     """
@@ -1082,7 +1104,7 @@ def get_encoded_word(value):
             ew.append(token)
             continue
         chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, 'vtext')
+        vtext = ValueTerminal(chars, terminal_type)
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
@@ -1124,7 +1146,7 @@ def get_unstructured(value):
         valid_ew = True
         if value.startswith('=?'):
             try:
-                token, value = get_encoded_word(value)
+                token, value = get_encoded_word(value, 'utext')
             except _InvalidEwError:
                 valid_ew = False
             except errors.HeaderParseError:
@@ -1153,7 +1175,7 @@ def get_unstructured(value):
         # the parser to go in an infinite loop.
         if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'vtext')
+        vtext = ValueTerminal(tok, 'utext')
         _validate_xtext(vtext)
         unstructured.append(vtext)
         value = ''.join(remainder)
@@ -1563,7 +1585,7 @@ def get_dtext(value):
 def _check_for_early_dl_end(value, domain_literal):
     if value:
         return False
-    domain_literal.append(errors.InvalidHeaderDefect(
+    domain_literal.defects.append(errors.InvalidHeaderDefect(
         "end of input inside domain-literal"))
     domain_literal.append(ValueTerminal(']', 'domain-literal-end'))
     return True
@@ -1582,9 +1604,9 @@ def get_domain_literal(value):
         raise errors.HeaderParseError("expected '[' at start of domain-literal "
                 "but found '{}'".format(value))
     value = value[1:]
+    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if _check_for_early_dl_end(value, domain_literal):
         return domain_literal, value
-    domain_literal.append(ValueTerminal('[', 'domain-literal-start'))
     if value[0] in WSP:
         token, value = get_fws(value)
         domain_literal.append(token)
@@ -2158,6 +2180,32 @@ def parse_message_id(value):
                 "Unexpected {!r}".format(value)))
 
     return message_id
+
+def parse_message_ids(value):
+    """in-reply-to     =   "In-Reply-To:" 1*msg-id CRLF
+       references      =   "References:" 1*msg-id CRLF
+    """
+    message_id_list = MessageIDList()
+    while value:
+        if value[0] == ',':
+            # message id list separated with commas - this is invalid,
+            # but happens rather frequently in the wild
+            message_id_list.defects.append(
+                errors.InvalidHeaderDefect("comma in msg-id list"))
+            message_id_list.append(
+                WhiteSpaceTerminal(' ', 'invalid-comma-replacement'))
+            value = value[1:]
+            continue
+        try:
+            token, value = get_msg_id(value)
+            message_id_list.append(token)
+        except errors.HeaderParseError as ex:
+            token = get_unstructured(value)
+            message_id_list.append(InvalidMessageID(token))
+            message_id_list.defects.append(
+                errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+            break
+    return message_id_list
 
 #
 # XXX: As I begin to add additional header parsers, I'm realizing we probably
@@ -2776,6 +2824,9 @@ def _steal_trailing_WSP_if_exists(lines):
     if lines and lines[-1] and lines[-1][-1] in WSP:
         wsp = lines[-1][-1]
         lines[-1] = lines[-1][:-1]
+        # gh-142006: if the line is now empty, remove it entirely.
+        if not lines[-1]:
+            lines.pop()
     return wsp
 
 def _refold_parse_tree(parse_tree, *, policy):
@@ -2802,9 +2853,13 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
-        if part.token_type == 'ptext' and set(tstr) & SPECIALS:
-            # Encode if tstr contains special characters.
-            want_encoding = True
+        if not want_encoding:
+            if part.token_type in ('ptext', 'vtext'):
+                # Encode if tstr contains special characters.
+                want_encoding = not SPECIALSNL.isdisjoint(tstr)
+            else:
+                # Encode if tstr contains newlines.
+                want_encoding = not NLSET.isdisjoint(tstr)
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2899,6 +2954,15 @@ def _refold_parse_tree(parse_tree, *, policy):
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
+            if part.token_type == 'bare-quoted-string':
+                # To fold a quoted string we need to create a list of terminal
+                # tokens that will render the leading and trailing quotes
+                # and use quoted pairs in the value as appropriate.
+                newparts = (
+                    [ValueTerminal('"', 'ptext')] +
+                    [ValueTerminal(make_quoted_pairs(p), 'ptext')
+                     for p in newparts] +
+                    [ValueTerminal('"', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)
@@ -2988,6 +3052,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset, 
             excess = len(encoded_word) - remaining_space
         lines[-1] += encoded_word
         to_encode = to_encode[len(to_encode_word):]
+        leading_whitespace = ''
 
         if to_encode:
             lines.append(' ')

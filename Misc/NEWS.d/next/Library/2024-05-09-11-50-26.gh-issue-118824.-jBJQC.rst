@@ -1,3 +1,0 @@
-Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
-Use :func:`pty.openpty` instead.
-Patch by Nikita Sobolev.

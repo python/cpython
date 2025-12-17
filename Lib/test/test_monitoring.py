@@ -3,6 +3,7 @@
 import collections
 import dis
 import functools
+import inspect
 import math
 import operator
 import sys
@@ -11,10 +12,10 @@ import types
 import unittest
 
 import test.support
-from test.support import requires_specialization, script_helper
-from test.support.import_helper import import_module
+from test.support import import_helper, requires_specialization_ft, script_helper
 
-_testcapi = test.support.import_helper.import_module("_testcapi")
+_testcapi = import_helper.import_module("_testcapi")
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
@@ -46,10 +47,14 @@ def nth_line(func, offset):
 
 class MonitoringBasicTest(unittest.TestCase):
 
+    def tearDown(self):
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
     def test_has_objects(self):
         m = sys.monitoring
         m.events
         m.use_tool_id
+        m.clear_tool_id
         m.free_tool_id
         m.get_tool
         m.get_events
@@ -76,6 +81,43 @@ class MonitoringBasicTest(unittest.TestCase):
         self.assertEqual(sys.monitoring.get_tool(TEST_TOOL), None)
         with self.assertRaises(ValueError):
             sys.monitoring.set_events(TEST_TOOL, sys.monitoring.events.CALL)
+
+    def test_clear(self):
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.PY_START, lambda *args: events.append(args))
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        def f():
+            a = 1
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        sys.monitoring.set_events(TEST_TOOL, E.PY_START)
+
+        f()
+        sys.monitoring.clear_tool_id(TEST_TOOL)
+        f()
+
+        # the first f() should trigger a PY_START and a LINE event
+        # the second f() after clear_tool_id should not trigger any event
+        # the callback function should be cleared as well
+        self.assertEqual(len(events), 2)
+        callback = sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
+        self.assertIs(callback, None)
+
+        sys.monitoring.free_tool_id(TEST_TOOL)
+
+        events = []
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        sys.monitoring.register_callback(TEST_TOOL, E.LINE, lambda *args: events.append(args))
+        sys.monitoring.set_local_events(TEST_TOOL, f.__code__, E.LINE)
+        f()
+        sys.monitoring.free_tool_id(TEST_TOOL)
+        sys.monitoring.use_tool_id(TEST_TOOL, "MonitoringTest.Tool")
+        f()
+        # the first f() should trigger a LINE event, and even if we use the
+        # tool id immediately after freeing it, the second f() should not
+        # trigger any event
+        self.assertEqual(len(events), 1)
+        sys.monitoring.free_tool_id(TEST_TOOL)
 
 
 class MonitoringTestBase:
@@ -744,8 +786,6 @@ class CheckEvents(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         events = self.get_events(func, tool, recorders)
-        if events != expected:
-            print(events, file = sys.stderr)
         self.assertEqual(events, expected)
 
     def check_balanced(self, func, recorders):
@@ -811,6 +851,7 @@ class ReturnRecorder:
     def __call__(self, code, offset, val):
         self.events.append(("return", code.co_name, val))
 
+
 class ExceptionMonitoringTest(CheckEvents):
 
     exception_recorders = (
@@ -832,20 +873,43 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
-    # gh-116090: This test doesn't really require specialization, but running
-    # it without specialization exposes a monitoring bug.
-    @requires_specialization
     def test_implicit_stop_iteration(self):
+        """Generators are documented as raising a StopIteration
+           when they terminate.
+           However, we don't do that if we can avoid it, for speed.
+           sys.monitoring handles that by injecting a STOP_ITERATION
+           event when we would otherwise have skip the RAISE event.
+           This test checks that both paths record an equivalent event.
+           """
 
         def gen():
             yield 1
             return 2
 
-        def implicit_stop_iteration():
-            for _ in gen():
+        def implicit_stop_iteration(iterator=None):
+            if iterator is None:
+                iterator = gen()
+            for _ in iterator:
                 pass
 
-        self.check_events(implicit_stop_iteration, [("raise", StopIteration)], recorders=(StopiterationRecorder,))
+        recorders=(ExceptionRecorder, StopiterationRecorder,)
+        expected = [("raise", StopIteration)]
+
+        # Make sure that the loop is unspecialized, and that it will not
+        # re-specialize immediately, so that we can we can test the
+        # unspecialized version of the loop first.
+        # Note: this assumes that we don't specialize loops over sets.
+        implicit_stop_iteration(set(range(_testinternalcapi.SPECIALIZATION_THRESHOLD)))
+
+        # This will record a RAISE event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
+
+        # Now specialize, so that we see a STOP_ITERATION event.
+        for _ in range(_testinternalcapi.SPECIALIZATION_COOLDOWN):
+            implicit_stop_iteration()
+
+        # This will record a STOP_ITERATION event for the StopIteration.
+        self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
     initial = [
         ("raise", ZeroDivisionError),
@@ -983,20 +1047,19 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
-    @requires_specialization
+    @requires_specialization_ft
     def test_no_unwind_for_shim_frame(self):
-
-        class B:
+        class ValueErrorRaiser:
             def __init__(self):
                 raise ValueError()
 
         def f():
             try:
-                return B()
+                return ValueErrorRaiser()
             except ValueError:
                 pass
 
-        for _ in range(100):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
         recorders = (
             ReturnRecorder,
@@ -1014,6 +1077,25 @@ class ExceptionMonitoringTest(CheckEvents):
             ('return', 'f', None),
         ]
 
+        self.assertEqual(events, expected)
+
+    # gh-140373
+    def test_gen_unwind(self):
+        def gen():
+            yield 1
+
+        def f():
+            g = gen()
+            next(g)
+            g.close()
+
+        recorders = (
+            UnwindRecorder,
+        )
+        events = self.get_events(f, TEST_TOOL, recorders)
+        expected = [
+            ("unwind", GeneratorExit, "gen"),
+        ]
         self.assertEqual(events, expected)
 
 class LineRecorder:
@@ -1143,6 +1225,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_c_call(self):
@@ -1167,6 +1250,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 40),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
+            ('instruction', 'func2', 46),
             ('line', 'get_events', 11)])
 
     def test_try_except(self):
@@ -1200,6 +1284,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func3', 30),
             ('instruction', 'func3', 32),
             ('instruction', 'func3', 34),
+            ('instruction', 'func3', 36),
             ('line', 'get_events', 11)])
 
     def test_with_restart(self):
@@ -1220,6 +1305,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
         sys.monitoring.restart_events()
@@ -1236,6 +1322,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 10),
             ('instruction', 'func1', 12),
             ('instruction', 'func1', 14),
+            ('instruction', 'func1', 16),
             ('line', 'get_events', 11)])
 
     def test_turn_off_only_instruction(self):
@@ -1421,11 +1508,44 @@ class BranchRecorder(JumpRecorder):
     event_type = E.BRANCH
     name = "branch"
 
+class BranchRightRecorder(JumpRecorder):
+
+    event_type = E.BRANCH_RIGHT
+    name = "branch right"
+
+class BranchLeftRecorder(JumpRecorder):
+
+    event_type = E.BRANCH_LEFT
+    name = "branch left"
+
+class JumpOffsetRecorder:
+
+    event_type = E.JUMP
+    name = "jump"
+
+    def __init__(self, events, offsets=False):
+        self.events = events
+
+    def __call__(self, code, from_, to):
+        self.events.append((self.name, code.co_name, from_, to))
+
+class BranchLeftOffsetRecorder(JumpOffsetRecorder):
+
+    event_type = E.BRANCH_LEFT
+    name = "branch left"
+
+class BranchRightOffsetRecorder(JumpOffsetRecorder):
+
+    event_type = E.BRANCH_RIGHT
+    name = "branch right"
 
 
 JUMP_AND_BRANCH_RECORDERS = JumpRecorder, BranchRecorder
 JUMP_BRANCH_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder
 FLOW_AND_LINE_RECORDERS = JumpRecorder, BranchRecorder, LineRecorder, ExceptionRecorder, ReturnRecorder
+
+BRANCHES_RECORDERS = BranchLeftRecorder, BranchRightRecorder
+BRANCH_OFFSET_RECORDERS = BranchLeftOffsetRecorder, BranchRightOffsetRecorder
 
 class TestBranchAndJumpEvents(CheckEvents):
     maxDiff = None
@@ -1440,6 +1560,11 @@ class TestBranchAndJumpEvents(CheckEvents):
                 else:
                     x = 6
             7
+
+        def whilefunc(n=0):
+            while n < 3:
+                n += 1 # line 2
+            3
 
         self.check_events(func, recorders = JUMP_AND_BRANCH_RECORDERS, expected = [
             ('branch', 'func', 2, 2),
@@ -1470,6 +1595,26 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 7),
             ('line', 'get_events', 11)])
 
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 3, 6),
+            ('branch left', 'func', 2, 2),
+            ('branch left', 'func', 3, 4),
+            ('branch right', 'func', 2, 7)])
+
+        self.check_events(whilefunc, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'whilefunc', 1, 2),
+            ('branch left', 'whilefunc', 1, 2),
+            ('branch left', 'whilefunc', 1, 2),
+            ('branch right', 'whilefunc', 1, 3)])
+
+        self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
+            ('branch left', 'func', 28, 32),
+            ('branch right', 'func', 44, 58),
+            ('branch left', 'func', 28, 32),
+            ('branch left', 'func', 44, 50),
+            ('branch right', 'func', 28, 70)])
+
     def test_except_star(self):
 
         class Foo:
@@ -1495,8 +1640,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('jump', 'func', 5, '[offset=118]'),
-            ('branch', 'func', '[offset=122]', '[offset=126]'),
+            ('jump', 'func', 5, '[offset=120]'),
+            ('branch', 'func', '[offset=124]', '[offset=130]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1510,10 +1655,204 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('return', 'meth', None),
-            ('jump', 'func', 5, '[offset=118]'),
-            ('branch', 'func', '[offset=122]', '[offset=126]'),
+            ('jump', 'func', 5, '[offset=120]'),
+            ('branch', 'func', '[offset=124]', '[offset=130]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
+
+    def test_while_offset_consistency(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        in_loop = ('branch left', 'foo', 10, 16)
+        exit_loop = ('branch right', 'foo', 10, 40)
+        self.check_events(foo, recorders = BRANCH_OFFSET_RECORDERS, expected = [
+            in_loop,
+            in_loop,
+            in_loop,
+            in_loop,
+            exit_loop])
+
+    def test_async_for(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                async for y in gen():
+                    2
+                pass # line 3
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 3),
+            ('branch left', 'func', 12, 12)])
+
+
+    def test_match(self):
+
+        def func(v=1):
+            x = 0
+            for v in range(4):
+                match v:
+                    case 1:
+                        x += 1
+                    case 2:
+                        x += 2
+                    case _:
+                        x += 3
+            return x
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch left', 'func', 2, 2),
+            ('branch left', 'func', 4, 5),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch left', 'func', 6, 7),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch right', 'func', 2, 10)])
+
+    def test_callback_set_frame_lineno(self):
+        def func(s: str) -> int:
+            if s.startswith("t"):
+                return 1
+            else:
+                return 0
+
+        def callback(code, from_, to):
+            # try set frame.f_lineno
+            frame = inspect.currentframe()
+            while frame and frame.f_code is not code:
+                frame = frame.f_back
+
+            self.assertIsNotNone(frame)
+            frame.f_lineno = frame.f_lineno + 1 # run next instruction
+
+        sys.monitoring.set_local_events(TEST_TOOL, func.__code__, E.BRANCH_LEFT)
+        sys.monitoring.register_callback(TEST_TOOL, E.BRANCH_LEFT, callback)
+
+        self.assertEqual(func("true"), 1)
+
+
+class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
+
+    def check_branches(self, run_func, test_func=None, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
+        if test_func is None:
+            test_func = run_func
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            event_list = []
+            all_events = 0
+            for recorder in recorders:
+                ev = recorder.event_type
+                sys.monitoring.register_callback(tool, ev, recorder(event_list))
+                all_events |= ev
+            sys.monitoring.set_local_events(tool, test_func.__code__, all_events)
+            run_func()
+            sys.monitoring.set_local_events(tool, test_func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+            lefts = set()
+            rights = set()
+            for (src, left, right) in test_func.__code__.co_branches():
+                lefts.add((src, left))
+                rights.add((src, right))
+            for event in event_list:
+                way, _, src, dest = event
+                if "left" in way:
+                    self.assertIn((src, dest), lefts)
+                else:
+                    self.assertIn("right", way)
+                    self.assertIn((src, dest), rights)
+        finally:
+            sys.monitoring.set_local_events(tool, test_func.__code__, 0)
+            for recorder in recorders:
+                sys.monitoring.register_callback(tool, recorder.event_type, None)
+
+    def test_simple(self):
+
+        def func():
+            x = 1
+            for a in range(2):
+                if a:
+                    x = 4
+                else:
+                    x = 6
+            7
+
+        self.check_branches(func)
+
+        def whilefunc(n=0):
+            while n < 3:
+                n += 1 # line 2
+            3
+
+        self.check_branches(whilefunc)
+
+    def test_except_star(self):
+
+        class Foo:
+            def meth(self):
+                pass
+
+        def func():
+            try:
+                try:
+                    raise KeyError
+                except* Exception as e:
+                    f = Foo(); f.meth()
+            except KeyError:
+                pass
+
+
+        self.check_branches(func)
+
+    def test4(self):
+
+        def foo(n=0):
+            while n<4:
+                pass
+                n += 1
+            return None
+
+        self.check_branches(foo)
+
+    def test_async_for(self):
+
+        async def gen():
+            yield 2
+            yield 3
+
+        async def foo():
+            async for y in gen():
+                2
+            pass # line 3
+
+        def func():
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_branches(func, foo)
+
 
 class TestLoadSuperAttr(CheckEvents):
     RECORDERS = CallRecorder, LineRecorder, CRaiseRecorder, CReturnRecorder
@@ -1575,7 +1914,7 @@ class TestLoadSuperAttr(CheckEvents):
             ('line', 'method', 2),
             ('line', 'method', 3),
             ('line', 'method', 2),
-            ('call', 'method', 1),
+            ('call', 'method', d["b"]),
             ('line', 'method', 1),
             ('line', 'method', 1),
             ('line', 'get_events', 11),
@@ -1746,6 +2085,10 @@ class TestSetGetEvents(MonitoringTestBase, unittest.TestCase):
         code = f1.__code__
         sys.monitoring.set_local_events(TEST_TOOL, code, E.PY_START)
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), E.PY_START)
+        sys.monitoring.set_local_events(TEST_TOOL, code, 0)
+        sys.monitoring.set_local_events(TEST_TOOL, code, E.BRANCH)
+        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, code), E.BRANCH_LEFT | E.BRANCH_RIGHT)
+        sys.monitoring.set_local_events(TEST_TOOL, code, 0)
         sys.monitoring.set_local_events(TEST_TOOL2, code, E.PY_START)
         self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL2, code), E.PY_START)
         sys.monitoring.set_local_events(TEST_TOOL, code, 0)
@@ -1805,8 +2148,8 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
                     sys.monitoring.set_events(TEST_TOOL, E.PY_RESUME)
 
         def make_foo_optimized_then_set_event():
-            for i in range(100):
-                Foo(i == 99)
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 1):
+                Foo(i == _testinternalcapi.SPECIALIZATION_THRESHOLD)
 
         try:
             make_foo_optimized_then_set_event()
@@ -1840,22 +2183,38 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         self.assertEqual(call_data[0], (f, 1))
         self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
 
+    def test_instruction_explicit_callback(self):
+        # gh-122247
+        # Calling the instruction event callback explicitly should not
+        # crash CPython
+        def callback(code, instruction_offset):
+            pass
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.register_callback(0, sys.monitoring.events.INSTRUCTION, callback)
+        sys.monitoring.set_events(0, sys.monitoring.events.INSTRUCTION)
+        callback(None, 0)  # call the *same* handler while it is registered
+        sys.monitoring.restart_events()
+        sys.monitoring.set_events(0, 0)
+
+    def test_134879(self):
+        # gh-134789
+        # Specialized FOR_ITER not incrementing index
+        def foo():
+            t = 0
+            for i in [1,2,3,4]:
+                t += i
+            self.assertEqual(t, 10)
+
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_local_events(0, foo.__code__, E.BRANCH_LEFT | E.BRANCH_RIGHT)
+        foo()
+        sys.monitoring.set_local_events(0, foo.__code__, 0)
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
-
-    def setUp(self):
-        _testinternalcapi = import_module("_testinternalcapi")
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            self.old_opt = _testinternalcapi.get_optimizer()
-            opt = _testinternalcapi.new_counter_optimizer()
-            _testinternalcapi.set_optimizer(opt)
-        super(TestOptimizer, self).setUp()
-
-    def tearDown(self):
-        super(TestOptimizer, self).tearDown()
-        import _testinternalcapi
-        if hasattr(_testinternalcapi, "get_optimizer"):
-            _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
         def test_func(x):
@@ -1877,9 +2236,9 @@ class TestTier2Optimizer(CheckEvents):
             set_events = sys.monitoring.set_events
             line = E.LINE
             i = 0
-            for i in range(551):
-                # Turn on events without branching once i reaches 500.
-                set_events(TEST_TOOL, line * int(i >= 500))
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 51):
+                # Turn on events without branching once i reaches _testinternalcapi.SPECIALIZATION_THRESHOLD.
+                set_events(TEST_TOOL, line * int(i >= _testinternalcapi.SPECIALIZATION_THRESHOLD))
                 pass
                 pass
                 pass
@@ -1932,7 +2291,8 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
             ( 2, E.CALL, capi.fire_event_call, callable, 40),
             ( 1, E.JUMP, capi.fire_event_jump, 60),
-            ( 1, E.BRANCH, capi.fire_event_branch, 70),
+            ( 1, E.BRANCH_RIGHT, capi.fire_event_branch_right, 70),
+            ( 1, E.BRANCH_LEFT, capi.fire_event_branch_left, 80),
             ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
             ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
             ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),

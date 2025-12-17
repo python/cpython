@@ -1,9 +1,9 @@
 # Python test set -- built-in functions
 
 import ast
-import asyncio
 import builtins
 import collections
+import contextlib
 import decimal
 import fractions
 import gc
@@ -29,9 +29,13 @@ from textwrap import dedent
 from types import AsyncGeneratorType, FunctionType, CellType
 from operator import neg
 from test import support
-from test.support import (cpython_only, swap_attr, maybe_get_event_loop_policy)
+from test.support import cpython_only, swap_attr
+from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
+from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
+from test.support.testcase import ComplexesAreIdenticalMixin
 from test.support.warnings_helper import check_warnings
 from test.support import requires_IEEE_754
 from unittest.mock import MagicMock, patch
@@ -145,7 +149,10 @@ def filter_char(arg):
 def map_char(arg):
     return chr(ord(arg)+1)
 
-class BuiltinTest(unittest.TestCase):
+def pack(*args):
+    return args
+
+class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
     # Helper to check picklability
     def check_iter_pickle(self, it, seq, proto):
         itorg = it
@@ -219,6 +226,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
+        S = [50, 40, 60, TestFailingBool()]
+        self.assertEqual(all(x > 42 for x in S), False)
 
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
@@ -232,8 +241,58 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
+        S = [40, 60, 30, TestFailingBool()]
+        self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_all_any_tuple_optimization(self):
+        def f_all():
+            return all(x-2 for x in [1,2,3])
+
+        def f_any():
+            return any(x-1 for x in [1,2,3])
+
+        def f_tuple():
+            return tuple(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple]
+
+        for f in funcs:
+            # check that generator code object is not duplicated
+            code_objs = [c for c in f.__code__.co_consts if isinstance(c, type(f.__code__))]
+            self.assertEqual(len(code_objs), 1)
+
+
+        # check the overriding the builtins works
+
+        global all, any, tuple
+        saved = all, any, tuple
+        try:
+            all = lambda x : "all"
+            any = lambda x : "any"
+            tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+            builtins.all, builtins.any, builtins.tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -335,7 +394,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
-        self.assertTrue(not hasattr(builtins, "cmp"))
+        self.assertNotHasAttr(builtins, "cmp")
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -378,7 +437,7 @@ class BuiltinTest(unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -407,12 +466,8 @@ class BuiltinTest(unittest.TestCase):
                                 msg=f"source={source} mode={mode}")
 
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "socket.accept is broken"
-    )
     def test_compile_top_level_await(self):
-        """Test whether code some top level await can be compiled.
+        """Test whether code with top level await can be compiled.
 
         Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
         set, and make sure the generated code object has the CO_COROUTINE flag
@@ -425,12 +480,25 @@ class BuiltinTest(unittest.TestCase):
             for i in range(n):
                 yield i
 
+        class Lock:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                pass
+
+        async def sleep(delay, result=None):
+            assert delay == 0
+            await async_yield(None)
+            return result
+
         modes = ('single', 'exec')
+        optimizations = (-1, 0, 1, 2)
         code_samples = [
-            '''a = await asyncio.sleep(0, result=1)''',
+            '''a = await sleep(0, result=1)''',
             '''async for i in arange(1):
                    a = 1''',
-            '''async with asyncio.Lock() as l:
+            '''async with Lock() as l:
                    a = 1''',
             '''a = [x async for x in arange(2)][1]''',
             '''a = 1 in {x async for x in arange(2)}''',
@@ -438,42 +506,62 @@ class BuiltinTest(unittest.TestCase):
             '''a = [x async for x in arange(2) async for x in arange(2)][1]''',
             '''a = [x async for x in (x async for x in arange(5))][1]''',
             '''a, = [1 for x in {x async for x in arange(1)}]''',
-            '''a = [await asyncio.sleep(0, x) async for x in arange(2)][1]'''
+            '''a = [await sleep(0, x) async for x in arange(2)][1]''',
+            # gh-121637: Make sure we correctly handle the case where the
+            # async code is optimized away
+            '''assert not await sleep(0); a = 1''',
+            '''assert [x async for x in arange(1)]; a = 1''',
+            '''assert {x async for x in arange(1)}; a = 1''',
+            '''assert {x: x async for x in arange(1)}; a = 1''',
+            '''
+            if (a := 1) and __debug__:
+                async with Lock() as l:
+                    pass
+            ''',
+            '''
+            if (a := 1) and __debug__:
+                async for x in arange(2):
+                    pass
+            ''',
         ]
-        policy = maybe_get_event_loop_policy()
-        try:
-            for mode, code_sample in product(modes, code_samples):
+        for mode, code_sample, optimize in product(modes, code_samples, optimizations):
+            with self.subTest(mode=mode, code_sample=code_sample, optimize=optimize):
                 source = dedent(code_sample)
                 with self.assertRaises(
                         SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+                    compile(source, '?', mode, optimize=optimize)
 
                 co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+                            '?',
+                            mode,
+                            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+                            optimize=optimize)
 
                 self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
-                                 msg=f"source={source} mode={mode}")
+                                msg=f"source={source} mode={mode}")
 
                 # test we can create and  advance a function type
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                async_f = FunctionType(co, globals_)
-                asyncio.run(async_f())
+                globals_ = {'Lock': Lock, 'a': 0, 'arange': arange, 'sleep': sleep}
+                run_yielding_async_fn(FunctionType(co, globals_))
                 self.assertEqual(globals_['a'], 1)
 
                 # test we can await-eval,
-                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
-                asyncio.run(eval(co, globals_))
+                globals_ = {'Lock': Lock, 'a': 0, 'arange': arange, 'sleep': sleep}
+                run_yielding_async_fn(lambda: eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
-        finally:
-            asyncio.set_event_loop_policy(policy)
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
         async def arange(n):
             for i in range(n):
                 yield i
+
+        class Lock:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *exc_info):
+                pass
 
         modes = ('single', 'exec')
         code_samples = [
@@ -485,27 +573,22 @@ class BuiltinTest(unittest.TestCase):
                        a = 1
             ''',
             '''def f():
-                   async with asyncio.Lock() as l:
+                   async with Lock() as l:
                        a = 1
             '''
         ]
-        policy = maybe_get_event_loop_policy()
-        try:
-            for mode, code_sample in product(modes, code_samples):
-                source = dedent(code_sample)
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    compile(source, '?', mode)
+        for mode, code_sample in product(modes, code_samples):
+            source = dedent(code_sample)
+            with self.assertRaises(
+                    SyntaxError, msg=f"source={source} mode={mode}"):
+                compile(source, '?', mode)
 
-                with self.assertRaises(
-                        SyntaxError, msg=f"source={source} mode={mode}"):
-                    co = compile(source,
-                             '?',
-                             mode,
-                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-        finally:
-            asyncio.set_event_loop_policy(policy)
-
+            with self.assertRaises(
+                    SyntaxError, msg=f"source={source} mode={mode}"):
+                co = compile(source,
+                         '?',
+                         mode,
+                         flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
     def test_compile_async_generator(self):
         """
@@ -516,7 +599,7 @@ class BuiltinTest(unittest.TestCase):
         code = dedent("""async def ticker():
                 for i in range(10):
                     yield i
-                    await asyncio.sleep(0)""")
+                    await sleep(0)""")
 
         co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         glob = {}
@@ -524,7 +607,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1+2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -535,17 +618,14 @@ class BuiltinTest(unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
-        self.assertIsInstance(raw_right, ast.BinOp)
-        self.assertIsInstance(raw_right.left, ast.Constant)
-        self.assertEqual(raw_right.left.value, 1)
-        self.assertIsInstance(raw_right.right, ast.Constant)
-        self.assertEqual(raw_right.right.value, 2)
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant(3)
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, 3)
+            self.assertEqual(opt_right.value, __debug__)
 
     def test_delattr(self):
         sys.spam = 1
@@ -982,8 +1062,24 @@ class BuiltinTest(unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+        my_closure = tuple(my_closure)
+
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=int)
+
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
+        my_closure = list(my_closure)
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
@@ -991,6 +1087,29 @@ class BuiltinTest(unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
 
 
     def test_filter(self):
@@ -1024,6 +1143,8 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -1085,6 +1206,16 @@ class BuiltinTest(unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -1246,6 +1377,124 @@ class BuiltinTest(unittest.TestCase):
             m1 = map(map_char, "Is this the real life?")
             m2 = map(map_char, "Is this the real life?")
             self.check_iter_pickle(m1, list(m2), proto)
+
+    # strict map tests based on strict zip tests
+
+    def test_map_pickle_strict(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            m1 = map(pack, a, b, strict=True)
+            self.check_iter_pickle(m1, t, proto)
+
+    def test_map_pickle_strict_fail(self):
+        a = (1, 2, 3)
+        b = (4, 5, 6, 7)
+        t = [(1, 4), (2, 5), (3, 6)]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            m1 = map(pack, a, b, strict=True)
+            m2 = pickle.loads(pickle.dumps(m1, proto))
+            self.assertEqual(self.iter_error(m1, ValueError), t)
+            self.assertEqual(self.iter_error(m2, ValueError), t)
+
+    def test_map_strict(self):
+        self.assertEqual(tuple(map(pack, (1, 2, 3), 'abc', strict=True)),
+                         ((1, 'a'), (2, 'b'), (3, 'c')))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, (1, 2, 3, 4), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, (1, 2), 'abc', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, (1, 2), (1, 2), 'abc', strict=True))
+
+        # gh-140517: Testing refleaks with mortal objects.
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
+
+    def test_map_strict_iterators(self):
+        x = iter(range(5))
+        y = [0]
+        z = iter(range(5))
+        self.assertRaises(ValueError, list,
+                          (map(pack, x, y, z, strict=True)))
+        self.assertEqual(next(x), 2)
+        self.assertEqual(next(z), 1)
+
+    def test_map_strict_error_handling(self):
+
+        class Error(Exception):
+            pass
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise Error
+                return self.size
+
+        l1 = self.iter_error(map(pack, "AB", Iter(1), strict=True), Error)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(map(pack, "AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(map(pack, "AB", Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(map(pack, "AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(map(pack, Iter(1), "AB", strict=True), Error)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(map(pack, Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(map(pack, Iter(2), "ABC", strict=True), Error)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(map(pack, Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
+
+    def test_map_strict_error_handling_stopiteration(self):
+
+        class Iter:
+            def __init__(self, size):
+                self.size = size
+            def __iter__(self):
+                return self
+            def __next__(self):
+                self.size -= 1
+                if self.size < 0:
+                    raise StopIteration
+                return self.size
+
+        l1 = self.iter_error(map(pack, "AB", Iter(1), strict=True), ValueError)
+        self.assertEqual(l1, [("A", 0)])
+        l2 = self.iter_error(map(pack, "AB", Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l2, [("A", 1, "A")])
+        l3 = self.iter_error(map(pack, "AB", Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l3, [("A", 1, "A"), ("B", 0, "B")])
+        l4 = self.iter_error(map(pack, "AB", Iter(3), strict=True), ValueError)
+        self.assertEqual(l4, [("A", 2), ("B", 1)])
+        l5 = self.iter_error(map(pack, Iter(1), "AB", strict=True), ValueError)
+        self.assertEqual(l5, [(0, "A")])
+        l6 = self.iter_error(map(pack, Iter(2), "A", strict=True), ValueError)
+        self.assertEqual(l6, [(1, "A")])
+        l7 = self.iter_error(map(pack, Iter(2), "ABC", strict=True), ValueError)
+        self.assertEqual(l7, [(1, "A"), (0, "B")])
+        l8 = self.iter_error(map(pack, Iter(3), "AB", strict=True), ValueError)
+        self.assertEqual(l8, [(2, "A"), (1, "B")])
 
     def test_max(self):
         self.assertEqual(max('123123'), '3')
@@ -1434,14 +1683,11 @@ class BuiltinTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -1450,9 +1696,6 @@ class BuiltinTest(unittest.TestCase):
                 fp = open(TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     @support.requires_subprocess()
     def test_open_non_inheritable(self):
@@ -1584,6 +1827,29 @@ class BuiltinTest(unittest.TestCase):
             sys.stdout = savestdout
             fp.close()
 
+    def test_input_gh130163(self):
+        class X(io.StringIO):
+            def __getattribute__(self, name):
+                nonlocal patch
+                if patch:
+                    patch = False
+                    sys.stdout = X()
+                    sys.stderr = X()
+                    sys.stdin = X('input\n')
+                    support.gc_collect()
+                return io.StringIO.__getattribute__(self, name)
+
+        with (support.swap_attr(sys, 'stdout', None),
+              support.swap_attr(sys, 'stderr', None),
+              support.swap_attr(sys, 'stdin', None)):
+            patch = False
+            # the only references:
+            sys.stdout = X()
+            sys.stderr = X()
+            sys.stdin = X('input\n')
+            patch = True
+            input()  # should not crash
+
     # test_int(): see test_int.py for tests of built-in function int().
 
     def test_repr(self):
@@ -1598,6 +1864,11 @@ class BuiltinTest(unittest.TestCase):
         a = {}
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
+
+    def test_repr_blocked(self):
+        class C:
+            __repr__ = None
+        self.assertRaises(TypeError, repr, C())
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
@@ -1705,7 +1976,10 @@ class BuiltinTest(unittest.TestCase):
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
-        self.assertEqual(sys.spam, 1)
+        try:
+            self.assertEqual(sys.spam, 1)
+        finally:
+            del sys.spam
         self.assertRaises(TypeError, setattr)
         self.assertRaises(TypeError, setattr, sys)
         self.assertRaises(TypeError, setattr, sys, 'spam')
@@ -1758,6 +2032,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [], '')
         self.assertRaises(TypeError, sum, [], b'')
         self.assertRaises(TypeError, sum, [], bytearray())
+        self.assertRaises(OverflowError, sum, [1.0, 10**1000])
+        self.assertRaises(OverflowError, sum, [1j, 10**1000])
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1773,6 +2049,17 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(xs), complex(sum(z.real for z in xs),
                                           sum(z.imag for z in xs)))
 
+        # test that sum() of complex and real numbers doesn't
+        # smash sign of imaginary 0
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1, complex(1, -0.0)]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([complex(1, -0.0), 1.0]),
+                                         complex(2, -0.0))
+        self.assertComplexesAreIdentical(sum([1.0, complex(1, -0.0)]),
+                                         complex(2, -0.0))
+
     @requires_IEEE_754
     @unittest.skipIf(HAVE_DOUBLE_ROUNDING,
                          "sum accuracy not guaranteed on machines with double rounding")
@@ -1783,6 +2070,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum([1.0, 10E100, 1.0, -10E100, 2j]), 2+2j)
         self.assertEqual(sum([2+1j, 10E100j, 1j, -10E100j]), 2+2j)
         self.assertEqual(sum([1j, 1, 10E100j, 1j, 1.0, -10E100j]), 2+2j)
+        self.assertEqual(sum([2j, 1., 10E100, 1., -10E100]), 2+2j)
+        self.assertEqual(sum([1.0, 10**100, 1.0, -10**100]), 2.0)
+        self.assertEqual(sum([2j, 1.0, 10**100, 1.0, -10**100]), 2+2j)
         self.assertEqual(sum([0.1j]*10 + [fractions.Fraction(1, 10)]), 0.1+1j)
 
     def test_type(self):
@@ -2064,7 +2354,7 @@ class BuiltinTest(unittest.TestCase):
         # tests for object.__format__ really belong elsewhere, but
         #  there's no good place to put them
         x = object().__format__('')
-        self.assertTrue(x.startswith('<object object at'))
+        self.assertStartsWith(x, '<object object at')
 
         # first argument to object.__format__ must be string
         self.assertRaises(TypeError, object().__format__, 3)
@@ -2305,6 +2595,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
@@ -2387,7 +2678,8 @@ class PtyTests(unittest.TestCase):
                 print(ascii(input(prompt)), file=wpipe)
             except BaseException as e:
                 print(ascii(f'{e.__class__.__name__}: {e!s}'), file=wpipe)
-        lines = self.run_child(child, terminal_input + b"\r\n")
+        with self.detach_readline():
+            lines = self.run_child(child, terminal_input + b"\r\n")
         # Check we did exercise the GNU readline path
         self.assertIn(lines[0], {'tty = True', 'tty = False'})
         if lines[0] != 'tty = True':
@@ -2400,28 +2692,36 @@ class PtyTests(unittest.TestCase):
                 expected = terminal_input.decode(sys.stdin.encoding)  # what else?
         self.assertEqual(input_result, expected)
 
-    def test_input_tty(self):
-        # Test input() functionality when wired to a tty (the code path
-        # is different and invokes GNU readline if available).
-        self.check_input_tty("prompt", b"quux")
-
-    def skip_if_readline(self):
+    @contextlib.contextmanager
+    def detach_readline(self):
         # bpo-13886: When the readline module is loaded, PyOS_Readline() uses
         # the readline implementation. In some cases, the Python readline
         # callback rlhandler() is called by readline with a string without
-        # non-ASCII characters. Skip tests on non-ASCII characters if the
-        # readline module is loaded, since test_builtin is not intended to test
+        # non-ASCII characters.
+        # Unlink readline temporarily from PyOS_Readline() for those tests,
+        # since test_builtin is not intended to test
         # the readline module, but the builtins module.
-        if 'readline' in sys.modules:
-            self.skipTest("the readline module is loaded")
+        if "readline" in sys.modules:
+            c = import_module("ctypes")
+            fp_api = "PyOS_ReadlineFunctionPointer"
+            prev_value = c.c_void_p.in_dll(c.pythonapi, fp_api).value
+            c.c_void_p.in_dll(c.pythonapi, fp_api).value = None
+            try:
+                yield
+            finally:
+                c.c_void_p.in_dll(c.pythonapi, fp_api).value = prev_value
+        else:
+            yield
+
+    def test_input_tty(self):
+        # Test input() functionality when wired to a tty
+        self.check_input_tty("prompt", b"quux")
 
     def test_input_tty_non_ascii(self):
-        self.skip_if_readline()
         # Check stdin/stdout encoding is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xc3\xa9", "utf-8")
 
     def test_input_tty_non_ascii_unicode_errors(self):
-        self.skip_if_readline()
         # Check stdin/stdout error handler is used when invoking PyOS_Readline()
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
@@ -2431,14 +2731,12 @@ class PtyTests(unittest.TestCase):
                          'null characters')
 
     def test_input_tty_nonencodable_prompt(self):
-        self.skip_if_readline()
         self.check_input_tty("prompté", b"quux", "ascii", stdout_errors='strict',
                 expected="UnicodeEncodeError: 'ascii' codec can't encode "
                          "character '\\xe9' in position 6: ordinal not in "
                          "range(128)")
 
     def test_input_tty_nondecodable_input(self):
-        self.skip_if_readline()
         self.check_input_tty("prompt", b"quux\xe9", "ascii", stdin_errors='strict',
                 expected="UnicodeDecodeError: 'ascii' codec can't decode "
                          "byte 0xe9 in position 4: ordinal not in "
@@ -2540,15 +2838,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        IMMORTAL_REFCOUNT = (1 << 30) - 1
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = (1 << 32) - 1
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:
@@ -2573,6 +2871,7 @@ class TestType(unittest.TestCase):
         self.assertEqual(A.__module__, __name__)
         self.assertEqual(A.__bases__, (object,))
         self.assertIs(A.__base__, object)
+        self.assertNotIn('__firstlineno__', A.__dict__)
         x = A()
         self.assertIs(type(x), A)
         self.assertIs(x.__class__, A)
@@ -2650,6 +2949,17 @@ class TestType(unittest.TestCase):
         with self.assertRaises(TypeError):
             A.__qualname__ = b'B'
         self.assertEqual(A.__qualname__, 'D.E')
+
+    def test_type_firstlineno(self):
+        A = type('A', (), {'__firstlineno__': 42})
+        self.assertEqual(A.__name__, 'A')
+        self.assertEqual(A.__module__, __name__)
+        self.assertEqual(A.__dict__['__firstlineno__'], 42)
+        A.__module__ = 'testmodule'
+        self.assertEqual(A.__module__, 'testmodule')
+        self.assertNotIn('__firstlineno__', A.__dict__)
+        A.__firstlineno__ = 43
+        self.assertEqual(A.__dict__['__firstlineno__'], 43)
 
     def test_type_typeparams(self):
         class A[T]:
@@ -2732,7 +3042,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

@@ -53,6 +53,7 @@ Richard Chamberlain, for the first implementation of textdoc.
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
+import ast
 import __future__
 import builtins
 import importlib._bootstrap
@@ -67,10 +68,12 @@ import platform
 import re
 import sys
 import sysconfig
+import textwrap
 import time
 import tokenize
 import urllib.parse
 import warnings
+from annotationlib import Format
 from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
@@ -105,96 +108,10 @@ def pathdirs():
             normdirs.append(normdir)
     return dirs
 
-def _findclass(func):
-    cls = sys.modules.get(func.__module__)
-    if cls is None:
-        return None
-    for name in func.__qualname__.split('.')[:-1]:
-        cls = getattr(cls, name)
-    if not inspect.isclass(cls):
-        return None
-    return cls
-
-def _finddoc(obj):
-    if inspect.ismethod(obj):
-        name = obj.__func__.__name__
-        self = obj.__self__
-        if (inspect.isclass(self) and
-            getattr(getattr(self, name, None), '__func__') is obj.__func__):
-            # classmethod
-            cls = self
-        else:
-            cls = self.__class__
-    elif inspect.isfunction(obj):
-        name = obj.__name__
-        cls = _findclass(obj)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.isbuiltin(obj):
-        name = obj.__name__
-        self = obj.__self__
-        if (inspect.isclass(self) and
-            self.__qualname__ + '.' + name == obj.__qualname__):
-            # classmethod
-            cls = self
-        else:
-            cls = self.__class__
-    # Should be tested before isdatadescriptor().
-    elif isinstance(obj, property):
-        name = obj.__name__
-        cls = _findclass(obj.fget)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
-        name = obj.__name__
-        cls = obj.__objclass__
-        if getattr(cls, name) is not obj:
-            return None
-        if inspect.ismemberdescriptor(obj):
-            slots = getattr(cls, '__slots__', None)
-            if isinstance(slots, dict) and name in slots:
-                return slots[name]
-    else:
-        return None
-    for base in cls.__mro__:
-        try:
-            doc = _getowndoc(getattr(base, name))
-        except AttributeError:
-            continue
-        if doc is not None:
-            return doc
-    return None
-
-def _getowndoc(obj):
-    """Get the documentation string for an object if it is not
-    inherited from its class."""
-    try:
-        doc = object.__getattribute__(obj, '__doc__')
-        if doc is None:
-            return None
-        if obj is not type:
-            typedoc = type(obj).__doc__
-            if isinstance(typedoc, str) and typedoc == doc:
-                return None
-        return doc
-    except AttributeError:
-        return None
-
 def _getdoc(object):
-    """Get the documentation string for an object.
-
-    All tabs are expanded to spaces.  To clean up docstrings that are
-    indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
-    doc = _getowndoc(object)
-    if doc is None:
-        try:
-            doc = _finddoc(object)
-        except (AttributeError, TypeError):
-            return None
-    if not isinstance(doc, str):
-        return None
-    return inspect.cleandoc(doc)
+    return inspect.getdoc(object,
+                          fallback_to_class_doc=False,
+                          inherit_class_doc=False)
 
 def getdoc(object):
     """Get the doc string or comments for an object."""
@@ -212,12 +129,12 @@ def splitdoc(doc):
 
 def _getargspec(object):
     try:
-        signature = inspect.signature(object)
+        signature = inspect.signature(object, annotation_format=Format.STRING)
         if signature:
             name = getattr(object, '__name__', '')
             # <lambda> function are always single-line and should not be formatted
             max_width = (80 - len(name)) if name != '<lambda>' else None
-            return signature.format(max_width=max_width)
+            return signature.format(max_width=max_width, quote_annotation_strings=False)
     except (ValueError, TypeError):
         argspec = getattr(object, '__text_signature__', None)
         if argspec:
@@ -243,7 +160,7 @@ def parentname(object, modname):
     if necessary) or module."""
     if '.' in object.__qualname__:
         name = object.__qualname__.rpartition('.')[0]
-        if object.__module__ != modname:
+        if object.__module__ != modname and object.__module__ is not None:
             return object.__module__ + '.' + name
         else:
             return name
@@ -324,11 +241,12 @@ def visiblename(name, all=None, obj=None):
     """Decide whether to show documentation on a variable."""
     # Certain special names are redundant or internal.
     # XXX Remove __initializing__?
-    if name in {'__author__', '__builtins__', '__cached__', '__credits__',
-                '__date__', '__doc__', '__file__', '__spec__',
-                '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__',
-                '__static_attributes__', '__firstlineno__'}:
+    if name in {'__author__', '__builtins__', '__credits__', '__date__',
+                '__doc__', '__file__', '__spec__', '__loader__', '__module__',
+                '__name__', '__package__', '__path__', '__qualname__',
+                '__slots__', '__version__', '__static_attributes__',
+                '__firstlineno__', '__annotate_func__',
+                '__annotations_cache__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -383,21 +301,29 @@ def ispackage(path):
     return False
 
 def source_synopsis(file):
-    line = file.readline()
-    while line[:1] == '#' or not line.strip():
-        line = file.readline()
-        if not line: break
-    line = line.strip()
-    if line[:4] == 'r"""': line = line[1:]
-    if line[:3] == '"""':
-        line = line[3:]
-        if line[-1:] == '\\': line = line[:-1]
-        while not line.strip():
-            line = file.readline()
-            if not line: break
-        result = line.split('"""')[0].strip()
-    else: result = None
-    return result
+    """Return the one-line summary of a file object, if present"""
+
+    string = ''
+    try:
+        tokens = tokenize.generate_tokens(file.readline)
+        for tok_type, tok_string, _, _, _ in tokens:
+            if tok_type == tokenize.STRING:
+                string += tok_string
+            elif tok_type == tokenize.NEWLINE:
+                with warnings.catch_warnings():
+                    # Ignore the "invalid escape sequence" warning.
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    docstring = ast.literal_eval(string)
+                if not isinstance(docstring, str):
+                    return None
+                return docstring.strip().split('\n')[0].strip()
+            elif tok_type == tokenize.OP and tok_string in ('(', ')'):
+                string += tok_string
+            elif tok_type not in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
+                return None
+    except (tokenize.TokenError, UnicodeDecodeError, SyntaxError):
+        return None
+    return None
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
@@ -524,6 +450,7 @@ class Doc:
     PYTHONDOCS = os.environ.get("PYTHONDOCS",
                                 "https://docs.python.org/%d.%d/library"
                                 % sys.version_info[:2])
+    STDLIB_DIR = sysconfig.get_path('stdlib')
 
     def document(self, object, name=None, *args):
         """Generate documentation for an object."""
@@ -549,23 +476,12 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
+    def getdocloc(self, object, basedir=None):
         """Return the location of module docs or None"""
-
-        try:
-            file = inspect.getabsfile(object)
-        except TypeError:
-            file = '(built-in)'
-
+        basedir = self.STDLIB_DIR if basedir is None else basedir
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
 
-        basedir = os.path.normcase(basedir)
-        if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc',
-                                 'marshal', 'posix', 'signal', 'sys',
-                                 '_thread', 'zipimport') or
-             (file.startswith(basedir) and
-              not file.startswith(os.path.join(basedir, 'site-packages')))) and
+        if (self._is_stdlib_module(object, basedir) and
             object.__name__ not in ('xml.etree', 'test.test_pydoc.pydoc_mod')):
             if docloc.startswith(("http://", "https://")):
                 docloc = "{}/{}.html".format(docloc.rstrip("/"), object.__name__.lower())
@@ -574,6 +490,36 @@ class Doc:
         else:
             docloc = None
         return docloc
+
+    def _get_version(self, object):
+        if self._is_stdlib_module(object):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                version = getattr(object, '__version__', None)
+        else:
+            version = getattr(object, '__version__', None)
+        return '' if version is None else str(version)
+
+    def _is_stdlib_module(self, object, basedir=None):
+        basedir = self.STDLIB_DIR if basedir is None else basedir
+
+        try:
+            file = inspect.getabsfile(object)
+        except TypeError:
+            file = '(built-in)'
+
+        if sysconfig.is_python_build():
+            srcdir = sysconfig.get_config_var('srcdir')
+            if srcdir:
+                basedir = os.path.join(srcdir, 'Lib')
+
+        basedir = os.path.normcase(basedir)
+        return (isinstance(object, type(os)) and
+                (object.__name__ in ('errno', 'exceptions', 'gc',
+                                     'marshal', 'posix', 'signal', 'sys',
+                                     '_thread', 'zipimport')
+                or (file.startswith(basedir) and
+                 not file.startswith(os.path.join(basedir, 'site-packages')))))
 
 # -------------------------------------------- HTML documentation generator
 
@@ -834,8 +780,8 @@ class HTMLDoc(Doc):
         except TypeError:
             filelink = '(built-in)'
         info = []
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             info.append('version %s' % self.escape(version))
@@ -872,6 +818,7 @@ class HTMLDoc(Doc):
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use a heuristic.
             if (all is not None
+                or inspect.isbuiltin(value)
                 or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1316,6 +1263,7 @@ location listed above.
         for key, value in inspect.getmembers(object, inspect.isroutine):
             # if __all__ exists, believe it.  Otherwise use a heuristic.
             if (all is not None
+                or inspect.isbuiltin(value)
                 or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
@@ -1368,8 +1316,7 @@ location listed above.
                 contents.append(self.docother(value, key, name, maxlen=70))
             result = result + self.section('DATA', '\n'.join(contents))
 
-        if hasattr(object, '__version__'):
-            version = str(object.__version__)
+        if version := self._get_version(object):
             if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
                 version = version[11:-1].strip()
             result = result + self.section('VERSION', version)
@@ -1425,7 +1372,8 @@ location listed above.
         # List the built-in subclasses, if any:
         subclasses = sorted(
             (str(cls.__name__) for cls in type.__subclasses__(object)
-             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+             if (not cls.__name__.startswith("_") and
+                 getattr(cls, '__module__', '') == "builtins")),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)
@@ -1682,6 +1630,13 @@ def describe(thing):
         return 'function ' + thing.__name__
     if inspect.ismethod(thing):
         return 'method ' + thing.__name__
+    if inspect.ismethodwrapper(thing):
+        return 'method wrapper ' + thing.__name__
+    if inspect.ismethoddescriptor(thing):
+        try:
+            return 'method descriptor ' + thing.__name__
+        except AttributeError:
+            pass
     return type(thing).__name__
 
 def locate(path, forceload=0):
@@ -1790,6 +1745,36 @@ def writedocs(dir, pkgpath='', done=None):
         writedoc(modname)
     return
 
+
+def _introdoc():
+    ver = '%d.%d' % sys.version_info[:2]
+    if os.environ.get('PYTHON_BASIC_REPL'):
+        pyrepl_keys = ''
+    else:
+        # Additional help for keyboard shortcuts if enhanced REPL is used.
+        pyrepl_keys = '''
+        You can use the following keyboard shortcuts at the main interpreter prompt.
+        F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
+        mode (press again to exit).
+        '''
+    return textwrap.dedent(f'''\
+        Welcome to Python {ver}'s help utility! If this is your first time using
+        Python, you should definitely check out the tutorial at
+        https://docs.python.org/{ver}/tutorial/.
+
+        Enter the name of any module, keyword, or topic to get help on writing
+        Python programs and using Python modules.  To get a list of available
+        modules, keywords, symbols, or topics, enter "modules", "keywords",
+        "symbols", or "topics".
+        {pyrepl_keys}
+        Each module also comes with a one-line summary of what it does; to list
+        the modules whose name or summary contain a given string such as "spam",
+        enter "modules spam".
+
+        To quit this help utility and return to the interpreter,
+        enter "q", "quit" or "exit".
+    ''')
+
 class Helper:
 
     # These dictionaries map a topic name to either an alias, or a tuple
@@ -1863,6 +1848,7 @@ class Helper:
         ':': 'SLICINGS DICTIONARYLITERALS',
         '@': 'def class',
         '\\': 'STRINGS',
+        ':=': 'ASSIGNMENTEXPRESSIONS',
         '_': 'PRIVATENAMES',
         '__': 'PRIVATENAMES SPECIALMETHODS',
         '`': 'BACKQUOTES',
@@ -1956,6 +1942,7 @@ class Helper:
         'ASSERTION': 'assert',
         'ASSIGNMENT': ('assignment', 'AUGMENTEDASSIGNMENT'),
         'AUGMENTEDASSIGNMENT': ('augassign', 'NUMBERMETHODS'),
+        'ASSIGNMENTEXPRESSIONS': ('assignment-expressions', ''),
         'DELETION': 'del',
         'RETURNING': 'return',
         'IMPORTING': 'import',
@@ -2054,26 +2041,10 @@ has the same effect as typing a particular string at the help> prompt.
         self.output.write('\n')
 
     def intro(self):
-        self.output.write('''\
-Welcome to Python {0}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial at
-https://docs.python.org/{0}/tutorial/.
-
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To get a list of available
-modules, keywords, symbols, or topics, enter "modules", "keywords",
-"symbols", or "topics".
-
-Each module also comes with a one-line summary of what it does; to list
-the modules whose name or summary contain a given string such as "spam",
-enter "modules spam".
-
-To quit this help utility and return to the interpreter,
-enter "q", "quit" or "exit".
-'''.format('%d.%d' % sys.version_info[:2]))
+        self.output.write(_introdoc())
 
     def list(self, items, columns=4, width=80):
-        items = list(sorted(items))
+        items = sorted(items)
         colw = width // columns
         rows = (len(items) + columns - 1) // columns
         for row in range(rows):
@@ -2105,7 +2076,7 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list(self.topics.keys())
+        self.list(self.topics.keys(), columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:
@@ -2133,7 +2104,6 @@ module "pydoc_data.topics" could not be found.
         if more_xrefs:
             xrefs = (xrefs or '') + ' ' + more_xrefs
         if xrefs:
-            import textwrap
             text = 'Related help topics: ' + ', '.join(xrefs.split()) + '\n'
             wrapped_text = textwrap.wrap(text, 72)
             doc += '\n%s\n' % '\n'.join(wrapped_text)

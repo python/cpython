@@ -186,7 +186,7 @@ How do I get documentation on Python?
 -------------------------------------
 
 The standard documentation for the current stable version of Python is available
-at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are
+at https://docs.python.org/3/.  EPUB, plain text, and downloadable HTML versions are
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
@@ -309,10 +309,9 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/downloads/>`_.  There are two production-ready versions
-of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
-most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://peps.python.org/pep-0373/>`_.
+<https://www.python.org/downloads/>`_.
+Python 3.x is the recommended version and supported by most widely used libraries.
+Python 2.x :pep:`is not maintained anymore <373>`.
 
 How many people are using Python?
 ---------------------------------

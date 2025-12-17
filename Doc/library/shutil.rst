@@ -47,6 +47,13 @@ Directory and files operations
    0, only the contents from the current file position to the end of the file will
    be copied.
 
+   :func:`copyfileobj` will *not* guarantee that the destination stream has
+   been flushed on completion of the copy. If you want to read from the
+   destination at the completion of the copy operation (for example, reading
+   the contents of a temporary file that has been copied from a HTTP stream),
+   you must ensure that you have called :func:`~io.IOBase.flush` or
+   :func:`~io.IOBase.close` on the file-like object before attempting to read
+   the destination file.
 
 .. function:: copyfile(src, dst, *, follow_symlinks=True)
 
@@ -82,6 +89,13 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+.. exception:: SpecialFileError
+
+   This exception is raised when :func:`copyfile` or :func:`copytree` attempt
+   to copy a named pipe.
+
+   .. versionadded:: 2.7
 
 .. exception:: SameFileError
 
@@ -327,6 +341,10 @@ Directory and files operations
    The deprecated *onerror* is similar to *onexc*, except that the third
    parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
+   .. seealso::
+      :ref:`shutil-rmtree-example` for an example of handling the removal
+      of a directory tree that contains read-only files.
+
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
    .. versionchanged:: 3.3
@@ -449,9 +467,14 @@ Directory and files operations
    *mode* is a permission mask passed to :func:`os.access`, by default
    determining if the file exists and is executable.
 
-   *path* is a "``PATH`` string" specifying the lookup directory list. When no
-   *path* is specified, the results of :func:`os.environ` are used, returning
-   either the "PATH" value or a fallback of :data:`os.defpath`.
+   *path* is a "``PATH`` string" specifying the directories to look in,
+   delimited by :data:`os.pathsep`. When no *path* is specified, the
+   :envvar:`PATH` environment variable is read from :data:`os.environ`,
+   falling back to :data:`os.defpath` if it is not set.
+
+   If *cmd* contains a directory component, :func:`!which` only checks the
+   specified path directly and does not search the directories listed in
+   *path* or in the system's :envvar:`PATH` environment variable.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
@@ -460,9 +483,9 @@ Directory and files operations
    consulting the current working directory for executables: set the environment
    variable ``NoDefaultCurrentDirectoryInExePath``.
 
-   Also on Windows, the ``PATHEXT`` variable is used to resolve commands
-   that may not already include an extension. For example, if you call
-   ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   Also on Windows, the :envvar:`PATHEXT` environment variable is used to
+   resolve commands that may not already include an extension. For example,
+   if you call ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
    to know that it should look for ``python.exe`` within the *path*
    directories. For example, on Windows::
 
@@ -472,7 +495,7 @@ Directory and files operations
    This is also applied when *cmd* is a path that contains a directory
    component::
 
-      >> shutil.which("C:\\Python33\\python")
+      >>> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -489,12 +512,6 @@ Directory and files operations
       ``PATHEXT`` is used now even when *cmd* includes a directory component
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
-
-   .. versionchanged:: 3.12.1
-      On Windows, if *mode* includes ``os.X_OK``, executables with an
-      extension in ``PATHEXT`` will be preferred over executables without a
-      matching extension.
-      This brings behavior closer to that of Python 3.11.
 
 .. exception:: Error
 
@@ -517,7 +534,9 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux :func:`os.sendfile` is used.
+On Linux :func:`os.copy_file_range` or :func:`os.sendfile` is used.
+
+On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
@@ -528,6 +547,13 @@ file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
+
+.. versionchanged:: 3.14
+    Solaris now uses :func:`os.sendfile`.
+
+.. versionchanged:: 3.14
+   Copy-on-write or server-side copy may be used internally via
+   :func:`os.copy_file_range` on supported Linux filesystems.
 
 .. _shutil-copytree-example:
 
@@ -599,7 +625,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
    :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
-   available), or "xztar" (if the :mod:`lzma` module is available).
+   available), "xztar" (if the :mod:`lzma` module is available), or "zstdtar"
+   (if the :mod:`compression.zstd` module is available).
 
    *root_dir* is a directory that will be the root directory of the
    archive, all paths in the archive will be relative to it; for example,
@@ -654,6 +681,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
+   - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
+     module is available).
 
    You can register new formats or provide your own archiver for any existing
    formats, by using :func:`register_archive_format`.
@@ -697,8 +726,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    *extract_dir* is the name of the target directory where the archive is
    unpacked. If not provided, the current working directory is used.
 
-   *format* is the archive format: one of "zip", "tar", "gztar", "bztar", or
-   "xztar".  Or any other format registered with
+   *format* is the archive format: one of "zip", "tar", "gztar", "bztar",
+   "xztar", or "zstdtar".  Or any other format registered with
    :func:`register_unpack_format`.  If not provided, :func:`unpack_archive`
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
@@ -706,11 +735,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    The keyword-only *filter* argument is passed to the underlying unpacking
    function. For zip files, *filter* is not accepted.
-   For tar files, it is recommended to set it to ``'data'``,
-   unless using features specific to tar and UNIX-like filesystems.
+   For tar files, it is recommended to use ``'data'`` (default since Python
+   3.14), unless using features specific to tar and UNIX-like filesystems.
    (See :ref:`tarfile-extraction-filter` for details.)
-   The ``'data'`` filter will become the default for tar files
-   in Python 3.14.
 
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
@@ -720,6 +747,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       It is possible that files are created outside of the path specified in
       the *extract_dir* argument, e.g. members that have absolute filenames
       starting with "/" or filenames with two dots "..".
+
+      Since Python 3.14, the defaults for both built-in formats (zip and tar
+      files) will prevent the most dangerous of such security issues,
+      but will not prevent *all* unintended behavior.
+      Read the :ref:`tarfile-further-verification`
+      section for tar-specific details.
 
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
@@ -766,6 +799,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
+   - *zstdtar*: Zstandard compressed tar-file (if the :mod:`compression.zstd`
+     module is available).
 
    You can register new formats or provide your own unpacker for any existing
    formats, by using :func:`register_unpack_format`.
@@ -832,7 +867,7 @@ In the final archive, :file:`please_add.txt` should be included, but
     ...     root_dir='tmp/root',
     ...     base_dir='structure/content',
     ... )
-    '/Users/tarek/my_archive.tar'
+    '/Users/tarek/myarchive.tar'
 
 Listing the files in the resulting archive gives us:
 

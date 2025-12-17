@@ -131,8 +131,9 @@ any DWARF information available for them).
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
-#include "pycore_frame.h"
-#include "pycore_interp.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -202,6 +203,7 @@ enum perf_trampoline_type {
 #define perf_map_file _PyRuntime.ceval.perf.map_file
 #define persist_after_fork _PyRuntime.ceval.perf.persist_after_fork
 #define perf_trampoline_type _PyRuntime.ceval.perf.perf_trampoline_type
+#define prev_eval_frame _PyRuntime.ceval.perf.prev_eval_frame
 
 static void
 perf_map_write_entry(void *state, const void *code_addr,
@@ -230,6 +232,7 @@ perf_map_init_state(void)
 {
     PyUnstable_PerfMapState_Init();
     trampoline_api.code_padding = 0;
+    trampoline_api.code_alignment = 32;
     perf_trampoline_type = PERF_TRAMPOLINE_TYPE_MAP;
     return NULL;
 }
@@ -288,10 +291,13 @@ new_code_arena(void)
         perf_status = PERF_STATUS_FAILED;
         return -1;
     }
+    _PyAnnotateMemoryMap(memory, mem_size, "cpython:perf_trampoline");
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;
-    size_t chunk_size = round_up(code_size + trampoline_api.code_padding, 16);
+    size_t unaligned_size = code_size + trampoline_api.code_padding;
+    size_t chunk_size = round_up(unaligned_size, trampoline_api.code_alignment);
+    assert(chunk_size % trampoline_api.code_alignment == 0);
     // TODO: Check the effect of alignment of the code chunks. Initial investigation
     // showed that this has no effect on performance in x86-64 or aarch64 and the current
     // version has the advantage that the unwinder in GDB can unwind across JIT-ed code.
@@ -356,7 +362,9 @@ static inline py_trampoline
 code_arena_new_code(code_arena_t *code_arena)
 {
     py_trampoline trampoline = (py_trampoline)code_arena->current_addr;
-    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding, 16);
+    size_t total_code_size = round_up(code_arena->code_size + trampoline_api.code_padding,
+                                  trampoline_api.code_alignment);
+    assert(total_code_size % trampoline_api.code_alignment == 0);
     code_arena->size_left -= total_code_size;
     code_arena->current_addr += total_code_size;
     return trampoline;
@@ -402,9 +410,12 @@ py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
         f = new_trampoline;
     }
     assert(f != NULL);
-    return f(ts, frame, throw, _PyEval_EvalFrameDefault);
+    return f(ts, frame, throw, prev_eval_frame != NULL ? prev_eval_frame : _PyEval_EvalFrameDefault);
 default_eval:
     // Something failed, fall back to the default evaluator.
+    if (prev_eval_frame) {
+        return prev_eval_frame(ts, frame, throw);
+    }
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
 #endif  // PY_HAVE_PERF_TRAMPOLINE
@@ -476,28 +487,22 @@ _PyPerfTrampoline_Init(int activate)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->interp->eval_frame &&
-        tstate->interp->eval_frame != py_trampoline_evaluator) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Trampoline cannot be initialized as a custom eval "
-                        "frame is already present");
-        return -1;
-    }
     if (!activate) {
-        tstate->interp->eval_frame = NULL;
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, prev_eval_frame);
         perf_status = PERF_STATUS_NO_INIT;
     }
-    else {
-        tstate->interp->eval_frame = py_trampoline_evaluator;
-        if (new_code_arena() < 0) {
-            return -1;
-        }
+    else if (tstate->interp->eval_frame != py_trampoline_evaluator) {
+        prev_eval_frame = _PyInterpreterState_GetEvalFrameFunc(tstate->interp);
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
         extra_code_index = _PyEval_RequestCodeExtraIndex(NULL);
         if (extra_code_index == -1) {
             return -1;
         }
         if (trampoline_api.state == NULL && trampoline_api.init_state != NULL) {
             trampoline_api.state = trampoline_api.init_state();
+        }
+        if (new_code_arena() < 0) {
+            return -1;
         }
         perf_status = PERF_STATUS_OK;
     }
@@ -514,7 +519,7 @@ _PyPerfTrampoline_Fini(void)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
-        tstate->interp->eval_frame = NULL;
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);

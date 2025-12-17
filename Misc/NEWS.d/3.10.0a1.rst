@@ -1032,7 +1032,7 @@ the :meth:`~object.__int__` method but do not have the
 .. nonce: AkRzjb
 .. section: Core and Builtins
 
-Add :meth:`int.bit_count()`, counting the number of ones in the binary
+Add :meth:`int.bit_count`, counting the number of ones in the binary
 representation of an integer. Patch by Niklas Fiekas.
 
 ..
@@ -1499,7 +1499,7 @@ used to cause ZeroDivisionError now cause an OverflowError instead.
 .. nonce: rju34k
 .. section: Library
 
-Add :func:`os.cpu_count()` support for VxWorks RTOS.
+Add :func:`os.cpu_count` support for VxWorks RTOS.
 
 ..
 
@@ -2452,7 +2452,7 @@ Added the *root_dir* and *dir_fd* parameters in :func:`glob.glob`.
 .. nonce: X-TJZO
 .. section: Library
 
-Fix :meth:`IMAP4.noop()` when debug mode is enabled (ex: ``imaplib.Debug =
+Fix :meth:`IMAP4.noop` when debug mode is enabled (ex: ``imaplib.Debug =
 3``).
 
 ..
@@ -3275,8 +3275,8 @@ Types created with :c:func:`PyType_FromSpec` now make any signature in their
 .. nonce: u6Xfr2
 .. section: C API
 
-Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented pointers
-beyond the end of a string.
+Fix bug in :c:func:`PyOS_mystrnicmp` and :c:func:`PyOS_mystricmp` that
+incremented pointers beyond the end of a string.
 
 ..
 

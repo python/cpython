@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -241,7 +241,7 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
 
     Fri, 09 Nov 2001 01:08:47 -0000
 
-    Optional timeval if given is a floating point time value as accepted by
+    Optional timeval if given is a floating-point time value as accepted by
     gmtime() and localtime(), otherwise the current time is used.
 
     Optional localtime is a flag that when True, interprets timeval, and
@@ -417,8 +417,14 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
-            # Sort by number
-            continuations.sort()
+            # Sort by number, treating None as 0 if there is no 0,
+            # and ignore it if there is already a 0.
+            has_zero = any(x[0] == 0 for x in continuations)
+            if has_zero:
+                continuations = [x for x in continuations if x[0] is not None]
+            else:
+                continuations = [(x[0] or 0, x[1], x[2]) for x in continuations]
+            continuations.sort(key=lambda x: x[0])
             # And now append all values in numerical order, converting
             # %-encodings for the encoded segments.  If any of the
             # continuation names ends in a *, then the entire string, after
@@ -454,6 +460,10 @@ def collapse_rfc2231_value(value, errors='replace',
         charset = fallback_charset
     rawbytes = bytes(text, 'raw-unicode-escape')
     try:
+        # Explicitly look up the codec for warning generation, see gh-140030
+        # Can be removed in 3.17
+        import codecs
+        codecs.lookup(charset)
         return str(rawbytes, charset, errors)
     except LookupError:
         # charset is not a known codec.

@@ -1,2 +1,0 @@
-Improve error messages when a string, bytes or bytearray object of length 1
-is expected.

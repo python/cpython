@@ -9,6 +9,7 @@ import sys
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+import traceback
 import types
 import unittest
 
@@ -234,7 +235,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': '',
                                 '__file__': path,
-                                '__cached__': cached,
                                 '__doc__': None,
                                 }
                     os_helper.create_empty_file(path)
@@ -255,7 +255,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 }
@@ -315,7 +314,6 @@ class ReloadTests:
                     expected = {'__name__': name,
                                 '__package__': name,
                                 '__file__': init_path,
-                                '__cached__': cached,
                                 '__path__': [os.path.dirname(init_path)],
                                 '__doc__': None,
                                 'eggs': None,
@@ -353,6 +351,20 @@ class ReloadTests:
             self.assertIsNone(module.__spec__)
             with self.assertRaises(ModuleNotFoundError):
                 self.init.reload(module)
+
+    def test_reload_traceback_with_non_str(self):
+        # gh-125519
+        with support.captured_stdout() as stdout:
+            try:
+                self.init.reload("typing")
+            except TypeError as exc:
+                traceback.print_exception(exc, file=stdout)
+            else:
+                self.fail("Expected TypeError to be raised")
+        printed_traceback = stdout.getvalue()
+        self.assertIn("TypeError", printed_traceback)
+        self.assertNotIn("AttributeError", printed_traceback)
+        self.assertNotIn("module.__spec__.name", printed_traceback)
 
 
 (Frozen_ReloadTests,
@@ -415,8 +427,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__loader__'),
-                                    '{!r} lacks a __loader__ attribute'.format(name))
+                    self.assertHasAttr(module, '__loader__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__loader__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -426,7 +437,7 @@ class StartupTests:
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
                 with self.subTest(name=name):
-                    self.assertTrue(hasattr(module, '__spec__'))
+                    self.assertHasAttr(module, '__spec__')
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
                     elif self.machinery.FrozenImporter.find_spec(name):
@@ -475,6 +486,19 @@ class TestModuleAll(unittest.TestCase):
             'spec_from_loader',
         )
         support.check__all__(self, util['Source'], extra=extra)
+
+
+class TestDeprecations(unittest.TestCase):
+    def test_machinery_deprecated_attributes(self):
+        from importlib import machinery
+        attributes = (
+            'DEBUG_BYTECODE_SUFFIXES',
+            'OPTIMIZED_BYTECODE_SUFFIXES',
+        )
+        for attr in attributes:
+            with self.subTest(attr=attr):
+                with self.assertWarns(DeprecationWarning):
+                    getattr(machinery, attr)
 
 
 if __name__ == '__main__':

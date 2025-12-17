@@ -6,26 +6,44 @@
 
 """
 
+from functools import partial
 import hashlib
 from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+from test.support import (
+    open_urlresource,
+    requires_resource,
+    script_helper,
+    cpython_only,
+    check_disallow_instantiation,
+    force_not_colorized,
+    is_resource_enabled,
+    findfile,
+)
 
+
+quicktest = not is_resource_enabled('cpu')
+
+def iterallchars():
+    maxunicode = 0xffff if quicktest else sys.maxunicode
+    return map(chr, range(maxunicode + 1))
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '63aa77dcb36b0e1df082ee2a6071caeda7f0955e'
+    expectedchecksum = ('47a99fa654ef1f50e89d2e9697b7b041fccb5a05'
+                        if quicktest else
+                        '8b2615a9fc627676cbc0b6fac0191177df97ef5f')
 
-    @requires_resource('cpu')
     def test_method_checksum(self):
         h = hashlib.sha1()
-        for i in range(sys.maxunicode + 1):
-            char = chr(i)
-            data = [
+        for char in iterallchars():
+            s1 = char + 'abc'
+            s2 = char + 'ABC'
+            s3 = char + '123'
+            data = (
                 # Predicates (single char)
                 "01"[char.isalnum()],
                 "01"[char.isalpha()],
@@ -38,15 +56,15 @@ class UnicodeMethodsTest(unittest.TestCase):
                 "01"[char.isupper()],
 
                 # Predicates (multiple chars)
-                "01"[(char + 'abc').isalnum()],
-                "01"[(char + 'abc').isalpha()],
-                "01"[(char + '123').isdecimal()],
-                "01"[(char + '123').isdigit()],
-                "01"[(char + 'abc').islower()],
-                "01"[(char + '123').isnumeric()],
+                "01"[s1.isalnum()],
+                "01"[s1.isalpha()],
+                "01"[s3.isdecimal()],
+                "01"[s3.isdigit()],
+                "01"[s1.islower()],
+                "01"[s3.isnumeric()],
                 "01"[(char + ' \t').isspace()],
-                "01"[(char + 'abc').istitle()],
-                "01"[(char + 'ABC').isupper()],
+                "01"[s1.istitle()],
+                "01"[s2.isupper()],
 
                 # Mappings (single char)
                 char.lower(),
@@ -54,54 +72,54 @@ class UnicodeMethodsTest(unittest.TestCase):
                 char.title(),
 
                 # Mappings (multiple chars)
-                (char + 'abc').lower(),
-                (char + 'ABC').upper(),
-                (char + 'abc').title(),
-                (char + 'ABC').title(),
+                s1.lower(),
+                s2.upper(),
+                s1.title(),
+                s2.title(),
 
-                ]
+                )
             h.update(''.join(data).encode('utf-8', 'surrogatepass'))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
-class UnicodeDatabaseTest(unittest.TestCase):
-    db = unicodedata
 
-class UnicodeFunctionsTest(UnicodeDatabaseTest):
+class UnicodeFunctionsTest(unittest.TestCase):
+    db = unicodedata
+    old = False
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '232affd2a50ec4bd69d2482aa0291385cbdefaba'
+    expectedchecksum = ('83cc43a2fbb779185832b4c049217d80b05bf349'
+                        if quicktest else
+                        '65670ae03a324c5f9e826a4de3e25bae4d73c9b7')
 
-    @requires_resource('cpu')
     def test_function_checksum(self):
+        db = self.db
         data = []
         h = hashlib.sha1()
 
-        for i in range(sys.maxunicode + 1):
-            char = chr(i)
-            data = [
+        for char in iterallchars():
+            data = "%.12g%.12g%.12g%s%s%s%s%s%s%s" % (
                 # Properties
-                format(self.db.digit(char, -1), '.12g'),
-                format(self.db.numeric(char, -1), '.12g'),
-                format(self.db.decimal(char, -1), '.12g'),
-                self.db.category(char),
-                self.db.bidirectional(char),
-                self.db.decomposition(char),
-                str(self.db.mirrored(char)),
-                str(self.db.combining(char)),
-                unicodedata.east_asian_width(char),
-                self.db.name(char, ""),
-            ]
-            h.update(''.join(data).encode("ascii"))
+                db.digit(char, -1),
+                db.numeric(char, -1),
+                db.decimal(char, -1),
+                db.category(char),
+                db.bidirectional(char),
+                db.decomposition(char),
+                db.mirrored(char),
+                db.combining(char),
+                db.east_asian_width(char),
+                db.name(char, ""),
+            )
+            h.update(data.encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
-    @requires_resource('cpu')
     def test_name_inverse_lookup(self):
-        for i in range(sys.maxunicode + 1):
-            char = chr(i)
-            if looked_name := self.db.name(char, None):
+        for char in iterallchars():
+            looked_name = self.db.name(char, None)
+            if looked_name is not None:
                 self.assertEqual(self.db.lookup(looked_name), char)
 
     def test_no_names_in_pua(self):
@@ -114,7 +132,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_lookup_nonexistant(self):
         # just make sure that lookup can fail
-        for nonexistant in [
+        for nonexistent in [
             "LATIN SMLL LETR A",
             "OPEN HANDS SIGHS",
             "DREGS",
@@ -122,7 +140,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
         ]:
-            self.assertRaises(KeyError, self.db.lookup, nonexistant)
+            self.assertRaises(KeyError, self.db.lookup, nonexistent)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
@@ -131,6 +149,13 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.digit('\u2468'), 9)
         self.assertEqual(self.db.digit('\U00020000', None), None)
         self.assertEqual(self.db.digit('\U0001D7FD'), 7)
+
+        # New in 13.0.0
+        self.assertEqual(self.db.digit('\U0001fbf9', None), 9)
+        # New in 14.0.0
+        self.assertEqual(self.db.digit('\U00016ac9', None), 9)
+        # New in 15.0.0
+        self.assertEqual(self.db.digit('\U0001e4f9', None), 9)
 
         self.assertRaises(TypeError, self.db.digit)
         self.assertRaises(TypeError, self.db.digit, 'xx')
@@ -141,9 +166,24 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.numeric('9'), 9)
         self.assertEqual(self.db.numeric('\u215b'), 0.125)
         self.assertEqual(self.db.numeric('\u2468'), 9.0)
-        self.assertEqual(self.db.numeric('\ua627'), 7.0)
         self.assertEqual(self.db.numeric('\U00020000', None), None)
-        self.assertEqual(self.db.numeric('\U0001012A'), 9000)
+
+        # New in 4.1.0
+        self.assertEqual(self.db.numeric('\U0001012A', None), None if self.old else 9000)
+        # New in 5.0.0
+        self.assertEqual(self.db.numeric('\u07c0', None), None if self.old else 0.0)
+        # New in 5.1.0
+        self.assertEqual(self.db.numeric('\ua627', None), None if self.old else 7.0)
+        # New in 6.0.0
+        self.assertEqual(self.db.numeric('\u0b72', None), None if self.old else 0.25)
+        # New in 12.0.0
+        self.assertEqual(self.db.numeric('\U0001ed3c', None), None if self.old else 0.5)
+        # New in 13.0.0
+        self.assertEqual(self.db.numeric('\U0001fbf9', None), None if self.old else 9)
+        # New in 14.0.0
+        self.assertEqual(self.db.numeric('\U00016ac9', None), None if self.old else 9)
+        # New in 15.0.0
+        self.assertEqual(self.db.numeric('\U0001e4f9', None), None if self.old else 9)
 
         self.assertRaises(TypeError, self.db.numeric)
         self.assertRaises(TypeError, self.db.numeric, 'xx')
@@ -157,6 +197,18 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.decimal('\U00020000', None), None)
         self.assertEqual(self.db.decimal('\U0001D7FD'), 7)
 
+        # New in 4.1.0
+        self.assertEqual(self.db.decimal('\xb2', None), 2 if self.old else None)
+        self.assertEqual(self.db.decimal('\u1369', None), 1 if self.old else None)
+        # New in 5.0.0
+        self.assertEqual(self.db.decimal('\u07c0', None), None if self.old else 0)
+        # New in 13.0.0
+        self.assertEqual(self.db.decimal('\U0001fbf9', None), None if self.old else 9)
+        # New in 14.0.0
+        self.assertEqual(self.db.decimal('\U00016ac9', None), None if self.old else 9)
+        # New in 15.0.0
+        self.assertEqual(self.db.decimal('\U0001e4f9', None), None if self.old else 9)
+
         self.assertRaises(TypeError, self.db.decimal)
         self.assertRaises(TypeError, self.db.decimal, 'xx')
         self.assertRaises(ValueError, self.db.decimal, 'x')
@@ -166,7 +218,21 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.category('a'), 'Ll')
         self.assertEqual(self.db.category('A'), 'Lu')
         self.assertEqual(self.db.category('\U00020000'), 'Lo')
-        self.assertEqual(self.db.category('\U0001012A'), 'No')
+
+        # New in 4.1.0
+        self.assertEqual(self.db.category('\U0001012A'), 'Cn' if self.old else 'No')
+        self.assertEqual(self.db.category('\U000e01ef'), 'Cn' if self.old else 'Mn')
+        # New in 5.1.0
+        self.assertEqual(self.db.category('\u0374'), 'Sk' if self.old else 'Lm')
+        # Changed in 13.0.0
+        self.assertEqual(self.db.category('\u0b55'), 'Cn' if self.old else 'Mn')
+        self.assertEqual(self.db.category('\U0003134a'), 'Cn' if self.old else 'Lo')
+        # Changed in 14.0.0
+        self.assertEqual(self.db.category('\u061d'), 'Cn' if self.old else 'Po')
+        self.assertEqual(self.db.category('\U0002b738'), 'Cn' if self.old else 'Lo')
+        # Changed in 15.0.0
+        self.assertEqual(self.db.category('\u0cf3'), 'Cn' if self.old else 'Mc')
+        self.assertEqual(self.db.category('\U000323af'), 'Cn' if self.old else 'Lo')
 
         self.assertRaises(TypeError, self.db.category)
         self.assertRaises(TypeError, self.db.category, 'xx')
@@ -177,12 +243,48 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.bidirectional('A'), 'L')
         self.assertEqual(self.db.bidirectional('\U00020000'), 'L')
 
+        # New in 4.1.0
+        self.assertEqual(self.db.bidirectional('+'), 'ET' if self.old else 'ES')
+        self.assertEqual(self.db.bidirectional('\u0221'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\U000e01ef'), '' if self.old else 'NSM')
+        # New in 13.0.0
+        self.assertEqual(self.db.bidirectional('\u0b55'), '' if self.old else 'NSM')
+        self.assertEqual(self.db.bidirectional('\U0003134a'), '' if self.old else 'L')
+        # New in 14.0.0
+        self.assertEqual(self.db.bidirectional('\u061d'), '' if self.old else 'AL')
+        self.assertEqual(self.db.bidirectional('\U0002b738'), '' if self.old else 'L')
+        # New in 15.0.0
+        self.assertEqual(self.db.bidirectional('\u0cf3'), '' if self.old else 'L')
+        self.assertEqual(self.db.bidirectional('\U000323af'), '' if self.old else 'L')
+        # New in 16.0.0
+        self.assertEqual(self.db.bidirectional('\u0897'), '' if self.old else 'NSM')
+        self.assertEqual(self.db.bidirectional('\U0001fbef'), '' if self.old else 'ON')
+        # New in 17.0.0
+        self.assertEqual(self.db.bidirectional('\u088f'), '' if self.old else 'AL')
+        self.assertEqual(self.db.bidirectional('\U0001fbfa'), '' if self.old else 'ON')
+
         self.assertRaises(TypeError, self.db.bidirectional)
         self.assertRaises(TypeError, self.db.bidirectional, 'xx')
 
     def test_decomposition(self):
         self.assertEqual(self.db.decomposition('\uFFFE'),'')
         self.assertEqual(self.db.decomposition('\u00bc'), '<fraction> 0031 2044 0034')
+
+        # New in 4.1.0
+        self.assertEqual(self.db.decomposition('\u03f9'), '' if self.old else '<compat> 03A3')
+        # New in 13.0.0
+        self.assertEqual(self.db.decomposition('\uab69'), '' if self.old else '<super> 028D')
+        self.assertEqual(self.db.decomposition('\U00011938'), '' if self.old else '11935 11930')
+        self.assertEqual(self.db.decomposition('\U0001fbf9'), '' if self.old else '<font> 0039')
+        # New in 14.0.0
+        self.assertEqual(self.db.decomposition('\ua7f2'), '' if self.old else '<super> 0043')
+        self.assertEqual(self.db.decomposition('\U000107ba'), '' if self.old else '<super> 1DF1E')
+        # New in 15.0.0
+        self.assertEqual(self.db.decomposition('\U0001e06d'), '' if self.old else '<super> 04B1')
+        # New in 16.0.0
+        self.assertEqual(self.db.decomposition('\U0001CCD6'), '' if self.old else '<font> 0041')
+        # New in 17.0.0
+        self.assertEqual(self.db.decomposition('\uA7F1'), '' if self.old else '<super> 0053')
 
         self.assertRaises(TypeError, self.db.decomposition)
         self.assertRaises(TypeError, self.db.decomposition, 'xx')
@@ -193,6 +295,16 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.mirrored('\u2201'), 1)
         self.assertEqual(self.db.mirrored('\U00020000'), 0)
 
+        # New in 5.0.0
+        self.assertEqual(self.db.mirrored('\u0f3a'), 0 if self.old else 1)
+        self.assertEqual(self.db.mirrored('\U0001d7c3'), 0 if self.old else 1)
+        # New in 11.0.0
+        self.assertEqual(self.db.mirrored('\u29a1'), 1 if self.old else 0)
+        # New in 14.0.0
+        self.assertEqual(self.db.mirrored('\u2e5c'), 0 if self.old else 1)
+        # New in 16.0.0
+        self.assertEqual(self.db.mirrored('\u226D'), 0 if self.old else 1)
+
         self.assertRaises(TypeError, self.db.mirrored)
         self.assertRaises(TypeError, self.db.mirrored, 'xx')
 
@@ -202,8 +314,188 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.combining('\u20e1'), 230)
         self.assertEqual(self.db.combining('\U00020000'), 0)
 
+        # New in 4.1.0
+        self.assertEqual(self.db.combining('\u0350'), 0 if self.old else 230)
+        # New in 9.0.0
+        self.assertEqual(self.db.combining('\U0001e94a'), 0 if self.old else 7)
+        # New in 13.0.0
+        self.assertEqual(self.db.combining('\u1abf'), 0 if self.old else 220)
+        self.assertEqual(self.db.combining('\U00016ff1'), 0 if self.old else 6)
+        # New in 14.0.0
+        self.assertEqual(self.db.combining('\u0c3c'), 0 if self.old else 7)
+        self.assertEqual(self.db.combining('\U0001e2ae'), 0 if self.old else 230)
+        # New in 15.0.0
+        self.assertEqual(self.db.combining('\U00010efd'), 0 if self.old else 220)
+        # New in 16.0.0
+        self.assertEqual(self.db.combining('\u0897'), 0 if self.old else 230)
+        # New in 17.0.0
+        self.assertEqual(self.db.combining('\u1ACF'), 0 if self.old else 230)
+
         self.assertRaises(TypeError, self.db.combining)
         self.assertRaises(TypeError, self.db.combining, 'xx')
+
+    def test_normalization(self):
+        # Test normalize() and is_normalized()
+        def check(ch, expected):
+            if isinstance(expected, str):
+                expected = [expected]*4
+            forms = ('NFC', 'NFD', 'NFKC', 'NFKD')
+            result = [self.db.normalize(form, ch) for form in forms]
+            self.assertEqual(ascii(result), ascii(list(expected)))
+            self.assertEqual([self.db.is_normalized(form, ch) for form in forms],
+                             [ch == y for x, y in zip(result, expected)])
+
+        check('', '')
+        check('A', 'A')
+        check(' ', ' ')
+        check('\U0010ffff', '\U0010ffff')
+        check('abc', 'abc')
+        # Broken in 4.0.0
+        check('\u0340', '\u0300')
+        check('\u0300', '\u0300')
+        check('\U0002fa1d', '\U0002a600')
+        check('\U0002a600', '\U0002a600')
+        check('\u0344', '\u0308\u0301')
+        check('\u0308\u0301', '\u0308\u0301')
+        # Broken in 4.0.0 and 4.0.1
+        check('\U0001d1bc', '\U0001d1ba\U0001d165')
+        check('\U0001d1ba\U0001d165', '\U0001d1ba\U0001d165')
+        check('\ufb2c', '\u05e9\u05bc\u05c1')
+        check('\u05e9\u05bc\u05c1', '\u05e9\u05bc\u05c1')
+        check('\U0001d1c0', '\U0001d1ba\U0001d165\U0001d16f')
+        check('\U0001d1ba\U0001d165\U0001d16f', '\U0001d1ba\U0001d165\U0001d16f')
+
+        # Broken in 4.0.0
+        check('\xa0', ['\xa0', '\xa0', ' ', ' '])
+        check('\u2003', ['\u2003', '\u2003', ' ', ' '])
+        check('\U0001d7ff', ['\U0001d7ff', '\U0001d7ff', '9', '9'])
+
+        check('\xa8', ['\xa8', '\xa8', ' \u0308', ' \u0308'])
+        check(' \u0308', ' \u0308')
+
+        check('\xc0', ['\xc0', 'A\u0300']*2)
+        check('A\u0300', ['\xc0', 'A\u0300']*2)
+
+        check('\ud7a3', ['\ud7a3', '\u1112\u1175\u11c2']*2)
+        check('\u1112\u1175\u11c2', ['\ud7a3', '\u1112\u1175\u11c2']*2)
+
+        check('\xb4', ['\xb4', '\xb4', ' \u0301', ' \u0301'])
+        check('\u1ffd', ['\xb4', '\xb4', ' \u0301', ' \u0301'])
+        check(' \u0301', ' \u0301')
+
+        check('\xc5', ['\xc5', 'A\u030a']*2)
+        check('\u212b', ['\xc5', 'A\u030a']*2)
+        check('A\u030a', ['\xc5', 'A\u030a']*2)
+
+        check('\u1f71', ['\u03ac', '\u03b1\u0301']*2)
+        check('\u03ac', ['\u03ac', '\u03b1\u0301']*2)
+        check('\u03b1\u0301', ['\u03ac', '\u03b1\u0301']*2)
+
+        check('\u01c4', ['\u01c4', '\u01c4', 'D\u017d', 'DZ\u030c'])
+        check('D\u017d', ['D\u017d', 'DZ\u030c']*2)
+        check('DZ\u030c', ['D\u017d', 'DZ\u030c']*2)
+
+        check('\u1fed', ['\u1fed', '\xa8\u0300', ' \u0308\u0300', ' \u0308\u0300'])
+        check('\xa8\u0300', ['\u1fed', '\xa8\u0300', ' \u0308\u0300', ' \u0308\u0300'])
+        check(' \u0308\u0300', ' \u0308\u0300')
+
+        check('\u326e', ['\u326e', '\u326e', '\uac00', '\u1100\u1161'])
+        check('\u320e', ['\u320e', '\u320e', '(\uac00)', '(\u1100\u1161)'])
+        check('(\uac00)', ['(\uac00)', '(\u1100\u1161)']*2)
+        check('(\u1100\u1161)', ['(\uac00)', '(\u1100\u1161)']*2)
+
+        check('\u0385', ['\u0385', '\xa8\u0301', ' \u0308\u0301', ' \u0308\u0301'])
+        check('\u1fee', ['\u0385', '\xa8\u0301', ' \u0308\u0301', ' \u0308\u0301'])
+        check('\xa8\u0301', ['\u0385', '\xa8\u0301', ' \u0308\u0301', ' \u0308\u0301'])
+        check(' \u0308\u0301', ' \u0308\u0301')
+
+        check('\u1fdf', ['\u1fdf', '\u1ffe\u0342', ' \u0314\u0342', ' \u0314\u0342'])
+        check('\u1ffe\u0342', ['\u1fdf', '\u1ffe\u0342', ' \u0314\u0342', ' \u0314\u0342'])
+        check('\u1ffe', ['\u1ffe', '\u1ffe', ' \u0314', ' \u0314'])
+        check(' \u0314\u0342', ' \u0314\u0342')
+
+        check('\u03d3', ['\u03d3', '\u03d2\u0301', '\u038e', '\u03a5\u0301'])
+        check('\u03d2\u0301', ['\u03d3', '\u03d2\u0301', '\u038e', '\u03a5\u0301'])
+        check('\u038e', ['\u038e', '\u03a5\u0301']*2)
+        check('\u1feb', ['\u038e', '\u03a5\u0301']*2)
+        check('\u03a5\u0301', ['\u038e', '\u03a5\u0301']*2)
+
+        check('\u0626', ['\u0626', '\u064a\u0654']*2)
+        check('\u064a\u0654', ['\u0626', '\u064a\u0654']*2)
+        check('\ufe89', ['\ufe89', '\ufe89', '\u0626', '\u064a\u0654'])
+        check('\ufe8a', ['\ufe8a', '\ufe8a', '\u0626', '\u064a\u0654'])
+        check('\ufe8b', ['\ufe8b', '\ufe8b', '\u0626', '\u064a\u0654'])
+        check('\ufe8c', ['\ufe8c', '\ufe8c', '\u0626', '\u064a\u0654'])
+
+        check('\ufef9', ['\ufef9', '\ufef9', '\u0644\u0625', '\u0644\u0627\u0655'])
+        check('\ufefa', ['\ufefa', '\ufefa', '\u0644\u0625', '\u0644\u0627\u0655'])
+        check('\ufefb', ['\ufefb', '\ufefb', '\u0644\u0627', '\u0644\u0627'])
+        check('\ufefc', ['\ufefc', '\ufefc', '\u0644\u0627', '\u0644\u0627'])
+        check('\u0644\u0625', ['\u0644\u0625', '\u0644\u0627\u0655']*2)
+        check('\u0644\u0627\u0655', ['\u0644\u0625', '\u0644\u0627\u0655']*2)
+        check('\u0644\u0627', '\u0644\u0627')
+
+        # Broken in 4.0.0
+        check('\u327c', '\u327c' if self.old else
+              ['\u327c', '\u327c', '\ucc38\uace0', '\u110e\u1161\u11b7\u1100\u1169'])
+        check('\ucc38\uace0', ['\ucc38\uace0', '\u110e\u1161\u11b7\u1100\u1169']*2)
+        check('\ucc38', ['\ucc38', '\u110e\u1161\u11b7']*2)
+        check('\u110e\u1161\u11b7\u1100\u1169',
+              ['\ucc38\uace0', '\u110e\u1161\u11b7\u1100\u1169']*2)
+        check('\u110e\u1161\u11b7\u1100',
+              ['\ucc38\u1100', '\u110e\u1161\u11b7\u1100']*2)
+        check('\u110e\u1161\u11b7',
+              ['\ucc38', '\u110e\u1161\u11b7']*2)
+        check('\u110e\u1161',
+              ['\ucc28', '\u110e\u1161']*2)
+        check('\u110e', '\u110e')
+        # Broken in 4.0.0-12.0.0
+        check('\U00011938', '\U00011938' if self.old else
+              ['\U00011938', '\U00011935\U00011930']*2)
+        check('\U00011935\U00011930', ['\U00011938', '\U00011935\U00011930']*2)
+        # New in 4.0.1
+        check('\u321d', '\u321d' if self.old else
+              ['\u321d', '\u321d', '(\uc624\uc804)', '(\u110b\u1169\u110c\u1165\u11ab)'])
+        check('(\uc624\uc804)',
+              ['(\uc624\uc804)', '(\u110b\u1169\u110c\u1165\u11ab)']*2)
+        check('(\u110b\u1169\u110c\u1165\u11ab)',
+              ['(\uc624\uc804)', '(\u110b\u1169\u110c\u1165\u11ab)']*2)
+        check('\u4d57', '\u4d57')
+        check('\u45d7', '\u45d7' if self.old else '\u45d7')
+        check('\U0002f9bf', '\u4d57' if self.old else '\u45d7')
+        # New in 4.1.0
+        check('\u03a3', '\u03a3')
+        check('\u03f9', '\u03f9' if self.old else
+              ['\u03f9', '\u03f9', '\u03a3', '\u03a3'])
+        # New in 5.0.0
+        check('\u1b06', '\u1b06' if self.old else ['\u1b06', '\u1b05\u1b35']*2)
+        # New in 5.2.0
+        check('\U0001f213', '\U0001f213' if self.old else
+                ['\U0001f213', '\U0001f213', '\u30c7', '\u30c6\u3099'])
+        # New in 6.1.0
+        check('\ufa2e', '\ufa2e' if self.old else '\u90de')
+        # New in 13.0.0
+        check('\U00011938', '\U00011938' if self.old else
+                ['\U00011938', '\U00011935\U00011930', '\U00011938', '\U00011935\U00011930'])
+        check('\U0001fbf9', '\U0001fbf9' if self.old else
+                ['\U0001fbf9', '\U0001fbf9', '9', '9'])
+        # New in 14.0.0
+        check('\U000107ba', '\U000107ba' if self.old else
+                ['\U000107ba', '\U000107ba', '\U0001df1e', '\U0001df1e'])
+        # New in 15.0.0
+        check('\U0001e06d', '\U0001e06d' if self.old else
+                ['\U0001e06d', '\U0001e06d', '\u04b1', '\u04b1'])
+        # New in 16.0.0
+        check('\U0001ccd6', '\U0001ccd6' if self.old else
+              ['\U0001ccd6', '\U0001ccd6', 'A', 'A'])
+
+        self.assertRaises(TypeError, self.db.normalize)
+        self.assertRaises(TypeError, self.db.normalize, 'NFC')
+        self.assertRaises(ValueError, self.db.normalize, 'SPAM', 'A')
+
+        self.assertRaises(TypeError, self.db.is_normalized)
+        self.assertRaises(TypeError, self.db.is_normalized, 'NFC')
+        self.assertRaises(ValueError, self.db.is_normalized, 'SPAM', 'A')
 
     def test_pr29(self):
         # https://www.unicode.org/review/pr-29.html
@@ -219,6 +511,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_issue10254(self):
         # Crash reported in #10254
+        # New in 4.1.0
         a = 'C\u0338' * 20  + 'C\u0327'
         b = 'C\u0338' * 20  + '\xC7'
         self.assertEqual(self.db.normalize('NFC', a), b)
@@ -232,6 +525,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         u11c3_str_a = '\u1100\u1175\u11c3'
         u11c3_str_b = '\uae30\u11c3'
         self.assertEqual(self.db.normalize('NFC', u1176_str_a), u1176_str_b)
+        # New in 4.1.0
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
@@ -249,6 +543,34 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(eaw('\u2010'), 'A')
         self.assertEqual(eaw('\U00020000'), 'W')
 
+        # New in 4.1.0
+        self.assertEqual(eaw('\u0350'), 'N' if self.old else 'A')
+        self.assertEqual(eaw('\U000e01ef'), 'N' if self.old else 'A')
+        # New in 5.2.0
+        self.assertEqual(eaw('\u115a'), 'N' if self.old else 'W')
+        # New in 9.0.0
+        self.assertEqual(eaw('\u231a'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\u2614'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001f19a'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001f991'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001f9c0'), 'N' if self.old else 'W')
+        # New in 12.0.0
+        self.assertEqual(eaw('\u32ff'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001fa95'), 'N' if self.old else 'W')
+        # New in 13.0.0
+        self.assertEqual(eaw('\u31bb'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0003134a'), 'N' if self.old else 'W')
+        # New in 14.0.0
+        self.assertEqual(eaw('\u9ffd'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0002b738'), 'N' if self.old else 'W')
+        # New in 15.0.0
+        self.assertEqual(eaw('\U000323af'), 'N' if self.old else 'W')
+        # New in 16.0.0
+        self.assertEqual(eaw('\u2630'), 'N' if self.old else 'W')
+        self.assertEqual(eaw('\U0001FAE9'), 'N' if self.old else 'W')
+        # New in 17.0.0
+        self.assertEqual(eaw('\U00016FF2'), 'N' if self.old else 'W')
+
     def test_east_asian_width_unassigned(self):
         eaw = self.db.east_asian_width
         # unassigned
@@ -257,7 +579,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             self.assertIs(self.db.name(char, None), None)
 
         # unassigned but reserved for CJK
-        for char in '\uFA6E\uFADA\U0002A6E0\U0002FA20\U0003134B\U0003FFFD':
+        for char in ('\U0002A6E0\U0002FA20\U0003134B\U0003FFFD'
+                     '\uFA6E\uFADA'): # New in 5.2.0
             self.assertEqual(eaw(char), 'W')
             self.assertIs(self.db.name(char, None), None)
 
@@ -266,17 +589,51 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             self.assertEqual(eaw(char), 'A')
             self.assertIs(self.db.name(char, None), None)
 
-    def test_east_asian_width_9_0_changes(self):
-        self.assertEqual(self.db.ucd_3_2_0.east_asian_width('\u231a'), 'N')
-        self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
+    def test_isxidstart(self):
+        self.assertTrue(self.db.isxidstart('S'))
+        self.assertTrue(self.db.isxidstart('\u0AD0'))  # GUJARATI OM
+        self.assertTrue(self.db.isxidstart('\u0EC6'))  # LAO KO LA
+        self.assertTrue(self.db.isxidstart('\u17DC'))  # KHMER SIGN AVAKRAHASANYA
+        self.assertTrue(self.db.isxidstart('\uA015'))  # YI SYLLABLE WU
+        self.assertTrue(self.db.isxidstart('\uFE7B'))  # ARABIC KASRA MEDIAL FORM
 
-class UnicodeMiscTest(UnicodeDatabaseTest):
+        self.assertFalse(self.db.isxidstart(' '))
+        self.assertFalse(self.db.isxidstart('0'))
+        self.assertRaises(TypeError, self.db.isxidstart)
+        self.assertRaises(TypeError, self.db.isxidstart, 'xx')
+
+    def test_isxidcontinue(self):
+        self.assertTrue(self.db.isxidcontinue('S'))
+        self.assertTrue(self.db.isxidcontinue('_'))
+        self.assertTrue(self.db.isxidcontinue('0'))
+        self.assertTrue(self.db.isxidcontinue('\u00BA'))  # MASCULINE ORDINAL INDICATOR
+        self.assertTrue(self.db.isxidcontinue('\u0640'))  # ARABIC TATWEEL
+        self.assertTrue(self.db.isxidcontinue('\u0710'))  # SYRIAC LETTER ALAPH
+        self.assertTrue(self.db.isxidcontinue('\u0B3E'))  # ORIYA VOWEL SIGN AA
+        self.assertTrue(self.db.isxidcontinue('\u17D7'))  # KHMER SIGN LEK TOO
+
+        self.assertFalse(self.db.isxidcontinue(' '))
+        self.assertRaises(TypeError, self.db.isxidcontinue)
+        self.assertRaises(TypeError, self.db.isxidcontinue, 'xx')
+
+
+class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
+    db = unicodedata.ucd_3_2_0
+    old = True
+    expectedchecksum = ('f4526159891a4b766dd48045646547178737ba09'
+                        if quicktest else
+                        'f217b8688d7bdff31db4207e078a96702f091597')
+
+
+class UnicodeMiscTest(unittest.TestCase):
+    db = unicodedata
 
     @cpython_only
     def test_disallow_instantiation(self):
         # Ensure that the type disallows instantiation (bpo-43916)
         check_disallow_instantiation(self, unicodedata.UCD)
 
+    @force_not_colorized
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
@@ -298,32 +655,39 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # i.e. if a character has a decimal value,
         # its numeric value should be the same.
         count = 0
-        for i in range(0x10000):
-            c = chr(i)
+        for c in iterallchars():
             dec = self.db.decimal(c, -1)
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))
                 count += 1
-        self.assertTrue(count >= 10) # should have tested at least the ASCII digits
+        self.assertTrue(count >= 10, count) # should have tested at least the ASCII digits
 
     def test_digit_numeric_consistent(self):
         # Test that digit and numeric are consistent,
         # i.e. if a character has a digit value,
         # its numeric value should be the same.
         count = 0
-        for i in range(0x10000):
-            c = chr(i)
+        for c in iterallchars():
             dec = self.db.digit(c, -1)
             if dec != -1:
                 self.assertEqual(dec, self.db.numeric(c))
                 count += 1
-        self.assertTrue(count >= 10) # should have tested at least the ASCII digits
+        self.assertTrue(count >= 10, count) # should have tested at least the ASCII digits
+
+    def test_normalize_consistent(self):
+        allchars = list(iterallchars())
+        for form in ('NFC', 'NFD', 'NFKC', 'NFKD'):
+            for c in allchars:
+                norm = self.db.normalize(form, c)
+                self.assertEqual(self.db.is_normalized(form, c), norm == c)
+                if norm != c:
+                    self.assertEqual(self.db.normalize(form, norm), norm)
+                    self.assertTrue(self.db.is_normalized(form, norm))
 
     def test_bug_1704793(self):
         self.assertEqual(self.db.lookup("GOTHIC LETTER FAIHU"), '\U00010346')
 
     def test_ucd_510(self):
-        import unicodedata
         # In UCD 5.1.0, a mirrored property changed wrt. UCD 3.2.0
         self.assertTrue(unicodedata.mirrored("\u0f3a"))
         self.assertTrue(not unicodedata.ucd_3_2_0.mirrored("\u0f3a"))
@@ -339,10 +703,10 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
         self.assertEqual(
             [
-                c for c in range(sys.maxunicode+1)
-                if "\x00" in chr(c).lower()+chr(c).upper()+chr(c).title()
+                c for c in iterallchars()
+                if "\x00" in (c.lower(), c.upper(), c.title())
             ],
-            [0]
+            ["\x00"]
         )
 
     def test_bug_4971(self):
@@ -352,15 +716,16 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertEqual("\u01c6".title(), "\u01c5")
 
     def test_linebreak_7643(self):
-        for i in range(0x10000):
-            lines = (chr(i) + 'A').splitlines()
-            if i in (0x0a, 0x0b, 0x0c, 0x0d, 0x85,
-                     0x1c, 0x1d, 0x1e, 0x2028, 0x2029):
+        for c in iterallchars():
+            lines = (c + 'A').splitlines()
+            if c in ('\x0a', '\x0b', '\x0c', '\x0d', '\x85',
+                     '\x1c', '\x1d', '\x1e', '\u2028', '\u2029'):
                 self.assertEqual(len(lines), 2,
-                                 r"\u%.4x should be a linebreak" % i)
+                                 r"%a should be a linebreak" % c)
             else:
                 self.assertEqual(len(lines), 1,
-                                 r"\u%.4x should not be a linebreak" % i)
+                                 r"%a should not be a linebreak" % c)
+
 
 class NormalizationTest(unittest.TestCase):
     @staticmethod
@@ -390,23 +755,23 @@ class NormalizationTest(unittest.TestCase):
             self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
-            self.run_normalization_tests(testdata)
+            self.run_normalization_tests(testdata, unicodedata)
 
-    def run_normalization_tests(self, testdata):
+    @requires_resource('cpu')
+    def test_normalization_3_2_0(self):
+        testdatafile = findfile('NormalizationTest-3.2.0.txt', 'data')
+        with open(testdatafile, encoding='utf-8') as testdata:
+            self.run_normalization_tests(testdata, unicodedata.ucd_3_2_0)
+
+    def run_normalization_tests(self, testdata, ucd):
         part = None
-        part1_data = {}
+        part1_data = set()
 
-        def NFC(str):
-            return unicodedata.normalize("NFC", str)
-
-        def NFKC(str):
-            return unicodedata.normalize("NFKC", str)
-
-        def NFD(str):
-            return unicodedata.normalize("NFD", str)
-
-        def NFKD(str):
-            return unicodedata.normalize("NFKD", str)
+        NFC = partial(ucd.normalize, "NFC")
+        NFKC = partial(ucd.normalize, "NFKC")
+        NFD = partial(ucd.normalize, "NFD")
+        NFKD = partial(ucd.normalize, "NFKD")
+        is_normalized = ucd.is_normalized
 
         for line in testdata:
             if '#' in line:
@@ -431,25 +796,24 @@ class NormalizationTest(unittest.TestCase):
                             NFKD(c3) == NFKD(c4) == NFKD(c5),
                             line)
 
-            self.assertTrue(unicodedata.is_normalized("NFC", c2))
-            self.assertTrue(unicodedata.is_normalized("NFC", c4))
+            self.assertTrue(is_normalized("NFC", c2))
+            self.assertTrue(is_normalized("NFC", c4))
 
-            self.assertTrue(unicodedata.is_normalized("NFD", c3))
-            self.assertTrue(unicodedata.is_normalized("NFD", c5))
+            self.assertTrue(is_normalized("NFD", c3))
+            self.assertTrue(is_normalized("NFD", c5))
 
-            self.assertTrue(unicodedata.is_normalized("NFKC", c4))
-            self.assertTrue(unicodedata.is_normalized("NFKD", c5))
+            self.assertTrue(is_normalized("NFKC", c4))
+            self.assertTrue(is_normalized("NFKD", c5))
 
             # Record part 1 data
             if part == "@Part1":
-                part1_data[c1] = 1
+                part1_data.add(c1)
 
         # Perform tests for all other data
-        for c in range(sys.maxunicode+1):
-            X = chr(c)
+        for X in iterallchars():
             if X in part1_data:
                 continue
-            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c)
+            self.assertTrue(X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), ord(X))
 
     def test_edge_cases(self):
         self.assertRaises(TypeError, unicodedata.normalize)
@@ -459,6 +823,29 @@ class NormalizationTest(unittest.TestCase):
     def test_bug_834676(self):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
+
+    def test_normalize_return_type(self):
+        # gh-129569: normalize() return type must always be str
+        normalize = unicodedata.normalize
+
+        class MyStr(str):
+            pass
+
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
+
+        for form in normalization_forms:
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):
@@ -227,7 +227,7 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
         (s_rd, s_wr) = await fut
 
-        # Limit the socket buffers so we can reliably overfill them
+        # Limit the socket buffers so we can more reliably overfill them
         s_sock = s_wr.get_extra_info('socket')
         s_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
         c_sock = c_wr.get_extra_info('socket')
@@ -242,10 +242,18 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0)
 
         # Get the writer in a waiting state by sending data until the
-        # socket buffers are full on both server and client sockets and
-        # the kernel stops accepting more data
-        s_wr.write(b'a' * c_sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF))
-        s_wr.write(b'a' * s_sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF))
+        # kernel stops accepting more data in the send buffer.
+        # gh-122136: getsockopt() does not reliably report the buffer size
+        # available for message content.
+        # We loop until we start filling up the asyncio buffer.
+        # To avoid an infinite loop we cap at 10 times the expected value
+        c_bufsize = c_sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        s_bufsize = s_sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        for i in range(10):
+            s_wr.write(b'a' * c_bufsize)
+            s_wr.write(b'a' * s_bufsize)
+            if s_wr.transport.get_write_buffer_size() > 0:
+                break
         self.assertNotEqual(s_wr.transport.get_write_buffer_size(), 0)
 
         task = asyncio.create_task(srv.wait_closed())

@@ -24,8 +24,17 @@ If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
 :data:`os.pathsep`-separated list of browsers to try ahead of the platform
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
-substituted for ``%s``; if the part does not contain ``%s``, it is simply
-interpreted as the name of the browser to launch. [1]_
+substituted for ``%s``; if the value is a single word that refers to one of the
+already registered browsers this browser is added to the front of the search list;
+if the part does not contain ``%s``, it is simply interpreted as the name of the
+browser to launch. [1]_
+
+.. versionchanged:: 3.14
+
+   The :envvar:`BROWSER` variable can now also be used to reorder the list of
+   platform defaults. This is particularly useful on macOS where the platform
+   defaults do not refer to command-line tools on :envvar:`PATH`.
+
 
 For non-Unix platforms, or when a remote browser is available on Unix, the
 controlling process will not wait for the user to finish with the browser, but
@@ -40,18 +49,32 @@ a new tab, with the browser being brought to the foreground. The use of the
 :mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
+.. _webbrowser-cli:
+
+Command-line interface
+----------------------
+
+.. program:: webbrowser
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
 parameters:
 
-* ``-n``/``--new-window`` opens the URL in a new browser window, if possible.
-* ``-t``/``--new-tab`` opens the URL in a new browser page ("tab").
+.. option:: -n, --new-window
 
-The options are, naturally, mutually exclusive.  Usage example::
+   Opens the URL in a new browser window, if possible.
+
+.. option:: -t, --new-tab
+
+   Opens the URL in a new browser tab.
+
+The options are, naturally, mutually exclusive.  Usage example:
+
+.. code-block:: bash
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: not WASI, not Android.
 
 The following exception is defined:
 
@@ -72,6 +95,8 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
@@ -84,10 +109,15 @@ The following functions are defined:
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
+
 .. function:: open_new_tab(url)
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
+
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
 
 .. function:: get(using=None)
@@ -207,11 +237,11 @@ Here are some simple examples::
 
 .. _browser-controllers:
 
-Browser Controller Objects
+Browser controller objects
 --------------------------
 
-Browser controllers provide these methods which parallel three of the
-module-level convenience functions:
+Browser controllers provide the :attr:`~controller.name` attribute,
+and the following three methods which parallel module-level convenience functions:
 
 
 .. attribute:: controller.name

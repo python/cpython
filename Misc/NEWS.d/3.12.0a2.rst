@@ -35,11 +35,11 @@ Update bundled libexpat to 2.5.0
 .. nonce: ik4iOv
 .. section: Core and Builtins
 
-The docs clearly say that ``PyImport_Inittab``,
+The docs clearly say that :c:data:`PyImport_Inittab`,
 :c:func:`PyImport_AppendInittab`, and :c:func:`PyImport_ExtendInittab`
 should not be used after :c:func:`Py_Initialize` has been called. We now
 enforce this for the two functions.  Additionally, the runtime now uses an
-internal copy of ``PyImport_Inittab``, to guard against modification.
+internal copy of :c:data:`PyImport_Inittab`, to guard against modification.
 
 ..
 
@@ -706,7 +706,7 @@ Remove modules :mod:`!asyncore` and :mod:`!asynchat`, which were deprecated by
 .. section: Library
 
 Fix handling of ``bytes`` :term:`path-like objects <path-like object>` in
-:func:`os.ismount()`.
+:func:`os.ismount`.
 
 ..
 

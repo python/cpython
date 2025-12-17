@@ -4,6 +4,7 @@ Allows fine grained feature control of how the package parses and emits data.
 """
 
 import abc
+import re
 from email import header
 from email import charset as _charset
 from email.utils import _has_surrogates
@@ -14,6 +15,14 @@ __all__ = [
     'compat32',
     ]
 
+# validation regex from RFC 5322, equivalent to pattern re.compile("[!-9;-~]+$")
+valid_header_name_re = re.compile("[\041-\071\073-\176]+$")
+
+def validate_header_name(name):
+    # Validate header name according to RFC 5322
+    if not valid_header_name_re.match(name):
+        raise ValueError(
+            f"Header field name contains invalid characters: {name!r}")
 
 class _PolicyBase:
 
@@ -157,6 +166,13 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     message_factory     -- the class to use to create new message objects.
                            If the value is None, the default is Message.
 
+    verify_generated_headers
+                        -- if true, the generator verifies that each header
+                           they are properly folded, so that a parser won't
+                           treat it as multiple headers, start-of-body, or
+                           part of another header.
+                           This is a check against custom Header & fold()
+                           implementations.
     """
 
     raise_on_defect = False
@@ -165,6 +181,7 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
     max_line_length = 78
     mangle_from_ = False
     message_factory = None
+    verify_generated_headers = True
 
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.
@@ -294,18 +311,19 @@ class Compat32(Policy):
         """+
         The name is parsed as everything up to the ':' and returned unmodified.
         The value is determined by stripping leading whitespace off the
-        remainder of the first line, joining all subsequent lines together, and
+        remainder of the first line joined with all subsequent lines, and
         stripping any trailing carriage return or linefeed characters.
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = value.lstrip(' \t') + ''.join(sourcelines[1:])
+        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
         return (name, value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):
         """+
         The name and value are returned unmodified.
         """
+        validate_header_name(name)
         return (name, value)
 
     def header_fetch_parse(self, name, value):
@@ -362,7 +380,7 @@ class Compat32(Policy):
             h = value
         if h is not None:
             # The Header class interprets a value of None for maxlinelen as the
-            # default value of 78, as recommended by RFC 2822.
+            # default value of 78, as recommended by RFC 5322 section 2.1.1.
             maxlinelen = 0
             if self.max_line_length is not None:
                 maxlinelen = self.max_line_length

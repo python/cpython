@@ -17,13 +17,13 @@ from enum import StrEnum
 
 __all__ = ["symtable", "SymbolTableType", "SymbolTable", "Class", "Function", "Symbol"]
 
-def symtable(code, filename, compile_type):
+def symtable(code, filename, compile_type, *, module=None):
     """ Return the toplevel *SymbolTable* for the source code.
 
     *filename* is the name of the file with the code
     and *compile_type* is the *compile()* mode argument.
     """
-    top = _symtable.symtable(code, filename, compile_type)
+    top = _symtable.symtable(code, filename, compile_type, module=module)
     return _newSymbolTable(top, filename)
 
 class SymbolTableFactory:
@@ -237,6 +237,12 @@ class Class(SymbolTable):
     def get_methods(self):
         """Return a tuple of methods declared in the class.
         """
+        import warnings
+        typename = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        warnings.warn(f'{typename}.get_methods() is deprecated '
+                      f'and will be removed in Python 3.16.',
+                      DeprecationWarning, stacklevel=2)
+
         if self.__methods is None:
             d = {}
 
@@ -256,7 +262,7 @@ class Class(SymbolTable):
                             scope_name = st.name
                             for c in st.children:
                                 if c.name == scope_name and c.type == _symtable.TYPE_FUNCTION:
-                                    d[st.name] = 1
+                                    d[scope_name] = 1
                                     break
             self.__methods = tuple(d)
         return self.__methods

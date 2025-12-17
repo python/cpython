@@ -1,2 +1,0 @@
-Unexpected slot wrappers are no longer created for builtin static types in
-subinterpreters.
