@@ -6,6 +6,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
+import errno
 import unittest
 import os
 import re
@@ -1171,7 +1172,17 @@ class MmapTests(unittest.TestCase):
         # Test setting name on anonymous mmap
         m = mmap.mmap(-1, PAGESIZE)
         self.addCleanup(m.close)
-        result = m.set_name('test_mapping')
+        try:
+            result = m.set_name('test_mapping')
+        except OSError as exc:
+            if exc.errno == errno.EINVAL:
+                # gh-142419: On Fedora, prctl(PR_SET_VMA_ANON_NAME) fails with
+                # EINVAL because the kernel option CONFIG_ANON_VMA_NAME is
+                # disabled.
+                # See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
+                self.skipTest("prctl() failed with EINVAL")
+            else:
+                raise
         self.assertIsNone(result)
 
         # Test name length limit (80 chars including prefix "cpython:mmap:" and '\0')

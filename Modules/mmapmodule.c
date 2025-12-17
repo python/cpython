@@ -1138,7 +1138,10 @@ mmap_mmap_set_name_impl(mmap_object *self, const char *name)
     if (self->flags & MAP_ANONYMOUS) {
         char buf[80];
         sprintf(buf, "%s%s", prefix, name);
-        _PyAnnotateMemoryMap(self->data, self->size, buf);
+        if (_PyAnnotateMemoryMap(self->data, self->size, buf) < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
         Py_RETURN_NONE;
     }
     else {
@@ -1993,7 +1996,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     }
 #ifdef MAP_ANONYMOUS
     if (m_obj->flags & MAP_ANONYMOUS) {
-        _PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+        (void)_PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
     }
 #endif
     m_obj->access = (access_mode)access;
