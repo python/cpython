@@ -1551,6 +1551,26 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         except CustomError:
             pass
 
+    def test_weak_cache_descriptor_use_after_free(self):
+        class BombDescriptor:
+            def __get__(self, obj, owner):
+                return {}
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        # Must be set after the class creation.
+        EvilZoneInfo._weak_cache = BombDescriptor()
+
+        key = "America/Los_Angeles"
+        zone1 = EvilZoneInfo(key)
+        self.assertEqual(str(zone1), key)
+
+        EvilZoneInfo.clear_cache()
+        zone2 = EvilZoneInfo(key)
+        self.assertEqual(str(zone2), key)
+        self.assertIsNot(zone2, zone1)
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
