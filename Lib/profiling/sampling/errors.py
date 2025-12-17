@@ -3,10 +3,6 @@
 class SamplingProfilerError(Exception):
     """Base exception for sampling profiler errors."""
 
-class SamplingPermissionError(SamplingProfilerError):
-    def __init__(self):
-        super().__init__(f"Insufficient permission to access process.")
-
 class SamplingUnknownProcessError(SamplingProfilerError):
     def __init__(self, pid):
         self.pid = pid

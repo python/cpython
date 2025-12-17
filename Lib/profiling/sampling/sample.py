@@ -37,7 +37,7 @@ class SampleProfiler:
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
-            raise SystemExit(err)
+            raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
@@ -278,6 +278,9 @@ def _is_process_running(pid):
             return True
         except ProcessLookupError:
             return False
+        except PermissionError:
+            # EPERM means process exists but we can't signal it
+            return True
     elif sys.platform == "win32":
         try:
             _remote_debugging.RemoteUnwinder(pid)
