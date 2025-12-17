@@ -107,7 +107,7 @@ Queue
       The queue can no longer grow.
       Future calls to :meth:`~Queue.put` raise :exc:`QueueShutDown`.
       Currently blocked callers of :meth:`~Queue.put` will be unblocked
-      and will raise :exc:`QueueShutDown` in the formerly `await`ing task.
+      and will raise :exc:`QueueShutDown` in the formerly ``await``ing task.
 
       If *immediate* is false (the default), the queue can be wound
       down normally with :meth:`~Queue.get` calls to extract tasks
