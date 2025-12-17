@@ -25,7 +25,7 @@ Pending removal in Python 3.20
   - :mod:`tkinter.ttk`
   - :mod:`wsgiref.simple_server`
   - :mod:`xml.etree.ElementTree`
-  - :mod:`xml.sax.expatreader`
+  - :mod:`!xml.sax.expatreader`
   - :mod:`xml.sax.handler`
   - :mod:`zlib`
 
