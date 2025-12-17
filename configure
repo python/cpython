@@ -9289,7 +9289,7 @@ printf %s "checking for packed relocations in LDFLAGS... " >&6; }
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $has_packed_relocs" >&5
 printf "%s\n" "$has_packed_relocs" >&6; }
 
-  # Check BOLT version to determine if we need to skip functions with computed gotos.
+  # Check BOLT version if it's < 21.1.0, to determine if we need to skip functions with computed gotos.
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking llvm-bolt version" >&5
 printf %s "checking llvm-bolt version... " >&6; }
   llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
