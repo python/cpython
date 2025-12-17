@@ -292,16 +292,11 @@ static PyObject *
 get_weak_cache(zoneinfo_state *state, PyTypeObject *type)
 {
     if (type == state->ZoneInfoType) {
+        Py_INCREF(state->ZONEINFO_WEAK_CACHE);
         return state->ZONEINFO_WEAK_CACHE;
     }
     else {
-        PyObject *cache =
-            PyObject_GetAttrString((PyObject *)type, "_weak_cache");
-        // We are assuming that the type lives at least as long as the function
-        // that calls get_weak_cache, and that it holds a reference to the
-        // cache, so we'll return a "borrowed reference".
-        Py_XDECREF(cache);
-        return cache;
+        return PyObject_GetAttrString((PyObject *)type, "_weak_cache");
     }
 }
 
@@ -328,6 +323,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
     PyObject *weak_cache = get_weak_cache(state, type);
     instance = PyObject_CallMethod(weak_cache, "get", "O", key, Py_None);
     if (instance == NULL) {
+        Py_DECREF(weak_cache);
         return NULL;
     }
 
@@ -335,6 +331,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         Py_DECREF(instance);
         PyObject *tmp = zoneinfo_new_instance(state, type, key);
         if (tmp == NULL) {
+            Py_DECREF(weak_cache);
             return NULL;
         }
 
@@ -342,12 +339,14 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
             PyObject_CallMethod(weak_cache, "setdefault", "OO", key, tmp);
         Py_DECREF(tmp);
         if (instance == NULL) {
+            Py_DECREF(weak_cache);
             return NULL;
         }
         ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(state, type, key, instance);
+    Py_DECREF(weak_cache);
     return instance;
 }
 
@@ -510,12 +509,14 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
         PyObject *item = NULL;
         PyObject *pop = PyUnicode_FromString("pop");
         if (pop == NULL) {
+            Py_DECREF(weak_cache);
             return NULL;
         }
 
         PyObject *iter = PyObject_GetIter(only_keys);
         if (iter == NULL) {
             Py_DECREF(pop);
+            Py_DECREF(weak_cache);
             return NULL;
         }
 
@@ -540,6 +541,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
         Py_DECREF(pop);
     }
 
+    Py_DECREF(weak_cache);
     if (PyErr_Occurred()) {
         return NULL;
     }
