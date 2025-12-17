@@ -5,7 +5,7 @@
 /// Includes
 
 #include <Python.h>
-#include <stdlib.h>
+#include <stdlib.h>     // for system()
 
 /// Implementation of spam.system
 
