@@ -1270,10 +1270,10 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
 int
 _PyModule_ReplaceLazyValue(PyObject *dict, PyObject *name, PyObject *value)
 {
-    // The adaptive interpreter uses the dictionary version to return the slot at
-    // a given index from the module. When replacing a value the version number doesn't
-    // change, so we need to atomically clear the version before replacing so that it
-    // doesn't return a lazy value.
+    // The adaptive interpreter uses the dictionary version to return the
+    // slot at a given index from the module. When replacing a value the
+    // version number doesn't change, so we need to atomically clear the
+    // version before replacing so that it doesn't return a lazy value.
     int err;
     Py_BEGIN_CRITICAL_SECTION(dict);
 
@@ -1292,12 +1292,15 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     attr = _PyObject_GenericGetAttrWithDict((PyObject *)m, name, NULL, suppress);
     if (attr) {
         if (PyLazyImport_CheckExact(attr)) {
-            PyObject *new_value = _PyImport_LoadLazyImportTstate(PyThreadState_GET(), attr);
+            PyObject *new_value = _PyImport_LoadLazyImportTstate(
+                PyThreadState_GET(), attr);
             if (new_value == NULL) {
-                if (suppress && PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
-                    // ImportCycleError is raised when a lazy object tries to import itself.
-                    // In this case, the error should not propagate to the caller and
-                    // instead treated as if the attribute doesn't exist.
+                if (suppress &&
+                    PyErr_ExceptionMatches(PyExc_ImportCycleError)) {
+                    // ImportCycleError is raised when a lazy object tries
+                    // to import itself. In this case, the error should not
+                    // propagate to the caller and instead treated as if the
+                    // attribute doesn't exist.
                     PyErr_Clear();
                 }
                 Py_DECREF(attr);

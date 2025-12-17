@@ -2855,7 +2855,8 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
 {
     PyImport_LazyImportsMode lazy_mode;
     if (!PyUnicode_Check(mode)) {
-        PyErr_SetString(PyExc_TypeError, "mode must be a string: 'normal', 'all', or 'none'");
+        PyErr_SetString(PyExc_TypeError,
+                        "mode must be a string: 'normal', 'all', or 'none'");
         return NULL;
     }
     if (PyUnicode_CompareWithASCIIString(mode, "normal") == 0) {
@@ -2868,7 +2869,8 @@ sys_set_lazy_imports_impl(PyObject *module, PyObject *mode)
         lazy_mode = PyImport_LAZY_NONE;
     }
     else {
-        PyErr_SetString(PyExc_ValueError, "mode must be 'normal', 'all', or 'none'");
+        PyErr_SetString(PyExc_ValueError,
+                        "mode must be 'normal', 'all', or 'none'");
         return NULL;
     }
 

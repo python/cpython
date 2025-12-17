@@ -351,8 +351,8 @@ codegen_addop_o(compiler *c, location loc,
 #define LOAD_ZERO_SUPER_METHOD -4
 
 static int
-codegen_addop_name_custom(compiler *c, location loc,
-                   int opcode, PyObject *dict, PyObject *o, int shift, int low)
+codegen_addop_name_custom(compiler *c, location loc, int opcode,
+                          PyObject *dict, PyObject *o, int shift, int low)
 {
     PyObject *mangled = _PyCompile_MaybeMangle(c, o);
     if (!mangled) {
@@ -2856,7 +2856,8 @@ static int
 codegen_validate_lazy_import(compiler *c, location loc)
 {
     if (_PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
-        return _PyCompile_Error(c, loc, "lazy imports only allowed in module scope");
+        return _PyCompile_Error(
+            c, loc, "lazy imports only allowed in module scope");
     }
 
     return SUCCESS;
@@ -2886,7 +2887,8 @@ codegen_import(compiler *c, stmt_ty s)
             RETURN_IF_ERROR(codegen_validate_lazy_import(c, loc));
             ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 1);
         } else {
-            if (_PyCompile_InExceptionHandler(c) || _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
+            if (_PyCompile_InExceptionHandler(c) ||
+                _PyCompile_ScopeType(c) != COMPILE_SCOPE_MODULE) {
                 // force eager import in try/except block
                 ADDOP_NAME_CUSTOM(c, loc, IMPORT_NAME, alias->name, names, 2, 2);
             } else {
