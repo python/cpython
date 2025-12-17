@@ -1,0 +1,1 @@
+Fix building JIT stencils on free-threaded builds.
