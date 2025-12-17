@@ -81,10 +81,21 @@ struct PyModuleDef_Slot {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 #  define Py_mod_gil 4
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+#  define Py_mod_abi 5
+#  define Py_mod_name 6
+#  define Py_mod_doc 7
+#  define Py_mod_state_size 8
+#  define Py_mod_methods 9
+#  define Py_mod_state_traverse 10
+#  define Py_mod_state_clear 11
+#  define Py_mod_state_free 12
+#  define Py_mod_token 13
+#endif
 
 
 #ifndef Py_LIMITED_API
-#define _Py_mod_LAST_SLOT 4
+#define _Py_mod_LAST_SLOT 13
 #endif
 
 #endif /* New in 3.5 */
@@ -106,6 +117,13 @@ struct PyModuleDef_Slot {
 PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+PyAPI_FUNC(PyObject *) PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *,
+                                                 PyObject *spec);
+PyAPI_FUNC(int) PyModule_Exec(PyObject *mod);
+PyAPI_FUNC(int) PyModule_GetStateSize(PyObject *mod, Py_ssize_t *result);
+PyAPI_FUNC(int) PyModule_GetToken(PyObject *, void **result);
+#endif
 
 #ifndef _Py_OPAQUE_PYOBJECT
 struct PyModuleDef {

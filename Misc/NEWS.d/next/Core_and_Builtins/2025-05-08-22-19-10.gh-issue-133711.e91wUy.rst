@@ -1,2 +1,0 @@
-Implement :pep:`686`: Enable :ref:`Python UTF-8 Mode <utf8-mode>` by
-default. Patch by Adam Turner.

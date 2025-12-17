@@ -211,6 +211,17 @@ bound into a function.
    .. versionadded:: 3.12
 
 
+.. c:function:: PyObject *PyCode_Optimize(PyObject *code, PyObject *consts, PyObject *names, PyObject *lnotab_obj)
+
+   This is a :term:`soft deprecated` function that does nothing.
+
+   Prior to Python 3.10, this function would perform basic optimizations to a
+   code object.
+
+   .. versionchanged:: 3.10
+      This function now does nothing.
+
+
 .. _c_codeobject_flags:
 
 Code Object Flags
@@ -289,7 +300,7 @@ may change without deprecation warnings.
 
 .. c:function:: Py_ssize_t PyUnstable_Eval_RequestCodeExtraIndex(freefunc free)
 
-   Return a new an opaque index value used to adding data to code objects.
+   Return a new opaque index value used to adding data to code objects.
 
    You generally call this function once (per interpreter) and use the result
    with ``PyCode_GetExtra`` and ``PyCode_SetExtra`` to manipulate

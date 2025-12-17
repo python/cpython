@@ -714,7 +714,10 @@ class TypesTests(unittest.TestCase):
 
     def test_frame_locals_proxy_type(self):
         self.assertIsInstance(types.FrameLocalsProxyType, type)
-        self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
+        if MISSING_C_DOCSTRINGS:
+            self.assertIsNone(types.FrameLocalsProxyType.__doc__)
+        else:
+            self.assertIsInstance(types.FrameLocalsProxyType.__doc__, str)
         self.assertEqual(types.FrameLocalsProxyType.__module__, 'builtins')
         self.assertEqual(types.FrameLocalsProxyType.__name__, 'FrameLocalsProxy')
 

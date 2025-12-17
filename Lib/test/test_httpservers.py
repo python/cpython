@@ -362,6 +362,44 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.assertEqual(b'', data)
 
 
+class HTTP09ServerTestCase(BaseTestCase):
+
+    class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        """Request handler for HTTP/0.9 server."""
+
+        def do_GET(self):
+            self.wfile.write(f'OK: here is {self.path}\r\n'.encode())
+
+    def setUp(self):
+        super().setUp()
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = self.enterContext(self.sock)
+        self.sock.connect((self.HOST, self.PORT))
+
+    def test_simple_get(self):
+        self.sock.send(b'GET /index.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertEqual(res, b"OK: here is /index.html\r\n")
+
+    def test_invalid_request(self):
+        self.sock.send(b'POST /index.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertIn(b"Bad HTTP/0.9 request type ('POST')", res)
+
+    def test_single_request(self):
+        self.sock.send(b'GET /foo.html\r\n')
+        res = self.sock.recv(1024)
+        self.assertEqual(res, b"OK: here is /foo.html\r\n")
+
+        # Ignore errors if the connection is already closed,
+        # as this is the expected behavior of HTTP/0.9.
+        with contextlib.suppress(OSError):
+            self.sock.send(b'GET /bar.html\r\n')
+            res = self.sock.recv(1024)
+            # The server should not process our request.
+            self.assertEqual(res, b'')
+
+
 def certdata_file(*path):
     return os.path.join(os.path.dirname(__file__), "certdata", *path)
 
@@ -1520,6 +1558,16 @@ class CommandLineRunTimeTestCase(unittest.TestCase):
         url = f'https://{bind}:{port}/{self.served_filename}'
         res = self.fetch_file(url, context=context)
         self.assertEqual(res, self.served_data)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(http.server, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 def setUpModule():

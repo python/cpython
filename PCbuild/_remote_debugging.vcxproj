@@ -92,8 +92,23 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+  <Link>
+    <AdditionalDependencies>ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+  </Link>
+</ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_remote_debugging_module.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\module.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\object_reading.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\code_objects.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\frames.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\frame_cache.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\threads.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\asyncio.c" />
+    <ClCompile Include="..\Modules\_remote_debugging\subprocess.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Modules\_remote_debugging\_remote_debugging.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

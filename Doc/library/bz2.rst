@@ -25,6 +25,8 @@ The :mod:`bz2` module contains:
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
 
+.. include:: ../includes/optional-module.rst
+
 
 (De)compression of files
 ------------------------
