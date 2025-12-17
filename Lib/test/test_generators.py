@@ -112,6 +112,18 @@ class FinalizationTest(unittest.TestCase):
                 gen.send(2)
             self.assertEqual(cm.exception.value, 2)
 
+    def test_exhausted_generator_frame_cycle(self):
+        def g():
+            yield
+
+        generator = g()
+        frame = generator.gi_frame
+        self.assertIsNone(frame.f_back)
+        next(generator)
+        self.assertIsNone(frame.f_back)
+        next(generator, None)
+        self.assertIsNone(frame.f_back)
+
 
 class GeneratorTest(unittest.TestCase):
 
