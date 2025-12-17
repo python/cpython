@@ -579,7 +579,7 @@ class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     )
 
     # https://developer.arm.com/documentation/ddi0406/b/Application-Level-Architecture/Instruction-Details/Alphabetical-list-of-instructions/BL--BLX--immediate-
-    _re_call = re.compile(r"\s*blx??\s+(?P<target>[\w.]+)")
+    _re_call = re.compile(r"\s*blx?\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
     # https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/RET--Return-from-subroutine-
