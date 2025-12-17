@@ -1321,7 +1321,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 bnum = bp.number
                 break
             else:
-                self.error('no breakpoints set')
+                self.error('cannot set commands: no existing breakpoint')
                 return
         else:
             try:
