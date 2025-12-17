@@ -267,7 +267,7 @@ atexit_unregister_locked(PyObject *callbacks, PyObject *func)
         }
         if (cmp == 1) {
             // We found a callback!
-            // But it's index could be changed if it or other callbacks were
+            // But its index could have changed if it or other callbacks were
             // unregistered during the comparison.
             Py_ssize_t j = PyList_GET_SIZE(callbacks) - 1;
             j = Py_MIN(j, i);
