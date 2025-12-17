@@ -300,7 +300,7 @@ PyAPI_FUNC(void) PyUnstable_Object_Dump(PyObject *);
 // Alias for backward compatibility
 #define _PyObject_Dump PyUnstable_Object_Dump
 
-PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
+Py_DEPRECATED(3.15) PyAPI_FUNC(PyObject*) _PyObject_GetAttrId(PyObject *, _Py_Identifier *);
 
 PyAPI_FUNC(PyObject **) _PyObject_GetDictPtr(PyObject *);
 PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
@@ -435,8 +435,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
 
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
-
-PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count);
 
 /* For backwards compatibility with the old trashcan mechanism */
 #define Py_TRASHCAN_BEGIN(op, dealloc)
