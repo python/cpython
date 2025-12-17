@@ -1733,15 +1733,14 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on items can get suspended
+
+        // GH-142831: The item must be strong-referenced to avoid UAF
+        // if the user code modifies the list during iteration.
         Py_INCREF(item);
-#endif
+
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
 
@@ -1750,14 +1749,10 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                      indent_level, indent_cache,
                                      separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(item);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(item);
-#endif
     }
 
     return 0;
@@ -1772,24 +1767,20 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on dct can get suspended
+        // GH-142831: The key and value must be strong-referenced to avoid UAF
+        // if the user code modifies the dict during iteration.
         Py_INCREF(key);
         Py_INCREF(value);
-#endif
+
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
-#ifdef Py_GIL_DISABLED
             Py_DECREF(key);
             Py_DECREF(value);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(key);
         Py_DECREF(value);
-#endif
     }
     return 0;
 }
@@ -1893,28 +1884,23 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
-#ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the critical section on s_fast can get suspended
+
+        // GH-142831: The object must be strong-referenced to avoid UAF
+        // if the user code modifies the sequence during iteration.
         Py_INCREF(obj);
-#endif
+
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
-#ifdef Py_GIL_DISABLED
                 Py_DECREF(obj);
-#endif
                 return -1;
             }
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
-#ifdef Py_GIL_DISABLED
             Py_DECREF(obj);
-#endif
             return -1;
         }
-#ifdef Py_GIL_DISABLED
         Py_DECREF(obj);
-#endif
     }
     return 0;
 }
