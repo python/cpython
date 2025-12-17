@@ -227,10 +227,7 @@ The module defines the following user-callable items:
    platform uses permission bits to indicate whether a file is executable,
    the file is executable by no one.
 
-   The file descriptor is not inherited by child processes across
-   :func:`exec <os.execl>` calls, but will be inherited by child
-   processes created via :func:`os.fork`. See :ref:`fd_inheritance`
-   for more information.
+   The file descriptor is :ref:`not inherited by child processes <fd_inheritance>`.
 
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
