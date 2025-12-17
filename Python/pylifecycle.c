@@ -830,6 +830,7 @@ pycore_init_builtins(PyThreadState *tstate)
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
     interp->common_consts[CONSTANT_BUILTIN_LIST] = (PyObject*)&PyList_Type;
+    interp->common_consts[CONSTANT_BUILTIN_SET] = (PyObject*)&PySet_Type;
 
     for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
         assert(interp->common_consts[i] != NULL);
