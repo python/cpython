@@ -882,9 +882,8 @@ The major upgrades to the JIT are as follows:
 The JIT compiler now uses LLVM 21 for build-time stencil generation. As
 always, LLVM is only needed when building CPython with the JIT enabled;
 end users running Python do not need LLVM installed. Instructions for
-installing LLVM can be found in the
-`JIT compiler documentation <Tools/jit/README.md>`_ for all supported
-platforms.
+installing LLVM can be found in the JIT compiler documentation
+(:file:`Tools/jit/README.md`) for all supported platforms.
 
 (Contributed by Savannah Ostrowski in :gh:`140973`.)
 
@@ -915,10 +914,12 @@ more efficient traces by avoiding reads and writes to memory.
 More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
 is now performed. This means when the JIT compiler detects that certain user
 code results in constants, the code can be simplified by the JIT.
+
 (Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
 
 The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
+
 (Contributed by Ken Jin, Donghee Na, Nadeshiko Manju, Savannah Ostrowski,
 Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
 
@@ -928,6 +929,7 @@ The JIT compiler's machine code generator now produces better machine code
 for x86-64 and AArch64 macOS and Linux targets. In general, users should
 experience lower memory usage for generated machine code and more efficient
 machine code versus the old JIT.
+
 (Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
 Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
 Additional optimizations for AArch64 contributed by Mark Shannon and
