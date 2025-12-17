@@ -69,7 +69,9 @@ range_iterator___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = range_iterator___setstate___impl((_PyRangeIterObject *)self, state);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -89,7 +91,13 @@ longrange_iterator___length_hint___impl(longrangeiterobject *self);
 static PyObject *
 longrange_iterator___length_hint__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return longrange_iterator___length_hint___impl((longrangeiterobject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = longrange_iterator___length_hint___impl((longrangeiterobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(longrange_iterator___reduce____doc__,
@@ -107,7 +115,13 @@ longrange_iterator___reduce___impl(longrangeiterobject *self);
 static PyObject *
 longrange_iterator___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return longrange_iterator___reduce___impl((longrangeiterobject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = longrange_iterator___reduce___impl((longrangeiterobject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(longrange_iterator___setstate____doc__,
@@ -128,8 +142,10 @@ longrange_iterator___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = longrange_iterator___setstate___impl((longrangeiterobject *)self, state);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
-/*[clinic end generated code: output=3901cac5f53f222e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=759305b89302c30c input=a9049054013a1b77]*/

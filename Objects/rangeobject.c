@@ -922,7 +922,7 @@ Set state information for unpickling.
 
 static PyObject *
 range_iterator___setstate___impl(_PyRangeIterObject *self, PyObject *state)
-/*[clinic end generated code: output=8c0cbca5b07a30a3 input=acd092f19666fd2e]*/
+/*[clinic end generated code: output=8c0cbca5b07a30a3 input=230f74fae1cb5008]*/
 {
     long index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
@@ -1040,7 +1040,7 @@ Private method returning an estimate of len(list(it)).
 
 static PyObject *
 longrange_iterator___length_hint___impl(longrangeiterobject *self)
-/*[clinic end generated code: output=1890e941c1688fcd input=0dd7a785a3ee9e9a]*/
+/*[clinic end generated code: output=1890e941c1688fcd input=eef1908ae4759fb2]*/
 {
     Py_INCREF(self->len);
     return self->len;
@@ -1055,7 +1055,7 @@ Return state information for pickling.
 
 static PyObject *
 longrange_iterator___reduce___impl(longrangeiterobject *self)
-/*[clinic end generated code: output=6efcfea6587678cd input=f73e1a6449166649]*/
+/*[clinic end generated code: output=6efcfea6587678cd input=21302109df76aac9]*/
 {
     PyObject *product, *stop=NULL;
     PyObject *range;
@@ -1095,7 +1095,7 @@ Set state information for unpickling.
 static PyObject *
 longrange_iterator___setstate___impl(longrangeiterobject *self,
                                      PyObject *state)
-/*[clinic end generated code: output=0ad8528a4b723cd0 input=84c0bb455543ee24]*/
+/*[clinic end generated code: output=0ad8528a4b723cd0 input=7304c65ba48035ea]*/
 {
     if (!PyLong_CheckExact(state)) {
         PyErr_Format(PyExc_TypeError, "state must be an int, not %T", state);
