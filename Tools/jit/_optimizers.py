@@ -224,7 +224,7 @@ class Optimizer:
             inst = self._parse_instruction(line)
             block.instructions.append(inst)
             if inst.is_branch() or inst.kind == InstructionKind.CALL:
-                # A block ending in a branch has a target and fallthrough:
+                # A block ending in a branch/call has a target and fallthrough:
                 assert inst.target is not None
                 block.target = self._lookup_label(inst.target)
                 assert block.fallthrough
