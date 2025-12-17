@@ -73,8 +73,8 @@ Summary -- Release highlights
   <whatsnew315-utf8-default>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
-* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 * :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
+* :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 
 New features
