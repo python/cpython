@@ -23,9 +23,10 @@ Pending removal in Python 3.20
   - :mod:`tabnanny`
   - :mod:`tkinter.font`
   - :mod:`tkinter.ttk`
+  - :mod:`wsgiref.simple_server`
   - :mod:`xml.etree.ElementTree`
   - :mod:`xml.sax.expatreader`
-  - :mod:`wsgiref.simple_server`
+  - :mod:`xml.sax.handler`
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
