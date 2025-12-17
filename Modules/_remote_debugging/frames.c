@@ -265,7 +265,8 @@ process_frame_chain(
     int *stopped_at_cached_frame,
     uintptr_t *frame_addrs,      // optional: C array to receive frame addresses
     Py_ssize_t *num_addrs,       // in/out: current count / updated count
-    Py_ssize_t max_addrs)        // max capacity of frame_addrs array
+    Py_ssize_t max_addrs,        // max capacity of frame_addrs array
+    uintptr_t *out_last_frame_addr)  // optional: receives last frame address visited
 {
     uintptr_t frame_addr = initial_frame_addr;
     uintptr_t prev_frame_addr = 0;
@@ -273,9 +274,12 @@ process_frame_chain(
     const size_t MAX_FRAMES = 1024 + 512;
     size_t frame_count = 0;
 
-    // Initialize output flag
+    // Initialize output parameters
     if (stopped_at_cached_frame) {
         *stopped_at_cached_frame = 0;
+    }
+    if (out_last_frame_addr) {
+        *out_last_frame_addr = 0;
     }
 
     // Quick check: if current_frame == last_profiled_frame, entire stack is unchanged
@@ -388,6 +392,11 @@ process_frame_chain(
             "Incomplete sample: did not reach base frame (expected 0x%lx, got 0x%lx)",
             base_frame_addr, last_frame_addr);
         return -1;
+    }
+
+    // Set output parameter for caller (needed for cache validation)
+    if (out_last_frame_addr) {
+        *out_last_frame_addr = last_frame_addr;
     }
 
     return 0;
@@ -537,6 +546,7 @@ collect_frames_with_cache(
     uintptr_t frame_addr,
     StackChunkList *chunks,
     PyObject *frame_info,
+    uintptr_t base_frame_addr,
     uintptr_t gc_frame,
     uintptr_t last_profiled_frame,
     uint64_t thread_id)
@@ -551,11 +561,13 @@ collect_frames_with_cache(
     uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
     Py_ssize_t num_addrs = 0;
     Py_ssize_t frames_before = PyList_GET_SIZE(frame_info);
+    uintptr_t last_frame_visited = 0;
 
     int stopped_at_cached = 0;
-    if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, 0, gc_frame,
+    if (process_frame_chain(unwinder, frame_addr, chunks, frame_info, base_frame_addr, gc_frame,
                             last_profiled_frame, &stopped_at_cached,
-                            addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
+                            addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES,
+                            &last_frame_visited) < 0) {
         return -1;
     }
 
@@ -575,23 +587,28 @@ collect_frames_with_cache(
             // Cache miss - continue walking from last_profiled_frame to get the rest
             STATS_INC(unwinder, frame_cache_misses);
             Py_ssize_t frames_before_walk = PyList_GET_SIZE(frame_info);
-            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, 0, gc_frame,
-                                    0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES) < 0) {
+            if (process_frame_chain(unwinder, last_profiled_frame, chunks, frame_info, base_frame_addr, gc_frame,
+                                    0, NULL, addrs, &num_addrs, FRAME_CACHE_MAX_FRAMES,
+                                    &last_frame_visited) < 0) {
                 return -1;
             }
             STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(frame_info) - frames_before_walk);
         } else {
-            // Partial cache hit
+            // Partial cache hit - cache was validated when stored, so we trust it
             STATS_INC(unwinder, frame_cache_partial_hits);
             STATS_ADD(unwinder, frames_read_from_cache, PyList_GET_SIZE(frame_info) - frames_before_cache);
         }
-    } else if (last_profiled_frame == 0) {
-        // No cache involvement (no last_profiled_frame or cache disabled)
-        STATS_INC(unwinder, frame_cache_misses);
+    } else {
+        if (last_profiled_frame == 0) {
+            // No cache involvement (no last_profiled_frame or cache disabled)
+            STATS_INC(unwinder, frame_cache_misses);
+        }
     }
 
-    // Store in cache (frame_cache_store handles truncation if num_addrs > FRAME_CACHE_MAX_FRAMES)
-    if (frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs) < 0) {
+    // Store in cache - frame_cache_store validates internally that we have a
+    // complete stack (reached base_frame_addr) before actually storing
+    if (frame_cache_store(unwinder, thread_id, frame_info, addrs, num_addrs,
+                          base_frame_addr, last_frame_visited) < 0) {
         return -1;
     }
 

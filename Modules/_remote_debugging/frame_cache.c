@@ -194,6 +194,7 @@ frame_cache_lookup_and_extend(
 }
 
 // Store frame list with addresses in cache
+// Only stores complete stacks that reach base_frame_addr (validation done internally)
 // Returns: 1 = stored successfully, 0 = not stored (graceful degradation), -1 = error
 int
 frame_cache_store(
@@ -201,9 +202,22 @@ frame_cache_store(
     uint64_t thread_id,
     PyObject *frame_list,
     const uintptr_t *addrs,
-    Py_ssize_t num_addrs)
+    Py_ssize_t num_addrs,
+    uintptr_t base_frame_addr,
+    uintptr_t last_frame_visited)
 {
     if (!unwinder->frame_cache || thread_id == 0) {
+        return 0;
+    }
+
+    // Validate we have a complete stack before caching.
+    // Only cache if last_frame_visited matches base_frame_addr (the sentinel
+    // at the bottom of the stack). Note: we use last_frame_visited rather than
+    // addrs[num_addrs-1] because the base frame is visited but not added to the
+    // addrs array (it returns frame==NULL from is_frame_valid due to
+    // owner==FRAME_OWNED_BY_INTERPRETER).
+    if (base_frame_addr != 0 && last_frame_visited != base_frame_addr) {
+        // Incomplete stack - don't cache (graceful degradation)
         return 0;
     }
 

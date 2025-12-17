@@ -1,0 +1,4 @@
+Fix incomplete stack traces in the Tachyon profiler's frame cache when
+profiling code with deeply nested generators. The frame cache now validates
+that stack traces reach the base frame before caching, preventing broken
+flamegraphs. Patch by Pablo Galindo.

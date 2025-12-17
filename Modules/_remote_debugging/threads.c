@@ -430,7 +430,7 @@ unwind_stack_for_thread(
         uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, ts,
             unwinder->debug_offsets.thread_state.last_profiled_frame);
         if (collect_frames_with_cache(unwinder, frame_addr, &chunks, frame_info,
-                                      gc_frame, last_profiled_frame, tid) < 0) {
+                                      base_frame_addr, gc_frame, last_profiled_frame, tid) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
@@ -444,7 +444,7 @@ unwind_stack_for_thread(
     } else {
         // No caching - process entire frame chain with base_frame validation
         if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
-                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
+                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0, NULL) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
             goto error;
         }
