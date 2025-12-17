@@ -287,7 +287,7 @@ Known values:
     Python 3.15a1 3654 (Fix missing exception handlers in logical expression)
     Python 3.15a1 3655 (Fix miscompilation of some module-level annotations)
     Python 3.15a1 3656 (Add TRACE_RECORD instruction, for platforms with switch based interpreter)
-
+    Python 3.15a3 3657 (Optimize bytecode for list/set called on genexp)
 
     Python 3.16 will start with 3700
 
