@@ -750,12 +750,12 @@ dummy_func(
 
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            l = left;
-            r = right;
-            INPUTS_DEAD();
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 

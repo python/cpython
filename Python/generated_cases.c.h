@@ -278,11 +278,11 @@
                 assert(PyUnicode_CheckExact(right_o));
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-                l = left;
-                r = right;
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                l = left;
+                r = right;
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP_UNICODE
