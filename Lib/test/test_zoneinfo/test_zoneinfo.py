@@ -16,7 +16,6 @@ import tempfile
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
-from zoneinfo import ZoneInfo
 
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.os_helper import EnvironmentVarGuard, FakePath
@@ -1564,13 +1563,11 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 
         zone1 = EvilZoneInfo("America/Los_Angeles")
 
-        self.assertIsNotNone(zone1)
         self.assertEqual(str(zone1), "America/Los_Angeles")
 
         EvilZoneInfo.clear_cache()
 
         zone2 = EvilZoneInfo("America/Los_Angeles")
-        self.assertIsNotNone(zone2)
         self.assertEqual(str(zone2), "America/Los_Angeles")
 
 
