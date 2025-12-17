@@ -629,6 +629,8 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
         rf"\s*(?P<instruction>{'|'.join(_X86_BRANCHES)})\s+(?P<target>[\w.]+)"
     )
     # https://www.felixcloutier.com/x86/jmp
-    _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
+    # https://www.felixcloutier.com/x86/call
+    # Calls are also logically jumps to labels.
+    _re_jump = re.compile(r"\s*((?:jmp)|(?:callq?))\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*ret\b")
