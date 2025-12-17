@@ -50,7 +50,7 @@ jobs:
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
   jit:
     name: ${{ matrix.target }} (${{ matrix.debug && 'Debug' || 'Release' }})
-#    needs: interpreter
+    needs: interpreter
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     strategy:
@@ -131,7 +131,7 @@ jobs:
 
   jit-with-disabled-gil:
     name: Free-Threaded (Debug)
-#    needs: interpreter
+    needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
@@ -159,7 +159,7 @@ jobs:
 
   no-opt-jit:
     name: JIT without optimizations (Debug)
-#    needs: interpreter
+    needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
@@ -186,7 +186,7 @@ jobs:
 
   tail-call-jit:
     name: JIT with tail calling interpreter
-#    needs: interpreter
+    needs: interpreter
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     strategy:
