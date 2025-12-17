@@ -3517,7 +3517,7 @@ def test_pdb_commands_last_breakpoint():
     (Pdb) clear 1
     Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
     (Pdb) commands
-    *** no breakpoints set
+    *** cannot set commands: no existing breakpoint
     (Pdb) continue
     """
 
