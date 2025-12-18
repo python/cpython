@@ -1,0 +1,3 @@
+The new REPL now falls back to basic REPL if stdout is non-interactive.
+Previously it could flood the output if such stdout was a broken pipe.
+Contributed by Bartosz Sławecki.
