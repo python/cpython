@@ -1108,16 +1108,21 @@
         }
 
         case _UNPACK_SEQUENCE: {
+            JitOptRef seq;
             JitOptRef *values;
             JitOptRef *top;
+            JitOptRef s;
+            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             top = &stack_pointer[-1 + oparg];
             (void)top;
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
-            CHECK_STACK_BOUNDS(-1 + oparg);
-            stack_pointer += -1 + oparg;
+            s = seq;
+            CHECK_STACK_BOUNDS(oparg);
+            stack_pointer[-1 + oparg] = s;
+            stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -1126,13 +1131,16 @@
             JitOptRef seq;
             JitOptRef val1;
             JitOptRef val0;
+            JitOptRef s;
             seq = stack_pointer[-1];
             val0 = sym_tuple_getitem(ctx, seq, 0);
             val1 = sym_tuple_getitem(ctx, seq, 1);
-            CHECK_STACK_BOUNDS(1);
+            s = seq;
+            CHECK_STACK_BOUNDS(2);
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;
-            stack_pointer += 1;
+            stack_pointer[1] = s;
+            stack_pointer += 2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -1140,25 +1148,33 @@
         case _UNPACK_SEQUENCE_TUPLE: {
             JitOptRef seq;
             JitOptRef *values;
+            JitOptRef s;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
             }
-            CHECK_STACK_BOUNDS(-1 + oparg);
-            stack_pointer += -1 + oparg;
+            s = seq;
+            CHECK_STACK_BOUNDS(oparg);
+            stack_pointer[-1 + oparg] = s;
+            stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
         case _UNPACK_SEQUENCE_LIST: {
+            JitOptRef seq;
             JitOptRef *values;
+            JitOptRef s;
+            seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_not_null(ctx);
+            for (int i = 0; i < oparg; i++) {
+                values[i] = sym_new_not_null(ctx);
             }
-            CHECK_STACK_BOUNDS(-1 + oparg);
-            stack_pointer += -1 + oparg;
+            s = seq;
+            CHECK_STACK_BOUNDS(oparg);
+            stack_pointer[-1 + oparg] = s;
+            stack_pointer += oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

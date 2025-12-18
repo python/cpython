@@ -954,12 +954,13 @@ dummy_func(void) {
         }
     }
 
-    op(_UNPACK_SEQUENCE, (seq -- values[oparg], top[0])) {
+    op(_UNPACK_SEQUENCE, (seq -- values[oparg], top[0], s)) {
         (void)top;
         /* This has to be done manually */
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_new_unknown(ctx);
         }
+        s = seq;
     }
 
     op(_UNPACK_EX, (seq -- values[oparg & 0xFF], unused, unused[oparg >> 8], top[0])) {
@@ -1136,15 +1137,24 @@ dummy_func(void) {
         set = sym_new_type(ctx, &PySet_Type);
     }
 
-    op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
+    op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0, s)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
+        s = seq;
     }
 
-    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
+    op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg], s)) {
         for (int i = 0; i < oparg; i++) {
             values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }
+        s = seq;
+    }
+
+    op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg], s)) {
+        for (int i = 0; i < oparg; i++) {
+            values[i] = sym_new_not_null(ctx);
+        }
+        s = seq;
     }
 
     op(_CALL_TUPLE_1, (callable, null, arg -- res, a)) {
