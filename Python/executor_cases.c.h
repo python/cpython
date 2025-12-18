@@ -4661,12 +4661,14 @@
             break;
         }
 
-        case _BINARY_OP_SUBSCR_STR_INT_r21: {
+        case _BINARY_OP_SUBSCR_STR_INT_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef sub_st;
             _PyStackRef str_st;
             _PyStackRef res;
+            _PyStackRef s;
+            _PyStackRef i;
             _PyStackRef _stack_item_0 = _tos_cache0;
             _PyStackRef _stack_item_1 = _tos_cache1;
             sub_st = _stack_item_1;
@@ -4701,15 +4703,13 @@
             assert(c < 128);
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(str_st);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            s = str_st;
+            i = sub_st;
             res = PyStackRef_FromPyObjectBorrow(res_o);
+            _tos_cache2 = i;
+            _tos_cache1 = s;
             _tos_cache0 = res;
-            _tos_cache1 = PyStackRef_ZERO_BITS;
-            _tos_cache2 = PyStackRef_ZERO_BITS;
-            SET_CURRENT_CACHED_VALUES(1);
+            SET_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
         }
