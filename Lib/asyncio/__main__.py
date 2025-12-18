@@ -187,8 +187,8 @@ if __name__ == '__main__':
         from _pyrepl.main import CAN_USE_PYREPL
 
     return_code = 0
-    runner = asyncio.Runner()
-    loop = runner.get_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     repl_locals = {'asyncio': asyncio}
     for key in {'__name__', '__package__',
@@ -240,5 +240,4 @@ if __name__ == '__main__':
             break
 
     console.write('exiting asyncio REPL...\n')
-    runner.close()
     sys.exit(return_code)
