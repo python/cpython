@@ -123,7 +123,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_Py_CODEUNIT *_Py_LazyJitTrampoline(
+_Py_CODEUNIT *_Py_LazyJitShim(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
