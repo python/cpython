@@ -357,22 +357,11 @@ static uint32_t function_get_version(PyObject *o, int opcode);
 
 #ifdef Py_GIL_DISABLED
 static void
-maybe_enable_deferred_ref_count(PyObject *dict, PyObject *name)
+maybe_enable_deferred_ref_count(PyObject *op)
 {
-    PyObject *op;
-    if (PyDict_GetItemRef(dict, name, &op) != 1) {
-        return;
-    }
-    if (_Py_IsOwnedByCurrentThread(op) ||
-            !PyType_IS_GC(Py_TYPE(op)) ||
-            _PyObject_HasDeferredRefcount(op)) {
-        Py_DECREF(op);
-        return;
-    }
-    if (PyFrozenSet_Check(op) || PyTuple_Check(op) || PyType_Check(op)) {
+    if (!_Py_IsOwnedByCurrentThread(op)) {
         PyUnstable_Object_EnableDeferredRefcount(op);
     }
-    Py_DECREF(op);
 }
 #endif
 
@@ -391,7 +380,8 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND);
         return -1;
     }
-    index = _PyDict_LookupIndex(dict, name);
+    PyObject *value;
+    index = _PyDict_LookupIndexAndValue(dict, name, &value);
     assert (index != DKIX_ERROR);
     if (index != (uint16_t)index) {
         SPECIALIZATION_FAIL(LOAD_ATTR,
@@ -407,7 +397,7 @@ specialize_module_load_attr_lock_held(PyDictObject *dict, _Py_CODEUNIT *instr, P
         return -1;
     }
 #ifdef Py_GIL_DISABLED
-    maybe_enable_deferred_ref_count((PyObject *)dict, name);
+    maybe_enable_deferred_ref_count(value);
 #endif
     write_u32(cache->version, keys_version);
     cache->index = (uint16_t)index;
@@ -1308,7 +1298,12 @@ specialize_load_global_lock_held(
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_LOAD_GLOBAL_NON_STRING_OR_SPLIT);
         goto fail;
     }
+#ifdef Py_GIL_DISABLED
+    PyObject *value;
+    Py_ssize_t index = _PyDict_LookupIndexAndValue((PyDictObject *)globals, name, &value);
+#else
     Py_ssize_t index = _PyDictKeys_StringLookup(globals_keys, name);
+#endif
     if (index == DKIX_ERROR) {
         SPECIALIZATION_FAIL(LOAD_GLOBAL, SPEC_FAIL_EXPECTED_ERROR);
         goto fail;
@@ -1330,7 +1325,7 @@ specialize_load_global_lock_held(
             goto fail;
         }
 #ifdef Py_GIL_DISABLED
-        maybe_enable_deferred_ref_count(globals, name);
+        maybe_enable_deferred_ref_count(value);
 #endif
         cache->index = (uint16_t)index;
         cache->module_keys_version = (uint16_t)keys_version;
