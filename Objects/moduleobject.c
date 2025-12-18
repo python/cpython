@@ -178,7 +178,6 @@ new_module_notrack(PyTypeObject *mt)
     m->md_state = NULL;
     m->md_weaklist = NULL;
     m->md_name = NULL;
-    m->m_dict_version = 0;
     m->md_token_is_def = false;
 #ifdef Py_GIL_DISABLED
     m->md_requires_gil = true;
