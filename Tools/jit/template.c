@@ -118,6 +118,12 @@ do {                                                                      \
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif
 
+// For now, the FT JIT only supports single-threaded code.
+#undef LOCK_OBJECT
+#undef UNLOCK_OBJECT
+#define LOCK_OBJECT(op) (1)
+#define UNLOCK_OBJECT(op) ((void)0)
+
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
