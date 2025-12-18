@@ -1376,6 +1376,8 @@ bytearray_contains(PyObject *self, PyObject *arg)
     int ret = -1;
     Py_BEGIN_CRITICAL_SECTION(self);
     PyByteArrayObject *ba = _PyByteArray_CAST(self);
+
+    /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
     ba->ob_exports++;
     ret = _Py_bytes_contains(PyByteArray_AS_STRING(ba),
                              PyByteArray_GET_SIZE(self),
