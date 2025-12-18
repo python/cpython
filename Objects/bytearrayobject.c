@@ -95,8 +95,8 @@ typedef PyObject* (*_ba_bytes_op)(const char *buf, Py_ssize_t len,
                                   Py_ssize_t end);
 
 static PyObject *
-_bytearray_with_buffer(PyByteArrayObject *self, PyObject *sub,
-                       Py_ssize_t start, Py_ssize_t end, _ba_bytes_op op)
+_bytearray_with_buffer(PyByteArrayObject *self, _ba_bytes_op op, PyObject *sub,
+                       Py_ssize_t start, Py_ssize_t end)
 {
     PyObject *res;
 
@@ -1253,7 +1253,7 @@ bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
                     Py_ssize_t end)
 /*[clinic end generated code: output=413e1cab2ae87da0 input=df3aa94840d893a7]*/
 {
-    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_find);
+    return _bytearray_with_buffer(self, _Py_bytes_find, sub, start, end);
 }
 
 /*[clinic input]
@@ -1269,7 +1269,7 @@ bytearray_count_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=a21ee2692e4f1233 input=e8fcdca8272857e0]*/
 {
-    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_count);
+    return _bytearray_with_buffer(self, _Py_bytes_count, sub, start, end);
 }
 
 /*[clinic input]
@@ -1317,7 +1317,7 @@ bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=067a1e78efc672a7 input=c37f177cfee19fe4]*/
 {
-    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_index);
+    return _bytearray_with_buffer(self, _Py_bytes_index, sub, start, end);
 }
 
 /*[clinic input]
@@ -1335,7 +1335,7 @@ bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
                      Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=51bf886f932b283c input=1265b11c437d2750]*/
 {
-    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_rfind);
+    return _bytearray_with_buffer(self, _Py_bytes_rfind, sub, start, end);
 }
 
 /*[clinic input]
@@ -1353,7 +1353,7 @@ bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
                       Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=38e1cf66bafb08b9 input=7d198b3d6b0a62ce]*/
 {
-    return _bytearray_with_buffer(self, sub, start, end, _Py_bytes_rindex);
+    return _bytearray_with_buffer(self, _Py_bytes_rindex, sub, start, end);
 }
 
 static int
@@ -1392,7 +1392,7 @@ bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
                           Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=a3d9b6d44d3662a6 input=93f9ffee684f109a]*/
 {
-    return _bytearray_with_buffer(self, subobj, start, end, _Py_bytes_startswith);
+    return _bytearray_with_buffer(self, _Py_bytes_startswith, subobj, start, end);
 }
 
 /*[clinic input]
@@ -1417,7 +1417,7 @@ bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
                         Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=e75ea8c227954caa input=d158b030a11d0b06]*/
 {
-    return _bytearray_with_buffer(self, subobj, start, end, _Py_bytes_endswith);
+    return _bytearray_with_buffer(self, _Py_bytes_endswith, subobj, start, end);
 }
 
 /*[clinic input]
