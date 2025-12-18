@@ -479,6 +479,20 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
+
+    /* Check buffer validity and bounds after potential user code calls
+     * (_PyNumber_Index and PyLong_AsUnsignedLong may modify the array buffer).
+     * See gh-142555.
+     */
+    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
+        PyErr_SetString(PyExc_IndexError,
+            "array assignment index out of range");
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
+
     if (i >= 0)
         ((unsigned int *)ap->ob_item)[i] = (unsigned int)x;
 
@@ -541,6 +555,20 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
+
+    /* Check buffer validity and bounds after potential user code calls
+     * (_PyNumber_Index and PyLong_AsUnsignedLong may modify the array buffer).
+     * See gh-142555.
+     */
+    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
+        PyErr_SetString(PyExc_IndexError,
+            "array assignment index out of range");
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
+
     if (i >= 0)
         ((unsigned long *)ap->ob_item)[i] = x;
 
@@ -604,6 +632,20 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
+
+    /* Check buffer validity and bounds after potential user code calls
+     * (_PyNumber_Index and PyLong_AsUnsignedLongLong may modify the array buffer).
+     * See gh-142555.
+     */
+    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
+        PyErr_SetString(PyExc_IndexError,
+            "array assignment index out of range");
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
+    }
+
     if (i >= 0)
         ((unsigned long long *)ap->ob_item)[i] = x;
 

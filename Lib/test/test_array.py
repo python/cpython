@@ -1710,6 +1710,20 @@ class LargeArrayTest(unittest.TestCase):
             with self.assertRaises(IndexError):
                 victim[1] = ShrinkIndex()  # Original index 1 should now be out of bounds
 
+        def test_clear_array_float(victim):
+            """Test array clearing scenario using __float__ method"""
+            class EvilFloat:
+                def __float__(self):
+                    # Re-entrant mutation: clear the array while __setitem__
+                    # still holds a pointer to the pre-clear buffer.
+                    victim.clear()
+                    return 0.0
+
+            with self.assertRaises(IndexError):
+                victim[1] = EvilFloat()
+
+            self.assertEqual(len(victim), 0)
+
         # Test various array types
         test_clear_array(array.array('b', [0] * 64))
         test_shrink_array(array.array('b', [1, 2, 3]))
@@ -1719,8 +1733,13 @@ class LargeArrayTest(unittest.TestCase):
         test_clear_array(array.array('i', [1, 2, 3]))
         test_clear_array(array.array('l', [1, 2, 3]))
         test_clear_array(array.array('q', [1, 2, 3]))
-        test_clear_array(array.array('f', [1.0, 2.0, 3.0]))
-        test_clear_array(array.array('d', [1.0, 2.0, 3.0]))
+        test_clear_array(array.array('I', [1, 2, 3]))
+        test_clear_array(array.array('L', [1, 2, 3]))
+        test_clear_array(array.array('Q', [1, 2, 3]))
+
+        # Test float arrays with __float__ method
+        test_clear_array_float(array.array('f', [1.0, 2.0, 3.0]))
+        test_clear_array_float(array.array('d', [1.0, 2.0, 3.0]))
 
 
 if __name__ == "__main__":
