@@ -5702,6 +5702,12 @@ class TestHelpCustomHelpFormatter(TestCase):
         help_text = formatter.format_help()
         self.assertEqual(help_text, "usage: program\n")
 
+    def test_formatter_color_parameter_deprecated(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            argparse.HelpFormatter(prog="program", color=True)
+        self.assertIn("'color' parameter is deprecated", str(cm.warning))
+        self.assertIn("ArgumentParser", str(cm.warning))
+
 # =====================================
 # Optional/Positional constructor tests
 # =====================================

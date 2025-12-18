@@ -166,7 +166,18 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
+        color=None,
     ):
+        # Handle deprecated 'color' parameter for backwards compatibility
+        if color is not None:
+            import warnings
+            warnings.warn(
+                "The 'color' parameter is deprecated. "
+                "Set 'color' in ArgumentParser instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # default setting for width
         if width is None:
             import shutil
