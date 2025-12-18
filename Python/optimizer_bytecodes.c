@@ -1409,6 +1409,12 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res, ls, ss)) {
+        res = sym_new_unknown(ctx);
+        ls = list_st;
+        ss = sub_st;
+    }
+
 
 // END BYTECODES //
 

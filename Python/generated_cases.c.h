@@ -750,6 +750,8 @@
             _PyStackRef list_st;
             _PyStackRef sub_st;
             _PyStackRef res;
+            _PyStackRef ls;
+            _PyStackRef ss;
             // _GUARD_TOS_INT
             {
                 value = stack_pointer[-1];
@@ -808,18 +810,24 @@
                 res = PyStackRef_FromPyObjectNew(res_o);
                 #endif
                 STAT_INC(BINARY_OP, hit);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = list_st;
-                list_st = res;
-                stack_pointer[-2] = list_st;
-                PyStackRef_CLOSE(tmp);
-                tmp = sub_st;
-                sub_st = PyStackRef_NULL;
-                stack_pointer[-1] = sub_st;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                ls = list_st;
+                ss = sub_st;
+            }
+            // _POP_TOP_INT
+            {
+                value = ss;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            // _POP_TOP
+            {
+                value = ls;
+                stack_pointer[-2] = res;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
         }
