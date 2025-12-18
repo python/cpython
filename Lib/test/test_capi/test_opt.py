@@ -1877,6 +1877,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_binary_op_subscr_str_int(self):
+        def testfunc(n):
+            x = 0
+            s = "hello"
+            for _ in range(n):
+                c = s[1]  # _BINARY_OP_SUBSCR_STR_INT
+                if c == 'e':
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        self.assertIn("_COMPARE_OP_STR", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+
     def test_call_type_1_guards_removed(self):
         def testfunc(n):
             x = 0
