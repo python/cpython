@@ -124,6 +124,10 @@ do {                                                                      \
 #define LOCK_OBJECT(op) (1)
 #define UNLOCK_OBJECT(op) ((void)0)
 
+#ifdef Py_GIL_DISABLED
+#undef Py_GIL_DISABLED
+#endif
+
 __attribute__((preserve_none)) _Py_CODEUNIT *
 _JIT_ENTRY(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate,
