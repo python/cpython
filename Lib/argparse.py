@@ -704,7 +704,7 @@ class HelpFormatter(object):
                 return f'{t.interpolated_value}{formatted}{t.reset}'
             return spec
 
-        # Match %% (literal %) or %(name)... format specifiers
+        # Match %% or %(name)... format specifiers
         result = _re.sub(r'%%|%\((\w+)\)[^a-z]*[a-z]', colorize,
                          help_string, flags=_re.IGNORECASE)
 
