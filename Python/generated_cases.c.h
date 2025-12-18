@@ -10808,7 +10808,7 @@
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
+                _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
                 UNLOCK_OBJECT(dict);
