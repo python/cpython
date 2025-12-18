@@ -592,6 +592,11 @@ mmap
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
 
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
+
 
 os
 --

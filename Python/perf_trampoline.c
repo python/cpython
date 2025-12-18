@@ -291,7 +291,7 @@ new_code_arena(void)
         perf_status = PERF_STATUS_FAILED;
         return -1;
     }
-    _PyAnnotateMemoryMap(memory, mem_size, "cpython:perf_trampoline");
+    (void)_PyAnnotateMemoryMap(memory, mem_size, "cpython:perf_trampoline");
     void *start = &_Py_trampoline_func_start;
     void *end = &_Py_trampoline_func_end;
     size_t code_size = end - start;

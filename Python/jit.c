@@ -77,7 +77,7 @@ jit_alloc(size_t size)
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
     if (!failed) {
-        _PyAnnotateMemoryMap(memory, size, "cpython:jit");
+        (void)_PyAnnotateMemoryMap(memory, size, "cpython:jit");
     }
 #endif
     if (failed) {
