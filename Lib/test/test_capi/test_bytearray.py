@@ -1,3 +1,4 @@
+import sys
 import unittest
 from test.support import import_helper
 
@@ -55,7 +56,9 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(fromstringandsize(b'', 0), bytearray())
         self.assertEqual(fromstringandsize(NULL, 0), bytearray())
         self.assertEqual(len(fromstringandsize(NULL, 3)), 3)
-        self.assertRaises(MemoryError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL, PY_SSIZE_T_MAX)
+        self.assertRaises(OverflowError, fromstringandsize, NULL,
+                          PY_SSIZE_T_MAX-sys.getsizeof(b'') + 1)
 
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         self.assertRaises(SystemError, fromstringandsize, b'abc', PY_SSIZE_T_MIN)

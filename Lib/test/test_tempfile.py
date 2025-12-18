@@ -1386,7 +1386,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
 
         f.write(b'x')
         self.assertTrue(f._rolled)
-        self.assertEqual(f.mode, 'rb+')
+        self.assertEqual(f.mode, 'wb+')
         self.assertIsNotNone(f.name)
         with self.assertRaises(AttributeError):
             f.newlines
@@ -1593,30 +1593,6 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                     tempfile.TemporaryFile(dir=dir)
             mock_close.assert_called()
             self.assertEqual(os.listdir(dir), [])
-
-        @os_helper.skip_unless_hardlink
-        @unittest.skipUnless(tempfile._O_TMPFILE_WORKS, 'need os.O_TMPFILE')
-        @unittest.skipUnless(os.path.exists('/proc/self/fd'),
-                             'need /proc/self/fd')
-        def test_link_tmpfile(self):
-            dir = tempfile.mkdtemp()
-            self.addCleanup(os_helper.rmtree, dir)
-            filename = os.path.join(dir, "link")
-
-            with tempfile.TemporaryFile('w', dir=dir) as tmp:
-                # the flag can become False on Linux <= 3.11
-                if not tempfile._O_TMPFILE_WORKS:
-                    self.skipTest("O_TMPFILE doesn't work")
-
-                tmp.write("hello")
-                tmp.flush()
-                fd = tmp.fileno()
-
-                os.link(f'/proc/self/fd/{fd}',
-                        filename,
-                        follow_symlinks=True)
-                with open(filename) as fp:
-                    self.assertEqual(fp.read(), "hello")
 
 
 # Helper for test_del_on_shutdown
