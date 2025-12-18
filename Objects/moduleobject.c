@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_EnableGILTransient()
 #include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
 #include "pycore_import.h"        // _PyImport_GetNextModuleIndex()
@@ -178,7 +179,7 @@ new_module_notrack(PyTypeObject *mt)
     m->md_name = NULL;
     m->md_token_is_def = false;
 #ifdef Py_GIL_DISABLED
-    m->md_gil = Py_MOD_GIL_USED;
+    m->md_requires_gil = true;
 #endif
     m->md_state_size = 0;
     m->md_state_traverse = NULL;
@@ -361,7 +362,7 @@ _PyModule_CreateInitialized(PyModuleDef* module, int module_api_version)
     m->md_token_is_def = true;
     module_copy_members_from_deflike(m, module);
 #ifdef Py_GIL_DISABLED
-    m->md_gil = Py_MOD_GIL_USED;
+    m->md_requires_gil = true;
 #endif
     return (PyObject*)m;
 }
@@ -380,7 +381,7 @@ module_from_def_and_spec(
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
     int has_gil_slot = 0;
-    void *gil_slot = Py_MOD_GIL_USED;
+    bool requires_gil = true;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -474,7 +475,7 @@ module_from_def_and_spec(
                        name);
                     goto error;
                 }
-                gil_slot = cur_slot->value;
+                requires_gil = (cur_slot->value != Py_MOD_GIL_NOT_USED);
                 has_gil_slot = 1;
                 break;
             case Py_mod_abi:
@@ -521,6 +522,22 @@ module_from_def_and_spec(
         }
 #undef COPY_COMMON_SLOT
     }
+
+#ifdef Py_GIL_DISABLED
+    // For modules created directly from slots (not from a def), we enable
+    // the GIL here (pairing `_PyEval_EnableGILTransient` with
+    // an immediate `_PyImport_EnableGILAndWarn`).
+    // For modules created from a def, the caller is responsible for this.
+    if (!original_def && requires_gil) {
+        PyThreadState *tstate = _PyThreadState_GET();
+        if (_PyEval_EnableGILTransient(tstate) < 0) {
+            goto error;
+        }
+        if (_PyImport_EnableGILAndWarn(tstate, nameobj) < 0) {
+            goto error;
+        }
+    }
+#endif
 
     /* By default, multi-phase init modules are expected
        to work under multiple interpreters. */
@@ -581,9 +598,9 @@ module_from_def_and_spec(
             mod->md_token = token;
         }
 #ifdef Py_GIL_DISABLED
-        mod->md_gil = gil_slot;
+        mod->md_requires_gil = requires_gil;
 #else
-        (void)gil_slot;
+        (void)requires_gil;
 #endif
         mod->md_exec = m_exec;
     } else {
@@ -664,11 +681,12 @@ PyModule_FromSlotsAndSpec(const PyModuleDef_Slot *slots, PyObject *spec)
 int
 PyUnstable_Module_SetGIL(PyObject *module, void *gil)
 {
+    bool requires_gil = (gil != Py_MOD_GIL_NOT_USED);
     if (!PyModule_Check(module)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    ((PyModuleObject *)module)->md_gil = gil;
+    ((PyModuleObject *)module)->md_requires_gil = requires_gil;
     return 0;
 }
 #endif

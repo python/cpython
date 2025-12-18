@@ -66,126 +66,126 @@ Summary -- Release highlights
 .. PEP-sized items next.
 
 * :pep:`799`: :ref:`A dedicated profiling package for organizing Python
+  profiling tools <whatsnew315-profiling-package>`
+* :pep:`799`: :ref:`Tachyon: High frequency statistical sampling profiler
   profiling tools <whatsnew315-sampling-profiler>`
 * :pep:`686`: :ref:`Python now uses UTF-8 as the default encoding
   <whatsnew315-utf8-default>`
 * :pep:`782`: :ref:`A new PyBytesWriter C API to create a Python bytes object
   <whatsnew315-pep782>`
+* :ref:`The JIT compiler has been significantly upgraded <whatsnew315-jit>`
 * :ref:`Improved error messages <whatsnew315-improved-error-messages>`
 
 
 New features
 ============
 
+.. _whatsnew315-profiling-package:
+
+:pep:`799`: A dedicated profiling package
+-----------------------------------------
+
+A new :mod:`profiling` module has been added to organize Python's built-in
+profiling tools under a single, coherent namespace. This module contains:
+
+* :mod:`profiling.tracing`: deterministic function-call tracing (relocated from
+  ``cProfile``).
+* :mod:`profiling.sampling`: a new statistical sampling profiler (named Tachyon).
+
+The ``cProfile`` module remains as an alias for backwards compatibility.
+The :mod:`profile` module is deprecated and will be removed in Python 3.17.
+
+.. seealso:: :pep:`799` for further details.
+
+(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`138122`.)
+
+
 .. _whatsnew315-sampling-profiler:
 
-:pep:`799`: High frequency statistical sampling profiler
---------------------------------------------------------
+Tachyon: High frequency statistical sampling profiler
+-----------------------------------------------------
 
-A new statistical sampling profiler has been added to the new :mod:`!profiling` module as
-:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
+.. image:: ../library/tachyon-logo.png
+   :alt: Tachyon profiler logo
+   :align: center
+   :width: 200px
+
+A new statistical sampling profiler (Tachyon) has been added as
+:mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
-Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
+Unlike deterministic profilers (such as :mod:`profiling.tracing`) that instrument
 every function call, the sampling profiler periodically captures stack traces from
 running processes.  This approach provides virtually zero overhead while achieving
 sampling rates of **up to 1,000,000 Hz**, making it the fastest sampling profiler
 available for Python (at the time of its contribution) and ideal for debugging
-performance issues in production environments.
+performance issues in production environments. This capability is particularly
+valuable for debugging performance issues in production systems where traditional
+profiling approaches would be too intrusive.
 
 Key features include:
 
 * **Zero-overhead profiling**: Attach to any running Python process without
-  affecting its performance
-* **No code modification required**: Profile existing applications without restart
-* **Real-time statistics**: Monitor sampling quality during data collection
-* **Multiple output formats**: Generate both detailed statistics and flamegraph data
-* **Thread-aware profiling**: Option to profile all threads or just the main thread
+  affecting its performance. Ideal for production debugging where you can't afford
+  to restart or slow down your application.
 
-Profile process 1234 for 10 seconds with default settings:
+* **No code modification required**: Profile existing applications without restart.
+  Simply point the profiler at a running process by PID and start collecting data.
 
-.. code-block:: shell
+* **Flexible target modes**:
 
-  python -m profiling.sampling 1234
+  * Profile running processes by PID (``attach``) - attach to already-running applications
+  * Run and profile scripts directly (``run``) - profile from the very start of execution
+  * Execute and profile modules (``run -m``) - profile packages run as ``python -m module``
 
-Profile with custom interval and duration, save to file:
+* **Multiple profiling modes**: Choose what to measure based on your performance investigation:
 
-.. code-block:: shell
+  * **Wall-clock time** (``--mode wall``, default): Measures real elapsed time including I/O,
+    network waits, and blocking operations. Use this to understand where your program spends
+    calendar time, including when waiting for external resources.
+  * **CPU time** (``--mode cpu``): Measures only active CPU execution time, excluding I/O waits
+    and blocking. Use this to identify CPU-bound bottlenecks and optimize computational work.
+  * **GIL-holding time** (``--mode gil``): Measures time spent holding Python's Global Interpreter
+    Lock. Use this to identify which threads dominate GIL usage in multi-threaded applications.
+  * **Exception handling time** (``--mode exception``): Captures samples only from threads with
+    an active exception. Use this to analyze exception handling overhead.
 
-  python -m profiling.sampling -i 50 -d 30 -o profile.stats 1234
+* **Thread-aware profiling**: Option to profile all threads (``-a``) or just the main thread,
+  essential for understanding multi-threaded application behavior.
 
-Generate collapsed stacks for flamegraph:
+* **Multiple output formats**: Choose the visualization that best fits your workflow:
 
-.. code-block:: shell
+  * ``--pstats``: Detailed tabular statistics compatible with :mod:`pstats`. Shows function-level
+    timing with direct and cumulative samples. Best for detailed analysis and integration with
+    existing Python profiling tools.
+  * ``--collapsed``: Generates collapsed stack traces (one line per stack). This format is
+    specifically designed for creating flamegraphs with external tools like Brendan Gregg's
+    FlameGraph scripts or speedscope.
+  * ``--flamegraph``: Generates a self-contained interactive HTML flamegraph using D3.js.
+    Opens directly in your browser for immediate visual analysis. Flamegraphs show the call
+    hierarchy where width represents time spent, making it easy to spot bottlenecks at a glance.
+  * ``--gecko``: Generates Gecko Profiler format compatible with Firefox Profiler
+    (https://profiler.firefox.com). Upload the output to Firefox Profiler for advanced
+    timeline-based analysis with features like stack charts, markers, and network activity.
+  * ``--heatmap``: Generates an interactive HTML heatmap visualization with line-level sample
+    counts. Creates a directory with per-file heatmaps showing exactly where time is spent
+    at the source code level.
 
-  python -m profiling.sampling --collapsed 1234
+* **Live interactive mode**: Real-time TUI profiler with a top-like interface (``--live``).
+  Monitor performance as your application runs with interactive sorting and filtering.
 
-Profile all threads and sort by total time:
+* **Async-aware profiling**: Profile async/await code with task-based stack reconstruction
+  (``--async-aware``). See which coroutines are consuming time, with options to show only
+  running tasks or all tasks including those waiting.
 
-.. code-block:: shell
+* **Opcode-level profiling**: Gather bytecode opcode information for instruction-level
+  profiling (``--opcodes``). Shows which bytecode instructions are executing, including
+  specializations from the adaptive interpreter.
 
-  python -m profiling.sampling -a --sort-tottime 1234
+See :mod:`profiling.sampling` for the complete documentation, including all
+available output formats, profiling modes, and configuration options.
 
-The profiler generates statistical estimates of where time is spent:
-
-.. code-block:: text
-
-  Real-time sampling stats: Mean: 100261.5Hz (9.97µs) Min: 86333.4Hz (11.58µs) Max: 118807.2Hz (8.42µs) Samples: 400001
-  Captured 498841 samples in 5.00 seconds
-  Sample rate: 99768.04 samples/sec
-  Error rate: 0.72%
-  Profile Stats:
-        nsamples   sample%   tottime (s)    cumul%   cumtime (s)  filename:lineno(function)
-        43/418858       0.0         0.000      87.9         4.189  case.py:667(TestCase.run)
-      3293/418812       0.7         0.033      87.9         4.188  case.py:613(TestCase._callTestMethod)
-    158562/158562      33.3         1.586      33.3         1.586  test_compile.py:725(TestSpecifics.test_compiler_recursion_limit.<locals>.check_limit)
-    129553/129553      27.2         1.296      27.2         1.296  ast.py:46(parse)
-        0/128129       0.0         0.000      26.9         1.281  test_ast.py:884(AST_Tests.test_ast_recursion_limit.<locals>.check_limit)
-          7/67446       0.0         0.000      14.2         0.674  test_compile.py:729(TestSpecifics.test_compiler_recursion_limit)
-          6/60380       0.0         0.000      12.7         0.604  test_ast.py:888(AST_Tests.test_ast_recursion_limit)
-          3/50020       0.0         0.000      10.5         0.500  test_compile.py:727(TestSpecifics.test_compiler_recursion_limit)
-          1/38011       0.0         0.000       8.0         0.380  test_ast.py:886(AST_Tests.test_ast_recursion_limit)
-          1/25076       0.0         0.000       5.3         0.251  test_compile.py:728(TestSpecifics.test_compiler_recursion_limit)
-      22361/22362       4.7         0.224       4.7         0.224  test_compile.py:1368(TestSpecifics.test_big_dict_literal)
-          4/18008       0.0         0.000       3.8         0.180  test_ast.py:889(AST_Tests.test_ast_recursion_limit)
-        11/17696       0.0         0.000       3.7         0.177  subprocess.py:1038(Popen.__init__)
-      16968/16968       3.6         0.170       3.6         0.170  subprocess.py:1900(Popen._execute_child)
-          2/16941       0.0         0.000       3.6         0.169  test_compile.py:730(TestSpecifics.test_compiler_recursion_limit)
-
-  Legend:
-    nsamples: Direct/Cumulative samples (direct executing / on call stack)
-    sample%: Percentage of total samples this function was directly executing
-    tottime: Estimated total time spent directly in this function
-    cumul%: Percentage of total samples when this function was on the call stack
-    cumtime: Estimated cumulative time (including time in called functions)
-    filename:lineno(function): Function location and name
-
-  Summary of Interesting Functions:
-
-  Functions with Highest Direct/Cumulative Ratio (Hot Spots):
-    1.000 direct/cumulative ratio, 33.3% direct samples: test_compile.py:(TestSpecifics.test_compiler_recursion_limit.<locals>.check_limit)
-    1.000 direct/cumulative ratio, 27.2% direct samples: ast.py:(parse)
-    1.000 direct/cumulative ratio, 3.6% direct samples: subprocess.py:(Popen._execute_child)
-
-  Functions with Highest Call Frequency (Indirect Calls):
-    418815 indirect calls, 87.9% total stack presence: case.py:(TestCase.run)
-    415519 indirect calls, 87.9% total stack presence: case.py:(TestCase._callTestMethod)
-    159470 indirect calls, 33.5% total stack presence: test_compile.py:(TestSpecifics.test_compiler_recursion_limit)
-
-  Functions with Highest Call Magnification (Cumulative/Direct):
-    12267.9x call magnification, 159470 indirect calls from 13 direct: test_compile.py:(TestSpecifics.test_compiler_recursion_limit)
-    10581.7x call magnification, 116388 indirect calls from 11 direct: test_ast.py:(AST_Tests.test_ast_recursion_limit)
-    9740.9x call magnification, 418815 indirect calls from 43 direct: case.py:(TestCase.run)
-
-The profiler automatically identifies performance bottlenecks through statistical
-analysis, highlighting functions with high CPU usage and call frequency patterns.
-
-This capability is particularly valuable for debugging performance issues in
-production systems where traditional profiling approaches would be too intrusive.
-
-  .. seealso:: :pep:`799` for further details.
-
-(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
+(Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953` and :gh:`138122`.)
 
 
 .. _whatsnew315-improved-error-messages:
@@ -307,6 +307,97 @@ Other language changes
   not only integers or floats, although this does not improve precision.
   (Contributed by Serhiy Storchaka in :gh:`67795`.)
 
+.. _whatsnew315-bytearray-take-bytes:
+
+* Added :meth:`bytearray.take_bytes(n=None, /) <bytearray.take_bytes>` to take
+  bytes out of a :class:`bytearray` without copying. This enables optimizing code
+  which must return :class:`bytes` after working with a mutable buffer of bytes
+  such as data buffering, network protocol parsing, encoding, decoding,
+  and compression. Common code patterns which can be optimized with
+  :func:`~bytearray.take_bytes` are listed below.
+
+  .. list-table:: Suggested optimizing refactors
+      :header-rows: 1
+
+      * - Description
+        - Old
+        - New
+
+      * - Return :class:`bytes` after working with :class:`bytearray`
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return bytes(buffer)
+
+        - .. code:: python
+
+              def read() -> bytes:
+                  buffer = bytearray(1024)
+                  ...
+                  return buffer.take_bytes()
+
+      * - Empty a buffer getting the bytes
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = bytes(buffer)
+              buffer.clear()
+
+        - .. code:: python
+
+              buffer = bytearray(1024)
+              ...
+              data = buffer.take_bytes()
+
+      * - Split a buffer at a specific separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n + 1])
+              del buffer[:n + 1]
+              assert data == b'abc'
+              assert buffer == bytearray(b'def')
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = buffer.take_bytes(n + 1)
+
+      * - Split a buffer at a specific separator; discard after the separator
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              data = bytes(buffer[:n])
+              buffer.clear()
+              assert data == b'abc'
+              assert len(buffer) == 0
+
+        - .. code:: python
+
+              buffer = bytearray(b'abc\ndef')
+              n = buffer.find(b'\n')
+              buffer.resize(n)
+              data = buffer.take_bytes()
+
+  (Contributed by Cody Maloney in :gh:`139871`.)
+
+* Many functions related to compiling or parsing Python code, such as
+  :func:`compile`, :func:`ast.parse`, :func:`symtable.symtable`,
+  and :func:`importlib.abc.InspectLoader.source_to_code`, now allow the module
+  name to be passed. It is needed to unambiguously :ref:`filter <warning-filter>`
+  syntax warnings by module name.
+  (Contributed by Serhiy Storchaka in :gh:`135801`.)
+
+* Allowed defining the *__dict__* and *__weakref__* :ref:`__slots__ <slots>`
+  for any class.
+  (Contributed by Serhiy Storchaka in :gh:`41779`.)
+
 
 New modules
 ===========
@@ -325,9 +416,17 @@ Improved modules
 argparse
 --------
 
+* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+  long options and alternate prefix characters.
+  (Contributed by Serhiy Storchaka in :gh:`138525`.)
+
 * Changed the *suggest_on_error* parameter of :class:`argparse.ArgumentParser` to
   default to ``True``. This enables suggestions for mistyped arguments by default.
   (Contributed by Jakob Schluse in :gh:`140450`.)
+
+* Added backtick markup support in description and epilog text to highlight
+  inline code when color output is enabled.
+  (Contributed by Savannah Ostrowski in :gh:`142390`.)
 
 calendar
 --------
@@ -368,6 +467,24 @@ collections.abc
   previously emitted if it was merely imported or accessed from the
   :mod:`!collections.abc` module.
 
+
+concurrent.futures
+------------------
+
+* Improved error reporting when a child process in a
+  :class:`concurrent.futures.ProcessPoolExecutor` terminates abruptly.
+  The resulting traceback will now tell you the PID and exit code of the
+  terminated process.
+  (Contributed by Jonathan Berg in :gh:`139486`.)
+
+
+dataclasses
+-----------
+
+* Annotations for generated ``__init__`` methods no longer include internal
+  type names.
+
+
 dbm
 ---
 
@@ -391,6 +508,14 @@ difflib
 * Improved the styling of HTML diff pages generated by the :class:`difflib.HtmlDiff`
   class, and migrated the output to the HTML5 standard.
   (Contributed by Jiahao Li in :gh:`134580`.)
+
+
+functools
+---------
+
+* :func:`~functools.singledispatchmethod` now supports non-:term:`descriptor`
+  callables.
+  (Contributed by Serhiy Storchaka in :gh:`140873`.)
 
 
 hashlib
@@ -421,6 +546,14 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+inspect
+-------
+
+* Add parameters *inherit_class_doc* and *fallback_to_class_doc*
+  for :func:`~inspect.getdoc`.
+  (Contributed by Serhiy Storchaka in :gh:`132686`.)
+
+
 locale
 ------
 
@@ -443,9 +576,12 @@ math
 mimetypes
 ---------
 
+* Add ``application/node`` MIME type for ``.cjs`` extension. (Contributed by John Franey in :gh:`140937`.)
 * Add ``application/toml``. (Contributed by Gil Forcada in :gh:`139959`.)
 * Rename ``application/x-texinfo`` to ``application/texinfo``.
-  (Contributed by Charlie Lin in :gh:`140165`)
+  (Contributed by Charlie Lin in :gh:`140165`.)
+* Changed the MIME type for ``.ai`` files to ``application/pdf``.
+  (Contributed by Stan Ulbrych in :gh:`141239`.)
 
 
 mmap
@@ -455,6 +591,11 @@ mmap
   if it is ``False``, the file handle corresponding to *fileno* will
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
 
 
 os
@@ -610,6 +751,19 @@ timeit
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
+tkinter
+-------
+
+* The :meth:`!tkinter.Text.search` method now supports two additional
+  arguments: *nolinestop* which allows the search to
+  continue across line boundaries;
+  and *strictlimits* which restricts the search to within the specified range.
+  (Contributed by Rihaan Meher in :gh:`130848`)
+
+* A new method :meth:`!tkinter.Text.search_all` has been introduced.
+  This method allows for searching for all matches of a pattern
+  using Tcl's ``-all`` and ``-overlap`` options.
+  (Contributed by Rihaan Meher in :gh:`130848`)
 
 types
 ------
@@ -639,6 +793,17 @@ unittest
   (Contributed by Garry Cairns in :gh:`134567`.)
 
 
+venv
+----
+
+* On POSIX platforms, platlib directories will be created if needed when
+  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
+  This means purelib and platlib of virtual environments no longer share the
+  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
+  equal to ``lib``.
+  (Contributed by Rui Xi in :gh:`133951`.)
+
+
 warnings
 --------
 
@@ -649,17 +814,6 @@ warnings
   constructed starting from different parent directories of the filename
   (with ``/__init__.py``, ``.py`` and, on Windows, ``.pyw`` stripped).
   (Contributed by Serhiy Storchaka in :gh:`135801`.)
-
-
-venv
-----
-
-* On POSIX platforms, platlib directories will be created if needed when
-  creating virtual environments, instead of using ``lib64 -> lib`` symlink.
-  This means purelib and platlib of virtual environments no longer share the
-  same ``lib`` directory on platforms where :data:`sys.platlibdir` is not
-  equal to ``lib``.
-  (Contributed by Rui Xi in :gh:`133951`.)
 
 
 xml.parsers.expat
@@ -700,6 +854,91 @@ csv
 
 * :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
+
+.. _whatsnew315-jit:
+
+Upgraded JIT compiler
+=====================
+
+Results from the `pyperformance <https://github.com/python/pyperformance>`__
+benchmark suite report
+`3-4% <https://github.com/facebookexperimental/free-threading-benchmarking/blob/main/results/bm-20251214-3.15.0a2%2B-6cddf04-JIT/bm-20251214-vultr-x86_64-python-6cddf04344a1e8ca9df5-3.15.0a2%2B-6cddf04-vs-base.svg>`__
+geometric mean performance improvement for the JIT over the standard CPython
+interpreter built with all optimizations enabled. The speedups for JIT
+builds versus no JIT builds range from roughly 20% slowdown to over
+100% speedup (ignoring the ``unpack_sequence`` microbenchmark) on
+x86-64 Linux and AArch64 macOS systems.
+
+.. attention::
+    These results are not yet final.
+
+The major upgrades to the JIT are:
+
+* LLVM 21 build-time dependency
+* New tracing frontend
+* Basic register allocation in the JIT
+* More JIT optimizations
+* Better machine code generation
+
+.. rubric:: LLVM 21 build-time dependency
+
+The JIT compiler now uses LLVM 21 for build-time stencil generation. As
+always, LLVM is only needed when building CPython with the JIT enabled;
+end users running Python do not need LLVM installed. Instructions for
+installing LLVM can be found in the `JIT compiler documentation
+<https://github.com/python/cpython/blob/main/Tools/jit/README.md>`__
+for all supported platforms.
+
+(Contributed by Savannah Ostrowski in :gh:`140973`.)
+
+.. rubric:: A new tracing frontend
+
+The JIT compiler now supports significantly more bytecode operations and
+control flow than in Python 3.14, enabling speedups on a wider variety of
+code. For example, simple Python object creation is now understood by the
+3.15 JIT compiler. Overloaded operations and generators are also partially
+supported. This was made possible by an overhauled JIT tracing frontend
+that records actual execution paths through code, rather than estimating
+them as the previous implementation did.
+
+(Contributed by Ken Jin in :gh:`139109`. Support for Windows added by
+Mark Shannon in :gh:`141703`.)
+
+.. rubric:: Basic register allocation in the JIT
+
+A basic form of register allocation has been added to the JIT compiler's
+optimizer. This allows the JIT compiler to avoid certain stack operations
+altogether and instead operate on registers. This allows the JIT to produce
+more efficient traces by avoiding reads and writes to memory.
+
+(Contributed by Mark Shannon in :gh:`135379`.)
+
+.. rubric:: More JIT optimizations
+
+More `constant-propagation <https://en.wikipedia.org/wiki/Constant_folding>`__
+is now performed. This means when the JIT compiler detects that certain user
+code results in constants, the code can be simplified by the JIT.
+
+(Contributed by Ken Jin and Savannah Ostrowski in :gh:`132732`.)
+
+The JIT avoids :term:`reference count`\ s where possible. This generally
+reduces the cost of most operations in Python.
+
+(Contributed by Ken Jin, Donghee Na, Zheao Li, Savannah Ostrowski,
+Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
+
+.. rubric:: Better machine code generation
+
+The JIT compiler's machine code generator now produces better machine code
+for x86-64 and AArch64 macOS and Linux targets. In general, users should
+experience lower memory usage for generated machine code and more efficient
+machine code versus the old JIT.
+
+(Contributed by Brandt Bucher in :gh:`136528` and :gh:`136528`.
+Implementation for AArch64 contributed by Mark Shannon in :gh:`139855`.
+Additional optimizations for AArch64 contributed by Mark Shannon and
+Diego Russo in :gh:`140683` and :gh:`142305`.)
 
 
 Removed
@@ -870,14 +1109,16 @@ New deprecations
 
 * ``__version__``
 
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
 
     - :mod:`argparse`
     - :mod:`csv`
+    - :mod:`ctypes`
     - :mod:`!ctypes.macholib`
     - :mod:`decimal` (use :data:`decimal.SPEC_VERSION` instead)
+    - :mod:`http.server`
     - :mod:`imaplib`
     - :mod:`ipaddress`
     - :mod:`json`
@@ -890,6 +1131,10 @@ New deprecations
     - :mod:`tabnanny`
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
+    - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
     - :mod:`zlib`
 
     (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
@@ -947,8 +1192,22 @@ New features
 
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* Add a new :c:func:`PyImport_CreateModuleFromInitfunc` C-API for creating
+  a module from a *spec* and *initfunc*.
+  (Contributed by Itamar Oren in :gh:`116146`.)
+
 * Add :c:func:`PyTuple_FromArray` to create a :class:`tuple` from an array.
   (Contributed by Victor Stinner in :gh:`111489`.)
+
+* Add :c:func:`PyUnstable_Object_Dump` to dump an object to ``stderr``.
+  It should only be used for debugging.
+  (Contributed by Victor Stinner in :gh:`141070`.)
+
+* Add :c:func:`PyUnstable_ThreadState_SetStackProtection` and
+  :c:func:`PyUnstable_ThreadState_ResetStackProtection` functions to set
+  the stack protection base address and stack protection size of a Python
+  thread state.
+  (Contributed by Victor Stinner in :gh:`139653`.)
 
 
 Changed C APIs
@@ -1052,6 +1311,13 @@ Deprecated C APIs
   use the :c:type:`PyBytesWriter` API instead.
   (Contributed by Victor Stinner in :gh:`129813`.)
 
+* :c:func:`!_PyObject_CallMethodId`, :c:func:`!_PyObject_GetAttrId` and
+  :c:func:`!_PyUnicode_FromId` are deprecated since 3.15 and will be removed in
+  3.20. Instead, use :c:func:`PyUnicode_InternFromString()` and cache the result in
+  the module state, then call :c:func:`PyObject_CallMethod` or
+  :c:func:`PyObject_GetAttr`.
+  (Contributed by Victor Stinner in :gh:`141049`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -1068,6 +1334,14 @@ Deprecated C APIs
   since 3.15 and will be removed in 3.17.
   (Contributed by Nikita Sobolev in :gh:`136355`.)
 
+* :c:macro:`!Py_INFINITY` macro is :term:`soft deprecated`,
+  use the C11 standard ``<math.h>`` :c:macro:`!INFINITY` instead.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
+* :c:macro:`!Py_MATH_El` and :c:macro:`!Py_MATH_PIl` are deprecated
+  since 3.15 and will be removed in 3.20.
+  (Contributed by Sergey B Kirpichev in :gh:`141004`.)
+
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
@@ -1080,6 +1354,18 @@ Build changes
   set to ``no`` or with :option:`!--without-system-libmpdec`.
   (Contributed by Sergey B Kirpichev in :gh:`115119`.)
 
+* The new configure option :option:`--with-missing-stdlib-config=FILE` allows
+  distributors to pass a `JSON <https://www.json.org/json-en.html>`_
+  configuration file containing custom error messages for :term:`standard library`
+  modules that are missing or packaged separately.
+  (Contributed by Stan Ulbrych and Petr Viktorin in :gh:`139707`.)
+
+* Annotating anonymous mmap usage is now supported if Linux kernel supports
+  :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  Annotations are visible in ``/proc/<pid>/maps`` if the kernel supports the feature
+  and :option:`-X dev <-X>` is passed to the Python or Python is built in :ref:`debug mode <debug-build>`.
+  (Contributed by Donghee Na in :gh:`141770`)
+
 
 Porting to Python 3.15
 ======================
@@ -1087,7 +1373,7 @@ Porting to Python 3.15
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* :class:`sqlite3.Connection` APIs has been cleaned up.
+* :class:`sqlite3.Connection` APIs have been cleaned up.
 
   * All parameters of :func:`sqlite3.connect` except *database* are now keyword-only.
   * The first three parameters of methods :meth:`~sqlite3.Connection.create_function`
@@ -1106,3 +1392,16 @@ that may require changes to your code.
 
 * :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
+
+* A resource warning is now emitted for an unclosed
+  :func:`xml.etree.ElementTree.iterparse` iterator if it opened a file.
+  Use its :meth:`!close` method or the :func:`contextlib.closing` context
+  manager to close it.
+  (Contributed by Osama Abdelkader and Serhiy Storchaka in :gh:`140601`.)
+
+* If a short option and a single-dash long option are passed to
+  :meth:`argparse.ArgumentParser.add_argument`, *dest* is now inferred from
+  the single-dash long option. For example, in ``add_argument('-f', '-foo')``,
+  *dest* is now ``'foo'`` instead of ``'f'``.
+  Pass an explicit *dest* argument to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`138697`.)

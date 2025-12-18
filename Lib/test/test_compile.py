@@ -728,7 +728,8 @@ class TestSpecifics(unittest.TestCase):
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        crash_depth = limit * 5000
+        # Android test devices have less memory.
+        crash_depth = limit * (1000 if sys.platform == "android" else 5000)
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
@@ -1036,11 +1037,13 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    # bpo-31113: Stack overflow when compile a long sequence of
+    # complex statements.
     @support.requires_resource('cpu')
     def test_stack_overflow(self):
-        # bpo-31113: Stack overflow when compile a long sequence of
-        # complex statements.
-        compile("if a: b\n" * 200000, "<dummy>", "exec")
+        # Android test devices have less memory.
+        size = 100_000 if sys.platform == "android" else 200_000
+        compile("if a: b\n" * size, "<dummy>", "exec")
 
     # Multiple users rely on the fact that CPython does not generate
     # bytecode for dead code blocks. See bpo-37500 for more context.
@@ -1754,6 +1757,16 @@ class TestSpecifics(unittest.TestCase):
             warnings.simplefilter('error')
             warnings.filterwarnings('always', module=module_re)
             compile(source, filename, 'exec')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.module\z')
+            warnings.filterwarnings('error', module=module_re)
+            compile(source, filename, 'exec', module='package.module')
         self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
         for wm in wlog:
             self.assertEqual(wm.filename, filename)
