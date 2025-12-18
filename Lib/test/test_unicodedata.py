@@ -759,7 +759,7 @@ class NormalizationTest(unittest.TestCase):
 
     @requires_resource('cpu')
     def test_normalization_3_2_0(self):
-        testdatafile = findfile('NormalizationTest-3.2.0.txt', 'data')
+        testdatafile = findfile('NormalizationTest-3.2.0.txt')
         with open(testdatafile, encoding='utf-8') as testdata:
             self.run_normalization_tests(testdata, unicodedata.ucd_3_2_0)
 
