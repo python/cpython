@@ -3302,7 +3302,9 @@ clobber: clean
 .PHONY: distclean
 distclean: clobber docclean
 	for file in $(srcdir)/Lib/test/data/* ; do \
-	    if test "$$file" != "$(srcdir)/Lib/test/data/README"; then rm "$$file"; fi; \
+	    if test "$$file" != "$(srcdir)/Lib/test/data/README" \
+	       -a "$$file" != "$(srcdir)/Lib/test/data/NormalizationTest-3.2.0.txt"; \
+	    then rm "$$file"; fi; \
 	done
 	-rm -f core Makefile Makefile.pre config.status Modules/Setup.local \
 	    Modules/Setup.bootstrap Modules/Setup.stdlib \
