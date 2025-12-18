@@ -650,12 +650,12 @@ _contextvars.Context.items
 
 Return all variables and their values in the context object.
 
-The result is returned as a list of 2-tuples (variable, value).
+The result is returned as an iterator of 2-tuples (variable, value).
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_items_impl(PyContext *self)
-/*[clinic end generated code: output=fa1655c8a08502af input=00db64ae379f9f42]*/
+/*[clinic end generated code: output=fa1655c8a08502af input=f9c1fe4d39962ea0]*/
 {
     return _PyHamt_NewIterItems(self->ctx_vars);
 }
@@ -664,12 +664,12 @@ _contextvars_Context_items_impl(PyContext *self)
 /*[clinic input]
 _contextvars.Context.keys
 
-Return a list of all variables in the context object.
+Return an iterator of all variables in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_keys_impl(PyContext *self)
-/*[clinic end generated code: output=177227c6b63ec0e2 input=114b53aebca3449c]*/
+/*[clinic end generated code: output=177227c6b63ec0e2 input=f806e4e5f77c7e7e]*/
 {
     return _PyHamt_NewIterKeys(self->ctx_vars);
 }
@@ -678,12 +678,12 @@ _contextvars_Context_keys_impl(PyContext *self)
 /*[clinic input]
 _contextvars.Context.values
 
-Return a list of all variables' values in the context object.
+Return an iterator of all variables' values in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
-/*[clinic end generated code: output=d286dabfc8db6dde input=ce8075d04a6ea526]*/
+/*[clinic end generated code: output=d286dabfc8db6dde input=6f3cb30499d55021]*/
 {
     return _PyHamt_NewIterValues(self->ctx_vars);
 }
