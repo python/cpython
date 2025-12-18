@@ -893,9 +893,9 @@ dummy_func(
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         macro(BINARY_OP_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res, ls, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
@@ -918,7 +918,9 @@ dummy_func(
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
             STAT_INC(BINARY_OP, hit);
-            DECREF_INPUTS();
+            ls = list_st;
+            ss = sub_st;
+            INPUTS_DEAD();
         }
 
         macro(BINARY_OP_SUBSCR_LIST_SLICE) =
@@ -2628,7 +2630,7 @@ dummy_func(
                 UNLOCK_OBJECT(dict);
                 DEOPT_IF(true);
             }
-            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(dict);
 
