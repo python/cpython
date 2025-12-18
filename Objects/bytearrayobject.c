@@ -1375,12 +1375,13 @@ static int
 bytearray_contains(PyObject *self, PyObject *arg)
 {
     int ret = -1;
-    Py_buffer selfbuf;
     Py_BEGIN_CRITICAL_SECTION(self);
-    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) == 0) {
-        ret = _Py_bytes_contains((const char *)selfbuf.buf, selfbuf.len, arg);
-        PyBuffer_Release(&selfbuf);
-    }
+    PyByteArrayObject *ba = _PyByteArray_CAST(self);
+    ba->ob_exports++;
+    ret = _Py_bytes_contains(PyByteArray_AS_STRING(ba),
+                             PyByteArray_GET_SIZE(self),
+                             arg);
+    ba->ob_exports--;
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -1793,38 +1794,34 @@ Return a list of the sections in the bytearray, using sep as the delimiter.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
-                     Py_ssize_t maxsplit)
-/*[clinic end generated code: output=833e2cf385d9a04d input=dd9f6e2910cc3a34]*/
+bytearray_split_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit)
 {
-    PyObject *list;
-    Py_buffer selfbuf, vsub;
-    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
-        return NULL;
-    }
+    PyObject *list = NULL;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
+
+    self->ob_exports++;
+    const char *sbuf = PyByteArray_AS_STRING(self);
+    Py_ssize_t slen = PyByteArray_GET_SIZE((PyObject *)self);
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
 
     if (sep == Py_None) {
-        list = stringlib_split_whitespace((PyObject*) self,
-                                          (const char *)selfbuf.buf, selfbuf.len,
-                                          maxsplit);
-        PyBuffer_Release(&selfbuf);
-        return list;
+        list = stringlib_split_whitespace((PyObject*)self, sbuf, slen, maxsplit);
+        goto done;
     }
 
+    Py_buffer vsub;
     if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0) {
-        PyBuffer_Release(&selfbuf);
-        return NULL;
+        goto done;
     }
 
-    list = stringlib_split(
-        (PyObject*) self, (const char *)selfbuf.buf, selfbuf.len,
-        (const char *)vsub.buf, vsub.len, maxsplit
-        );
+    list = stringlib_split((PyObject*)self, sbuf, slen,
+                           (const char *)vsub.buf, vsub.len, maxsplit);
     PyBuffer_Release(&vsub);
-    PyBuffer_Release(&selfbuf);
+
+done:
+    self->ob_exports--;
     return list;
 }
 
@@ -1923,34 +1920,32 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
                       Py_ssize_t maxsplit)
 /*[clinic end generated code: output=a55e0b5a03cb6190 input=60e9abf305128ff4]*/
 {
-    PyObject *list;
-    Py_buffer selfbuf, vsub;
-    if (PyObject_GetBuffer((PyObject *)self, &selfbuf, PyBUF_SIMPLE) != 0) {
-        return NULL;
-    }
+    PyObject *list = NULL;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
+
+    self->ob_exports++;
+    const char *sbuf = PyByteArray_AS_STRING(self);
+    Py_ssize_t slen = PyByteArray_GET_SIZE((PyObject *)self);
 
     if (maxsplit < 0)
         maxsplit = PY_SSIZE_T_MAX;
 
     if (sep == Py_None) {
-        list = stringlib_rsplit_whitespace((PyObject*) self,
-                                           (const char *)selfbuf.buf, selfbuf.len,
-                                           maxsplit);
-        PyBuffer_Release(&selfbuf);
-        return list;
+        list = stringlib_rsplit_whitespace((PyObject*)self, sbuf, slen, maxsplit);
+        goto done;
     }
 
+    Py_buffer vsub;
     if (PyObject_GetBuffer(sep, &vsub, PyBUF_SIMPLE) != 0) {
-        PyBuffer_Release(&selfbuf);
-        return NULL;
+        goto done;
     }
 
-    list = stringlib_rsplit(
-        (PyObject*) self, (const char *)selfbuf.buf, selfbuf.len,
-        (const char *)vsub.buf, vsub.len, maxsplit
-        );
+    list = stringlib_rsplit((PyObject*)self, sbuf, slen,
+                            (const char *)vsub.buf, vsub.len, maxsplit);
     PyBuffer_Release(&vsub);
-    PyBuffer_Release(&selfbuf);
+
+done:
+    self->ob_exports--;
     return list;
 }
 

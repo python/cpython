@@ -2065,6 +2065,11 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         class Evil:
             def __init__(self, ba):
                 self.ba = ba
+            def __buffer__(self, flags):
+                self.ba.clear()
+                return memoryview(self.ba)
+            def __release_buffer__(self, view: memoryview) -> None:
+                view.release()
             def __index__(self):
                 self.ba.clear()
                 return ord("A")
@@ -2078,6 +2083,14 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             with self.subTest(name):
                 with self.assertRaises(BufferError):
                     getattr(ba, name)(evil)
+
+        ba, evil = make_case()
+        with self.assertRaises(BufferError):
+            evil in ba
+        with self.assertRaises(BufferError):
+            ba.split(evil)
+        with self.assertRaises(BufferError):
+            ba.rsplit(evil)
 
 
 class AssortedBytesTest(unittest.TestCase):
