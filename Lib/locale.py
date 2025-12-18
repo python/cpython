@@ -214,7 +214,7 @@ def format_string(f, val, grouping=False, monetary=False):
 
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
-    forth parameter monetary is true."""
+    fourth parameter monetary is true."""
     global _percent_re
     if _percent_re is None:
         import re
