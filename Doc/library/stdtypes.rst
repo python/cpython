@@ -1467,7 +1467,7 @@ application).
    threads and will not corrupt the list.
 
    The following operations return new objects and appear
-   :term:`atomic <atomic operations>` to other threads:
+   :term:`atomic <atomic operation>` to other threads:
 
    .. code-block::
       :class: good
@@ -1477,7 +1477,7 @@ application).
       lst.copy()     # returns a shallow copy of the list
 
    Methods that only operate on a single elements with no shifting required are
-   :term:`atomic <atomic operations>`:
+   :term:`atomic <atomic operation>`:
 
    .. code-block::
       :class: good
@@ -1485,7 +1485,7 @@ application).
       lst.append(x)  # append to the end of the list, no shifting required
       lst.pop()      # pop element from the end of the list, no shifting required
 
-   The :meth:`~list.clear` method is also :term:`atomic <atomic operations>`.
+   The :meth:`~list.clear` method is also :term:`atomic <atomic operation>`.
    Other threads cannot observe elements being removed.
 
    The :meth:`~list.sort` method is not :term:`atomic <atomic operation>`.
