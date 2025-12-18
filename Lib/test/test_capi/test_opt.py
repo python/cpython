@@ -2988,6 +2988,24 @@ class TestUopsOptimization(unittest.TestCase):
         for _ in range(TIER2_THRESHOLD+1):
             obj.attr = EvilAttr(obj.__dict__)
 
+    def test_binary_subscr_list_int(self):
+        def testfunc(n):
+            l = [1]
+            x = 0
+            for _ in range(n):
+                y = l[0]
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
 def global_identity(x):
     return x
