@@ -1370,7 +1370,12 @@ dummy_func(void) {
             res = sym_new_not_null(ctx);
         }
         else {
-            res = sym_new_const(ctx, cnst);
+            if (_Py_IsImmortal(cnst)) {
+                res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
         }
     }
 
@@ -1405,7 +1410,12 @@ dummy_func(void) {
             res = sym_new_not_null(ctx);
         }
         else {
-            res = sym_new_const(ctx, cnst);
+            if (_Py_IsImmortal(cnst)) {
+                res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
         }
     }
 
