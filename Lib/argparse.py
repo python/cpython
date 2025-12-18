@@ -688,12 +688,12 @@ class HelpFormatter(object):
                 params[name] = value.__name__
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
-        
+
         t = self._theme
 
         if not t.reset:
             return help_string % params
-        
+
         # Format first to preserve types for specifiers, like %x that require int.
         def colorize(match):
             spec, name = match.group(0, 1)
