@@ -1771,7 +1771,7 @@ insertion_resize(PyDictObject *mp, int unicode)
 }
 
 static inline int
-insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
+insert_combined_dict(PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
 {
     // gh-140551: If dict was cleared in _Py_dict_lookup,
@@ -1789,7 +1789,7 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
         }
     }
 
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
+    _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
     FT_ATOMIC_STORE_UINT32_RELAXED(mp->ma_keys->dk_version, 0);
 
     Py_ssize_t hashpos = find_empty_slot(mp->ma_keys, hash);
@@ -1846,19 +1846,19 @@ insert_split_key(PyDictKeysObject *keys, PyObject *key, Py_hash_t hash)
 }
 
 static void
-insert_split_value(PyInterpreterState *interp, PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
+insert_split_value(PyDictObject *mp, PyObject *key, PyObject *value, Py_ssize_t ix)
 {
     assert(PyUnicode_CheckExact(key));
     ASSERT_DICT_LOCKED(mp);
     PyObject *old_value = mp->ma_values->values[ix];
     if (old_value == NULL) {
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
+        _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
         STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
         _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         STORE_USED(mp, mp->ma_used + 1);
     }
     else {
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
+        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
         STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
         // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
         // when dict only holds the strong reference to value in ep->me_value.
@@ -1874,7 +1874,7 @@ Returns -1 if an error occurred, or 0 on success.
 Consumes key and value references.
 */
 static int
-insertdict(PyInterpreterState *interp, PyDictObject *mp,
+insertdict(PyDictObject *mp,
            PyObject *key, Py_hash_t hash, PyObject *value)
 {
     PyObject *old_value;
@@ -1885,7 +1885,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     if (_PyDict_HasSplitTable(mp) && PyUnicode_CheckExact(key)) {
         ix = insert_split_key(mp->ma_keys, key, hash);
         if (ix != DKIX_EMPTY) {
-            insert_split_value(interp, mp, key, value, ix);
+            insert_split_value(mp, key, value, ix);
             Py_DECREF(key);
             Py_DECREF(value);
             return 0;
@@ -1903,7 +1903,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         // into DICT_KEYS_GENERAL table if key is not Unicode.
         // We don't convert it before _Py_dict_lookup because non-Unicode key
         // may change generic table into Unicode table.
-        if (insert_combined_dict(interp, mp, hash, key, value) < 0) {
+        if (insert_combined_dict(mp, hash, key, value) < 0) {
             goto Fail;
         }
         STORE_USED(mp, mp->ma_used + 1);
@@ -1912,7 +1912,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
     }
 
     if (old_value != value) {
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_MODIFIED, mp, key, value);
+        _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, mp, key, value);
         assert(old_value != NULL);
         if (DK_IS_UNICODE(mp->ma_keys)) {
             if (_PyDict_HasSplitTable(mp)) {
@@ -1942,7 +1942,7 @@ Fail:
 // Same as insertdict but specialized for ma_keys == Py_EMPTY_KEYS.
 // Consumes key and value references.
 static int
-insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
+insert_to_emptydict(PyDictObject *mp,
                     PyObject *key, Py_hash_t hash, PyObject *value)
 {
     assert(mp->ma_keys == Py_EMPTY_KEYS);
@@ -1955,7 +1955,7 @@ insert_to_emptydict(PyInterpreterState *interp, PyDictObject *mp,
         Py_DECREF(value);
         return -1;
     }
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_ADDED, mp, key, value);
+    _PyDict_NotifyEvent(PyDict_EVENT_ADDED, mp, key, value);
 
     /* We don't decref Py_EMPTY_KEYS here because it is immortal. */
     assert(mp->ma_values == NULL);
@@ -2658,13 +2658,11 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
         return -1;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        return insert_to_emptydict(interp, mp, key, hash, value);
+        return insert_to_emptydict(mp, key, hash, value);
     }
     /* insertdict() handles any resizing that might be necessary */
-    return insertdict(interp, mp, key, hash, value);
+    return insertdict(mp, key, hash, value);
 }
 
 int
@@ -2710,12 +2708,11 @@ int
 _PyDict_SetItem_KnownHash_LockHeld(PyDictObject *mp, PyObject *key, PyObject *value,
                                    Py_hash_t hash)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        return insert_to_emptydict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
+        return insert_to_emptydict(mp, Py_NewRef(key), hash, Py_NewRef(value));
     }
     /* insertdict() handles any resizing that might be necessary */
-    return insertdict(interp, mp, Py_NewRef(key), hash, Py_NewRef(value));
+    return insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
 }
 
 int
@@ -2836,8 +2833,7 @@ _PyDict_DelItem_KnownHash_LockHeld(PyObject *op, PyObject *key, Py_hash_t hash)
         return -1;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, mp, key, NULL);
+    _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
     delitem_common(mp, hash, ix, old_value);
     return 0;
 }
@@ -2883,8 +2879,7 @@ delitemif_lock_held(PyObject *op, PyObject *key,
         return -1;
 
     if (res > 0) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, mp, key, NULL);
+        _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
         delitem_common(mp, hash, ix, old_value);
         return 1;
     } else {
@@ -2928,8 +2923,7 @@ clear_lock_held(PyObject *op)
         return;
     }
     /* Empty the dict... */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_CLEARED, mp, NULL, NULL);
+    _PyDict_NotifyEvent(PyDict_EVENT_CLEARED, mp, NULL, NULL);
     // We don't inc ref empty keys because they're immortal
     ensure_shared_on_resize(mp);
     STORE_USED(mp, 0);
@@ -3095,8 +3089,7 @@ _PyDict_Pop_KnownHash(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     }
 
     assert(old_value != NULL);
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, mp, key, NULL);
+    _PyDict_NotifyEvent(PyDict_EVENT_DELETED, mp, key, NULL);
     delitem_common(mp, hash, ix, Py_NewRef(old_value));
 
     ASSERT_CONSISTENT(mp);
@@ -3191,8 +3184,7 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *default_value)
 }
 
 static PyDictObject *
-dict_dict_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
-                   PyObject *iterable, PyObject *value)
+dict_dict_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 {
     PyObject *oldvalue;
     Py_ssize_t pos = 0;
@@ -3208,8 +3200,7 @@ dict_dict_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
     }
 
     while (_PyDict_Next(iterable, &pos, &key, &oldvalue, &hash)) {
-        if (insertdict(interp, mp,
-                        Py_NewRef(key), hash, Py_NewRef(value))) {
+        if (insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value))) {
             Py_DECREF(mp);
             return NULL;
         }
@@ -3218,8 +3209,7 @@ dict_dict_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
 }
 
 static PyDictObject *
-dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
-                  PyObject *iterable, PyObject *value)
+dict_set_fromkeys(PyDictObject *mp, PyObject *iterable, PyObject *value)
 {
     Py_ssize_t pos = 0;
     PyObject *key;
@@ -3234,7 +3224,7 @@ dict_set_fromkeys(PyInterpreterState *interp, PyDictObject *mp,
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(iterable);
     while (_PySet_NextEntryRef(iterable, &pos, &key, &hash)) {
-        if (insertdict(interp, mp, key, hash, Py_NewRef(value))) {
+        if (insertdict(mp, key, hash, Py_NewRef(value))) {
             Py_DECREF(mp);
             return NULL;
         }
@@ -3250,7 +3240,6 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
     PyObject *key;
     PyObject *d;
     int status;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     d = _PyObject_CallNoArgs(cls);
     if (d == NULL)
@@ -3262,7 +3251,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             PyDictObject *mp = (PyDictObject *)d;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
-            d = (PyObject *)dict_dict_fromkeys(interp, mp, iterable, value);
+            d = (PyObject *)dict_dict_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
             return d;
         }
@@ -3270,7 +3259,7 @@ _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
             PyDictObject *mp = (PyDictObject *)d;
 
             Py_BEGIN_CRITICAL_SECTION2(d, iterable);
-            d = (PyObject *)dict_set_fromkeys(interp, mp, iterable, value);
+            d = (PyObject *)dict_set_fromkeys(mp, iterable, value);
             Py_END_CRITICAL_SECTION2();
             return d;
         }
@@ -3320,9 +3309,8 @@ static void
 dict_dealloc(PyObject *self)
 {
     PyDictObject *mp = (PyDictObject *)self;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyObject_ResurrectStart(self);
-    _PyDict_NotifyEvent(interp, PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
+    _PyDict_NotifyEvent(PyDict_EVENT_DEALLOCATED, mp, NULL, NULL);
     if (_PyObject_ResurrectEnd(self)) {
         return;
     }
@@ -3844,7 +3832,7 @@ PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 }
 
 static int
-dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *other, int override)
+dict_dict_merge(PyDictObject *mp, PyDictObject *other, int override)
 {
     ASSERT_DICT_LOCKED(mp);
     ASSERT_DICT_LOCKED(other);
@@ -3867,7 +3855,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
             (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
              USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)
         ) {
-            _PyDict_NotifyEvent(interp, PyDict_EVENT_CLONED, mp, (PyObject *)other, NULL);
+            _PyDict_NotifyEvent(PyDict_EVENT_CLONED, mp, (PyObject *)other, NULL);
             PyDictKeysObject *keys = clone_combined_dict_keys(other);
             if (keys == NULL)
                 return -1;
@@ -3908,14 +3896,12 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         Py_INCREF(key);
         Py_INCREF(value);
         if (override == 1) {
-            err = insertdict(interp, mp,
-                                Py_NewRef(key), hash, Py_NewRef(value));
+            err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
         }
         else {
             err = _PyDict_Contains_KnownHash((PyObject *)mp, key, hash);
             if (err == 0) {
-                err = insertdict(interp, mp,
-                                    Py_NewRef(key), hash, Py_NewRef(value));
+                err = insertdict(mp, Py_NewRef(key), hash, Py_NewRef(value));
             }
             else if (err > 0) {
                 if (override != 0) {
@@ -3942,7 +3928,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
 }
 
 static int
-dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
+dict_merge(PyObject *a, PyObject *b, int override)
 {
     PyDictObject *mp, *other;
 
@@ -3963,7 +3949,7 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
         other = (PyDictObject*)b;
         int res;
         Py_BEGIN_CRITICAL_SECTION2(a, b);
-        res = dict_dict_merge(interp, (PyDictObject *)a, other, override);
+        res = dict_dict_merge((PyDictObject *)a, other, override);
         ASSERT_CONSISTENT(a);
         Py_END_CRITICAL_SECTION2();
         return res;
@@ -4044,23 +4030,20 @@ slow_exit:
 int
 PyDict_Update(PyObject *a, PyObject *b)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return dict_merge(interp, a, b, 1);
+    return dict_merge(a, b, 1);
 }
 
 int
 PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     /* XXX Deprecate override not in (0, 1). */
-    return dict_merge(interp, a, b, override != 0);
+    return dict_merge(a, b, override != 0);
 }
 
 int
 _PyDict_MergeEx(PyObject *a, PyObject *b, int override)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return dict_merge(interp, a, b, override);
+    return dict_merge(a, b, override);
 }
 
 /*[clinic input]
@@ -4102,7 +4085,6 @@ copy_lock_held(PyObject *o)
 {
     PyObject *copy;
     PyDictObject *mp;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     ASSERT_DICT_LOCKED(o);
 
@@ -4172,7 +4154,7 @@ copy_lock_held(PyObject *o)
     copy = PyDict_New();
     if (copy == NULL)
         return NULL;
-    if (dict_merge(interp, copy, o, 1) == 0)
+    if (dict_merge(copy, o, 1) == 0)
         return copy;
     Py_DECREF(copy);
     return NULL;
@@ -4367,7 +4349,6 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     PyObject *value;
     Py_hash_t hash;
     Py_ssize_t ix;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     ASSERT_DICT_LOCKED(d);
 
@@ -4389,7 +4370,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
     }
 
     if (mp->ma_keys == Py_EMPTY_KEYS) {
-        if (insert_to_emptydict(interp, mp, Py_NewRef(key), hash,
+        if (insert_to_emptydict(mp, Py_NewRef(key), hash,
                                 Py_NewRef(default_value)) < 0) {
             if (result) {
                 *result = NULL;
@@ -4408,7 +4389,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
             PyObject *value = mp->ma_values->values[ix];
             int already_present = value != NULL;
             if (!already_present) {
-                insert_split_value(interp, mp, key, default_value, ix);
+                insert_split_value(mp, key, default_value, ix);
                 value = default_value;
             }
             if (result) {
@@ -4432,7 +4413,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         value = default_value;
 
         // See comment to this function in insertdict.
-        if (insert_combined_dict(interp, mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
+        if (insert_combined_dict(mp, hash, Py_NewRef(key), Py_NewRef(value)) < 0) {
             Py_DECREF(key);
             Py_DECREF(value);
             if (result) {
@@ -4554,7 +4535,6 @@ dict_popitem_impl(PyDictObject *self)
 {
     Py_ssize_t i, j;
     PyObject *res;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 
     ASSERT_DICT_LOCKED(self);
 
@@ -4596,7 +4576,7 @@ dict_popitem_impl(PyDictObject *self)
         assert(i >= 0);
 
         key = ep0[i].me_key;
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
+        _PyDict_NotifyEvent(PyDict_EVENT_DELETED, self, key, NULL);
         hash = unicode_get_hash(key);
         value = ep0[i].me_value;
         STORE_KEY(&ep0[i], NULL);
@@ -4611,7 +4591,7 @@ dict_popitem_impl(PyDictObject *self)
         assert(i >= 0);
 
         key = ep0[i].me_key;
-        _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
+        _PyDict_NotifyEvent(PyDict_EVENT_DELETED, self, key, NULL);
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
         STORE_KEY(&ep0[i], NULL);
@@ -6925,11 +6905,10 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     }
 
     if (dict) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
         PyDict_WatchEvent event = (old_value == NULL ? PyDict_EVENT_ADDED :
                                    value == NULL ? PyDict_EVENT_DELETED :
                                    PyDict_EVENT_MODIFIED);
-        _PyDict_NotifyEvent(interp, event, dict, name, value);
+        _PyDict_NotifyEvent(event, dict, name, value);
     }
 
     FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
