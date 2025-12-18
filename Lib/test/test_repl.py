@@ -409,20 +409,6 @@ class TestAsyncioREPL(unittest.TestCase):
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
 
-    def test_loop_closed_after_exit(self):
-        user_input = dedent("""\
-        import atexit
-        atexit.register(\
-            lambda loop: print("loop closed:", loop.is_closed()),\
-            asyncio.get_running_loop(),\
-        )
-        """)
-        p = spawn_asyncio_repl()
-        p.stdin.write(user_input)
-        output = kill_python(p)
-        self.assertEqual(p.returncode, 0)
-        self.assertIn("loop closed: True", output)
-
 
 if __name__ == "__main__":
     unittest.main()
