@@ -95,7 +95,7 @@ class TestDump:
 
         try:
             encoder(BadDict(), 0)
-        except (ValueError, RuntimeError, SystemError):
+        except (ValueError, RuntimeError):
             pass
 
 
