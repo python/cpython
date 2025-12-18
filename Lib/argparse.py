@@ -708,7 +708,6 @@ class HelpFormatter(object):
         result = _re.sub(r'%%|%\((\w+)\)[^a-z]*[a-z]', colorize,
                          help_string, flags=_re.IGNORECASE)
 
-        # Check for invalid/unmatched % specifiers
         if '%' in result:
             raise ValueError(f"invalid format specifier in: {help_string!r}")
         return result
