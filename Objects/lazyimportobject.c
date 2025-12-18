@@ -113,10 +113,7 @@ static PyObject *
 lazy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyTypeObject *base_tp = &PyLazyImport_Type;
-    if (
-        (type == base_tp || type->tp_init == base_tp->tp_init)
-        && !_PyArg_NoKeywords("lazy_import", kwds)
-    ) {
+    if (!_PyArg_NoKeywords("lazy_import", kwds)) {
         return NULL;
     }
 
@@ -126,9 +123,9 @@ lazy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     PyObject *builtins = PyTuple_GET_ITEM(args, 0);
-    PyObject *from = PyTuple_GET_ITEM(args, 1);
-    PyObject *attr = nargs == 3 ? PyTuple_GET_ITEM(args, 2) : NULL;
-    return _PyLazyImport_New(builtins, from, attr);
+    PyObject *name = PyTuple_GET_ITEM(args, 1);
+    PyObject *fromlist = nargs == 3 ? PyTuple_GET_ITEM(args, 2) : NULL;
+    return _PyLazyImport_New(builtins, name, fromlist);
 }
 
 PyObject *
@@ -160,8 +157,9 @@ PyDoc_STRVAR(lazy_import_doc,
 "\n"
 "Represents a deferred import that will be resolved on first use.\n"
 "\n"
-"This type is used internally by the 'lazy import' statement.\n"
-"Users should not typically create instances directly.");
+"Instances of this object accessed from the global scope will be\n"
+"automatically imported based upon their name and then replaced with\n"
+"the imported value.");
 
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -169,7 +167,7 @@ PyTypeObject PyLazyImport_Type = {
     .tp_basicsize = sizeof(PyLazyImportObject),
     .tp_dealloc = lazy_import_dealloc,
     .tp_repr = lazy_import_repr,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_doc = lazy_import_doc,
     .tp_traverse = lazy_import_traverse,
     .tp_clear = lazy_import_clear,
