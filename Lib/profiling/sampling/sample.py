@@ -135,8 +135,8 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-            print(f"Sample rate: {sample_rate:.2f} samples/sec")
+            print(f"Captured {num_samples:,} samples in {running_time:.2f} seconds")
+            print(f"Sample rate: {sample_rate:,.2f} samples/sec")
             print(f"Error rate: {error_rate:.2f}%")
 
             # Print unwinder stats if stats collection is enabled

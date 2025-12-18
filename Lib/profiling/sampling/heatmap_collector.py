@@ -431,10 +431,11 @@ class _HtmlRenderer:
         bar_width = min(stat.percentage, 100)
 
         html_file = self.file_index[stat.filename]
+        s = "" if stat.total_samples == 1 else "s"
 
         return (f'{indent}<div class="file-item">\n'
                 f'{indent}  <a href="{html_file}" class="file-link" title="{full_path}">📄 {module_name}</a>\n'
-                f'{indent}  <span class="file-samples">{stat.total_samples:,} samples</span>\n'
+                f'{indent}  <span class="file-samples">{stat.total_samples:,} sample{s}</span>\n'
                 f'{indent}  <div class="heatmap-bar-container"><div class="heatmap-bar" style="width: {bar_width}px; height: {self.heatmap_bar_height}px;" data-intensity="{intensity:.3f}"></div></div>\n'
                 f'{indent}</div>\n')
 
@@ -761,7 +762,8 @@ class HeatmapCollector(StackTraceCollector):
         """Print summary of exported heatmap."""
         print(f"Heatmap output written to {output_dir}/")
         print(f"  - Index: {output_dir / 'index.html'}")
-        print(f"  - {len(file_stats)} source file(s) analyzed")
+        s = "" if len(file_stats) == 1 else "s"
+        print(f"  - {len(file_stats)} source file{s} analyzed")
 
     def _calculate_file_stats(self) -> List[FileStats]:
         """Calculate statistics for each file.
@@ -859,10 +861,10 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.index_js}\n</script>",
             "<!-- PYTHON_LOGO -->": self._template_loader.logo_html,
             "<!-- PYTHON_VERSION -->": f"{sys.version_info.major}.{sys.version_info.minor}",
-            "<!-- NUM_FILES -->": str(len(file_stats)),
+            "<!-- NUM_FILES -->": f"{len(file_stats):,}",
             "<!-- TOTAL_SAMPLES -->": f"{self._total_samples:,}",
-            "<!-- DURATION -->": f"{self.stats.get('duration_sec', 0):.1f}s",
-            "<!-- SAMPLE_RATE -->": f"{self.stats.get('sample_rate', 0):.1f}",
+            "<!-- DURATION -->": f"{self.stats.get('duration_sec', 0):,.1f}s",
+            "<!-- SAMPLE_RATE -->": f"{self.stats.get('sample_rate', 0):,.1f}",
             "<!-- ERROR_RATE -->": error_rate_str,
             "<!-- ERROR_RATE_WIDTH -->": str(error_rate_width),
             "<!-- ERROR_RATE_CLASS -->": error_rate_class,
@@ -908,10 +910,10 @@ class HeatmapCollector(StackTraceCollector):
             "<!-- FILENAME -->": html.escape(filename),
             "<!-- TOTAL_SAMPLES -->": f"{file_stat.total_samples:,}",
             "<!-- TOTAL_SELF_SAMPLES -->": f"{file_stat.total_self_samples:,}",
-            "<!-- NUM_LINES -->": str(file_stat.num_lines),
+            "<!-- NUM_LINES -->": f"{file_stat.num_lines:,}",
             "<!-- PERCENTAGE -->": f"{file_stat.percentage:.2f}",
-            "<!-- MAX_SAMPLES -->": str(file_stat.max_samples),
-            "<!-- MAX_SELF_SAMPLES -->": str(file_stat.max_self_samples),
+            "<!-- MAX_SAMPLES -->": f"{file_stat.max_samples:,}",
+            "<!-- MAX_SELF_SAMPLES -->": f"{file_stat.max_self_samples:,}",
             "<!-- CODE_LINES -->": ''.join(code_lines_html),
             "<!-- INLINE_CSS -->": f"<style>\n{self._template_loader.file_css}\n</style>",
             "<!-- INLINE_JS -->": f"<script>\n{self._template_loader.file_js}\n</script>",
