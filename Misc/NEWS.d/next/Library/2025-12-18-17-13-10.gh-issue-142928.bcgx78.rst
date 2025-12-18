@@ -1,0 +1,1 @@
+Deprecate :class:`~argparse.HelpFormatter`'s *color* parameter. Users should use the *color* parameter on :class:`~argparse.ArgumentParser` instead.
