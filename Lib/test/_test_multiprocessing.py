@@ -2787,9 +2787,7 @@ class _TestContainers(BaseTestCase):
         self.assertEqual(outer[-1][-1]['feed'], 3)
 
     def test_set_isinstance(self):
-        m = multiprocessing.Manager()
-        self.addCleanup(m.shutdown)
-        s = m.set()
+        s = self.set()
         self.assertIsInstance(s, collections.abc.MutableSet)
         self.assertNotIsInstance(s, collections.abc.MutableMapping)
 
@@ -7156,6 +7154,7 @@ class ManagerMixin(BaseMixin):
     Array = property(operator.attrgetter('manager.Array'))
     list = property(operator.attrgetter('manager.list'))
     dict = property(operator.attrgetter('manager.dict'))
+    set = property(operator.attrgetter('manager.set'))
     Namespace = property(operator.attrgetter('manager.Namespace'))
 
     @classmethod
