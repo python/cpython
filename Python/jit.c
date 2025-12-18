@@ -77,7 +77,7 @@ jit_alloc(size_t size)
     unsigned char *memory = mmap(NULL, size, prot, flags, -1, 0);
     int failed = memory == MAP_FAILED;
     if (!failed) {
-        _PyAnnotateMemoryMap(memory, size, "cpython:jit");
+        (void)_PyAnnotateMemoryMap(memory, size, "cpython:jit");
     }
 #endif
     if (failed) {
@@ -430,6 +430,15 @@ patch_aarch64_33rx(unsigned char *location, uint64_t value)
         // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
         loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | reg;
         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | reg;
+        return;
+    }
+    int64_t page_delta = (relaxed >> 12) - ((uintptr_t)location >> 12);
+    if (page_delta >= -(1L << 20) &&
+        page_delta < (1L << 20))
+    {
+        // adrp reg, AAA; ldr reg, [reg + BBB] -> adrp reg, AAA; add reg, reg, BBB
+        patch_aarch64_21rx(location, relaxed);
+        loc32[1] = 0x91000000 | get_bits(relaxed, 0, 12) << 10 | reg << 5 | reg;
         return;
     }
     relaxed = value - (uintptr_t)location;
