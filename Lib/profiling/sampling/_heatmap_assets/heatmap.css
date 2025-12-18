@@ -5,6 +5,18 @@
    This file extends the shared foundation with heatmap-specific styles.
    ========================================================================== */
 
+/* Heatmap heat colors - using base.css colors with 60% opacity */
+[data-theme="dark"] {
+  --heat-1: rgba(90, 123, 167, 0.60);
+  --heat-2: rgba(106, 148, 168, 0.60);
+  --heat-3: rgba(122, 172, 172, 0.60);
+  --heat-4: rgba(142, 196, 152, 0.60);
+  --heat-5: rgba(168, 216, 136, 0.60);
+  --heat-6: rgba(200, 222, 122, 0.60);
+  --heat-7: rgba(244, 212, 93, 0.60);
+  --heat-8: rgba(255, 122, 69, 0.60);
+}
+
 /* --------------------------------------------------------------------------
    Layout Overrides (Heatmap-specific)
    -------------------------------------------------------------------------- */
@@ -18,24 +30,6 @@
   position: sticky;
   top: 0;
   z-index: 100;
-}
-
-/* Back link in toolbar */
-.back-link {
-  color: white;
-  text-decoration: none;
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all var(--transition-fast);
-}
-
-.back-link:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.35);
 }
 
 /* --------------------------------------------------------------------------
@@ -684,91 +678,7 @@
   margin-left: auto;
 }
 
-/* Toggle Switch Styles */
-.toggle-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  font-family: var(--font-sans);
-  transition: opacity var(--transition-fast);
-  flex-shrink: 0;
-}
-
-.toggle-switch:hover {
-  opacity: 0.85;
-}
-
-.toggle-switch .toggle-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color var(--transition-fast);
-  white-space: nowrap;
-  display: inline-flex;
-  flex-direction: column;
-}
-
-.toggle-switch .toggle-label.active {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* Reserve space for bold text to prevent layout shift on toggle */
-.toggle-switch .toggle-label::after {
-  content: attr(data-text);
-  font-weight: 600;
-  height: 0;
-  visibility: hidden;
-}
-
-.toggle-switch.disabled {
-  opacity: 0.4;
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-.toggle-track {
-  position: relative;
-  width: 36px;
-  height: 20px;
-  background: var(--bg-tertiary);
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  transition: all var(--transition-fast);
-  box-shadow: inset var(--shadow-sm);
-}
-
-.toggle-track:hover {
-  border-color: var(--text-muted);
-}
-
-.toggle-track.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-}
-
-.toggle-track::after {
-  content: '';
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 14px;
-  height: 14px;
-  background: white;
-  border-radius: 50%;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
-}
-
-.toggle-track.on::after {
-  transform: translateX(16px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Specific toggle overrides */
+/* Heatmap-Specific Toggle Overrides */
 #toggle-color-mode .toggle-track.on {
   background: #8e44ad;
   border-color: #8e44ad;
@@ -1231,6 +1141,10 @@
   .line-samples-cumulative {
     padding: 0 4px;
   }
+
+  .bytecode-panel {
+    margin: 8px 10px 8px 160px;
+  }
 }
 
 .bytecode-toggle {
@@ -1262,13 +1176,77 @@
 }
 
 .bytecode-panel {
-  margin-left: 90px;
-  padding: 8px 15px;
-  background: var(--bg-secondary);
-  border-left: 3px solid var(--accent);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
   font-family: var(--font-mono);
   font-size: 12px;
-  margin-bottom: 4px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 0;
+  margin: 8px 10px 8px 250px;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  max-height: 500px;
+  flex: 1;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bytecode-panel.expanded {
+  padding: 14px;
+}
+
+.bytecode-wrapper {
+  position: relative;
+  display: flex;
+  overflow: visible;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out;
+}
+
+.bytecode-wrapper.expanded {
+  max-height: 600px;
+  opacity: 1;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+}
+
+/* Column backdrop matching table header columns (line/self/total) */
+.bytecode-columns {
+  display: none;
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bytecode-wrapper.expanded .bytecode-columns {
+  display: flex;
+  top: 0;
+  bottom: 0;
+}
+
+.bytecode-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bytecode-panel::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* Specialization summary bar */

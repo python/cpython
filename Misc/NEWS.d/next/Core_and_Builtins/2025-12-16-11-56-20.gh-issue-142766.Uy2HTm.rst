@@ -1,0 +1,1 @@
+Clear the frame of a generator when :meth:`generator.close` is called.

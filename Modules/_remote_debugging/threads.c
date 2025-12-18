@@ -23,6 +23,8 @@ iterate_threads(
 ) {
     uintptr_t thread_state_addr;
     unsigned long tid = 0;
+    const size_t MAX_THREADS = 8192;
+    size_t thread_count = 0;
 
     if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
@@ -34,7 +36,8 @@ iterate_threads(
         return -1;
     }
 
-    while (thread_state_addr != 0) {
+    while (thread_state_addr != 0 && thread_count < MAX_THREADS) {
+        thread_count++;
         if (0 > _Py_RemoteDebug_PagedReadRemoteMemory(
                     &unwinder->handle,
                     thread_state_addr + (uintptr_t)unwinder->debug_offsets.thread_state.native_thread_id,
@@ -344,6 +347,33 @@ unwind_stack_for_thread(
         gil_requested = 0;
     }
 
+    // Check exception state (both raised and handled exceptions)
+    int has_exception = 0;
+
+    // Check current_exception (exception being raised/propagated)
+    uintptr_t current_exception = GET_MEMBER(uintptr_t, ts,
+        unwinder->debug_offsets.thread_state.current_exception);
+    if (current_exception != 0) {
+        has_exception = 1;
+    }
+
+    // Check exc_state.exc_value (exception being handled in except block)
+    // exc_state is embedded in PyThreadState, so we read it directly from
+    // the thread state buffer. This catches most cases; nested exception
+    // handlers where exc_info points elsewhere are rare.
+    if (!has_exception) {
+        uintptr_t exc_value = GET_MEMBER(uintptr_t, ts,
+            unwinder->debug_offsets.thread_state.exc_state +
+            unwinder->debug_offsets.err_stackitem.exc_value);
+        if (exc_value != 0) {
+            has_exception = 1;
+        }
+    }
+
+    if (has_exception) {
+        status_flags |= THREAD_STATUS_HAS_EXCEPTION;
+    }
+
     // Check CPU status
     long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
 
@@ -368,6 +398,9 @@ unwind_stack_for_thread(
         } else if (unwinder->mode == PROFILING_MODE_GIL) {
             // Skip if doesn't have GIL
             should_skip = !(status_flags & THREAD_STATUS_HAS_GIL);
+        } else if (unwinder->mode == PROFILING_MODE_EXCEPTION) {
+            // Skip if thread doesn't have an exception active
+            should_skip = !(status_flags & THREAD_STATUS_HAS_EXCEPTION);
         }
         // PROFILING_MODE_WALL and PROFILING_MODE_ALL never skip
     }
@@ -395,12 +428,24 @@ unwind_stack_for_thread(
         }
     }
 
+    uintptr_t addrs[FRAME_CACHE_MAX_FRAMES];
+    FrameWalkContext ctx = {
+        .frame_addr = frame_addr,
+        .base_frame_addr = base_frame_addr,
+        .gc_frame = gc_frame,
+        .chunks = &chunks,
+        .frame_info = frame_info,
+        .frame_addrs = addrs,
+        .num_addrs = 0,
+        .max_addrs = FRAME_CACHE_MAX_FRAMES,
+    };
+    assert(ctx.max_addrs == FRAME_CACHE_MAX_FRAMES);
+
     if (unwinder->cache_frames) {
         // Use cache to avoid re-reading unchanged parent frames
-        uintptr_t last_profiled_frame = GET_MEMBER(uintptr_t, ts,
+        ctx.last_profiled_frame = GET_MEMBER(uintptr_t, ts,
             unwinder->debug_offsets.thread_state.last_profiled_frame);
-        if (collect_frames_with_cache(unwinder, frame_addr, &chunks, frame_info,
-                                      gc_frame, last_profiled_frame, tid) < 0) {
+        if (collect_frames_with_cache(unwinder, &ctx, tid) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to collect frames");
             goto error;
         }
@@ -413,8 +458,7 @@ unwind_stack_for_thread(
         }
     } else {
         // No caching - process entire frame chain with base_frame validation
-        if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info,
-                                base_frame_addr, gc_frame, 0, NULL, NULL, NULL, 0) < 0) {
+        if (process_frame_chain(unwinder, &ctx) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
             goto error;
         }
