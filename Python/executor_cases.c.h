@@ -9571,7 +9571,8 @@
                 stack_pointer += 2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),
+                    LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
                     PyStackRef_AsPyObjectBorrow(level),
                     oparg & 0x01);
@@ -9583,7 +9584,8 @@
                 stack_pointer += 2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(),
+                    LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
                     PyStackRef_AsPyObjectBorrow(level));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -9628,7 +9630,8 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_LazyImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_LazyImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             else {
@@ -9636,7 +9639,8 @@
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_ImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             if (res_o == NULL) {

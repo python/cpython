@@ -6009,12 +6009,14 @@
             PyObject *res_o;
             if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_LazyImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_LazyImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                res_o = _PyEval_ImportFrom(
+                    tstate, PyStackRef_AsPyObjectBorrow(from), name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             if (res_o == NULL) {
@@ -6044,7 +6046,8 @@
             PyObject *res_o;
             if (!(oparg & 0x02)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),
+                    LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
                     PyStackRef_AsPyObjectBorrow(level),
                     oparg & 0x01);
@@ -6052,7 +6055,8 @@
             }
             else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(),
+                    LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
                     PyStackRef_AsPyObjectBorrow(level));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
