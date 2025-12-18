@@ -919,7 +919,7 @@ Utilities and Decorators
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
      used to create the ``SECOND`` enum member;
-   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]``) is used to
+   * ``THREE = [auto(), -3]`` will *not* work (``[<auto instance>, -3]`` is used to
      create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1
