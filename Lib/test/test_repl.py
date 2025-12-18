@@ -409,7 +409,7 @@ class TestAsyncioREPL(unittest.TestCase):
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
 
-    def test_loop_was_closed(self):
+    def test_loop_closed_after_exit(self):
         user_input = dedent("""\
         import atexit
         atexit.register(\
