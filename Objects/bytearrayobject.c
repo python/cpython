@@ -1797,6 +1797,7 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
                      Py_ssize_t maxsplit)
 /*[clinic end generated code: output=833e2cf385d9a04d input=dd9f6e2910cc3a34]*/
 
+
 static PyObject *
 bytearray_split_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit)
 {
