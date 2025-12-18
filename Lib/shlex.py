@@ -313,7 +313,14 @@ def split(s, comments=False, posix=True):
 
 
 def join(split_command):
-    """Return a shell-escaped string from *split_command*."""
+    """Return a shell-escaped string from *split_command*.
+
+    This function is the inverse of :func:`split`.
+
+    >>> import shlex
+    >>> print(shlex.join(['echo', '-n', 'Multiple words']))
+    echo -n 'Multiple words'
+    """
     return ' '.join(quote(arg) for arg in split_command)
 
 
