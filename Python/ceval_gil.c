@@ -1399,11 +1399,13 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_RunGC(tstate);
     }
 
+#ifdef _Py_TIER2
     if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
         _Py_Executors_InvalidateCold(tstate->interp);
         tstate->interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     }
+#endif
 
     /* GIL drop request */
     if ((breaker & _PY_GIL_DROP_REQUEST_BIT) != 0) {

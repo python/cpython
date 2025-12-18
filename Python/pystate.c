@@ -566,7 +566,7 @@ init_interpreter(PyInterpreterState *interp,
         interp->monitoring_tool_versions[t] = 0;
     }
     interp->_code_object_generation = 0;
-    interp->jit = false;
+    interp->jit = 0;
     interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
@@ -1546,6 +1546,12 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 {
     assert(interp->threads.head != tstate);
     if (next != NULL) {
+#if defined(_Py_TIER2) && defined(Py_GIL_DISABLED)
+        FT_ATOMIC_STORE_UINT8(interp->jit, 0);
+        // There's more than one thread. In FT mode,
+        // disable the JIT completely for now.
+        _Py_Executors_InvalidateAll(interp, 1);
+#endif
         assert(next->prev == NULL || next->prev == tstate);
         next->prev = tstate;
     }
@@ -1847,6 +1853,13 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
         _PyObject_VirtualFree(_tstate->jit_tracer_state.code_buffer, UOP_BUFFER_SIZE);
         _tstate->jit_tracer_state.code_buffer = NULL;
     }
+#ifdef Py_GIL_DISABLED
+    // There's only one thread. Re-enable JIT.
+    PyThreadState *curr = interp->threads.head;
+    if (curr != NULL && curr->prev == NULL && curr->next == NULL) {
+       FT_ATOMIC_STORE_UINT8(interp->jit, 1);
+    }
+#endif
 #endif
 
     HEAD_UNLOCK(runtime);

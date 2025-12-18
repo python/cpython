@@ -9,9 +9,13 @@ import types
 
 import _opcode
 
-from test.support import (script_helper, requires_specialization,
-                          import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+from test.support import (
+    script_helper,
+    import_helper,
+    Py_GIL_DISABLED,
+    requires_jit_enabled,
+    reset_code
+)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -61,8 +65,6 @@ def get_opnames(ex):
     return list(iter_opnames(ex))
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 class TestExecutorInvalidation(unittest.TestCase):
 
@@ -130,8 +132,6 @@ class TestExecutorInvalidation(unittest.TestCase):
         self.assertIsNone(exe)
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
@@ -434,8 +434,6 @@ class TestUops(unittest.TestCase):
         self.assertIn("_FOR_ITER_TIER_TWO", uops)
 
 
-@requires_specialization
-@unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
 @requires_jit_enabled
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
@@ -2085,6 +2083,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build immortalizes constants")
     def test_call_len_known_length_small_int(self):
         # Make sure that len(t) is optimized for a tuple of length 5.
         # See https://github.com/python/cpython/issues/139393.
@@ -2109,6 +2108,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT build immortalizes constants")
     def test_call_len_known_length(self):
         # Make sure that len(t) is not optimized for a tuple of length 2048.
         # See https://github.com/python/cpython/issues/139393.
@@ -2744,6 +2744,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_NOP", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT might immortalize this.")
     def test_pop_top_specialize_int(self):
         def testfunc(n):
             for _ in range(n):
@@ -2757,6 +2758,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         self.assertIn("_POP_TOP_INT", uops)
 
+    @unittest.skipIf(Py_GIL_DISABLED, "FT might immortalize this.")
     def test_pop_top_specialize_float(self):
         def testfunc(n):
             for _ in range(n):
