@@ -1184,10 +1184,16 @@ class CallableMixin(Base):
         # handle call_args
         # needs to be set here so assertions on call arguments pass before
         # execution in the case of awaited calls
-        _call = _Call((args, kwargs), two=True)
-        self.call_args = _call
-        self.call_args_list.append(_call)
-        self.call_count = len(self.call_args_list)
+        with NonCallableMock._lock:
+            # Lock is used here so that call_args_list and call_count are
+            # set atomically otherwise it is possible that by the time call_count
+            # is set another thread may have appended to call_args_list.
+            # The rest of this function relies on list.append being atomic and
+            # skips locking.
+            _call = _Call((args, kwargs), two=True)
+            self.call_args = _call
+            self.call_args_list.append(_call)
+            self.call_count = len(self.call_args_list)
 
         # initial stuff for method_calls:
         do_method_calls = self._mock_parent is not None
