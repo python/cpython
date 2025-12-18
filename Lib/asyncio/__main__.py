@@ -245,4 +245,5 @@ if __name__ == '__main__':
             break
 
     console.write('exiting asyncio REPL...\n')
+    loop.close()
     sys.exit(return_code)
