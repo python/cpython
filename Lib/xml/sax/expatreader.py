@@ -459,4 +459,4 @@ if __name__ == "__main__":
     p = create_parser()
     p.setContentHandler(xml.sax.saxutils.XMLGenerator())
     p.setErrorHandler(xml.sax.ErrorHandler())
-    p.parse("https://www.ibiblio.org/xml/examples/shakespeare/hamlet.xml")
+    p.parse("http://www.ibiblio.org/xml/examples/shakespeare/hamlet.xml")
