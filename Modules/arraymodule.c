@@ -222,9 +222,7 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -261,9 +259,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -363,9 +359,7 @@ h_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -402,9 +396,7 @@ HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -430,9 +422,7 @@ i_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "i;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -480,10 +470,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    /* Check buffer validity and bounds after potential user code calls
-     * (_PyNumber_Index and PyLong_AsUnsignedLong may modify the array buffer).
-     * See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -515,9 +502,7 @@ l_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "l;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -556,10 +541,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    /* Check buffer validity and bounds after potential user code calls
-     * (_PyNumber_Index and PyLong_AsUnsignedLong may modify the array buffer).
-     * See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -591,9 +573,7 @@ q_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "L;array item must be integer", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -633,10 +613,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    /* Check buffer validity and bounds after potential user code calls
-     * (_PyNumber_Index and PyLong_AsUnsignedLongLong may modify the array buffer).
-     * See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -668,9 +645,7 @@ f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "f;array item must be float", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
@@ -695,9 +670,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
 
-    /* Check buffer validity and bounds after PyArg_Parse which may call user-defined
-     * __index__ on v, which might modify the array buffer. See gh-142555.
-     */
+    // Check buffer validity and bounds after call user-defined method.
     if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
         PyErr_SetString(PyExc_IndexError,
             "array assignment index out of range");
