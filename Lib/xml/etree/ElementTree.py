@@ -83,14 +83,11 @@ __all__ = [
     "SubElement",
     "tostring", "tostringlist",
     "TreeBuilder",
-    "VERSION",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
-
-VERSION = "1.3.0"
 
 import sys
 import re
@@ -2104,3 +2101,14 @@ except ImportError:
     pass
 else:
     _set_factories(Comment, ProcessingInstruction)
+
+
+# --------------------------------------------------------------------
+
+def __getattr__(name):
+    if name == "VERSION":
+        from warnings import _deprecated
+
+        _deprecated("VERSION", remove=(3, 20))
+        return "1.3.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
