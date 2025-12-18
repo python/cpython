@@ -940,18 +940,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. versionadded:: next
 
 
-.. function:: get_lazy_modules()
-
-   Returns a set of fully-qualified module names that have been
-   lazily imported. This is primarily useful for diagnostics and
-   introspection.
-
-   Note that modules are removed from this set when they are reified
-   (actually loaded on first use).
-
-   .. versionadded:: next
-
-
 .. function:: getrefcount(object)
 
    Return the reference count of the *object*.  The count returned is generally one
