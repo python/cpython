@@ -4843,7 +4843,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
 #endif
 
 finally:
-    if (fp) {
+    if (fp != NULL) {
         fclose(fp);
     }
     _Py_ext_module_loader_info_clear(&info);
