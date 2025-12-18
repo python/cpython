@@ -168,7 +168,6 @@ class HelpFormatter(object):
         width=None,
         color=None,
     ):
-        # Handle deprecated 'color' parameter for backwards compatibility
         if color is not None:
             import warnings
             warnings.warn(
