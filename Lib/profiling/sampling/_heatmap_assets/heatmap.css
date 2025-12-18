@@ -72,7 +72,7 @@
 .stat-card:nth-child(1) { --i: 0; --card-color: 55, 118, 171; }
 .stat-card:nth-child(2) { --i: 1; --card-color: 40, 167, 69; }
 .stat-card:nth-child(3) { --i: 2; --card-color: 255, 193, 7; }
-.stat-card:nth-child(4) { --i: 3; --card-color: 111, 66, 193; }
+.stat-card:nth-child(4) { --i: 3; --card-color: 116, 69, 201; }
 .stat-card:nth-child(5) { --i: 4; --card-color: 220, 53, 69; }
 .stat-card:nth-child(6) { --i: 5; --card-color: 23, 162, 184; }
 
