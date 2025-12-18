@@ -1802,6 +1802,7 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
     PyObject *list = NULL;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
 
+    /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
     self->ob_exports++;
     const char *sbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t slen = PyByteArray_GET_SIZE((PyObject *)self);
@@ -1926,6 +1927,7 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
     PyObject *list = NULL;
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
 
+    /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
     self->ob_exports++;
     const char *sbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t slen = PyByteArray_GET_SIZE((PyObject *)self);
