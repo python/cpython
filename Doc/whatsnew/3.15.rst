@@ -164,11 +164,8 @@ eager:
    import myapp.slow_module  # lazy (matches filter)
    import json               # eager (does not match filter)
 
-For debugging and introspection, :func:`sys.get_lazy_modules` returns a set
-containing the names of all modules that have been lazily imported but not
-yet loaded. The proxy type itself is available as
-:data:`types.LazyImportType` for code that needs to detect lazy imports
-programmatically.
+The proxy type itself is available as :data:`types.LazyImportType` for code
+that needs to detect lazy imports programmatically.
 
 There are some restrictions on where the ``lazy`` keyword can be used. Lazy
 imports are only permitted at module scope; using ``lazy`` inside a
