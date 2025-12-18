@@ -742,7 +742,7 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
 
-        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyUnicode_CheckExact(left_o));
@@ -750,15 +750,17 @@ dummy_func(
 
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            INPUTS_DEAD();
-            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
+            if (PyStackRef_IsNull(res)) {
+                ERROR_NO_POP();
+            }
+            l = left;
+            r = right;
+            INPUTS_DEAD();
         }
 
         macro(BINARY_OP_ADD_UNICODE) =
-            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE + _POP_TOP_UNICODE + _POP_TOP_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -2628,7 +2630,7 @@ dummy_func(
                 UNLOCK_OBJECT(dict);
                 DEOPT_IF(true);
             }
-            _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
+            _PyDict_NotifyEvent(PyDict_EVENT_MODIFIED, dict, name, PyStackRef_AsPyObjectBorrow(value));
             FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, PyStackRef_AsPyObjectSteal(value));
             UNLOCK_OBJECT(dict);
 
