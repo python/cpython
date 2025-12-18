@@ -1460,7 +1460,7 @@ application).
    All of the above methods/operations are also lock-free. They do not block
    concurrent modifications. Other operations that hold a lock will not block
    these from observing intermediate states.
-   
+
    All other operations from here on block using the per-object lock.
 
    Writing a single item via ``lst[i] = x`` is safe to call from multiple
