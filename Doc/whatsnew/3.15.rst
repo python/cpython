@@ -1078,6 +1078,12 @@ Deprecated
 New deprecations
 ----------------
 
+* :mod:`argparse`:
+
+  * The *color* parameter of :class:`~argparse.HelpFormatter` is deprecated.
+    Use the *color* parameter of :class:`~argparse.ArgumentParser` instead.
+    (Contributed by Savannah Ostrowski in :gh:`142946`.)
+
 * CLI:
 
   * Deprecate :option:`-b` and :option:`!-bb` command-line options
