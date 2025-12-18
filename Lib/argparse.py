@@ -688,11 +688,30 @@ class HelpFormatter(object):
                 params[name] = value.__name__
         if params.get('choices') is not None:
             params['choices'] = ', '.join(map(str, params['choices']))
-        # Before interpolating, wrap the values with color codes
+        
         t = self._theme
-        for name, value in params.items():
-            params[name] = f"{t.interpolated_value}{value}{t.reset}"
-        return help_string % params
+
+        if not t.reset:
+            return help_string % params
+        
+        # Format first to preserve types for specifiers, like %x that require int.
+        def colorize(match):
+            spec, name = match.group(0, 1)
+            if spec == '%%':
+                return '%'
+            if name in params:
+                formatted = spec % {name: params[name]}
+                return f'{t.interpolated_value}{formatted}{t.reset}'
+            return spec
+
+        # Match %% (literal %) or %(name)... format specifiers
+        result = _re.sub(r'%%|%\((\w+)\)[^a-z]*[a-z]', colorize,
+                         help_string, flags=_re.IGNORECASE)
+
+        # Check for invalid/unmatched % specifiers
+        if '%' in result:
+            raise ValueError(f"invalid format specifier in: {help_string!r}")
+        return result
 
     def _iter_indented_subactions(self, action):
         try:
