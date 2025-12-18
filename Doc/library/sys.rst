@@ -943,7 +943,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. function:: get_lazy_modules()
 
    Returns a set of fully-qualified module names that have been
-   lazilyimported. This is primarily useful for diagnostics and
+   lazily imported. This is primarily useful for diagnostics and
    introspection.
 
    Note that modules are removed from this set when they are reified
