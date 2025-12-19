@@ -113,6 +113,27 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | <type-params>` of         |
 |                 |                   | a generic function        |
 +-----------------+-------------------+---------------------------+
+|                 | __closure__       | Contains the cells that   |
+|                 |                   | store values for free     |
+|                 |                   | variables (variables from |
+|                 |                   | outer scopes) used in     |
+|                 |                   | nested functions.         |
+|                 |                   | Essential for             |
+|                 |                   | understanding how closures|
+|                 |                   | work in Python.           |
++-----------------+-------------------+---------------------------+
+|                 | __dict__          | The namespace dictionary  |
+|                 |                   | that stores arbitrary     |
+|                 |                   | function attributes       |
+|                 |                   | and metadata.             |
++-----------------+-------------------+---------------------------+
+|                 | __annotate__      | The annotate function for |
+|                 |                   |lazy evaluation of         |
+|                 |                   | annotations (PEP649), or  |
+|                 |                   | None if the function has  |
+|                 |                   | no annotations. New in    |
+|                 |                   |Python 3.14.               |
++-----------------+-------------------+---------------------------+
 |                 | __module__        | name of module in which   |
 |                 |                   | this function was defined |
 +-----------------+-------------------+---------------------------+
