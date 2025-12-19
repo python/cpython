@@ -273,6 +273,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | ag_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | ag_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | ag_code           | code                      |
 +-----------------+-------------------+---------------------------+
 | coroutine       | __name__          | name                      |
