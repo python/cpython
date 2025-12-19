@@ -390,6 +390,7 @@ gen_close(PyObject *self, PyObject *args)
 
     if (gen->gi_frame_state == FRAME_CREATED) {
         gen->gi_frame_state = FRAME_COMPLETED;
+        gen_clear_frame(gen);
         Py_RETURN_NONE;
     }
     if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
@@ -407,11 +408,12 @@ gen_close(PyObject *self, PyObject *args)
     }
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     if (is_resume(frame->instr_ptr)) {
+        bool no_unwind_tools = _PyEval_NoToolsForUnwind(_PyThreadState_GET());
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
         int oparg = frame->instr_ptr->op.arg;
-        if (oparg & RESUME_OPARG_DEPTH1_MASK) {
+        if (oparg & RESUME_OPARG_DEPTH1_MASK && no_unwind_tools) {
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
@@ -932,6 +934,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
     gen->gi_weakreflist = NULL;
     gen->gi_exc_state.exc_value = NULL;
     gen->gi_exc_state.previous_item = NULL;
+    gen->gi_iframe.f_executable = PyStackRef_None;
     assert(func->func_name != NULL);
     gen->gi_name = Py_NewRef(func->func_name);
     assert(func->func_qualname != NULL);
