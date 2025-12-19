@@ -1257,7 +1257,7 @@ defined by any build system or documented for manual use.
 .. nonce: n_AfcS
 .. section: Library
 
-Update :mod:`cProfile` to use PEP 669 API
+Update :mod:`!cProfile` to use PEP 669 API
 
 ..
 
@@ -1750,7 +1750,7 @@ Remove the long-deprecated ``imp`` module.
 .. nonce: N46coo
 .. section: Library
 
-Deprecate :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader` in
+Deprecate :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader` in
 favor of :func:`importlib.util.find_spec`.
 
 ..

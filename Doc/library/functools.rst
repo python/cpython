@@ -42,11 +42,11 @@ The :mod:`functools` module defines the following functions:
         def factorial(n):
             return n * factorial(n-1) if n else 1
 
-        >>> factorial(10)      # no previously cached result, makes 11 recursive calls
+        >>> factorial(10)   # no previously cached result, makes 11 recursive calls
         3628800
-        >>> factorial(5)       # just looks up cached value result
+        >>> factorial(5)    # no new calls, just returns the cached result
         120
-        >>> factorial(12)      # makes two new recursive calls, the other 10 are cached
+        >>> factorial(12)   # two new recursive calls, factorial(10) is cached
         479001600
 
    The cache is threadsafe so that the wrapped function can be used in
@@ -56,6 +56,10 @@ The :mod:`functools` module defines the following functions:
    It is possible for the wrapped function to be called more than once if
    another thread makes an additional call before the initial call has been
    completed and cached.
+
+   Call-once behavior is not guaranteed because locks are not held during the
+   function call. Potentially another call with the same arguments could
+   occur while the first call is still running.
 
    .. versionadded:: 3.9
 
@@ -190,7 +194,7 @@ The :mod:`functools` module defines the following functions:
 
    Note, type specificity applies only to the function's immediate arguments
    rather than their contents.  The scalar arguments, ``Decimal(42)`` and
-   ``Fraction(42)`` are be treated as distinct calls with distinct results.
+   ``Fraction(42)`` are treated as distinct calls with distinct results.
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
@@ -199,12 +203,18 @@ The :mod:`functools` module defines the following functions:
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
 
+   .. method:: lru_cache.cache_info()
+      :no-typesetting:
+
    To help measure the effectiveness of the cache and tune the *maxsize*
-   parameter, the wrapped function is instrumented with a :func:`cache_info`
+   parameter, the wrapped function is instrumented with a :func:`!cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
    *maxsize* and *currsize*.
 
-   The decorator also provides a :func:`cache_clear` function for clearing or
+   .. method:: lru_cache.cache_clear()
+      :no-typesetting:
+
+   The decorator also provides a :func:`!cache_clear` function for clearing or
    invalidating the cache.
 
    The original underlying function is accessible through the
@@ -284,9 +294,9 @@ The :mod:`functools` module defines the following functions:
    class decorator supplies the rest.  This simplifies the effort involved
    in specifying all of the possible rich comparison operations:
 
-   The class must define one of :meth:`__lt__`, :meth:`__le__`,
-   :meth:`__gt__`, or :meth:`__ge__`.
-   In addition, the class should supply an :meth:`__eq__` method.
+   The class must define one of :meth:`~object.__lt__`, :meth:`~object.__le__`,
+   :meth:`~object.__gt__`, or :meth:`~object.__ge__`.
+   In addition, the class should supply an :meth:`~object.__eq__` method.
 
    For example::
 
@@ -368,8 +378,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
    when :func:`!partial` is called. This makes it possible to pre-fill any positional
-   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
-   first positional argument can be pre-filled.
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`,
+   only the chosen number of leading positional arguments can be pre-filled.
 
    If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 
@@ -403,8 +413,7 @@ The :mod:`functools` module defines the following functions:
       >>> remove_first_dear(message)
       'Hello, dear world!'
 
-   :data:`!Placeholder` has no special treatment when used in a keyword
-   argument to :func:`!partial`.
+   :data:`!Placeholder` cannot be passed to :func:`!partial` as a keyword argument.
 
    .. versionchanged:: 3.14
       Added support for :data:`Placeholder` in positional arguments.
@@ -419,7 +428,7 @@ The :mod:`functools` module defines the following functions:
    like normal functions, are handled as descriptors).
 
    When *func* is a descriptor (such as a normal Python function,
-   :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
+   :func:`classmethod`, :func:`staticmethod`, :func:`~abc.abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
    :ref:`partial object<partial-objects>` returned as the result.
@@ -453,7 +462,7 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initial], /)
+.. function:: reduce(function, iterable, /[, initial])
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
@@ -468,7 +477,7 @@ The :mod:`functools` module defines the following functions:
 
       initial_missing = object()
 
-      def reduce(function, iterable, initial=initial_missing, /):
+      def reduce(function, iterable, /, initial=initial_missing):
           it = iter(iterable)
           if initial is initial_missing:
               value = next(it)
@@ -480,6 +489,9 @@ The :mod:`functools` module defines the following functions:
 
    See :func:`itertools.accumulate` for an iterator that yields all intermediate
    values.
+
+   .. versionchanged:: 3.14
+      *initial* is now supported as a keyword argument.
 
 .. decorator:: singledispatch
 
@@ -497,7 +509,10 @@ The :mod:`functools` module defines the following functions:
      ...         print("Let me just say,", end=" ")
      ...     print(arg)
 
-   To add overloaded implementations to the function, use the :func:`register`
+   .. method:: singledispatch.register()
+      :no-typesetting:
+
+   To add overloaded implementations to the function, use the :func:`!register`
    attribute of the generic function, which can be used as a decorator.  For
    functions annotated with types, the decorator will infer the type of the
    first argument automatically::
@@ -515,7 +530,7 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+   :class:`typing.Union` can also be used::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
@@ -563,14 +578,14 @@ The :mod:`functools` module defines the following functions:
       runtime impact.
 
    To enable registering :term:`lambdas<lambda>` and pre-existing functions,
-   the :func:`register` attribute can also be used in a functional form::
+   the :func:`~singledispatch.register` attribute can also be used in a functional form::
 
      >>> def nothing(arg, verbose=False):
      ...     print("Nothing.")
      ...
      >>> fun.register(type(None), nothing)
 
-   The :func:`register` attribute returns the undecorated function. This
+   The :func:`~singledispatch.register` attribute returns the undecorated function. This
    enables decorator stacking, :mod:`pickling<pickle>`, and the creation
    of unit tests for each variant independently::
 
@@ -648,11 +663,11 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.7
-      The :func:`register` attribute now supports using type annotations.
+      The :func:`~singledispatch.register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports :data:`types.UnionType`
-      and :data:`typing.Union` as type annotations.
+      The :func:`~singledispatch.register` attribute now supports
+      :class:`typing.Union` as a type annotation.
 
 
 .. class:: singledispatchmethod(func)
@@ -661,7 +676,7 @@ The :mod:`functools` module defines the following functions:
    dispatch>` :term:`generic function`.
 
    To define a generic method, decorate it with the ``@singledispatchmethod``
-   decorator. When defining a function using ``@singledispatchmethod``, note
+   decorator. When defining a method using ``@singledispatchmethod``, note
    that the dispatch happens on the type of the first non-*self* or non-*cls*
    argument::
 
@@ -679,7 +694,7 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    ``@singledispatchmethod`` supports nesting with other decorators such as
-   :func:`@classmethod<classmethod>`. Note that to allow for
+   :deco:`classmethod`. Note that to allow for
    ``dispatcher.register``, ``singledispatchmethod`` must be the *outer most*
    decorator. Here is the ``Negator`` class with the ``neg`` methods bound to
    the class, rather than an instance of the class::
@@ -701,10 +716,12 @@ The :mod:`functools` module defines the following functions:
             return not arg
 
    The same pattern can be used for other similar decorators:
-   :func:`@staticmethod<staticmethod>`,
-   :func:`@abstractmethod<abc.abstractmethod>`, and others.
+   :deco:`staticmethod`, :deco:`~abc.abstractmethod`, and others.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.15
+      Added support of non-:term:`descriptor` callables.
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
@@ -781,7 +798,7 @@ The :mod:`functools` module defines the following functions:
       'Docstring'
 
    Without the use of this decorator factory, the name of the example function
-   would have been ``'wrapper'``, and the docstring of the original :func:`example`
+   would have been ``'wrapper'``, and the docstring of the original :func:`!example`
    would have been lost.
 
 

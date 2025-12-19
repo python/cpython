@@ -311,7 +311,7 @@ Pure paths provide the following methods and properties:
 .. attribute:: PurePath.parser
 
    The implementation of the :mod:`os.path` module used for low-level path
-   parsing and joining: either :mod:`posixpath` or :mod:`ntpath`.
+   parsing and joining: either :mod:`!posixpath` or :mod:`!ntpath`.
 
    .. versionadded:: 3.13
 
@@ -541,20 +541,6 @@ Pure paths provide the following methods and properties:
 
       Passing additional arguments is deprecated; if supplied, they are joined
       with *other*.
-
-.. method:: PurePath.is_reserved()
-
-   With :class:`PureWindowsPath`, return ``True`` if the path is considered
-   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
-   ``False`` is always returned.
-
-   .. versionchanged:: 3.13
-      Windows path names that contain a colon, or end with a dot or a space,
-      are considered reserved. UNC paths may be reserved.
-
-   .. deprecated-removed:: 3.13 3.15
-      This method is deprecated; use :func:`os.path.isreserved` to detect
-      reserved paths on Windows.
 
 .. method:: PurePath.joinpath(*pathsegments)
 
@@ -871,6 +857,12 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`ValueError` is raised.
+
 
 .. method:: Path.as_uri()
 
@@ -886,9 +878,11 @@ conforming to :rfc:`8089`.
       >>> p.as_uri()
       'file:///c:/Windows'
 
-   For historical reasons, this method is also available from
-   :class:`PurePath` objects. However, its use of :func:`os.fsencode` makes
-   it strictly impure.
+   .. deprecated-removed:: 3.14 3.19
+
+      Calling this method from :class:`PurePath` rather than :class:`Path` is
+      possible but deprecated. The method's use of :func:`os.fsencode` makes
+      it strictly impure.
 
 
 Expanding and resolving paths
@@ -1175,6 +1169,38 @@ Querying file type and status
       True
 
    .. versionadded:: 3.5
+
+
+.. attribute:: Path.info
+
+   A :class:`~pathlib.types.PathInfo` object that supports querying file type
+   information. The object exposes methods that cache their results, which can
+   help reduce the number of system calls needed when switching on file type.
+   For example::
+
+      >>> p = Path('src')
+      >>> if p.info.is_symlink():
+      ...     print('symlink')
+      ... elif p.info.is_dir():
+      ...     print('directory')
+      ... elif p.info.exists():
+      ...     print('something else')
+      ... else:
+      ...     print('not found')
+      ...
+      directory
+
+   If the path was generated from :meth:`Path.iterdir` then this attribute is
+   initialized with some information about the file type gleaned from scanning
+   the parent directory. Merely accessing :attr:`Path.info` does not perform
+   any filesystem queries.
+
+   To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
+   :meth:`~Path.is_file` and :meth:`~Path.is_symlink` rather than methods of
+   this attribute. There is no way to reset the cache; instead you can create
+   a new path object with an empty info cache via ``p = Path(p)``.
+
+   .. versionadded:: 3.14
 
 
 Reading and writing files
@@ -1539,8 +1565,7 @@ Creating files and directories
 Copying, moving and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
-                      preserve_metadata=False)
+.. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
    Copy this file or directory tree to the given *target*, and return a new
    :class:`!Path` instance pointing to *target*.
@@ -1550,12 +1575,6 @@ Copying, moving and deleting
    default), the symlink's target is copied. Otherwise, the symlink is
    recreated at the destination.
 
-   If the source is a directory and *dirs_exist_ok* is false (the default), a
-   :exc:`FileExistsError` is raised if the target is an existing directory.
-   If *dirs_exists_ok* is true, the copying operation will overwrite
-   existing files within the destination tree with corresponding files
-   from the source tree.
-
    If *preserve_metadata* is false (the default), only directory structures
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
    to ensure that file and directory permissions, flags, last access and
@@ -1563,11 +1582,16 @@ Copying, moving and deleting
    This argument has no effect when copying files on Windows (where
    metadata is always preserved).
 
+   .. note::
+      Where supported by the operating system and file system, this method
+      performs a lightweight copy, where data blocks are only copied when
+      modified. This is known as copy-on-write.
+
    .. versionadded:: 3.14
 
 
 .. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
-                           dirs_exist_ok=False, preserve_metadata=False)
+                           preserve_metadata=False)
 
    Copy this file or directory tree into the given *target_dir*, which should
    be an existing directory. Other arguments are handled identically to
@@ -1743,9 +1767,12 @@ The following wildcards are supported in patterns for
 ``?``
   Matches one non-separator character.
 ``[seq]``
-  Matches one character in *seq*.
+  Matches one character in *seq*, where *seq* is a sequence of characters.
+  Range expressions are supported; for example, ``[a-z]`` matches any lowercase ASCII letter.
+  Multiple ranges can be combined: ``[a-zA-Z0-9_]`` matches any ASCII letter, digit, or underscore.
+
 ``[!seq]``
-  Matches one character not in *seq*.
+  Matches one character not in *seq*, where *seq* follows the same rules as above.
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``"[?]"`` matches the character ``"?"``.
@@ -1898,3 +1925,56 @@ Below is a table mapping various :mod:`os` functions to their corresponding
 .. [4] :func:`os.walk` always follows symlinks when categorizing paths into
    *dirnames* and *filenames*, whereas :meth:`Path.walk` categorizes all
    symlinks into *filenames* when *follow_symlinks* is false (the default.)
+
+
+Protocols
+---------
+
+.. module:: pathlib.types
+   :synopsis: pathlib types for static type checking
+
+
+The :mod:`pathlib.types` module provides types for static type checking.
+
+.. versionadded:: 3.14
+
+
+.. class:: PathInfo()
+
+   A :class:`typing.Protocol` describing the
+   :attr:`Path.info <pathlib.Path.info>` attribute. Implementations may
+   return cached results from their methods.
+
+   .. method:: exists(*, follow_symlinks=True)
+
+      Return ``True`` if the path is an existing file or directory, or any
+      other kind of file; return ``False`` if the path doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` for symlinks without
+      checking if their targets exist.
+
+   .. method:: is_dir(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a directory, or a symbolic link pointing
+      to a directory; return ``False`` if the path is (or points to) any other
+      kind of file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a directory (without following symlinks); return ``False`` if the
+      path is any other kind of file, or if it doesn't exist.
+
+   .. method:: is_file(*, follow_symlinks=True)
+
+      Return ``True`` if the path is a file, or a symbolic link pointing to
+      a file; return ``False`` if the path is (or points to) a directory or
+      other non-file, or if it doesn't exist.
+
+      If *follow_symlinks* is ``False``, return ``True`` only if the path
+      is a file (without following symlinks); return ``False`` if the path
+      is a directory or other non-file, or if it doesn't exist.
+
+   .. method:: is_symlink()
+
+      Return ``True`` if the path is a symbolic link (even if broken); return
+      ``False`` if the path is a directory or any kind of file, or if it
+      doesn't exist.

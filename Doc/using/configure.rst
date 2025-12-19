@@ -4,10 +4,13 @@ Configure Python
 
 .. highlight:: sh
 
+
+.. _build-requirements:
+
 Build Requirements
 ==================
 
-Features and minimum versions required to build CPython:
+To build CPython, you will need:
 
 * A `C11 <https://en.cppreference.com/w/c/11>`_ compiler. `Optional C11
   features
@@ -22,44 +25,136 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
-  minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
-
-* SQLite 3.15.2 for the :mod:`sqlite3` extension module.
-
-* Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
-
-* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
-  :file:`configure` script.
-
-.. versionchanged:: 3.1
-   Tcl/Tk version 8.3.1 is now required.
-
 .. versionchanged:: 3.5
    On Windows, Visual Studio 2015 or later is now required.
-   Tcl/Tk version 8.4 is now required.
 
 .. versionchanged:: 3.6
-   Selected C99 features are now required, like ``<stdint.h>`` and ``static
-   inline`` functions.
+   Selected C99 features, like ``<stdint.h>`` and ``static inline`` functions,
+   are now required.
 
 .. versionchanged:: 3.7
-   Thread support and OpenSSL 1.0.2 are now required.
-
-.. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required.
-   Require SQLite 3.7.15.
+   Thread support is now required.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
-   Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
-
-.. versionchanged:: 3.13
-   Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
+
+
+.. _optional-module-requirements:
+
+Requirements for optional modules
+---------------------------------
+
+Some :term:`optional modules <optional module>` of the standard library
+require third-party libraries installed for development
+(for example, header files must be available).
+
+Missing requirements are reported in the ``configure`` output.
+Modules that are missing due to missing dependencies are listed near the end
+of the ``make`` output,
+sometimes using an internal name, for example, ``_ctypes`` for :mod:`ctypes`
+module.
+
+If you distribute a CPython interpreter without optional modules,
+it's best practice to advise users, who generally expect that
+standard library modules are available.
+
+Dependencies to build optional modules are:
+
+.. list-table::
+   :header-rows: 1
+   :align: left
+
+   * - Dependency
+     - Minimum version
+     - Python module
+   * - `libbz2 <https://sourceware.org/bzip2/>`_
+     -
+     - :mod:`bz2`
+   * - `libffi <https://sourceware.org/libffi/>`_
+     - 3.3.0 recommended
+     - :mod:`ctypes`
+   * - `liblzma <https://tukaani.org/xz/>`_
+     -
+     - :mod:`lzma`
+   * - `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_
+     - 2.5.0
+     - :mod:`decimal` [1]_
+   * - `libreadline <https://tiswww.case.edu/php/chet/readline/rltop.html>`_ or
+       `libedit <https://www.thrysoee.dk/editline/>`_ [2]_
+     -
+     - :mod:`readline`
+   * - `libuuid <https://linux.die.net/man/3/libuuid>`_
+     -
+     - ``_uuid`` [3]_
+   * - `ncurses <https://gnu.org/software/ncurses/ncurses.html>`_ [4]_
+     -
+     - :mod:`curses`
+   * - `OpenSSL <https://openssl-library.org/>`_
+     - | 3.0.18 recommended
+       | (1.1.1 minimum)
+     - :mod:`ssl`, :mod:`hashlib` [5]_
+   * - `SQLite <https://sqlite.org/>`_
+     - 3.15.2
+     - :mod:`sqlite3`
+   * - `Tcl/Tk <https://www.tcl-lang.org/>`_
+     - 8.5.12
+     - :mod:`tkinter`, :ref:`IDLE <idle>`, :mod:`turtle`
+   * - `zlib <https://www.zlib.net>`_
+     - 1.2.2.1
+     - :mod:`zlib`, :mod:`gzip`, :mod:`ensurepip`
+   * - `zstd <https://facebook.github.io/zstd/>`_
+     - 1.4.5
+     - :mod:`compression.zstd`
+
+.. [1] If *libmpdec* is not available, the :mod:`decimal` module will use
+   a pure-Python implementation.
+   See :option:`--with-system-libmpdec` for details.
+.. [2] See :option:`--with-readline` for choosing the backend for the
+   :mod:`readline` module.
+.. [3] The :mod:`uuid` module uses ``_uuid`` to generate "safe" UUIDs.
+   See the module documentation for details.
+.. [4] The :mod:`curses` module requires the ``libncurses`` or ``libncursesw``
+   library.
+   The :mod:`curses.panel` module additionally requires the ``libpanel`` or
+   ``libpanelw`` library.
+.. [5] If OpenSSL is not available, the :mod:`hashlib` module will use
+   bundled implementations of several hash functions.
+   See :option:`--with-builtin-hashlib-hashes` for *forcing* usage of OpenSSL.
+
+Note that the table does not include all optional modules; in particular,
+platform-specific modules like :mod:`winreg` are not listed here.
+
+.. seealso::
+
+   * The `devguide <https://devguide.python.org/getting-started/setup-building/#install-dependencies>`_
+     includes a full list of dependencies required to build all modules and
+     instructions on how to install them on common platforms.
+   * :option:`--with-system-expat` allows building with an external
+     `libexpat <https://libexpat.github.io/>`_ library.
+   * :ref:`configure-options-for-dependencies`
+
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required for :mod:`tkinter`.
+
+.. versionchanged:: 3.5
+   Tcl/Tk version 8.4 is now required for :mod:`tkinter`.
+
+.. versionchanged:: 3.7
+   OpenSSL 1.0.2 is now required for :mod:`hashlib` and :mod:`ssl`.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required for :mod:`hashlib` and :mod:`ssl`.
+   SQLite 3.7.15 is now required for :mod:`sqlite3`.
+
+.. versionchanged:: 3.11
+   Tcl/Tk version 8.5.12 is now required for :mod:`tkinter`.
+
+.. versionchanged:: 3.13
+   SQLite 3.15.2 is now required for :mod:`sqlite3`.
 
 
 Generated files
@@ -88,8 +183,19 @@ The container is optional, the following command can be run locally::
 
     autoreconf -ivf -Werror
 
-The generated files can change depending on the exact ``autoconf-archive``,
-``aclocal`` and ``pkg-config`` versions.
+The generated files can change depending on the exact versions of the
+tools used.
+The container that CPython uses has
+`Autoconf <https://gnu.org/software/autoconf>`_ 2.72,
+``aclocal`` from `Automake <https://www.gnu.org/software/automake>`_ 1.16.5,
+and `pkg-config <https://www.freedesktop.org/wiki/Software/pkg-config/>`_ 1.8.1.
+
+.. versionchanged:: 3.13
+   Autoconf 2.71 and aclocal 1.16.5 and are now used to regenerate
+   :file:`configure`.
+
+.. versionchanged:: 3.14
+   Autoconf 2.72 is now used to regenerate :file:`configure`.
 
 
 .. _configure-options:
@@ -216,6 +322,30 @@ General Options
 
    .. versionadded:: 3.11
 
+.. option:: --with-missing-stdlib-config=FILE
+
+   Path to a `JSON <https://www.json.org/json-en.html>`_ configuration file
+   containing custom error messages for missing :term:`standard library` modules.
+
+   This option is intended for Python distributors who wish to provide
+   distribution-specific guidance when users encounter standard library
+   modules that are missing or packaged separately.
+
+   The JSON file should map missing module names to custom error message strings.
+   For example, if your distribution packages :mod:`tkinter` and
+   :mod:`_tkinter` separately and excludes :mod:`!_gdbm` for legal reasons,
+   the configuration could contain:
+
+   .. code-block:: json
+
+      {
+          "_gdbm": "The '_gdbm' module is not available in this distribution",
+          "tkinter": "Install the python-tk package to use tkinter",
+          "_tkinter": "Install the python-tk package to use tkinter",
+      }
+
+   .. versionadded:: 3.15
+
 .. option:: --enable-pystats
 
    Turn on internal Python performance statistics gathering.
@@ -287,13 +417,40 @@ General Options
 
 .. option:: --disable-gil
 
-   Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL): free threading build.
+   .. c:macro:: Py_GIL_DISABLED
+      :no-typesetting:
+
+   Enables support for running Python without the :term:`global interpreter
+   lock` (GIL): free threading build.
 
    Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
    :data:`sys.abiflags`.
 
    See :ref:`whatsnew313-free-threaded-cpython` for more detail.
+
+   .. versionadded:: 3.13
+
+.. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
+
+   Indicate how to integrate the :ref:`experimental just-in-time compiler <whatsnew314-jit-compiler>`.
+
+   * ``no``: Don't build the JIT.
+   * ``yes``: Enable the JIT. To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+   * ``yes-off``: Build the JIT, but disable it by default. To enable it at
+     runtime, set the environment variable :envvar:`PYTHON_JIT=1 <PYTHON_JIT>`.
+   * ``interpreter``: Enable the "JIT interpreter" (only useful for those
+     debugging the JIT itself). To disable it at runtime, set the environment
+     variable :envvar:`PYTHON_JIT=0 <PYTHON_JIT>`.
+
+   ``--enable-experimental-jit=no`` is the default behavior if the option is not
+   provided, and ``--enable-experimental-jit`` is shorthand for
+   ``--enable-experimental-jit=yes``.  See :file:`Tools/jit/README.md` for more
+   information, including how to install the necessary build-time dependencies.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
    .. versionadded:: 3.13
 
@@ -343,6 +500,8 @@ Linker options
    Name for machine-dependent library files.
 
 
+.. _configure-options-for-dependencies:
+
 Options for third-party dependencies
 ------------------------------------
 
@@ -364,12 +523,6 @@ Options for third-party dependencies
 .. option:: GDBM_LIBS
 
    C compiler and linker flags for ``gdbm``.
-
-.. option:: LIBB2_CFLAGS
-.. option:: LIBB2_LIBS
-
-   C compiler and linker flags for ``libb2`` (:ref:`BLAKE2 <hashlib-blake2>`),
-   used by :mod:`hashlib` module, overriding ``pkg-config``.
 
 .. option:: LIBEDIT_CFLAGS
 .. option:: LIBEDIT_LIBS
@@ -418,6 +571,14 @@ Options for third-party dependencies
    C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
 
+.. option:: LIBZSTD_CFLAGS
+.. option:: LIBZSTD_LIBS
+
+   C compiler and linker flags for ``libzstd``, used by :mod:`compression.zstd` module,
+   overriding ``pkg-config``.
+
+   .. versionadded:: 3.14
+
 .. option:: PANEL_CFLAGS
 .. option:: PANEL_LIBS
 
@@ -440,15 +601,6 @@ Options for third-party dependencies
 
 WebAssembly Options
 -------------------
-
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
 
 .. option:: --enable-wasm-dynamic-linking
 
@@ -607,6 +759,16 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: 3.14
+
 .. option:: --without-mimalloc
 
    Disable the fast :ref:`mimalloc <mimalloc>` allocator
@@ -638,6 +800,24 @@ also be used to improve performance.
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
+
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+   .. c:macro:: Py_REMOTE_DEBUG
+
+      This macro is defined by default, unless Python is configured with
+      :option:`--without-remote-debug`.
+
+      Note that even if the macro is defined, remote debugging may not be
+      available (for example, on an incompatible platform).
+
+   .. versionadded:: 3.14
 
 
 .. _debug-build:
@@ -745,6 +925,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 
@@ -806,9 +989,16 @@ Libraries options
    .. versionchanged:: 3.13
       Default to using the installed ``mpdecimal`` library.
 
-   .. deprecated-removed:: 3.13 3.15
+   .. versionchanged:: 3.15
+
+      A bundled copy of the library will no longer be selected
+      implicitly if an installed ``mpdecimal`` library is not found.
+      In Python 3.15 only, it can still be selected explicitly using
+      ``--with-system-libmpdec=no`` or ``--without-system-libmpdec``.
+
+   .. deprecated-removed:: 3.13 3.16
       A copy of the ``mpdecimal`` library sources will no longer be distributed
-      with Python 3.15.
+      with Python 3.16.
 
    .. seealso:: :option:`LIBMPDEC_CFLAGS` and :option:`LIBMPDEC_LIBS`.
 
@@ -957,14 +1147,20 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (x86-64 and arm64);
+   * ``32-bit`` (PPC and i386);
+   * ``64-bit``  (PPC64 and x86-64);
+   * ``3-way`` (i386, PPC and x86-64);
+   * ``intel`` (i386 and x86-64);
+   * ``intel-32`` (i386);
+   * ``intel-64`` (x86-64);
+   * ``all``  (PPC, i386, PPC64 and x86-64).
+
+   Note that values for this configuration item are *not* the same as the
+   identifiers used for universal binary wheels on macOS. See the Python
+   Packaging User Guide for details on the `packaging platform compatibility
+   tags used on macOS
+   <https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_
 
 .. option:: --with-framework-name=FRAMEWORK
 
@@ -1084,7 +1280,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
@@ -1142,11 +1339,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest

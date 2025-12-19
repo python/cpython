@@ -1,1 +1,0 @@
-Fixed a bug in :mod:`pdb` where arguments starting with ``-`` can't be passed to the debugged script.

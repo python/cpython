@@ -12,11 +12,19 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import (infinite_recursion, no_tracing, verbose,
-                          requires_subprocess, requires_resource)
+from test.support import (
+    force_not_colorized_test_class,
+    infinite_recursion,
+    no_tracing,
+    requires_resource,
+    requires_subprocess,
+    verbose,
+)
+from test import support
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
+from test.test_importlib.util import temporary_pycache_prefix
 
 
 import runpy
@@ -49,7 +57,6 @@ nested = runpy._run_module_code('x=1\\n', mod_name='<run>')
 implicit_namespace = {
     "__name__": None,
     "__file__": None,
-    "__cached__": None,
     "__package__": None,
     "__doc__": None,
     "__spec__": None
@@ -278,7 +285,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
     def _fix_ns_for_legacy_pyc(self, ns, alter_sys):
         char_to_add = "c"
         ns["__file__"] += char_to_add
-        ns["__cached__"] = ns["__file__"]
         spec = ns["__spec__"]
         new_spec = importlib.util.spec_from_file_location(spec.name,
                                                           ns["__file__"])
@@ -298,7 +304,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": mod_spec.cached,
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -339,7 +344,6 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": mod_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": pkg_name,
             "__spec__": mod_spec,
         })
@@ -544,7 +548,6 @@ from ..uncle.cousin import nephew
         expected_ns.update({
             "__name__": run_name,
             "__file__": mod_fname,
-            "__cached__": importlib.util.cache_from_source(mod_fname),
             "__package__": mod_name.rpartition(".")[0],
             "__spec__": mod_spec,
         })
@@ -624,7 +627,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         expected_ns.update({
             "__name__": expected_name,
             "__file__": expected_file,
-            "__cached__": mod_cached,
             "__package__": "",
             "__spec__": mod_spec,
             "run_argv0": expected_argv0,
@@ -757,7 +759,49 @@ s = "non-ASCII: h\xe9"
             result = run_path(filename)
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
+    def test_run_module_filter_syntax_warnings_by_module(self):
+        module_re = r'test\.test_import\.data\.syntax_warnings\z'
+        with (temp_dir() as tmpdir,
+              temporary_pycache_prefix(tmpdir),
+              warnings.catch_warnings(record=True) as wlog):
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=module_re)
+            warnings.filterwarnings('error', module='syntax_warnings')
+            ns = run_module('test.test_import.data.syntax_warnings')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        filename = ns['__file__']
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
 
+    def test_run_path_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<run_path>\z')
+            warnings.filterwarnings('error', module='test')
+            warnings.filterwarnings('error', module='syntax_warnings')
+            warnings.filterwarnings('error',
+                    module=r'test\.test_import\.data\.syntax_warnings')
+            run_path(filename)
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, filename)
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package\.script\z')
+            warnings.filterwarnings('error', module='<run_path>')
+            warnings.filterwarnings('error', module='test')
+            warnings.filterwarnings('error', module='syntax_warnings')
+            warnings.filterwarnings('error',
+                    module=r'test\.test_import\.data\.syntax_warnings')
+            run_path(filename, run_name='package.script')
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+
+
+@force_not_colorized_test_class
 class TestExit(unittest.TestCase):
     STATUS_CONTROL_C_EXIT = 0xC000013A
     EXPECTED_CODE = (
@@ -789,7 +833,7 @@ class TestExit(unittest.TestCase):
         # Use -E to ignore PYTHONSAFEPATH
         cmd = [sys.executable, '-E', *cmd]
         proc = subprocess.run(cmd, *args, **kwargs, text=True, stderr=subprocess.PIPE)
-        self.assertTrue(proc.stderr.endswith("\nKeyboardInterrupt\n"), proc.stderr)
+        self.assertEndsWith(proc.stderr, "\nKeyboardInterrupt\n")
         self.assertEqual(proc.returncode, self.EXPECTED_CODE)
 
     def test_pymain_run_file(self):

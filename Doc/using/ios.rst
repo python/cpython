@@ -170,7 +170,7 @@ helpful.
 To add Python to an iOS Xcode project:
 
 1. Build or obtain a Python ``XCFramework``. See the instructions in
-   :source:`iOS/README.rst` (in the CPython source distribution) for details on
+   :source:`Apple/iOS/README.md` (in the CPython source distribution) for details on
    how to build a Python ``XCFramework``. At a minimum, you will need a build
    that supports ``arm64-apple-ios``, plus one of either
    ``arm64-apple-ios-simulator`` or ``x86_64-apple-ios-simulator``.
@@ -180,22 +180,19 @@ To add Python to an iOS Xcode project:
    of your project; however, you can use any other location that you want by
    adjusting paths as needed.
 
-3. Drag the ``iOS/Resources/dylib-Info-template.plist`` file into your project,
-   and ensure it is associated with the app target.
-
-4. Add your application code as a folder in your Xcode project. In the
+3. Add your application code as a folder in your Xcode project. In the
    following instructions, we'll assume that your user code is in a folder
    named ``app`` in the root of your project; you can use any other location by
    adjusting paths as needed. Ensure that this folder is associated with your
    app target.
 
-5. Select the app target by selecting the root node of your Xcode project, then
+4. Select the app target by selecting the root node of your Xcode project, then
    the target name in the sidebar that appears.
 
-6. In the "General" settings, under "Frameworks, Libraries and Embedded
+5. In the "General" settings, under "Frameworks, Libraries and Embedded
    Content", add ``Python.xcframework``, with "Embed & Sign" selected.
 
-7. In the "Build Settings" tab, modify the following:
+6. In the "Build Settings" tab, modify the following:
 
    - Build Options
 
@@ -211,94 +208,34 @@ To add Python to an iOS Xcode project:
 
      * Quoted Include In Framework Header: No
 
-8. Add a build step that copies the Python standard library into your app. In
-   the "Build Phases" tab, add a new "Run Script" build step *before* the
-   "Embed Frameworks" step, but *after* the "Copy Bundle Resources" step. Name
-   the step "Install Target Specific Python Standard Library", disable the
-   "Based on dependency analysis" checkbox, and set the script content to:
+7. Add a build step that processes the Python standard library, and your own
+   Python binary dependencies. In the "Build Phases" tab, add a new "Run
+   Script" build step *before* the "Embed Frameworks" step, but *after* the
+   "Copy Bundle Resources" step. Name the step "Process Python libraries",
+   disable the "Based on dependency analysis" checkbox, and set the script
+   content to:
 
    .. code-block:: bash
 
-       set -e
+      set -e
+      source $PROJECT_DIR/Python.xcframework/build/build_utils.sh
+      install_python Python.xcframework app
 
-       mkdir -p "$CODESIGNING_FOLDER_PATH/python/lib"
-       if [ "$EFFECTIVE_PLATFORM_NAME" = "-iphonesimulator" ]; then
-           echo "Installing Python modules for iOS Simulator"
-           rsync -au --delete "$PROJECT_DIR/Python.xcframework/ios-arm64_x86_64-simulator/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-       else
-           echo "Installing Python modules for iOS Device"
-           rsync -au --delete "$PROJECT_DIR/Python.xcframework/ios-arm64/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-       fi
+   If you have placed your XCframework somewhere other than the root of your
+   project, modify the path to the first argument.
 
-   Note that the name of the simulator "slice" in the XCframework may be
-   different, depending the CPU architectures your ``XCFramework`` supports.
+8. Add Objective C code to initialize and use a Python interpreter in embedded
+   mode. You should ensure that:
 
-9. Add a second build step that processes the binary extension modules in the
-   standard library into "Framework" format. Add a "Run Script" build step
-   *directly after* the one you added in step 8, named "Prepare Python Binary
-   Modules". It should also have "Based on dependency analysis" unchecked, with
-   the following script content:
-
-   .. code-block:: bash
-
-       set -e
-
-       install_dylib () {
-           INSTALL_BASE=$1
-           FULL_EXT=$2
-
-           # The name of the extension file
-           EXT=$(basename "$FULL_EXT")
-           # The location of the extension file, relative to the bundle
-           RELATIVE_EXT=${FULL_EXT#$CODESIGNING_FOLDER_PATH/}
-           # The path to the extension file, relative to the install base
-           PYTHON_EXT=${RELATIVE_EXT/$INSTALL_BASE/}
-           # The full dotted name of the extension module, constructed from the file path.
-           FULL_MODULE_NAME=$(echo $PYTHON_EXT | cut -d "." -f 1 | tr "/" ".");
-           # A bundle identifier; not actually used, but required by Xcode framework packaging
-           FRAMEWORK_BUNDLE_ID=$(echo $PRODUCT_BUNDLE_IDENTIFIER.$FULL_MODULE_NAME | tr "_" "-")
-           # The name of the framework folder.
-           FRAMEWORK_FOLDER="Frameworks/$FULL_MODULE_NAME.framework"
-
-           # If the framework folder doesn't exist, create it.
-           if [ ! -d "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER" ]; then
-               echo "Creating framework for $RELATIVE_EXT"
-               mkdir -p "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
-               cp "$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-               plutil -replace CFBundleExecutable -string "$FULL_MODULE_NAME" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-               plutil -replace CFBundleIdentifier -string "$FRAMEWORK_BUNDLE_ID" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
-           fi
-
-           echo "Installing binary for $FRAMEWORK_FOLDER/$FULL_MODULE_NAME"
-           mv "$FULL_EXT" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME"
-           # Create a placeholder .fwork file where the .so was
-           echo "$FRAMEWORK_FOLDER/$FULL_MODULE_NAME" > ${FULL_EXT%.so}.fwork
-           # Create a back reference to the .so file location in the framework
-           echo "${RELATIVE_EXT%.so}.fwork" > "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME.origin"
-        }
-
-        PYTHON_VER=$(ls -1 "$CODESIGNING_FOLDER_PATH/python/lib")
-        echo "Install Python $PYTHON_VER standard library extension modules..."
-        find "$CODESIGNING_FOLDER_PATH/python/lib/$PYTHON_VER/lib-dynload" -name "*.so" | while read FULL_EXT; do
-           install_dylib python/lib/$PYTHON_VER/lib-dynload/ "$FULL_EXT"
-        done
-
-        # Clean up dylib template
-        rm -f "$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist"
-
-        echo "Signing frameworks as $EXPANDED_CODE_SIGN_IDENTITY_NAME ($EXPANDED_CODE_SIGN_IDENTITY)..."
-        find "$CODESIGNING_FOLDER_PATH/Frameworks" -name "*.framework" -exec /usr/bin/codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" ${OTHER_CODE_SIGN_FLAGS:-} -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "{}" \;
-
-10. Add Objective C code to initialize and use a Python interpreter in embedded
-    mode. You should ensure that:
-
-   * :c:member:`UTF-8 mode <PyPreConfig.utf8_mode>` is *enabled*;
-   * :c:member:`Buffered stdio <PyConfig.buffered_stdio>` is *disabled*;
-   * :c:member:`Writing bytecode <PyConfig.write_bytecode>` is *disabled*;
-   * :c:member:`Signal handlers <PyConfig.install_signal_handlers>` are *enabled*;
-   * ``PYTHONHOME`` for the interpreter is configured to point at the
+   * UTF-8 mode (:c:member:`PyPreConfig.utf8_mode`) is *enabled*;
+   * Buffered stdio (:c:member:`PyConfig.buffered_stdio`) is *disabled*;
+   * Writing bytecode (:c:member:`PyConfig.write_bytecode`) is *disabled*;
+   * Signal handlers (:c:member:`PyConfig.install_signal_handlers`) are *enabled*;
+   * System logging (:c:member:`PyConfig.use_system_logger`) is *enabled*
+     (optional, but strongly recommended; this is enabled by default);
+   * :envvar:`PYTHONHOME` for the interpreter is configured to point at the
      ``python`` subfolder of your app's bundle; and
-   * The ``PYTHONPATH`` for the interpreter includes:
+   * The :envvar:`PYTHONPATH` for the interpreter includes:
 
      - the ``python/lib/python3.X`` subfolder of your app's bundle,
      - the ``python/lib/python3.X/lib-dynload`` subfolder of your app's bundle, and
@@ -307,22 +244,83 @@ To add Python to an iOS Xcode project:
    Your app's bundle location can be determined using ``[[NSBundle mainBundle]
    resourcePath]``.
 
-Steps 8, 9 and 10 of these instructions assume that you have a single folder of
+Steps 7 and 8 of these instructions assume that you have a single folder of
 pure Python application code, named ``app``. If you have third-party binary
 modules in your app, some additional steps will be required:
 
 * You need to ensure that any folders containing third-party binaries are
-  either associated with the app target, or copied in as part of step 8. Step 8
-  should also purge any binaries that are not appropriate for the platform a
-  specific build is targeting (i.e., delete any device binaries if you're
-  building an app targeting the simulator).
+  either associated with the app target, or are explicitly copied as part of
+  step 7. Step 7 should also purge any binaries that are not appropriate for
+  the platform a specific build is targeting (i.e., delete any device binaries
+  if you're building an app targeting the simulator).
 
-* Any folders that contain third-party binaries must be processed into
-  framework form by step 9. The invocation of ``install_dylib`` that processes
-  the ``lib-dynload`` folder can be copied and adapted for this purpose.
+* If you're using a separate folder for third-party packages, ensure that
+  folder is added to the end of the call to ``install_python`` in step 7, and
+  as part of the :envvar:`PYTHONPATH` configuration in step 8.
 
-* If you're using a separate folder for third-party packages, ensure that folder
-  is included as part of the ``PYTHONPATH`` configuration in step 10.
+* If any of the folders that contain third-party packages will contain ``.pth``
+  files, you should add that folder as a *site directory* (using
+  :meth:`site.addsitedir`), rather than adding to :envvar:`PYTHONPATH` or
+  :attr:`sys.path` directly.
+
+Testing a Python package
+------------------------
+
+The CPython source tree contains :source:`a testbed project <Apple/iOS/testbed>` that
+is used to run the CPython test suite on the iOS simulator. This testbed can also
+be used as a testbed project for running your Python library's test suite on iOS.
+
+After building or obtaining an iOS XCFramework (see :source:`Apple/iOS/README.md`
+for details), create a clone of the Python iOS testbed project. If you used the
+``Apple`` build script to build the XCframework, you can run:
+
+.. code-block:: bash
+
+    $ python cross-build/iOS/testbed clone --app <path/to/module1> --app <path/to/module2> app-testbed
+
+Or, if you've sourced your own XCframework, by running:
+
+.. code-block:: bash
+
+    $ python Apple/testbed clone --platform iOS --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
+
+Any folders specified with the ``--app`` flag will be copied into the cloned
+testbed project. The resulting testbed will be created in the ``app-testbed``
+folder. In this example, the ``module1`` and ``module2`` would be importable
+modules at runtime. If your project has additional dependencies, they can be
+installed into the ``app-testbed/Testbed/app_packages`` folder (using ``pip
+install --target app-testbed/Testbed/app_packages`` or similar).
+
+You can then use the ``app-testbed`` folder to run the test suite for your app,
+For example, if ``module1.tests`` was the entry point to your test suite, you
+could run:
+
+.. code-block:: bash
+
+    $ python app-testbed run -- module1.tests
+
+This is the equivalent of running ``python -m module1.tests`` on a desktop
+Python build. Any arguments after the ``--`` will be passed to the testbed as
+if they were arguments to ``python -m`` on a desktop machine.
+
+You can also open the testbed project in Xcode by running:
+
+.. code-block:: bash
+
+    $ open app-testbed/iOSTestbed.xcodeproj
+
+This will allow you to use the full Xcode suite of tools for debugging.
+
+The arguments used to run the test suite are defined as part of the test plan.
+To modify the test plan, select the test plan node of the project tree (it
+should be the first child of the root node), and select the "Configurations"
+tab. Modify the "Arguments Passed On Launch" value to change the testing
+arguments.
+
+The test plan also disables parallel testing, and specifies the use of the
+``Testbed.lldbinit`` file for providing configuration of the debugger. The
+default debugger configuration disables automatic breakpoints on the
+``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
 
 App Store Compliance
 ====================
@@ -330,7 +328,12 @@ App Store Compliance
 The only mechanism for distributing apps to third-party iOS devices is to
 submit the app to the iOS App Store; apps submitted for distribution must pass
 Apple's app review process. This process includes a set of automated validation
-rules that inspect the submitted application bundle for problematic code.
+rules that inspect the submitted application bundle for problematic code. There
+are some steps that must be taken to ensure that your app will be able to pass
+these validation steps.
+
+Incompatible code in the standard library
+-----------------------------------------
 
 The Python standard library contains some code that is known to violate these
 automated rules. While these violations appear to be false positives, Apple's
@@ -341,3 +344,18 @@ The Python source tree contains
 :source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
 all code that is known to cause issues with the App Store review process. This
 patch is applied automatically when building for iOS.
+
+Privacy manifests
+-----------------
+
+In April 2025, Apple introduced a requirement for `certain third-party
+libraries to provide a Privacy Manifest
+<https://developer.apple.com/support/third-party-SDK-requirements>`__.
+As a result, if you have a binary module that uses one of the affected
+libraries, you must provide an ``.xcprivacy`` file for that library.
+OpenSSL is one library affected by this requirement, but there are others.
+
+If you produce a binary module named ``mymodule.so``, and use you the Xcode
+build script described in step 7 above, you can place a ``mymodule.xcprivacy``
+file next to ``mymodule.so``, and the privacy manifest will be installed into
+the required location when the binary module is converted into a framework.

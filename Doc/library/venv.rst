@@ -22,9 +22,12 @@ The :mod:`!venv` module supports creating lightweight "virtual environments",
 each with their own independent set of Python packages installed in
 their :mod:`site` directories.
 A virtual environment is created on top of an existing
-Python installation, known as the virtual environment's "base" Python, and may
-optionally be isolated from the packages in the base environment,
-so only those explicitly installed in the virtual environment are available.
+Python installation, known as the virtual environment's "base" Python, and by
+default is isolated from the packages in the base environment,
+so that only those explicitly installed in the virtual environment are
+available. See :ref:`sys-path-init-virtual-environments` and :mod:`site`'s
+:ref:`virtual environments documentation <site-virtual-environments-configuration>`
+for more information.
 
 When used from within a virtual environment, common installation tools such as
 :pypi:`pip` will install Python packages into a virtual environment
@@ -75,7 +78,7 @@ It also creates a :file:`bin` (or :file:`Scripts` on Windows) subdirectory
 containing a copy or symlink of the Python executable
 (as appropriate for the platform or arguments used at environment creation time).
 It also creates a :file:`lib/pythonX.Y/site-packages` subdirectory
-(on Windows, this is :file:`Lib\site-packages`).
+(on Windows, this is :file:`Lib\\site-packages`).
 If an existing directory is specified, it will be re-used.
 
 .. versionchanged:: 3.5
@@ -102,35 +105,51 @@ The command, if run with ``-h``, will show the available options::
 
    Creates virtual Python environments in one or more target directories.
 
-   positional arguments:
-     ENV_DIR               A directory to create the environment in.
-
-   options:
-     -h, --help            show this help message and exit
-     --system-site-packages
-                           Give the virtual environment access to the system
-                           site-packages dir.
-     --symlinks            Try to use symlinks rather than copies, when
-                           symlinks are not the default for the platform.
-     --copies              Try to use copies rather than symlinks, even when
-                           symlinks are the default for the platform.
-     --clear               Delete the contents of the environment directory
-                           if it already exists, before environment creation.
-     --upgrade             Upgrade the environment directory to use this
-                           version of Python, assuming Python has been
-                           upgraded in-place.
-     --without-pip         Skips installing or upgrading pip in the virtual
-                           environment (pip is bootstrapped by default)
-     --prompt PROMPT       Provides an alternative prompt prefix for this
-                           environment.
-     --upgrade-deps        Upgrade core dependencies (pip) to the latest
-                           version in PyPI
-     --without-scm-ignore-files
-                           Skips adding SCM ignore files to the environment
-                           directory (Git is supported by default).
-
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
+
+.. _venv-cli:
+.. program:: venv
+
+.. option:: ENV_DIR
+
+   A required argument specifying the directory to create the environment in.
+
+.. option:: --system-site-packages
+
+   Give the virtual environment access to the system site-packages directory.
+
+.. option:: --symlinks
+
+   Try to use symlinks rather than copies, when symlinks are not the default for the platform.
+
+.. option:: --copies
+
+   Try to use copies rather than symlinks, even when symlinks are the default for the platform.
+
+.. option:: --clear
+
+   Delete the contents of the environment directory if it already exists, before environment creation.
+
+.. option:: --upgrade
+
+   Upgrade the environment directory to use this version of Python, assuming Python has been upgraded in-place.
+
+.. option:: --without-pip
+
+   Skips installing or upgrading pip in the virtual environment (pip is bootstrapped by default).
+
+.. option:: --prompt <PROMPT>
+
+   Provides an alternative prompt prefix for this environment.
+
+.. option:: --upgrade-deps
+
+   Upgrade core dependencies (pip) to the latest version in PyPI.
+
+.. option:: --without-scm-ignore-files
+
+   Skips adding SCM ignore files to the environment directory (Git is supported by default).
 
 
 .. versionchanged:: 3.4
@@ -388,6 +407,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
         * ``lib_path`` - The purelib path for the virtual environment.
 
+        * ``platlib_path`` - The platlib path for the virtual environment.
+
         * ``bin_path`` - The script path for the virtual environment.
 
         * ``bin_name`` - The name of the script path relative to the virtual
@@ -411,6 +432,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
         .. versionchanged:: 3.12
            The attribute ``lib_path`` was added to the context, and the context
            object was documented.
+
+        .. versionchanged:: 3.15
+           The attribute ``platlib_path`` was added to the context.
 
     .. method:: create_configuration(context)
 

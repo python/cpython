@@ -150,6 +150,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
@@ -247,6 +253,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 +-----------------+-------------------+---------------------------+
 |                 | gi_running        | is the generator running? |
 +-----------------+-------------------+---------------------------+
+|                 | gi_suspended      | is the generator          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 |                 | gi_code           | code                      |
 +-----------------+-------------------+---------------------------+
 |                 | gi_yieldfrom      | object being iterated by  |
@@ -310,6 +319,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
+
 .. function:: getmembers(object[, predicate])
 
    Return all the members of an object in a list of ``(name, value)``
@@ -372,6 +385,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethod(object)
 
    Return ``True`` if the object is a bound method written in Python.
+
+
+.. function:: ispackage(object)
+
+   Return ``True`` if the object is a :term:`package`.
+
+   .. versionadded:: 3.14
 
 
 .. function:: isfunction(object)
@@ -599,16 +619,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
-   If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
-   string from the inheritance hierarchy.
+   If the documentation string for an object is not provided:
+
+   * if the object is a class and *inherit_class_doc* is true (by default),
+     retrieve the documentation string from the inheritance hierarchy;
+   * if the object is a method, a property or a descriptor, retrieve
+     the documentation string from the inheritance hierarchy;
+   * otherwise, if *fallback_to_class_doc* is true (by default), retrieve
+     the documentation string from the class of the object.
+
    Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.15
+      Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
+
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overridden.
 
 
 .. function:: getcomments(object)
@@ -1162,7 +1194,7 @@ Classes and functions
       :func:`signature` in Python 3.5, but that decision has been reversed
       in order to restore a clearly supported standard interface for
       single-source Python 2/3 code migrating away from the legacy
-      :func:`getargspec` API.
+      :func:`!getargspec` API.
 
    .. versionchanged:: 3.7
       Python only explicitly guaranteed that it preserved the declaration
@@ -1271,6 +1303,11 @@ Classes and functions
 
    This is an alias for :func:`annotationlib.get_annotations`; see the documentation
    of that function for more information.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.10
 
@@ -1693,6 +1730,21 @@ which is a bitmap of the following flags:
 
    .. versionadded:: 3.6
 
+.. data:: CO_HAS_DOCSTRING
+
+   The flag is set when there is a docstring for the code object in
+   the source code. If set, it will be the first item in
+   :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
+
+   .. versionadded:: 3.14
+
 .. note::
    The flags are specific to CPython, and may not be defined in other
    Python implementations.  Furthermore, the flags are an implementation
@@ -1736,7 +1788,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability

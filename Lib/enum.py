@@ -10,14 +10,15 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
-        'pickle_by_global_name', 'pickle_by_enum_name',
+        'pickle_by_global_name', 'pickle_by_enum_name', 'show_flag_values',
+        'bin',
         ]
 
 
 # Dummy value for Enum and Flag as there are explicit checks for them
 # before they have been created.
 # This is also why there are checks in EnumType like `if Enum is not None`
-Enum = Flag = EJECT = _stdlib_enums = ReprEnum = None
+Enum = Flag = EJECT = ReprEnum = None
 
 class nonmember(object):
     """
@@ -149,18 +150,6 @@ def bin(num, max_bits=None):
         if len(digits) < max_bits:
             digits = (sign[-1] * max_bits + digits)[-max_bits:]
     return "%s %s" % (sign, digits)
-
-def _dedent(text):
-    """
-    Like textwrap.dedent.  Rewritten because we cannot import textwrap.
-    """
-    lines = text.split('\n')
-    for i, ch in enumerate(lines[0]):
-        if ch != ' ':
-            break
-    for j, l in enumerate(lines):
-        lines[j] = l[i:]
-    return '\n'.join(lines)
 
 class _not_given:
     def __repr__(self):
@@ -342,12 +331,13 @@ class EnumDict(dict):
     EnumType will use the names found in self._member_names as the
     enumeration member names.
     """
-    def __init__(self):
+    def __init__(self, cls_name=None):
         super().__init__()
         self._member_names = {} # use a dict -- faster look-up than a list, and keeps insertion order since 3.7
         self._last_values = []
         self._ignore = []
         self._auto_called = False
+        self._cls_name = cls_name
 
     def __setitem__(self, key, value):
         """
@@ -358,7 +348,7 @@ class EnumDict(dict):
 
         Single underscore (sunder) names are reserved.
         """
-        if _is_private(self._cls_name, key):
+        if self._cls_name is not None and _is_private(self._cls_name, key):
             # do nothing, name will be a normal attribute
             pass
         elif _is_sunder(key):
@@ -406,7 +396,7 @@ class EnumDict(dict):
             value = value.value
         elif _is_descriptor(value):
             pass
-        elif _is_internal_class(self._cls_name, value):
+        elif self._cls_name is not None and _is_internal_class(self._cls_name, value):
             # do nothing, name will be a normal attribute
             pass
         else:
@@ -478,8 +468,7 @@ class EnumType(type):
         # check that previous enum members do not exist
         metacls._check_for_existing_members_(cls, bases)
         # create the namespace dict
-        enum_dict = EnumDict()
-        enum_dict._cls_name = cls
+        enum_dict = EnumDict(cls)
         # inherit previous flags and _generate_next_value_ function
         member_type, first_enum = metacls._get_mixins_(cls, bases)
         if first_enum is not None:
@@ -547,7 +536,7 @@ class EnumType(type):
         # now set the __repr__ for the value
         classdict['_value_repr_'] = metacls._find_data_repr_(cls, bases)
         #
-        # Flag structures (will be removed if final class is not a Flag
+        # Flag structures (will be removed if final class is not a Flag)
         classdict['_boundary_'] = (
                 boundary
                 or getattr(first_enum, '_boundary_', None)
@@ -556,6 +545,29 @@ class EnumType(type):
         classdict['_singles_mask_'] = 0
         classdict['_all_bits_'] = 0
         classdict['_inverted_'] = None
+        # check for negative flag values and invert if found (using _proto_members)
+        if Flag is not None and bases and issubclass(bases[-1], Flag):
+            bits = 0
+            inverted = []
+            for n in member_names:
+                p = classdict[n]
+                if isinstance(p.value, int):
+                    if p.value < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value
+                elif p.value is None:
+                    pass
+                elif isinstance(p.value, tuple) and p.value and isinstance(p.value[0], int):
+                    if p.value[0] < 0:
+                        inverted.append(p)
+                    else:
+                        bits |= p.value[0]
+            for p in inverted:
+                if isinstance(p.value, int):
+                    p.value = bits & p.value
+                else:
+                    p.value = (bits & p.value[0], ) + p.value[1:]
         try:
             classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
@@ -739,16 +751,20 @@ class EnumType(type):
         `value` is in `cls` if:
         1) `value` is a member of `cls`, or
         2) `value` is the value of one of the `cls`'s members.
+        3) `value` is a pseudo-member (flags)
         """
         if isinstance(value, cls):
             return True
-        try:
-            return value in cls._value2member_map_
-        except TypeError:
-            return (
-                    value in cls._unhashable_values_    # both structures are lists
-                    or value in cls._hashable_values_
-                    )
+        if issubclass(cls, Flag):
+            try:
+                result = cls._missing_(value)
+                return isinstance(result, cls)
+            except ValueError:
+                pass
+        return (
+                value in cls._unhashable_values_    # both structures are lists
+                or value in cls._hashable_values_
+                )
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -758,12 +774,16 @@ class EnumType(type):
         super().__delattr__(attr)
 
     def __dir__(cls):
+        if issubclass(cls, Flag):
+            members = list(cls._member_map_.keys())
+        else:
+            members = cls._member_names_
         interesting = set([
                 '__class__', '__contains__', '__doc__', '__getitem__',
                 '__iter__', '__len__', '__members__', '__module__',
                 '__name__', '__qualname__',
                 ]
-                + cls._member_names_
+                + members
                 )
         if cls._new_member_ is not object.__new__:
             interesting.add('__new__')
@@ -1211,9 +1231,6 @@ class Enum(metaclass=EnumType):
             exc = None
             ve_exc = None
 
-    def __init__(self, *args, **kwds):
-        pass
-
     def _add_alias_(self, name):
         self.__class__._add_member_(name, self)
 
@@ -1498,7 +1515,10 @@ class Flag(Enum, boundary=STRICT):
                         )
         if value < 0:
             neg_value = value
-            value = all_bits + 1 + value
+            if cls._boundary_ in (EJECT, KEEP):
+                value = all_bits + 1 + value
+            else:
+                value = singles_mask & value
         # get members and unknown
         unknown = value & ~flag_mask
         aliases = value & ~singles_mask
@@ -1976,7 +1996,7 @@ class verify:
                         if 2**i not in values:
                             missing.append(2**i)
                 elif enum_type == 'enum':
-                    # check for powers of one
+                    # check for missing consecutive integers
                     for i in range(low+1, high):
                         if i not in values:
                             missing.append(i)
@@ -2174,5 +2194,3 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
     return cls
-
-_stdlib_enums = IntEnum, StrEnum, IntFlag

@@ -6,12 +6,13 @@ machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
 import importlib.util
+from importlib import _bootstrap_external
 import os
 import pathlib
-import re
 import string
 import sys
 from test import support
+from test.support import os_helper
 import textwrap
 import types
 import unittest
@@ -123,12 +124,6 @@ class ModuleFromSpecTests:
         module = self.util.module_from_spec(spec)
         self.assertEqual(module.__file__, spec.origin)
 
-    def test___cached__(self):
-        spec = self.machinery.ModuleSpec('test', object())
-        spec.cached = 'some/path'
-        spec.has_location = True
-        module = self.util.module_from_spec(spec)
-        self.assertEqual(module.__cached__, spec.cached)
 
 (Frozen_ModuleFromSpecTests,
  Source_ModuleFromSpecTests
@@ -319,7 +314,7 @@ class MagicNumberTests:
 
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
-        self.assertTrue(self.util.MAGIC_NUMBER.endswith(b'\r\n'))
+        self.assertEndsWith(self.util.MAGIC_NUMBER, b'\r\n')
 
 
 (Frozen_MagicNumberTests,
@@ -358,46 +353,11 @@ class PEP3147Tests:
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
 
-    def test_cache_from_source_debug_override(self):
-        # Given the path to a .py file, return the path to its PEP 3147/PEP 488
-        # defined .pyc file (i.e. under __pycache__).
-        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, False),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, True),
-                             self.util.cache_from_source(path, optimization=''))
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, False)
-            with self.assertRaises(DeprecationWarning):
-                self.util.cache_from_source(path, True)
-
     def test_cache_from_source_cwd(self):
         path = 'foo.py'
         expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
         self.assertEqual(self.util.cache_from_source(path, optimization=''),
                          expect)
-
-    def test_cache_from_source_override(self):
-        # When debug_override is not None, it can be any true-ish or false-ish
-        # value.
-        path = os.path.join('foo', 'bar', 'baz.py')
-        # However if the bool-ishness can't be determined, the exception
-        # propagates.
-        class Bearish:
-            def __bool__(self): raise RuntimeError
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.assertEqual(self.util.cache_from_source(path, []),
-                             self.util.cache_from_source(path, optimization=1))
-            self.assertEqual(self.util.cache_from_source(path, [17]),
-                             self.util.cache_from_source(path, optimization=''))
-            with self.assertRaises(RuntimeError):
-                self.util.cache_from_source('/foo/bar/baz.py', Bearish())
-
 
     def test_cache_from_source_optimization_empty_string(self):
         # Setting 'optimization' to '' leads to no optimization tag (PEP 488).
@@ -581,6 +541,18 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_in_root_with_pycache_prefix(self):
+        # Regression test for gh-82916
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = 'qux.py'
+        expect = os.path.join(os.path.sep, 'tmp', 'bytecode',
+                              f'qux.{self.tag}.pyc')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            with os_helper.change_cwd('/'):
+                self.assertEqual(self.util.cache_from_source(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_inside_pycache_prefix(self):
         # If pycache_prefix is set and the cache path we get is inside it,
         # we return an absolute path to the py file based on the remainder of
@@ -634,7 +606,7 @@ class MagicNumberTests(unittest.TestCase):
         # stakeholders such as OS package maintainers must be notified
         # in advance. Such exceptional releases will then require an
         # adjustment to this test case.
-        EXPECTED_MAGIC_NUMBER = 3495
+        EXPECTED_MAGIC_NUMBER = 3625
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (
@@ -773,6 +745,75 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
             self.run_with_shared_gil(script)
         with self.subTest('check enabled, per-interpreter GIL'):
             self.run_with_own_gil(script)
+
+
+class PatchAtomicWrites:
+    def __init__(self, truncate_at_length, never_complete=False):
+        self.truncate_at_length = truncate_at_length
+        self.never_complete = never_complete
+        self.seen_write = False
+        self._children = []
+
+    def __enter__(self):
+        import _pyio
+
+        oldwrite = os.write
+
+        # Emulate an os.write that only writes partial data.
+        def write(fd, data):
+            if self.seen_write and self.never_complete:
+                return None
+            self.seen_write = True
+            return oldwrite(fd, data[:self.truncate_at_length])
+
+        # Need to patch _io to be _pyio, so that io.FileIO is affected by the
+        # os.write patch.
+        self.children = [
+            support.swap_attr(_bootstrap_external, '_io', _pyio),
+            support.swap_attr(os, 'write', write)
+        ]
+        for child in self.children:
+            child.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for child in self.children:
+            child.__exit__(exc_type, exc_val, exc_tb)
+
+
+class MiscTests(unittest.TestCase):
+
+    def test_atomic_write_retries_incomplete_writes(self):
+        truncate_at_length = 100
+        length = truncate_at_length * 2
+
+        with PatchAtomicWrites(truncate_at_length=truncate_at_length) as cm:
+            # Make sure we write something longer than the point where we
+            # truncate.
+            content = b'x' * length
+            _bootstrap_external._write_atomic(os_helper.TESTFN, content)
+        self.assertTrue(cm.seen_write)
+
+        self.assertEqual(os.stat(support.os_helper.TESTFN).st_size, length)
+        os.unlink(support.os_helper.TESTFN)
+
+    def test_atomic_write_errors_if_unable_to_complete(self):
+        truncate_at_length = 100
+
+        with (
+            PatchAtomicWrites(
+                truncate_at_length=truncate_at_length, never_complete=True,
+            ) as cm,
+            self.assertRaises(OSError)
+        ):
+            # Make sure we write something longer than the point where we
+            # truncate.
+            content = b'x' * (truncate_at_length * 2)
+            _bootstrap_external._write_atomic(os_helper.TESTFN, content)
+        self.assertTrue(cm.seen_write)
+
+        with self.assertRaises(OSError):
+            os.stat(support.os_helper.TESTFN) # Check that the file did not get written.
 
 
 if __name__ == '__main__':

@@ -62,37 +62,112 @@
 #ifdef Py_STATS
 #define INSTRUCTION_STATS(op) \
     do { \
+        PyStats *s = _PyStats_GET(); \
         OPCODE_EXE_INC(op); \
-        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (s) s->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#if USE_COMPUTED_GOTOS
+#ifdef Py_STATS
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg, int lastopcode
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg, lastopcode
+#else
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, const void *instruction_funcptr_table, int oparg
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
+#endif
+
+#if _Py_TAIL_CALL_INTERP
+#   if defined(__clang__) || defined(__GNUC__)
+#       if !_Py__has_attribute(preserve_none) || !_Py__has_attribute(musttail)
+#           error "This compiler does not have support for efficient tail calling."
+#       endif
+#   elif defined(_MSC_VER) && (_MSC_VER < 1950)
+#       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
+#   endif
+
+    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
+#   define Py_MUSTTAIL [[clang::musttail]]
+#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+    Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+
+#   define DISPATCH_TABLE_VAR instruction_funcptr_table
+#   define DISPATCH_TABLE instruction_funcptr_handler_table
+#   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
+#   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+
+#   define DISPATCH_GOTO() \
+        do { \
+            Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
+        } while (0)
+#   define DISPATCH_GOTO_NON_TRACING() \
+        do { \
+            Py_MUSTTAIL return (((py_tail_call_funcptr *)DISPATCH_TABLE)[opcode])(TAIL_CALL_ARGS); \
+        } while (0)
+#   define JUMP_TO_LABEL(name) \
+        do { \
+            Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
+        } while (0)
+#   ifdef Py_STATS
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg, lastopcode); \
+            } while (0)
+#   else
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, instruction_funcptr_table, oparg); \
+            } while (0)
+#   endif
+#    define LABEL(name) TARGET(name)
+#elif USE_COMPUTED_GOTOS
+#  define DISPATCH_TABLE_VAR opcode_targets
+#  define DISPATCH_TABLE opcode_targets_table
+#  define TRACING_DISPATCH_TABLE opcode_tracing_targets_table
 #  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define DISPATCH_GOTO_NON_TRACING() goto *DISPATCH_TABLE[opcode];
+#  define JUMP_TO_LABEL(name) goto name;
+#  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
+#  define LABEL(name) name:
 #else
 #  define TARGET(op) case op: TARGET_##op:
-#  define DISPATCH_GOTO() goto dispatch_opcode
+#  define DISPATCH_GOTO() dispatch_code = opcode | tracing_mode ; goto dispatch_opcode
+#  define DISPATCH_GOTO_NON_TRACING() dispatch_code = opcode; goto dispatch_opcode
+#  define JUMP_TO_LABEL(name) goto name;
+#  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
+#  define LABEL(name) name:
+#endif
+
+#if (_Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS) && _Py_TIER2
+#  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
+#  define ENTER_TRACING() \
+    DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
+#  define LEAVE_TRACING() \
+    DISPATCH_TABLE_VAR = DISPATCH_TABLE;
+#else
+#  define IS_JIT_TRACING() (tracing_mode != 0)
+#  define ENTER_TRACING() tracing_mode = 255
+#  define LEAVE_TRACING() tracing_mode = 0
 #endif
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
-#ifdef LLTRACE
-#define PRE_DISPATCH_GOTO() if (lltrace >= 5) { \
+#ifdef Py_DEBUG
+#define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
     lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
-#if LLTRACE
+#ifdef Py_DEBUG
 #define LLTRACE_RESUME_FRAME() \
 do { \
-    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
-    if (lltrace < 0) { \
-        goto exit_unwind; \
-    } \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
+    int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
+    frame->lltrace = lltrace; \
 } while (0)
 #else
 #define LLTRACE_RESUME_FRAME() ((void)0)
@@ -114,11 +189,19 @@ do { \
         DISPATCH_GOTO(); \
     }
 
+#define DISPATCH_NON_TRACING() \
+    { \
+        assert(frame->stackpointer == NULL); \
+        NEXTOPARG(); \
+        PRE_DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
+    }
+
 #define DISPATCH_SAME_OPARG() \
     { \
         opcode = next_instr->op.code; \
         PRE_DISPATCH_GOTO(); \
-        DISPATCH_GOTO(); \
+        DISPATCH_GOTO_NON_TRACING(); \
     }
 
 #define DISPATCH_INLINED(NEW_FRAME)                     \
@@ -128,11 +211,8 @@ do { \
         assert((NEW_FRAME)->previous == frame);         \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
-        goto start_frame;                               \
+        JUMP_TO_LABEL(start_frame);                      \
     } while (0)
-
-// Use this instead of 'goto error' so Tier 2 can go to a different label
-#define GOTO_ERROR(LABEL) goto LABEL
 
 /* Tuple access macros */
 
@@ -151,7 +231,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* Code access macros */
 
 /* The integer overflow is checked by an assertion below. */
-#define INSTR_OFFSET() ((int)(next_instr - _PyCode_CODE(_PyFrame_GetCode(frame))))
+#define INSTR_OFFSET() ((int)(next_instr - _PyFrame_GetBytecode(frame)))
 #define NEXTOPARG()  do { \
         _Py_CODEUNIT word  = {.cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t*)next_instr)}; \
         opcode = word.op.code; \
@@ -165,80 +245,19 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
-/* OpCode prediction macros
-    Some opcodes tend to come in pairs thus making it possible to
-    predict the second code when the first is run.  For example,
-    COMPARE_OP is often followed by POP_JUMP_IF_FALSE or POP_JUMP_IF_TRUE.
-
-    Verifying the prediction costs a single high-speed test of a register
-    variable against a constant.  If the pairing was good, then the
-    processor's own internal branch predication has a high likelihood of
-    success, resulting in a nearly zero-overhead transition to the
-    next opcode.  A successful prediction saves a trip through the eval-loop
-    including its unpredictable switch-case branch.  Combined with the
-    processor's internal branch prediction, a successful PREDICT has the
-    effect of making the two opcodes run as if they were a single new opcode
-    with the bodies combined.
-
-    If collecting opcode statistics, your choices are to either keep the
-    predictions turned-on and interpret the results as if some opcodes
-    had been combined or turn-off predictions so that the opcode frequency
-    counter updates for both opcodes.
-
-    Opcode prediction is disabled with threaded code, since the latter allows
-    the CPU to record separate branch prediction information for each
-    opcode.
-
-*/
-
-#define PREDICT_ID(op)          PRED_##op
-#define PREDICTED(op)           PREDICT_ID(op):
-
-
-/* Stack manipulation macros */
-
-/* The stack can grow at most MAXINT deep, as co_nlocals and
-   co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
 #define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
-#define EMPTY()           (STACK_LEVEL() == 0)
-#define TOP()             (stack_pointer[-1])
-#define SECOND()          (stack_pointer[-2])
-#define THIRD()           (stack_pointer[-3])
-#define FOURTH()          (stack_pointer[-4])
-#define PEEK(n)           (stack_pointer[-(n)])
-#define POKE(n, v)        (stack_pointer[-(n)] = (v))
-#define SET_TOP(v)        (stack_pointer[-1] = (v))
-#define SET_SECOND(v)     (stack_pointer[-2] = (v))
-#define BASIC_STACKADJ(n) (stack_pointer += n)
-#define BASIC_PUSH(v)     (*stack_pointer++ = (v))
-#define BASIC_POP()       (*--stack_pointer)
-
-#ifdef Py_DEBUG
-#define PUSH(v)         do { \
-                            BASIC_PUSH(v); \
-                            assert(STACK_LEVEL() <= STACK_SIZE()); \
-                        } while (0)
-#define POP()           (assert(STACK_LEVEL() > 0), BASIC_POP())
-#define STACK_GROW(n)   do { \
-                            assert(n >= 0); \
-                            BASIC_STACKADJ(n); \
-                            assert(STACK_LEVEL() <= STACK_SIZE()); \
-                        } while (0)
-#define STACK_SHRINK(n) do { \
-                            assert(n >= 0); \
-                            assert(STACK_LEVEL() >= n); \
-                            BASIC_STACKADJ(-(n)); \
-                        } while (0)
-#else
-#define PUSH(v)                BASIC_PUSH(v)
-#define POP()                  BASIC_POP()
-#define STACK_GROW(n)          BASIC_STACKADJ(n)
-#define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
-#endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame == &entry_frame || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+// This allows temporary stack "overflows", provided it's all in the cache at any point of time.
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#else
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#endif
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
@@ -249,17 +268,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
-/* The SETLOCAL() macro must not DECREF the local variable in-place and
-   then store the new value; it must copy the old value to a temporary
-   value, then store the new value, and then DECREF the temporary value.
-   This is because it is possible that during the DECREF the frame is
-   accessed by other code (e.g. a __del__ method or gc.collect()) and the
-   variable would be pointing to already-freed memory. */
-#define SETLOCAL(i, value)      do { _PyStackRef tmp = GETLOCAL(i); \
-                                     GETLOCAL(i) = value; \
-                                     PyStackRef_XCLOSE(tmp); } while (0)
-
-#define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \
@@ -275,14 +283,29 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define UPDATE_MISS_STATS(INSTNAME) ((void)0)
 #endif
 
-#define DEOPT_IF(COND, INSTNAME)                            \
-    if ((COND)) {                                           \
-        /* This is only a single jump on release builds! */ \
-        UPDATE_MISS_STATS((INSTNAME));                      \
-        assert(_PyOpcode_Deopt[opcode] == (INSTNAME));      \
-        GO_TO_INSTRUCTION(INSTNAME);                        \
-    }
 
+// Try to lock an object in the free threading build, if it's not already
+// locked. Use with a DEOPT_IF() to deopt if the object is already locked.
+// These are no-ops in the default GIL build. The general pattern is:
+//
+// DEOPT_IF(!LOCK_OBJECT(op));
+// if (/* condition fails */) {
+//     UNLOCK_OBJECT(op);
+//     DEOPT_IF(true);
+//  }
+//  ...
+//  UNLOCK_OBJECT(op);
+//
+// NOTE: The object must be unlocked on every exit code path and you should
+// avoid any potentially escaping calls (like PyStackRef_CLOSE) while the
+// object is locked.
+#ifdef Py_GIL_DISABLED
+#  define LOCK_OBJECT(op) PyMutex_LockFast(&(_PyObject_CAST(op))->ob_mutex)
+#  define UNLOCK_OBJECT(op) PyMutex_Unlock(&(_PyObject_CAST(op))->ob_mutex)
+#else
+#  define LOCK_OBJECT(op) (1)
+#  define UNLOCK_OBJECT(op) ((void)0)
+#endif
 
 #define GLOBALS() frame->f_globals
 #define BUILTINS() frame->f_builtins
@@ -298,17 +321,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 /* This takes a uint16_t instead of a _Py_BackoffCounter,
  * because it is used directly on the cache entry in generated code,
  * which is always an integral type. */
+// Force re-specialization when tracing a side exit to get good side exits.
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
     backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
-#ifdef Py_GIL_DISABLED
-#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
-    do { \
-        /* gh-115999 tracks progress on addressing this. */ \
-        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
-    } while (0);
-#define PAUSE_ADAPTIVE_COUNTER(COUNTER) ((void)COUNTER)
-#else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
         (COUNTER) = advance_backoff_counter((COUNTER)); \
@@ -318,6 +334,18 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     do { \
         (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
+
+#ifdef ENABLE_SPECIALIZATION_FT
+/* Multiple threads may execute these concurrently if thread-local bytecode is
+ * disabled and they all execute the main copy of the bytecode. Specialization
+ * is disabled in that case so the value is unused, but the RMW cycle should be
+ * free of data races.
+ */
+#define RECORD_BRANCH_TAKEN(bitset, flag) \
+    FT_ATOMIC_STORE_UINT16_RELAXED(       \
+        bitset, (FT_ATOMIC_LOAD_UINT16_RELAXED(bitset) << 1) | (flag))
+#else
+#define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
 
 #define UNBOUNDLOCAL_ERROR_MSG \
@@ -336,11 +364,11 @@ do { \
         next_instr = dest; \
     } else { \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        next_instr = _Py_call_instrumentation_jump(this_instr, tstate, event, frame, src, dest); \
         stack_pointer = _PyFrame_GetStackPointer(frame); \
         if (next_instr == NULL) { \
             next_instr = (dest)+1; \
-            goto error; \
+            JUMP_TO_LABEL(error); \
         } \
     } \
 } while (0);
@@ -374,76 +402,97 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#ifdef _Py_JIT
-#define GOTO_TIER_TWO(EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
-    jit_func jitted = (EXECUTOR)->jit_code;            \
-    next_instr = jitted(frame, stack_pointer, tstate); \
-    Py_DECREF(tstate->previous_executor);              \
-    tstate->previous_executor = NULL;                  \
+    next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
-    if (next_instr == NULL) {                          \
-        goto resume_with_error;                        \
-    }                                                  \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
+    next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) & (~1)); \
+    if (next_instr == NULL) {                          \
+        /* gh-140104: The exception handler expects frame->instr_ptr
+            to after this_instr, not this_instr! */ \
+        next_instr = frame->instr_ptr + 1;                 \
+        JUMP_TO_LABEL(error);                          \
+    }                                                  \
+    if (keep_tracing_bit) { \
+        assert(((_PyThreadStateImpl *)tstate)->jit_tracer_state.prev_state.code_curr_size == 2); \
+        ENTER_TRACING(); \
+        DISPATCH_NON_TRACING(); \
+    } \
     DISPATCH();                                        \
 } while (0)
-#else
-#define GOTO_TIER_TWO(EXECUTOR) \
-do { \
-    OPT_STAT_INC(traces_executed); \
-    next_uop = (EXECUTOR)->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR); \
-    goto enter_tier_two; \
+
+#define TIER2_TO_TIER2(EXECUTOR) \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    current_executor = (EXECUTOR);                     \
+    goto tier2_start;                                  \
 } while (0)
-#endif
+
+#define GOTO_TIER_ONE_SETUP \
+    tstate->current_executor = NULL;                              \
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
+    _PyFrame_SetStackPointer(frame, stack_pointer);
 
 #define GOTO_TIER_ONE(TARGET) \
-do { \
-    Py_DECREF(tstate->previous_executor); \
-    tstate->previous_executor = NULL;  \
-    next_instr = target; \
-    DISPATCH(); \
-} while (0)
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(TARGET); \
+    } while (0)
 
-#define CURRENT_OPARG() (next_uop[-1].oparg)
+#define GOTO_TIER_ONE_CONTINUE_TRACING(TARGET) \
+    do \
+    { \
+        GOTO_TIER_ONE_SETUP \
+        return (_Py_CODEUNIT *)(((uintptr_t)(TARGET))| 1); \
+    } while (0)
 
-#define CURRENT_OPERAND() (next_uop[-1].operand)
+#define CURRENT_OPARG()    (next_uop[-1].oparg)
+#define CURRENT_OPERAND0_64() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_64() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_32() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_32() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_16() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_16() (next_uop[-1].operand1)
+#define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
 #define JUMP_TO_ERROR() goto jump_to_error_target
-#define GOTO_UNWIND() goto error_tier_two
-#define EXIT_TO_TIER1() goto exit_to_tier1
-#define EXIT_TO_TIER1_DYNAMIC() goto exit_to_tier1_dynamic;
 
 /* Stackref macros */
 
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
-#else
-#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    PyObject **NAME = (PyObject **)ARGS; \
-    assert(NAME != NULL);
-#endif
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 
-#ifdef Py_GIL_DISABLED
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
+
+#define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define SET_CURRENT_CACHED_VALUES(N) current_cached_values = (N)
+#define CHECK_CURRENT_CACHED_VALUES(N) assert(current_cached_values == (N))
 #else
-#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
-    (void)(NAME);
+#define SET_CURRENT_CACHED_VALUES(N) ((void)0)
+#define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
 #endif
 
-#ifdef Py_GIL_DISABLED
-#define CONVERSION_FAILED(NAME) ((NAME) == NULL)
-#else
-#define CONVERSION_FAILED(NAME) (0)
-#endif
+static inline int
+check_periodics(PyThreadState *tstate) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+
