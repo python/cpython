@@ -17,25 +17,27 @@ extern "C" {
 #endif
 
 #if defined(HAVE_PR_SET_VMA_ANON_NAME) && defined(__linux__)
-static inline void
+static inline int
 _PyAnnotateMemoryMap(void *addr, size_t size, const char *name)
 {
 #ifndef Py_DEBUG
     if (!_Py_GetConfig()->dev_mode) {
-        return;
+        return 0;
     }
 #endif
+    // The name length cannot exceed 80 (including the '\0').
     assert(strlen(name) < 80);
-    int old_errno = errno;
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
-    /* Ignore errno from prctl */
-    /* See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746 */
-    errno = old_errno;
+    int res = prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME, (unsigned long)addr, size, name);
+    if (res < 0) {
+        return -1;
+    }
+    return 0;
 }
 #else
-static inline void
+static inline int
 _PyAnnotateMemoryMap(void *Py_UNUSED(addr), size_t Py_UNUSED(size), const char *Py_UNUSED(name))
 {
+    return 0;
 }
 #endif
 
