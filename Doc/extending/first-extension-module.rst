@@ -33,7 +33,7 @@ Linux), or Windows.
 On other systems, you might need to adjust some details -- for example,
 a system command name.
 
-You need to have suitable C compiler and Python development headers installed.
+You need to have a suitable C compiler and Python development headers installed.
 On Linux, headers are often in a package like ``python3-dev``
 or ``python3-devel``.
 
@@ -95,7 +95,7 @@ Start with the headers
 ======================
 
 Begin by creating a directory for this tutorial, and switching to it
-on command line.
+on the command line.
 Then, create a file named :file:`spammodule.c` in your directory.
 [#why-spammodule]_
 
@@ -254,9 +254,9 @@ The slot table
 
 Rather than ``NULL``, the export hook should return the information needed to
 create a module.
-Let's with the basics: the name and docstring.
+Let's start with the basics: the name and docstring.
 
-The information should de defined in as ``static`` array of
+The information should be defined in a ``static`` array of
 :c:type:`PyModuleDef_Slot` entries, which are essentially key-value pairs.
 Define this array just before your export hook:
 
@@ -269,12 +269,12 @@ Define this array just before your export hook:
    };
 
 For both :c:data:`Py_mod_name` and :c:data:`Py_mod_doc`, the values are C
-strings -- that is, NUL-terminated UTF-8 encoded byte arrays.
+strings -- that is, NUL-terminated, UTF-8 encoded byte arrays.
 
 Note the zero-filled sentinel entry at the end.
 If you forget it, you'll trigger undefined behavior.
 
-The array is defined as ``static`` -- not visible outside this ``.c`` file.
+The array is defined as ``static`` -- that is, not visible outside this ``.c`` file.
 This will be a common theme.
 CPython only needs to access the export hook; all global variables
 and all other functions should generally be ``static``, so that they don't
@@ -299,7 +299,7 @@ Now, recompile and try it out:
    >>> print(spam)
    <module 'spam' from '/home/encukou/dev/cpython/spam.so'>
 
-You have a extension module!
+You have an extension module!
 Try ``help(spam)`` to see the docstring.
 
 The next step will be adding a function.
@@ -317,7 +317,7 @@ objects to C values, and the C return value back to Python.
 One of the simplest ways to write glue code is a ":c:data:`METH_O`" function,
 which takes two Python objects and returns one.
 All Python objects -- regardless of the Python type -- are represented in C
-as pointers to the ``PyObject`` structure.
+as pointers to the :c:type:`PyObject` structure.
 
 Add such a function above the slots array::
 
@@ -363,7 +363,7 @@ Add this array just below the ``spam_system`` function:
 As with module slots, a zero-filled sentinel marks the end of the array.
 
 Next, we'll add the method to the module.
-Add a :c:data:`Py_mod_methods` slot to your a :c:type:`PyMethodDef` array:
+Add a :c:data:`Py_mod_methods` slot to your :c:type:`PyMethodDef` array:
 
 .. literalinclude:: ../includes/capi-extension/spammodule-01.c
    :start-after: /// Module slot table
@@ -408,7 +408,7 @@ Eventually this will be the exit code of a system command,
 but let's start with a fixed value, say, ``3``.
 
 The Python C API provides a function to create a Python :py:type:`int` object
-from a C ``int`` values: :c:func:`PyLong_FromLong`. [#why-pylongfromlong]_
+from a C ``int`` value: :c:func:`PyLong_FromLong`. [#why-pylongfromlong]_
 
 To call it, replace the ``Py_RETURN_NONE`` with the following 3 lines:
 
@@ -513,7 +513,7 @@ Add an ``if`` block for this:
    }
 
 That's it for the setup.
-Now, all that is left is calling C library function :c:func:`system` with
+Now, all that is left is calling the C library function :c:func:`system` with
 the ``char *`` buffer, and using its result instead of the ``3``:
 
 .. code-block:: c
