@@ -108,8 +108,7 @@ class AsyncGenSyntaxTest(unittest.TestCase):
             return 123
         '''
 
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
+        exec(code, {}, {})
 
     def test_async_gen_syntax_04(self):
         code = '''async def foo():
@@ -117,8 +116,7 @@ class AsyncGenSyntaxTest(unittest.TestCase):
             return 123
         '''
 
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
+        exec(code, {}, {})
 
     def test_async_gen_syntax_05(self):
         code = '''async def foo():
@@ -127,8 +125,7 @@ class AsyncGenSyntaxTest(unittest.TestCase):
             return 12
         '''
 
-        with self.assertRaisesRegex(SyntaxError, 'return.*value.*async gen'):
-            exec(code, {}, {})
+        exec(code, {}, {})
 
 
 class AsyncGenTest(unittest.TestCase):
@@ -2101,6 +2098,40 @@ class TestUnawaitedWarnings(unittest.TestCase):
 
         del gen2
         gc_collect()  # does not warn unawaited
+
+class TestAsyncGenReturn(unittest.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+        asyncio.set_event_loop_policy(None)
+
+    def test_async_gen_return_value(self):
+        async def gen():
+            await asyncio.sleep(0)
+            yield 1
+            await asyncio.sleep(0)
+            yield 2
+            await asyncio.sleep(0)
+            return 3
+
+        async def run():
+            g = gen()
+            res = []
+            while True:
+                try:
+                    res.append(await g.__anext__())
+                except StopAsyncIteration as e:
+                    res.append(e.value)
+                    break
+
+            return res
+
+        res = self.loop.run_until_complete(run())
+        self.assertEqual(res, [1, 2, 3])
 
 if __name__ == "__main__":
     unittest.main()

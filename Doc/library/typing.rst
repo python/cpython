@@ -490,10 +490,8 @@ or :class:`Iterator[YieldType] <collections.abc.Iterator>`::
            yield start
            start += 1
 
-Async generators are handled in a similar fashion, but don't
-expect a ``ReturnType`` type argument
-(:class:`AsyncGenerator[YieldType, SendType] <collections.abc.AsyncGenerator>`).
-The ``SendType`` argument defaults to :const:`!None`, so the following definitions
+Async generators are handled in a similar fashion.
+The ``SendType`` and ```ReturnType``` parameters default to :const:`!None`, so the following definitions
 are equivalent::
 
    async def infinite_stream(start: int) -> AsyncGenerator[int]:
@@ -501,7 +499,7 @@ are equivalent::
            yield start
            start = await increment(start)
 
-   async def infinite_stream(start: int) -> AsyncGenerator[int, None]:
+   async def infinite_stream(start: int) -> AsyncGenerator[int, None, None]:
        while True:
            yield start
            start = await increment(start)

@@ -728,8 +728,54 @@ SimpleExtendsException(PyExc_Exception, TypeError,
 /*
  *    StopAsyncIteration extends Exception
  */
-SimpleExtendsException(PyExc_Exception, StopAsyncIteration,
-                       "Signal the end from iterator.__anext__().");
+static PyMemberDef StopAsyncIteration_members[] = {
+    {"value", _Py_T_OBJECT, offsetof(PyStopAsyncIterationObject, value), 0,
+        PyDoc_STR("async generator return value")},
+    {NULL}  /* Sentinel */
+};
+
+static int
+StopAsyncIteration_init(PyStopAsyncIterationObject *self, PyObject *args, PyObject *kwds)
+{
+    Py_ssize_t size = PyTuple_GET_SIZE(args);
+    PyObject *value;
+
+    if (BaseException_init((PyBaseExceptionObject *)self, args, kwds) == -1)
+        return -1;
+    Py_CLEAR(self->value);
+    if (size > 0)
+        value = PyTuple_GET_ITEM(args, 0);
+    else
+        value = Py_None;
+    self->value = Py_NewRef(value);
+    return 0;
+}
+
+static int
+StopAsyncIteration_clear(PyStopAsyncIterationObject *self)
+{
+    Py_CLEAR(self->value);
+    return BaseException_clear((PyBaseExceptionObject *)self);
+}
+
+static void
+StopAsyncIteration_dealloc(PyStopAsyncIterationObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    StopAsyncIteration_clear(self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static int
+StopAsyncIteration_traverse(PyStopAsyncIterationObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->value);
+    return BaseException_traverse((PyBaseExceptionObject *)self, visit, arg);
+}
+
+ComplexExtendsException(PyExc_Exception, StopAsyncIteration, StopAsyncIteration,
+                        0, 0, StopAsyncIteration_members, 0, 0,
+                        "Signal the end from iterator.__anext__().");
 
 
 /*

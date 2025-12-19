@@ -518,7 +518,17 @@ The following exceptions are the exceptions that are usually raised.
    Must be raised by :meth:`~object.__anext__` method of an
    :term:`asynchronous iterator` object to stop the iteration.
 
+  .. attribute:: StopAsyncIteration.value
+
+     The exception object has a single attribute :attr:`!value`, which is
+     given as an argument when constructing the exception, and defaults
+     to :const:`None`.
+
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.14
+      Added ``value`` attribute and the ability for async generator functions to
+      use it to return a value.
 
 .. exception:: SyntaxError(message, details)
 
