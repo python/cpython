@@ -1,0 +1,1 @@
+Add missing validation for allowed constant values in :func:`ast.literal_eval`.
