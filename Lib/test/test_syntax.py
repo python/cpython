@@ -3511,6 +3511,15 @@ except* ImportError:
     pass
 """, "lazy from ... import not allowed inside try/except blocks")
 
+    def test_lazy_import_in_except_block(self):
+        """Test that lazy imports are not allowed inside except blocks."""
+        self._check_error("""\
+try:
+    sys.modules # trigger the except block
+except* Exception:
+   lazy import sys
+""", "lazy import not allowed inside try/except blocks")
+
     def test_lazy_import_in_function(self):
         """Test that lazy imports are not allowed inside functions."""
         self._check_error("""\

@@ -112,7 +112,6 @@ lazy_import_repr(PyObject *op)
 static PyObject *
 lazy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *base_tp = &PyLazyImport_Type;
     if (!_PyArg_NoKeywords("lazy_import", kwds)) {
         return NULL;
     }
