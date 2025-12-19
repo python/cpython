@@ -896,6 +896,12 @@ list_atomic_memmove(PyListObject *a, PyObject **dest, PyObject **src, Py_ssize_t
 #ifndef Py_GIL_DISABLED
     memmove(dest, src, n * sizeof(PyObject *));
 #else
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
+    if (_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
+        // No other threads can read this list concurrently
+        memmove(dest, src, n * sizeof(PyObject *));
+        return;
+    }
     if (dest < src) {
         for (Py_ssize_t i = 0; i != n; i++) {
             _Py_atomic_store_ptr_release(&dest[i], src[i]);
