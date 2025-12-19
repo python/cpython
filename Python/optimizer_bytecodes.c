@@ -329,8 +329,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res)) {
+    op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
         res = sym_new_type(ctx, &PyUnicode_Type);
+        s = str_st;
+        i = sub_st;
     }
 
     op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
@@ -524,10 +526,6 @@ dummy_func(void) {
     }
 
     op(_POP_CALL_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
-    op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
@@ -1261,7 +1259,7 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+                REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);

@@ -793,11 +793,21 @@
         }
 
         case _BINARY_OP_SUBSCR_STR_INT: {
+            JitOptRef sub_st;
+            JitOptRef str_st;
             JitOptRef res;
+            JitOptRef s;
+            JitOptRef i;
+            sub_st = stack_pointer[-1];
+            str_st = stack_pointer[-2];
             res = sym_new_type(ctx, &PyUnicode_Type);
-            CHECK_STACK_BOUNDS(-1);
+            s = str_st;
+            i = sub_st;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[-1] = s;
+            stack_pointer[0] = i;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2862,7 +2872,7 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+                    REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
@@ -3424,12 +3434,24 @@
 
         case _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW: {
             JitOptRef value;
-            PyObject *ptr = (PyObject *)this_instr->operand0;
-            value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+            value = sym_new_not_null(ctx);
             CHECK_STACK_BOUNDS(-2);
             stack_pointer[-3] = value;
             stack_pointer += -2;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW: {
+            JitOptRef res;
+            JitOptRef a;
+            JitOptRef c;
+            res = sym_new_not_null(ctx);
+            a = sym_new_not_null(ctx);
+            c = sym_new_not_null(ctx);
+            stack_pointer[-3] = res;
+            stack_pointer[-2] = a;
+            stack_pointer[-1] = c;
             break;
         }
 

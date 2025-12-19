@@ -941,9 +941,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_STR_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *str = PyStackRef_AsPyObjectBorrow(str_st);
 
@@ -958,9 +958,9 @@ dummy_func(
             assert(c < 128);
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
-            DEAD(sub_st);
-            PyStackRef_CLOSE(str_st);
+            INPUTS_DEAD();
+            s = str_st;
+            i = sub_st;
             res = PyStackRef_FromPyObjectBorrow(res_o);
         }
 
@@ -5283,6 +5283,13 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
+        }
+
+        tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
         }
 
         tier2 op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {

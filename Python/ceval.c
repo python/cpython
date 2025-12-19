@@ -1601,7 +1601,7 @@ early_exit:
 }
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitTrampoline;
+_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitShim;
 #else
 _PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
 #endif
@@ -1617,7 +1617,7 @@ _PyTier2Interpreter(
     const _PyUOpInstruction *next_uop;
     int oparg;
     /* Set up "jit" state after entry from tier 1.
-     * This mimics what the jit trampoline function does. */
+     * This mimics what the jit shim function does. */
     tstate->jit_exit = NULL;
     _PyStackRef _tos_cache0 = PyStackRef_ZERO_BITS;
     _PyStackRef _tos_cache1 = PyStackRef_ZERO_BITS;
