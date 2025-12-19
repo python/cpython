@@ -891,7 +891,7 @@ list_clear_slot(PyObject *self)
 // Pointer-by-pointer memmove for PyObject** arrays that is safe
 // for shared lists in Py_GIL_DISABLED builds.
 static void
-list_atomic_memmove(PyListObject *a, PyObject **dest, PyObject **src, Py_ssize_t n)
+ptr_wise_atomic_memmove(PyListObject *a, PyObject **dest, PyObject **src, Py_ssize_t n)
 {
 #ifndef Py_GIL_DISABLED
     memmove(dest, src, n * sizeof(PyObject *));
@@ -987,7 +987,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
 
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail = Py_SIZE(a) - ihigh;
-        list_atomic_memmove(a, &item[ihigh+d], &item[ihigh], tail);
+        ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], tail);
         (void)list_resize(a, Py_SIZE(a) + d); // NB: shrinking a list can't fail
         item = a->ob_item;
     }
@@ -996,7 +996,7 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         if (list_resize(a, k+d) < 0)
             goto Error;
         item = a->ob_item;
-        list_atomic_memmove(a, &item[ihigh+d], &item[ihigh], k - ihigh);
+        ptr_wise_atomic_memmove(a, &item[ihigh+d], &item[ihigh], k - ihigh);
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];
@@ -1084,19 +1084,11 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
                       sizeof(PyObject *)*input_size);
 #else
-    if (_Py_IsOwnedByCurrentThread((PyObject *)self) && !_PyObject_GC_IS_SHARED(self)) {
-        // No other threads can read this list concurrently, so atomic repeat is not necessary.
-        _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
-                          sizeof(PyObject *)*input_size);
-        return 0;
-    }
-
-    PyObject **src = items;
-    PyObject **dst = items + input_size;
-    Py_ssize_t remaining = output_size - input_size;
-    while (remaining > 0) {
-        _Py_atomic_store_ptr_release(dst++, *src++);
-        remaining--;
+    Py_ssize_t copied = input_size;
+    while (copied < output_size) {
+        Py_ssize_t items_to_copy = Py_MIN(copied, output_size - copied);
+        ptr_wise_atomic_memmove(self, items + copied, items, items_to_copy);
+        copied += items_to_copy;
     }
 #endif
     return 0;
@@ -1593,8 +1585,8 @@ list_pop_impl(PyListObject *self, Py_ssize_t index)
     }
     Py_ssize_t size_after_pop = Py_SIZE(self) - 1;
     if (index < size_after_pop) {
-        list_atomic_memmove(self, &items[index], &items[index+1],
-                            size_after_pop - index);
+        ptr_wise_atomic_memmove(self, &items[index], &items[index+1],
+                                size_after_pop - index);
     }
     list_resize(self, size_after_pop);  // NB: shrinking a list can't fail
     return v;
