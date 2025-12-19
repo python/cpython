@@ -2145,7 +2145,7 @@ expression support in the :mod:`re` module).
 
       >>> ''.isprintable(), ' '.isprintable()
       (True, True)
-      >>> '\t'.isprintable(), '\n'.isprintable() # TAB and BREAK LINE
+      >>> '\t'.isprintable(), '\n'.isprintable()
       (False, False)
 
 
