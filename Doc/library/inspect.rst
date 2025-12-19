@@ -322,6 +322,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
    Add ``__builtins__`` attribute to functions.
 
+.. versionchanged:: 3.12
+
+   Add ``ag_suspended`` attribute to async generator.
+
 .. versionchanged:: 3.14
 
    Add ``f_generator`` attribute to frames.
