@@ -36,15 +36,16 @@ function toggleTheme() {
 }
 
 function restoreUIState() {
-    // Restore theme
-    const savedTheme = localStorage.getItem('heatmap-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        const btn = document.getElementById('theme-btn');
-        if (btn) {
-            btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
-            btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
-        }
+    // Restore theme from localStorage, or use browser preference
+    let theme = localStorage.getItem('heatmap-theme');
+    if (!theme) {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+        btn.querySelector('.icon-moon').style.display = theme === 'dark' ? 'none' : '';
+        btn.querySelector('.icon-sun').style.display = theme === 'dark' ? '' : 'none';
     }
 }
 
