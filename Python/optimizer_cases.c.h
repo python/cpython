@@ -1330,7 +1330,12 @@
                 res = sym_new_not_null(ctx);
             }
             else {
-                res = sym_new_const(ctx, cnst);
+                if (_Py_IsImmortal(cnst)) {
+                    res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+                }
+                else {
+                    res = sym_new_const(ctx, cnst);
+                }
             }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = res;
@@ -1367,7 +1372,12 @@
                 res = sym_new_not_null(ctx);
             }
             else {
-                res = sym_new_const(ctx, cnst);
+                if (_Py_IsImmortal(cnst)) {
+                    res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+                }
+                else {
+                    res = sym_new_const(ctx, cnst);
+                }
             }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = res;
