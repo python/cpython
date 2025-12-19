@@ -185,12 +185,17 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
+    executor->vm_data.chain_depth = chain_depth;
+    assert(executor->vm_data.valid);
     _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
     if (exit != NULL) {
         exit->executor = executor;
     }
-    executor->vm_data.chain_depth = chain_depth;
-    assert(executor->vm_data.valid);
+    else {
+        // An executor inserted into the code object now has a strong reference
+        // to it from the code object. Thus, we don't need this reference anymore.
+        Py_DECREF(executor);
+    }
     interp->compiling = false;
     return 1;
 #else
