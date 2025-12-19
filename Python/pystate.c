@@ -490,7 +490,7 @@ static inline int check_interpreter_whence(long);
 #endif
 
 extern _Py_CODEUNIT *
-_Py_LazyJitTrampoline(
+_Py_LazyJitShim(
     struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 );
 
