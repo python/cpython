@@ -214,10 +214,8 @@ intern_constants(PyObject *tuple, int *modified)
             if (PyUnicode_CHECK_INTERNED(v) != 0) {
                 continue;
             }
-            PyObject *interned;
             Py_BEGIN_CRITICAL_SECTION(interned_dict);
-            interned = PyDict_GetItemWithError(interned_dict, v);
-            Py_END_CRITICAL_SECTION();
+            PyObject *interned = PyDict_GetItemWithError(interned_dict, v);
             if (interned == NULL && PyErr_Occurred()) {
                 goto error;
             }
@@ -244,6 +242,7 @@ intern_constants(PyObject *tuple, int *modified)
                     }
                 }
             }
+            Py_END_CRITICAL_SECTION();
         }
         else if (PyTuple_CheckExact(v)) {
             if (intern_constants(v, NULL) < 0) {
