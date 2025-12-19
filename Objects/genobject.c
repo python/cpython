@@ -153,7 +153,7 @@ _PyGen_Finalize(PyObject *self)
 static void
 gen_clear_frame(PyGenObject *gen)
 {
-    assert(gen->gi_frame_state == FRAME_CLEARED);
+    assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_CLEARED);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
     frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
