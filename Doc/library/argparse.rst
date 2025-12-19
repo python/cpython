@@ -365,7 +365,7 @@ newlines.
 
 :class:`FlexiHelpFormatter` wraps description and help text like the default
 formatter, while preserving paragraphs and supporting bulleted lists. Bullet
-list items are recognized by markers such as "*", "-", "+", or ">" characters, or 
+list items are recognized by markers such as "*", "-", "+", or ">" characters, or
 by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
 
    >>> parser = argparse.ArgumentParser(
