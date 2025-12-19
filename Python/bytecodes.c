@@ -5285,7 +5285,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_SWAP_CALL_ARG_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
+        tier2 op(_SWAP3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
             c = callable;

@@ -16532,7 +16532,7 @@
             break;
         }
 
-        case _SWAP_CALL_ARG_LOAD_CONST_INLINE_BORROW_r03: {
+        case _SWAP3_LOAD_CONST_INLINE_BORROW_r03: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef arg;
@@ -16556,7 +16556,7 @@
             break;
         }
 
-        case _SWAP_CALL_ARG_LOAD_CONST_INLINE_BORROW_r13: {
+        case _SWAP3_LOAD_CONST_INLINE_BORROW_r13: {
             CHECK_CURRENT_CACHED_VALUES(1);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef arg;
@@ -16581,7 +16581,7 @@
             break;
         }
 
-        case _SWAP_CALL_ARG_LOAD_CONST_INLINE_BORROW_r23: {
+        case _SWAP3_LOAD_CONST_INLINE_BORROW_r23: {
             CHECK_CURRENT_CACHED_VALUES(2);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef arg;
@@ -16607,7 +16607,7 @@
             break;
         }
 
-        case _SWAP_CALL_ARG_LOAD_CONST_INLINE_BORROW_r33: {
+        case _SWAP3_LOAD_CONST_INLINE_BORROW_r33: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef arg;
