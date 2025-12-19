@@ -1890,6 +1890,10 @@ Module(
         self.assertRaises(ValueError, ast.literal_eval, '++6')
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
+        # gh-141778: reject values of invalid types
+        node = ast.Expression(body=ast.Constant(object()))
+        ast.fix_missing_locations(node)
+        self.assertRaises(ValueError, ast.literal_eval, node)
 
     def test_literal_eval_str_int_limit(self):
         with support.adjust_int_max_str_digits(4000):

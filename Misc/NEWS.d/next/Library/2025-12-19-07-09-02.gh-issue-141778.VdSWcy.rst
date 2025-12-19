@@ -1,0 +1,2 @@
+Validate value types of :class:`ast.Constant` nodes in the
+:func:`ast.literal_eval`.  Patch by Sergey B Kirpichev.

@@ -6286,7 +6286,9 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_thread_module_has_signatures(self):
         import _thread
         no_signature = {'RLock'}
-        self._test_module_has_signatures(_thread, no_signature)
+        unsupported_signature = {'interrupt_main'}
+        self._test_module_has_signatures(_thread, no_signature,
+                                         unsupported_signature)
 
     def test_time_module_has_signatures(self):
         no_signature = {
