@@ -107,6 +107,46 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
