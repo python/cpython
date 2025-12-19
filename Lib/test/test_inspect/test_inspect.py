@@ -6280,7 +6280,8 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_threading_module_has_signatures(self):
         import threading
-        self._test_module_has_signatures(threading)
+        no_signature = {'RLock'}
+        self._test_module_has_signatures(threading, no_signature)
         self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
