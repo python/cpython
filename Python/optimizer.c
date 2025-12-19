@@ -190,7 +190,8 @@ _PyOptimizer_Optimize(
     _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
     if (exit != NULL) {
         exit->executor = executor;
-    } else {
+    }
+    else {
         // An executor inserted into the code object now has a strong reference
         // to it from the code object. Thus, we don't need this reference anymore.
         Py_DECREF(executor);
