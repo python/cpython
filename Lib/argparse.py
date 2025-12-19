@@ -766,7 +766,8 @@ class FlexiHelpFormatter(HelpFormatter):
 
     def _fill_text(self, text, width, indent):
         lines = self._para_reformat(text, width - len(indent))
-        return "\n".join(indent + line for line in lines)
+        linearray = [indent + line if line else "" for line in lines]
+        return "\n".join(linearray)
 
     def _indents(self, line):
         """Return line indent level and "sub_indent" for bullet list text."""
