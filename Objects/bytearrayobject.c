@@ -1800,7 +1800,6 @@ bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
 /*[clinic end generated code: output=833e2cf385d9a04d input=dd9f6e2910cc3a34]*/
 {
     PyObject *list = NULL;
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
 
     /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
     self->ob_exports++;
