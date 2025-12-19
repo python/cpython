@@ -15,36 +15,11 @@ let coldCodeHidden = false;
 // ============================================================================
 
 function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('heatmap-theme', next);
-
-    // Update theme button icon
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
-        btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
-    }
+    toggleAndSaveTheme();
     applyLineColors();
 
     // Rebuild scroll marker with new theme colors
     buildScrollMarker();
-}
-
-function restoreUIState() {
-    // Restore theme from localStorage, or use browser preference
-    let theme = localStorage.getItem('heatmap-theme');
-    if (!theme) {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    document.documentElement.setAttribute('data-theme', theme);
-    const btn = document.getElementById('theme-btn');
-    if (btn) {
-        btn.querySelector('.icon-moon').style.display = theme === 'dark' ? 'none' : '';
-        btn.querySelector('.icon-sun').style.display = theme === 'dark' ? '' : 'none';
-    }
 }
 
 // ============================================================================
