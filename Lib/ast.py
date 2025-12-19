@@ -72,7 +72,7 @@ def _convert_literal(node):
     """
     if (
         isinstance(node, Constant)
-        and type(value := node.value) in (int, float, complex, bytes, bool,
+        and type(value := node.value) in (int, float, complex, bytes, bool, str, bytes,
                                           type_None, type_Ellipsis)
     ):
         return value
