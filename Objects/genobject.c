@@ -316,7 +316,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, PyObject **presult)
             else if (arg) {
                 /* `gen` is an exhausted generator:
                 only return value if called from send(). */
-                *presult = Py_NewRef(Py_None);
+                *presult = Py_None;
                 return PYGEN_RETURN;
             }
             return PYGEN_ERROR;
