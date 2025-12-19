@@ -364,10 +364,13 @@ one. If you wish to preserve multiple blank lines, add spaces between the
 newlines.
 
 :class:`ParagraphHelpFormatter` wraps description and help text like the
-default formatter, while preserving paragraphs and supporting bulleted lists.
-Bullet list items are recognized by markers such as "*", "-", "+", or ">"
-characters, or by alphanumeric sequences followed by "." or ")" (e.g. 1., a),
-iv.)::
+default formatter, while preserving paragraphs. Parapgraphs are separated by
+blank lines. Blocks of text separated by a single return are merged into a
+single paragraph.
+
+Bullet lists are supported. Text for a bullet item is wrapped with appropriate
+indentation. Bullet list items are recognized by markers such as "*", "-", "+",
+or ">" characters, or by alphanumeric sequences followed by "." or ")".::
 
    >>> parser = argparse.ArgumentParser(
    ...     prog='PROG',
