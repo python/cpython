@@ -2862,7 +2862,7 @@
                     goto error;
                 }
                 if (_Py_IsImmortal(temp)) {
-                    REPLACE_OP(this_instr, _SWAP3_LOAD_CONST_INLINE_BORROW,
+                    REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
                 }
                 res = sym_new_const(ctx, temp);
@@ -3432,7 +3432,7 @@
             break;
         }
 
-        case _SWAP3_LOAD_CONST_INLINE_BORROW: {
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW: {
             JitOptRef res;
             JitOptRef a;
             JitOptRef c;
