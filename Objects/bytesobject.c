@@ -1960,7 +1960,7 @@ bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
 /*[clinic end generated code: output=0da25cc74683ba42 input=1cb45ce71456a269]*/
 {
     return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-                           sub, start, end);
+                           sub, start, end, "bytes");
 }
 
 /*[clinic input]
@@ -1996,7 +1996,7 @@ bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
 /*[clinic end generated code: output=42bf674e0a0aabf6 input=bb5f473c64610c43]*/
 {
     return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-                            sub, start, end);
+                            sub, start, end, "bytes");
 }
 
 

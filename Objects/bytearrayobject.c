@@ -1315,7 +1315,7 @@ bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
 /*[clinic end generated code: output=067a1e78efc672a7 input=c37f177cfee19fe4]*/
 {
     return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                           sub, start, end);
+                           sub, start, end, "bytearray");
 }
 
 /*[clinic input]
@@ -1353,7 +1353,7 @@ bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
 /*[clinic end generated code: output=38e1cf66bafb08b9 input=7d198b3d6b0a62ce]*/
 {
     return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
-                            sub, start, end);
+                            sub, start, end, "bytearray");
 }
 
 static int
@@ -2307,7 +2307,7 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
 
     where = stringlib_find_char(buf, n, value);
     if (where < 0) {
-        PyErr_SetString(PyExc_ValueError, "value not found in bytearray");
+        PyErr_SetString(PyExc_ValueError, "value not in bytearray");
         return NULL;
     }
     if (!_canresize(self))
