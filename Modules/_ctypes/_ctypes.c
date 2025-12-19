@@ -1266,6 +1266,32 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
     return 0;
 }
 
+// Set the format string for a pointer type based on its element type.
+static int
+PyCPointerType_SetFormat(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
+{
+    StgInfo *iteminfo;
+    if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+        return -1;
+    }
+    assert(iteminfo);  // PyCPointerType_SetProto already verified this
+
+    const char *current_format = iteminfo->format ? iteminfo->format : "B";
+    char *new_format;
+    if (iteminfo->shape != NULL) {
+        new_format = _ctypes_alloc_format_string_with_shape(
+            iteminfo->ndim, iteminfo->shape, "&", current_format);
+    } else {
+        new_format = _ctypes_alloc_format_string("&", current_format);
+    }
+    if (new_format == NULL) {
+        return -1;
+    }
+    PyMem_Free(stginfo->format);
+    stginfo->format = new_format;
+    return 0;
+}
+
 static PyCArgObject *
 PyCPointerType_paramfunc(ctypes_state *st, CDataObject *self)
 {
@@ -1314,35 +1340,15 @@ PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (proto) {
-        const char *current_format;
         if (PyCPointerType_SetProto(st, self, stginfo, proto) < 0) {
             Py_DECREF(proto);
             return -1;
         }
-        StgInfo *iteminfo;
-        if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
+        if (PyCPointerType_SetFormat(st, stginfo, proto) < 0) {
             Py_DECREF(proto);
             return -1;
         }
-        /* PyCPointerType_SetProto has verified proto has a stginfo. */
-        assert(iteminfo);
-        /* If iteminfo->format is NULL, then this is a pointer to an
-           incomplete type.  We create a generic format string
-           'pointer to bytes' in this case.  XXX Better would be to
-           fix the format string later...
-        */
-        current_format = iteminfo->format ? iteminfo->format : "B";
-        if (iteminfo->shape != NULL) {
-            /* pointer to an array: the shape needs to be prefixed */
-            stginfo->format = _ctypes_alloc_format_string_with_shape(
-                iteminfo->ndim, iteminfo->shape, "&", current_format);
-        } else {
-            stginfo->format = _ctypes_alloc_format_string("&", current_format);
-        }
         Py_DECREF(proto);
-        if (stginfo->format == NULL) {
-            return -1;
-        }
     }
 
     return 0;
@@ -1374,6 +1380,9 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
     }
 
     if (PyCPointerType_SetProto(st, (PyObject *)self, info, type) < 0) {
+        return NULL;
+    }
+    if (PyCPointerType_SetFormat(st, info, type) < 0) {
         return NULL;
     }
     if (PyObject_SetAttr((PyObject *)self, &_Py_ID(_type_), type) < 0) {
