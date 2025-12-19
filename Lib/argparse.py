@@ -74,7 +74,7 @@ __all__ = [
     'ArgumentDefaultsHelpFormatter',
     'RawDescriptionHelpFormatter',
     'RawTextHelpFormatter',
-    'FlexiHelpFormatter',
+    'ParagraphHelpFormatter',
     'MetavarTypeHelpFormatter',
     'Namespace',
     'Action',
@@ -754,7 +754,7 @@ class RawTextHelpFormatter(RawDescriptionHelpFormatter):
         return text.splitlines()
 
 
-class FlexiHelpFormatter(HelpFormatter):
+class ParagraphHelpFormatter(HelpFormatter):
     """Help message formatter which respects paragraphs and bulleted lists.
 
     Only the name of this class is considered a public API. All the methods

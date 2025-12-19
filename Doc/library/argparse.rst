@@ -297,17 +297,17 @@ formatter_class
 ^^^^^^^^^^^^^^^
 
 :class:`ArgumentParser` objects allow the help formatting to be customized by
-specifying an alternate formatting class.  Currently, there are four such
+specifying an alternate formatting class.  Currently, there are five such
 classes:
 
 .. class:: RawDescriptionHelpFormatter
            RawTextHelpFormatter
-           FlexiHelpFormatter
+           ParagraphHelpFormatter
            ArgumentDefaultsHelpFormatter
            MetavarTypeHelpFormatter
 
 :class:`RawDescriptionHelpFormatter`, :class:`RawTextHelpFormatter`, and
-:class:`FlexiHelpFormatter` give more control over how textual descriptions
+:class:`ParagraphHelpFormatter` give more control over how textual descriptions
 are displayed.
 By default, :class:`ArgumentParser` objects line-wrap the description_ and
 epilog_ texts in command-line help messages::
@@ -363,16 +363,17 @@ including argument descriptions. However, multiple newlines are replaced with
 one. If you wish to preserve multiple blank lines, add spaces between the
 newlines.
 
-:class:`FlexiHelpFormatter` wraps description and help text like the default
-formatter, while preserving paragraphs and supporting bulleted lists. Bullet
-list items are recognized by markers such as "*", "-", "+", or ">" characters, or
-by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
+:class:`ParagraphHelpFormatter` wraps description and help text like the
+default formatter, while preserving paragraphs and supporting bulleted lists.
+Bullet list items are recognized by markers such as "*", "-", "+", or ">"
+characters, or by alphanumeric sequences followed by "." or ")" (e.g. 1., a),
+iv.)::
 
    >>> parser = argparse.ArgumentParser(
    ...     prog='PROG',
-   ...     formatter_class=argparse.FlexiHelpFormatter,
+   ...     formatter_class=argparse.ParagraphHelpFormatter,
    ...     description="""
-   ...         The FlexiHelpFormatter will wrap text within paragraphs
+   ...         The ParagraphHelpFormatter will wrap text within paragraphs
    ...         when required to in order to make the text fit.
    ...
    ...         Paragraphs are preserved.
@@ -392,7 +393,7 @@ by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
    >>> parser.print_help()
    usage: PROG [-h] argument
 
-   The FlexiHelpFormatter will wrap text within paragraphs when required to in
+   The ParagraphHelpFormatter will wrap text within paragraphs when required to in
    order to make the text fit.
 
    Paragraphs are preserved.
@@ -412,7 +413,7 @@ by alphanumeric sequences followed by "." or ")" (e.g. 1., a), iv.)::
 
 
 .. versionadded:: 3.15
-   :class:`FlexiHelpFormatter` class was added.
+   :class:`ParagraphHelpFormatter` class was added.
 
 :class:`ArgumentDefaultsHelpFormatter` automatically adds information about
 default values to each of the argument help messages::

@@ -5409,11 +5409,11 @@ class TestHelpRawDescription(HelpTestCase):
     version = ''
 
 
-class TestHelpFlexi(HelpTestCase):
-    """Test the FlexiHelpFormatter"""
+class TestHelpParagraph(HelpTestCase):
+    """Test the ParagraphHelpFormatter"""
 
     parser_signature = Sig(
-        prog='PROG', formatter_class=argparse.FlexiHelpFormatter,
+        prog='PROG', formatter_class=argparse.ParagraphHelpFormatter,
         description='This text should be wrapped as appropriate to keep\n'
                     'things nice and very, very tidy.\n'
                     '\n'

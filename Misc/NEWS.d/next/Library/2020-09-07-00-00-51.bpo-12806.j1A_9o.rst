@@ -1,3 +1,3 @@
-The :mod:`argparse` module has a new :class:`argparse.FlexiHelpFormatter`
+The :mod:`argparse` module has a new :class:`argparse.ParagraphHelpFormatter`
 class that wraps help and description text while preserving paragraphs and
 supporting bulleted lists.
