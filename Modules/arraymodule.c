@@ -205,6 +205,20 @@ Note that the basic Get and Set functions do NOT check that the index is
 in bounds; that's the responsibility of the caller.
 ****************************************************************************/
 
+/* Check array buffer validity and bounds after calling user-defined methods
+   (like __index__ or __float__) that might modify the array during the call.
+   Returns false on error, true on success. */
+static inline bool
+array_check_bounds_after_user_call(arrayobject *ap, Py_ssize_t i)
+{
+    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
+        PyErr_SetString(PyExc_IndexError,
+            "array assignment index out of range");
+        return false;
+    }
+    return true;
+}
+
 static PyObject *
 b_getitem(arrayobject *ap, Py_ssize_t i)
 {
@@ -222,10 +236,7 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -259,10 +270,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -359,10 +367,7 @@ h_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -396,10 +401,7 @@ HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -422,10 +424,7 @@ i_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "i;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -470,10 +469,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -502,10 +498,7 @@ l_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "l;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -541,10 +534,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -573,10 +563,7 @@ q_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "L;array item must be integer", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -613,10 +600,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -645,10 +629,7 @@ f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "f;array item must be float", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
@@ -670,10 +651,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
 
-    // Check buffer validity and bounds after call user-defined method.
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
+    if (!array_check_bounds_after_user_call(ap, i)) {
         return -1;
     }
 
