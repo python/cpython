@@ -78,9 +78,7 @@ Bookkeeping functions
    instead of the system time (see the :func:`os.urandom` function for details
    on availability).
 
-   If *a* is an int, it is used directly. Note that negative integer seeds are
-   treated as equivalent to their absolute value, so for example ``seed(-5)`` and
-   ``seed(5)`` will produce identical sequences.
+   If *a* is an int, its absolute value is used directly.
 
    With version 2 (the default), a :class:`str`, :class:`bytes`, or :class:`bytearray`
    object gets converted to an :class:`int` and all of its bits are used.
