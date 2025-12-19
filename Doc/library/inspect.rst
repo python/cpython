@@ -324,7 +324,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. versionchanged:: 3.12
 
-   Add ``ag_suspended`` attribute to async generator.
+   Add ``ag_suspended`` attribute to async generators.
 
 .. versionchanged:: 3.14
 
