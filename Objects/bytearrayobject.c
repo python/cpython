@@ -1924,7 +1924,6 @@ bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
 /*[clinic end generated code: output=a55e0b5a03cb6190 input=60e9abf305128ff4]*/
 {
     PyObject *list = NULL;
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((PyObject *)self);
 
     /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
     self->ob_exports++;
