@@ -5,6 +5,18 @@
    This file extends the shared foundation with heatmap-specific styles.
    ========================================================================== */
 
+/* Heatmap heat colors - using base.css colors with 60% opacity */
+[data-theme="dark"] {
+  --heat-1: rgba(90, 123, 167, 0.60);
+  --heat-2: rgba(106, 148, 168, 0.60);
+  --heat-3: rgba(122, 172, 172, 0.60);
+  --heat-4: rgba(142, 196, 152, 0.60);
+  --heat-5: rgba(168, 216, 136, 0.60);
+  --heat-6: rgba(200, 222, 122, 0.60);
+  --heat-7: rgba(244, 212, 93, 0.60);
+  --heat-8: rgba(255, 122, 69, 0.60);
+}
+
 /* --------------------------------------------------------------------------
    Layout Overrides (Heatmap-specific)
    -------------------------------------------------------------------------- */
@@ -1129,6 +1141,10 @@
   .line-samples-cumulative {
     padding: 0 4px;
   }
+
+  .bytecode-panel {
+    margin: 8px 10px 8px 160px;
+  }
 }
 
 .bytecode-toggle {
@@ -1160,13 +1176,77 @@
 }
 
 .bytecode-panel {
-  margin-left: 90px;
-  padding: 8px 15px;
-  background: var(--bg-secondary);
-  border-left: 3px solid var(--accent);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
   font-family: var(--font-mono);
   font-size: 12px;
-  margin-bottom: 4px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 0;
+  margin: 8px 10px 8px 250px;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  max-height: 500px;
+  flex: 1;
+  transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bytecode-panel.expanded {
+  padding: 14px;
+}
+
+.bytecode-wrapper {
+  position: relative;
+  display: flex;
+  overflow: visible;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-in-out;
+}
+
+.bytecode-wrapper.expanded {
+  max-height: 600px;
+  opacity: 1;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-in-out;
+}
+
+/* Column backdrop matching table header columns (line/self/total) */
+.bytecode-columns {
+  display: none;
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bytecode-wrapper.expanded .bytecode-columns {
+  display: flex;
+  top: 0;
+  bottom: 0;
+}
+
+.bytecode-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bytecode-panel::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.bytecode-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* Specialization summary bar */
