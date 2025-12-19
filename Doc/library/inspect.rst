@@ -128,11 +128,11 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | and metadata.             |
 +-----------------+-------------------+---------------------------+
 |                 | __annotate__      | The annotate function for |
-|                 |                   |lazy evaluation of         |
+|                 |                   | lazy evaluation of        |
 |                 |                   | annotations (PEP649), or  |
 |                 |                   | None if the function has  |
 |                 |                   | no annotations. New in    |
-|                 |                   |Python 3.14.               |
+|                 |                   | Python 3.14.              |
 +-----------------+-------------------+---------------------------+
 |                 | __module__        | name of module in which   |
 |                 |                   | this function was defined |
