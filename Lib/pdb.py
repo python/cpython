@@ -1316,7 +1316,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if not arg:
             for bp in reversed(bdb.Breakpoint.bpbynumber):
-                if not bp:
+                if bp is None:
                     continue
                 bnum = bp.number
                 break
