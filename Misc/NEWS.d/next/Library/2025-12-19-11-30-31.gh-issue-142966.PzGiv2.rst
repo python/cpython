@@ -1,0 +1,1 @@
+ctypes.POINTER.set_type also resets format
