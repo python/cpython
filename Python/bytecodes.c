@@ -5285,6 +5285,13 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, pop1, pop2 -- value)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);

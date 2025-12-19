@@ -16532,6 +16532,106 @@
             break;
         }
 
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r03: {
+            CHECK_CURRENT_CACHED_VALUES(0);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef arg;
+            _PyStackRef callable;
+            _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
+            arg = stack_pointer[-1];
+            callable = stack_pointer[-3];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            _tos_cache2 = c;
+            _tos_cache1 = a;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -3;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r13: {
+            CHECK_CURRENT_CACHED_VALUES(1);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef arg;
+            _PyStackRef callable;
+            _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            arg = _stack_item_0;
+            callable = stack_pointer[-2];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            _tos_cache2 = c;
+            _tos_cache1 = a;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -2;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r23: {
+            CHECK_CURRENT_CACHED_VALUES(2);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef arg;
+            _PyStackRef callable;
+            _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            arg = _stack_item_1;
+            callable = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            _tos_cache2 = c;
+            _tos_cache1 = a;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
+        case _SHUFFLE_3_LOAD_CONST_INLINE_BORROW_r33: {
+            CHECK_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            _PyStackRef arg;
+            _PyStackRef callable;
+            _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
+            _PyStackRef _stack_item_0 = _tos_cache0;
+            _PyStackRef _stack_item_1 = _tos_cache1;
+            _PyStackRef _stack_item_2 = _tos_cache2;
+            arg = _stack_item_2;
+            callable = _stack_item_0;
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0_64();
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            c = callable;
+            _tos_cache2 = c;
+            _tos_cache1 = a;
+            _tos_cache0 = res;
+            SET_CURRENT_CACHED_VALUES(3);
+            assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
+            break;
+        }
+
         case _POP_CALL_TWO_LOAD_CONST_INLINE_BORROW_r31: {
             CHECK_CURRENT_CACHED_VALUES(3);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
