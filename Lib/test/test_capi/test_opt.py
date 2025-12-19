@@ -1877,6 +1877,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_binary_op_subscr_str_int(self):
+        def testfunc(n):
+            x = 0
+            s = "hello"
+            for _ in range(n):
+                c = s[1]  # _BINARY_OP_SUBSCR_STR_INT
+                if c == 'e':
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        self.assertIn("_COMPARE_OP_STR", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+
     def test_call_type_1_guards_removed(self):
         def testfunc(n):
             x = 0
@@ -2473,6 +2493,25 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_load_attr_instance_value(self):
+        def testfunc(n):
+            class C():
+                pass
+            c = C()
+            c.x = n
+            x = 0
+            for _ in range(n):
+                x = c.x
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_int_add_op_refcount_elimination(self):
         def testfunc(n):
             c = 1
@@ -2533,6 +2572,22 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertNotIn("_POP_TOP", uops)
 
+    def test_unicode_add_op_refcount_elimination(self):
+        def testfunc(n):
+            c = "a"
+            res = ""
+            for _ in range(n):
+                res = c + c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, "aa")
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
     def test_remove_guard_for_slice_list(self):
         def f(n):
             for i in range(n):
@@ -2590,6 +2645,26 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_STORE_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_store_attr_with_hint(self):
+        def testfunc(n):
+            class C:
+                pass
+            c = C()
+            for i in range(_testinternalcapi.SHARED_KEYS_MAX_SIZE - 1):
+                setattr(c, f"_{i}", None)
+
+            for i in range(n):
+                c.x = i
+            return c.x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD - 1)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_STORE_ATTR_WITH_HINT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
@@ -2933,6 +3008,24 @@ class TestUopsOptimization(unittest.TestCase):
         for _ in range(TIER2_THRESHOLD+1):
             obj.attr = EvilAttr(obj.__dict__)
 
+    def test_binary_subscr_list_int(self):
+        def testfunc(n):
+            l = [1]
+            x = 0
+            for _ in range(n):
+                y = l[0]
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_LIST_INT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
 def global_identity(x):
     return x
