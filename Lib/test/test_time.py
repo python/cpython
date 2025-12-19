@@ -180,6 +180,38 @@ class TimeTestCase(unittest.TestCase):
             with self.subTest(value=value):
                 time.sleep(value)
 
+        class IndexLike:
+            def __init__(self, value):
+                self.value = int(value)
+            def __index__(self):
+                return self.value
+        index_like = IndexLike(1)
+
+        with self.subTest(value = index_like):
+            self._test_sleep_duration(index_like)
+
+        class FloatLike:
+            def __init__(self, value):
+                self.value = float(value)
+            def __float__(self):
+                return self.value
+        float_like = FloatLike(0.5)
+
+
+        with self.subTest(value = float_like):
+            self._test_sleep_duration(float_like)
+
+    def _test_sleep_duration(self, secs):
+        t1 = time.monotonic()
+        time.sleep(secs)
+        t2 = time.monotonic()
+        dt = t2 - t1
+        self.assertGreater(t2, t1)
+        # bpo-20101: tolerate a difference of 50 ms because of bad timer
+        # resolution on Windows
+        self.assertTrue(float(secs) - 0.05 <= dt)
+
+
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
         # January 1, 1970, 00:00:00 (UTC).

@@ -584,6 +584,17 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         *tp = ns;
         return 0;
     }
+    else if (PyFloat_Check(obj)) {
+        double d = PyFloat_AsDouble(obj);
+        if (d == -1 && PyErr_Occurred()) {
+            return -1;
+        }
+        if (isnan(d)) {
+            PyErr_SetString(PyExc_ValueError, "Invalid value NaN (not a number)");
+            return -1;
+        }
+        return pytime_from_double(tp, d, round, unit_to_ns);
+    }
     else {
         double d;
         d = PyFloat_AsDouble(obj);
