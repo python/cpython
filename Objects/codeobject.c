@@ -25,6 +25,9 @@
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
+// copypaste from unicodeobject.c
+#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
+
 static const char *
 code_event_name(PyCodeEvent event) {
     switch (event) {
@@ -196,7 +199,6 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
-
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
    constants. */
@@ -205,6 +207,11 @@ intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *interned_dict = _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
+    // copypaste from unicodeobject.c
+#ifdef Py_GIL_DISABLED
+#  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+#endif
+    FT_MUTEX_LOCK(INTERN_MUTEX);
     Py_INCREF(interned_dict);
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
@@ -212,9 +219,16 @@ intern_constants(PyObject *tuple, int *modified)
             if (PyUnicode_CHECK_INTERNED(v) != 0) {
                 continue;
             }
+            //
             PyObject *interned = PyDict_GetItemWithError(interned_dict, v);
             if (interned == NULL && PyErr_Occurred()) {
                 goto error;
+            }
+            if (!interned) {
+                interned = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, v);
+                if (interned == NULL && PyErr_Occurred()) {
+                    goto error;
+                }
             }
             if (interned != NULL && interned != v) {
                 Py_INCREF(interned);
@@ -317,10 +331,12 @@ intern_constants(PyObject *tuple, int *modified)
         }
 #endif
     }
+    FT_MUTEX_UNLOCK(INTERN_MUTEX);
     Py_DECREF(interned_dict);
     return 0;
 
 error:
+    FT_MUTEX_UNLOCK(INTERN_MUTEX);
     Py_DECREF(interned_dict);
     return -1;
 }
