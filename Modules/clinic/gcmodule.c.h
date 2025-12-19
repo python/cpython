@@ -8,7 +8,6 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(gc_enable__doc__,
 "enable($module, /)\n"
@@ -102,9 +101,11 @@ gc_collect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -322,7 +323,7 @@ gc_get_referrers(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *objs = NULL;
 
-    objs = _PyTuple_FromArray(args, nargs);
+    objs = PyTuple_FromArray(args, nargs);
     if (objs == NULL) {
         goto exit;
     }
@@ -353,7 +354,7 @@ gc_get_referents(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *objs = NULL;
 
-    objs = _PyTuple_FromArray(args, nargs);
+    objs = PyTuple_FromArray(args, nargs);
     if (objs == NULL) {
         goto exit;
     }
@@ -394,9 +395,11 @@ gc_get_objects(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(generation), },
     };
     #undef NUM_KEYWORDS
@@ -580,4 +583,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3e33248997e06c34 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19738854607938db input=a9049054013a1b77]*/

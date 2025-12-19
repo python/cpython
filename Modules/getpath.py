@@ -344,9 +344,10 @@ elif use_environment and ENV_PYTHONHOME and not py_setpath:
 
 venv_prefix = None
 
-# Calling Py_SetPythonHome(), Py_SetPath() or
-# setting $PYTHONHOME will override venv detection.
-if not home and not py_setpath:
+# Calling Py_SetPath() will override venv detection.
+# Calling Py_SetPythonHome() or setting $PYTHONHOME will override the 'home' key
+# specified in pyvenv.cfg.
+if not py_setpath:
     try:
         # prefix2 is just to avoid calculating dirname again later,
         # as the path in venv_prefix is the more common case.
@@ -363,10 +364,22 @@ if not home and not py_setpath:
         venv_prefix = None
         pyvenvcfg = []
 
+    # Search for the 'home' key in pyvenv.cfg. If a home key isn't found,
+    # then it means a venv is active and home is based on the venv's
+    # executable (if its a symlink, home is where the symlink points).
     for line in pyvenvcfg:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
+            # If PYTHONHOME was set, ignore 'home' from pyvenv.cfg.
+            if home:
+                break
+            # Override executable_dir/real_executable_dir with the value from 'home'.
+            # These values may be later used to calculate prefix/base_prefix, if a more
+            # reliable source — like the runtime library (libpython) path — isn't available.
             executable_dir = real_executable_dir = value.strip()
+            # If base_executable — which points to the Python interpreted from
+            # the base installation — isn't set (eg. when embedded), try to find
+            # it in 'home'.
             if not base_executable:
                 # First try to resolve symlinked executables, since that may be
                 # more accurate than assuming the executable in 'home'.
@@ -398,9 +411,8 @@ if not home and not py_setpath:
                             if isfile(candidate):
                                 base_executable = candidate
                                 break
+            # home key found; stop iterating over lines
             break
-    else:
-        venv_prefix = None
 
 
 # ******************************************************************************
@@ -610,6 +622,8 @@ else:
             # gh-100320: Our PYDs are assumed to be relative to the Lib directory
             # (that is, prefix) rather than the executable (that is, executable_dir)
             exec_prefix = prefix
+        if not exec_prefix and prefix and isdir(joinpath(prefix, PLATSTDLIB_LANDMARK)):
+            exec_prefix = prefix
         if not exec_prefix and executable_dir:
             exec_prefix = search_up(executable_dir, PLATSTDLIB_LANDMARK, test=isdir)
         if not exec_prefix and EXEC_PREFIX:
@@ -776,6 +790,7 @@ if pth:
     config['isolated'] = 1
     config['use_environment'] = 0
     config['site_import'] = 0
+    config['user_site_directory'] = 0
     config['safe_path'] = 1
     pythonpath = []
     for line in pth:

@@ -1,3 +1,0 @@
-``locale.nl_langinfo(locale.ERA)`` now returns multiple era description
-segments separated by semicolons. Previously it only returned the first
-segment on platforms with Glibc.

@@ -3,12 +3,13 @@ import collections.abc
 import gc
 import pickle
 import random
+import re
 import string
 import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper, get_c_recursion_limit
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -265,6 +266,63 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
+    def test_update_type_error(self):
+        with self.assertRaises(TypeError) as cm:
+            {}.update([object() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "object is not iterable")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+        def badgen():
+            yield "key"
+            raise TypeError("oops")
+            yield "value"
+
+        with self.assertRaises(TypeError) as cm:
+            dict([badgen() for _ in range(3)])
+
+        self.assertEqual(str(cm.exception), "oops")
+        self.assertEqual(
+            cm.exception.__notes__,
+            ['Cannot convert dictionary update sequence element #0 to a sequence'],
+        )
+
+    def test_update_shared_keys(self):
+        class MyClass: pass
+
+        # Subclass str to enable us to create an object during the
+        # dict.update() call.
+        class MyStr(str):
+            def __hash__(self):
+                return super().__hash__()
+
+            def __eq__(self, other):
+                # Create an object that shares the same PyDictKeysObject as
+                # obj.__dict__.
+                obj2 = MyClass()
+                obj2.a = "a"
+                obj2.b = "b"
+                obj2.c = "c"
+                return super().__eq__(other)
+
+        obj = MyClass()
+        obj.a = "a"
+        obj.b = "b"
+
+        x = {}
+        x[MyStr("a")] = MyStr("a")
+
+        # gh-132617: this previously raised "dict mutated during update" error
+        x.update(obj.__dict__)
+
+        self.assertEqual(x, {
+            MyStr("a"): "a",
+            "b": "b",
+        })
+
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
@@ -312,16 +370,33 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, baddict2.fromkeys, [1])
 
         # test fast path for dictionary inputs
+        res = dict(zip(range(6), [0]*6))
         d = dict(zip(range(6), range(6)))
-        self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test fast path for set inputs
+        d = set(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test slow path for other iterable inputs
+        d = list(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
 
+        # test fast path when object's constructor returns large non-empty dict
         class baddict3(dict):
             def __new__(cls):
                 return d
-        d = {i : i for i in range(10)}
+        d = {i : i for i in range(1000)}
         res = d.copy()
         res.update(a=None, b=None, c=None)
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
+
+        # test slow path when object is a proper subclass of dict
+        class baddict4(dict):
+            def __init__(self):
+                dict.__init__(self, d)
+        d = {i : i for i in range(1000)}
+        res = d.copy()
+        res.update(a=None, b=None, c=None)
+        self.assertEqual(baddict4.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
         d = {1: 1, 2: 2, 3: 3}
@@ -594,9 +669,11 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}
-        for i in range(get_c_recursion_limit() + 1):
+        for i in range(support.exceeds_recursion_limit()):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -742,8 +819,8 @@ class DictTest(unittest.TestCase):
 
     def test_missing(self):
         # Make sure dict doesn't have a __missing__ method
-        self.assertFalse(hasattr(dict, "__missing__"))
-        self.assertFalse(hasattr({}, "__missing__"))
+        self.assertNotHasAttr(dict, "__missing__")
+        self.assertNotHasAttr({}, "__missing__")
         # Test several cases:
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError
@@ -994,10 +1071,8 @@ class DictTest(unittest.TestCase):
         a = C()
         a.x = 1
         d = a.__dict__
-        before_resize = sys.getsizeof(d)
         d[2] = 2 # split table is resized to a generic combined table
 
-        self.assertGreater(sys.getsizeof(d), before_resize)
         self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):
@@ -1484,6 +1559,75 @@ class DictTest(unittest.TestCase):
                 eq_count = 0
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
+
+    def test_unhashable_key(self):
+        d = {'a': 1}
+        key = [1, 2, 3]
+
+        def check_unhashable_key():
+            msg = "cannot use 'list' as a dict key (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_key():
+            key in d
+        with check_unhashable_key():
+            d[key]
+        with check_unhashable_key():
+            d[key] = 2
+        with check_unhashable_key():
+            d.setdefault(key, 2)
+        with check_unhashable_key():
+            d.pop(key)
+        with check_unhashable_key():
+            d.get(key)
+
+        # Only TypeError exception is overriden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        key2 = HashError()
+        with self.assertRaises(KeyError):
+            key2 in d
+        with self.assertRaises(KeyError):
+            d[key2]
+        with self.assertRaises(KeyError):
+            d[key2] = 2
+        with self.assertRaises(KeyError):
+            d.setdefault(key2, 2)
+        with self.assertRaises(KeyError):
+            d.pop(key2)
+        with self.assertRaises(KeyError):
+            d.get(key2)
+
+    def test_clear_at_lookup(self):
+        class X:
+            def __hash__(self):
+                return 1
+            def __eq__(self, other):
+                nonlocal d
+                d.clear()
+
+        d = {}
+        for _ in range(10):
+            d[X()] = None
+
+        self.assertEqual(len(d), 1)
+
+        d = {}
+        for _ in range(10):
+            d.setdefault(X(), None)
+
+        self.assertEqual(len(d), 1)
+
+    def test_split_table_update_with_str_subclass(self):
+        class MyStr(str): pass
+        class MyClass: pass
+        obj = MyClass()
+        obj.attr = 1
+        obj.__dict__[MyStr('attr')] = 2
+        self.assertEqual(obj.attr, 2)
 
 
 class CAPITest(unittest.TestCase):

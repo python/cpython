@@ -1,10 +1,12 @@
+import collections.abc
 import functools
 import unittest
 import tkinter
 from tkinter import TclError
 import enum
 from test import support
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
+from test.test_tkinter.support import (AbstractTkTest, AbstractDefaultRootTest,
+                                       requires_tk, get_tk_patchlevel)
 
 support.requires('gui')
 
@@ -30,12 +32,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(repr(f), '<tkinter.Frame object .top.child>')
 
     def test_generated_names(self):
+        class Button2(tkinter.Button):
+            pass
+
         t = tkinter.Toplevel(self.root)
         f = tkinter.Frame(t)
         f2 = tkinter.Frame(t)
+        self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
-        for name in str(b).split('.'):
+        b2 = Button2(f2)
+        for name in str(b).split('.') + str(b2).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
+        b3 = tkinter.Button(f2)
+        b4 = Button2(f2)
+        self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):
@@ -123,9 +133,9 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
     def test_after(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Without function, sleeps for ms.
         self.assertIsNone(root.after(1))
@@ -161,12 +171,18 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         root.update()  # Process all pending events.
         self.assertEqual(count, 53)
 
+        # Set up with callback with keyword args.
+        count = 0
+        timer1 = root.after(0, callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
+
     def test_after_idle(self):
         root = self.root
 
-        def callback(start=0, step=1):
+        def callback(start=0, step=1, *, end=0):
             nonlocal count
-            count = start + step
+            count = start + step + end
 
         # Set up with callback with no args.
         count = 0
@@ -192,6 +208,12 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(count, 53)
         with self.assertRaises(tkinter.TclError):
             root.tk.call(script)
+
+        # Set up with callback with keyword args.
+        count = 0
+        idle1 = root.after_idle(callback, 42, step=11, end=1)
+        root.update()  # Process all pending events.
+        self.assertEqual(count, 54)
 
     def test_after_cancel(self):
         root = self.root
@@ -476,7 +498,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
             self.assertEqual(vi.serial, 0)
         else:
             self.assertEqual(vi.micro, 0)
-        self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
+        self.assertStartsWith(str(vi), f'{vi.major}.{vi.minor}')
 
     def test_embedded_null(self):
         widget = tkinter.Entry(self.root)
@@ -486,6 +508,17 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         widget.insert(0, '\u20ac\0')  # non-ASCII
         widget.selection_range(0, 'end')
         self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
+
+    def test_iterable_protocol(self):
+        widget = tkinter.Entry(self.root)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Iterable)
+        self.assertNotIsSubclass(tkinter.Entry, collections.abc.Container)
+        self.assertNotIsInstance(widget, collections.abc.Iterable)
+        self.assertNotIsInstance(widget, collections.abc.Container)
+        with self.assertRaisesRegex(TypeError, 'is not iterable'):
+            iter(widget)
+        with self.assertRaisesRegex(TypeError, 'is not a container or iterable'):
+            widget in widget
 
 
 class WmTest(AbstractTkTest, unittest.TestCase):
@@ -542,6 +575,31 @@ class WmTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(w.wm_attributes('alpha'),
                          1.0 if self.wantobjects else '1.0')
 
+    def test_wm_iconbitmap(self):
+        t = tkinter.Toplevel(self.root)
+        self.assertEqual(t.wm_iconbitmap(), '')
+        t.wm_iconbitmap('hourglass')
+        bug = False
+        if t._windowingsystem == 'aqua':
+            # Tk bug 13ac26b35dc55f7c37f70b39d59d7ef3e63017c8.
+            patchlevel = get_tk_patchlevel(t)
+            if patchlevel < (8, 6, 17) or (9, 0) <= patchlevel < (9, 0, 2):
+                bug = True
+        if not bug:
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+        self.assertEqual(self.root.wm_iconbitmap(), '')
+        t.wm_iconbitmap('')
+        self.assertEqual(t.wm_iconbitmap(), '')
+
+        if t._windowingsystem == 'win32':
+            t.wm_iconbitmap(default='hourglass')
+            self.assertEqual(t.wm_iconbitmap(), 'hourglass')
+            self.assertEqual(self.root.wm_iconbitmap(), '')
+            t.wm_iconbitmap(default='')
+            self.assertEqual(t.wm_iconbitmap(), '')
+
+        t.destroy()
+
 
 class EventTest(AbstractTkTest, unittest.TestCase):
 
@@ -563,7 +621,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, '??')
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, '??')
         self.assertEqual(e.char, '??')
@@ -596,7 +654,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, '??')
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, '??')
         self.assertEqual(e.char, '??')
@@ -630,7 +688,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertIsInstance(e.state, int)
         self.assertNotEqual(e.state, 0)
@@ -701,7 +759,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, 1)
         self.assertEqual(e.state, 0)
         self.assertEqual(e.char, '??')
@@ -735,7 +793,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0x100)
         self.assertEqual(e.char, '??')
@@ -768,7 +826,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIs(e.widget, f)
         self.assertIsInstance(e.serial, int)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.time, 0)
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0)
@@ -803,7 +861,7 @@ class EventTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(e.serial, int)
         self.assertEqual(e.time, 0)
         self.assertIs(e.send_event, False)
-        self.assertFalse(hasattr(e, 'focus'))
+        self.assertNotHasAttr(e, 'focus')
         self.assertEqual(e.num, '??')
         self.assertEqual(e.state, 0)
         self.assertEqual(e.char, '??')
@@ -1262,17 +1320,17 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         self.assertIs(tkinter._default_root, root)
         tkinter.NoDefaultRoot()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         # repeated call is no-op
         tkinter.NoDefaultRoot()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root.destroy()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root = tkinter.Tk()
         self.assertIs(tkinter._support_default_root, False)
-        self.assertFalse(hasattr(tkinter, '_default_root'))
+        self.assertNotHasAttr(tkinter, '_default_root')
         root.destroy()
 
     def test_getboolean(self):

@@ -161,7 +161,7 @@ static PyModuleDef testconsole_def = {
 };
 
 PyMODINIT_FUNC
-PyInit__testconsole(PyObject *spec)
+PyInit__testconsole(void)
 {
     return PyModuleDef_Init(&testconsole_def);
 }

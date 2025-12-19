@@ -1,7 +1,11 @@
 import io
+import itertools
 import pickle
 import pickletools
+import tempfile
+import textwrap
 from test import support
+from test.support import os_helper
 from test.pickletester import AbstractPickleTests
 import doctest
 import unittest
@@ -384,13 +388,13 @@ highest protocol among opcodes = 0
         self.check_dis_error(b'Sabc"\n.', '',
                              "no string quotes around b'abc\"'")
         self.check_dis_error(b"S'abc\n.", '',
-                             '''strinq quote b"'" not found at both ends of b"'abc"''')
+                             '''string quote b"'" not found at both ends of b"'abc"''')
         self.check_dis_error(b'S"abc\n.', '',
-                             r"""strinq quote b'"' not found at both ends of b'"abc'""")
+                             r"""string quote b'"' not found at both ends of b'"abc'""")
         self.check_dis_error(b"S'abc\"\n.", '',
-                             r"""strinq quote b"'" not found at both ends of b'\\'abc"'""")
+                             r"""string quote b"'" not found at both ends of b'\\'abc"'""")
         self.check_dis_error(b"S\"abc'\n.", '',
-                             r"""strinq quote b'"' not found at both ends of b'"abc\\''""")
+                             r"""string quote b'"' not found at both ends of b'"abc\\''""")
 
     def test_binstring(self):
         self.check_dis(b"T\x03\x00\x00\x00abc.", '''\
@@ -443,6 +447,43 @@ highest protocol among opcodes = 0
 highest protocol among opcodes = 0
 ''')
 
+    def test_constants(self):
+        self.check_dis(b"(NI00\nI01\n\x89\x88t.", '''\
+    0: (    MARK
+    1: N        NONE
+    2: I        INT        False
+    6: I        INT        True
+   10: \\x89     NEWFALSE
+   11: \\x88     NEWTRUE
+   12: t        TUPLE      (MARK at 0)
+   13: .    STOP
+highest protocol among opcodes = 2
+''')
+
+    def test_integers(self):
+        self.check_dis(b"(I0\nI1\nI10\nI011\nL12\nL13L\nL014\nL015L\nt.", '''\
+    0: (    MARK
+    1: I        INT        0
+    4: I        INT        1
+    7: I        INT        10
+   11: I        INT        11
+   16: L        LONG       12
+   20: L        LONG       13
+   25: L        LONG       14
+   30: L        LONG       15
+   36: t        TUPLE      (MARK at 0)
+   37: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_nondecimal_integers(self):
+        self.check_dis_error(b'I0b10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'I0o10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'I0x10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0b10L\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0o10L\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0x10L\n.', '', 'invalid literal for int')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -475,6 +516,170 @@ class MiscTestCase(unittest.TestCase):
             'code2op',
         }
         support.check__all__(self, pickletools, not_exported=not_exported)
+
+
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    @staticmethod
+    def text_normalize(string):
+        return textwrap.dedent(string).strip()
+
+    def set_pickle_data(self, data):
+        with open(self.filename, 'wb') as f:
+            pickle.dump(data, f)
+
+    def invoke_pickletools(self, *flags):
+        with (
+            support.captured_stdout() as stdout,
+            support.captured_stderr() as stderr,
+        ):
+            pickletools._main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return self.text_normalize(stdout.getvalue())
+
+    def check_output(self, data, expect, *flags):
+        with self.subTest(data=data, flags=flags):
+            self.set_pickle_data(data)
+            res = self.invoke_pickletools(*flags)
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        output_file = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, output_file)
+        base_flags = [
+            (f'-o={output_file}', f'--output={output_file}'),
+            ('-m', '--memo'),
+            ('-l=2', '--indentlevel=2'),
+            ('-a', '--annotate'),
+            ('-p="Another:"', '--preamble="Another:"'),
+        ]
+        data = { 'a', 'b', 'c' }
+
+        self.set_pickle_data(data)
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(args=args[1:]):
+                        self.invoke_pickletools(*args)
+
+    def test_unknown_flag(self):
+        with self.assertRaises(SystemExit):
+            with support.captured_stderr() as stderr:
+                pickletools._main(args=['--unknown'])
+            self.assertStartsWith(stderr.getvalue(), 'usage: ')
+
+    def test_output_flag(self):
+        # test 'python -m pickletools -o/--output'
+        output_file = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, output_file)
+        data = ('fake_data',)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
+           25: .    STOP
+        highest protocol among opcodes = 4
+        '''
+        for flag in [f'-o={output_file}', f'--output={output_file}']:
+            with self.subTest(data=data, flags=flag):
+                self.set_pickle_data(data)
+                res = self.invoke_pickletools(flag)
+                with open(output_file, 'r') as f:
+                    res_from_file = self.text_normalize(f.read())
+                expect = self.text_normalize(expect)
+
+                self.assertListEqual(res.splitlines(), [])
+                self.assertListEqual(res_from_file.splitlines(),
+                                     expect.splitlines())
+
+    def test_memo_flag(self):
+        # test 'python -m pickletools -m/--memo'
+        data = ('fake_data',)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
+           25: .    STOP
+        highest protocol among opcodes = 4
+        '''
+        for flag in ['-m', '--memo']:
+            self.check_output(data, expect, flag)
+
+    def test_indentlevel_flag(self):
+        # test 'python -m pickletools -l/--indentlevel'
+        data = ('fake_data',)
+        expect = r'''
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
+           25: .    STOP
+        highest protocol among opcodes = 4
+        '''
+        for flag in ['-l=2', '--indentlevel=2']:
+            self.check_output(data, expect, flag)
+
+    def test_annotate_flag(self):
+        # test 'python -m pickletools -a/--annotate'
+        data = ('fake_data',)
+        expect = r'''
+            0: \x80 PROTO      5              Protocol version indicator.
+            2: \x95 FRAME      15             Indicate the beginning of a new frame.
+           11: \x8c SHORT_BINUNICODE 'fake_data' Push a Python Unicode string object.
+           22: \x94 MEMOIZE    (as 0)            Store the stack top into the memo.  The stack is not popped.
+           23: \x85 TUPLE1                       Build a one-tuple out of the topmost item on the stack.
+           24: \x94 MEMOIZE    (as 1)            Store the stack top into the memo.  The stack is not popped.
+           25: .    STOP                         Stop the unpickling machine.
+        highest protocol among opcodes = 4
+        '''
+        for flag in ['-a', '--annotate']:
+            self.check_output(data, expect, flag)
+
+    def test_preamble_flag(self):
+        # test 'python -m pickletools -p/--preamble'
+        data = ('fake_data',)
+        expect = r'''
+        Another:
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
+           25: .    STOP
+        highest protocol among opcodes = 4
+        Another:
+            0: \x80 PROTO      5
+            2: \x95 FRAME      15
+           11: \x8c SHORT_BINUNICODE 'fake_data'
+           22: \x94 MEMOIZE    (as 0)
+           23: \x85 TUPLE1
+           24: \x94 MEMOIZE    (as 1)
+           25: .    STOP
+        highest protocol among opcodes = 4
+        '''
+        for flag in ['-p=Another:', '--preamble=Another:']:
+            with self.subTest(data=data, flags=flag):
+                self.set_pickle_data(data)
+                with support.captured_stdout() as stdout:
+                    pickletools._main(args=[flag, self.filename, self.filename])
+                res = self.text_normalize(stdout.getvalue())
+                expect = self.text_normalize(expect)
+                self.assertListEqual(res.splitlines(), expect.splitlines())
 
 
 def load_tests(loader, tests, pattern):

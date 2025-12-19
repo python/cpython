@@ -97,11 +97,9 @@ def clear_cache():
     _byte_quoter_factory.cache_clear()
 
 # Helpers for bytes handling
-# For 3.2, we deliberately require applications that
-# handle improperly quoted URLs to do their own
-# decoding and encoding. If valid use cases are
-# presented, we may relax this by using latin-1
-# decoding internally for 3.3
+# We deliberately require applications that
+# handle improperly quoted URLs to do their
+# own decoding and encoding.
 _implicit_encoding = 'ascii'
 _implicit_errors = 'strict'
 
@@ -439,11 +437,28 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+def _check_bracketed_netloc(netloc):
+    # Note that this function must mirror the splitting
+    # done in NetlocResultMixins._hostinfo().
+    hostname_and_port = netloc.rpartition('@')[2]
+    before_bracket, have_open_br, bracketed = hostname_and_port.partition('[')
+    if have_open_br:
+        # No data is allowed before a bracket.
+        if before_bracket:
+            raise ValueError("Invalid IPv6 URL")
+        hostname, _, port = bracketed.partition(']')
+        # No data is allowed after the bracket but before the port delimiter.
+        if port and not port.startswith(":"):
+            raise ValueError("Invalid IPv6 URL")
+    else:
+        hostname, _, port = hostname_and_port.partition(':')
+    _check_bracketed_host(hostname)
+
 # Valid bracketed hosts are defined in
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
@@ -505,8 +520,7 @@ def _urlsplit(url, scheme=None, allow_fragments=True):
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
         if '[' in netloc and ']' in netloc:
-            bracketed_host = netloc.partition('[')[2].partition(']')[0]
-            _check_bracketed_host(bracketed_host)
+            _check_bracketed_netloc(netloc)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:
@@ -1048,7 +1062,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
             else:
                 try:
                     # Is this a sufficient test for sequence-ness?
-                    x = len(v)
+                    len(v)
                 except TypeError:
                     # not a sequence
                     v = quote_via(str(v), safe, encoding, errors)

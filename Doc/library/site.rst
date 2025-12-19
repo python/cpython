@@ -35,7 +35,7 @@ are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
 :file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
 optional suffix "t" indicates the :term:`free threading` build, and is
-appended if ``"t"`` is present in the :attr:`sys.abiflags` constant.)
+appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
 For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
@@ -270,7 +270,7 @@ Module contents
 
 .. _site-commandline:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 .. program:: site

@@ -1,1 +1,0 @@
-Fix crash in free-threaded builds when replacing object dictionary while reading attribute on another thread

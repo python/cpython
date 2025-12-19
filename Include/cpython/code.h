@@ -8,25 +8,6 @@
 extern "C" {
 #endif
 
-/* Total tool ids available */
-#define  _PY_MONITORING_TOOL_IDS 8
-/* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 10
-/* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 15
-/* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 17
-
-/* Tables of which tools are active for each monitored event. */
-typedef struct _Py_LocalMonitors {
-    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
-} _Py_LocalMonitors;
-
-typedef struct _Py_GlobalMonitors {
-    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_GlobalMonitors;
-
-
 typedef struct {
     PyObject *_co_code;
     PyObject *_co_varnames;
@@ -34,43 +15,12 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancillary data structure used for instrumentation.
-   Line instrumentation creates an array of
-   these. One entry per code unit.*/
-typedef struct {
-    uint8_t original_opcode;
-    int8_t line_delta;
-} _PyCoLineInstrumentationData;
-
-
 typedef struct {
     int size;
     int capacity;
     struct _PyExecutorObject *executors[1];
 } _PyExecutorArray;
 
-/* Main data structure used for instrumentation.
- * This is allocated when needed for instrumentation
- */
-typedef struct {
-    /* Monitoring specific to this code object */
-    _Py_LocalMonitors local_monitors;
-    /* Monitoring that is active on this code object */
-    _Py_LocalMonitors active_monitors;
-    /* The tools that are to be notified for events for the matching code unit */
-    uint8_t *tools;
-    /* The version of tools when they instrument the code */
-    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
-    /* Information to support line events */
-    _PyCoLineInstrumentationData *lines;
-    /* The tools that are to be notified for line events for the matching code unit */
-    uint8_t *line_tools;
-    /* Information to support instruction events */
-    /* The underlying instructions, which can themselves be instrumented */
-    uint8_t *per_instruction_opcodes;
-    /* The tools that are to be notified for instruction events for the matching code unit */
-    uint8_t *per_instruction_tools;
-} _PyCoMonitoringData;
 
 #ifdef Py_GIL_DISABLED
 
@@ -150,7 +100,7 @@ typedef struct {
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
-    _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    struct _PyCoMonitoringData *_co_monitoring; /* Monitoring data */          \
     Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
@@ -198,6 +148,9 @@ struct PyCodeObject _PyCode_DEF(1);
    If so, it will be the first item in co_consts
 */
 #define CO_HAS_DOCSTRING 0x4000000
+
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
 
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
@@ -328,15 +281,6 @@ typedef struct _line_offsets {
    same line as lasti.  Return the number of that line.
 */
 PyAPI_FUNC(int) _PyCode_CheckLineNumber(int lasti, PyCodeAddressRange *bounds);
-
-/* Create a comparable key used to compare constants taking in account the
- * object type. It is used to make sure types are not coerced (e.g., float and
- * complex) _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms
- *
- * Return (type(obj), obj, ...): a tuple with variable size (at least 2 items)
- * depending on the type and the value. The type is the first item to not
- * compare bytes and str which can raise a BytesWarning exception. */
-PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);

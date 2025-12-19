@@ -1,5 +1,5 @@
 from test import support
-from test.support import is_apple_mobile, os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -41,6 +41,11 @@ class IntTestCase(unittest.TestCase, HelperMixin):
         n = sys.maxsize ** 2
         while n:
             for expected in (-n, n):
+                self.helper(expected)
+            n = n >> 1
+        n = 1 << 100
+        while n:
+            for expected in (-n, -n+1, n-1, n):
                 self.helper(expected)
             n = n >> 1
 
@@ -125,8 +130,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.exceeds_recursion_limit()
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):
@@ -294,7 +298,7 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
-        elif sys.platform == 'wasi' or is_apple_mobile:
+        elif sys.platform == 'wasi' or is_emscripten or is_apple_mobile:
             MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000

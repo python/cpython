@@ -32,7 +32,7 @@ Below is a checklist of things that may need to change.
   [`Include/internal/pycore_ast.h`](../Include/internal/pycore_ast.h) and
   [`Python/Python-ast.c`](../Python/Python-ast.c).
 
-* [`Parser/lexer/`](../Parser/lexer/) contains the tokenization code.
+* [`Parser/lexer/`](../Parser/lexer) contains the tokenization code.
   This is where you would add a new type of comment or string literal, for example.
 
 * [`Python/ast.c`](../Python/ast.c) will need changes to validate AST objects
@@ -60,4 +60,4 @@ Below is a checklist of things that may need to change.
   to the tokenizer.
 
 * Documentation must be written! Specifically, one or more of the pages in
-  [`Doc/reference/`](../Doc/reference/) will need to be updated.
+  [`Doc/reference/`](../Doc/reference) will need to be updated.
