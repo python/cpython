@@ -1,1 +1,1 @@
-Fix a segfault in the JIT when constant folding `len(tuple)`.
+Fix a segfault in the JIT when constant folding ``len(tuple)``.
