@@ -2988,6 +2988,18 @@ class TestUopsOptimization(unittest.TestCase):
         for _ in range(TIER2_THRESHOLD+1):
             obj.attr = EvilAttr(obj.__dict__)
 
+    def test_constant_fold_tuple(self):
+        def testfunc(n):
+            for _ in range(n):
+                t = (1,)
+                p = len(t)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_CALL_LEN", uops)
+
     def test_binary_subscr_list_int(self):
         def testfunc(n):
             l = [1]
