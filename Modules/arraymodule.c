@@ -205,19 +205,28 @@ Note that the basic Get and Set functions do NOT check that the index is
 in bounds; that's the responsibility of the caller.
 ****************************************************************************/
 
-/* Check array buffer validity and bounds after calling user-defined methods
-   (like __index__ or __float__) that might modify the array during the call.
-   Returns false on error, true on success. */
-static inline bool
-array_check_bounds_after_user_call(arrayobject *ap, Py_ssize_t i)
-{
-    if (i >= 0 && (ap->ob_item == NULL || i >= Py_SIZE(ap))) {
-        PyErr_SetString(PyExc_IndexError,
-            "array assignment index out of range");
-        return false;
-    }
-    return true;
-}
+/* Macro to check array buffer validity and bounds after calling
+   user-defined methods (like __index__ or __float__) that might modify
+   the array during the call.
+*/
+#define CHECK_ARRAY_BOUNDS(ap, i) \
+    do { \
+        if ((i) >= 0 && ((ap)->ob_item == NULL || (i) >= Py_SIZE((ap)))) { \
+            PyErr_SetString(PyExc_IndexError, "array assignment index out of range"); \
+            return -1; \
+        } \
+    } while (0)
+
+#define CHECK_ARRAY_BOUNDS_WITH_CLEANUP(ap, i, v, cleanup) \
+    do { \
+        if ((i) >= 0 && ((ap)->ob_item == NULL || (i) >= Py_SIZE((ap)))) { \
+            PyErr_SetString(PyExc_IndexError, "array assignment index out of range"); \
+            if (cleanup) { \
+                Py_DECREF(v); \
+            } \
+            return -1; \
+        } \
+    } while (0)
 
 static PyObject *
 b_getitem(arrayobject *ap, Py_ssize_t i)
@@ -236,9 +245,7 @@ b_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (x < -128) {
         PyErr_SetString(PyExc_OverflowError,
@@ -270,9 +277,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
         ((unsigned char *)ap->ob_item)[i] = x;
@@ -367,9 +372,7 @@ h_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "h;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
                  ((short *)ap->ob_item)[i] = x;
@@ -401,9 +404,7 @@ HH_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
         ((short *)ap->ob_item)[i] = (short)x;
@@ -424,9 +425,7 @@ i_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "i;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
                  ((int *)ap->ob_item)[i] = x;
@@ -469,12 +468,7 @@ II_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        if (do_decref) {
-            Py_DECREF(v);
-        }
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS_WITH_CLEANUP(ap, i, v, do_decref);
 
     if (i >= 0)
         ((unsigned int *)ap->ob_item)[i] = (unsigned int)x;
@@ -498,9 +492,7 @@ l_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "l;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
                  ((long *)ap->ob_item)[i] = x;
@@ -534,12 +526,7 @@ LL_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        if (do_decref) {
-            Py_DECREF(v);
-        }
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS_WITH_CLEANUP(ap, i, v, do_decref);
 
     if (i >= 0)
         ((unsigned long *)ap->ob_item)[i] = x;
@@ -563,9 +550,7 @@ q_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "L;array item must be integer", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
         ((long long *)ap->ob_item)[i] = x;
@@ -600,12 +585,7 @@ QQ_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
         return -1;
     }
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        if (do_decref) {
-            Py_DECREF(v);
-        }
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS_WITH_CLEANUP(ap, i, v, do_decref);
 
     if (i >= 0)
         ((unsigned long long *)ap->ob_item)[i] = x;
@@ -629,9 +609,7 @@ f_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "f;array item must be float", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
                  ((float *)ap->ob_item)[i] = x;
@@ -651,9 +629,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "d;array item must be float", &x))
         return -1;
 
-    if (!array_check_bounds_after_user_call(ap, i)) {
-        return -1;
-    }
+    CHECK_ARRAY_BOUNDS(ap, i);
 
     if (i >= 0)
                  ((double *)ap->ob_item)[i] = x;
