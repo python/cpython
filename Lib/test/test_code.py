@@ -1173,6 +1173,34 @@ class CodeTest(unittest.TestCase):
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
 
+# copypaste from 'Tools/build/generate_global_objects.py'
+import os
+import re
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]
+def iter_files():
+    for name in ('Modules', 'Objects', 'Parser', 'PC', 'Programs', 'Python'):
+        root = os.path.join(ROOT, name)
+        for dirname, _, files in os.walk(root):
+            for name in files:
+                if not name.endswith(('.c', '.h')):
+                    continue
+                yield os.path.join(dirname, name)
+
+def iter_global_strings():
+    str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
+    for filename in iter_files():
+        try:
+            infile = open(filename, encoding='utf-8')
+        except FileNotFoundError:
+            # The file must have been a temporary file.
+            continue
+        with infile:
+            for lno, line in enumerate(infile, 1):
+                for m in str_regex.finditer(line):
+                    varname, string = m.groups()
+                    yield string
+
 class CodeConstsTest(unittest.TestCase):
 
     def find_const(self, consts, value):
@@ -1261,6 +1289,10 @@ class CodeConstsTest(unittest.TestCase):
         self.assertEqual(code.co_consts[2], code.co_consts[3])
         self.assertFalse(sys._is_immortal(code.co_consts[4]))
 
+    @cpython_only
+    def test__Py_DECLARE_STR_is_interned(self):
+        for global_string in iter_global_strings():
+            self.assertIsInterned(global_string)
 
 class CodeWeakRefTest(unittest.TestCase):
 
