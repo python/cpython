@@ -1333,7 +1333,7 @@ Reading directories
 
    .. note::
       Akin to :mod:`glob`, the paths are returned with no ordering guarantees.
-      If you need a specific order, sort them.
+      If you need a specific order, sort the results.
 
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
@@ -1368,7 +1368,7 @@ Reading directories
 
    .. note::
       Akin to :mod:`glob`, the paths are returned with no ordering guarantees.
-      If you need a specific order, sort them.
+      If you need a specific order, sort the results.
 
    Glob the given relative *pattern* recursively.  This is like calling
    :func:`Path.glob` with "``**/``" added in front of the *pattern*.
