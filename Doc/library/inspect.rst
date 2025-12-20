@@ -295,6 +295,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 |                   | created, or ``None``. See |
 |                 |                   | |coroutine-origin-link|   |
 +-----------------+-------------------+---------------------------+
+|                 | cr_suspended      | is the coroutine          |
+|                 |                   | suspended?                |
++-----------------+-------------------+---------------------------+
 | builtin         | __doc__           | documentation string      |
 +-----------------+-------------------+---------------------------+
 |                 | __name__          | original name of this     |
@@ -321,6 +324,13 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.11
+
+   Add ``gi_suspended`` attribute to generators.
+
+.. versionchanged:: 3.11
+   Add ``cr_suspended`` attribute to coroutines.
 
 .. versionchanged:: 3.12
 
