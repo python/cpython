@@ -1,0 +1,11 @@
+Make CallTips selectable
+
+The text display widget in the "CalltipWindow" has been changed from
+"tk.Label" to "ScrolledText", and now the text in the "Calltip" window can
+be selected with mouse. The display size of the "CalltipWindow" is set to
+the smaller value between the size when using the "tk.Label" widget and the
+default size of "tk.Text". When the displayed text exceeds the display area
+of the "ScrolledText" window, showing the vertical scrollbar; otherwise,
+hiding the scrollbar. Since more text can be displayed, "argspec" is no
+longer truncated, and the tests related to the max lines or text truncation
+have been removed from the unit tests. Contributed by Shixian Li.
