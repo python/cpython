@@ -1698,7 +1698,7 @@ convertenviron(void)
 #ifdef MS_WINDOWS
         k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
 #else
-        k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
+        k = PyBytes_FromStringAndSize(*e, (Py_ssize_t)(p-*e));
 #endif
         if (k == NULL) {
             Py_DECREF(d);
