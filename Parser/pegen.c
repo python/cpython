@@ -3,9 +3,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
-#include "pycore_runtime.h"     // _PyRuntime
+#include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
-#include "pycore_pyatomic_ft_wrappers.h"
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -303,11 +302,11 @@ error:
 void
 _PyPegen_clear_memo_statistics(void)
 {
-    FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
+    PyMutex_Lock(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         memo_statistics[i] = 0;
     }
-    FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
+    PyMutex_Unlock(&_PyRuntime.parser.mutex);
 }
 
 PyObject *
@@ -318,22 +317,22 @@ _PyPegen_get_memo_statistics(void)
         return NULL;
     }
 
-    FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
+    PyMutex_Lock(&_PyRuntime.parser.mutex);
     for (int i = 0; i < NSTATISTICS; i++) {
         PyObject *value = PyLong_FromLong(memo_statistics[i]);
         if (value == NULL) {
-            FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
+            PyMutex_Unlock(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
         // PyList_SetItem borrows a reference to value.
         if (PyList_SetItem(ret, i, value) < 0) {
-            FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
+            PyMutex_Unlock(&_PyRuntime.parser.mutex);
             Py_DECREF(ret);
             return NULL;
         }
     }
-    FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
+    PyMutex_Unlock(&_PyRuntime.parser.mutex);
     return ret;
 }
 #endif
@@ -359,9 +358,9 @@ _PyPegen_is_memoized(Parser *p, int type, void *pres)
                 if (count <= 0) {
                     count = 1;
                 }
-                FT_MUTEX_LOCK(&_PyRuntime.parser.mutex);
+                PyMutex_Lock(&_PyRuntime.parser.mutex);
                 memo_statistics[type] += count;
-                FT_MUTEX_UNLOCK(&_PyRuntime.parser.mutex);
+                PyMutex_Unlock(&_PyRuntime.parser.mutex);
             }
 #endif
             p->mark = m->mark;
