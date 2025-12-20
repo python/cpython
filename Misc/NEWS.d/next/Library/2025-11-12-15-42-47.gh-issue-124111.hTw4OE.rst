@@ -1,2 +1,0 @@
-Updated Tcl threading configuration in :mod:`_tkinter` to assume that
-threads are always available in Tcl 9 and later.

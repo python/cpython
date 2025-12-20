@@ -107,6 +107,46 @@ header files properly declare the entry points to be ``extern "C"``. As a result
 there is no need to do anything special to use the API from C++.
 
 
+.. _capi-system-includes:
+
+System includes
+---------------
+
+   :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   The implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.13 or newer:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   The following are included for backwards compatibility, unless using
+   :ref:`Limited API <limited-c-api>` 3.11 or newer:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
+
+.. note::
+
+   Since Python may define some pre-processor definitions which affect the standard
+   headers on some systems, you *must* include :file:`Python.h` before any standard
+   headers are included.
+
+
 Useful macros
 =============
 
@@ -170,6 +210,17 @@ complete listing.
 
    Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (see :c:member:`PyConfig.use_environment`).
+
+.. c:macro:: Py_LOCAL(type)
+
+   Declare a function returning the specified *type* using a fast-calling
+   qualifier for functions that are local to the current file.
+   Semantically, this is equivalent to ``static type``.
+
+.. c:macro:: Py_LOCAL_INLINE(type)
+
+   Equivalent to :c:macro:`Py_LOCAL` but additionally requests the function
+   be inlined.
 
 .. c:macro:: Py_MAX(x, y)
 
@@ -310,6 +361,19 @@ complete listing.
 
       PyDoc_VAR(python_doc) = PyDoc_STR("A genus of constricting snakes in the Pythonidae family native "
                                         "to the tropics and subtropics of the Eastern Hemisphere.");
+
+.. c:macro:: Py_ARRAY_LENGTH(array)
+
+   Compute the length of a statically allocated C array at compile time.
+
+   The *array* argument must be a C array with a size known at compile time.
+   Passing an array with an unknown size, such as a heap-allocated array,
+   will result in a compilation error on some compilers, or otherwise produce
+   incorrect results.
+
+   This is roughly equivalent to::
+
+      sizeof(array) / sizeof((array)[0])
 
 
 .. _api-objects:

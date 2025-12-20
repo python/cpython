@@ -156,7 +156,7 @@ following functions:
       >>> unicodedata.isxidstart('0')
       False
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: isxidcontinue(chr, /)
@@ -171,7 +171,7 @@ following functions:
       >>> unicodedata.isxidcontinue(' ')
       False
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: decomposition(chr, /)

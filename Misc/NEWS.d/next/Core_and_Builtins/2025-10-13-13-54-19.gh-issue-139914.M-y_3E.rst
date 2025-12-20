@@ -1,1 +1,0 @@
-Restore support for HP PA-RISC, which has an upwards-growing stack.

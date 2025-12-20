@@ -26,6 +26,7 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_mmap.h"          // _PyAnnotateMemoryMap()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
@@ -1117,6 +1118,47 @@ mmap_mmap_seek_impl(mmap_object *self, Py_ssize_t dist, int how)
 }
 
 /*[clinic input]
+mmap.mmap.set_name
+
+    name: str
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+mmap_mmap_set_name_impl(mmap_object *self, const char *name)
+/*[clinic end generated code: output=1edaf4fd51277760 input=6c7dd91cad205f07]*/
+{
+#if defined(MAP_ANONYMOUS) && defined(__linux__)
+    const char *prefix = "cpython:mmap:";
+    if (strlen(name) + strlen(prefix) > 79) {
+        PyErr_SetString(PyExc_ValueError, "name is too long");
+        return NULL;
+    }
+    if (self->flags & MAP_ANONYMOUS) {
+        char buf[80];
+        sprintf(buf, "%s%s", prefix, name);
+        if (_PyAnnotateMemoryMap(self->data, self->size, buf) < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    else {
+        /* cannot name non-anonymous mappings */
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set annotation on non-anonymous mappings");
+        return NULL;
+    }
+#else
+    /* naming not supported on this platform */
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Annotation of mmap is not supported on this platform");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
 mmap.mmap.seekable
 
 [clinic start generated code]*/
@@ -1396,6 +1438,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     MMAP_MMAP_RESIZE_METHODDEF
     MMAP_MMAP_SEEK_METHODDEF
     MMAP_MMAP_SEEKABLE_METHODDEF
+    MMAP_MMAP_SET_NAME_METHODDEF
     MMAP_MMAP_SIZE_METHODDEF
     MMAP_MMAP_TELL_METHODDEF
     MMAP_MMAP_WRITE_METHODDEF
@@ -1951,6 +1994,11 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+#ifdef MAP_ANONYMOUS
+    if (m_obj->flags & MAP_ANONYMOUS) {
+        (void)_PyAnnotateMemoryMap(m_obj->data, map_size, "cpython:mmap");
+    }
+#endif
     m_obj->access = (access_mode)access;
     return (PyObject *)m_obj;
 }
