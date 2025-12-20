@@ -1103,13 +1103,15 @@ workflow that separates data capture from analysis. Rather than generating
 visualizations during profiling, you capture raw data to a compact binary file
 and convert it to different formats later.
 
-This approach has three main benefits. First, sampling runs faster because the
-work of building data structures for visualization is deferred until replay.
-Second, a single binary capture can be converted to multiple output formats
-without re-profiling---pstats for a quick overview, flame graph for visual
-exploration, heatmap for line-level detail. Third, binary files are compact
-and easy to share with colleagues who can convert them to their preferred
-format.
+This approach has three main benefits:
+
+- Sampling runs faster because the work of building data structures for
+  visualization is deferred until replay.
+- A single binary capture can be converted to multiple output formats
+  without re-profiling: pstats for a quick overview, flame graph for visual
+  exploration, heatmap for line-level detail.
+- Binary files are compact and easy to share with colleagues who can convert
+  them to their preferred format.
 
 A typical workflow::
 
@@ -1433,9 +1435,9 @@ Output options
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   ``--pstats`` writes to stdout, ``--flamegraph``, ``--gecko``, and
-   ``--binary`` generate files like ``flamegraph.PID.html``, and ``--heatmap``
-   creates a directory named ``heatmap_PID``.
+   :option:`--pstats` writes to stdout, while other formats generate a file
+   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
 
 
 pstats display options

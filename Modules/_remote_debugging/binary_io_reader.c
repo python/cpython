@@ -799,8 +799,8 @@ emit_batch(RemoteDebuggingState *state, PyObject *collector,
                        frame_indices, stack_depth, reader, timestamps_list);
 }
 
-/* Helper to invoke progress callback, clearing any errors */
-static inline void
+/* Helper to invoke progress callback, returns -1 on error */
+static inline int
 invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
 {
     if (callback && callback != Py_None) {
@@ -808,9 +808,10 @@ invoke_progress_callback(PyObject *callback, Py_ssize_t current, uint32_t total)
         if (result) {
             Py_DECREF(result);
         } else {
-            PyErr_Clear();
+            return -1;
         }
     }
+    return 0;
 }
 
 Py_ssize_t
@@ -838,7 +839,9 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
     Py_ssize_t replayed = 0;
 
     /* Initial progress callback at 0% */
-    invoke_progress_callback(progress_callback, 0, reader->sample_count);
+    if (invoke_progress_callback(progress_callback, 0, reader->sample_count) < 0) {
+        return -1;
+    }
 
     while (offset < reader->sample_data_size) {
         /* Read thread_id (8 bytes) + interpreter_id (4 bytes) */
@@ -954,7 +957,9 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
             /* Progress callback after batch */
             if (replayed % PROGRESS_CALLBACK_INTERVAL < count) {
-                invoke_progress_callback(progress_callback, replayed, reader->sample_count);
+                if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
+                    return -1;
+                }
             }
             break;
         }
@@ -1026,12 +1031,16 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 
         /* Progress callback */
         if (replayed % PROGRESS_CALLBACK_INTERVAL == 0) {
-            invoke_progress_callback(progress_callback, replayed, reader->sample_count);
+            if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
+                return -1;
+            }
         }
     }
 
     /* Final progress callback at 100% */
-    invoke_progress_callback(progress_callback, replayed, reader->sample_count);
+    if (invoke_progress_callback(progress_callback, replayed, reader->sample_count) < 0) {
+        return -1;
+    }
 
     return replayed;
 }
