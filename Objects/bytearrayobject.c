@@ -74,13 +74,10 @@ _bytearray_with_buffer(PyByteArrayObject *self, _ba_bytes_op op, PyObject *sub,
 {
     PyObject *res;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
-
     /* Increase exports to prevent bytearray storage from changing during op. */
     self->ob_exports++;
     res = op(PyByteArray_AS_STRING(self), Py_SIZE(self), sub, start, end);
     self->ob_exports--;
-    Py_END_CRITICAL_SECTION(self);
 
     return res;
 }
@@ -1265,7 +1262,6 @@ static int
 bytearray_contains(PyObject *self, PyObject *arg)
 {
     int ret = -1;
-    Py_BEGIN_CRITICAL_SECTION(self);
     PyByteArrayObject *ba = _PyByteArray_CAST(self);
 
     /* Increase exports to prevent bytearray storage from changing during _Py_bytes_contains(). */
@@ -1274,7 +1270,6 @@ bytearray_contains(PyObject *self, PyObject *arg)
                              PyByteArray_GET_SIZE(self),
                              arg);
     ba->ob_exports--;
-    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
