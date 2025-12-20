@@ -1203,7 +1203,6 @@ class BaseTest:
         support.check_free_after_iterating(self, reversed, array.array,
                                            (self.typecode,))
 
-
 class StringTest(BaseTest):
 
     def test_setitem(self):
@@ -1306,13 +1305,13 @@ class NumberTest(BaseTest):
     def test_assignment(self):
         a = array.array(self.typecode, range(10))
         a[::2] = array.array(self.typecode, [42]*5)
-        self.assertEqual(a, array.array(self.typecode, [42,1,42,3,42,5,42,7,42,9]))
+        self.assertEqual(a, array.array(self.typecode, [42, 1, 42, 3, 42, 5, 42, 7, 42, 9]))
         a = array.array(self.typecode, range(10))
         a[::-4] = array.array(self.typecode, [10]*3)
-        self.assertEqual(a, array.array(self.typecode, [0,10,2,3,4,10,6,7,8,10]))
+        self.assertEqual(a, array.array(self.typecode, [0, 10, 2, 3, 4, 10, 6, 7, 8, 10]))
         a = array.array(self.typecode, range(4))
         a[::-1] = a
-        self.assertEqual(a, array.array(self.typecode, [3,2,1,0]))
+        self.assertEqual(a, array.array(self.typecode, [3, 2, 1, 0]))
         a = array.array(self.typecode, range(10))
         b = a[:]
         c = a[:]
@@ -1346,7 +1345,6 @@ class NumberTest(BaseTest):
 
     def test_subclassing(self):
         typecode = self.typecode
-
         class ExaggeratingArray(array.array):
             __slots__ = ['offset']
 
@@ -1382,16 +1380,12 @@ class IntegerNumberTest(NumberTest):
 class Intable:
     def __init__(self, num):
         self._num = num
-
     def __index__(self):
         return self._num
-
     def __int__(self):
         return self._num
-
     def __sub__(self, other):
         return Intable(int(self) - int(other))
-
     def __add__(self, other):
         return Intable(int(self) + int(other))
 
