@@ -1332,7 +1332,7 @@ Reading directories
        PosixPath('test_pathlib.py')]
 
    .. note::
-      Akin to :mod:`glob`, the paths are returned with no ordering guarantees.
+      The paths are returned in no particular order.
       If you need a specific order, sort the results.
 
    .. seealso::
@@ -1367,7 +1367,7 @@ Reading directories
 .. method:: Path.rglob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
    .. note::
-      Akin to :mod:`glob`, the paths are returned with no ordering guarantees.
+      The paths are returned in no particular order.
       If you need a specific order, sort the results.
 
    Glob the given relative *pattern* recursively.  This is like calling
