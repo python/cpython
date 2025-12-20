@@ -381,7 +381,7 @@ static const _PyStackRef PyStackRef_ERROR = { .bits = Py_TAG_INVALID };
 /* For use in the JIT to clear an unused value.
  * PyStackRef_ZERO_BITS has no meaning and should not be used other than by the JIT. */
 static const _PyStackRef PyStackRef_ZERO_BITS = { .bits = 0 };
-  
+
 static inline PyObject *
 _PyStackRef_AsTuple(_PyStackRef ref, PyObject *op)
 {
