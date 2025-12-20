@@ -174,6 +174,7 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(dom.documentElement.childNodes[-1].data, "Hello")
         dom.unlink()
 
+    @support.requires_resource('cpu')
     def testAppendChildNoQuadraticComplexity(self):
         impl = getDOMImplementation()
 
