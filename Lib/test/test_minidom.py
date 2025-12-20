@@ -182,14 +182,18 @@ class MinidomTest(unittest.TestCase):
         children = [newdoc.createElement(f"child-{i}") for i in range(1, 2 ** 15 + 1)]
         element = top_element
 
-        start = time.time()
+        start = time.monotonic()
         for child in children:
             element.appendChild(child)
             element = child
-        end = time.time()
+        end = time.monotonic()
 
         # This example used to take at least 30 seconds.
-        self.assertLess(end - start, 1)
+        # Conservative assertion due to the wide variety of systems and
+        # build configs timing based tests wind up run under.
+        # A --with-address-sanitizer --with-pydebug build on a rpi5 still
+        # completes this loop in <0.5 seconds.
+        self.assertLess(end - start, 4)
 
     def testSetAttributeNodeWithoutOwnerDocument(self):
         # regression test for gh-142754
