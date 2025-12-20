@@ -391,14 +391,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
         if readrc:
+            home_rcfile = os.path.expanduser("~/.pdbrc")
+            local_rcfile = os.path.abspath(".pdbrc")
+
             try:
-                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
+                with open(home_rcfile, encoding='utf-8') as rcFile:
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
-            if os.path.abspath(".pdbrc") != os.path.expanduser("~/.pdbrc"):
+
+            if local_rcfile != home_rcfile:
                 try:
-                    with open(".pdbrc", encoding='utf-8') as rcFile:
+                    with open(local_rcfile, encoding='utf-8') as rcFile:
                         self.rcLines.extend(rcFile)
                 except OSError:
                     pass
