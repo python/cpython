@@ -1366,12 +1366,12 @@ Reading directories
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None, recurse_symlinks=False)
 
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
    .. note::
       The paths are returned in no particular order.
       If you need a specific order, sort the results.
-
-   Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*.
 
    .. seealso::
       :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
