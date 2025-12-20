@@ -1315,7 +1315,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bp in reversed(bdb.Breakpoint.bpbynumber):
+                if bp is None:
+                    continue
+                bnum = bp.number
+                break
+            else:
+                self.error('cannot set commands: no existing breakpoint')
+                return
         else:
             try:
                 bnum = int(arg)
