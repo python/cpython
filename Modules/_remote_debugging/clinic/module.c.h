@@ -434,6 +434,66 @@ _remote_debugging_RemoteUnwinder_get_stats(PyObject *self, PyObject *Py_UNUSED(i
     return return_value;
 }
 
+PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_pause_threads__doc__,
+"pause_threads($self, /)\n"
+"--\n"
+"\n"
+"Pause all threads in the target process.\n"
+"\n"
+"This stops all threads in the target process to allow for consistent\n"
+"memory reads during sampling. Must be paired with a call to resume_threads().\n"
+"\n"
+"Returns True if threads were successfully paused, False if they were already paused.\n"
+"\n"
+"Raises:\n"
+"    RuntimeError: If there is an error stopping the threads");
+
+#define _REMOTE_DEBUGGING_REMOTEUNWINDER_PAUSE_THREADS_METHODDEF    \
+    {"pause_threads", (PyCFunction)_remote_debugging_RemoteUnwinder_pause_threads, METH_NOARGS, _remote_debugging_RemoteUnwinder_pause_threads__doc__},
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self);
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_pause_threads(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _remote_debugging_RemoteUnwinder_pause_threads_impl((RemoteUnwinderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_resume_threads__doc__,
+"resume_threads($self, /)\n"
+"--\n"
+"\n"
+"Resume all threads in the target process.\n"
+"\n"
+"This resumes threads that were previously paused with pause_threads().\n"
+"\n"
+"Returns True if threads were successfully resumed, False if they were not paused.");
+
+#define _REMOTE_DEBUGGING_REMOTEUNWINDER_RESUME_THREADS_METHODDEF    \
+    {"resume_threads", (PyCFunction)_remote_debugging_RemoteUnwinder_resume_threads, METH_NOARGS, _remote_debugging_RemoteUnwinder_resume_threads__doc__},
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self);
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_resume_threads(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _remote_debugging_RemoteUnwinder_resume_threads_impl((RemoteUnwinderObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
 "get_child_pids($module, /, pid, *, recursive=True)\n"
 "--\n"
@@ -582,4 +642,4 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dc0550ad3d6a409c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c27c4032158215c input=a9049054013a1b77]*/

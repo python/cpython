@@ -312,6 +312,8 @@ The default configuration works well for most use cases:
      - Disabled
    * - Default for ``--subprocesses``
      - Disabled
+   * - Default for ``--blocking``
+     - Disabled (non-blocking sampling)
 
 
 Sampling interval and duration
@@ -360,6 +362,50 @@ identify threads that are blocked or starved. Each thread's samples are
 combined in the output, with the ability to filter by thread in some formats.
 This option is particularly useful when investigating concurrency issues or
 when work is distributed across a thread pool.
+
+
+.. _blocking-mode:
+
+Blocking mode
+-------------
+
+By default, Tachyon reads the target process's memory without stopping it.
+This non-blocking approach is ideal for most profiling scenarios because it
+imposes virtually zero overhead on the target application: the profiled
+program runs at full speed and is unaware it is being observed.
+
+However, non-blocking sampling can occasionally produce incomplete or
+inconsistent stack traces in applications with many generators or coroutines
+that rapidly switch between yield points, or in programs with very fast-changing
+call stacks where functions enter and exit between the start and end of a single
+stack read, resulting in reconstructed stacks that mix frames from different
+execution states or that never actually existed.
+
+For these cases, the :option:`--blocking` option stops the target process during
+each sample::
+
+   python -m profiling.sampling run --blocking script.py
+   python -m profiling.sampling attach --blocking 12345
+
+When blocking mode is enabled, the profiler suspends the target process,
+reads its stack, then resumes it. This guarantees that each captured stack
+represents a real, consistent snapshot of what the process was doing at that
+instant. The trade-off is that the target process runs slower because it is
+repeatedly paused.
+
+.. warning::
+
+   Do not use very high sample rates (low ``--interval`` values) with blocking
+   mode. Suspending and resuming a process takes time, and if the sampling
+   interval is too short, the target will spend more time stopped than running.
+   For blocking mode, intervals of 1000 microseconds (1 millisecond) or higher
+   are recommended. The default 100 microsecond interval may cause noticeable
+   slowdown in the target application.
+
+Use blocking mode only when you observe inconsistent stacks in your profiles,
+particularly with generator-heavy or coroutine-heavy code. For most
+applications, the default non-blocking mode provides accurate results with
+zero impact on the target process.
 
 
 Special frames
@@ -1295,6 +1341,13 @@ Sampling options
 
    Also profile subprocesses. Each subprocess gets its own profiler
    instance and output file. Incompatible with ``--live``.
+
+.. option:: --blocking
+
+   Stop the target process during each sample. This ensures consistent
+   stack traces at the cost of slowing down the target. Use with longer
+   intervals (1000 µs or higher) to minimize impact. See :ref:`blocking-mode`
+   for details.
 
 
 Mode options

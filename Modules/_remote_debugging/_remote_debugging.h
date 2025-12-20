@@ -54,9 +54,49 @@ extern "C" {
 #  endif
 #endif
 
+// Platforms that support pausing/resuming threads for accurate stack sampling
+#if defined(MS_WINDOWS) || defined(__linux__) || (defined(__APPLE__) && TARGET_OS_OSX)
+#  define Py_REMOTE_DEBUG_SUPPORTS_BLOCKING 1
+#endif
+
 #ifdef MS_WINDOWS
 #include <windows.h>
 #include <winternl.h>
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_OSX
+
+typedef struct {
+    mach_port_t task;
+    int suspended;
+} _Py_RemoteDebug_ThreadsState;
+
+#elif defined(__linux__)
+
+typedef struct {
+    pid_t *tids;      // Points to unwinder's reusable buffer
+    size_t count;     // Number of threads currently seized
+} _Py_RemoteDebug_ThreadsState;
+
+#elif defined(MS_WINDOWS)
+
+typedef NTSTATUS (NTAPI *NtSuspendProcessFunc)(HANDLE ProcessHandle);
+typedef NTSTATUS (NTAPI *NtResumeProcessFunc)(HANDLE ProcessHandle);
+
+typedef struct {
+    HANDLE hProcess;
+    int suspended;
+} _Py_RemoteDebug_ThreadsState;
+
+#else
+
+typedef struct {
+    int dummy;
+} _Py_RemoteDebug_ThreadsState;
+
+#endif
+
+#ifdef MS_WINDOWS
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
 typedef enum _WIN32_THREADSTATE {
@@ -257,6 +297,15 @@ typedef struct {
     PVOID win_process_buffer;
     ULONG win_process_buffer_size;
 #endif
+    // Thread stopping state (only on platforms that support it)
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    _Py_RemoteDebug_ThreadsState threads_state;
+    int threads_stopped;  // 1 if threads are currently stopped
+#endif
+#ifdef __linux__
+    pid_t *thread_tids;           // Reusable buffer for thread IDs
+    size_t thread_tids_capacity;  // Current capacity of thread_tids buffer
+#endif
 } RemoteUnwinderObject;
 
 #define RemoteUnwinder_CAST(op) ((RemoteUnwinderObject *)(op))
@@ -289,6 +338,7 @@ typedef struct {
     uintptr_t gc_frame;             // GC frame address (0 if not tracking)
     uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
     StackChunkList *chunks;         // Pre-copied stack chunks
+    int skip_first_frame;           // Skip frame_addr itself (continue from its caller)
 
     /* Outputs */
     PyObject *frame_info;           // List to append FrameInfo objects
@@ -511,6 +561,11 @@ extern PyObject* unwind_stack_for_thread(
     uintptr_t gil_holder_tstate,
     uintptr_t gc_frame
 );
+
+/* Thread stopping functions (for blocking mode) */
+extern void _Py_RemoteDebug_InitThreadsState(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+extern int _Py_RemoteDebug_StopAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
+extern void _Py_RemoteDebug_ResumeAllThreads(RemoteUnwinderObject *unwinder, _Py_RemoteDebug_ThreadsState *st);
 
 /* ============================================================================
  * ASYNCIO FUNCTION DECLARATIONS

@@ -342,6 +342,13 @@ def _add_sampling_options(parser):
         action="store_true",
         help="Also profile subprocesses. Each subprocess gets its own profiler and output file.",
     )
+    sampling_group.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads in target process before sampling to get consistent snapshots. "
+        "Uses thread_suspend on macOS and ptrace on Linux. Adds overhead but ensures memory "
+        "reads are from a frozen state.",
+    )
 
 
 def _add_mode_options(parser):
@@ -545,6 +552,15 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
+    # Warn about blocking mode with aggressive sampling intervals
+    if args.blocking and args.interval < 100:
+        print(
+            f"Warning: --blocking with a {args.interval} µs interval will stop all threads "
+            f"{1_000_000 // args.interval} times per second. "
+            "Consider using --interval 1000 or higher to reduce overhead.",
+            file=sys.stderr
+        )
+
     # Check if live mode is available
     if hasattr(args, 'live') and args.live and LiveStatsCollector is None:
         parser.error(
@@ -778,6 +794,7 @@ def _handle_attach(args):
             native=args.native,
             gc=args.gc,
             opcodes=args.opcodes,
+            blocking=args.blocking,
         )
         _handle_output(collector, args, args.pid, mode)
 
@@ -848,6 +865,7 @@ def _handle_run(args):
                 native=args.native,
                 gc=args.gc,
                 opcodes=args.opcodes,
+                blocking=args.blocking,
             )
             _handle_output(collector, args, process.pid, mode)
         finally:
@@ -893,6 +911,7 @@ def _handle_live_attach(args, pid):
         native=args.native,
         gc=args.gc,
         opcodes=args.opcodes,
+        blocking=args.blocking,
     )
 
 
@@ -940,6 +959,7 @@ def _handle_live_run(args):
             native=args.native,
             gc=args.gc,
             opcodes=args.opcodes,
+            blocking=args.blocking,
         )
     finally:
         # Clean up the subprocess

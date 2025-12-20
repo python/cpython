@@ -372,6 +372,8 @@ class TestCLIChildrenFlag(unittest.TestCase):
             limit=None,
             no_summary=False,
             opcodes=False,
+            blocking=False,
+            interval=1000,
         )
 
         parser = argparse.ArgumentParser()

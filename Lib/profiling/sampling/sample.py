@@ -1,4 +1,5 @@
 import _remote_debugging
+import contextlib
 import os
 import pstats
 import statistics
@@ -9,6 +10,21 @@ from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
+
+
+@contextlib.contextmanager
+def _pause_threads(unwinder, blocking):
+    """Context manager to pause/resume threads around sampling if blocking is True."""
+    if blocking:
+        unwinder.pause_threads()
+        try:
+            yield
+        finally:
+            unwinder.resume_threads()
+    else:
+        yield
+
+
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
@@ -28,12 +44,13 @@ _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
+        self.blocking = blocking
         try:
             self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
         except RuntimeError as err:
@@ -63,12 +80,11 @@ class SampleProfiler:
         running_time = 0
         num_samples = 0
         errors = 0
+        interrupted = False
         start_time = next_time = time.perf_counter()
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
-        interrupted = False
-
         try:
             while running_time < duration_sec:
                 # Check if live collector wants to stop
@@ -78,20 +94,22 @@ class SampleProfiler:
                 current_time = time.perf_counter()
                 if next_time < current_time:
                     try:
-                        if async_aware == "all":
-                            stack_frames = self.unwinder.get_all_awaited_by()
-                        elif async_aware == "running":
-                            stack_frames = self.unwinder.get_async_stack_trace()
-                        else:
-                            stack_frames = self.unwinder.get_stack_trace()
-                        collector.collect(stack_frames)
-                    except ProcessLookupError:
+                        with _pause_threads(self.unwinder, self.blocking):
+                            if async_aware == "all":
+                                stack_frames = self.unwinder.get_all_awaited_by()
+                            elif async_aware == "running":
+                                stack_frames = self.unwinder.get_async_stack_trace()
+                            else:
+                                stack_frames = self.unwinder.get_stack_trace()
+                            collector.collect(stack_frames)
+                    except ProcessLookupError as e:
                         duration_sec = current_time - start_time
                         break
-                    except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
+                    except (RuntimeError, UnicodeDecodeError, MemoryError, OSError) as e:
                         collector.collect_failed_sample()
                         errors += 1
                     except Exception as e:
+                        print(e)
                         if not _is_process_running(self.pid):
                             break
                         raise e from None
@@ -303,6 +321,7 @@ def sample(
     native=False,
     gc=True,
     opcodes=False,
+    blocking=False,
 ):
     """Sample a process using the provided collector.
 
@@ -318,6 +337,7 @@ def sample(
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information
+        blocking: Whether to stop all threads before sampling for consistent snapshots
 
     Returns:
         The collector with collected samples
@@ -343,6 +363,7 @@ def sample(
         opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
+        blocking=blocking,
     )
     profiler.realtime_stats = realtime_stats
 
@@ -364,6 +385,7 @@ def sample_live(
     native=False,
     gc=True,
     opcodes=False,
+    blocking=False,
 ):
     """Sample a process in live/interactive mode with curses TUI.
 
@@ -379,6 +401,7 @@ def sample_live(
         native: Whether to include native frames
         gc: Whether to include GC frames
         opcodes: Whether to include opcode information
+        blocking: Whether to stop all threads before sampling for consistent snapshots
 
     Returns:
         The collector with collected samples
@@ -404,6 +427,7 @@ def sample_live(
         opcodes=opcodes,
         skip_non_matching_threads=skip_non_matching_threads,
         collect_stats=realtime_stats,
+        blocking=blocking,
     )
     profiler.realtime_stats = realtime_stats
 

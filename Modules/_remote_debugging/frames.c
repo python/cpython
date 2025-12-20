@@ -281,16 +281,7 @@ process_frame_chain(
     ctx->stopped_at_cached_frame = 0;
     ctx->last_frame_visited = 0;
 
-    if (ctx->last_profiled_frame != 0 && ctx->frame_addr == ctx->last_profiled_frame) {
-        ctx->stopped_at_cached_frame = 1;
-        return 0;
-    }
-
     while ((void*)frame_addr != NULL) {
-        if (ctx->last_profiled_frame != 0 && frame_addr == ctx->last_profiled_frame) {
-            ctx->stopped_at_cached_frame = 1;
-            break;
-        }
         PyObject *frame = NULL;
         uintptr_t next_frame_addr = 0;
         uintptr_t stackpointer = 0;
@@ -311,6 +302,14 @@ process_frame_chain(
                 return -1;
             }
         }
+
+        // Skip first frame if requested (used for cache miss continuation)
+        if (ctx->skip_first_frame && frame_count == 1) {
+            Py_XDECREF(frame);
+            frame_addr = next_frame_addr;
+            continue;
+        }
+
         if (frame == NULL && PyList_GET_SIZE(ctx->frame_info) == 0) {
             const char *e = "Failed to parse initial frame in chain";
             PyErr_SetString(PyExc_RuntimeError, e);
@@ -365,6 +364,11 @@ process_frame_chain(
                 ctx->frame_addrs[ctx->num_addrs++] = frame_addr;
             }
             Py_DECREF(frame);
+        }
+
+        if (ctx->last_profiled_frame != 0 && frame_addr == ctx->last_profiled_frame) {
+            ctx->stopped_at_cached_frame = 1;
+            break;
         }
 
         prev_frame_addr = next_frame_addr;
@@ -548,14 +552,15 @@ collect_frames_with_cache(
         }
         if (cache_result == 0) {
             STATS_INC(unwinder, frame_cache_misses);
-            Py_ssize_t frames_before_walk = PyList_GET_SIZE(ctx->frame_info);
 
+            // Continue walking from last_profiled_frame, skipping it (already processed)
+            Py_ssize_t frames_before_walk = PyList_GET_SIZE(ctx->frame_info);
             FrameWalkContext continue_ctx = {
                 .frame_addr = ctx->last_profiled_frame,
                 .base_frame_addr = ctx->base_frame_addr,
                 .gc_frame = ctx->gc_frame,
-                .last_profiled_frame = 0,
                 .chunks = ctx->chunks,
+                .skip_first_frame = 1,
                 .frame_info = ctx->frame_info,
                 .frame_addrs = ctx->frame_addrs,
                 .num_addrs = ctx->num_addrs,
@@ -566,7 +571,6 @@ collect_frames_with_cache(
             }
             ctx->num_addrs = continue_ctx.num_addrs;
             ctx->last_frame_visited = continue_ctx.last_frame_visited;
-
             STATS_ADD(unwinder, frames_read_from_memory, PyList_GET_SIZE(ctx->frame_info) - frames_before_walk);
         } else {
             // Partial cache hit - cached stack was validated as complete when stored,
