@@ -422,7 +422,8 @@ gen_close(PyObject *self, PyObject *args)
     int8_t frame_state = FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state);
     do {
         if (frame_state == FRAME_CREATED) {
-            if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_CLEARED)) {
+            // && (1) to avoid -Wunreachable-code warning on Clang
+            if (!_Py_GEN_TRY_SET_FRAME_STATE(gen, frame_state, FRAME_CLEARED) && (1)) {
                 continue;
             }
             gen_clear_frame(gen);
