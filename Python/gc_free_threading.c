@@ -100,6 +100,7 @@ struct collection_state {
     int skip_deferred_objects;
     Py_ssize_t collected;
     Py_ssize_t uncollectable;
+    Py_ssize_t candidates;
     Py_ssize_t long_lived_total;
     struct worklist unreachable;
     struct worklist legacy_finalizers;
@@ -289,7 +290,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 
     frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
-        if (!PyStackRef_IsNullOrInt(*ref) && PyStackRef_IsDeferred(*ref)) {
+        if (!PyStackRef_IsNullOrInt(*ref) && !PyStackRef_RefcountOnObject(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
     }
@@ -374,6 +375,19 @@ op_from_block(void *block, void *arg, bool include_frozen)
     return op;
 }
 
+// As above but returns untracked and frozen objects as well.
+static PyObject *
+op_from_block_all_gc(void *block, void *arg)
+{
+    struct visitor_args *a = arg;
+    if (block == NULL) {
+        return NULL;
+    }
+    PyObject *op = (PyObject *)((char*)block + a->offset);
+    assert(PyObject_IS_GC(op));
+    return op;
+}
+
 static int
 gc_visit_heaps_lock_held(PyInterpreterState *interp, mi_block_visit_fun *visitor,
                          struct visitor_args *arg)
@@ -444,7 +458,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref) && !PyStackRef_RefcountOnObject(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -675,10 +689,11 @@ gc_mark_span_push(gc_span_stack_t *ss, PyObject **start, PyObject **end)
         else {
             ss->capacity *= 2;
         }
-        ss->stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
-        if (ss->stack == NULL) {
+        gc_span_t *new_stack = (gc_span_t *)PyMem_Realloc(ss->stack, ss->capacity * sizeof(gc_span_t));
+        if (new_stack == NULL) {
             return -1;
         }
+        ss->stack = new_stack;
     }
     assert(end > start);
     ss->stack[ss->size].start = start;
@@ -974,12 +989,9 @@ static bool
 update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
             void *block, size_t block_size, void *args)
 {
+    struct collection_state *state = (struct collection_state *)args;
     PyObject *op = op_from_block(block, args, false);
     if (op == NULL) {
-        return true;
-    }
-
-    if (gc_is_alive(op)) {
         return true;
     }
 
@@ -988,6 +1000,11 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         op->ob_tid = 0;
         _PyObject_GC_UNTRACK(op);
         gc_clear_unreachable(op);
+        return true;
+    }
+    // Marked objects count as candidates, immortals don't:
+    state->candidates++;
+    if (gc_is_alive(op)) {
         return true;
     }
 
@@ -1182,12 +1199,20 @@ static bool
 scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
                   void *block, size_t block_size, void *args)
 {
-    PyObject *op = op_from_block(block, args, false);
+    PyObject *op = op_from_block_all_gc(block, args);
     if (op == NULL) {
         return true;
     }
-
     struct collection_state *state = (struct collection_state *)args;
+    // The free-threaded GC cost is proportional to the number of objects in
+    // the mimalloc GC heap and so we should include the counts for untracked
+    // and frozen objects as well.  This is especially important if many
+    // tuples have been untracked.
+    state->long_lived_total++;
+    if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
+        return true;
+    }
+
     if (gc_is_unreachable(op)) {
         // Disable deferred refcounting for unreachable objects so that they
         // are collected immediately after finalization.
@@ -1205,6 +1230,9 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         else {
             worklist_push(&state->unreachable, op);
         }
+        // It is possible this object will be resurrected but
+        // for now we assume it will be deallocated.
+        state->long_lived_total--;
         return true;
     }
 
@@ -1218,7 +1246,6 @@ scan_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
     // object is reachable, restore `ob_tid`; we're done with these objects
     gc_restore_tid(op);
     gc_clear_alive(op);
-    state->long_lived_total++;
     return true;
 }
 
@@ -1492,22 +1519,49 @@ move_legacy_finalizer_reachable(struct collection_state *state)
     return 0;
 }
 
-// Clear all weakrefs to unreachable objects. Weakrefs with callbacks are
-// optionally enqueued in `wrcb_to_call`, but not invoked yet.
+// Weakrefs with callbacks are enqueued in `wrcb_to_call`, but not invoked
+// yet.  Note that it's possible for such weakrefs to be outside the
+// unreachable set -- indeed, those are precisely the weakrefs whose callbacks
+// must be invoked.  See gc_weakref.txt for overview & some details.
+//
+// The clearing of weakrefs is suble and must be done carefully, as there was
+// previous bugs related to this.  First, weakrefs to the unreachable set of
+// objects must be cleared before we start calling `tp_clear`.  If we don't,
+// those weakrefs can reveal unreachable objects to Python-level code and that
+// is not safe.  Many objects are not usable after `tp_clear` has been called
+// and could even cause crashes if accessed (see bpo-38006 and gh-91636 as
+// example bugs).
+//
+// Weakrefs with callbacks always need to be cleared before executing the
+// callback.  That's because sometimes a callback will call the ref object,
+// to check if the reference is actually dead (KeyedRef does this, for
+// example).  We want to indicate that it is dead, even though it is possible
+// a finalizer might resurrect it.  Clearing also prevents the callback from
+// executing more than once.
+//
+// Since Python 2.3, all weakrefs to cyclic garbage have been cleared *before*
+// calling finalizers.  However, since tp_subclasses started being necessary
+// to invalidate caches (e.g. by PyType_Modified), that clearing has created
+// a bug.  If the weakref to the subclass is cleared before a finalizer is
+// called, the cache may not be correctly invalidated.  That can lead to
+// segfaults since the caches can refer to deallocated objects (GH-91636
+// is an example).  Now, we delay the clear of weakrefs without callbacks
+// until *after* finalizers have been executed.  That means weakrefs without
+// callbacks are still usable while finalizers are being executed.
+//
+// The weakrefs that are inside the unreachable set must also be cleared.
+// The reason this is required is not immediately obvious.  If the weakref
+// refers to an object outside of the unreachable set, that object might go
+// away when we start clearing objects.  Normally, the object should also be
+// part of the unreachable set but that's not true in the case of incomplete
+// or missing `tp_traverse` methods.  When that object goes away, the callback
+// for weakref can be executed and that could reveal unreachable objects to
+// Python-level code.  See bpo-38006 as an example bug.
 static void
-clear_weakrefs(struct collection_state *state, bool enqueue_callbacks)
+find_weakref_callbacks(struct collection_state *state)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
-        if (PyWeakref_Check(op)) {
-            // Clear weakrefs that are themselves unreachable to ensure their
-            // callbacks will not be executed later from a `tp_clear()`
-            // inside delete_garbage(). That would be unsafe: it could
-            // resurrect a dead object or access a an already cleared object.
-            // See bpo-38006 for one example.
-            _PyWeakref_ClearRef((PyWeakReference *)op);
-        }
-
         if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
             continue;
         }
@@ -1519,16 +1573,21 @@ clear_weakrefs(struct collection_state *state, bool enqueue_callbacks)
         // `op` may have some weakrefs.  March over the list, clear
         // all the weakrefs, and enqueue the weakrefs with callbacks
         // that must be called into wrcb_to_call.
-        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
-            // _PyWeakref_ClearRef clears the weakref but leaves
-            // the callback pointer intact.  Obscure: it also
-            // changes *wrlist.
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
-            _PyWeakref_ClearRef(wr);
-            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
+        PyWeakReference *next_wr;
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = next_wr) {
+            // Get the next list element to get iterator progress if we omit
+            // clearing of the weakref (because _PyWeakref_ClearRef changes
+            // next pointer in the wrlist).
+            next_wr = wr->wr_next;
 
-            if (!enqueue_callbacks) {
-                continue;
+            // Weakrefs with callbacks always need to be cleared before
+            // executing the callback.
+            if (wr->wr_callback != NULL) {
+                // _PyWeakref_ClearRef clears the weakref but leaves the
+                // callback pointer intact.  Obscure: it also changes *wrlist.
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+                _PyWeakref_ClearRef(wr);
+                _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
             }
 
             // We do not invoke callbacks for weakrefs that are themselves
@@ -1546,6 +1605,39 @@ clear_weakrefs(struct collection_state *state, bool enqueue_callbacks)
 
             // Enqueue weakref to be called later.
             worklist_push(&state->wrcb_to_call, (PyObject *)wr);
+        }
+    }
+}
+
+// Clear weakrefs to objects in the unreachable set.  See comments
+// above find_weakref_callbacks() for why this clearing is required.
+static void
+clear_weakrefs(struct collection_state *state)
+{
+    PyObject *op;
+    WORKSTACK_FOR_EACH(&state->unreachable, op) {
+        if (PyWeakref_Check(op)) {
+            // Clear weakrefs that are themselves unreachable.
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
+        if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(op))) {
+            continue;
+        }
+
+        // NOTE: This is never triggered for static types so we can avoid the
+        // (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR().
+        PyWeakReference **wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
+
+        // `op` may have some weakrefs.  March over the list, clear
+        // all the weakrefs.
+        for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
+            // _PyWeakref_ClearRef clears the weakref but leaves
+            // the callback pointer intact.  Obscure: it also
+            // changes *wrlist.
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == op);
+            _PyWeakref_ClearRef(wr);
+            _PyObject_ASSERT((PyObject *)wr, wr->wr_object == Py_None);
         }
     }
 }
@@ -1736,7 +1828,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // computing the incoming references, but otherwise treat them like
     // regular references.
     assert(!PyStackRef_IsTaggedInt(*ref));
-    if (!PyStackRef_IsDeferred(*ref) ||
+    if (PyStackRef_RefcountOnObject(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
         Py_VISIT(PyStackRef_AsPyObjectBorrow(*ref));
@@ -1822,6 +1914,7 @@ handle_resurrected_objects(struct collection_state *state)
                 _PyObject_ASSERT(op, Py_REFCNT(op) > 1);
                 worklist_remove(&iter);
                 merge_refcount(op, -1);  // remove worklist reference
+                state->long_lived_total++;
             }
         }
     }
@@ -1845,7 +1938,8 @@ handle_resurrected_objects(struct collection_state *state)
 static void
 invoke_gc_callback(PyThreadState *tstate, const char *phase,
                    int generation, Py_ssize_t collected,
-                   Py_ssize_t uncollectable)
+                   Py_ssize_t uncollectable, Py_ssize_t candidates,
+                   double duration)
 {
     assert(!_PyErr_Occurred(tstate));
 
@@ -1859,10 +1953,12 @@ invoke_gc_callback(PyThreadState *tstate, const char *phase,
     assert(PyList_CheckExact(gcstate->callbacks));
     PyObject *info = NULL;
     if (PyList_GET_SIZE(gcstate->callbacks) != 0) {
-        info = Py_BuildValue("{sisnsn}",
+        info = Py_BuildValue("{sisnsnsnsd}",
             "generation", generation,
             "collected", collected,
-            "uncollectable", uncollectable);
+            "uncollectable", uncollectable,
+            "candidates", candidates,
+            "duration", duration);
         if (info == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "invoking gc callbacks");
@@ -2138,7 +2234,19 @@ record_deallocation(PyThreadState *tstate)
     gc->alloc_count--;
     if (gc->alloc_count <= -LOCAL_ALLOC_COUNT_THRESHOLD) {
         GCState *gcstate = &tstate->interp->gc;
-        _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
+        int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
+        int new_count;
+        do {
+            if (count == 0) {
+                break;
+            }
+            new_count = count + (int)gc->alloc_count;
+            if (new_count < 0) {
+                new_count = 0;
+            }
+        } while (!_Py_atomic_compare_exchange_int(&gcstate->young.count,
+                                                  &count,
+                                                  new_count));
         gc->alloc_count = 0;
     }
 }
@@ -2219,11 +2327,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
         }
     }
 
-    // Record the number of live GC objects
-    interp->gc.long_lived_total = state->long_lived_total;
-
-    // Clear weakrefs and enqueue callbacks (but do not call them).
-    clear_weakrefs(state, true);
+    // Find weakref callbacks we will honor (but do not call them).
+    find_weakref_callbacks(state);
     _PyEval_StartTheWorld(interp);
 
     // Deallocate any object from the refcount merge step
@@ -2240,14 +2345,12 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
     if (err == 0) {
-        // Clear weakrefs to objects in the unreachable set.  No Python-level
-        // code must be allowed to access those unreachable objects.  During
-        // delete_garbage(), finalizers outside the unreachable set might
-        // run and create new weakrefs.  If those weakrefs were not cleared,
-        // they could reveal unreachable objects.
-        clear_weakrefs(state, false);
+        clear_weakrefs(state);
     }
+    // Record the number of live GC objects
+    interp->gc.long_lived_total = state->long_lived_total;
     _PyEval_StartTheWorld(interp);
+
 
     if (err < 0) {
         cleanup_worklist(&state->unreachable);
@@ -2279,7 +2382,6 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
-    PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -2298,30 +2400,32 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         _Py_atomic_store_int(&gcstate->collecting, 0);
         return 0;
     }
+    gcstate->frame = tstate->current_frame;
 
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
 #ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
+    PyStats *s = _PyStats_GET();
+    if (s) {
+        s->object_stats.object_visits = 0;
     }
 #endif
     GC_STAT_ADD(generation, collections, 1);
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "start", generation, 0, 0);
+        invoke_gc_callback(tstate, "start", generation, 0, 0, 0, 0.0);
     }
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        // ignore error: don't interrupt the GC if reading the clock fails
-        (void)PyTime_PerfCounterRaw(&t1);
     }
 
     if (PyDTrace_GC_START_ENABLED()) {
         PyDTrace_GC_START(generation);
     }
+    PyTime_t start, stop;
+    (void)PyTime_PerfCounterRaw(&start);
 
     PyInterpreterState *interp = tstate->interp;
 
@@ -2336,13 +2440,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     m = state.collected;
     n = state.uncollectable;
 
+    (void)PyTime_PerfCounterRaw(&stop);
+    double duration = PyTime_AsSecondsDouble(stop - start);
+
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        PyTime_t t2;
-        (void)PyTime_PerfCounterRaw(&t2);
-        double d = PyTime_AsSecondsDouble(t2 - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
-            n+m, n, d);
+            n+m, n, duration);
     }
 
     // Clear the current thread's free-list again.
@@ -2363,13 +2467,18 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     stats->collections++;
     stats->collected += m;
     stats->uncollectable += n;
+    stats->duration += duration;
+    stats->candidates += state.candidates;
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
-    if (_Py_stats) {
-        GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+    {
+        PyStats *s = _PyStats_GET();
+        if (s) {
+            GC_STAT_ADD(generation, object_visits,
+                s->object_stats.object_visits);
+            s->object_stats.object_visits = 0;
+        }
     }
 #endif
 
@@ -2378,10 +2487,11 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     if (reason != _Py_GC_REASON_SHUTDOWN) {
-        invoke_gc_callback(tstate, "stop", generation, m, n);
+        invoke_gc_callback(tstate, "stop", generation, m, n, state.candidates, duration);
     }
 
     assert(!_PyErr_Occurred(tstate));
+    gcstate->frame = NULL;
     _Py_atomic_store_int(&gcstate->collecting, 0);
     return n + m;
 }

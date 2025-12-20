@@ -859,7 +859,7 @@ _ctypes.CDataType.from_buffer as CDataType_from_buffer
     type: self
     cls: defining_class
     obj: object
-    offset: Py_ssize_t = 0
+    offset: Py_ssize_t(allow_negative=False) = 0
     /
 
 C.from_buffer(object, offset=0) -> C instance
@@ -870,7 +870,7 @@ Create a C instance from a writeable buffer.
 static PyObject *
 CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
                            Py_ssize_t offset)
-/*[clinic end generated code: output=57604e99635abd31 input=0f36cedd105ca28d]*/
+/*[clinic end generated code: output=57604e99635abd31 input=8f43e6bc44373180]*/
 {
     PyObject *mv;
     PyObject *result;
@@ -902,13 +902,6 @@ CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
     if (!PyBuffer_IsContiguous(buffer, 'C')) {
         PyErr_SetString(PyExc_TypeError,
             "underlying buffer is not C contiguous");
-        Py_DECREF(mv);
-        return NULL;
-    }
-
-    if (offset < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "offset cannot be negative");
         Py_DECREF(mv);
         return NULL;
     }
@@ -955,7 +948,7 @@ _ctypes.CDataType.from_buffer_copy as CDataType_from_buffer_copy
     type: self
     cls: defining_class
     buffer: Py_buffer
-    offset: Py_ssize_t = 0
+    offset: Py_ssize_t(allow_negative=False) = 0
     /
 
 C.from_buffer_copy(object, offset=0) -> C instance
@@ -966,7 +959,7 @@ Create a C instance from a readable buffer.
 static PyObject *
 CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
                                 Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=c8fc62b03e5cc6fa input=2a81e11b765a6253]*/
+/*[clinic end generated code: output=c8fc62b03e5cc6fa input=41f97f512295ceec]*/
 {
     PyObject *result;
 
@@ -977,12 +970,6 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError, "abstract class");
-        return NULL;
-    }
-
-    if (offset < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "offset cannot be negative");
         return NULL;
     }
 
@@ -3647,6 +3634,9 @@ atomic_xgetref(PyObject *obj, PyObject **field)
 #endif
 }
 
+static int
+_validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags, PyObject *argtypes);
+
 
 
 /*[clinic input]
@@ -3760,16 +3750,22 @@ static int
 _ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value)
 /*[clinic end generated code: output=596a36e2ae89d7d1 input=c4627573e980aa8b]*/
 {
-    PyObject *converters;
-
     if (value == NULL || value == Py_None) {
         atomic_xsetref(&self->argtypes, NULL);
         atomic_xsetref(&self->converters, NULL);
     } else {
-        ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
-        converters = converters_from_argtypes(st, value);
+        PyTypeObject *type = Py_TYPE(self);
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+
+        PyObject *converters = converters_from_argtypes(st, value);
         if (!converters)
             return -1;
+
+        /* Verify paramflags again due to constraints with argtypes */
+        if (!_validate_paramflags(st, type, self->paramflags, value)) {
+            Py_DECREF(converters);
+            return -1;
+        }
         atomic_xsetref(&self->converters, converters);
         Py_INCREF(value);
         atomic_xsetref(&self->argtypes, value);
@@ -3899,10 +3895,9 @@ _check_outarg_type(ctypes_state *st, PyObject *arg, Py_ssize_t index)
 
 /* Returns 1 on success, 0 on error */
 static int
-_validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
+_validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags, PyObject *argtypes)
 {
     Py_ssize_t i, len;
-    PyObject *argtypes;
 
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
@@ -3913,10 +3908,13 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
                         "abstract class");
         return 0;
     }
-    argtypes = info->argtypes;
+    if (argtypes == NULL) {
+        argtypes = info->argtypes;
+    }
 
-    if (paramflags == NULL || info->argtypes == NULL)
+    if (paramflags == NULL || argtypes == NULL) {
         return 1;
+    }
 
     if (!PyTuple_Check(paramflags)) {
         PyErr_SetString(PyExc_TypeError,
@@ -3925,7 +3923,7 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
     }
 
     len = PyTuple_GET_SIZE(paramflags);
-    if (len != PyTuple_GET_SIZE(info->argtypes)) {
+    if (len != PyTuple_GET_SIZE(argtypes)) {
         PyErr_SetString(PyExc_ValueError,
                         "paramflags must have the same length as argtypes");
         return 0;
@@ -4101,7 +4099,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #endif
 #undef USE_DLERROR
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-    if (!_validate_paramflags(st, type, paramflags)) {
+    if (!_validate_paramflags(st, type, paramflags, NULL)) {
         Py_DECREF(ftuple);
         return NULL;
     }
@@ -4145,7 +4143,7 @@ PyCFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
         paramflags = NULL;
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-    if (!_validate_paramflags(st, type, paramflags)) {
+    if (!_validate_paramflags(st, type, paramflags, NULL)) {
         return NULL;
     }
     self = (PyCFuncPtrObject *)generic_pycdata_new(st, type, args, kwds);
@@ -6336,7 +6334,6 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
     MOD_ADD("FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
     MOD_ADD("FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    MOD_ADD("__version__", PyUnicode_FromString("1.1.0"));
 
     MOD_ADD("_memmove_addr", PyLong_FromVoidPtr(memmove));
     MOD_ADD("_memset_addr", PyLong_FromVoidPtr(memset));

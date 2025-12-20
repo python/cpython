@@ -12,34 +12,51 @@
 #define HASHLIB_UNSUPPORTED_STR_ALGORITHM   "unsupported hash algorithm %s"
 
 /*
- * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
- * of PyObject_GetBuffer.  Sets an exception and issues the erraction
- * on any errors, e.g. 'return NULL' or 'goto error'.
+ * Obtain a buffer view from a buffer-like object 'obj'.
+ *
+ * On success, store the result in 'view' and return 0.
+ * On error, set an exception and return -1.
  */
-#define GET_BUFFER_VIEW_OR_ERROR(obj, viewp, erraction) do { \
-        if (PyUnicode_Check((obj))) { \
-            PyErr_SetString(PyExc_TypeError, \
-                            "Strings must be encoded before hashing");\
-            erraction; \
-        } \
-        if (!PyObject_CheckBuffer((obj))) { \
-            PyErr_SetString(PyExc_TypeError, \
-                            "object supporting the buffer API required"); \
-            erraction; \
-        } \
-        if (PyObject_GetBuffer((obj), (viewp), PyBUF_SIMPLE) == -1) { \
-            erraction; \
-        } \
-        if ((viewp)->ndim > 1) { \
-            PyErr_SetString(PyExc_BufferError, \
-                            "Buffer must be single dimension"); \
-            PyBuffer_Release((viewp)); \
-            erraction; \
-        } \
-    } while(0)
+static inline int
+_Py_hashlib_get_buffer_view(PyObject *obj, Py_buffer *view)
+{
+    if (PyUnicode_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Strings must be encoded before hashing");
+        return -1;
+    }
+    if (!PyObject_CheckBuffer(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "object supporting the buffer API required");
+        return -1;
+    }
+    if (PyObject_GetBuffer(obj, view, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if (view->ndim > 1) {
+        PyErr_SetString(PyExc_BufferError,
+                        "Buffer must be single dimension");
+        PyBuffer_Release(view);
+        return -1;
+    }
+    return 0;
+}
 
-#define GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) \
-    GET_BUFFER_VIEW_OR_ERROR(obj, viewp, return NULL)
+/*
+ * Call _Py_hashlib_get_buffer_view() and check if it succeeded.
+ *
+ * On error, set an exception and execute the ERRACTION statements.
+ */
+#define GET_BUFFER_VIEW_OR_ERROR(OBJ, VIEW, ERRACTION)      \
+    do {                                                    \
+        if (_Py_hashlib_get_buffer_view(OBJ, VIEW) < 0) {   \
+            assert(PyErr_Occurred());                       \
+            ERRACTION;                                      \
+        }                                                   \
+    } while (0)
+
+#define GET_BUFFER_VIEW_OR_ERROUT(OBJ, VIEW)                \
+    GET_BUFFER_VIEW_OR_ERROR(OBJ, VIEW, return NULL)
 
 /*
  * Helper code to synchronize access to the hash object when the GIL is

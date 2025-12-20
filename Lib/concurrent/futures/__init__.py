@@ -44,7 +44,7 @@ if _interpreters:
 
 
 def __dir__():
-    return __all__ + ('__author__', '__doc__')
+    return __all__ + ['__author__', '__doc__']
 
 
 def __getattr__(name):

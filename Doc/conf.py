@@ -221,31 +221,18 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
-    # Deprecated function that was never documented:
-    ('py:func', 'getargspec'),
-    ('py:func', 'inspect.getargspec'),
-    # Undocumented modules that users shouldn't have to worry about
-    # (implementation details of `os.path`):
-    ('py:mod', 'ntpath'),
-    ('py:mod', 'posixpath'),
 ]
 
 # Temporary undocumented names.
 # In future this list must be empty.
 nitpick_ignore += [
-    # Undocumented public C macros
-    ('c:macro', 'Py_BUILD_ASSERT'),
-    ('c:macro', 'Py_BUILD_ASSERT_EXPR'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
-    ('py:attr', '__annotations__'),
-    ('py:meth', '__missing__'),
     ('py:attr', '__wrapped__'),
-    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain and C
@@ -369,11 +356,12 @@ latex_elements = {
     'papersize': 'a4paper',
     # The font size ('10pt', '11pt' or '12pt').
     'pointsize': '10pt',
+    'maxlistdepth': '8',  # See https://github.com/python/cpython/issues/139588
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Guido van Rossum and the Python development team'
+_stdauthor = 'The Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex', 'The Python/C API', _stdauthor, 'manual'),
     (
@@ -448,11 +436,35 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 
 epub_author = 'Python Documentation Authors'
 epub_publisher = 'Python Software Foundation'
-epub_exclude_files = ('index.xhtml', 'download.xhtml')
+epub_exclude_files = (
+    'index.xhtml',
+    'download.xhtml',
+    '_static/tachyon-example-flamegraph.html',
+    '_static/tachyon-example-heatmap.html',
+)
 
 # index pages are not valid xhtml
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
+
+# translation tag
+# ---------------
+
+language_code = None
+for arg in sys.argv:
+    if arg.startswith('language='):
+        language_code = arg.split('=', 1)[1]
+
+if language_code:
+    tags.add('translation')  # noqa: F821
+
+    rst_epilog += f"""\
+.. _TRANSLATION_REPO: https://github.com/python/python-docs-{language_code.replace("_", "-").lower()}
+"""  # noqa: F821
+else:
+    rst_epilog += """\
+.. _TRANSLATION_REPO: https://github.com/python
+"""
 
 # Options for the coverage checker
 # --------------------------------
@@ -567,14 +579,11 @@ ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
     'line_color': '#3776ab',
 }
-if 'builder_html' in tags:  # noqa: F821
-    ogp_custom_meta_tags = [
-        '<meta name="theme-color" content="#3776ab">',
-    ]
-    if 'create-social-cards' not in tags:  # noqa: F821
-        # Define a static preview image when not creating social cards
-        ogp_image = '_static/og-image.png'
-        ogp_custom_meta_tags += [
-            '<meta property="og:image:width" content="200">',
-            '<meta property="og:image:height" content="200">',
-        ]
+ogp_custom_meta_tags = ('<meta name="theme-color" content="#3776ab">',)
+if 'create-social-cards' not in tags:  # noqa: F821
+    # Define a static preview image when not creating social cards
+    ogp_image = '_static/og-image.png'
+    ogp_custom_meta_tags += (
+        '<meta property="og:image:width" content="200">',
+        '<meta property="og:image:height" content="200">',
+    )

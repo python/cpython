@@ -135,13 +135,6 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
-    return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
-}
-
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
 {
@@ -288,16 +281,16 @@ PyFloat_AsDouble(PyObject *op)
     if (!PyFloat_CheckExact(res)) {
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name);
+                         "%T.__float__() must return a float, not %T",
+                         op, res);
             Py_DECREF(res);
             return -1;
         }
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
+                "%T.__float__() must return a float, not %T.  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name)) {
+                op, res)) {
             Py_DECREF(res);
             return -1;
         }
@@ -1484,6 +1477,7 @@ float_fromhex_impl(PyTypeObject *type, PyObject *string)
 }
 
 /*[clinic input]
+@permit_long_summary
 float.as_integer_ratio
 
 Return a pair of integers, whose ratio is exactly equal to the original float.
@@ -1501,7 +1495,7 @@ OverflowError on infinities and a ValueError on NaNs.
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=65f25f0d8d30a712 input=d5ba7765655d75bd]*/
+/*[clinic end generated code: output=65f25f0d8d30a712 input=75ae9be7cecd82a3]*/
 {
     double self_double;
     double float_part;
@@ -1698,6 +1692,7 @@ typedef enum _py_float_format_type float_format_type;
 
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 float.__getformat__
 
@@ -1716,7 +1711,7 @@ C type named by typestr.
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr)
-/*[clinic end generated code: output=2bfb987228cc9628 input=90d5e246409a246e]*/
+/*[clinic end generated code: output=2bfb987228cc9628 input=d2735823bfe8e81e]*/
 {
     float_format_type r;
 
@@ -2028,6 +2023,10 @@ PyFloat_Pack2(double x, char *data, int le)
         memcpy(&v, &x, sizeof(v));
         v &= 0xffc0000000000ULL;
         bits = (unsigned short)(v >> 42); /* NaN's type & payload */
+        /* set qNaN if no payload */
+        if (!bits) {
+            bits |= (1<<9);
+        }
     }
     else {
         sign = (x < 0.0);
@@ -2200,16 +2199,16 @@ PyFloat_Pack4(double x, char *data, int le)
             if ((v & (1ULL << 51)) == 0) {
                 uint32_t u32;
                 memcpy(&u32, &y, 4);
-                u32 &= ~(1 << 22); /* make sNaN */
+                /* if have payload, make sNaN */
+                if (u32 & 0x3fffff) {
+                    u32 &= ~(1 << 22);
+                }
                 memcpy(&y, &u32, 4);
             }
 #else
             uint32_t u32;
 
             memcpy(&u32, &y, 4);
-            if ((v & (1ULL << 51)) == 0) {
-                u32 &= ~(1 << 22);
-            }
             /* Workaround RISC-V: "If a NaN value is converted to a
              * different floating-point type, the result is the
              * canonical NaN of the new type".  The canonical NaN here
@@ -2220,6 +2219,10 @@ PyFloat_Pack4(double x, char *data, int le)
             /* add payload */
             u32 -= (u32 & 0x3fffff);
             u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
+            /* if have payload, make sNaN */
+            if ((v & (1ULL << 51)) == 0 && (u32 & 0x3fffff)) {
+                u32 &= ~(1 << 22);
+            }
 
             memcpy(&y, &u32, 4);
 #endif
@@ -2405,7 +2408,7 @@ PyFloat_Unpack2(const char *data, int le)
     if (e == 0x1f) {
         if (f == 0) {
             /* Infinity */
-            return sign ? -Py_INFINITY : Py_INFINITY;
+            return sign ? -INFINITY : INFINITY;
         }
         else {
             /* NaN */
