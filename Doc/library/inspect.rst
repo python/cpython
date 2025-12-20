@@ -330,6 +330,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Add ``gi_suspended`` attribute to generators.
 
 .. versionchanged:: 3.11
+
    Add ``cr_suspended`` attribute to coroutines.
 
 .. versionchanged:: 3.12
