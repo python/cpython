@@ -579,7 +579,7 @@ def _validate_args(args, parser):
         parser: ArgumentParser instance for error reporting
     """
     # Replay command has minimal validation
-    if args.command == "replay":
+    if getattr(args, 'command', None) == "replay":
         # Can't replay to binary format
         if args.format == "binary":
             parser.error("Cannot replay to binary format. Use a different output format.")

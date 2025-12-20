@@ -9,7 +9,9 @@
 #define Py_REMOTE_DEBUGGING_H
 
 /* _GNU_SOURCE must be defined before any system headers */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
