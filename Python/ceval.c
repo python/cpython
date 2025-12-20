@@ -2272,6 +2272,10 @@ monitor_unwind(PyThreadState *tstate,
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
+bool
+_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
+    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
+}
 
 static int
 monitor_handled(PyThreadState *tstate,
