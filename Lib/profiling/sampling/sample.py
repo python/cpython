@@ -35,23 +35,29 @@ class SampleProfiler:
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
-        if _FREE_THREADED_BUILD:
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
-        else:
-            only_active_threads = bool(self.all_threads)
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
+        try:
+            self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
+        except RuntimeError as err:
+            raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
         self.realtime_stats = False
+
+    def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
+        if _FREE_THREADED_BUILD:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        else:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        return unwinder
 
     def sample(self, collector, duration_sec=10, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
@@ -87,7 +93,7 @@ class SampleProfiler:
                         collector.collect_failed_sample()
                         errors += 1
                     except Exception as e:
-                        if not self._is_process_running():
+                        if not _is_process_running(self.pid):
                             break
                         raise e from None
 
@@ -151,22 +157,6 @@ class SampleProfiler:
                 f"from the expected total of {expected_samples} "
                 f"({(expected_samples - num_samples) / expected_samples * 100:.2f}%)"
             )
-
-    def _is_process_running(self):
-        if sys.platform == "linux" or sys.platform == "darwin":
-            try:
-                os.kill(self.pid, 0)
-                return True
-            except ProcessLookupError:
-                return False
-        elif sys.platform == "win32":
-            try:
-                _remote_debugging.RemoteUnwinder(self.pid)
-            except Exception:
-                return False
-            return True
-        else:
-            raise ValueError(f"Unsupported platform: {sys.platform}")
 
     def _print_realtime_stats(self):
         """Print real-time sampling statistics."""
@@ -328,6 +318,28 @@ class SampleProfiler:
         else:
             bytes_str = f"{bytes_written} B"
         print(f"    Bytes (pre-zstd): {bytes_str}")
+
+
+def _is_process_running(pid):
+    if pid <= 0:
+        return False
+    if os.name == "posix":
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            # EPERM means process exists but we can't signal it
+            return True
+    elif sys.platform == "win32":
+        try:
+            _remote_debugging.RemoteUnwinder(pid)
+        except Exception:
+            return False
+        return True
+    else:
+        raise ValueError(f"Unsupported platform: {sys.platform}")
 
 
 def sample(

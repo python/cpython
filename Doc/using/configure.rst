@@ -344,7 +344,7 @@ General Options
           "_tkinter": "Install the python-tk package to use tkinter",
       }
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. option:: --enable-pystats
 

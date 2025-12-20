@@ -1,2 +1,0 @@
-Fix :mod:`cmath` data race when initializing trigonometric tables with
-subinterpreters.

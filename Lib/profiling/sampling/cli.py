@@ -10,7 +10,8 @@ import sys
 import time
 from contextlib import nullcontext
 
-from .sample import sample, sample_live
+from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
+from .sample import sample, sample_live, _is_process_running
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
@@ -809,6 +810,8 @@ Examples:
 
 def _handle_attach(args):
     """Handle the 'attach' command."""
+    if not _is_process_running(args.pid):
+        raise SamplingUnknownProcessError(args.pid)
     # Check if live mode is requested
     if args.live:
         _handle_live_attach(args, args.pid)
@@ -866,13 +869,13 @@ def _handle_run(args):
             added_cwd = True
         try:
             if importlib.util.find_spec(args.target) is None:
-                sys.exit(f"Error: Module not found: {args.target}")
+                raise SamplingModuleNotFoundError(args.target)
         finally:
             if added_cwd:
                 sys.path.remove(cwd)
     else:
         if not os.path.exists(args.target):
-            sys.exit(f"Error: Script not found: {args.target}")
+            raise SamplingScriptNotFoundError(args.target)
 
     # Check if live mode is requested
     if args.live:

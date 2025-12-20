@@ -252,7 +252,7 @@ Startup hooks
    function has been set.  This function only exists if Python was compiled
    for a version of the library that supports it.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. _readline-completion:

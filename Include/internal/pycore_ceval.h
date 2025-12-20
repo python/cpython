@@ -123,7 +123,7 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
 
 #ifdef _Py_TIER2
 #ifdef _Py_JIT
-_Py_CODEUNIT *_Py_LazyJitTrampoline(
+_Py_CODEUNIT *_Py_LazyJitShim(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
@@ -376,8 +376,6 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 // threads in the given interpreter.
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
-
-PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
 #ifndef Py_SUPPORTS_REMOTE_DEBUG
     #if defined(__APPLE__)

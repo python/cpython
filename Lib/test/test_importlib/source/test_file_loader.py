@@ -180,21 +180,6 @@ class SimpleTest:
                 data[8:16],
             )
 
-    @util.writes_bytecode_files
-    def test_gitignore_in_pycache(self):
-        with util.create_modules('_temp') as mapping:
-            source = mapping['_temp']
-            loader = self.machinery.SourceFileLoader('_temp', source)
-            mod = types.ModuleType('_temp')
-            mod.__spec__ = self.util.spec_from_loader('_temp', loader)
-            loader.exec_module(mod)
-            pyc = os.path.dirname(self.util.cache_from_source(source))
-            gitignore = os.path.join(pyc, '.gitignore')
-            self.assertTrue(os.path.exists(gitignore))
-            with open(gitignore, 'rb') as f:
-                t = f.read()
-            self.assertEqual(t, b'# Created by CPython\n*\n')
-
 
 (Frozen_SimpleTest,
  Source_SimpleTest

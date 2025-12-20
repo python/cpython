@@ -252,10 +252,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 #if defined(Py_DEBUG) && !defined(_Py_JIT)
-#define WITHIN_STACK_BOUNDS_WITH_CACHE() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL() + current_cached_values) <= STACK_SIZE()))
+// This allows temporary stack "overflows", provided it's all in the cache at any point of time.
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
 #else
-#define WITHIN_STACK_BOUNDS_WITH_CACHE WITHIN_STACK_BOUNDS
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
 #endif
 
 /* Data access macros */
@@ -495,3 +496,28 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
+// Mark the generator as executing. Returns true if the state was changed,
+// false if it was already executing or finished.
+static inline bool
+gen_try_set_executing(PyGenObject *gen)
+{
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+        int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        while (frame_state < FRAME_EXECUTING) {
+            if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
+                                                 &frame_state,
+                                                 FRAME_EXECUTING)) {
+                return true;
+            }
+        }
+    }
+#endif
+    // Use faster non-atomic modifications in the GIL-enabled build and when
+    // the object is uniquely referenced in the free-threaded build.
+    if (gen->gi_frame_state < FRAME_EXECUTING) {
+        gen->gi_frame_state = FRAME_EXECUTING;
+        return true;
+    }
+    return false;
+}

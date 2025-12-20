@@ -982,7 +982,17 @@ class HeatmapCollector(StackTraceCollector):
                 f'data-spec-pct="{spec_pct}" '
                 f'onclick="toggleBytecode(this)" title="Show bytecode">&#9654;</button>'
             )
-            bytecode_panel_html = f'        <div class="bytecode-panel" id="bytecode-{line_num}" style="display:none;"></div>\n'
+            # Wrapper contains columns + content panel
+            bytecode_panel_html = (
+                f'        <div class="bytecode-wrapper" id="bytecode-wrapper-{line_num}">\n'
+                f'            <div class="bytecode-columns">'
+                f'<div class="line-number"></div>'
+                f'<div class="line-samples-self"></div>'
+                f'<div class="line-samples-cumulative"></div>'
+                f'</div>\n'
+                f'            <div class="bytecode-panel" id="bytecode-{line_num}"></div>\n'
+                f'        </div>\n'
+            )
         elif self.opcodes_enabled:
             # Add invisible spacer to maintain consistent indentation when opcodes are enabled
             bytecode_btn_html = '<div class="bytecode-spacer"></div>'
