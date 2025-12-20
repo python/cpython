@@ -9,7 +9,7 @@ import unittest
 
 import xml.dom.minidom
 
-from xml.dom.minidom import parse, Attr, Node, Document, parseString
+from xml.dom.minidom import parse, Attr, Node, Document, Element, parseString
 from xml.dom.minidom import getDOMImplementation
 from xml.parsers.expat import ExpatError
 
@@ -190,6 +190,14 @@ class MinidomTest(unittest.TestCase):
 
         # This example used to take at least 30 seconds.
         self.assertLess(end - start, 10)
+
+    def testSetAttributeNodeWithoutOwnerDocument(self):
+        # regression test for gh-142754
+        elem = Element("test")
+        attr = Attr("id")
+        attr.value = "test-id"
+        elem.setAttributeNode(attr)
+        self.assertEqual(elem.getAttribute("id"), "test-id")
 
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
