@@ -215,11 +215,6 @@ static inline PyObject *get_interned_dict(PyInterpreterState *interp)
     return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
 }
 
-/* This hashtable holds statically allocated interned strings.
- * See InternalDocs/string_interning.md for details.
- */
-#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
-
 /* Get number of all interned strings for the current interpreter. */
 Py_ssize_t
 _PyUnicode_InternedSize(void)

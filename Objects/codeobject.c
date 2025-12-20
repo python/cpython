@@ -25,9 +25,6 @@
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
-// copypaste from unicodeobject.c
-#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
-
 static const char *
 code_event_name(PyCodeEvent event) {
     switch (event) {
@@ -206,15 +203,17 @@ static int
 intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
+#if !defined(Py_GIL_DISABLED)
     PyObject *interned_dict = _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
     Py_INCREF(interned_dict);
+#endif
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v) && PyUnicode_GET_LENGTH(v) > 1) {
             if (PyUnicode_CHECK_INTERNED(v) != 0) {
                 continue;
             }
-            Py_BEGIN_CRITICAL_SECTION(interned_dict);
+#if !defined(Py_GIL_DISABLED)
             PyObject *interned = PyDict_GetItemWithError(interned_dict, v);
             if (interned == NULL && PyErr_Occurred()) {
                 goto error;
@@ -232,7 +231,9 @@ intern_constants(PyObject *tuple, int *modified)
                 if (modified) {
                     *modified = 1;
                 }
-            } else if (should_intern_string(v)) {
+            } else
+#endif
+            if (should_intern_string(v)) {
                 PyObject *w = v;
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
@@ -242,7 +243,6 @@ intern_constants(PyObject *tuple, int *modified)
                     }
                 }
             }
-            Py_END_CRITICAL_SECTION();
         }
         else if (PyTuple_CheckExact(v)) {
             if (intern_constants(v, NULL) < 0) {
@@ -327,11 +327,15 @@ intern_constants(PyObject *tuple, int *modified)
         }
 #endif
     }
+#if !defined(Py_GIL_DISABLED)
     Py_DECREF(interned_dict);
+#endif
     return 0;
 
 error:
+#if !defined(Py_GIL_DISABLED)
     Py_DECREF(interned_dict);
+#endif
     return -1;
 }
 
