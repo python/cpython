@@ -5,21 +5,15 @@ import sys as _sys
 import sysconfig as _sysconfig
 import types as _types
 
-__version__ = "1.1.0"
-
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
 from _ctypes import CFuncPtr as _CFuncPtr
-from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
 from _ctypes import CField
 
 from struct import calcsize as _calcsize
-
-if __version__ != _ctypes_version:
-    raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
     from _ctypes import COMError, CopyComPointer, FormatError
@@ -673,3 +667,12 @@ else:
     raise SystemError(f"Unexpected sizeof(time_t): {SIZEOF_TIME_T=}")
 
 _reset_cache()
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "1.1.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
