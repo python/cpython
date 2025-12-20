@@ -1,1 +1,1 @@
-Fix issue where `pdb` would read a `pdbrc` twice if launched from the home directory
+Fix issue where ``pdb`` would read a ``.pdbrc`` twice if launched from the home directory
