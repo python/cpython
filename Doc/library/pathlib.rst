@@ -1320,10 +1320,6 @@ Reading directories
    Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
 
-   .. note::
-      Akin to :mod:`glob`, the paths are returned in no particular order.
-      If you need a specific order, sort them.
-
       >>> sorted(Path('.').glob('*.py'))
       [PosixPath('pathlib.py'), PosixPath('setup.py'), PosixPath('test_pathlib.py')]
       >>> sorted(Path('.').glob('*/*.py'))
@@ -1334,6 +1330,10 @@ Reading directories
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. note::
+      Akin to :mod:`glob`, the paths are returned in no particular order.
+      If you need a specific order, sort them.
 
    .. seealso::
       :ref:`pathlib-pattern-language` documentation.
