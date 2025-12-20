@@ -3008,6 +3008,56 @@ class TestUopsOptimization(unittest.TestCase):
         for _ in range(TIER2_THRESHOLD+1):
             obj.attr = EvilAttr(obj.__dict__)
 
+    def test_promoted_global_refcount_eliminated(self):
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import _testinternalcapi
+        import opcode
+        import _opcode
+
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            for i in range(0, len(co_code), 2):
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
+            return None
+
+        def get_opnames(ex):
+            return {item[0] for item in ex}
+
+
+        def testfunc(n):
+            y = []
+            for i in range(n):
+                x = tuple(y)
+            return x
+
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        assert ex is not None
+        uops = get_opnames(ex)
+        assert "_LOAD_GLOBAL_BUILTIN" not in uops
+        assert "_LOAD_CONST_INLINE_BORROW" in uops
+        assert "_POP_TOP_NOP" in uops
+        assert "_POP_TOP" not in uops
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_constant_fold_tuple(self):
+        def testfunc(n):
+            for _ in range(n):
+                t = (1,)
+                p = len(t)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_CALL_LEN", uops)
+
     def test_binary_subscr_list_int(self):
         def testfunc(n):
             l = [1]
