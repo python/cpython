@@ -1308,7 +1308,7 @@ class NumberTest(BaseTest):
         self.assertEqual(a, array.array(self.typecode, [42, 1, 42, 3, 42, 5, 42, 7, 42, 9]))
         a = array.array(self.typecode, range(10))
         a[::-4] = array.array(self.typecode, [10]*3)
-        self.assertEqual(a, array.array(self.typecode, [0, 10, 2, 3, 4, 10, 6, 7, 8, 10]))
+        self.assertEqual(a, array.array(self.typecode, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10]))
         a = array.array(self.typecode, range(4))
         a[::-1] = a
         self.assertEqual(a, array.array(self.typecode, [3, 2, 1, 0]))
@@ -1375,7 +1375,6 @@ class IntegerNumberTest(NumberTest):
             a.append(42.0)
         with self.assertRaises(TypeError):
             a[0] = 42.0
-
 
 class Intable:
     def __init__(self, num):
