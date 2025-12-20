@@ -17,7 +17,7 @@ from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 from .heatmap_collector import HeatmapCollector
 from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
-from .binary_reader import BinaryReader, convert_binary_to_format
+from .binary_reader import BinaryReader
 from .constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_WALL,

@@ -1084,7 +1084,7 @@ The :option:`--compression` option controls data compression:
 
 - ``auto`` (default): Use zstd compression if available, otherwise no
   compression
-- ``zstd``: Force zstd compression (requires zstd support)
+- ``zstd``: Force zstd compression (requires :mod:`compression.zstd` support)
 - ``none``: Disable compression
 
 ::

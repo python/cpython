@@ -2,6 +2,8 @@
 
 import time
 
+import _remote_debugging
+
 from .collector import Collector
 
 # Compression type constants (must match binary_io.h)
@@ -28,7 +30,6 @@ def _resolve_compression(compression):
         return COMPRESSION_ZSTD
     elif compression == 'auto':
         # Auto: use zstd if available, otherwise none
-        import _remote_debugging
         if _remote_debugging.zstd_available():
             return COMPRESSION_ZSTD
         return COMPRESSION_NONE
@@ -57,8 +58,6 @@ class BinaryCollector(Collector):
             skip_idle: If True, skip idle threads (not used in binary format)
             compression: 'auto', 'zstd', 'none', or int (0=none, 1=zstd)
         """
-        import _remote_debugging
-
         self.filename = filename
         self.sample_interval_usec = sample_interval_usec
         self.skip_idle = skip_idle

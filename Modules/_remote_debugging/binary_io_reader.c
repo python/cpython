@@ -22,9 +22,7 @@
  * ============================================================================ */
 
 /* File structure sizes */
-#define FILE_HEADER_PLACEHOLDER_SIZE 64  /* Placeholder written at file start */
-#define FILE_HEADER_SIZE 52              /* Actual header content size */
-#define FILE_FOOTER_SIZE 32              /* Footer size */
+#define FILE_FOOTER_SIZE 32
 #define MIN_DECOMPRESS_BUFFER_SIZE (64 * 1024)  /* Minimum decompression buffer */
 
 /* Progress callback frequency */
@@ -57,17 +55,35 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     }
 
     if (version != BINARY_FORMAT_VERSION) {
-        PyErr_Format(PyExc_ValueError, "Unsupported version: %u", version);
+        if (version > BINARY_FORMAT_VERSION && file_size >= HDR_OFF_PY_MICRO + 1) {
+            /* Newer format - try to read Python version for better error */
+            uint8_t py_major = data[HDR_OFF_PY_MAJOR];
+            uint8_t py_minor = data[HDR_OFF_PY_MINOR];
+            uint8_t py_micro = data[HDR_OFF_PY_MICRO];
+            PyErr_Format(PyExc_ValueError,
+                "Binary file was created with Python %u.%u.%u (format version %u), "
+                "but this is Python %d.%d.%d (format version %d)",
+                py_major, py_minor, py_micro, version,
+                PY_MAJOR_VERSION, PY_MINOR_VERSION, PY_MICRO_VERSION,
+                BINARY_FORMAT_VERSION);
+        } else {
+            PyErr_Format(PyExc_ValueError,
+                "Unsupported format version %u (this reader supports version %d)",
+                version, BINARY_FORMAT_VERSION);
+        }
         return -1;
     }
 
-    memcpy(&reader->start_time_us, &data[8], sizeof(reader->start_time_us));
-    memcpy(&reader->sample_interval_us, &data[16], sizeof(reader->sample_interval_us));
-    memcpy(&reader->sample_count, &data[24], sizeof(reader->sample_count));
-    memcpy(&reader->thread_count, &data[28], sizeof(reader->thread_count));
-    memcpy(&reader->string_table_offset, &data[32], sizeof(reader->string_table_offset));
-    memcpy(&reader->frame_table_offset, &data[40], sizeof(reader->frame_table_offset));
-    memcpy(&reader->compression_type, &data[48], sizeof(reader->compression_type));
+    reader->py_major = data[HDR_OFF_PY_MAJOR];
+    reader->py_minor = data[HDR_OFF_PY_MINOR];
+    reader->py_micro = data[HDR_OFF_PY_MICRO];
+    memcpy(&reader->start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
+    memcpy(&reader->sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
+    memcpy(&reader->sample_count, &data[HDR_OFF_SAMPLES], HDR_SIZE_SAMPLES);
+    memcpy(&reader->thread_count, &data[HDR_OFF_THREADS], HDR_SIZE_THREADS);
+    memcpy(&reader->string_table_offset, &data[HDR_OFF_STR_TABLE], HDR_SIZE_STR_TABLE);
+    memcpy(&reader->frame_table_offset, &data[HDR_OFF_FRAME_TABLE], HDR_SIZE_FRAME_TABLE);
+    memcpy(&reader->compression_type, &data[HDR_OFF_COMPRESSION], HDR_SIZE_COMPRESSION);
 
     return 0;
 }
@@ -1023,9 +1039,15 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
 PyObject *
 binary_reader_get_info(BinaryReader *reader)
 {
+    PyObject *py_version = Py_BuildValue("(B,B,B)",
+        reader->py_major, reader->py_minor, reader->py_micro);
+    if (py_version == NULL) {
+        return NULL;
+    }
     return Py_BuildValue(
-        "{s:I, s:K, s:K, s:I, s:I, s:I, s:I, s:i}",
+        "{s:I, s:N, s:K, s:K, s:I, s:I, s:I, s:I, s:i}",
         "version", BINARY_FORMAT_VERSION,
+        "python_version", py_version,
         "start_time_us", reader->start_time_us,
         "sample_interval_us", reader->sample_interval_us,
         "sample_count", reader->sample_count,

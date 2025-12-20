@@ -22,7 +22,37 @@ extern "C" {
  * ============================================================================ */
 
 #define BINARY_FORMAT_MAGIC     0x54414348  /* "TACH" (Tachyon) */
-#define BINARY_FORMAT_VERSION   2
+#define BINARY_FORMAT_VERSION   3
+
+/* Header field offsets and sizes */
+#define HDR_OFF_MAGIC        0
+#define HDR_SIZE_MAGIC       4
+#define HDR_OFF_VERSION      (HDR_OFF_MAGIC + HDR_SIZE_MAGIC)
+#define HDR_SIZE_VERSION     4
+#define HDR_OFF_PY_VERSION   (HDR_OFF_VERSION + HDR_SIZE_VERSION)
+#define HDR_SIZE_PY_VERSION  4   /* 3 bytes: major, minor, micro + 1 reserved */
+#define HDR_OFF_PY_MAJOR     HDR_OFF_PY_VERSION
+#define HDR_OFF_PY_MINOR     (HDR_OFF_PY_VERSION + 1)
+#define HDR_OFF_PY_MICRO     (HDR_OFF_PY_VERSION + 2)
+#define HDR_OFF_START_TIME   (HDR_OFF_PY_VERSION + HDR_SIZE_PY_VERSION)
+#define HDR_SIZE_START_TIME  8
+#define HDR_OFF_INTERVAL     (HDR_OFF_START_TIME + HDR_SIZE_START_TIME)
+#define HDR_SIZE_INTERVAL    8
+#define HDR_OFF_SAMPLES      (HDR_OFF_INTERVAL + HDR_SIZE_INTERVAL)
+#define HDR_SIZE_SAMPLES     4
+#define HDR_OFF_THREADS      (HDR_OFF_SAMPLES + HDR_SIZE_SAMPLES)
+#define HDR_SIZE_THREADS     4
+#define HDR_OFF_STR_TABLE    (HDR_OFF_THREADS + HDR_SIZE_THREADS)
+#define HDR_SIZE_STR_TABLE   8
+#define HDR_OFF_FRAME_TABLE  (HDR_OFF_STR_TABLE + HDR_SIZE_STR_TABLE)
+#define HDR_SIZE_FRAME_TABLE 8
+#define HDR_OFF_COMPRESSION  (HDR_OFF_FRAME_TABLE + HDR_SIZE_FRAME_TABLE)
+#define HDR_SIZE_COMPRESSION 4
+#define FILE_HEADER_SIZE     (HDR_OFF_COMPRESSION + HDR_SIZE_COMPRESSION)
+#define FILE_HEADER_PLACEHOLDER_SIZE 64
+
+static_assert(FILE_HEADER_SIZE <= FILE_HEADER_PLACEHOLDER_SIZE,
+              "FILE_HEADER_SIZE exceeds FILE_HEADER_PLACEHOLDER_SIZE");
 
 /* Buffer sizes: 512KB balances syscall amortization against memory use,
  * and aligns well with filesystem block sizes and zstd dictionary windows */
@@ -253,6 +283,9 @@ typedef struct {
     size_t decompressed_size;
 
     /* Header metadata */
+    uint8_t py_major;
+    uint8_t py_minor;
+    uint8_t py_micro;
     uint64_t start_time_us;
     uint64_t sample_interval_us;
     uint32_t sample_count;
@@ -415,10 +448,22 @@ grow_array(void *ptr, size_t *capacity, size_t elem_size)
     return new_ptr;
 }
 
-/* Macro wrapper for type safety with grow_array */
-#define GROW_ARRAY(ptr, count, capacity, type) \
-    ((count) < (capacity) ? 0 : \
-     ((ptr) = grow_array((ptr), &(capacity), sizeof(type))) ? 0 : -1)
+static inline int
+grow_array_inplace(void **ptr_addr, size_t count, size_t *capacity, size_t elem_size)
+{
+    if (count < *capacity) {
+        return 0;
+    }
+    void *tmp = grow_array(*ptr_addr, capacity, elem_size);
+    if (tmp == NULL) {
+        return -1;
+    }
+    *ptr_addr = tmp;
+    return 0;
+}
+
+#define GROW_ARRAY(ptr, count, cap, type) \
+    grow_array_inplace((void**)&(ptr), (count), &(cap), sizeof(type))
 
 /* ============================================================================
  * BINARY WRITER API
