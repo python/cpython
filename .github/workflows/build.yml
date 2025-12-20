@@ -109,20 +109,10 @@ jobs:
           python-version: '3.x'
       - name: Runner image version
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-      - name: Restore config.cache
-        uses: actions/cache@v4
-        with:
-          path: config.cache
-          # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
-          key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}-${{ env.pythonLocation }}
       - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
         run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-      - name: Configure ccache action
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          save: false
       - name: Configure CPython
         run: |
           # Build Python with the libpython dynamic library
@@ -152,6 +142,9 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
+      - name: Check for undocumented C APIs
+        run: make check-c-api-docs
+
 
   build-windows:
     name: >-
@@ -198,32 +191,23 @@ jobs:
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-macos == 'true'
     strategy:
       fail-fast: false
       matrix:
-        # Cirrus and macos-14 are M1, macos-13 is default GHA Intel.
-        # macOS 13 only runs tests against the GIL-enabled CPython.
-        # Cirrus used for upstream, macos-14 for forks.
+        # macos-14 is M1, macos-15-intel is Intel.
+        # macos-15-intel only runs tests against the GIL-enabled CPython.
         os:
-        - ghcr.io/cirruslabs/macos-runner:sonoma
         - macos-14
-        - macos-13
-        is-fork:  # only used for the exclusion trick
-        - ${{ github.repository_owner != 'python' }}
+        - macos-15-intel
         free-threading:
         - false
         - true
         exclude:
-        - os: ghcr.io/cirruslabs/macos-runner:sonoma
-          is-fork: true
-        - os: macos-14
-          is-fork: false
-        - os: macos-13
+        - os: macos-15-intel
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
@@ -233,7 +217,7 @@ jobs:
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
       ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -255,7 +239,6 @@ jobs:
           bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
@@ -265,7 +248,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -273,7 +256,7 @@ jobs:
         # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
         # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
         # supported by important vendors such as AWS-LC.
-        openssl_ver: [1.1.1w, 3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
+        openssl_ver: [1.1.1w, 3.0.18, 3.2.6, 3.3.5, 3.4.3, 3.5.4]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -286,11 +269,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -312,10 +290,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Configure CPython
       run: ./configure CFLAGS="-fdiagnostics-format=json" --config-cache --enable-slower-safety --with-pydebug --with-openssl="$OPENSSL_DIR"
     - name: Build CPython
@@ -330,7 +304,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -347,11 +321,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -378,10 +347,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Configure CPython
       run: |
         ./configure CFLAGS="-fdiagnostics-format=json" \
@@ -403,15 +368,14 @@ jobs:
   build-android:
     name: Android (${{ matrix.arch }})
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-android == 'true'
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Use the same runs-on configuration as build-macos and build-ubuntu.
           - arch: aarch64
-            runs-on: ${{ github.repository_owner == 'python' && 'ghcr.io/cirruslabs/macos-runner:sonoma' || 'macos-14' }}
+            runs-on: macos-14
           - arch: x86_64
             runs-on: ubuntu-24.04
 
@@ -421,24 +385,45 @@ jobs:
         with:
           persist-credentials: false
       - name: Build and test
-        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
+        run: ./Android/android.py ci --fast-ci ${{ matrix.arch }}-linux-android
+
+  build-ios:
+    name: iOS
+    needs: build-context
+    if: needs.build-context.outputs.run-ios == 'true'
+    timeout-minutes: 60
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # GitHub recommends explicitly selecting the desired Xcode version:
+      # https://github.com/actions/runner-images/issues/12541#issuecomment-3083850140
+      # This became a necessity as a result of
+      # https://github.com/actions/runner-images/issues/12541 and
+      # https://github.com/actions/runner-images/issues/12751.
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_15.4.app
+
+      - name: Build and test
+        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
 
   build-wasi:
     name: 'WASI'
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-wasi == 'true'
     uses: ./.github/workflows/reusable-wasi.yml
-    with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -465,10 +450,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: false
     - name: Setup directory envs for out-of-tree builds
       run: |
         echo "CPYTHON_RO_SRCDIR=$(realpath -m "${GITHUB_WORKSPACE}"/../cpython-ro-srcdir)" >> "$GITHUB_ENV"
@@ -479,11 +460,6 @@ jobs:
       run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: |
@@ -552,13 +528,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.16
+      OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -567,11 +543,6 @@ jobs:
         persist-credentials: false
     - name: Runner image version
       run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install dependencies
@@ -597,11 +568,6 @@ jobs:
     - name: Add ccache to PATH
       run: |
         echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: ./configure --config-cache --with-address-sanitizer --without-pymalloc
     - name: Build CPython
@@ -615,7 +581,7 @@ jobs:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
     name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -633,7 +599,6 @@ jobs:
     uses: ./.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   cross-build-linux:
@@ -641,18 +606,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Runner image version
         run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
-      - name: Restore config.cache
-        uses: actions/cache@v4
-        with:
-          path: config.cache
-          key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
       - name: Register gcc problem matcher
         run: echo "::add-matcher::.github/problem-matchers/gcc.json"
       - name: Set build dir
@@ -732,6 +692,7 @@ jobs:
     - build-ubuntu-ssltests-awslc
     - build-ubuntu-ssltests-openssl
     - build-android
+    - build-ios
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -751,24 +712,24 @@ jobs:
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
-          ${{
-            !fromJSON(needs.build-context.outputs.run-docs)
-            && '
-            check-docs,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
             check-autoconf-regen,
             check-generated-files,
-            build-macos,
+            '
+            || ''
+          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-ubuntu)
+            && '
             build-ubuntu,
             build-ubuntu-ssltests-awslc,
             build-ubuntu-ssltests-openssl,
-            build-android,
-            build-wasi,
             test-hypothesis,
             build-asan,
             build-san,
@@ -776,18 +737,7 @@ jobs:
             '
             || ''
           }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-windows-tests)
-            && '
-            build-windows,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-            && '
-            cifuzz,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}

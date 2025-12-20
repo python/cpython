@@ -114,7 +114,10 @@ INCL_DIRS = format_tsv_lines([
     ('*', './Include/internal/mimalloc'),
 
     ('Modules/_decimal/**/*.c', 'Modules/_decimal/libmpdec'),
+
     ('Modules/_elementtree.c', 'Modules/expat'),
+    ('Modules/pyexpat.c', 'Modules/expat'),
+
     ('Modules/_hacl/*.c', 'Modules/_hacl/include'),
     ('Modules/_hacl/*.c', 'Modules/_hacl/'),
     ('Modules/_hacl/*.h', 'Modules/_hacl/include'),
@@ -125,6 +128,7 @@ INCL_DIRS = format_tsv_lines([
     ('Modules/sha3module.c', 'Modules/_hacl/include'),
     ('Modules/blake2module.c', 'Modules/_hacl/include'),
     ('Modules/hmacmodule.c', 'Modules/_hacl/include'),
+
     ('Objects/stringlib/*.h', 'Objects'),
 
     # possible system-installed headers, just in case
@@ -316,8 +320,8 @@ MAX_SIZES = {
     _abs('Python/compile.c'): (20_000, 500),
     _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),
-    _abs('Python/pylifecycle.c'): (500_000, 5000),
-    _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/pylifecycle.c'): (750_000, 5000),
+    _abs('Python/pystate.c'): (750_000, 5000),
     _abs('Python/initconfig.c'): (50_000, 500),
 
     # Generated files:
@@ -340,6 +344,10 @@ MAX_SIZES = {
 
     # Catch-alls:
     _abs('Include/**/*.h'): (5_000, 500),
+
+    # Specific to clang
+    _abs('Modules/selectmodule.c'): (40_000, 3000),
+    _abs('Modules/_testcapi/pyatomic.c'): (30_000, 1000),
 }
 
 

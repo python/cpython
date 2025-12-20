@@ -5,11 +5,13 @@ This module is used internally by the sample profiler to coordinate
 the startup of target processes. It should not be called directly by users.
 """
 
+import importlib.util
 import os
 import sys
 import socket
 import runpy
 import time
+import types
 from typing import List, NoReturn
 
 
@@ -137,7 +139,7 @@ def _execute_module(module_name: str, module_args: List[str]) -> None:
     """
     # Replace sys.argv to match how Python normally runs modules
     # When running 'python -m module args', sys.argv is ["__main__.py", "args"]
-    sys.argv = [f"__main__.py"] + module_args
+    sys.argv = ["__main__.py"] + module_args
 
     try:
         runpy.run_module(module_name, run_name="__main__", alter_sys=True)
@@ -176,13 +178,20 @@ def _execute_script(script_path: str, script_args: List[str], cwd: str) -> None:
         with open(script_path, 'rb') as f:
             source_code = f.read()
 
-        # Compile and execute the script
-        code = compile(source_code, script_path, 'exec')
-        exec(code, {'__name__': '__main__', '__file__': script_path})
     except FileNotFoundError as e:
         raise TargetError(f"Script file not found: {script_path}") from e
     except PermissionError as e:
         raise TargetError(f"Permission denied reading script: {script_path}") from e
+
+    try:
+        main_module = types.ModuleType("__main__")
+        main_module.__file__ = script_path
+        main_module.__builtins__ = __builtins__
+        # gh-140729: Create a __mp_main__ module to allow pickling
+        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+
+        code = compile(source_code, script_path, 'exec', module='__main__')
+        exec(code, main_module.__dict__)
     except SyntaxError as e:
         raise TargetError(f"Syntax error in script {script_path}: {e}") from e
     except SystemExit:
@@ -207,22 +216,31 @@ def main() -> NoReturn:
         # Set up execution environment
         _setup_environment(cwd)
 
+        # Determine execution type and validate target exists
+        is_module = target_args[0] == "-m"
+        if is_module:
+            if len(target_args) < 2:
+                raise ArgumentError("Module name required after -m")
+            module_name = target_args[1]
+            module_args = target_args[2:]
+
+            if importlib.util.find_spec(module_name) is None:
+                raise TargetError(f"Module not found: {module_name}")
+        else:
+            script_path = target_args[0]
+            script_args = target_args[1:]
+            # Match the path resolution logic in _execute_script
+            check_path = script_path if os.path.isabs(script_path) else os.path.join(cwd, script_path)
+            if not os.path.isfile(check_path):
+                raise TargetError(f"Script not found: {script_path}")
+
         # Signal readiness to profiler
         _signal_readiness(sync_port)
 
         # Execute the target
-        if target_args[0] == "-m":
-            # Module execution
-            if len(target_args) < 2:
-                raise ArgumentError("Module name required after -m")
-
-            module_name = target_args[1]
-            module_args = target_args[2:]
+        if is_module:
             _execute_module(module_name, module_args)
         else:
-            # Script execution
-            script_path = target_args[0]
-            script_args = target_args[1:]
             _execute_script(script_path, script_args, cwd)
 
     except CoordinatorError as e:

@@ -26,6 +26,7 @@
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"         // _PyStats_InterpInit()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -209,7 +210,10 @@ _Py_LegacyLocaleDetected(int warn)
      *                 we may also want to check for that explicitly.
      */
     const char *ctype_loc = setlocale(LC_CTYPE, NULL);
-    return ctype_loc != NULL && strcmp(ctype_loc, "C") == 0;
+    if (ctype_loc == NULL) {
+        return 0;
+    }
+    return (strcmp(ctype_loc, "C") == 0 || strcmp(ctype_loc, "POSIX") == 0);
 #else
     /* Windows uses code pages instead of locales, so no locale is legacy */
     return 0;
@@ -503,6 +507,7 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     _Py_InitVersion();
+    _Py_DumpTraceback_Init();
 
     status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -651,6 +656,14 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
 
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
@@ -832,6 +845,10 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
+    if (_PyType_InitSlotDefs(interp) < 0) {
+        return _PyStatus_ERR("failed to init slotdefs");
+    }
 
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
@@ -2461,6 +2478,14 @@ new_interpreter(PyThreadState **tstate_p,
         return status;
     }
 
+#ifdef Py_STATS
+    // initialize pystats.  This must be done after the settings are loaded.
+    status = _PyStats_InterpInit(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
+
     // initialize the interp->obmalloc state.  This must be done after
     // the settings are loaded (so that feature_flags are set) but before
     // any calls are made to obmalloc functions.
@@ -2546,7 +2571,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2618,7 +2643,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong

@@ -108,6 +108,7 @@
 #endif
 
 #include <limits.h> // ULONG_MAX
+#include <stddef.h> // size_t
 
 #if defined(_WIN32)                                                            \
     && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
@@ -152,6 +153,11 @@
 #define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
 #define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                       \
   67108864 // 64 MiB, 2^26
+
+// NOTE: If function expat_alloc was user facing, EXPAT_MALLOC_ALIGNMENT would
+//       have to take sizeof(long double) into account
+#define EXPAT_MALLOC_ALIGNMENT sizeof(long long) // largest parser (sub)member
+#define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
 
 /* NOTE END */
 

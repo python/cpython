@@ -77,9 +77,7 @@ struct _fileutils_state {
 struct _parser_runtime_state {
 #ifdef Py_DEBUG
     long memo_statistics[_PYPEGEN_NSTATISTICS];
-#ifdef Py_GIL_DISABLED
     PyMutex mutex;
-#endif
 #else
     int _not_used;
 #endif
@@ -106,7 +104,7 @@ struct _Py_cached_objects {
 };
 
 // These would be in pycore_long.h if it weren't for an include cycle.
-#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLPOSINTS           1025
 #define _PY_NSMALLNEGINTS           5
 
 #include "pycore_global_strings.h" // struct _Py_global_strings
