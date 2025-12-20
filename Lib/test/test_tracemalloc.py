@@ -446,6 +446,13 @@ class TestSnapshot(unittest.TestCase):
 
         self.assertRaises(TypeError, snapshot.filter_traces, filter1)
 
+    def test_filter_traces_no_filter_tuple_storage(self):
+        snapshot, _snapshot2 = create_snapshots()
+        snap = tracemalloc.Snapshot(tuple(snapshot.traces._traces),
+                                    snapshot.traceback_limit)
+        snap2 = snap.filter_traces(())
+        self.assertEqual(snap2.traces._traces, list(snap.traces._traces))
+
     def test_filter_traces_domain(self):
         snapshot, snapshot2 = create_snapshots()
         filter1 = tracemalloc.Filter(False, "a.py", domain=1)

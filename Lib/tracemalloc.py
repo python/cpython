@@ -471,7 +471,7 @@ class Snapshot:
                                                 exclude_filters,
                                                 trace)]
         else:
-            new_traces = self.traces._traces.copy()
+            new_traces = list(self.traces._traces)
         return Snapshot(new_traces, self.traceback_limit)
 
     def _group_by(self, key_type, cumulative):
