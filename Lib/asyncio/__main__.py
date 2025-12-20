@@ -103,6 +103,7 @@ class REPLThread(threading.Thread):
                     startup_code = compile(f.read(), startup_path, "exec")
                     try:
                         exec(startup_code, console.locals)
+                    # TODO: Revisit in GH-143023
                     except SystemExit:
                         raise
                     except BaseException:
