@@ -1431,6 +1431,7 @@ class UnsignedNumberTest(IntegerNumberTest):
             array.array(self.typecode, self.example+self.example[::-1])
         )
 
+
 class ByteTest(SignedNumberTest, unittest.TestCase):
     typecode = 'b'
     minitemsize = 1
@@ -1530,6 +1531,7 @@ class DoubleTest(FPTest, unittest.TestCase):
             pass
         else:
             self.fail("Array of size > maxsize created - MemoryError expected")
+
 
 class LargeArrayTest(unittest.TestCase):
     typecode = 'b'
