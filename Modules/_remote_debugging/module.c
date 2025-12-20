@@ -1307,11 +1307,13 @@ _remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
 /*[clinic end generated code: output=61831f47c72a53c6 input=12334ce1009af37f]*/
 {
     if (self->writer) {
-        /* Finalize on normal exit */
-        if (binary_writer_finalize(self->writer) < 0) {
-            binary_writer_destroy(self->writer);
-            self->writer = NULL;
-            return NULL;
+        /* Only finalize on normal exit (no exception) */
+        if (exc_type == Py_None) {
+            if (binary_writer_finalize(self->writer) < 0) {
+                binary_writer_destroy(self->writer);
+                self->writer = NULL;
+                return NULL;
+            }
         }
         binary_writer_destroy(self->writer);
         self->writer = NULL;

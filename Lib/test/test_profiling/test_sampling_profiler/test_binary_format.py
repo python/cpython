@@ -1012,5 +1012,70 @@ class TestBinaryStress(BinaryFormatTestBase):
             )
 
 
+class TimestampCollector:
+    """Collector that captures timestamps for verification."""
+
+    def __init__(self):
+        self.all_timestamps = []
+
+    def collect(self, stack_frames, timestamps_us=None):
+        if timestamps_us is not None:
+            self.all_timestamps.extend(timestamps_us)
+
+    def export(self, filename):
+        pass
+
+
+class TestTimestampPreservation(BinaryFormatTestBase):
+    """Tests for timestamp preservation during binary round-trip."""
+
+    def test_timestamp_preservation(self):
+        """Timestamps are preserved during round-trip."""
+        frame = make_frame("test.py", 10, "func")
+        timestamps = [1000000, 2000000, 3000000]
+
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        collector = BinaryCollector(filename, 1000, compression="none")
+        for ts in timestamps:
+            sample = [make_interpreter(0, [make_thread(1, [frame])])]
+            collector.collect(sample, timestamp_us=ts)
+        collector.export(None)
+
+        ts_collector = TimestampCollector()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(ts_collector)
+
+        self.assertEqual(count, 3)
+        self.assertEqual(ts_collector.all_timestamps, timestamps)
+
+    def test_timestamp_preservation_with_rle(self):
+        """RLE-batched samples preserve individual timestamps."""
+        frame = make_frame("rle.py", 42, "rle_func")
+
+        with tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as f:
+            filename = f.name
+        self.temp_files.append(filename)
+
+        # Identical samples (triggers RLE) with different timestamps
+        collector = BinaryCollector(filename, 1000, compression="none")
+        expected_timestamps = []
+        for i in range(50):
+            ts = 1000000 + i * 100
+            expected_timestamps.append(ts)
+            sample = [make_interpreter(0, [make_thread(1, [frame])])]
+            collector.collect(sample, timestamp_us=ts)
+        collector.export(None)
+
+        ts_collector = TimestampCollector()
+        with BinaryReader(filename) as reader:
+            count = reader.replay_samples(ts_collector)
+
+        self.assertEqual(count, 50)
+        self.assertEqual(ts_collector.all_timestamps, expected_timestamps)
+
+
 if __name__ == "__main__":
     unittest.main()

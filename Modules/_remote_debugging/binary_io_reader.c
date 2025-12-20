@@ -586,6 +586,14 @@ decode_stack_suffix(ReaderThreadState *ts, const uint8_t *data,
 
     /* Move shared frames (from bottom of stack) to make room for new frames at the top */
     if (new_count > 0 && shared > 0) {
+        /* Defensive check: ensure subtraction won't underflow.
+         * This should already be guaranteed by the check above, but we add
+         * this assertion as defense-in-depth against stack corruption. */
+        if (ts->current_stack_depth < shared) {
+            PyErr_SetString(PyExc_ValueError,
+                "Internal error: stack corruption detected in suffix decoding");
+            return -1;
+        }
         size_t prev_shared_start = ts->current_stack_depth - shared;
         memmove(&ts->current_stack[new_count],
                 &ts->current_stack[prev_shared_start],

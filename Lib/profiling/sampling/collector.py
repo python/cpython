@@ -44,14 +44,16 @@ def extract_lineno(location):
 
 class Collector(ABC):
     @abstractmethod
-    def collect(self, stack_frames, timestamp_us=None):
+    def collect(self, stack_frames, timestamps_us=None):
         """Collect profiling data from stack frames.
 
         Args:
             stack_frames: List of InterpreterInfo objects
-            timestamp_us: Optional timestamp in microseconds. If provided (from
-                binary replay), use this instead of current time. If None,
-                collectors should use time.monotonic() or similar.
+            timestamps_us: Optional list of timestamps in microseconds. If provided
+                (from binary replay with RLE batching), use these instead of current
+                time. If None, collectors should use time.monotonic() or similar.
+                The list may contain multiple timestamps when samples are batched
+                together (same stack, different times).
         """
 
     def collect_failed_sample(self):

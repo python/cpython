@@ -447,12 +447,13 @@ writer_get_or_create_thread_entry(BinaryWriter *writer, uint64_t thread_id,
     }
 
     if (writer->thread_count >= writer->thread_capacity) {
-        writer->thread_entries = grow_array(writer->thread_entries,
-                                            &writer->thread_capacity,
-                                            sizeof(ThreadEntry));
-        if (!writer->thread_entries) {
+        ThreadEntry *new_entries = grow_array(writer->thread_entries,
+                                              &writer->thread_capacity,
+                                              sizeof(ThreadEntry));
+        if (!new_entries) {
             return NULL;
         }
+        writer->thread_entries = new_entries;
     }
 
     ThreadEntry *entry = &writer->thread_entries[writer->thread_count];
