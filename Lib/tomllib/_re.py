@@ -17,7 +17,8 @@ if TYPE_CHECKING:
 # E.g.
 # - 00:32:00.999999
 # - 00:32:00
-_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
+# - 00:32
+_TIME_RE_STR = r"([01][0-9]|2[0-3]):([0-5][0-9])(?::([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?)?"
 
 RE_NUMBER = re.compile(
     r"""
@@ -74,7 +75,8 @@ def match_to_datetime(match: re.Match[str]) -> datetime | date:
     year, month, day = int(year_str), int(month_str), int(day_str)
     if hour_str is None:
         return date(year, month, day)
-    hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
+    hour, minute = int(hour_str), int(minute_str)
+    sec = int(sec_str) if sec_str else 0
     micros = int(micros_str.ljust(6, "0")) if micros_str else 0
     if offset_sign_str:
         tz: tzinfo | None = cached_tz(
@@ -103,8 +105,9 @@ def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
 
 def match_to_localtime(match: re.Match[str]) -> time:
     hour_str, minute_str, sec_str, micros_str = match.groups()
+    sec = int(sec_str) if sec_str else 0
     micros = int(micros_str.ljust(6, "0")) if micros_str else 0
-    return time(int(hour_str), int(minute_str), int(sec_str), micros)
+    return time(int(hour_str), int(minute_str), sec, micros)
 
 
 def match_to_number(match: re.Match[str], parse_float: ParseFloat) -> Any:

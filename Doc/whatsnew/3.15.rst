@@ -751,6 +751,7 @@ timeit
   :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Yi Hong in :gh:`139374`.)
 
+
 tkinter
 -------
 
@@ -765,8 +766,16 @@ tkinter
   using Tcl's ``-all`` and ``-overlap`` options.
   (Contributed by Rihaan Meher in :gh:`130848`)
 
+
+tomllib
+-------
+
+* Updated to support `TOML 1.1.0
+  <https://github.com/toml-lang/toml/blob/1.1.0/CHANGELOG.md#110--2025-12-18>`__.
+
+
 types
-------
+-----
 
 * Expose the write-through :func:`locals` proxy type
   as :data:`types.FrameLocalsProxyType`.

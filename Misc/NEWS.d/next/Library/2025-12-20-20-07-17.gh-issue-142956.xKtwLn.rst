@@ -1,0 +1,2 @@
+:mod:`tomllib`: Updated to support `TOML 1.1.0
+<https://github.com/toml-lang/toml/blob/1.1.0/CHANGELOG.md#110--2025-12-18>`_.

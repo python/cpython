@@ -49,6 +49,7 @@ BASIC_STR_ESCAPE_REPLACEMENTS = MappingProxyType(
         "\\n": "\u000A",  # linefeed
         "\\f": "\u000C",  # form feed
         "\\r": "\u000D",  # carriage return
+        "\\e": "\u001B",  # escape
         '\\"': "\u0022",  # quote
         "\\\\": "\u005C",  # backslash
     }
@@ -515,7 +516,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
     nested_dict = NestedDict()
     flags = Flags()
 
-    pos = skip_chars(src, pos, TOML_WS)
+    pos = skip_comments_and_array_ws(src, pos)
     if src.startswith("}", pos):
         return pos + 1, nested_dict.dict
     while True:
@@ -530,7 +531,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         if key_stem in nest:
             raise TOMLDecodeError(f"Duplicate inline table key {key_stem!r}", src, pos)
         nest[key_stem] = value
-        pos = skip_chars(src, pos, TOML_WS)
+        pos = skip_comments_and_array_ws(src, pos)
         c = src[pos : pos + 1]
         if c == "}":
             return pos + 1, nested_dict.dict
@@ -539,7 +540,9 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         if isinstance(value, (dict, list)):
             flags.set(key, Flags.FROZEN, recursive=True)
         pos += 1
-        pos = skip_chars(src, pos, TOML_WS)
+        pos = skip_comments_and_array_ws(src, pos)
+        if src.startswith("}", pos):
+            return pos + 1, nested_dict.dict
 
 
 def parse_basic_str_escape(
@@ -565,6 +568,8 @@ def parse_basic_str_escape(
         return parse_hex_char(src, pos, 4)
     if escape_id == "\\U":
         return parse_hex_char(src, pos, 8)
+    if escape_id == "\\x":
+        return parse_hex_char(src, pos, 2)
     try:
         return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
     except KeyError:

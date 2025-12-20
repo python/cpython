@@ -13,7 +13,7 @@
 
 --------------
 
-This module provides an interface for parsing TOML 1.0.0 (Tom's Obvious Minimal
+This module provides an interface for parsing TOML 1.1.0 (Tom's Obvious Minimal
 Language, `https://toml.io <https://toml.io/en/>`_). This module does not
 support writing TOML.
 
@@ -30,6 +30,10 @@ support writing TOML.
     is a style-preserving TOML library with both read and write capability.
     It is a recommended replacement for this module for editing already
     existing TOML files.
+
+.. versionchanged:: next
+
+   This module supports TOML 1.1.0.
 
 
 This module defines the following functions:

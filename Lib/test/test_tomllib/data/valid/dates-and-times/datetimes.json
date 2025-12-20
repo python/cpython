@@ -1,4 +1,5 @@
 {
   "local-dt": {"type":"datetime-local","value":"1988-10-27t01:01:01"},
-  "zulu-dt": {"type":"datetime","value":"1988-10-27t01:01:01z"}
+  "zulu-dt": {"type":"datetime","value":"1988-10-27t01:01:01z"},
+  "local-dt-nosec": {"type":"datetime-local","value":"1988-10-27T14:30:00"}
 }

@@ -1,7 +1,5 @@
-{"arr":
-  {"type":"array","value":
-    [
-      {"type":"integer","value":"1"}
-    ]
-  }
+{
+  "arr": {"type":"array","value":[{"type":"integer","value":"1"}]},
+  "tbl": {"a":{"type":"integer","value":"1"}},
+  "tbl2": {"b":{"type":"integer","value":"2"}}
 }

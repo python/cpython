@@ -1,5 +1,7 @@
 {
   "a": {"type":"string","value":"a"},
   "b": {"type":"string","value":"b"},
-  "c": {"type":"string","value":"c"}
+  "c": {"type":"string","value":"c"},
+  "d": {"type":"string","value":"d"},
+  "esc": {"type":"string","value":"\u001b"}
 }
