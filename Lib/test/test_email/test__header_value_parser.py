@@ -2867,6 +2867,81 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_parse_message_ids_valid(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_empty(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            " ",
+            " ",
+            " ",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comment(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> (foo's message from \"bar\")",
+            "<foo@bar> ",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar> ')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_no_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            "<foo@bar><bar@foo>",
+            [],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_comma_sep(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar>,<bar@foo>",
+            "<foo@bar> <bar@foo>",
+            "<foo@bar> <bar@foo>",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_ids.message_ids[0].value, '<foo@bar>')
+        self.assertEqual(message_ids.message_ids[1].value, '<bar@foo>')
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_invalid_id(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            "<Date: Wed, 08 Jun 2002 09:78:58 +0600>",
+            [errors.InvalidHeaderDefect]*2,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
+    def test_parse_message_ids_broken_ang(self):
+        message_ids = self._test_parse_x(
+            parser.parse_message_ids,
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            "<foo@bar> >bar@foo",
+            [errors.InvalidHeaderDefect]*1,
+            )
+        self.assertEqual(message_ids.token_type, 'message-id-list')
+
 
 
 @parameterize
