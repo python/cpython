@@ -312,19 +312,14 @@ class TestInteractiveInterpreter(unittest.TestCase):
         with os_helper.temp_dir() as tmpdir:
             script = os.path.join(tmpdir, "pythonstartup.py")
             with open(script, "w") as f:
-                f.write("print('pythonstartup done!')" + os.linesep)
-                f.write("exit(0)" + os.linesep)
-
+                f.write("print('pythonstartup done!')\n")
             env = os.environ.copy()
             env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
             env["PYTHONSTARTUP"] = script
-            subprocess.check_call(
-                [sys.executable, "-m", "asyncio"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=env,
-                timeout=SHORT_TIMEOUT,
-            )
+            p = spawn_asyncio_repl(env=env)
+            output = kill_python(p)
+            self.assertEqual(p.returncode, 0)
+            self.assertIn("pythonstartup done!", output)
 
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
