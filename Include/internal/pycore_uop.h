@@ -36,7 +36,12 @@ typedef struct _PyUOpInstruction{
 } _PyUOpInstruction;
 
 // This is the length of the trace we translate initially.
-#define UOP_MAX_TRACE_LENGTH 3000
+#ifdef Py_DEBUG
+    // With asserts, the stencils are a lot larger
+#define UOP_MAX_TRACE_LENGTH 2000
+#else
+#define UOP_MAX_TRACE_LENGTH 5000
+#endif
 #define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
 
 /* Bloom filter with m = 256
