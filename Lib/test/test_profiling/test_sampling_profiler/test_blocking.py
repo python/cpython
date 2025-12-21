@@ -1,6 +1,7 @@
 """Tests for blocking mode sampling profiler."""
 
 import io
+import textwrap
 import unittest
 from unittest import mock
 
@@ -41,28 +42,28 @@ class TestBlockingModeStackAccuracy(unittest.TestCase):
         # When consume_generator is on the arithmetic lines (temp1, temp2, etc.),
         # fibonacci_generator should NOT be in the stack at all.
         # Line numbers are important here - see ARITHMETIC_LINES below.
-        cls.generator_script = '''
-def fibonacci_generator(n):
-    a, b = 0, 1
-    for _ in range(n):
-        yield a
-        a, b = b, a + b
+        cls.generator_script = textwrap.dedent('''
+            def fibonacci_generator(n):
+                a, b = 0, 1
+                for _ in range(n):
+                    yield a
+                    a, b = b, a + b
 
-def consume_generator():
-    gen = fibonacci_generator(10000)
-    for value in gen:
-        temp1 = value + 1
-        temp2 = value * 2
-        temp3 = value - 1
-        result = temp1 + temp2 + temp3
+            def consume_generator():
+                gen = fibonacci_generator(10000)
+                for value in gen:
+                    temp1 = value + 1
+                    temp2 = value * 2
+                    temp3 = value - 1
+                    result = temp1 + temp2 + temp3
 
-def main():
-    while True:
-        consume_generator()
+            def main():
+                while True:
+                    consume_generator()
 
-_test_sock.sendall(b"working")
-main()
-'''
+            _test_sock.sendall(b"working")
+            main()
+        ''')
         # Line numbers of the arithmetic operations in consume_generator.
         # These are the lines where fibonacci_generator should NOT be in the stack.
         # The socket injection code adds 7 lines before our script.
