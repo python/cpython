@@ -87,16 +87,19 @@
 #   elif defined(_MSC_VER) && (_MSC_VER < 1950)
 #       error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
 #   endif
-
-    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
-#   define Py_MUSTTAIL [[clang::musttail]]
-#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
-    Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
+#   if defined(_MSC_VER) && !defined(__clang__)
+#      define Py_MUSTTAIL [[msvc::musttail]]
+#      define Py_PRESERVE_NONE_CC __preserve_none
+#   else
+#       define Py_MUSTTAIL __attribute__((musttail))
+#       define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+#   endif
+    typedef PyObject *(Py_PRESERVE_NONE_CC *py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
 #   define DISPATCH_TABLE_VAR instruction_funcptr_table
 #   define DISPATCH_TABLE instruction_funcptr_handler_table
 #   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
-#   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TARGET(op) Py_NO_INLINE PyObject *Py_PRESERVE_NONE_CC _TAIL_CALL_##op(TAIL_CALL_PARAMS)
 
 #   define DISPATCH_GOTO() \
         do { \
