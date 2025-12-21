@@ -1344,7 +1344,7 @@ Sampling options
 
 .. option:: --blocking
 
-   Stop the target process during each sample. This ensures consistent
+   Pause the target process during each sample. This ensures consistent
    stack traces at the cost of slowing down the target. Use with longer
    intervals (1000 µs or higher) to minimize impact. See :ref:`blocking-mode`
    for details.
