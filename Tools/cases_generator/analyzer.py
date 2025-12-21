@@ -3,9 +3,11 @@ import itertools
 import lexer
 import parser
 import re
-from typing import Optional, Callable
+from typing import Optional, Callable, Iterator
 
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt, ForStmt, MacroIfStmt
+
+MAX_CACHED_REGISTER = 3
 
 @dataclass
 class EscapingCall:
@@ -26,14 +28,17 @@ class Properties:
     eval_breaker: bool
     needs_this: bool
     always_exits: bool
-    stores_sp: bool
+    sync_sp: bool
     uses_co_consts: bool
     uses_co_names: bool
     uses_locals: bool
     has_free: bool
     side_exit: bool
+    side_exit_at_end: bool
     pure: bool
     uses_opcode: bool
+    needs_guard_ip: bool
+    unpredictable_jump: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -65,16 +70,19 @@ class Properties:
             eval_breaker=any(p.eval_breaker for p in properties),
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
-            stores_sp=any(p.stores_sp for p in properties),
+            sync_sp=any(p.sync_sp for p in properties),
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
             uses_opcode=any(p.uses_opcode for p in properties),
             has_free=any(p.has_free for p in properties),
             side_exit=any(p.side_exit for p in properties),
+            side_exit_at_end=any(p.side_exit_at_end for p in properties),
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
             no_save_ip=all(p.no_save_ip for p in properties),
+            needs_guard_ip=any(p.needs_guard_ip for p in properties),
+            unpredictable_jump=any(p.unpredictable_jump for p in properties),
         )
 
     @property
@@ -93,15 +101,18 @@ SKIP_PROPERTIES = Properties(
     eval_breaker=False,
     needs_this=False,
     always_exits=False,
-    stores_sp=False,
+    sync_sp=False,
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
     uses_opcode=False,
     has_free=False,
     side_exit=False,
+    side_exit_at_end=False,
     pure=True,
     no_save_ip=False,
+    needs_guard_ip=False,
+    unpredictable_jump=False,
 )
 
 
@@ -608,6 +619,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyUnicode_Concat",
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
+    "PyUnicode_IS_COMPACT_ASCII",
+    "PyUnicode_1BYTE_DATA",
     "Py_ARRAY_LENGTH",
     "Py_FatalError",
     "Py_INCREF",
@@ -621,7 +634,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
-    "_PyFloat_FromDouble_ConsumeInputs",
     "_PyFrame_GetBytecode",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
@@ -630,6 +642,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyFrame_StackPush",
     "_PyFunction_SetVersion",
     "_PyGen_GetGeneratorFromFrame",
+    "gen_try_set_executing",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
     "_PyList_ITEMS",
@@ -692,6 +705,12 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_Wrap",
     "PyStackRef_Unwrap",
     "_PyLong_CheckExactAndCompact",
+    "_PyExecutor_FromExit",
+    "_PyJit_TryInitializeTracing",
+    "_Py_unset_eval_breaker_bit",
+    "_Py_set_eval_breaker_bit",
+    "trigger_backoff_counter",
+    "_PyThreadState_PopCStackRefSteal",
 )
 
 
@@ -882,6 +901,46 @@ def stmt_escapes(stmt: Stmt) -> bool:
     else:
         assert False, "Unexpected statement type"
 
+def stmt_has_jump_on_unpredictable_path_body(stmts: list[Stmt] | None, branches_seen: int) -> tuple[bool, int]:
+    if not stmts:
+        return False, branches_seen
+    predict = False
+    seen = 0
+    for st in stmts:
+        predict_body, seen_body = stmt_has_jump_on_unpredictable_path(st, branches_seen)
+        predict = predict or predict_body
+        seen += seen_body
+    return predict, seen
+
+def stmt_has_jump_on_unpredictable_path(stmt: Stmt, branches_seen: int) -> tuple[bool, int]:
+    if isinstance(stmt, BlockStmt):
+        return stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+    elif isinstance(stmt, SimpleStmt):
+        for tkn in stmt.contents:
+            if tkn.text == "JUMPBY":
+                return True, branches_seen
+        return False, branches_seen
+    elif isinstance(stmt, IfStmt):
+        predict, seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        if stmt.else_body:
+            predict_else, seen_else = stmt_has_jump_on_unpredictable_path(stmt.else_body, branches_seen)
+            return predict != predict_else, seen + seen_else + 1
+        return predict, seen + 1
+    elif isinstance(stmt, MacroIfStmt):
+        predict, seen = stmt_has_jump_on_unpredictable_path_body(stmt.body, branches_seen)
+        if stmt.else_body:
+            predict_else, seen_else = stmt_has_jump_on_unpredictable_path_body(stmt.else_body, branches_seen)
+            return predict != predict_else, seen + seen_else
+        return predict, seen
+    elif isinstance(stmt, ForStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    elif isinstance(stmt, WhileStmt):
+        unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(stmt.body, branches_seen)
+        return unpredictable, branches_seen + 1
+    else:
+        assert False, f"Unexpected statement type {stmt}"
+
 
 def compute_properties(op: parser.CodeDef) -> Properties:
     escaping_calls = find_escaping_api_calls(op)
@@ -892,7 +951,8 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
-    exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "AT_END_EXIT_IF")
+    exits_if = variable_used(op, "EXIT_IF")
+    exit_if_at_end = variable_used(op, "AT_END_EXIT_IF")
     deopts_periodic = variable_used(op, "HANDLE_PENDING_AND_DEOPT_IF")
     exits_and_deopts = sum((deopts_if, exits_if, deopts_periodic))
     if exits_and_deopts > 1:
@@ -909,6 +969,8 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     escapes = stmt_escapes(op.block)
     pure = False if isinstance(op, parser.LabelDef) else "pure" in op.annotations
     no_save_ip = False if isinstance(op, parser.LabelDef) else "no_save_ip" in op.annotations
+    unpredictable, branches_seen = stmt_has_jump_on_unpredictable_path(op.block, 0)
+    unpredictable_jump = False if isinstance(op, parser.LabelDef) else (unpredictable and branches_seen > 0)
     return Properties(
         escaping_calls=escaping_calls,
         escapes=escapes,
@@ -917,12 +979,13 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         deopts=deopts_if,
         deopts_periodic=deopts_periodic,
         side_exit=exits_if,
+        side_exit_at_end=exit_if_at_end,
         oparg=oparg_used(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker="CHECK_PERIODIC" in op.name,
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
-        stores_sp=variable_used(op, "SYNC_SP"),
+        sync_sp=variable_used(op, "SYNC_SP"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=variable_used(op, "GETLOCAL") and not has_free,
@@ -932,6 +995,11 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         no_save_ip=no_save_ip,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
+        needs_guard_ip=(isinstance(op, parser.InstDef)
+                        and (unpredictable_jump and "replaced" not in op.annotations))
+                       or variable_used(op, "LOAD_IP")
+                       or variable_used(op, "DISPATCH_INLINED"),
+        unpredictable_jump=unpredictable_jump,
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:
@@ -1137,8 +1205,9 @@ def assign_opcodes(
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
 
-    instmap["INSTRUMENTED_LINE"] = 254
-    instmap["ENTER_EXECUTOR"] = 255
+    instmap["INSTRUMENTED_LINE"] = 253
+    instmap["ENTER_EXECUTOR"] = 254
+    instmap["TRACE_RECORD"] = 255
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]
 
@@ -1163,7 +1232,7 @@ def assign_opcodes(
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
     min_internal = instmap["RESUME"] + 1
-    min_instrumented = 254 - (len(instrumented) - 1)
+    min_instrumented = 254 - len(instrumented)
     assert min_internal + len(specialized) < min_instrumented
 
     next_opcode = 1
@@ -1279,6 +1348,59 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     return Analysis(
         instructions, uops, families, pseudos, labels, opmap, first_arg, min_instrumented
     )
+
+
+#Simple heuristic for size to avoid too much stencil duplication
+def is_large(uop: Uop) -> bool:
+    return len(list(uop.body.tokens())) > 120
+
+
+def get_uop_cache_depths(uop: Uop) -> Iterator[tuple[int, int, int]]:
+    if uop.name == "_SPILL_OR_RELOAD":
+        for inputs in range(MAX_CACHED_REGISTER+1):
+            for outputs in range(MAX_CACHED_REGISTER+1):
+                if inputs != outputs:
+                    yield inputs, outputs, inputs
+        return
+    if uop.name in ("_DEOPT", "_HANDLE_PENDING_AND_DEOPT", "_EXIT_TRACE", "_DYNAMIC_EXIT"):
+        for i in range(MAX_CACHED_REGISTER+1):
+            yield i, 0, 0
+        return
+    if uop.name in ("_START_EXECUTOR", "_JUMP_TO_TOP", "_COLD_EXIT"):
+        yield 0, 0, 0
+        return
+    if uop.name == "_ERROR_POP_N":
+        yield 0, 0, 0
+        return
+    ideal_inputs = 0
+    has_array = False
+    for item in reversed(uop.stack.inputs):
+        if item.size:
+            has_array = True
+            break
+        ideal_inputs += 1
+    ideal_outputs = 0
+    for item in reversed(uop.stack.outputs):
+        if item.size:
+            has_array = True
+            break
+        ideal_outputs += 1
+    if ideal_inputs > MAX_CACHED_REGISTER:
+        ideal_inputs = MAX_CACHED_REGISTER
+    if ideal_outputs > MAX_CACHED_REGISTER:
+        ideal_outputs = MAX_CACHED_REGISTER
+    at_end = uop.properties.sync_sp or uop.properties.side_exit_at_end
+    exit_depth = ideal_outputs if at_end else ideal_inputs
+    if uop.properties.escapes or uop.properties.sync_sp or has_array or is_large(uop):
+        yield ideal_inputs, ideal_outputs, exit_depth
+        return
+    for inputs in range(MAX_CACHED_REGISTER + 1):
+        outputs = ideal_outputs - ideal_inputs + inputs
+        if outputs < ideal_outputs:
+            outputs = ideal_outputs
+        elif outputs > MAX_CACHED_REGISTER:
+            continue
+        yield inputs, outputs, outputs if at_end else inputs
 
 
 def analyze_files(filenames: list[str]) -> Analysis:

@@ -78,7 +78,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    This mode is useful to limit the number of open file handles.
    The original file can be renamed (but not deleted) after closing *fileno*.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The *trackfd* parameter was added.
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
@@ -212,8 +212,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush()
-               flush(offset, size, /)
+   .. method:: flush([offset[, size]])
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
@@ -229,6 +228,12 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Previously, a nonzero value was returned on success; zero was returned
          on error under Windows.  A zero value was returned on success; an
          exception was raised on error under Unix.
+
+      .. versionchanged:: 3.15
+         Allow specifying *offset* without *size*. Previously, both *offset*
+         and *size* parameters were required together. Now *offset* can be
+         specified alone, and the flush operation will extend from *offset*
+         to the end of the mmap.
 
 
    .. method:: madvise(option[, start[, length]])
@@ -323,13 +328,24 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       .. versionadded:: 3.13
 
+   .. method:: set_name(name, /)
+
+      Annotate the memory mapping with the given *name* for easier identification
+      in ``/proc/<pid>/maps`` if the kernel supports the feature and :option:`-X dev <-X>` is passed
+      to Python or if Python is built in :ref:`debug mode <debug-build>`.
+      The length of *name* must not exceed 67 bytes including the ``'\0'`` terminator.
+
+      .. availability:: Linux >= 5.17 (kernel built with ``CONFIG_ANON_VMA_NAME`` option)
+
+      .. versionadded:: next
+
    .. method:: size()
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
       For an anonymous mapping, return its size.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Anonymous mappings are now supported on Unix.
 
 

@@ -130,7 +130,7 @@ def find_first_executable_line(code):
     return code.co_firstlineno
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'(?:async\s+)?def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -183,19 +183,37 @@ class _ExecutableTarget:
 
 class _ScriptTarget(_ExecutableTarget):
     def __init__(self, target):
-        self._target = os.path.realpath(target)
+        self._check(target)
+        self._target = self._safe_realpath(target)
 
-        if not os.path.exists(self._target):
-            print(f'Error: {target} does not exist')
-            sys.exit(1)
-        if os.path.isdir(self._target):
-            print(f'Error: {target} is a directory')
-            sys.exit(1)
-
-        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # If PYTHONSAFEPATH (-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self._target)
+
+    @staticmethod
+    def _check(target):
+        """
+        Check that target is plausibly a script.
+        """
+        if not os.path.exists(target):
+            print(f'Error: {target} does not exist')
+            sys.exit(1)
+        if os.path.isdir(target):
+            print(f'Error: {target} is a directory')
+            sys.exit(1)
+
+    @staticmethod
+    def _safe_realpath(path):
+        """
+        Return the canonical path (realpath) if it is accessible from the userspace.
+        Otherwise (for example, if the path is a symlink to an anonymous pipe),
+        return the original path.
+
+        See GH-142315.
+        """
+        realpath = os.path.realpath(path)
+        return realpath if os.path.exists(realpath) else path
 
     def __repr__(self):
         return self._target
@@ -346,8 +364,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
-        if stdout:
-            self.use_rawinput = 0
+        if stdin:
+            self.use_rawinput = False
         self.prompt = '(Pdb) '
         self.aliases = {}
         self.displaying = {}
@@ -363,14 +381,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
-
-        # GH-138860
-        # We need to lazy-import rlcompleter to avoid deadlock
-        # We cannot import it during self.complete* methods because importing
-        # rlcompleter for the first time will overwrite readline's completer
-        # So we import it here and save the Completer class
-        from rlcompleter import Completer
-        self.RlCompleter = Completer
 
         self.allow_kbdint = False
         self.nosigint = nosigint
@@ -405,6 +415,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exception_index = 0
 
         self._current_task = None
+
+        self.lineno = None
+        self.stack = []
+        self.curindex = 0
+        self.curframe = None
+        self._user_requested_quit = False
 
     def set_trace(self, frame=None, *, commands=None):
         Pdb._last_pdb_instance = self
@@ -482,7 +498,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
-        if hasattr(self, 'curframe') and self.curframe:
+        if self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
@@ -656,7 +672,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def _get_tb_and_exceptions(self, tb_or_exc):
         """
-        Given a tracecack or an exception, return a tuple of chained exceptions
+        Given a traceback or an exception, return a tuple of chained exceptions
         and current traceback to inspect.
 
         This will deal with selecting the right ``__cause__`` or ``__context__``
@@ -1100,6 +1116,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
 
+    @property
+    def rlcompleter(self):
+        """Return the `Completer` class from `rlcompleter`, while avoiding the
+        side effects of changing the completer from `import rlcompleter`.
+
+        This is a compromise between GH-138860 and GH-139289. If GH-139289 is
+        fixed, then we don't need this and we can just `import rlcompleter` in
+        `Pdb.__init__`.
+        """
+        if not hasattr(self, "_rlcompleter"):
+            try:
+                import readline
+            except ImportError:
+                # readline is not available, just get the Completer
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+            else:
+                # importing rlcompleter could have side effect of changing
+                # the current completer, we need to restore it
+                prev_completer = readline.get_completer()
+                from rlcompleter import Completer
+                self._rlcompleter = Completer
+                readline.set_completer(prev_completer)
+        return self._rlcompleter
+
     def completenames(self, text, line, begidx, endidx):
         # Overwrite completenames() of cmd so for the command completion,
         # if no current command matches, check for expressions as well
@@ -1196,7 +1237,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         state = 0
         matches = []
-        completer = self.RlCompleter(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.rlcompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1211,7 +1252,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
-            completer = self.RlCompleter(ns)
+            completer = self.rlcompleter(ns)
             old_completer = readline.get_completer()
             readline.set_completer(completer.complete)
             yield
@@ -1274,7 +1315,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         reached.
         """
         if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+            for bp in reversed(bdb.Breakpoint.bpbynumber):
+                if bp is None:
+                    continue
+                bnum = bp.number
+                break
+            else:
+                self.error('cannot set commands: no existing breakpoint')
+                return
         else:
             try:
                 bnum = int(arg)
@@ -1464,7 +1512,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             f = self.lookupmodule(parts[0])
             if f:
                 fname = f
-            item = parts[1]
+                item = parts[1]
+            else:
+                return failed
         answer = find_function(item, self.canonic(fname))
         return answer or failed
 
@@ -1476,7 +1526,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
-        frame = getattr(self, 'curframe', None)
+        frame = self.curframe
         if module_globals is None:
             module_globals = frame.f_globals if frame else None
         line = linecache.getline(filename, lineno, module_globals)
@@ -2406,7 +2456,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, prompt_prefix=None):
+        if prompt_prefix is None:
+            prompt_prefix = line_prefix
         frame, lineno = frame_lineno
         if frame is self.curframe:
             prefix = '> '
@@ -3525,7 +3577,15 @@ def exit_with_permission_help_text():
     sys.exit(1)
 
 
-def main():
+def parse_args():
+    # We want pdb to be as intuitive as possible to users, so we need to do some
+    # heuristic parsing to deal with ambiguity.
+    # For example:
+    # "python -m pdb -m foo -p 1" should pass "-p 1" to "foo".
+    # "python -m pdb foo.py -m bar" should pass "-m bar" to "foo.py".
+    # "python -m pdb -m foo -m bar" should pass "-m bar" to "foo".
+    # This require some customized parsing logic to find the actual debug target.
+
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -3536,58 +3596,63 @@ def main():
         color=True,
     )
 
-    # We need to maunally get the script from args, because the first positional
-    # arguments could be either the script we need to debug, or the argument
-    # to the -m module
+    # Get all the commands out first. For backwards compatibility, we allow
+    # -c commands to be after the target.
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
-    parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
-
-    if len(sys.argv) == 1:
-        # If no arguments were given (python -m pdb), print the whole help message.
-        # Without this check, argparse would only complain about missing required arguments.
-        parser.print_help()
-        sys.exit(2)
 
     opts, args = parser.parse_known_args()
 
-    if opts.pid:
-        # If attaching to a remote pid, unrecognized arguments are not allowed.
-        # This will raise an error if there are extra unrecognized arguments.
-        opts = parser.parse_args()
-        if opts.module:
-            parser.error("argument -m: not allowed with argument --pid")
+    if not args:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        # We need to add the arguments definitions here to get a proper help message.
+        parser.add_argument('-m', metavar='module', dest='module')
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        parser.print_help()
+        sys.exit(2)
+    elif args[0] == '-p' or args[0] == '--pid':
+        # Attach to a pid
+        parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
+        opts, args = parser.parse_known_args()
+        if args:
+            # For --pid, any extra arguments are invalid.
+            parser.error(f"unrecognized arguments: {' '.join(args)}")
+    elif args[0] == '-m':
+        # Debug a module, we only need the first -m module argument.
+        # The rest is passed to the module itself.
+        parser.add_argument('-m', metavar='module', dest='module')
+        opt_module = parser.parse_args(args[:2])
+        opts.module = opt_module.module
+        args = args[2:]
+    elif args[0].startswith('-'):
+        # Invalid argument before the script name.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+
+    # Otherwise it's debugging a script and we already parsed all -c commands.
+
+    return opts, args
+
+def main():
+    opts, args = parse_args()
+
+    if getattr(opts, 'pid', None) is not None:
         try:
             attach(opts.pid, opts.commands)
-        except PermissionError as e:
+        except RuntimeError:
+            print(
+                f"Cannot attach to pid {opts.pid}, please make sure that the process exists "
+                "and is using the same Python version."
+            )
+            sys.exit(1)
+        except PermissionError:
             exit_with_permission_help_text()
         return
-    elif opts.module:
-        # If a module is being debugged, we consider the arguments after "-m module" to
-        # be potential arguments to the module itself. We need to parse the arguments
-        # before "-m" to check if there is any invalid argument.
-        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
-        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
-        idx = sys.argv.index('-m')
-        args_to_pdb = sys.argv[1:idx]
-        # This will raise an error if there are invalid arguments
-        parser.parse_args(args_to_pdb)
-    else:
-        # If a script is being debugged, then pdb expects the script name as the first argument.
-        # Anything before the script is considered an argument to pdb itself, which would
-        # be invalid because it's not parsed by argparse.
-        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
-        if invalid_args:
-            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
-            sys.exit(2)
-
-    if opts.module:
+    elif getattr(opts, 'module', None) is not None:
         file = opts.module
         target = _ModuleTarget(file)
     else:
-        if not args:
-            parser.error("no module or script to run")
         file = args.pop(0)
         if file.endswith('.pyz'):
             target = _ZipTarget(file)

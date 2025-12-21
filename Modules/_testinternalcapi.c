@@ -34,6 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -2249,6 +2250,13 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
     }
     return PyLong_FromVoidPtr(bc);
 }
+
+static PyObject *
+get_long_lived_total(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromInt64(PyInterpreterState_Get()->gc.long_lived_total);
+}
+
 #endif
 
 static PyObject *
@@ -2398,6 +2406,105 @@ simple_pending_call(PyObject *self, PyObject *callable)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
+
+static void
+check_threadstate_set_stack_protection(PyThreadState *tstate,
+                                       void *start, size_t size)
+{
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == 0);
+    assert(!PyErr_Occurred());
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_top == (uintptr_t)start + size);
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit < ts->c_stack_top);
+}
+
+
+static PyObject *
+test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(!PyErr_Occurred());
+
+    uintptr_t init_base = ts->c_stack_init_base;
+    size_t init_top = ts->c_stack_init_top;
+
+    // Test the minimum stack size
+    size_t size = _PyOS_MIN_STACK_SIZE;
+    void *start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test a larger size
+    size = 7654321;
+    assert(size > _PyOS_MIN_STACK_SIZE);
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test invalid size (too small)
+    size = 5;
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    // Test PyUnstable_ThreadState_ResetStackProtection()
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
+    assert(ts->c_stack_init_base == init_base);
+    assert(ts->c_stack_init_top == init_top);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2490,6 +2597,7 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
+    {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
@@ -2506,6 +2614,10 @@ static PyMethodDef module_functions[] = {
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
+    {"test_threadstate_set_stack_protection",
+     test_threadstate_set_stack_protection, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2557,7 +2669,8 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        // + 1 more due to one loop spent on tracing.
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
         return 1;
     }
 
@@ -2576,10 +2689,17 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
+        return 1;
+    }
+
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

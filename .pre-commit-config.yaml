@@ -1,31 +1,43 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.8
+    rev: v0.13.2
     hooks:
-      - id: ruff
+      - id: ruff-check
+        name: Run Ruff (lint) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple/
+      - id: ruff-check
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/i18n/
         args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
         files: ^Tools/i18n/
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
-      - id: ruff
+      - id: ruff-check
         name: Run Ruff (lint) on Tools/peg_generator/
         args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
         files: ^Tools/peg_generator/
+      - id: ruff-check
+        name: Run Ruff (lint) on Tools/wasm/
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
+      - id: ruff-format
+        name: Run Ruff (format) on Apple/
+        args: [--exit-non-zero-on-fix, --config=Apple/.ruff.toml]
+        files: ^Apple
       - id: ruff-format
         name: Run Ruff (format) on Doc/
         args: [--check]
@@ -34,9 +46,13 @@ repos:
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/check_warnings.py
+      - id: ruff-format
+        name: Run Ruff (format) on Tools/wasm/
+        args: [--check, --config=Tools/wasm/.ruff.toml]
+        files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
       - id: black
         name: Run Black on Tools/jit/
@@ -47,7 +63,6 @@ repos:
     hooks:
       - id: remove-tabs
         types: [python]
-        exclude: ^Tools/c-analyzer/cpython/_parser.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -68,7 +83,7 @@ repos:
         files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.2
+    rev: 0.34.0
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
@@ -80,7 +95,7 @@ repos:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.11.0
+    rev: v1.14.1
     hooks:
       - id: zizmor
 
