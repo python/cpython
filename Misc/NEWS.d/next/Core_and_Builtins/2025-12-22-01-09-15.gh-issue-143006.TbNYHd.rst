@@ -1,0 +1,3 @@
+Add missing type check for rich comparison methods of the :class:`float` to
+avoid possible crash with integer operand, having broken implementation of
+the :meth:`object.__neg__` method.

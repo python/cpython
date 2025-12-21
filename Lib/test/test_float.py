@@ -651,6 +651,14 @@ class GeneralFloatCases(unittest.TestCase):
         value = F('nan')
         self.assertEqual(hash(value), object.__hash__(value))
 
+    def test_issue_gh143006(self):
+        class EvilInt(int):
+            def __neg__(self):
+                return
+
+        i = -1<<50
+        self.assertRaises(TypeError, operator.ge, float(i), EvilInt(i))
+
 
 @unittest.skipUnless(hasattr(float, "__getformat__"), "requires __getformat__")
 class FormatFunctionsTestCase(unittest.TestCase):
