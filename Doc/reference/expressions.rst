@@ -133,14 +133,18 @@ Literals
 
 Python supports string and bytes literals and various numeric literals:
 
-.. productionlist:: python-grammar
-   literal: `stringliteral` | `bytesliteral`
-          : | `integer` | `floatnumber` | `imagnumber`
+.. grammar-snippet::
+   :group: python-grammar
+
+   literal: `strings` | `NUMBER`
 
 Evaluation of a literal yields an object of the given type (string, bytes,
 integer, floating-point number, complex number) with the given value.  The value
 may be approximated in the case of floating-point and imaginary (complex)
-literals.  See section :ref:`literals` for details.
+literals.
+See section :ref:`literals` for details.
+See section :ref:`string-concatenation` for details on ``strings``.
+
 
 .. index::
    triple: immutable; data; type
@@ -151,6 +155,58 @@ is less important than its value.  Multiple evaluations of literals with the
 same value (either the same occurrence in the program text or a different
 occurrence) may obtain the same object or a different object with the same
 value.
+
+
+.. _string-concatenation:
+
+String literal concatenation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multiple adjacent string or bytes literals (delimited by whitespace), possibly
+using different quoting conventions, are allowed, and their meaning is the same
+as their concatenation::
+
+   >>> "hello" 'world'
+   "helloworld"
+
+Formally:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
+
+This feature is defined at the syntactical level, so it only works with literals.
+To concatenate string expressions at run time, the '+' operator may be used::
+
+   >>> greeting = "Hello"
+   >>> space = " "
+   >>> name = "Blaise"
+   >>> print(greeting + space + name)   # not: print(greeting space name)
+   Hello Blaise
+
+Literal concatenation can freely mix raw strings, triple-quoted strings,
+and formatted string literals.
+For example::
+
+   >>> "Hello" r', ' f"{name}!"
+   "Hello, Blaise!"
+
+This feature can be used to reduce the number of backslashes
+needed, to split long strings conveniently across long lines, or even to add
+comments to parts of strings. For example::
+
+   re.compile("[A-Za-z_]"       # letter or underscore
+              "[A-Za-z0-9_]*"   # letter, digit or underscore
+             )
+
+However, bytes literals may only be combined with other byte literals;
+not with string literals of any kind.
+Also, template string literals may only be combined with other template
+string literals::
+
+   >>> t"Hello" t"{name}!"
+   Template(strings=('Hello', '!'), interpolations=(...))
 
 
 .. _parenthesized:
@@ -626,8 +682,10 @@ is already executing raises a :exc:`ValueError` exception.
 
 .. method:: generator.close()
 
-   Raises a :exc:`GeneratorExit` at the point where the generator function was
-   paused.  If the generator function catches the exception and returns a
+   Raises a :exc:`GeneratorExit` exception at the point where the generator
+   function was paused (equivalent to calling ``throw(GeneratorExit)``).
+   The exception is raised by the yield expression where the generator was paused.
+   If the generator function catches the exception and returns a
    value, this value is returned from :meth:`close`.  If the generator function
    is already closed, or raises :exc:`GeneratorExit` (by not catching the
    exception), :meth:`close` returns :const:`None`.  If the generator yields a
@@ -1024,7 +1082,7 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: positional_item ("," positional_item)*
+   positional_arguments: `positional_item` ("," `positional_item`)*
    positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
@@ -1880,8 +1938,9 @@ Conditional expressions
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
    expression: `conditional_expression` | `lambda_expr`
 
-Conditional expressions (sometimes called a "ternary operator") have the lowest
-priority of all Python operations.
+A conditional expression (sometimes called a "ternary operator") is an
+alternative to the if-else statement. As it is an expression, it returns a value
+and can appear as a sub-expression.
 
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
 If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is

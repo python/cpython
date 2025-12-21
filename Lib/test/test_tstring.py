@@ -150,7 +150,6 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         t = tr"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
 
-
     def test_template_concatenation(self):
         # Test template + template
         t1 = t"Hello, "
@@ -161,9 +160,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
 
         # Test template + string
         t1 = t"Hello"
-        combined = t1 + ", world"
-        self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(fstring(combined), "Hello, world")
+        expected_msg = 'can only concatenate string.templatelib.Template ' \
+            '\\(not "str"\\) to string.templatelib.Template'
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            t1 + ", world"
 
         # Test template + template with interpolation
         name = "Python"
@@ -174,9 +174,10 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
-        t = "Hello, " + t"{name}"
-        self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(fstring(t), "Hello, Python")
+        expected_msg = 'can only concatenate str ' \
+            '\\(not "string.templatelib.Template"\\) to str'
+        with self.assertRaisesRegex(TypeError, expected_msg):
+            "Hello, " + t"{name}"
 
     def test_nested_templates(self):
         # Test a template inside another template expression
@@ -219,6 +220,7 @@ class TestTString(unittest.TestCase, TStringBaseCase):
             ("t'{lambda:1}'", "t-string: lambda expressions are not allowed "
                               "without parentheses"),
             ("t'{x:{;}}'", "t-string: expecting a valid expression after '{'"),
+            ("t'{1:d\n}'", "t-string: newlines are not allowed in format specifiers")
         ):
             with self.subTest(case), self.assertRaisesRegex(SyntaxError, err):
                 eval(case)
@@ -240,52 +242,28 @@ class TestTString(unittest.TestCase, TStringBaseCase):
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
         self.assertEqual(fstring(t), "Hello, Python")
 
-        # Test concatenation with string literal
-        name = "Python"
-        t = t"Hello, {name}" "and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with Unicode literal
-        name = "Python"
-        t = t"Hello, {name}" u"and welcome!"
-        self.assertTStringEqual(
-            t, ("Hello, ", "and welcome!"), [(name, "name")]
-        )
-        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
-
-        # Test concatenation with f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " f"f-tab: {tab}."
-        self.assertTStringEqual(t, ("Tab: ", ". f-tab: \t."), [(tab, "tab")])
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t.")
-
-        # Test concatenation with raw string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " r"Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", r". Raw tab: \t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. Raw tab: \\t.")
-
-        # Test concatenation with raw f-string literal
-        tab = '\t'
-        t = t"Tab: {tab}. " rf"f-tab: {tab}. Raw tab: \t."
-        self.assertTStringEqual(
-            t, ("Tab: ", ". f-tab: \t. Raw tab: \\t."), [(tab, "tab")]
-        )
-        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
-
+        # Test disallowed mix of t-string and string/f-string (incl. bytes)
         what = 't'
-        expected_msg = 'cannot mix bytes and nonbytes literals'
+        expected_msg = 'cannot mix t-string literals with string or bytes literals'
         for case in (
+            "t'{what}-string literal' 'str literal'",
+            "t'{what}-string literal' u'unicode literal'",
+            "t'{what}-string literal' f'f-string literal'",
+            "t'{what}-string literal' r'raw string literal'",
+            "t'{what}-string literal' rf'raw f-string literal'",
             "t'{what}-string literal' b'bytes literal'",
             "t'{what}-string literal' br'raw bytes literal'",
+            "'str literal' t'{what}-string literal'",
+            "u'unicode literal' t'{what}-string literal'",
+            "f'f-string literal' t'{what}-string literal'",
+            "r'raw string literal' t'{what}-string literal'",
+            "rf'raw f-string literal' t'{what}-string literal'",
+            "b'bytes literal' t'{what}-string literal'",
+            "br'raw bytes literal' t'{what}-string literal'",
         ):
-            with self.assertRaisesRegex(SyntaxError, expected_msg):
-                eval(case)
+            with self.subTest(case):
+                with self.assertRaisesRegex(SyntaxError, expected_msg):
+                    eval(case)
 
     def test_triple_quoted(self):
         # Test triple-quoted t-strings

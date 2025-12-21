@@ -17,7 +17,6 @@ Functions:
 
 Misc variables:
 
-    __version__
     format_version
     compatible_formats
 
@@ -190,6 +189,11 @@ READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 __all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
 
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_MIN_READ_BUF_SIZE = (1 << 20)
+
+
 class _Framer:
 
     _FRAME_SIZE_MIN = 4
@@ -288,7 +292,7 @@ class _Unframer:
                     "pickle exhausted before end of frame")
             return data
         else:
-            return self.file_read(n)
+            return self._chunked_file_read(n)
 
     def readline(self):
         if self.current_frame:
@@ -303,11 +307,23 @@ class _Unframer:
         else:
             return self.file_readline()
 
+    def _chunked_file_read(self, size):
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        b = self.file_read(cursize)
+        while cursize < size and len(b) == cursize:
+            delta = min(cursize, size - cursize)
+            b += self.file_read(delta)
+            cursize += delta
+        return b
+
     def load_frame(self, frame_size):
         if self.current_frame and self.current_frame.read() != b'':
             raise UnpicklingError(
                 "beginning of a new frame before end of current frame")
-        self.current_frame = io.BytesIO(self.file_read(frame_size))
+        data = self._chunked_file_read(frame_size)
+        if len(data) < frame_size:
+            raise EOFError
+        self.current_frame = io.BytesIO(data)
 
 
 # Tools used for pickling.
@@ -1153,7 +1169,6 @@ class _Pickler:
 
     def save_global(self, obj, name=None):
         write = self.write
-        memo = self.memo
 
         if name is None:
             name = getattr(obj, '__qualname__', None)
@@ -1497,12 +1512,17 @@ class _Unpickler:
     dispatch[BINBYTES8[0]] = load_binbytes8
 
     def load_bytearray8(self):
-        len, = unpack('<Q', self.read(8))
-        if len > maxsize:
+        size, = unpack('<Q', self.read(8))
+        if size > maxsize:
             raise UnpicklingError("BYTEARRAY8 exceeds system's maximum size "
                                   "of %d bytes" % maxsize)
-        b = bytearray(len)
-        self.readinto(b)
+        cursize = min(size, _MIN_READ_BUF_SIZE)
+        b = bytearray(cursize)
+        if self.readinto(b) == cursize:
+            while cursize < size and len(b) == cursize:
+                delta = min(cursize, size - cursize)
+                b += self.read(delta)
+                cursize += delta
         self.append(b)
     dispatch[BYTEARRAY8[0]] = load_bytearray8
 
@@ -1735,7 +1755,7 @@ class _Unpickler:
         i = self.read(1)[0]
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
@@ -1744,7 +1764,7 @@ class _Unpickler:
         i, = unpack('<I', self.read(4))
         try:
             self.append(self.memo[i])
-        except KeyError as exc:
+        except KeyError:
             msg = f'Memo value not found at index {i}'
             raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget

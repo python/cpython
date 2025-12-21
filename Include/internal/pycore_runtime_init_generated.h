@@ -275,6 +275,774 @@ extern "C" {
     _PyLong_DIGIT_INIT(254), \
     _PyLong_DIGIT_INIT(255), \
     _PyLong_DIGIT_INIT(256), \
+    _PyLong_DIGIT_INIT(257), \
+    _PyLong_DIGIT_INIT(258), \
+    _PyLong_DIGIT_INIT(259), \
+    _PyLong_DIGIT_INIT(260), \
+    _PyLong_DIGIT_INIT(261), \
+    _PyLong_DIGIT_INIT(262), \
+    _PyLong_DIGIT_INIT(263), \
+    _PyLong_DIGIT_INIT(264), \
+    _PyLong_DIGIT_INIT(265), \
+    _PyLong_DIGIT_INIT(266), \
+    _PyLong_DIGIT_INIT(267), \
+    _PyLong_DIGIT_INIT(268), \
+    _PyLong_DIGIT_INIT(269), \
+    _PyLong_DIGIT_INIT(270), \
+    _PyLong_DIGIT_INIT(271), \
+    _PyLong_DIGIT_INIT(272), \
+    _PyLong_DIGIT_INIT(273), \
+    _PyLong_DIGIT_INIT(274), \
+    _PyLong_DIGIT_INIT(275), \
+    _PyLong_DIGIT_INIT(276), \
+    _PyLong_DIGIT_INIT(277), \
+    _PyLong_DIGIT_INIT(278), \
+    _PyLong_DIGIT_INIT(279), \
+    _PyLong_DIGIT_INIT(280), \
+    _PyLong_DIGIT_INIT(281), \
+    _PyLong_DIGIT_INIT(282), \
+    _PyLong_DIGIT_INIT(283), \
+    _PyLong_DIGIT_INIT(284), \
+    _PyLong_DIGIT_INIT(285), \
+    _PyLong_DIGIT_INIT(286), \
+    _PyLong_DIGIT_INIT(287), \
+    _PyLong_DIGIT_INIT(288), \
+    _PyLong_DIGIT_INIT(289), \
+    _PyLong_DIGIT_INIT(290), \
+    _PyLong_DIGIT_INIT(291), \
+    _PyLong_DIGIT_INIT(292), \
+    _PyLong_DIGIT_INIT(293), \
+    _PyLong_DIGIT_INIT(294), \
+    _PyLong_DIGIT_INIT(295), \
+    _PyLong_DIGIT_INIT(296), \
+    _PyLong_DIGIT_INIT(297), \
+    _PyLong_DIGIT_INIT(298), \
+    _PyLong_DIGIT_INIT(299), \
+    _PyLong_DIGIT_INIT(300), \
+    _PyLong_DIGIT_INIT(301), \
+    _PyLong_DIGIT_INIT(302), \
+    _PyLong_DIGIT_INIT(303), \
+    _PyLong_DIGIT_INIT(304), \
+    _PyLong_DIGIT_INIT(305), \
+    _PyLong_DIGIT_INIT(306), \
+    _PyLong_DIGIT_INIT(307), \
+    _PyLong_DIGIT_INIT(308), \
+    _PyLong_DIGIT_INIT(309), \
+    _PyLong_DIGIT_INIT(310), \
+    _PyLong_DIGIT_INIT(311), \
+    _PyLong_DIGIT_INIT(312), \
+    _PyLong_DIGIT_INIT(313), \
+    _PyLong_DIGIT_INIT(314), \
+    _PyLong_DIGIT_INIT(315), \
+    _PyLong_DIGIT_INIT(316), \
+    _PyLong_DIGIT_INIT(317), \
+    _PyLong_DIGIT_INIT(318), \
+    _PyLong_DIGIT_INIT(319), \
+    _PyLong_DIGIT_INIT(320), \
+    _PyLong_DIGIT_INIT(321), \
+    _PyLong_DIGIT_INIT(322), \
+    _PyLong_DIGIT_INIT(323), \
+    _PyLong_DIGIT_INIT(324), \
+    _PyLong_DIGIT_INIT(325), \
+    _PyLong_DIGIT_INIT(326), \
+    _PyLong_DIGIT_INIT(327), \
+    _PyLong_DIGIT_INIT(328), \
+    _PyLong_DIGIT_INIT(329), \
+    _PyLong_DIGIT_INIT(330), \
+    _PyLong_DIGIT_INIT(331), \
+    _PyLong_DIGIT_INIT(332), \
+    _PyLong_DIGIT_INIT(333), \
+    _PyLong_DIGIT_INIT(334), \
+    _PyLong_DIGIT_INIT(335), \
+    _PyLong_DIGIT_INIT(336), \
+    _PyLong_DIGIT_INIT(337), \
+    _PyLong_DIGIT_INIT(338), \
+    _PyLong_DIGIT_INIT(339), \
+    _PyLong_DIGIT_INIT(340), \
+    _PyLong_DIGIT_INIT(341), \
+    _PyLong_DIGIT_INIT(342), \
+    _PyLong_DIGIT_INIT(343), \
+    _PyLong_DIGIT_INIT(344), \
+    _PyLong_DIGIT_INIT(345), \
+    _PyLong_DIGIT_INIT(346), \
+    _PyLong_DIGIT_INIT(347), \
+    _PyLong_DIGIT_INIT(348), \
+    _PyLong_DIGIT_INIT(349), \
+    _PyLong_DIGIT_INIT(350), \
+    _PyLong_DIGIT_INIT(351), \
+    _PyLong_DIGIT_INIT(352), \
+    _PyLong_DIGIT_INIT(353), \
+    _PyLong_DIGIT_INIT(354), \
+    _PyLong_DIGIT_INIT(355), \
+    _PyLong_DIGIT_INIT(356), \
+    _PyLong_DIGIT_INIT(357), \
+    _PyLong_DIGIT_INIT(358), \
+    _PyLong_DIGIT_INIT(359), \
+    _PyLong_DIGIT_INIT(360), \
+    _PyLong_DIGIT_INIT(361), \
+    _PyLong_DIGIT_INIT(362), \
+    _PyLong_DIGIT_INIT(363), \
+    _PyLong_DIGIT_INIT(364), \
+    _PyLong_DIGIT_INIT(365), \
+    _PyLong_DIGIT_INIT(366), \
+    _PyLong_DIGIT_INIT(367), \
+    _PyLong_DIGIT_INIT(368), \
+    _PyLong_DIGIT_INIT(369), \
+    _PyLong_DIGIT_INIT(370), \
+    _PyLong_DIGIT_INIT(371), \
+    _PyLong_DIGIT_INIT(372), \
+    _PyLong_DIGIT_INIT(373), \
+    _PyLong_DIGIT_INIT(374), \
+    _PyLong_DIGIT_INIT(375), \
+    _PyLong_DIGIT_INIT(376), \
+    _PyLong_DIGIT_INIT(377), \
+    _PyLong_DIGIT_INIT(378), \
+    _PyLong_DIGIT_INIT(379), \
+    _PyLong_DIGIT_INIT(380), \
+    _PyLong_DIGIT_INIT(381), \
+    _PyLong_DIGIT_INIT(382), \
+    _PyLong_DIGIT_INIT(383), \
+    _PyLong_DIGIT_INIT(384), \
+    _PyLong_DIGIT_INIT(385), \
+    _PyLong_DIGIT_INIT(386), \
+    _PyLong_DIGIT_INIT(387), \
+    _PyLong_DIGIT_INIT(388), \
+    _PyLong_DIGIT_INIT(389), \
+    _PyLong_DIGIT_INIT(390), \
+    _PyLong_DIGIT_INIT(391), \
+    _PyLong_DIGIT_INIT(392), \
+    _PyLong_DIGIT_INIT(393), \
+    _PyLong_DIGIT_INIT(394), \
+    _PyLong_DIGIT_INIT(395), \
+    _PyLong_DIGIT_INIT(396), \
+    _PyLong_DIGIT_INIT(397), \
+    _PyLong_DIGIT_INIT(398), \
+    _PyLong_DIGIT_INIT(399), \
+    _PyLong_DIGIT_INIT(400), \
+    _PyLong_DIGIT_INIT(401), \
+    _PyLong_DIGIT_INIT(402), \
+    _PyLong_DIGIT_INIT(403), \
+    _PyLong_DIGIT_INIT(404), \
+    _PyLong_DIGIT_INIT(405), \
+    _PyLong_DIGIT_INIT(406), \
+    _PyLong_DIGIT_INIT(407), \
+    _PyLong_DIGIT_INIT(408), \
+    _PyLong_DIGIT_INIT(409), \
+    _PyLong_DIGIT_INIT(410), \
+    _PyLong_DIGIT_INIT(411), \
+    _PyLong_DIGIT_INIT(412), \
+    _PyLong_DIGIT_INIT(413), \
+    _PyLong_DIGIT_INIT(414), \
+    _PyLong_DIGIT_INIT(415), \
+    _PyLong_DIGIT_INIT(416), \
+    _PyLong_DIGIT_INIT(417), \
+    _PyLong_DIGIT_INIT(418), \
+    _PyLong_DIGIT_INIT(419), \
+    _PyLong_DIGIT_INIT(420), \
+    _PyLong_DIGIT_INIT(421), \
+    _PyLong_DIGIT_INIT(422), \
+    _PyLong_DIGIT_INIT(423), \
+    _PyLong_DIGIT_INIT(424), \
+    _PyLong_DIGIT_INIT(425), \
+    _PyLong_DIGIT_INIT(426), \
+    _PyLong_DIGIT_INIT(427), \
+    _PyLong_DIGIT_INIT(428), \
+    _PyLong_DIGIT_INIT(429), \
+    _PyLong_DIGIT_INIT(430), \
+    _PyLong_DIGIT_INIT(431), \
+    _PyLong_DIGIT_INIT(432), \
+    _PyLong_DIGIT_INIT(433), \
+    _PyLong_DIGIT_INIT(434), \
+    _PyLong_DIGIT_INIT(435), \
+    _PyLong_DIGIT_INIT(436), \
+    _PyLong_DIGIT_INIT(437), \
+    _PyLong_DIGIT_INIT(438), \
+    _PyLong_DIGIT_INIT(439), \
+    _PyLong_DIGIT_INIT(440), \
+    _PyLong_DIGIT_INIT(441), \
+    _PyLong_DIGIT_INIT(442), \
+    _PyLong_DIGIT_INIT(443), \
+    _PyLong_DIGIT_INIT(444), \
+    _PyLong_DIGIT_INIT(445), \
+    _PyLong_DIGIT_INIT(446), \
+    _PyLong_DIGIT_INIT(447), \
+    _PyLong_DIGIT_INIT(448), \
+    _PyLong_DIGIT_INIT(449), \
+    _PyLong_DIGIT_INIT(450), \
+    _PyLong_DIGIT_INIT(451), \
+    _PyLong_DIGIT_INIT(452), \
+    _PyLong_DIGIT_INIT(453), \
+    _PyLong_DIGIT_INIT(454), \
+    _PyLong_DIGIT_INIT(455), \
+    _PyLong_DIGIT_INIT(456), \
+    _PyLong_DIGIT_INIT(457), \
+    _PyLong_DIGIT_INIT(458), \
+    _PyLong_DIGIT_INIT(459), \
+    _PyLong_DIGIT_INIT(460), \
+    _PyLong_DIGIT_INIT(461), \
+    _PyLong_DIGIT_INIT(462), \
+    _PyLong_DIGIT_INIT(463), \
+    _PyLong_DIGIT_INIT(464), \
+    _PyLong_DIGIT_INIT(465), \
+    _PyLong_DIGIT_INIT(466), \
+    _PyLong_DIGIT_INIT(467), \
+    _PyLong_DIGIT_INIT(468), \
+    _PyLong_DIGIT_INIT(469), \
+    _PyLong_DIGIT_INIT(470), \
+    _PyLong_DIGIT_INIT(471), \
+    _PyLong_DIGIT_INIT(472), \
+    _PyLong_DIGIT_INIT(473), \
+    _PyLong_DIGIT_INIT(474), \
+    _PyLong_DIGIT_INIT(475), \
+    _PyLong_DIGIT_INIT(476), \
+    _PyLong_DIGIT_INIT(477), \
+    _PyLong_DIGIT_INIT(478), \
+    _PyLong_DIGIT_INIT(479), \
+    _PyLong_DIGIT_INIT(480), \
+    _PyLong_DIGIT_INIT(481), \
+    _PyLong_DIGIT_INIT(482), \
+    _PyLong_DIGIT_INIT(483), \
+    _PyLong_DIGIT_INIT(484), \
+    _PyLong_DIGIT_INIT(485), \
+    _PyLong_DIGIT_INIT(486), \
+    _PyLong_DIGIT_INIT(487), \
+    _PyLong_DIGIT_INIT(488), \
+    _PyLong_DIGIT_INIT(489), \
+    _PyLong_DIGIT_INIT(490), \
+    _PyLong_DIGIT_INIT(491), \
+    _PyLong_DIGIT_INIT(492), \
+    _PyLong_DIGIT_INIT(493), \
+    _PyLong_DIGIT_INIT(494), \
+    _PyLong_DIGIT_INIT(495), \
+    _PyLong_DIGIT_INIT(496), \
+    _PyLong_DIGIT_INIT(497), \
+    _PyLong_DIGIT_INIT(498), \
+    _PyLong_DIGIT_INIT(499), \
+    _PyLong_DIGIT_INIT(500), \
+    _PyLong_DIGIT_INIT(501), \
+    _PyLong_DIGIT_INIT(502), \
+    _PyLong_DIGIT_INIT(503), \
+    _PyLong_DIGIT_INIT(504), \
+    _PyLong_DIGIT_INIT(505), \
+    _PyLong_DIGIT_INIT(506), \
+    _PyLong_DIGIT_INIT(507), \
+    _PyLong_DIGIT_INIT(508), \
+    _PyLong_DIGIT_INIT(509), \
+    _PyLong_DIGIT_INIT(510), \
+    _PyLong_DIGIT_INIT(511), \
+    _PyLong_DIGIT_INIT(512), \
+    _PyLong_DIGIT_INIT(513), \
+    _PyLong_DIGIT_INIT(514), \
+    _PyLong_DIGIT_INIT(515), \
+    _PyLong_DIGIT_INIT(516), \
+    _PyLong_DIGIT_INIT(517), \
+    _PyLong_DIGIT_INIT(518), \
+    _PyLong_DIGIT_INIT(519), \
+    _PyLong_DIGIT_INIT(520), \
+    _PyLong_DIGIT_INIT(521), \
+    _PyLong_DIGIT_INIT(522), \
+    _PyLong_DIGIT_INIT(523), \
+    _PyLong_DIGIT_INIT(524), \
+    _PyLong_DIGIT_INIT(525), \
+    _PyLong_DIGIT_INIT(526), \
+    _PyLong_DIGIT_INIT(527), \
+    _PyLong_DIGIT_INIT(528), \
+    _PyLong_DIGIT_INIT(529), \
+    _PyLong_DIGIT_INIT(530), \
+    _PyLong_DIGIT_INIT(531), \
+    _PyLong_DIGIT_INIT(532), \
+    _PyLong_DIGIT_INIT(533), \
+    _PyLong_DIGIT_INIT(534), \
+    _PyLong_DIGIT_INIT(535), \
+    _PyLong_DIGIT_INIT(536), \
+    _PyLong_DIGIT_INIT(537), \
+    _PyLong_DIGIT_INIT(538), \
+    _PyLong_DIGIT_INIT(539), \
+    _PyLong_DIGIT_INIT(540), \
+    _PyLong_DIGIT_INIT(541), \
+    _PyLong_DIGIT_INIT(542), \
+    _PyLong_DIGIT_INIT(543), \
+    _PyLong_DIGIT_INIT(544), \
+    _PyLong_DIGIT_INIT(545), \
+    _PyLong_DIGIT_INIT(546), \
+    _PyLong_DIGIT_INIT(547), \
+    _PyLong_DIGIT_INIT(548), \
+    _PyLong_DIGIT_INIT(549), \
+    _PyLong_DIGIT_INIT(550), \
+    _PyLong_DIGIT_INIT(551), \
+    _PyLong_DIGIT_INIT(552), \
+    _PyLong_DIGIT_INIT(553), \
+    _PyLong_DIGIT_INIT(554), \
+    _PyLong_DIGIT_INIT(555), \
+    _PyLong_DIGIT_INIT(556), \
+    _PyLong_DIGIT_INIT(557), \
+    _PyLong_DIGIT_INIT(558), \
+    _PyLong_DIGIT_INIT(559), \
+    _PyLong_DIGIT_INIT(560), \
+    _PyLong_DIGIT_INIT(561), \
+    _PyLong_DIGIT_INIT(562), \
+    _PyLong_DIGIT_INIT(563), \
+    _PyLong_DIGIT_INIT(564), \
+    _PyLong_DIGIT_INIT(565), \
+    _PyLong_DIGIT_INIT(566), \
+    _PyLong_DIGIT_INIT(567), \
+    _PyLong_DIGIT_INIT(568), \
+    _PyLong_DIGIT_INIT(569), \
+    _PyLong_DIGIT_INIT(570), \
+    _PyLong_DIGIT_INIT(571), \
+    _PyLong_DIGIT_INIT(572), \
+    _PyLong_DIGIT_INIT(573), \
+    _PyLong_DIGIT_INIT(574), \
+    _PyLong_DIGIT_INIT(575), \
+    _PyLong_DIGIT_INIT(576), \
+    _PyLong_DIGIT_INIT(577), \
+    _PyLong_DIGIT_INIT(578), \
+    _PyLong_DIGIT_INIT(579), \
+    _PyLong_DIGIT_INIT(580), \
+    _PyLong_DIGIT_INIT(581), \
+    _PyLong_DIGIT_INIT(582), \
+    _PyLong_DIGIT_INIT(583), \
+    _PyLong_DIGIT_INIT(584), \
+    _PyLong_DIGIT_INIT(585), \
+    _PyLong_DIGIT_INIT(586), \
+    _PyLong_DIGIT_INIT(587), \
+    _PyLong_DIGIT_INIT(588), \
+    _PyLong_DIGIT_INIT(589), \
+    _PyLong_DIGIT_INIT(590), \
+    _PyLong_DIGIT_INIT(591), \
+    _PyLong_DIGIT_INIT(592), \
+    _PyLong_DIGIT_INIT(593), \
+    _PyLong_DIGIT_INIT(594), \
+    _PyLong_DIGIT_INIT(595), \
+    _PyLong_DIGIT_INIT(596), \
+    _PyLong_DIGIT_INIT(597), \
+    _PyLong_DIGIT_INIT(598), \
+    _PyLong_DIGIT_INIT(599), \
+    _PyLong_DIGIT_INIT(600), \
+    _PyLong_DIGIT_INIT(601), \
+    _PyLong_DIGIT_INIT(602), \
+    _PyLong_DIGIT_INIT(603), \
+    _PyLong_DIGIT_INIT(604), \
+    _PyLong_DIGIT_INIT(605), \
+    _PyLong_DIGIT_INIT(606), \
+    _PyLong_DIGIT_INIT(607), \
+    _PyLong_DIGIT_INIT(608), \
+    _PyLong_DIGIT_INIT(609), \
+    _PyLong_DIGIT_INIT(610), \
+    _PyLong_DIGIT_INIT(611), \
+    _PyLong_DIGIT_INIT(612), \
+    _PyLong_DIGIT_INIT(613), \
+    _PyLong_DIGIT_INIT(614), \
+    _PyLong_DIGIT_INIT(615), \
+    _PyLong_DIGIT_INIT(616), \
+    _PyLong_DIGIT_INIT(617), \
+    _PyLong_DIGIT_INIT(618), \
+    _PyLong_DIGIT_INIT(619), \
+    _PyLong_DIGIT_INIT(620), \
+    _PyLong_DIGIT_INIT(621), \
+    _PyLong_DIGIT_INIT(622), \
+    _PyLong_DIGIT_INIT(623), \
+    _PyLong_DIGIT_INIT(624), \
+    _PyLong_DIGIT_INIT(625), \
+    _PyLong_DIGIT_INIT(626), \
+    _PyLong_DIGIT_INIT(627), \
+    _PyLong_DIGIT_INIT(628), \
+    _PyLong_DIGIT_INIT(629), \
+    _PyLong_DIGIT_INIT(630), \
+    _PyLong_DIGIT_INIT(631), \
+    _PyLong_DIGIT_INIT(632), \
+    _PyLong_DIGIT_INIT(633), \
+    _PyLong_DIGIT_INIT(634), \
+    _PyLong_DIGIT_INIT(635), \
+    _PyLong_DIGIT_INIT(636), \
+    _PyLong_DIGIT_INIT(637), \
+    _PyLong_DIGIT_INIT(638), \
+    _PyLong_DIGIT_INIT(639), \
+    _PyLong_DIGIT_INIT(640), \
+    _PyLong_DIGIT_INIT(641), \
+    _PyLong_DIGIT_INIT(642), \
+    _PyLong_DIGIT_INIT(643), \
+    _PyLong_DIGIT_INIT(644), \
+    _PyLong_DIGIT_INIT(645), \
+    _PyLong_DIGIT_INIT(646), \
+    _PyLong_DIGIT_INIT(647), \
+    _PyLong_DIGIT_INIT(648), \
+    _PyLong_DIGIT_INIT(649), \
+    _PyLong_DIGIT_INIT(650), \
+    _PyLong_DIGIT_INIT(651), \
+    _PyLong_DIGIT_INIT(652), \
+    _PyLong_DIGIT_INIT(653), \
+    _PyLong_DIGIT_INIT(654), \
+    _PyLong_DIGIT_INIT(655), \
+    _PyLong_DIGIT_INIT(656), \
+    _PyLong_DIGIT_INIT(657), \
+    _PyLong_DIGIT_INIT(658), \
+    _PyLong_DIGIT_INIT(659), \
+    _PyLong_DIGIT_INIT(660), \
+    _PyLong_DIGIT_INIT(661), \
+    _PyLong_DIGIT_INIT(662), \
+    _PyLong_DIGIT_INIT(663), \
+    _PyLong_DIGIT_INIT(664), \
+    _PyLong_DIGIT_INIT(665), \
+    _PyLong_DIGIT_INIT(666), \
+    _PyLong_DIGIT_INIT(667), \
+    _PyLong_DIGIT_INIT(668), \
+    _PyLong_DIGIT_INIT(669), \
+    _PyLong_DIGIT_INIT(670), \
+    _PyLong_DIGIT_INIT(671), \
+    _PyLong_DIGIT_INIT(672), \
+    _PyLong_DIGIT_INIT(673), \
+    _PyLong_DIGIT_INIT(674), \
+    _PyLong_DIGIT_INIT(675), \
+    _PyLong_DIGIT_INIT(676), \
+    _PyLong_DIGIT_INIT(677), \
+    _PyLong_DIGIT_INIT(678), \
+    _PyLong_DIGIT_INIT(679), \
+    _PyLong_DIGIT_INIT(680), \
+    _PyLong_DIGIT_INIT(681), \
+    _PyLong_DIGIT_INIT(682), \
+    _PyLong_DIGIT_INIT(683), \
+    _PyLong_DIGIT_INIT(684), \
+    _PyLong_DIGIT_INIT(685), \
+    _PyLong_DIGIT_INIT(686), \
+    _PyLong_DIGIT_INIT(687), \
+    _PyLong_DIGIT_INIT(688), \
+    _PyLong_DIGIT_INIT(689), \
+    _PyLong_DIGIT_INIT(690), \
+    _PyLong_DIGIT_INIT(691), \
+    _PyLong_DIGIT_INIT(692), \
+    _PyLong_DIGIT_INIT(693), \
+    _PyLong_DIGIT_INIT(694), \
+    _PyLong_DIGIT_INIT(695), \
+    _PyLong_DIGIT_INIT(696), \
+    _PyLong_DIGIT_INIT(697), \
+    _PyLong_DIGIT_INIT(698), \
+    _PyLong_DIGIT_INIT(699), \
+    _PyLong_DIGIT_INIT(700), \
+    _PyLong_DIGIT_INIT(701), \
+    _PyLong_DIGIT_INIT(702), \
+    _PyLong_DIGIT_INIT(703), \
+    _PyLong_DIGIT_INIT(704), \
+    _PyLong_DIGIT_INIT(705), \
+    _PyLong_DIGIT_INIT(706), \
+    _PyLong_DIGIT_INIT(707), \
+    _PyLong_DIGIT_INIT(708), \
+    _PyLong_DIGIT_INIT(709), \
+    _PyLong_DIGIT_INIT(710), \
+    _PyLong_DIGIT_INIT(711), \
+    _PyLong_DIGIT_INIT(712), \
+    _PyLong_DIGIT_INIT(713), \
+    _PyLong_DIGIT_INIT(714), \
+    _PyLong_DIGIT_INIT(715), \
+    _PyLong_DIGIT_INIT(716), \
+    _PyLong_DIGIT_INIT(717), \
+    _PyLong_DIGIT_INIT(718), \
+    _PyLong_DIGIT_INIT(719), \
+    _PyLong_DIGIT_INIT(720), \
+    _PyLong_DIGIT_INIT(721), \
+    _PyLong_DIGIT_INIT(722), \
+    _PyLong_DIGIT_INIT(723), \
+    _PyLong_DIGIT_INIT(724), \
+    _PyLong_DIGIT_INIT(725), \
+    _PyLong_DIGIT_INIT(726), \
+    _PyLong_DIGIT_INIT(727), \
+    _PyLong_DIGIT_INIT(728), \
+    _PyLong_DIGIT_INIT(729), \
+    _PyLong_DIGIT_INIT(730), \
+    _PyLong_DIGIT_INIT(731), \
+    _PyLong_DIGIT_INIT(732), \
+    _PyLong_DIGIT_INIT(733), \
+    _PyLong_DIGIT_INIT(734), \
+    _PyLong_DIGIT_INIT(735), \
+    _PyLong_DIGIT_INIT(736), \
+    _PyLong_DIGIT_INIT(737), \
+    _PyLong_DIGIT_INIT(738), \
+    _PyLong_DIGIT_INIT(739), \
+    _PyLong_DIGIT_INIT(740), \
+    _PyLong_DIGIT_INIT(741), \
+    _PyLong_DIGIT_INIT(742), \
+    _PyLong_DIGIT_INIT(743), \
+    _PyLong_DIGIT_INIT(744), \
+    _PyLong_DIGIT_INIT(745), \
+    _PyLong_DIGIT_INIT(746), \
+    _PyLong_DIGIT_INIT(747), \
+    _PyLong_DIGIT_INIT(748), \
+    _PyLong_DIGIT_INIT(749), \
+    _PyLong_DIGIT_INIT(750), \
+    _PyLong_DIGIT_INIT(751), \
+    _PyLong_DIGIT_INIT(752), \
+    _PyLong_DIGIT_INIT(753), \
+    _PyLong_DIGIT_INIT(754), \
+    _PyLong_DIGIT_INIT(755), \
+    _PyLong_DIGIT_INIT(756), \
+    _PyLong_DIGIT_INIT(757), \
+    _PyLong_DIGIT_INIT(758), \
+    _PyLong_DIGIT_INIT(759), \
+    _PyLong_DIGIT_INIT(760), \
+    _PyLong_DIGIT_INIT(761), \
+    _PyLong_DIGIT_INIT(762), \
+    _PyLong_DIGIT_INIT(763), \
+    _PyLong_DIGIT_INIT(764), \
+    _PyLong_DIGIT_INIT(765), \
+    _PyLong_DIGIT_INIT(766), \
+    _PyLong_DIGIT_INIT(767), \
+    _PyLong_DIGIT_INIT(768), \
+    _PyLong_DIGIT_INIT(769), \
+    _PyLong_DIGIT_INIT(770), \
+    _PyLong_DIGIT_INIT(771), \
+    _PyLong_DIGIT_INIT(772), \
+    _PyLong_DIGIT_INIT(773), \
+    _PyLong_DIGIT_INIT(774), \
+    _PyLong_DIGIT_INIT(775), \
+    _PyLong_DIGIT_INIT(776), \
+    _PyLong_DIGIT_INIT(777), \
+    _PyLong_DIGIT_INIT(778), \
+    _PyLong_DIGIT_INIT(779), \
+    _PyLong_DIGIT_INIT(780), \
+    _PyLong_DIGIT_INIT(781), \
+    _PyLong_DIGIT_INIT(782), \
+    _PyLong_DIGIT_INIT(783), \
+    _PyLong_DIGIT_INIT(784), \
+    _PyLong_DIGIT_INIT(785), \
+    _PyLong_DIGIT_INIT(786), \
+    _PyLong_DIGIT_INIT(787), \
+    _PyLong_DIGIT_INIT(788), \
+    _PyLong_DIGIT_INIT(789), \
+    _PyLong_DIGIT_INIT(790), \
+    _PyLong_DIGIT_INIT(791), \
+    _PyLong_DIGIT_INIT(792), \
+    _PyLong_DIGIT_INIT(793), \
+    _PyLong_DIGIT_INIT(794), \
+    _PyLong_DIGIT_INIT(795), \
+    _PyLong_DIGIT_INIT(796), \
+    _PyLong_DIGIT_INIT(797), \
+    _PyLong_DIGIT_INIT(798), \
+    _PyLong_DIGIT_INIT(799), \
+    _PyLong_DIGIT_INIT(800), \
+    _PyLong_DIGIT_INIT(801), \
+    _PyLong_DIGIT_INIT(802), \
+    _PyLong_DIGIT_INIT(803), \
+    _PyLong_DIGIT_INIT(804), \
+    _PyLong_DIGIT_INIT(805), \
+    _PyLong_DIGIT_INIT(806), \
+    _PyLong_DIGIT_INIT(807), \
+    _PyLong_DIGIT_INIT(808), \
+    _PyLong_DIGIT_INIT(809), \
+    _PyLong_DIGIT_INIT(810), \
+    _PyLong_DIGIT_INIT(811), \
+    _PyLong_DIGIT_INIT(812), \
+    _PyLong_DIGIT_INIT(813), \
+    _PyLong_DIGIT_INIT(814), \
+    _PyLong_DIGIT_INIT(815), \
+    _PyLong_DIGIT_INIT(816), \
+    _PyLong_DIGIT_INIT(817), \
+    _PyLong_DIGIT_INIT(818), \
+    _PyLong_DIGIT_INIT(819), \
+    _PyLong_DIGIT_INIT(820), \
+    _PyLong_DIGIT_INIT(821), \
+    _PyLong_DIGIT_INIT(822), \
+    _PyLong_DIGIT_INIT(823), \
+    _PyLong_DIGIT_INIT(824), \
+    _PyLong_DIGIT_INIT(825), \
+    _PyLong_DIGIT_INIT(826), \
+    _PyLong_DIGIT_INIT(827), \
+    _PyLong_DIGIT_INIT(828), \
+    _PyLong_DIGIT_INIT(829), \
+    _PyLong_DIGIT_INIT(830), \
+    _PyLong_DIGIT_INIT(831), \
+    _PyLong_DIGIT_INIT(832), \
+    _PyLong_DIGIT_INIT(833), \
+    _PyLong_DIGIT_INIT(834), \
+    _PyLong_DIGIT_INIT(835), \
+    _PyLong_DIGIT_INIT(836), \
+    _PyLong_DIGIT_INIT(837), \
+    _PyLong_DIGIT_INIT(838), \
+    _PyLong_DIGIT_INIT(839), \
+    _PyLong_DIGIT_INIT(840), \
+    _PyLong_DIGIT_INIT(841), \
+    _PyLong_DIGIT_INIT(842), \
+    _PyLong_DIGIT_INIT(843), \
+    _PyLong_DIGIT_INIT(844), \
+    _PyLong_DIGIT_INIT(845), \
+    _PyLong_DIGIT_INIT(846), \
+    _PyLong_DIGIT_INIT(847), \
+    _PyLong_DIGIT_INIT(848), \
+    _PyLong_DIGIT_INIT(849), \
+    _PyLong_DIGIT_INIT(850), \
+    _PyLong_DIGIT_INIT(851), \
+    _PyLong_DIGIT_INIT(852), \
+    _PyLong_DIGIT_INIT(853), \
+    _PyLong_DIGIT_INIT(854), \
+    _PyLong_DIGIT_INIT(855), \
+    _PyLong_DIGIT_INIT(856), \
+    _PyLong_DIGIT_INIT(857), \
+    _PyLong_DIGIT_INIT(858), \
+    _PyLong_DIGIT_INIT(859), \
+    _PyLong_DIGIT_INIT(860), \
+    _PyLong_DIGIT_INIT(861), \
+    _PyLong_DIGIT_INIT(862), \
+    _PyLong_DIGIT_INIT(863), \
+    _PyLong_DIGIT_INIT(864), \
+    _PyLong_DIGIT_INIT(865), \
+    _PyLong_DIGIT_INIT(866), \
+    _PyLong_DIGIT_INIT(867), \
+    _PyLong_DIGIT_INIT(868), \
+    _PyLong_DIGIT_INIT(869), \
+    _PyLong_DIGIT_INIT(870), \
+    _PyLong_DIGIT_INIT(871), \
+    _PyLong_DIGIT_INIT(872), \
+    _PyLong_DIGIT_INIT(873), \
+    _PyLong_DIGIT_INIT(874), \
+    _PyLong_DIGIT_INIT(875), \
+    _PyLong_DIGIT_INIT(876), \
+    _PyLong_DIGIT_INIT(877), \
+    _PyLong_DIGIT_INIT(878), \
+    _PyLong_DIGIT_INIT(879), \
+    _PyLong_DIGIT_INIT(880), \
+    _PyLong_DIGIT_INIT(881), \
+    _PyLong_DIGIT_INIT(882), \
+    _PyLong_DIGIT_INIT(883), \
+    _PyLong_DIGIT_INIT(884), \
+    _PyLong_DIGIT_INIT(885), \
+    _PyLong_DIGIT_INIT(886), \
+    _PyLong_DIGIT_INIT(887), \
+    _PyLong_DIGIT_INIT(888), \
+    _PyLong_DIGIT_INIT(889), \
+    _PyLong_DIGIT_INIT(890), \
+    _PyLong_DIGIT_INIT(891), \
+    _PyLong_DIGIT_INIT(892), \
+    _PyLong_DIGIT_INIT(893), \
+    _PyLong_DIGIT_INIT(894), \
+    _PyLong_DIGIT_INIT(895), \
+    _PyLong_DIGIT_INIT(896), \
+    _PyLong_DIGIT_INIT(897), \
+    _PyLong_DIGIT_INIT(898), \
+    _PyLong_DIGIT_INIT(899), \
+    _PyLong_DIGIT_INIT(900), \
+    _PyLong_DIGIT_INIT(901), \
+    _PyLong_DIGIT_INIT(902), \
+    _PyLong_DIGIT_INIT(903), \
+    _PyLong_DIGIT_INIT(904), \
+    _PyLong_DIGIT_INIT(905), \
+    _PyLong_DIGIT_INIT(906), \
+    _PyLong_DIGIT_INIT(907), \
+    _PyLong_DIGIT_INIT(908), \
+    _PyLong_DIGIT_INIT(909), \
+    _PyLong_DIGIT_INIT(910), \
+    _PyLong_DIGIT_INIT(911), \
+    _PyLong_DIGIT_INIT(912), \
+    _PyLong_DIGIT_INIT(913), \
+    _PyLong_DIGIT_INIT(914), \
+    _PyLong_DIGIT_INIT(915), \
+    _PyLong_DIGIT_INIT(916), \
+    _PyLong_DIGIT_INIT(917), \
+    _PyLong_DIGIT_INIT(918), \
+    _PyLong_DIGIT_INIT(919), \
+    _PyLong_DIGIT_INIT(920), \
+    _PyLong_DIGIT_INIT(921), \
+    _PyLong_DIGIT_INIT(922), \
+    _PyLong_DIGIT_INIT(923), \
+    _PyLong_DIGIT_INIT(924), \
+    _PyLong_DIGIT_INIT(925), \
+    _PyLong_DIGIT_INIT(926), \
+    _PyLong_DIGIT_INIT(927), \
+    _PyLong_DIGIT_INIT(928), \
+    _PyLong_DIGIT_INIT(929), \
+    _PyLong_DIGIT_INIT(930), \
+    _PyLong_DIGIT_INIT(931), \
+    _PyLong_DIGIT_INIT(932), \
+    _PyLong_DIGIT_INIT(933), \
+    _PyLong_DIGIT_INIT(934), \
+    _PyLong_DIGIT_INIT(935), \
+    _PyLong_DIGIT_INIT(936), \
+    _PyLong_DIGIT_INIT(937), \
+    _PyLong_DIGIT_INIT(938), \
+    _PyLong_DIGIT_INIT(939), \
+    _PyLong_DIGIT_INIT(940), \
+    _PyLong_DIGIT_INIT(941), \
+    _PyLong_DIGIT_INIT(942), \
+    _PyLong_DIGIT_INIT(943), \
+    _PyLong_DIGIT_INIT(944), \
+    _PyLong_DIGIT_INIT(945), \
+    _PyLong_DIGIT_INIT(946), \
+    _PyLong_DIGIT_INIT(947), \
+    _PyLong_DIGIT_INIT(948), \
+    _PyLong_DIGIT_INIT(949), \
+    _PyLong_DIGIT_INIT(950), \
+    _PyLong_DIGIT_INIT(951), \
+    _PyLong_DIGIT_INIT(952), \
+    _PyLong_DIGIT_INIT(953), \
+    _PyLong_DIGIT_INIT(954), \
+    _PyLong_DIGIT_INIT(955), \
+    _PyLong_DIGIT_INIT(956), \
+    _PyLong_DIGIT_INIT(957), \
+    _PyLong_DIGIT_INIT(958), \
+    _PyLong_DIGIT_INIT(959), \
+    _PyLong_DIGIT_INIT(960), \
+    _PyLong_DIGIT_INIT(961), \
+    _PyLong_DIGIT_INIT(962), \
+    _PyLong_DIGIT_INIT(963), \
+    _PyLong_DIGIT_INIT(964), \
+    _PyLong_DIGIT_INIT(965), \
+    _PyLong_DIGIT_INIT(966), \
+    _PyLong_DIGIT_INIT(967), \
+    _PyLong_DIGIT_INIT(968), \
+    _PyLong_DIGIT_INIT(969), \
+    _PyLong_DIGIT_INIT(970), \
+    _PyLong_DIGIT_INIT(971), \
+    _PyLong_DIGIT_INIT(972), \
+    _PyLong_DIGIT_INIT(973), \
+    _PyLong_DIGIT_INIT(974), \
+    _PyLong_DIGIT_INIT(975), \
+    _PyLong_DIGIT_INIT(976), \
+    _PyLong_DIGIT_INIT(977), \
+    _PyLong_DIGIT_INIT(978), \
+    _PyLong_DIGIT_INIT(979), \
+    _PyLong_DIGIT_INIT(980), \
+    _PyLong_DIGIT_INIT(981), \
+    _PyLong_DIGIT_INIT(982), \
+    _PyLong_DIGIT_INIT(983), \
+    _PyLong_DIGIT_INIT(984), \
+    _PyLong_DIGIT_INIT(985), \
+    _PyLong_DIGIT_INIT(986), \
+    _PyLong_DIGIT_INIT(987), \
+    _PyLong_DIGIT_INIT(988), \
+    _PyLong_DIGIT_INIT(989), \
+    _PyLong_DIGIT_INIT(990), \
+    _PyLong_DIGIT_INIT(991), \
+    _PyLong_DIGIT_INIT(992), \
+    _PyLong_DIGIT_INIT(993), \
+    _PyLong_DIGIT_INIT(994), \
+    _PyLong_DIGIT_INIT(995), \
+    _PyLong_DIGIT_INIT(996), \
+    _PyLong_DIGIT_INIT(997), \
+    _PyLong_DIGIT_INIT(998), \
+    _PyLong_DIGIT_INIT(999), \
+    _PyLong_DIGIT_INIT(1000), \
+    _PyLong_DIGIT_INIT(1001), \
+    _PyLong_DIGIT_INIT(1002), \
+    _PyLong_DIGIT_INIT(1003), \
+    _PyLong_DIGIT_INIT(1004), \
+    _PyLong_DIGIT_INIT(1005), \
+    _PyLong_DIGIT_INIT(1006), \
+    _PyLong_DIGIT_INIT(1007), \
+    _PyLong_DIGIT_INIT(1008), \
+    _PyLong_DIGIT_INIT(1009), \
+    _PyLong_DIGIT_INIT(1010), \
+    _PyLong_DIGIT_INIT(1011), \
+    _PyLong_DIGIT_INIT(1012), \
+    _PyLong_DIGIT_INIT(1013), \
+    _PyLong_DIGIT_INIT(1014), \
+    _PyLong_DIGIT_INIT(1015), \
+    _PyLong_DIGIT_INIT(1016), \
+    _PyLong_DIGIT_INIT(1017), \
+    _PyLong_DIGIT_INIT(1018), \
+    _PyLong_DIGIT_INIT(1019), \
+    _PyLong_DIGIT_INIT(1020), \
+    _PyLong_DIGIT_INIT(1021), \
+    _PyLong_DIGIT_INIT(1022), \
+    _PyLong_DIGIT_INIT(1023), \
+    _PyLong_DIGIT_INIT(1024), \
 }
 
 #define _Py_bytes_characters_INIT { \
@@ -553,10 +1321,12 @@ extern "C" {
     INIT_STR(dot_locals, ".<locals>"), \
     INIT_STR(empty, ""), \
     INIT_STR(format, ".format"), \
+    INIT_STR(gc, "<GC>"), \
     INIT_STR(generic_base, ".generic_base"), \
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
+    INIT_STR(native, "<native>"), \
     INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
@@ -564,6 +1334,8 @@ extern "C" {
 
 #define _Py_str_identifiers_INIT { \
     INIT_ID(CANCELLED), \
+    INIT_ID(Emax), \
+    INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
     INIT_ID(JSONDecodeError), \
@@ -816,6 +1588,7 @@ extern "C" {
     INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
+    INIT_ID(blocking), \
     INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
@@ -833,6 +1606,8 @@ extern "C" {
     INIT_ID(c_exception), \
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
+    INIT_ID(c_stack), \
+    INIT_ID(cache_frames), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -840,13 +1615,17 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
+    INIT_ID(capitals), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
+    INIT_ID(chain), \
     INIT_ID(check_same_thread), \
+    INIT_ID(clamp), \
     INIT_ID(clear), \
     INIT_ID(close), \
     INIT_ID(closed), \
@@ -875,6 +1654,7 @@ extern "C" {
     INIT_ID(command), \
     INIT_ID(comment_factory), \
     INIT_ID(compile_mode), \
+    INIT_ID(config), \
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
@@ -885,11 +1665,14 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
+    INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
     INIT_ID(data), \
     INIT_ID(database), \
+    INIT_ID(date), \
     INIT_ID(day), \
+    INIT_ID(days), \
     INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
@@ -902,7 +1685,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
     INIT_ID(digest_size), \
@@ -920,6 +1702,7 @@ extern "C" {
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
+    INIT_ID(emptyerror), \
     INIT_ID(encode), \
     INIT_ID(encoding), \
     INIT_ID(end), \
@@ -932,17 +1715,20 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
+    INIT_ID(exc), \
     INIT_ID(exc_type), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
+    INIT_ID(exit), \
     INIT_ID(exp), \
     INIT_ID(expression), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
+    INIT_ID(fallback), \
     INIT_ID(false), \
     INIT_ID(family), \
     INIT_ID(fanout), \
@@ -969,15 +1755,17 @@ extern "C" {
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(frame_buffer), \
+    INIT_ID(free_threaded), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
     INIT_ID(fromutc), \
     INIT_ID(fset), \
+    INIT_ID(fullerror), \
     INIT_ID(func), \
     INIT_ID(future), \
+    INIT_ID(gc), \
     INIT_ID(generation), \
-    INIT_ID(genexpr), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
     INIT_ID(get_event_loop), \
@@ -998,13 +1786,16 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(hours), \
     INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
     INIT_ID(imag), \
+    INIT_ID(implieslink), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
+    INIT_ID(include_aliases), \
     INIT_ID(incoming), \
     INIT_ID(index), \
     INIT_ID(indexgroup), \
@@ -1051,9 +1842,9 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwargs), \
     INIT_ID(kwdefaults), \
     INIT_ID(label), \
-    INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
     INIT_ID(last_node), \
@@ -1062,6 +1853,7 @@ extern "C" {
     INIT_ID(last_value), \
     INIT_ID(latin1), \
     INIT_ID(leaf_size), \
+    INIT_ID(legacy), \
     INIT_ID(len), \
     INIT_ID(length), \
     INIT_ID(level), \
@@ -1069,7 +1861,6 @@ extern "C" {
     INIT_ID(line), \
     INIT_ID(line_buffering), \
     INIT_ID(lineno), \
-    INIT_ID(listcomp), \
     INIT_ID(little), \
     INIT_ID(lo), \
     INIT_ID(locale), \
@@ -1078,12 +1869,14 @@ extern "C" {
     INIT_ID(loop), \
     INIT_ID(manual_reset), \
     INIT_ID(mapping), \
+    INIT_ID(mask), \
     INIT_ID(match), \
     INIT_ID(max_length), \
     INIT_ID(maxdigits), \
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
     INIT_ID(maxmem), \
+    INIT_ID(maxsize), \
     INIT_ID(maxsplit), \
     INIT_ID(maxvalue), \
     INIT_ID(memLevel), \
@@ -1093,13 +1886,16 @@ extern "C" {
     INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(microsecond), \
+    INIT_ID(microseconds), \
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
+    INIT_ID(minutes), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
     INIT_ID(module_globals), \
     INIT_ID(modules), \
+    INIT_ID(modulo), \
     INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
@@ -1112,6 +1908,7 @@ extern "C" {
     INIT_ID(name_from), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
+    INIT_ID(native), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \
@@ -1134,9 +1931,11 @@ extern "C" {
     INIT_ID(offset_src), \
     INIT_ID(on_type_read), \
     INIT_ID(onceregistry), \
+    INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
+    INIT_ID(opcodes), \
     INIT_ID(open), \
     INIT_ID(opener), \
     INIT_ID(operation), \
@@ -1144,6 +1943,7 @@ extern "C" {
     INIT_ID(options), \
     INIT_ID(order), \
     INIT_ID(origin), \
+    INIT_ID(other), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(outpath), \
@@ -1161,11 +1961,14 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
     INIT_ID(pos1), \
     INIT_ID(pos2), \
     INIT_ID(posix), \
+    INIT_ID(prec), \
+    INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
@@ -1174,7 +1977,10 @@ extern "C" {
     INIT_ID(protocol), \
     INIT_ID(ps1), \
     INIT_ID(ps2), \
+    INIT_ID(qid), \
+    INIT_ID(qualname), \
     INIT_ID(query), \
+    INIT_ID(queuetype), \
     INIT_ID(quotetabs), \
     INIT_ID(raw), \
     INIT_ID(read), \
@@ -1186,24 +1992,31 @@ extern "C" {
     INIT_ID(readline), \
     INIT_ID(readonly), \
     INIT_ID(real), \
+    INIT_ID(recursive), \
     INIT_ID(reducer_override), \
     INIT_ID(registry), \
     INIT_ID(rel_tol), \
     INIT_ID(release), \
     INIT_ID(reload), \
+    INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(reqrefs), \
+    INIT_ID(require_ready), \
     INIT_ID(reserved), \
     INIT_ID(reset), \
     INIT_ID(resetids), \
+    INIT_ID(restrict), \
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
+    INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \
     INIT_ID(second), \
+    INIT_ID(seconds), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \
     INIT_ID(seekable), \
@@ -1215,18 +2028,21 @@ extern "C" {
     INIT_ID(server_hostname), \
     INIT_ID(server_side), \
     INIT_ID(session), \
-    INIT_ID(setcomp), \
     INIT_ID(setpgroup), \
     INIT_ID(setsid), \
     INIT_ID(setsigdef), \
     INIT_ID(setsigmask), \
     INIT_ID(setstate), \
     INIT_ID(shape), \
+    INIT_ID(shared), \
+    INIT_ID(short), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
+    INIT_ID(signum), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
+    INIT_ID(skip_non_matching_threads), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \
@@ -1238,6 +2054,7 @@ extern "C" {
     INIT_ID(stacklevel), \
     INIT_ID(start), \
     INIT_ID(statement), \
+    INIT_ID(stats), \
     INIT_ID(status), \
     INIT_ID(stderr), \
     INIT_ID(stdin), \
@@ -1255,6 +2072,7 @@ extern "C" {
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
+    INIT_ID(take_bytes), \
     INIT_ID(target), \
     INIT_ID(target_is_directory), \
     INIT_ID(task), \
@@ -1266,17 +2084,22 @@ extern "C" {
     INIT_ID(template), \
     INIT_ID(term), \
     INIT_ID(text), \
+    INIT_ID(third), \
     INIT_ID(threading), \
     INIT_ID(throw), \
+    INIT_ID(time), \
     INIT_ID(timeout), \
     INIT_ID(timer), \
     INIT_ID(times), \
+    INIT_ID(timespec), \
+    INIT_ID(timestamp), \
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
     INIT_ID(top), \
     INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
+    INIT_ID(traps), \
     INIT_ID(true), \
     INIT_ID(truncate), \
     INIT_ID(twice), \
@@ -1287,8 +2110,10 @@ extern "C" {
     INIT_ID(tzinfo), \
     INIT_ID(tzname), \
     INIT_ID(uid), \
+    INIT_ID(unboundop), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
+    INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
     INIT_ID(value), \
@@ -1302,6 +2127,7 @@ extern "C" {
     INIT_ID(wbits), \
     INIT_ID(week), \
     INIT_ID(weekday), \
+    INIT_ID(weeks), \
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \

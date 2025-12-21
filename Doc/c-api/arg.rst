@@ -113,18 +113,14 @@ There are three ways strings and buffers can be converted to C:
 ``z`` (:class:`str` or ``None``) [const char \*]
    Like ``s``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
-   It is the same as ``s?`` with the C pointer was initialized to ``NULL``.
 
 ``z*`` (:class:`str`, :term:`bytes-like object` or ``None``) [Py_buffer]
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
-   It is the same as ``s*?`` with the ``buf`` member of the :c:type:`Py_buffer`
-   structure was initialized to ``NULL``.
 
 ``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
-   It is the same as ``s#?`` with the C pointer was initialized to ``NULL``.
 
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a
@@ -164,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -241,9 +237,11 @@ the Python object to the required type.
 
 For signed integer formats, :exc:`OverflowError` is raised if the value
 is out of range for the C type.
-For unsigned integer formats, no range checking is done --- the
+For unsigned integer formats, the
 most significant bits are silently truncated when the receiving field is too
-small to receive the value.
+small to receive the value, and :exc:`DeprecationWarning` is emitted when
+the value is larger than the maximal value for the C type or less than
+the minimal value for the corresponding signed integer type of the same size.
 
 ``b`` (:class:`int`) [unsigned char]
    Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
@@ -252,27 +250,25 @@ small to receive the value.
 ``B`` (:class:`int`) [unsigned char]
    Convert a Python integer to a tiny integer without overflow checking, stored in a C
    :c:expr:`unsigned char`.
+   Convert a Python integer to a C :c:expr:`unsigned char`.
 
 ``h`` (:class:`int`) [short int]
    Convert a Python integer to a C :c:expr:`short int`.
 
 ``H`` (:class:`int`) [unsigned short int]
-   Convert a Python integer to a C :c:expr:`unsigned short int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned short int`.
 
 ``i`` (:class:`int`) [int]
    Convert a Python integer to a plain C :c:expr:`int`.
 
 ``I`` (:class:`int`) [unsigned int]
-   Convert a Python integer to a C :c:expr:`unsigned int`, without overflow
-   checking.
+   Convert a Python integer to a C :c:expr:`unsigned int`.
 
 ``l`` (:class:`int`) [long int]
    Convert a Python integer to a C :c:expr:`long int`.
 
 ``k`` (:class:`int`) [unsigned long]
-   Convert a Python integer to a C :c:expr:`unsigned long` without
-   overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long`.
 
    .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
@@ -281,8 +277,7 @@ small to receive the value.
    Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
-   Convert a Python integer to a C :c:expr:`unsigned long long`
-   without overflow checking.
+   Convert a Python integer to a C :c:expr:`unsigned long long`.
 
    .. versionchanged:: 3.14
       Use :meth:`~object.__index__` if available.
@@ -309,6 +304,14 @@ small to receive the value.
 
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
+
+.. deprecated:: 3.15
+
+   For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
+   :exc:`DeprecationWarning` is emitted when the value is larger than
+   the maximal value for the C type or less than the minimal value for
+   the corresponding signed integer type of the same size.
+
 
 Other objects
 -------------
@@ -386,17 +389,6 @@ Other objects
    .. deprecated:: 3.14
       Non-tuple sequences are deprecated if *items* contains format units
       which store a borrowed buffer or a borrowed reference.
-
-``unit?`` (anything or ``None``) [*matching-variable(s)*]
-   ``?`` modifies the behavior of the preceding format unit.
-   The C variable(s) corresponding to that parameter should be initialized
-   to their default value --- when the argument is ``None``,
-   :c:func:`PyArg_ParseTuple` does not touch the contents of the corresponding
-   C variable(s).
-   If the argument is not ``None``, it is parsed according to the specified
-   format unit.
-
-   .. versionadded:: 3.14
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:
@@ -685,6 +677,12 @@ Building values
 
    ``p`` (:class:`bool`) [int]
       Convert a C :c:expr:`int` to a Python :class:`bool` object.
+
+      Be aware that this format requires an ``int`` argument.
+      Unlike most other contexts in C, variadic arguments are not coerced to
+      a suitable type automatically.
+      You can convert another type (for example, a pointer or a float) to a
+      suitable ``int`` value using ``(x) ? 1 : 0`` or ``!!x``.
 
       .. versionadded:: 3.14
 

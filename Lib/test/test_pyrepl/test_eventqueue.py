@@ -3,6 +3,8 @@ import unittest
 from unittest.mock import patch
 from test import support
 
+from _pyrepl import terminfo
+
 try:
     from _pyrepl.console import Event
     from _pyrepl import base_eventqueue
@@ -172,17 +174,22 @@ class EventQueueTestBase:
         self.assertEqual(eq.get(), _event("key", "a"))
 
 
+class EmptyTermInfo(terminfo.TermInfo):
+    def get(self, cap: str) -> bytes:
+        return b""
+
+
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
     def setUp(self):
-        self.enterContext(patch("_pyrepl.curses.tigetstr", lambda x: b""))
         self.file = tempfile.TemporaryFile()
 
     def tearDown(self) -> None:
         self.file.close()
 
     def make_eventqueue(self) -> base_eventqueue.BaseEventQueue:
-        return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8")
+        ti = EmptyTermInfo("ansi")
+        return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8", ti)
 
 
 @unittest.skipUnless(support.MS_WINDOWS, "No Windows event queue on Unix")
