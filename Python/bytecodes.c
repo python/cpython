@@ -2185,8 +2185,11 @@ dummy_func(
             }
             // we make no attempt to optimize here; specializations should
             // handle any case whose performance we care about
-            PyObject *stack[] = {class, self};
-            PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+            PyObject *super;
+            {
+                PyObject *stack[] = {class, self};
+                super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+            }
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 if (super == NULL) {
@@ -2245,8 +2248,12 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
             int method_found = 0;
-            PyObject *attr_o = _PySuper_Lookup(cls, self, name,
-                                   Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
+            PyObject *attr_o;
+            {
+                int *method_found_ptr = &method_found;
+                attr_o = _PySuper_Lookup(cls, self, name,
+                    Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
+            }
             if (attr_o == NULL) {
                 ERROR_NO_POP();
             }
@@ -3472,10 +3479,13 @@ dummy_func(
             }
             assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
-            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
-            int has_self = !PyStackRef_IsNull(exit_self);
-            PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
-                    (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            PyObject* res_o;
+            {
+                PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+                int has_self = !PyStackRef_IsNull(exit_self);
+                res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                        (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            }
             Py_XDECREF(original_tb);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -3707,36 +3717,18 @@ dummy_func(
                 frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
-            /* Callable is not a normal Python function */
-            STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
-            if (CONVERSION_FAILED(args_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true);
-            }
-            PyObject *res_o = PyObject_Vectorcall(
-                callable_o, args_o,
-                total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
-            if (opcode == INSTRUMENTED_CALL) {
-                PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
-                if (res_o == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, this_instr, callable_o, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, this_instr, callable_o, arg);
-                    if (err < 0) {
-                        Py_CLEAR(res_o);
-                    }
-                }
-            }
-            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            DECREF_INPUTS();
+            PyObject* res_o = _Py_VectorCallInstrumentation_StackRefSteal(
+                callable,
+                arguments,
+                total_args,
+                PyStackRef_NULL,
+                opcode == INSTRUMENTED_CALL,
+                frame,
+                this_instr,
+                tstate);
+            DEAD(args);
+            DEAD(self_or_null);
+            DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -4587,35 +4579,19 @@ dummy_func(
                 frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }
-            /* Callable is not a normal Python function */
-            STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
-            if (CONVERSION_FAILED(args_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true);
-            }
-            PyObject *res_o = PyObject_Vectorcall(
-                callable_o, args_o,
-                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                kwnames_o);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
-            if (opcode == INSTRUMENTED_CALL_KW) {
-                PyObject *arg = total_args == 0 ?
-                    &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
-                if (res_o == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, this_instr, callable_o, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, this_instr, callable_o, arg);
-                    if (err < 0) {
-                        Py_CLEAR(res_o);
-                    }
-                }
-            }
-            DECREF_INPUTS();
+            PyObject* res_o = _Py_VectorCallInstrumentation_StackRefSteal(
+                callable,
+                arguments,
+                total_args,
+                kwnames,
+                opcode == INSTRUMENTED_CALL_KW,
+                frame,
+                this_instr,
+                tstate);
+            DEAD(kwnames);
+            DEAD(args);
+            DEAD(self_or_null);
+            DEAD(callable);
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }

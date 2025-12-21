@@ -79,19 +79,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Native Windows (debug)
+      - name: Native Windows MSVC (PGO)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
-          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
-          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          choco install visualstudio2026buildtools-preview --pre -allWorkloads
+          set PATH=C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Current\Bin\;%PATH%
+          ./PCbuild/build.bat --tail-call-interp --pgo -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
+          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
-      - name: Emulated Windows (release)
+      - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: cmd
         run: |
