@@ -395,15 +395,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             local_rcfile = os.path.abspath(".pdbrc")
 
             try:
-                with open(home_rcfile, encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
+                with open(home_rcfile, encoding='utf-8') as rcfile:
+                    self.rcLines.extend(rcfile)
             except OSError:
                 pass
 
             if local_rcfile != home_rcfile:
                 try:
-                    with open(local_rcfile, encoding='utf-8') as rcFile:
-                        self.rcLines.extend(rcFile)
+                    with open(local_rcfile, encoding='utf-8') as rcfile:
+                        self.rcLines.extend(rcfile)
                 except OSError:
                     pass
 
