@@ -1,0 +1,2 @@
+Fix crash in :meth:`io.TextIOWrapper.seek` when a custom cookie's
+``__int__`` method detaches the underlying buffer.
