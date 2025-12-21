@@ -28,7 +28,7 @@ if not has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 
-def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=False, **kw):
+def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=False, isolated=True, **kw):
     """Run the Python REPL with the given arguments.
 
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
@@ -42,7 +42,10 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=F
     # path may be used by PyConfig_Get("module_search_paths") to build the
     # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-I']
+    cmd_line = [stdin_fname]
+    # Isolated mode implies -EPs and ignores PYTHON* variables.
+    if isolated:
+        cmd_line.append('-I')
     # Don't re-run the built-in REPL from interactive mode
     # if we're testing a custom REPL (such as the asyncio REPL).
     if not custom:
