@@ -344,8 +344,6 @@ medium_from_stwodigits(stwodigits x)
 }
 
 
-/* If a freshly-allocated int is already shared, it must
-   be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
 _PyLong_Negate(PyLongObject **x_p)
 {
@@ -357,8 +355,10 @@ _PyLong_Negate(PyLongObject **x_p)
         return;
     }
 
-    *x_p = _PyLong_FromSTwoDigits(-medium_value(x));
-    Py_DECREF(x);
+    /* If a freshly-allocated int is already shared, it must
+    be a small integer, so negating it will fit a single digit */
+    assert(_long_is_small_int((PyObject *)x));
+    *x_p = (PyLongObject *)_PyLong_FromSTwoDigits(-medium_value(x));
 }
 
 #define PYLONG_FROM_INT(UINT_TYPE, INT_TYPE, ival)                                  \
