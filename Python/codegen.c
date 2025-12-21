@@ -4479,7 +4479,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4493,39 +4493,39 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
                 ADDOP(c, NO_LOCATION, END_FOR);
                 ADDOP(c, NO_LOCATION, POP_ITER);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_YIELD(c, elt_loc);
                 ADDOP(c, elt_loc, POP_TOP);
             }
             break;
         case COMP_LISTCOMP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
         case COMP_SETCOMP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
         case COMP_DICTCOMP:
-            if (val == NULL){
+            if (val == NULL) {
                 /* unpacking (**) case */
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, DICT_UPDATE, depth+1);
             }
-            else{
+            else {
                 /* With '{k: v}', k is evaluated before v, so we do
                 the same. */
                 VISIT(c, expr, elt);
@@ -4619,7 +4619,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         /* comprehension specific code */
         switch (type) {
         case COMP_GENEXP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 NEW_JUMP_TARGET_LABEL(c, unpack_start);
                 NEW_JUMP_TARGET_LABEL(c, unpack_end);
                 VISIT(c, expr, elt->v.Starred.value);
@@ -4633,39 +4633,39 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                 ADDOP(c, NO_LOCATION, END_FOR);
                 ADDOP(c, NO_LOCATION, POP_ITER);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_YIELD(c, elt_loc);
                 ADDOP(c, elt_loc, POP_TOP);
             }
             break;
         case COMP_LISTCOMP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, LIST_EXTEND, depth + 1);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, LIST_APPEND, depth + 1);
             }
             break;
         case COMP_SETCOMP:
-            if (elt->kind == Starred_kind){
+            if (elt->kind == Starred_kind) {
                 VISIT(c, expr, elt->v.Starred.value);
                 ADDOP_I(c, elt_loc, SET_UPDATE, depth + 1);
             }
-            else{
+            else {
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, SET_ADD, depth + 1);
             }
             break;
         case COMP_DICTCOMP:
-            if (val == NULL){
+            if (val == NULL) {
                 /* unpacking (**) case */
                 VISIT(c, expr, elt);
                 ADDOP_I(c, elt_loc, DICT_UPDATE, depth+1);
             }
-            else{
+            else {
                 /* With '{k: v}', k is evaluated before v, so we do
                 the same. */
                 VISIT(c, expr, elt);
