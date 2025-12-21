@@ -482,7 +482,7 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       ``IPV6_HDRINCL`` was added.
 
 
@@ -2095,11 +2095,8 @@ to sockets.
       Accepts any real number, not only integer or float.
 
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+.. method:: socket.setsockopt(level, optname, value: int | Buffer)
+            socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: pair: module; struct
 

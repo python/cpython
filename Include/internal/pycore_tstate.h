@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_brc.h"             // struct _brc_thread_state
 #include "pycore_freelist_state.h"  // struct _Py_freelists
+#include "pycore_interpframe_structs.h"  // _PyInterpreterFrame
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
 #include "pycore_uop.h"             // struct _PyUOpInstruction
@@ -61,6 +62,10 @@ typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
 
+    // Embedded base frame - sentinel at the bottom of the frame stack.
+    // Used by profiling/sampling to detect incomplete stack traces.
+    _PyInterpreterFrame base_frame;
+
     // The reference count field is used to synchronize deallocation of the
     // thread state during runtime finalization.
     Py_ssize_t refcount;
@@ -76,6 +81,13 @@ typedef struct _PyThreadStateImpl {
 
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
+
+    // Distinguishes between yield and return from PyEval_EvalFrame().
+    // See gen_send_ex2() in Objects/genobject.c
+    enum {
+        GENERATOR_RETURN = 0,
+        GENERATOR_YIELD = 1,
+    } generator_return_kind;
 
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.

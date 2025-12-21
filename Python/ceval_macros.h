@@ -251,6 +251,14 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define WITHIN_STACK_BOUNDS() \
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+// This allows temporary stack "overflows", provided it's all in the cache at any point of time.
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL()) <= STACK_SIZE()))
+#else
+#define WITHIN_STACK_BOUNDS_IGNORING_CACHE WITHIN_STACK_BOUNDS
+#endif
+
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
 #define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
@@ -443,8 +451,12 @@ do {                                                   \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
-#define CURRENT_OPERAND0() (next_uop[-1].operand0)
-#define CURRENT_OPERAND1() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_64() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_64() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_32() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_32() (next_uop[-1].operand1)
+#define CURRENT_OPERAND0_16() (next_uop[-1].operand0)
+#define CURRENT_OPERAND1_16() (next_uop[-1].operand1)
 #define CURRENT_TARGET()   (next_uop[-1].target)
 
 #define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
@@ -458,13 +470,21 @@ do {                                                   \
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp);
 
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define SET_CURRENT_CACHED_VALUES(N) current_cached_values = (N)
+#define CHECK_CURRENT_CACHED_VALUES(N) assert(current_cached_values == (N))
+#else
+#define SET_CURRENT_CACHED_VALUES(N) ((void)0)
+#define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
+#endif
 
 static inline int
 check_periodics(PyThreadState *tstate) {
@@ -476,3 +496,28 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
+// Mark the generator as executing. Returns true if the state was changed,
+// false if it was already executing or finished.
+static inline bool
+gen_try_set_executing(PyGenObject *gen)
+{
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+        int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        while (frame_state < FRAME_EXECUTING) {
+            if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
+                                                 &frame_state,
+                                                 FRAME_EXECUTING)) {
+                return true;
+            }
+        }
+    }
+#endif
+    // Use faster non-atomic modifications in the GIL-enabled build and when
+    // the object is uniquely referenced in the free-threaded build.
+    if (gen->gi_frame_state < FRAME_EXECUTING) {
+        gen->gi_frame_state = FRAME_EXECUTING;
+        return true;
+    }
+    return false;
+}
