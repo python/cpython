@@ -303,7 +303,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             env = os.environ.copy()
             env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
             env["PYTHONSTARTUP"] = script
-            p = spawn_asyncio_repl(env=env)
+            p = spawn_asyncio_repl(isolated=False, env=env)
             output = kill_python(p)
             self.assertEqual(p.returncode, 0)
             self.assertIn("pythonstartup done!", output)
