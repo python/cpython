@@ -1282,7 +1282,14 @@ class CodeConstsTest(unittest.TestCase):
     @cpython_only
     def test__Py_DECLARE_STR_is_interned(self):
         for global_string in iter_global_strings():
+            # compile given string to a codeobject
+            global_string = eval(f"'{global_string}'")
             self.assertIsInterned(global_string)
+
+    @cpython_only
+    def test_non_internable_strings_not_interned(self):
+        self.assertIsNotInterned("not-internable")
+        self.assertIsNotInterned("not.internable")
 
 class CodeWeakRefTest(unittest.TestCase):
 
