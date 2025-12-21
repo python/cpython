@@ -2587,15 +2587,15 @@ Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 ``time.strftime(fmt, d.timetuple())`` although not all objects support a
 :meth:`~date.timetuple` method.
 
-For the :meth:`.datetime.strptime` and :meth:`.date.strptime` class methods,
-the default value is ``1900-01-01T00:00:00.000``: any components not specified
-in the format string will be pulled from the default value.
+For the :meth:`.datetime.strptime` class method, the default value is
+``1900-01-01T00:00:00.000``: any components not specified in the format string
+will be pulled from the default value.
 
 .. note::
    When used to parse partial dates lacking a year, :meth:`.datetime.strptime`
-   and :meth:`.date.strptime` will raise when encountering February 29 because
-   the default year of 1900 is *not* a leap year.  Always add a default leap
-   year to partial date strings before parsing.
+   will raise when encountering February 29 because the default year of 1900 is
+   *not* a leap year.  Always add a default leap year to partial date strings
+   before parsing.
 
 
 .. testsetup::
