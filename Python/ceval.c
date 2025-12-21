@@ -887,7 +887,8 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     // So far so good:
     PyObject *seen = NULL;
     // Only check for duplicates if there is at least one positional attribute
-    // and two or more attributes in total.
+    // and two or more attributes in total. Duplicate keyword attributes are
+    // detected during the compile stage and raise a SyntaxError.
     if (nargs > 0 && nattrs > 1) {
         seen = PySet_New(NULL);
         if (seen == NULL) {
