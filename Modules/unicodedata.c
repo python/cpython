@@ -24,6 +24,26 @@
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
 
+/* helper macro to fixup start/end slice values */
+#define ADJUST_INDICES(start, end, len) \
+    do {                                \
+        if (end > len) {                \
+            end = len;                  \
+        }                               \
+        else if (end < 0) {             \
+            end += len;                 \
+            if (end < 0) {              \
+                end = 0;                \
+            }                           \
+        }                               \
+        if (start < 0) {                \
+            start += len;               \
+            if (start < 0) {            \
+                start = 0;              \
+            }                           \
+        }                               \
+    } while (0)
+
 /*[clinic input]
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '<not used>'
@@ -42,6 +62,11 @@ typedef struct {
     const unsigned char east_asian_width;       /* index into
                                                    _PyUnicode_EastAsianWidth */
     const unsigned char normalization_quick_check; /* see is_normalized() */
+    const unsigned char grapheme_cluster_break; /* index into
+                                                   _PyUnicode_GraphemeBreakNames */
+    const unsigned char incb;           /* index into
+                                           _PyUnicode_IndicConjunctBreakNames */
+    const unsigned char ext_pict;       /* true if Extended_Pictographic */
 } _PyUnicode_DatabaseRecord;
 
 typedef struct change_record {
@@ -1628,11 +1653,438 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
     return PyUnicode_FromOrdinal(code);
 }
 
+
+/* Grapheme Cluster Break algorithm */
+
+enum ExtPictState {
+    ExtPictState_Init,
+    // \p{Extended_Pictographic} Extend*
+    ExtPictState_Started,
+    // ... ZWJ
+    ExtPictState_ZWJ,
+    // ... \p{Extended_Pictographic}
+    ExtPictState_Matched,
+};
+
+enum InCBState {
+    InCBState_Init,
+    // \p{InCB=Consonant} \p{InCB=Extend}*
+    InCBState_Started,
+    // ... \p{InCB=Linker} [ \p{InCB=Extend} \p{InCB=Linker} ]*
+    InCBState_Linker,
+    // ... \p{InCB=Consonant}
+    InCBState_Matched,
+};
+
+typedef struct {
+    PyObject *str;
+    Py_ssize_t start;
+    Py_ssize_t pos;
+    Py_ssize_t end;
+    int gcb;
+    enum ExtPictState ep_state;
+    enum InCBState incb_state;
+    bool ri_flag;
+} _PyGraphemeBreak;
+
+static enum ExtPictState
+update_ext_pict_state(enum ExtPictState state, int gcb, bool ext_pict)
+{
+    if (ext_pict) {
+        return (state == ExtPictState_ZWJ) ? ExtPictState_Matched : ExtPictState_Started;
+    }
+    if (state == ExtPictState_Started || state == ExtPictState_Matched) {
+        if (gcb == GCB_Extend) {
+            return ExtPictState_Started;
+        }
+        if (gcb == GCB_ZWJ) {
+            return ExtPictState_ZWJ;
+        }
+    }
+    return ExtPictState_Init;
+}
+
+static enum InCBState
+update_incb_state(enum InCBState state, int incb)
+{
+    if (incb == InCB_Consonant) {
+        return (state == InCBState_Linker) ? InCBState_Matched : InCBState_Started;
+    }
+    if (state != InCBState_Init) {
+        if (incb == InCB_Extend) {
+            return (state == InCBState_Linker) ? InCBState_Linker : InCBState_Started;
+        }
+        if (incb == InCB_Linker) {
+            return InCBState_Linker;
+        }
+    }
+    return InCBState_Init;
+}
+
+static bool
+update_ri_flag(bool flag, int gcb)
+{
+    if (gcb == GCB_Regional_Indicator) {
+        return !flag;
+    }
+    else {
+        return false;
+    }
+}
+
+static bool
+grapheme_break(int prev_gcb, int curr_gcb, enum ExtPictState ep_state,
+               bool ri_flag, enum InCBState incb_state)
+{
+    /* GB3 */
+    if (prev_gcb == GCB_CR && curr_gcb == GCB_LF) {
+        return false;
+    }
+
+    /* GB4 */
+    if (prev_gcb == GCB_CR ||
+        prev_gcb == GCB_LF ||
+        prev_gcb == GCB_Control)
+    {
+        return true;
+    }
+
+    /* GB5 */
+    if (curr_gcb == GCB_CR ||
+        curr_gcb == GCB_LF ||
+        curr_gcb == GCB_Control)
+    {
+        return true;
+    }
+
+    /* GB6 */
+    if (prev_gcb == GCB_L &&
+        (curr_gcb == GCB_L ||
+        curr_gcb == GCB_V ||
+        curr_gcb == GCB_LV ||
+        curr_gcb == GCB_LVT))
+    {
+        return false;
+    }
+
+    /* GB7 */
+    if ((prev_gcb == GCB_LV || prev_gcb == GCB_V) &&
+        (curr_gcb == GCB_V || curr_gcb == GCB_T))
+    {
+        return false;
+    }
+
+    /* GB8 */
+    if ((prev_gcb == GCB_LVT || prev_gcb == GCB_T) &&
+        curr_gcb == GCB_T)
+    {
+        return false;
+    }
+
+    /* GB9 */
+    if (curr_gcb == GCB_Extend || curr_gcb == GCB_ZWJ) {
+        return false;
+    }
+
+    /* GB9a */
+    if (curr_gcb == GCB_SpacingMark) {
+        return false;
+    }
+
+    /* GB9b */
+    if (prev_gcb == GCB_Prepend) {
+        return false;
+    }
+
+    /* GB9c */
+    if (incb_state == InCBState_Matched) {
+        return false;
+    }
+
+    /* GB11 */
+    if (ep_state == ExtPictState_Matched) {
+        return false;
+    }
+
+    if (prev_gcb == GCB_Regional_Indicator && curr_gcb == prev_gcb) {
+        return ri_flag;
+    }
+
+    /* GB999 */
+    return true;
+}
+
+static void
+_Py_InitGraphemeBreak(_PyGraphemeBreak *iter, PyObject *str,
+                      Py_ssize_t start, Py_ssize_t end)
+{
+    iter->str = str;
+    iter->start = iter->pos = start;
+    iter->end = end;
+    iter->gcb = 0;
+    iter->ep_state = ExtPictState_Init;
+    iter->ri_flag = false;
+    iter->incb_state = InCBState_Init;
+}
+
+static Py_ssize_t
+_Py_NextGraphemeBreak(_PyGraphemeBreak *iter)
+{
+    if (iter->start >= iter->end) {
+        return -1;
+    }
+
+    int kind = PyUnicode_KIND(iter->str);
+    void *pstr = PyUnicode_DATA(iter->str);
+    while (iter->pos < iter->end) {
+        Py_UCS4 chr = PyUnicode_READ(kind, pstr, iter->pos);
+        const _PyUnicode_DatabaseRecord *record = _getrecord_ex(chr);
+        int gcb = record->grapheme_cluster_break;
+        iter->ep_state = update_ext_pict_state(iter->ep_state, gcb, record->ext_pict);
+        iter->ri_flag = update_ri_flag(iter->ri_flag, gcb);
+        iter->incb_state = update_incb_state(iter->incb_state, record->incb);
+        int prev_gcb = iter->gcb;
+        iter->gcb = gcb;
+        if (iter->pos != iter->start &&
+            grapheme_break(prev_gcb, gcb, iter->ep_state, iter->ri_flag,
+                           iter->incb_state))
+        {
+            iter->start = iter->pos;
+            return iter->pos++;
+        }
+        ++iter->pos;
+    }
+    iter->start = iter->pos;
+    return iter->pos;
+}
+
+
+/* Grapheme Cluster object */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *string;
+    Py_ssize_t start;
+    Py_ssize_t end;
+} GraphemeObject;
+
+static void
+Grapheme_dealloc(PyObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    Py_DECREF(((GraphemeObject *)self)->string);
+    PyObject_GC_Del(self);
+}
+
+static int
+Grapheme_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(((GraphemeObject *)self)->string);
+    return 0;
+}
+
+static int
+Grapheme_clear(PyObject *self)
+{
+    Py_CLEAR(((GraphemeObject *)self)->string);
+    return 0;
+}
+
+static PyObject *
+Grapheme_str(PyObject *self)
+{
+    GraphemeObject *g = (GraphemeObject *)self;
+    return PyUnicode_Substring(g->string, g->start, g->end);
+}
+
+static PyMemberDef Grapheme_members[] = {
+    {"start", Py_T_PYSSIZET, offsetof(GraphemeObject, start), 0,
+        PyDoc_STR("grapheme start")},
+    {"end", Py_T_PYSSIZET, offsetof(GraphemeObject, end), 0,
+        PyDoc_STR("grapheme end")},
+    {NULL}  /* Sentinel */
+};
+
+static PyTypeObject GraphemeType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "unicodedata.Grapheme",
+    .tp_basicsize = sizeof(GraphemeObject),
+    .tp_dealloc = Grapheme_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_iter = PyObject_SelfIter,
+    .tp_traverse = Grapheme_traverse,
+    .tp_clear = Grapheme_clear,
+    .tp_str = Grapheme_str,
+    .tp_members = Grapheme_members
+};
+
+/* Grapheme Cluster iterator */
+
+typedef struct {
+    PyObject_HEAD
+    _PyGraphemeBreak iter;
+} GraphemeBreakIterator;
+
+static void
+GBI_dealloc(PyObject *self)
+{
+    PyObject_GC_UnTrack(self);
+    Py_DECREF(((GraphemeBreakIterator *)self)->iter.str);
+    PyObject_GC_Del(self);
+}
+
+static int
+GBI_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(((GraphemeBreakIterator *)self)->iter.str);
+    return 0;
+}
+
+static int
+GBI_clear(PyObject *self)
+{
+    Py_CLEAR(((GraphemeBreakIterator *)self)->iter.str);
+    return 0;
+}
+
+static PyObject *
+GBI_iternext(PyObject *self)
+{
+    GraphemeBreakIterator *it = (GraphemeBreakIterator *)self;
+    Py_ssize_t start = it->iter.start;
+    Py_ssize_t pos = _Py_NextGraphemeBreak(&it->iter);
+
+    if (pos < 0) {
+        return NULL;
+    }
+    GraphemeObject *g = PyObject_GC_New(GraphemeObject, &GraphemeType);
+    if (!g) {
+        return NULL;
+    }
+    g->string = Py_NewRef(it->iter.str);
+    g->start = start;
+    g->end = pos;
+    PyObject_GC_Track(g);
+    return (PyObject *)g;
+    // return PyUnicode_Substring(it->iter.str, start, pos);
+}
+
+
+static PyTypeObject GraphemeBreakIteratorType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "unicodedata.GraphemeBreakIterator",
+    .tp_basicsize = sizeof(GraphemeBreakIterator),
+    .tp_dealloc = GBI_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = GBI_iternext,
+    .tp_traverse = GBI_traverse,
+    .tp_clear = GBI_clear
+};
+
+
+/*[clinic input]
+unicodedata.iter_graphemes
+
+    unistr: unicode
+    start: Py_ssize_t = 0
+    end: Py_ssize_t(c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Returns an iterator to iterate over grapheme clusters.
+
+It uses extended grapheme cluster rules from TR29.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_iter_graphemes_impl(PyObject *module, PyObject *unistr,
+                                Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=b0b831944265d36f input=a1454d9e8135951f]*/
+{
+    GraphemeBreakIterator *gci = PyObject_GC_New(GraphemeBreakIterator,
+            &GraphemeBreakIteratorType);
+    if (!gci) {
+        return NULL;
+    }
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unistr);
+    ADJUST_INDICES(start, end, len);
+    Py_INCREF(unistr);
+    _Py_InitGraphemeBreak(&gci->iter, unistr, start, end);
+    PyObject_GC_Track(gci);
+    return (PyObject*)gci;
+}
+
+/*[clinic input]
+unicodedata.grapheme_cluster_break
+
+    chr: int(accept={str})
+    /
+
+Returns the Grapheme_Cluster_Break property assigned to the character.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_grapheme_cluster_break_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=39542e0f63bba36f input=5da75e86435576fd]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+    int index = (int) _getrecord_ex(c)->grapheme_cluster_break;
+    return PyUnicode_FromString(_PyUnicode_GraphemeBreakNames[index]);
+}
+
+/*[clinic input]
+unicodedata.indic_conjunct_break
+
+    chr: int(accept={str})
+    /
+
+Returns the Indic_Conjunct_Break property assigned to the character.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_indic_conjunct_break_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=673eff2caf797f08 input=5c730f78e469f2e8]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+    int index = (int) _getrecord_ex(c)->incb;
+    return PyUnicode_FromString(_PyUnicode_IndicConjunctBreakNames[index]);
+}
+
+/*[clinic input]
+@permit_long_summary
+unicodedata.extended_pictographic
+
+    chr: int(accept={str})
+    /
+
+Returns the Extended_Pictographic property assigned to the character, as boolean.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_extended_pictographic_impl(PyObject *module, int chr)
+/*[clinic end generated code: output=b6bbb349427370b1 input=250d7bd988997eb3]*/
+{
+    Py_UCS4 c = (Py_UCS4)chr;
+    int index = (int) _getrecord_ex(c)->ext_pict;
+    return PyBool_FromLong(index);
+}
+
+
+/* XXX Add doc strings. */
+
 // List of functions used to define module functions *AND* unicodedata.UCD
 // methods. For module functions, self is the module. For UCD methods, self
 // is an UCD instance. The UCD_Check() macro is used to check if self is
 // an UCD instance.
 static PyMethodDef unicodedata_functions[] = {
+    UNICODEDATA_GRAPHEME_CLUSTER_BREAK_METHODDEF
+    UNICODEDATA_INDIC_CONJUNCT_BREAK_METHODDEF
+    UNICODEDATA_EXTENDED_PICTOGRAPHIC_METHODDEF
+    UNICODEDATA_ITER_GRAPHEMES_METHODDEF
+    // Update Py_tp_methods in ucd_type_slots if add more module-only
+    // functions.
+
     UNICODEDATA_UCD_DECIMAL_METHODDEF
     UNICODEDATA_UCD_DIGIT_METHODDEF
     UNICODEDATA_UCD_NUMERIC_METHODDEF
@@ -1664,7 +2116,7 @@ static PyType_Slot ucd_type_slots[] = {
     {Py_tp_dealloc, ucd_dealloc},
     {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_methods, unicodedata_functions},
+    {Py_tp_methods, unicodedata_functions + 4},
     {Py_tp_members, DB_members},
     {0, 0}
 };
@@ -1689,6 +2141,13 @@ UnicodeData File Format " UNIDATA_VERSION ".");
 static int
 unicodedata_exec(PyObject *module)
 {
+    if (PyType_Ready(&GraphemeType)) {
+        return -1;
+    }
+    if (PyType_Ready(&GraphemeBreakIteratorType)) {
+        return -1;
+    }
+
     if (PyModule_AddStringConstant(module, "unidata_version", UNIDATA_VERSION) < 0) {
         return -1;
     }
