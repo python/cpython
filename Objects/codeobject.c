@@ -214,15 +214,10 @@ intern_constants(PyObject *tuple, int *modified)
                 continue;
             }
 #if !defined(Py_GIL_DISABLED)
-            PyObject *interned = PyDict_GetItemWithError(interned_dict, v);
-            if (interned == NULL && PyErr_Occurred()) {
-                goto error;
-            }
-            if (!interned) {
-                interned = (PyObject *)_Py_hashtable_get(INTERNED_STRINGS, v);
-                if (interned == NULL && PyErr_Occurred()) {
-                    goto error;
-                }
+            PyObject *interned = _Py_hashtable_get(INTERNED_STRINGS, v);
+            if (interned == NULL) {
+                interned = PyDict_GetItemWithError(interned_dict, v);
+                if (PyErr_Occurred()) goto error;
             }
             if (interned != NULL && interned != v) {
                 Py_INCREF(interned);
