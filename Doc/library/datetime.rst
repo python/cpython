@@ -2661,15 +2661,27 @@ will be pulled from the default value.
    *not* a leap year.  Always add a default leap year to partial date strings
    before parsing.
 
+
+.. testsetup::
+
+    # doctest seems to turn the warning into an error which makes it
+    # show up and require matching and prevents the actual interesting
+    # exception from being raised.
+    # Manually apply the catch_warnings context manager
+    import warnings
+    catch_warnings = warnings.catch_warnings()
+    catch_warnings.__enter__()
+    warnings.simplefilter("ignore")
+
+.. testcleanup::
+
+    catch_warnings.__exit__()
+
 .. doctest::
 
     >>> from datetime import datetime
-    >>> import warnings
     >>> value = "2/29"
-    >>> with warnings.catch_warnings():
-    ...     warnings.simplefilter("ignore")
-    ...     datetime.strptime(value, "%m/%d")
-    ...
+    >>> datetime.strptime(value, "%m/%d")
     Traceback (most recent call last):
     ...
     ValueError: day 29 must be in range 1..28 for month 2 in year 1900
