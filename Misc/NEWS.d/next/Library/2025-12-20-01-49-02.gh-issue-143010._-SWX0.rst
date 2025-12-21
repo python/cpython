@@ -1,1 +1,1 @@
-mailbox: Fixed a bug in :mod:mailbox where the precise timing of an external event could result in the library opening an existing file instead of a file it expected to create.
+Fixed a bug in :mod:`mailbox` where the precise timing of an external event could result in the library opening an existing file instead of a file it expected to create.
