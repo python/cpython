@@ -295,19 +295,6 @@ class TestInteractiveInterpreter(unittest.TestCase):
         expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
 
-    def test_asyncio_repl_respects_isolated_mode(self):
-        with os_helper.temp_dir() as tmpdir:
-            script = os.path.join(tmpdir, "pythonstartup.py")
-            with open(script, "w") as f:
-                f.write("print('should not print')\n")
-            env = os.environ.copy()
-            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
-            env["PYTHONSTARTUP"] = script
-            p = spawn_asyncio_repl(isolated=True, env=env)
-            output = kill_python(p)
-            self.assertEqual(p.returncode, 0)
-            self.assertNotIn("should not print", output)
-
     def test_asyncio_repl_reaches_python_startup_script(self):
         with os_helper.temp_dir() as tmpdir:
             script = os.path.join(tmpdir, "pythonstartup.py")
@@ -320,6 +307,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
             output = kill_python(p)
             self.assertEqual(p.returncode, 0)
             self.assertIn("pythonstartup done!", output)
+
+    def test_asyncio_repl_respects_isolated_mode(self):
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('should not print')\n")
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
+            env["PYTHONSTARTUP"] = script
+            p = spawn_asyncio_repl(isolated=True, env=env)
+            output = kill_python(p)
+            self.assertEqual(p.returncode, 0)
+            self.assertNotIn("should not print", output)
 
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
