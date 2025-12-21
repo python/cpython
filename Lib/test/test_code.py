@@ -1280,6 +1280,7 @@ class CodeConstsTest(unittest.TestCase):
         self.assertEqual(code.co_consts[2], code.co_consts[3])
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test__Py_DECLARE_STR_is_interned(self):
         for global_string in iter_global_strings():
             # compile given string to a codeobject
@@ -1287,6 +1288,7 @@ class CodeConstsTest(unittest.TestCase):
             self.assertIsInterned(global_string)
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_non_internable_strings_not_interned(self):
         self.assertIsNotInterned("not-internable")
         self.assertIsNotInterned("not.internable")
