@@ -501,7 +501,7 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         where = n;
     items = self->ob_item;
     for (i = n; --i >= where; )
-        FT_ATOMIC_STORE_PTR_RELAXED(items[i+1], items[i]);
+        FT_ATOMIC_STORE_PTR_RELEASE(items[i+1], items[i]);
     FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
@@ -1122,7 +1122,7 @@ list_ass_item_lock_held(PyListObject *a, Py_ssize_t i, PyObject *v)
     if (v == NULL) {
         Py_ssize_t size = Py_SIZE(a);
         for (Py_ssize_t idx = i; idx < size - 1; idx++) {
-            FT_ATOMIC_STORE_PTR_RELAXED(a->ob_item[idx], a->ob_item[idx + 1]);
+            FT_ATOMIC_STORE_PTR_RELEASE(a->ob_item[idx], a->ob_item[idx + 1]);
         }
         Py_SET_SIZE(a, size - 1);
     }
@@ -1601,8 +1601,8 @@ reverse_slice(PyObject **lo, PyObject **hi)
     --hi;
     while (lo < hi) {
         PyObject *t = *lo;
-        *lo = *hi;
-        *hi = t;
+        FT_ATOMIC_STORE_PTR_RELEASE(*lo, *hi);
+        FT_ATOMIC_STORE_PTR_RELEASE(*hi, t);
         ++lo;
         --hi;
     }
@@ -3845,7 +3845,7 @@ list_ass_subscript_lock_held(PyObject *_self, PyObject *item, PyObject *value)
                  cur += (size_t)step, i++) {
                 garbage[i] = selfitems[cur];
                 ins = Py_NewRef(seqitems[i]);
-                selfitems[cur] = ins;
+                FT_ATOMIC_STORE_PTR_RELEASE(selfitems[cur], ins);
             }
 
             for (i = 0; i < slicelength; i++) {
