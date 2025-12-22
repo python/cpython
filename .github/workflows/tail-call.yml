@@ -81,7 +81,7 @@ jobs:
 
       - name: Native Windows MSVC (release)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install visualstudio2026buildtools -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
           set PATH=C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;%PATH%
@@ -91,7 +91,7 @@ jobs:
       # No tests (yet):
       - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           set PlatformToolset=clangcl
