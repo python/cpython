@@ -1,1 +1,2 @@
-gh-143004: Fix a potential use-after-free in collections.Counter.update() when user code mutates the Counter during an update.
+Fix a potential use-after-free in collections.Counter.update() when user code
+mutates the Counter during an update. (gh-143004)
