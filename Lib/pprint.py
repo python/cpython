@@ -622,25 +622,23 @@ class PrettyPrinter:
         readable = True
 
         for item in method(object):
-            if isinstance(item, tuple):
-                if len(item) == 2:
-                    # (name, value) - always show
-                    name, value = item
-                    vrep, vreadable, _ = self.format(value, context, maxlevels, level + 1)
-                    parts.append(f"{name}={vrep}")
-                    readable = readable and vreadable
-                elif len(item) == 3:
-                    # (name, value, default) - show only if value != default
-                    name, value, default = item
+            match item:
+                case (name, value, default):
+                    # Keyword argument w/default.  Show only if value != default.
                     if value != default:
-                        vrep, vreadable, _ = self.format(value, context, maxlevels, level + 1)
-                        parts.append(f"{name}={vrep}")
-                        readable = readable and vreadable
-            else:
-                # Positional argument
-                vrep, vreadable, _ = self.format(item, context, maxlevels, level + 1)
-                parts.append(vrep)
-                readable = readable and vreadable
+                        formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                        parts.append(f"{name}={formatted}")
+                        readable = readable and is_readable
+                case (name, value):
+                    # Keyword argument.  Always show.
+                    formatted, is_readable, _ = self.format(value, context, maxlevels, level + 1)
+                    parts.append(f"{name}={formatted}")
+                    readable = readable and is_readable
+                case _:
+                    # Positional argument.
+                    formatted, is_readable, _ = self.format(item, context, maxlevels, level + 1)
+                    parts.append(formatted)
+                    readable = readable and is_readable
 
         rep = f"{cls_name}({', '.join(parts)})"
         return rep, readable, False
