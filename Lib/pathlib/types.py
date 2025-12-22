@@ -393,7 +393,7 @@ class _ReadablePath(_JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        
+
         target = target_dir / name
         if hasattr(target, 'info') and self.info.is_dir() and target.info.exists() and target.info.is_dir():
             if not exist_ok:
