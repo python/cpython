@@ -654,8 +654,7 @@ class TestMiscellaneous(unittest.TestCase):
                 env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
-                with check_warnings(('', DeprecationWarning)):
-                    self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
+                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
         finally:
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
