@@ -425,15 +425,15 @@ earlier dict items and earlier dictionary unpackings.
 
 A dict comprehension may take one of two forms:
 
-The first form  uses two expressions separated with a colon followed by the
-usual "for" and "if" clauses.  When the comprehension is run, the resulting key
-and value elements are inserted in the new dictionary in the order they are
-produced.
+- The first form  uses two expressions separated with a colon followed by the
+  usual "for" and "if" clauses.  When the comprehension is run, the resulting
+  key and value elements are inserted in the new dictionary in the order they
+  are produced.
 
-The second form uses a single expression prefixed by the ``**`` dictionary
-unpacking operator followed by the usual "for" and "if" clauses.  When the
-comprehension is run, the expression is evaluated and then unpacked, inserting
-zero or more key/value pairs into the new dictionary.
+- The second form uses a single expression prefixed by the ``**`` dictionary
+  unpacking operator followed by the usual "for" and "if" clauses.  When the
+  comprehension is evaluated, the expression is evaluated and then unpacked,
+  inserting zero or more key/value pairs into the new dictionary.
 
 Both forms of dictionary comprehension retain the property that if the same key
 is specified multiple times, the associated value in the resulting dictionary
