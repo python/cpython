@@ -135,22 +135,6 @@ class Orderable:
         return self._hash
 
 
-class CustomPrintable:
-    def __init__(self, name="my pprint", value=42):
-        self.name = name
-        self.value = value
-
-    def __str__(self):
-        return "my str"
-
-    def __repr__(self):
-        return "my str"
-
-    def __pprint__(self):
-        yield self.name
-        yield ("value", self.value)
-
-
 class QueryTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -1490,10 +1474,18 @@ ValuesView({'a': 6,
     'lazy dog'}""")
 
     def test_custom_pprinter(self):
+        # Test __pprint__ with positional and keyword argument.
+        class CustomPrintable:
+            def __init__(self, name="my pprint", value=42, is_custom=True):
+                self.name = name
+                self.value = value
+
+            def __pprint__(self):
+                yield self.name
+                yield "value", self.value
+
         stream = io.StringIO()
-        pp = pprint.PrettyPrinter(stream=stream)
-        custom_obj = CustomPrintable()
-        pp.pprint(custom_obj)
+        pprint.pprint(CustomPrintable(), stream=stream)
         self.assertEqual(stream.getvalue(), "CustomPrintable('my pprint', value=42)\n")
 
     def test_pprint_protocol_positional(self):
@@ -1505,7 +1497,10 @@ ValuesView({'a': 6,
             def __pprint__(self):
                 yield self.x
                 yield self.y
-        self.assertEqual(pprint.pformat(Point(1, 2)), "Point(1, 2)")
+
+        stream = io.StringIO()
+        pprint.pprint(Point(1, 2), stream=stream)
+        self.assertEqual(stream.getvalue(), "Point(1, 2)\n")
 
     def test_pprint_protocol_keyword(self):
         # Test __pprint__ with keyword arguments
@@ -1516,39 +1511,49 @@ ValuesView({'a': 6,
             def __pprint__(self):
                 yield ("host", self.host)
                 yield ("port", self.port)
-        self.assertEqual(pprint.pformat(Config("localhost", 8080)),
-                         "Config(host='localhost', port=8080)")
+
+        stream = io.StringIO()
+        pprint.pprint(Config("localhost", 8080), stream=stream)
+        self.assertEqual(stream.getvalue(), "Config(host='localhost', port=8080)\n")
 
     def test_pprint_protocol_default(self):
         # Test __pprint__ with default values (3-tuple form)
-        class Bird:
-            def __init__(self, name, fly=True, extinct=False):
-                self.name = name
-                self.fly = fly
-                self.extinct = extinct
-            def __pprint__(self):
-                yield self.name
-                yield ("fly", self.fly, True)       # hide if True
-                yield ("extinct", self.extinct, False)  # hide if False
+        class Bass:
+            def __init__(self, strings: int, pickups: str, active: bool=False):
+                self._strings = strings
+                self._pickups = pickups
+                self._active = active
 
-        # Defaults should be hidden
-        self.assertEqual(pprint.pformat(Bird("sparrow")),
-                         "Bird('sparrow')")
-        # Non-defaults should be shown
-        self.assertEqual(pprint.pformat(Bird("dodo", fly=False, extinct=True)),
-                         "Bird('dodo', fly=False, extinct=True)")
+            def __pprint__(self):
+                yield self._strings
+                yield 'pickups', self._pickups
+                yield 'active', self._active, False
+
+        # Defaults should be hidden if the value is equal to the default.
+        stream = io.StringIO()
+        pprint.pprint(Bass(4, 'split coil P'), stream=stream)
+        self.assertEqual(stream.getvalue(), "Bass(4, pickups='split coil P')\n")
+        # Show the argument if the value is not equal to the default.
+        stream = io.StringIO()
+        pprint.pprint(Bass(5, 'humbucker', active=True), stream=stream)
+        self.assertEqual(stream.getvalue(), "Bass(5, pickups='humbucker', active=True)\n")
 
     def test_pprint_protocol_nested(self):
-        # Test __pprint__ with nested objects
+        # Test __pprint__ with nested objects.
         class Container:
             def __init__(self, items):
                 self.items = items
             def __pprint__(self):
-                yield ("items", self.items)
+                yield "items", self.items
+
+        stream = io.StringIO()
         c = Container([1, 2, 3])
-        self.assertEqual(pprint.pformat(c), "Container(items=[1, 2, 3])")
+        pprint.pprint(c, stream=stream)
+        self.assertEqual(stream.getvalue(), "Container(items=[1, 2, 3])\n")
         # Nested in a list
-        self.assertEqual(pprint.pformat([c]), "[Container(items=[1, 2, 3])]")
+        stream = io.StringIO()
+        pprint.pprint([c], stream=stream)
+        self.assertEqual(stream.getvalue(), "[Container(items=[1, 2, 3])]\n")
 
     def test_pprint_protocol_isreadable(self):
         # Test that isreadable works correctly with __pprint__
