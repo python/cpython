@@ -533,8 +533,8 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- value, a)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+    op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
+        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
         a = arg;
     }
 
@@ -989,7 +989,7 @@ dummy_func(void) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
-            REPLACE_OP(this_instr, _SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+            REPLACE_OP(this_instr, _SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
                        (uintptr_t)type);
         }
         else {

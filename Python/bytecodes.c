@@ -5274,6 +5274,12 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
@@ -5288,16 +5294,6 @@ dummy_func(
             DEAD(null);
             PyStackRef_CLOSE(callable);
             value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_SWAP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- value, a)) {
-            (void)null; // Silence compiler warnings about unused variables
-            (void)callable;
-            DEAD(null);
-            DEAD(callable);
-            assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(callable)));
-            value = PyStackRef_FromPyObjectBorrow(ptr);
-            a = arg;
         }
 
         tier2 op(_LOAD_CONST_UNDER_INLINE, (ptr/4, old -- value, new)) {
