@@ -229,12 +229,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
-#ifdef Py_GIL_DISABLED
-    int already_entered = _Py_atomic_exchange_int(&ctx->ctx_entered, 0);
-#else
-    int already_entered = ctx->ctx_entered;
-    ctx->ctx_entered = 0;
-#endif
+    int already_entered = FT_ATOMIC_LOAD_INT_RELAXED(ctx->ctx_entered);
 
     if (!already_entered) {
         PyErr_Format(PyExc_RuntimeError,
@@ -253,6 +248,7 @@ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
     Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
 
     ctx->ctx_prev = NULL;
+    FT_ATOMIC_STORE_INT(ctx->ctx_entered, 0);
     context_switched(ts);
     return 0;
 }
