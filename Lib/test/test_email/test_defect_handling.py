@@ -126,12 +126,10 @@ class TestDefectsBase:
             errors.InvalidMultipartContentTransferEncodingDefect)
 
     def test_multipart_no_cte_no_defect(self):
-        if self.raise_expected: return
         msg = self._str_msg(self.multipart_msg.format(''))
         self.assertEqual(len(self.get_defects(msg)), 0)
 
     def test_multipart_valid_cte_no_defect(self):
-        if self.raise_expected: return
         for cte in ('7bit', '8bit', 'BINary'):
             msg = self._str_msg(
                 self.multipart_msg.format("\nContent-Transfer-Encoding: "+cte))
@@ -300,6 +298,47 @@ class TestDefectsBase:
         self.assertDefectsEqual(self.get_defects(msg),
                                 [errors.CloseBoundaryNotFoundDefect])
 
+    def test_line_beginning_colon(self):
+        string = (
+            "Subject: Dummy subject\r\n: faulty header line\r\n\r\nbody\r\n"
+        )
+
+        with self._raise_point(errors.InvalidHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.InvalidHeaderDefect]
+            )
+
+            if msg:
+                self.assertEqual(msg.items(), [("Subject", "Dummy subject")])
+                self.assertEqual(msg.get_payload(), "body\r\n")
+
+    def test_misplaced_envelope(self):
+        string = (
+            "Subject: Dummy subject\r\nFrom wtf\r\nTo: abc\r\n\r\nbody\r\n"
+        )
+        with self._raise_point(errors.MisplacedEnvelopeHeaderDefect):
+            msg = self._str_msg(string)
+            self.assertEqual(len(self.get_defects(msg)), 1)
+            self.assertDefectsEqual(
+                self.get_defects(msg), [errors.MisplacedEnvelopeHeaderDefect]
+            )
+
+            if msg:
+                headers = [("Subject", "Dummy subject"), ("To", "abc")]
+                self.assertEqual(msg.items(), headers)
+                self.assertEqual(msg.get_payload(), "body\r\n")
+
+
+
+class TestCompat32(TestDefectsBase, TestEmailBase):
+
+    policy = policy.compat32
+
+    def get_defects(self, obj):
+        return obj.defects
+
 
 class TestDefectDetection(TestDefectsBase, TestEmailBase):
 
@@ -331,6 +370,9 @@ class TestDefectRaising(TestDefectsBase, TestEmailBase):
     def _raise_point(self, defect):
         with self.assertRaises(defect):
             yield
+
+    def get_defects(self, obj):
+        return obj.defects
 
 
 if __name__ == '__main__':

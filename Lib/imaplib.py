@@ -21,8 +21,6 @@ Public functions:       Internaldate2tuple
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 # IDLE contributed by Forest <forestix@nom.one> August 2024.
 
-__version__ = "2.59"
-
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
 from io import DEFAULT_BUFFER_SIZE
@@ -247,7 +245,6 @@ class IMAP4:
             self._cmd_log_idx = 0
             self._cmd_log = {}           # Last '_cmd_log_len' interactions
             if self.debug >= 1:
-                self._mesg('imaplib version %s' % __version__)
                 self._mesg('new IMAP4 connection, tag=%s' % self.tagpre)
 
         self.welcome = self._get_response()
@@ -497,8 +494,6 @@ class IMAP4:
         else:
             date_time = None
         literal = MapCRLF.sub(CRLF, message)
-        if self.utf8_enabled:
-            literal = b'UTF8 (' + literal + b')'
         self.literal = literal
         return self._simple_command(name, mailbox, flags, date_time)
 
@@ -725,9 +720,17 @@ class IMAP4:
     def _CRAM_MD5_AUTH(self, challenge):
         """ Authobject to use with CRAM-MD5 authentication. """
         import hmac
-        pwd = (self.password.encode('utf-8') if isinstance(self.password, str)
-                                             else self.password)
-        return self.user + " " + hmac.HMAC(pwd, challenge, 'md5').hexdigest()
+
+        if isinstance(self.password, str):
+            password = self.password.encode('utf-8')
+        else:
+            password = self.password
+
+        try:
+            authcode = hmac.HMAC(password, challenge, 'md5')
+        except ValueError:  # HMAC-MD5 is not available
+            raise self.error("CRAM-MD5 authentication is not supported")
+        return f"{self.user} {authcode.hexdigest()}"
 
 
     def logout(self):
@@ -805,7 +808,7 @@ class IMAP4:
         """
 
         name = 'PROXYAUTH'
-        return self._simple_command('PROXYAUTH', user)
+        return self._simple_command(name, user)
 
 
     def rename(self, oldmailbox, newmailbox):
@@ -1111,7 +1114,11 @@ class IMAP4:
                 literator = literal
             else:
                 literator = None
-                data = data + bytes(' {%s}' % len(literal), self._encoding)
+                if self.utf8_enabled:
+                    data = data + bytes(' UTF8 (~{%s}' % len(literal), self._encoding)
+                    literal = literal + b')'
+                else:
+                    data = data + bytes(' {%s}' % len(literal), self._encoding)
 
         if __debug__:
             if self.debug >= 4:
@@ -1303,7 +1310,7 @@ class IMAP4:
 
             try:
                 self._get_response()
-            except self.abort as val:
+            except self.abort:
                 if __debug__:
                     if self.debug >= 1:
                         self.print_log()
@@ -1860,7 +1867,7 @@ if __name__ == '__main__':
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'd:s:')
-    except getopt.error as val:
+    except getopt.error:
         optlist, args = (), ()
 
     stream_command = None
@@ -1955,3 +1962,12 @@ try: %s -d5
 ''' % sys.argv[0])
 
         raise
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 20))
+        return "2.60"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

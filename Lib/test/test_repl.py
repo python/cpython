@@ -5,6 +5,7 @@ import select
 import subprocess
 import sys
 import unittest
+from functools import partial
 from textwrap import dedent
 from test import support
 from test.support import (
@@ -27,7 +28,7 @@ if not has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 
-def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
+def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, custom=False, **kw):
     """Run the Python REPL with the given arguments.
 
     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
@@ -41,7 +42,11 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # path may be used by PyConfig_Get("module_search_paths") to build the
     # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-I', '-i']
+    cmd_line = [stdin_fname, '-I']
+    # Don't re-run the built-in REPL from interactive mode
+    # if we're testing a custom REPL (such as the asyncio REPL).
+    if not custom:
+        cmd_line.append('-i')
     cmd_line.extend(args)
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
@@ -54,6 +59,10 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             stdin=subprocess.PIPE,
                             stdout=stdout, stderr=stderr,
                             **kw)
+
+
+spawn_asyncio_repl = partial(spawn_repl, "-m", "asyncio", custom=True)
+
 
 def run_on_interactive_mode(source):
     """Spawn a new Python interpreter, pass the given
@@ -188,6 +197,68 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_pythonstartup_error_reporting(self):
+        # errors based on https://github.com/python/cpython/issues/137576
+
+        def make_repl(env):
+            return subprocess.Popen(
+                [os.path.join(os.path.dirname(sys.executable), '<stdin>'), "-i"],
+                executable=sys.executable,
+                text=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+            )
+
+        # case 1: error in user input, but PYTHONSTARTUP is fine
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('from pythonstartup')" + os.linesep)
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write("1/0")
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """)
+        self.assertIn("from pythonstartup", output)
+        self.assertIn(expected, output)
+
+        # case 2: error in PYTHONSTARTUP triggered by user input
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("def foo():\n    1/0\n")
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write('foo()')
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                foo()
+                ~~~^^
+              File "%s", line 2, in foo
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """) % script
+        self.assertIn(expected, output)
+
+
+
     def test_runsource_show_syntax_error_location(self):
         user_input = dedent("""def f(x, x): ...
                             """)
@@ -297,7 +368,7 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 class TestAsyncioREPL(unittest.TestCase):
     def test_multiple_statements_fail_early(self):
         user_input = "1 / 0; print(f'afterwards: {1+1}')"
-        p = spawn_repl("-m", "asyncio")
+        p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         output = kill_python(p)
         self.assertIn("ZeroDivisionError", output)
@@ -309,7 +380,7 @@ class TestAsyncioREPL(unittest.TestCase):
         var = ContextVar("var", default="failed")
         var.set("ok")
         """)
-        p = spawn_repl("-m", "asyncio")
+        p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         user_input2 = dedent("""
         print(f"toplevel contextvar test: {var.get()}")
@@ -325,7 +396,7 @@ class TestAsyncioREPL(unittest.TestCase):
         from contextvars import ContextVar
         var = ContextVar('var', default='failed')
         """)
-        p = spawn_repl("-m", "asyncio")
+        p = spawn_asyncio_repl()
         p.stdin.write(user_input)
         user_input2 = "async def set_var(): var.set('ok')\n"
         p.stdin.write(user_input2)
@@ -337,6 +408,12 @@ class TestAsyncioREPL(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
+
+    def test_quiet_mode(self):
+        p = spawn_repl("-q", "-m", "asyncio", custom=True)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(output[:3], ">>>")
 
 
 if __name__ == "__main__":

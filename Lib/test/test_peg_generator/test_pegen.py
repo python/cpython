@@ -1106,3 +1106,53 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
+
+    def test_rule_flags(self) -> None:
+        """Test the new rule flags syntax that accepts arbitrary lists of flags."""
+        # Test grammar with various flag combinations
+        grammar_source = """
+        start: simple_rule
+
+        simple_rule (memo):
+            | "hello"
+
+        multi_flag_rule (memo, custom, test):
+            | "world"
+
+        single_custom_flag (custom):
+            | "test"
+
+        no_flags_rule:
+            | "plain"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        # Test memo-only rule
+        simple_rule = rules['simple_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "simple_rule should have memo")
+        self.assertEqual(simple_rule.flags, frozenset(['memo']),
+                        f"simple_rule flags should be {'memo'}, got {simple_rule.flags}")
+
+        # Test multi-flag rule
+        multi_flag_rule = rules['multi_flag_rule']
+        self.assertTrue('memo' in simple_rule.flags,
+                        "multi_flag_rule should have memo")
+        self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
+                        f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
+
+        # Test single custom flag rule
+        single_custom_rule = rules['single_custom_flag']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "single_custom_flag should not have memo")
+        self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
+                        f"single_custom_flag flags should be {'custom'}, got {single_custom_rule.flags}")
+
+        # Test no flags rule
+        no_flags_rule = rules['no_flags_rule']
+        self.assertFalse('memo' not in simple_rule.flags,
+                         "no_flags_rule should not have memo")
+        self.assertEqual(no_flags_rule.flags, frozenset(),
+                        f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")
