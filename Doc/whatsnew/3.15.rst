@@ -851,7 +851,7 @@ Optimizations
 
 * Builds using Visual Studio 2026 (MSVC 18) may now use the new
   :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
-  Results on an early experimental MSVC compiler reported roughly 15% speedups
+  Results on an early experimental MSVC compiler reported roughly 15% speedup
   on the geometric mean of pyperformance on Windows x86-64 over
   the switch-case interpreter. We have
   observed speedups ranging from 15% for large pure-Python libraries
