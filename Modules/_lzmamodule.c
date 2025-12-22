@@ -1041,11 +1041,12 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     if (d->eof) {
         FT_ATOMIC_STORE_CHAR_RELAXED(d->needs_input, 0);
         if (lzs->avail_in > 0) {
-            Py_XSETREF(d->unused_data,
-                      PyBytes_FromStringAndSize((char *)lzs->next_in, lzs->avail_in));
-            if (d->unused_data == NULL) {
+            PyObject *unused_data = PyBytes_FromStringAndSize(
+                (char *)lzs->next_in, lzs->avail_in);
+            if (unused_data == NULL) {
                 goto error;
             }
+            Py_XSETREF(d->unused_data, unused_data);
         }
     }
     else if (lzs->avail_in == 0) {
@@ -1319,12 +1320,13 @@ static PyObject *
 Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
 {
     Decompressor *self = Decompressor_CAST(op);
-    PyMutex_Lock(&self->mutex);
-    PyObject *result = Py_XNewRef(self->unused_data);
-    PyMutex_Unlock(&self->mutex);
-    if (result == NULL) {
-        PyErr_SetString(PyExc_AttributeError, "unused_data");
+    if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
+    PyMutex_Lock(&self->mutex);
+    assert(self->unused_data != NULL);
+    PyObject *result = Py_NewRef(self->unused_data);
+    PyMutex_Unlock(&self->mutex);
     return result;
 }
 
