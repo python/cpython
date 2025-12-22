@@ -710,7 +710,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
-        goto done;
+        goto full;
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
