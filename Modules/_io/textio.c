@@ -2416,21 +2416,12 @@ typedef struct {
 #endif
 
 static int
-textiowrapper_parse_cookie(textio *self, cookie_type *cookie, PyObject *cookieObj)
+textiowrapper_parse_cookie(cookie_type *cookie, PyObject *cookieObj)
 {
     unsigned char buffer[COOKIE_BUF_LEN];
     PyLongObject *cookieLong = (PyLongObject *)PyNumber_Long(cookieObj);
     if (cookieLong == NULL)
         return -1;
-
-    // gh-143007: PyNumber_Long can call arbitrary code through __int__
-    // which may detach the underlying buffer.
-    if (self->detached) {
-        Py_DECREF(cookieLong);
-        PyErr_SetString(PyExc_ValueError,
-                        "underlying buffer has been detached");
-        return -1;
-    }
 
     if (_PyLong_AsByteArray(cookieLong, buffer, sizeof(buffer),
                             PY_LITTLE_ENDIAN, 0, 1) < 0) {
@@ -2646,7 +2637,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     /* The strategy of seek() is to go back to the safe start point
      * and replay the effect of read(chars_to_skip) from there.
      */
-    if (textiowrapper_parse_cookie(self, &cookie, cookieObj) < 0)
+    if (textiowrapper_parse_cookie(&cookie, cookieObj) < 0)
         goto fail;
 
     /* Seek back to the safe start point. */
