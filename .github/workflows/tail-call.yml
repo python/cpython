@@ -79,14 +79,14 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Native Windows MSVC (PGO)
+      - name: Native Windows MSVC (release)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install visualstudio2026buildtools-preview --pre -allWorkloads
-          set PATH=C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Current\Bin\;%PATH%
-          ./PCbuild/build.bat --tail-call-interp --pgo -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
-          ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          choco install visualstudio2026buildtools -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
+          set PATH=C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;%PATH%
+          call ./PCbuild/build.bat --tail-call-interp -c Release -p ${{ matrix.architecture }} "/p:PlatformToolset=v145"
+          call ./PCbuild/rt.bat -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows Clang (release)
