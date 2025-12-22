@@ -1301,17 +1301,33 @@ class Path(PurePath):
         target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, **kwargs):
+    def copy_into(self, target_dir, exist_ok=True, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, 'with_segments'):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
+
+        target = (target_dir / name) if hasattr(target_dir, "with_segments") \
+                else self.with_segments(target_dir, name)
+
+        if self.info.is_file():
+            if not exist_ok and target.info.is_file():
+                raise FileExistsError(EEXIST, "File exists", str(target))
+            return self.copy(target, **kwargs)
+
+        if self.info.is_dir():
+            if target.info.exists() and target.info.is_dir():
+                if not exist_ok:
+                    raise FileExistsError(EEXIST, "File exists", str(target))
+
+                for child in self.iterdir():
+                    child.copy_into(target, exist_ok=exist_ok, **kwargs)
+                return target.joinpath()
+
+            return self.copy(target, **kwargs)
+
         return self.copy(target, **kwargs)
 
     def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):

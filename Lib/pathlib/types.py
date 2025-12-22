@@ -386,13 +386,22 @@ class _ReadablePath(_JoinablePath):
         target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, **kwargs):
+    def copy_into(self, target_dir, exist_ok=True, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
+        
+        target = target_dir / name
+        if hasattr(target, 'info') and self.info.is_dir() and target.info.exists() and target.info.is_dir():
+            if not exist_ok:
+                raise FileExistsError("File exists", str(target))
+            for child in self.iterdir():
+                child.copy_into(target, exist_ok=exist_ok, **kwargs)
+            return target.joinpath()
+
         return self.copy(target_dir / name, **kwargs)
 
 
