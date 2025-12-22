@@ -1266,18 +1266,51 @@ OrderedDict_copy_impl(PyObject *od)
         }
     }
     else {
-        _odict_FOREACH(od, node) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od,
-                                               _odictnode_KEY(node));
-            if (value == NULL)
-                goto fail;
-            res = PyObject_SetItem((PyObject *)od_copy,
-                                   _odictnode_KEY(node), value);
-            Py_DECREF(value);
-            if (res != 0)
-                goto fail;
+        Py_ssize_t i, size = PyODict_Size((PyODictObject *)od);
+        PyObject **keys;
+        if (size < 0) {
+            goto fail;
         }
+
+        if (size == 0) {
+            return od_copy;
+        }
+
+        keys = PyMem_Malloc(size * sizeof(PyObject *));
+        if (keys == NULL) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+
+        i = 0;
+        _odict_FOREACH(od, node) {
+            keys[i] = _odictnode_KEY(node);
+            Py_INCREF(keys[i]);
+            i++;
+        }
+
+        for (i = 0; i < size; i++) {
+            int res;
+            PyObject *value = PyObject_GetItem((PyObject *)od, keys[i]);
+            if (value == NULL) {
+                for (Py_ssize_t j = 0; j < size; j++) {
+                    Py_DECREF(keys[j]);
+                }
+                PyMem_Free(keys);
+                goto fail;
+            }
+            res = PyObject_SetItem((PyObject *)od_copy, keys[i], value);
+            Py_DECREF(value);
+            Py_DECREF(keys[i]);
+            if (res != 0) {
+                for (; i < size; i++) {
+                    Py_DECREF(keys[i]);
+                }
+                PyMem_Free(keys);
+                goto fail;
+            }
+        }
+        PyMem_Free(keys);
     }
     return od_copy;
 
