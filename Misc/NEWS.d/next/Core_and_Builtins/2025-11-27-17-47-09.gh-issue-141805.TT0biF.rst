@@ -1,2 +1,2 @@
-Fix set length corruption when set additions occur within
-element comparison (:meth:`object.__eq__`) methods.
+Fix set corruption due to invalid length calculation when set additions occur
+in the element comparison (:meth:`object.__eq__`) methods.

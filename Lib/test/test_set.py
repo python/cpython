@@ -701,6 +701,8 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertEqual(len(tasks), 1)
         tasks.add(CorruptTrigger())
         self.assertEqual(len(tasks), 2)
+        # cover the case in gh-141805 that triggers segfault
+        repr(tasks)
 
 
 class SetSubclass(set):
