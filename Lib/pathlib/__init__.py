@@ -1309,19 +1309,23 @@ class Path(PurePath):
         if not name:
             raise ValueError(f"{self!r} has an empty name")
 
-        parent = target_dir if hasattr(target_dir, "with_segments") \
-                else self.with_segments(target_dir, name)
+        parent = target_dir if hasattr(target_dir, "with_segments") else self.with_segments(target_dir)
 
-        dest = parent / self.name
+        is_dir = getattr(parent, "is_dir", None)
+        if callable(is_dir) and not is_dir():
+            raise ValueError(f"{parent!r} is not a directory")
+
+        dest = parent / name
 
         if not exist_ok and dest.exists():
             raise FileExistsError(EEXIST, "File exists", str(dest))
 
-        if self.info.is_dir():
-            if not dest.exists():
-                os.mkdir(dest)
-            elif not dest.is_dir():
-                raise ValueError(f"{dest!r} is not a directory")
+        if self.is_dir():
+            if dest.exists():
+                if not dest.is_dir():
+                    raise ValueError(f"{dest!r} is not a directory")
+            else:
+                dest.mkdir()
             for child in self.iterdir():
                 child.copy_into(dest, exist_ok=exist_ok, **kwargs)
             return dest.joinpath()

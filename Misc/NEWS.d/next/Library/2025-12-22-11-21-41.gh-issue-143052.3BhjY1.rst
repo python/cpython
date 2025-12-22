@@ -1,1 +1,1 @@
-copy_into add exist_ok allow overwrite same directory.
+Add ``exist_ok`` parameter to :meth:`!pathlib.Path.copy_into`.

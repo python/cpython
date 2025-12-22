@@ -1604,6 +1604,9 @@ Copying, moving and deleting
 
    .. versionadded:: 3.14
 
+   .. versionchanged:: 3.15
+      Added exist_ok argument to allow copy duplicate directory
+
 
 .. method:: Path.rename(target)
 
