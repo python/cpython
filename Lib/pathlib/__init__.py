@@ -1309,26 +1309,24 @@ class Path(PurePath):
         if not name:
             raise ValueError(f"{self!r} has an empty name")
 
-        target = (target_dir / name) if hasattr(target_dir, "with_segments") \
+        parent = target_dir if hasattr(target_dir, "with_segments") \
                 else self.with_segments(target_dir, name)
 
-        if self.info.is_file():
-            if not exist_ok and target.info.is_file():
-                raise FileExistsError(EEXIST, "File exists", str(target))
-            return self.copy(target, **kwargs)
+        dest = parent / self.name
+
+        if not exist_ok and dest.exists():
+            raise FileExistsError(EEXIST, "File exists", str(dest))
 
         if self.info.is_dir():
-            if target.info.exists() and target.info.is_dir():
-                if not exist_ok:
-                    raise FileExistsError(EEXIST, "File exists", str(target))
+            if not dest.exists():
+                os.mkdir(dest)
+            elif not dest.is_dir():
+                raise ValueError(f"{dest!r} is not a directory")
+            for child in self.iterdir():
+                child.copy_into(dest, exist_ok=exist_ok, **kwargs)
+            return dest.joinpath()
 
-                for child in self.iterdir():
-                    child.copy_into(target, exist_ok=exist_ok, **kwargs)
-                return target.joinpath()
-
-            return self.copy(target, **kwargs)
-
-        return self.copy(target, **kwargs)
+        return self.copy(dest, **kwargs)
 
     def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):
         """
