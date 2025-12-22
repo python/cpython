@@ -733,7 +733,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             fileno = file.fileno()
-        except (AttributeError, io.UnsupportedOperation) as err:
+        except (AttributeError, io.UnsupportedOperation):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
