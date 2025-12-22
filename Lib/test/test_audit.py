@@ -23,6 +23,7 @@ class AuditTest(unittest.TestCase):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
+            errors="backslashreplace",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ) as p:
@@ -79,6 +80,14 @@ class AuditTest(unittest.TestCase):
     def test_mmap(self):
         self.do_test("test_mmap")
 
+    def test_ctypes_call_function(self):
+        import_helper.import_module("ctypes")
+        self.do_test("test_ctypes_call_function")
+
+    def test_posixsubprocess(self):
+        import_helper.import_module("_posixsubprocess")
+        self.do_test("test_posixsubprocess")
+
     def test_excepthook(self):
         returncode, events, stderr = self.run_python("test_excepthook")
         if not returncode:
@@ -125,7 +134,7 @@ class AuditTest(unittest.TestCase):
         self.assertEqual(events[0][0], "socket.gethostname")
         self.assertEqual(events[1][0], "socket.__new__")
         self.assertEqual(events[2][0], "socket.bind")
-        self.assertTrue(events[2][2].endswith("('127.0.0.1', 8080)"))
+        self.assertEndsWith(events[2][2], "('127.0.0.1', 8080)")
 
     def test_gc(self):
         returncode, events, stderr = self.run_python("test_gc")
@@ -313,6 +322,23 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+    @support.support_remote_exec_only
+    @support.cpython_only
+    def test_sys_remote_exec(self):
+        returncode, events, stderr = self.run_python("test_sys_remote_exec")
+        self.assertTrue(any(["sys.remote_exec" in event for event in events]))
+        self.assertTrue(any(["cpython.remote_debugger_script" in event for event in events]))
+        if returncode:
+            self.fail(stderr)
+
+    def test_import_module(self):
+        self.do_test("test_import_module")
+
+    def test_builtin__import__(self):
+        self.do_test("test_builtin__import__")
+
+    def test_import_statement(self):
+        self.do_test("test_import_statement")
 
 if __name__ == "__main__":
     unittest.main()

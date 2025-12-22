@@ -12,8 +12,7 @@ import re
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only
-from test.support import hashlib_helper
-from test.support import threading_helper
+from test.support import hashlib_helper, threading_helper
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -208,7 +207,68 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
 
 
-class NewIMAPTestsMixin():
+class IdleCmdDenyHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        self._send_tagged(tag, 'NO', 'IDLE is not allowed at this time')
+
+
+class IdleCmdHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        # pre-idle-continuation response
+        self._send_line(b'* 0 EXISTS')
+        self._send_textline('+ idling')
+        # simple response
+        self._send_line(b'* 2 EXISTS')
+        # complex response: fragmented data due to literal string
+        self._send_line(b'* 1 FETCH (BODY[HEADER.FIELDS (DATE)] {41}')
+        self._send(b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n')
+        self._send_line(b')')
+        # simple response following a fragmented one
+        self._send_line(b'* 3 EXISTS')
+        # response arriving later
+        time.sleep(1)
+        self._send_line(b'* 1 RECENT')
+        r = yield
+        if r == b'DONE\r\n':
+            self._send_line(b'* 9 RECENT')
+            self._send_tagged(tag, 'OK', 'Idle completed')
+        else:
+            self._send_tagged(tag, 'BAD', 'Expected DONE')
+
+
+class IdleCmdDelayedPacketHandler(SimpleIMAPHandler):
+    capabilities = 'IDLE'
+    def cmd_IDLE(self, tag, args):
+        self._send_textline('+ idling')
+        # response line spanning multiple packets, the last one delayed
+        self._send(b'* 1 EX')
+        time.sleep(0.2)
+        self._send(b'IS')
+        time.sleep(1)
+        self._send(b'TS\r\n')
+        r = yield
+        if r == b'DONE\r\n':
+            self._send_tagged(tag, 'OK', 'Idle completed')
+        else:
+            self._send_tagged(tag, 'BAD', 'Expected DONE')
+
+
+class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
+                            'VzdG9uLm1jaS5uZXQ=')
+        r = yield
+        if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
+                 b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
+            self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
+        else:
+            self._send_tagged(tag, 'NO', 'No access')
+
+
+class NewIMAPTestsMixin:
     client = None
 
     def _setup(self, imap_handler, connect=True):
@@ -312,7 +372,11 @@ class NewIMAPTestsMixin():
                 self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
         client, server = self._setup(UTF8AppendServer)
         self.assertEqual(client._encoding, 'ascii')
@@ -323,10 +387,13 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(client._encoding, 'utf-8')
         msg_string = 'Subject: üñí©öðé'
-        typ, data = client.append(None, None, None, msg_string.encode('utf-8'))
+        typ, data = client.append(
+            None, None, None, (msg_string + '\n').encode('utf-8'))
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.response,
-            ('UTF8 (%s)\r\n' % msg_string).encode('utf-8'))
+            ['INBOX', 'UTF8',
+             '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+             b')\r\n' ])
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
@@ -391,39 +458,25 @@ class NewIMAPTestsMixin():
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
+
+    @hashlib_helper.block_algorithm("md5")
+    def test_login_cram_md5_blocked(self):
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
+        msg = re.escape("CRAM-MD5 authentication is not supported")
+        with self.assertRaisesRegex(imaplib.IMAP4.error, msg):
+            client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
@@ -497,6 +550,73 @@ class NewIMAPTestsMixin():
 
     # command tests
 
+    def test_idle_capability(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                'does not support IMAP4 IDLE'):
+            with client.idle():
+                pass
+
+    def test_idle_denied(self):
+        client, _ = self._setup(IdleCmdDenyHandler)
+        client.login('user', 'pass')
+        with self.assertRaises(imaplib.IMAP4.error):
+            with client.idle() as idler:
+                pass
+
+    def test_idle_iter(self):
+        client, _ = self._setup(IdleCmdHandler)
+        client.login('user', 'pass')
+        with client.idle() as idler:
+            # iteration should include response between 'IDLE' & '+ idling'
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'0']))
+            # iteration should produce responses
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'2']))
+            # fragmented response (with literal string) should arrive whole
+            expected_fetch_data = [
+                (b'1 (BODY[HEADER.FIELDS (DATE)] {41}',
+                    b'Date: Fri, 06 Dec 2024 06:00:00 +0000\r\n\r\n'),
+                b')']
+            typ, data = next(idler)
+            self.assertEqual(typ, 'FETCH')
+            self.assertEqual(data, expected_fetch_data)
+            # response after a fragmented one should arrive separately
+            response = next(idler)
+            self.assertEqual(response, ('EXISTS', [b'3']))
+        # iteration should have consumed untagged responses
+        _, data = client.response('EXISTS')
+        self.assertEqual(data, [None])
+        # responses not iterated should be available after idle
+        _, data = client.response('RECENT')
+        self.assertEqual(data[0], b'1')
+        # responses received after 'DONE' should be available after idle
+        self.assertEqual(data[1], b'9')
+
+    def test_idle_burst(self):
+        client, _ = self._setup(IdleCmdHandler)
+        client.login('user', 'pass')
+        # burst() should yield immediately available responses
+        with client.idle() as idler:
+            batch = list(idler.burst())
+            self.assertEqual(len(batch), 4)
+        # burst() should not have consumed later responses
+        _, data = client.response('RECENT')
+        self.assertEqual(data, [b'1', b'9'])
+
+    def test_idle_delayed_packet(self):
+        client, _ = self._setup(IdleCmdDelayedPacketHandler)
+        client.login('user', 'pass')
+        # If our readline() implementation fails to preserve line fragments
+        # when idle timeouts trigger, a response spanning delayed packets
+        # can be corrupted, leaving the protocol stream in a bad state.
+        try:
+            with client.idle(0.5) as idler:
+                self.assertRaises(StopIteration, next, idler)
+        except client.abort as err:
+            self.fail('multi-packet response was corrupted by idle timeout')
+
     def test_login(self):
         client, _ = self._setup(SimpleIMAPHandler)
         typ, data = client.login('user', 'pass')
@@ -536,6 +656,14 @@ class NewIMAPTestsMixin():
         self.assertEqual(typ, 'OK')
         self.assertEqual(data[0], b'Returned to authenticated state. (Success)')
         self.assertEqual(client.state, 'AUTH')
+
+    # property tests
+
+    def test_file_property_should_not_be_accessed(self):
+        client, _ = self._setup(SimpleIMAPHandler)
+        # the 'file' property replaced a private attribute that is now unsafe
+        with self.assertWarns(RuntimeWarning):
+            client.file
 
 
 class NewIMAPTests(NewIMAPTestsMixin, unittest.TestCase):
@@ -760,7 +888,11 @@ class ThreadedNetworkedTests(unittest.TestCase):
         class UTF8AppendServer(self.UTF8Server):
             def cmd_APPEND(self, tag, args):
                 self._send_textline('+')
-                self.server.response = yield
+                self.server.response = args
+                literal = yield
+                self.server.response.append(literal)
+                literal = yield
+                self.server.response.append(literal)
                 self._send_tagged(tag, 'OK', 'okay')
 
         with self.reaped_pair(UTF8AppendServer) as (server, client):
@@ -774,12 +906,12 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(client._encoding, 'utf-8')
             msg_string = 'Subject: üñí©öðé'
             typ, data = client.append(
-                None, None, None, msg_string.encode('utf-8'))
+                None, None, None, (msg_string + '\n').encode('utf-8'))
             self.assertEqual(typ, 'OK')
-            self.assertEqual(
-                server.response,
-                ('UTF8 (%s)\r\n' % msg_string).encode('utf-8')
-            )
+            self.assertEqual(server.response,
+                ['INBOX', 'UTF8',
+                 '(~{25}', ('%s\r\n' % msg_string).encode('utf-8'),
+                 b')\r\n' ])
 
     # XXX also need a test that makes sure that the Literal and Untagged_status
     # regexes uses unicode in UTF8 mode instead of the default ASCII.
@@ -901,6 +1033,20 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.error,
                               self.imap_class, *server.server_address)
 
+    def test_truncated_large_literal(self):
+        size = 0
+        class BadHandler(SimpleIMAPHandler):
+            def handle(self):
+                self._send_textline('* OK {%d}' % size)
+                self._send_textline('IMAP4rev1')
+
+        for exponent in range(15, 64):
+            size = 1 << exponent
+            with self.subTest(f"size=2e{size}"):
+                with self.reaped_server(BadHandler) as server:
+                    with self.assertRaises(imaplib.IMAP4.abort):
+                        self.imap_class(*server.server_address)
+
     @threading_helper.reap_threads
     def test_simple_with_statement(self):
         # simplest call
@@ -969,6 +1115,16 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
             client = self.imap_class("localhost", server.server_address[1],
                                      ssl_context=ssl_context)
             client.shutdown()
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(imaplib, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":

@@ -52,9 +52,13 @@ An explanation of some terminology and conventions is in order.
    single: Coordinated Universal Time
    single: Greenwich Mean Time
 
-* UTC is Coordinated Universal Time (formerly known as Greenwich Mean Time, or
-  GMT).  The acronym UTC is not a mistake but a compromise between English and
-  French.
+* UTC is `Coordinated Universal Time`_ and superseded `Greenwich Mean Time`_ or
+  GMT as the basis of international timekeeping. The acronym UTC is not a
+  mistake but conforms to an earlier, language-agnostic naming scheme for time
+  standards such as UT0, UT1, and UT2.
+
+.. _Coordinated Universal Time: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+.. _Greenwich Mean Time: https://en.wikipedia.org/wiki/Greenwich_Mean_Time
 
 .. index:: single: Daylight Saving Time
 
@@ -185,7 +189,7 @@ Functions
    .. versionadded:: 3.7
 
 
-.. function:: clock_settime(clk_id, time: float)
+.. function:: clock_settime(clk_id, time)
 
    Set the time of the specified clock *clk_id*.  Currently,
    :data:`CLOCK_REALTIME` is the only accepted value for *clk_id*.
@@ -196,6 +200,9 @@ Functions
    .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Accepts any real number as *time*, not only integer or float.
 
 
 .. function:: clock_settime_ns(clk_id, time: int)
@@ -219,6 +226,9 @@ Functions
    ``asctime(localtime(secs))``. Locale information is not used by
    :func:`ctime`.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
+
 
 .. function:: get_clock_info(name)
 
@@ -234,8 +244,8 @@ Functions
 
    The result has the following attributes:
 
-   - *adjustable*: ``True`` if the clock can be changed automatically (e.g. by
-     a NTP daemon) or manually by the system administrator, ``False`` otherwise
+   - *adjustable*: ``True`` if the clock can be set to jump forward or backward
+     in time, ``False`` otherwise. Does not refer to gradual NTP rate adjustments.
    - *implementation*: The name of the underlying C function used to get
      the clock value.  Refer to :ref:`time-clock-id-constants` for possible values.
    - *monotonic*: ``True`` if the clock cannot go backward,
@@ -254,6 +264,9 @@ Functions
    :class:`struct_time` object. See :func:`calendar.timegm` for the inverse of this
    function.
 
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
+
 
 .. function:: localtime([secs])
 
@@ -266,6 +279,9 @@ Functions
    or :c:func:`gmtime` functions, and :exc:`OSError` on :c:func:`localtime` or
    :c:func:`gmtime` failure. It's common for this to be restricted to years
    between 1970 and 2038.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 
 .. function:: mktime(t)
@@ -302,10 +318,11 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
-      The function is now always available and always system-wide.
+      The function is now always available and the clock is now the same for
+      all processes.
 
    .. versionchanged:: 3.10
-      On macOS, the function is now system-wide.
+      On macOS, the clock is now the same for all processes.
 
 
 .. function:: monotonic_ns() -> int
@@ -321,13 +338,14 @@ Functions
 
    Return the value (in fractional seconds) of a performance counter, i.e. a
    clock with the highest available resolution to measure a short duration.  It
-   does include time elapsed during sleep and is system-wide.  The reference
+   does include time elapsed during sleep. The clock is the same for all
+   processes. The reference
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
    .. impl-detail::
 
-      On CPython, use the same clock than :func:`time.monotonic` and is a
+      On CPython, use the same clock as :func:`time.monotonic` and is a
       monotonic clock, i.e. a clock that cannot go backwards.
 
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
@@ -336,10 +354,10 @@ Functions
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      On Windows, the function is now system-wide.
+      On Windows, the clock is now the same for all processes.
 
    .. versionchanged:: 3.13
-      Use the same clock than :func:`time.monotonic`.
+      Use the same clock as :func:`time.monotonic`.
 
 
 .. function:: perf_counter_ns() -> int
@@ -376,8 +394,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating-point number to indicate a more precise sleep
-   time.
+   The argument may be a non-integer to indicate a more precise sleep time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
    signal handler, the sleep is restarted with a recomputed timeout.
@@ -385,19 +402,28 @@ Functions
    The suspension time may be longer than requested by an arbitrary amount,
    because of the scheduling of other activity in the system.
 
+   .. rubric:: Windows implementation
+
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
-   continues execution.  On Windows 8.1 and newer the implementation uses
+   continues execution.  On Windows 10 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows/win32/api/synchapi/nf-synchapi-createwaitabletimerexw>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
-   Unix implementation:
+   .. rubric:: Unix implementation
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
+
+   .. note::
+
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
+
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
@@ -412,6 +438,9 @@ Functions
 
    .. versionchanged:: 3.13
       Raises an auditing event.
+
+   .. versionchanged:: 3.15
+      Accepts any real number, not only integer or float.
 
 .. index::
    single: % (percent); datetime format
@@ -555,7 +584,7 @@ Functions
       calculations when the day of the week and the year are specified.
 
    Here is an example, a format for dates compatible with that specified  in the
-   :rfc:`2822` Internet email standard.  [1]_ ::
+   :rfc:`5322` Internet email standard.  [1]_ ::
 
       >>> from time import gmtime, strftime
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
@@ -699,12 +728,17 @@ Functions
 
    Clock:
 
-   * On Windows, call ``GetSystemTimeAsFileTime()``.
+   * On Windows, call ``GetSystemTimePreciseAsFileTime()``.
    * Call ``clock_gettime(CLOCK_REALTIME)`` if available.
    * Otherwise, call ``gettimeofday()``.
 
    Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
    type.
+
+.. versionchanged:: 3.13
+
+   On Windows, calls ``GetSystemTimePreciseAsFileTime()`` instead of
+   ``GetSystemTimeAsFileTime()``.
 
 
 .. function:: time_ns() -> int
@@ -915,7 +949,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
 .. data:: CLOCK_TAI
 
-   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/how-utcnist-related-coordinated-universal-time-utc-international>`_
 
    The system must have a current leap second table in order for this to give
    the correct answer.  PTP or NTP software can maintain a leap second table.
@@ -969,8 +1003,8 @@ The following constant is the only parameter that can be sent to
 
 .. data:: CLOCK_REALTIME
 
-   System-wide real-time clock.  Setting this clock requires appropriate
-   privileges.
+   Real-time clock.  Setting this clock requires appropriate privileges.
+   The clock is the same for all processes.
 
    .. availability:: Unix.
 
@@ -1032,4 +1066,5 @@ Timezone Constants
    strict reading of the original 1982 :rfc:`822` standard calls for a two-digit
    year (``%y`` rather than ``%Y``), but practice moved to 4-digit years long before the
    year 2000.  After that, :rfc:`822` became obsolete and the 4-digit year has
-   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`.
+   been first recommended by :rfc:`1123` and then mandated by :rfc:`2822`,
+   with :rfc:`5322` continuing this requirement.

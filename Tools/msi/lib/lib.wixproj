@@ -15,11 +15,11 @@
         <EmbeddedResource Include="*.wxl" />
     </ItemGroup>
     <ItemGroup>
-        <ExcludeFolders Include="Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo" />
+        <ExcludeFolders Include="Lib\site-packages;Lib\test;Lib\tests;Lib\tkinter;Lib\idlelib;Lib\turtledemo" />
         <InstallFiles Include="$(PySourcePath)Lib\**\*"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;
                                $(PySourcePath)Lib\**\*.pyo;
-                               $(PySourcePath)Lib\site-packages\README;
+                               $(PySourcePath)Lib\turtle.py;
                                @(ExcludeFolders->'$(PySourcePath)%(Identity)\*');
                                @(ExcludeFolders->'$(PySourcePath)%(Identity)\**\*')">
             <SourceBase>$(PySourcePath)Lib</SourceBase>

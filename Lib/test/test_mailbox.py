@@ -8,7 +8,7 @@ import re
 import io
 import tempfile
 from test import support
-from test.support import import_helper
+from test.support import import_helper, warnings_helper
 from test.support import os_helper
 from test.support import refleak_helper
 from test.support import socket_helper
@@ -1212,6 +1212,7 @@ class _TestMboxMMDF(_TestSingleFile):
             self.assertEqual(contents, f.read())
         self._box = self._factory(self._path)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @unittest.skipUnless(hasattr(socket, 'socketpair'), "Test needs socketpair().")
     def test_lock_conflict(self):
@@ -1303,12 +1304,12 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
         self._box.add('From: foo\n\n0')  # No newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
         self._box.add('From: foo\n\n0\n')  # Newline at the end
         with open(self._path, encoding='utf-8') as f:
             data = f.read()
-            self.assertEqual(data[-3:], '0\n\n')
+            self.assertEndsWith(data, '0\n\n')
 
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
@@ -2357,7 +2358,7 @@ class MaildirTestCase(unittest.TestCase):
         # Test for regression on bug #117490:
         # Make sure the boxes attribute actually gets set.
         self.mbox = mailbox.Maildir(os_helper.TESTFN)
-        #self.assertTrue(hasattr(self.mbox, "boxes"))
+        #self.assertHasAttr(self.mbox, "boxes")
         #self.assertEqual(len(self.mbox.boxes), 0)
         self.assertIsNone(self.mbox.next())
         self.assertIsNone(self.mbox.next())

@@ -1,7 +1,7 @@
 # Python WebAssembly (WASM) build
 
 **WASI support is [tier 2](https://peps.python.org/pep-0011/#tier-2).**
-**Emscripten is NOT officially supported as of Python 3.13.**
+**Emscripten support is [tier 3](https://peps.python.org/pep-0011/#tier-3).**
 
 This directory contains configuration and helpers to facilitate cross
 compilation of CPython to WebAssembly (WASM). Python supports Emscripten
@@ -9,171 +9,109 @@ compilation of CPython to WebAssembly (WASM). Python supports Emscripten
 run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
 use WASM runtimes such as *wasmtime*.
 
-Users and developers are encouraged to use the script
-`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
-assistance with installation of SDKs, running tests, etc.
+**NOTE**: If you are looking for general information about WebAssembly that is
+not directly related to CPython, please see https://github.com/psf/webassembly.
 
-**NOTE**: If you are looking for information that is not directly related to
-building CPython for WebAssembly (or the resulting build), please see
-https://github.com/psf/webassembly for more information.
-
-## wasm32-emscripten
+## Emscripten (wasm32-emscripten)
 
 ### Build
 
-For now the build system has two target flavors. The ``Emscripten/browser``
-target (``--with-emscripten-target=browser``) is optimized for browsers.
-It comes with a reduced and preloaded stdlib without tests and threading
-support. The ``Emscripten/node`` target has threading enabled and can
-access the file system directly.
+See [the devguide instructions for building for Emscripten](https://devguide.python.org/getting-started/setup-building/#emscripten).
 
-Cross compiling to the wasm32-emscripten platform needs the
-[Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
-Emscripten 3.1.19 or newer are recommended. All commands below are relative
-to a repository checkout.
+### Running from node
 
-#### Toolchain
+If you want to run the normal Python CLI, you can use `python.sh`. It takes the
+same options as the normal Python CLI entrypoint, though the REPL does not
+function and will crash.
 
-##### Container image
+`python.sh` invokes `node_entry.mjs` which imports the Emscripten module for the
+Python process and starts it up with the appropriate settings. If you wish to
+make a node application that "embeds" the interpreter instead of acting like the
+CLI you will need to write your own alternative to `node_entry.mjs`.
 
-Christian Heimes maintains a container image with Emscripten SDK, Python
-build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
-From within your local CPython repo clone, run one of the following commands:
+### Running tests
 
-```
-# Fedora, RHEL, CentOS
-podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
-
-# other
-docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
-```
-
-##### Manually
-
-###### Install [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
-
-**NOTE**: Follow the on-screen instructions how to add the SDK to ``PATH``.
-
+After building, you can run the full test suite with:
 ```shell
-git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
-/opt/emsdk/emsdk install latest
-/opt/emsdk/emsdk activate latest
+./cross-build/wasm32-emscripten/build/python/python.sh -m test -uall
 ```
-
-###### Optionally: enable ccache for EMSDK
-
-The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
-sourced. Otherwise the source script removes the environment variable.
-
-```
-. /opt/emsdk/emsdk_env.sh
-EM_COMPILER_WRAPPER=ccache
-```
-
-###### Optionally: pre-build and cache static libraries
-
-Emscripten SDK provides static builds of core libraries without PIC
-(position-independent code). Python builds with ``dlopen`` support require
-PIC. To populate the build cache, run:
-
+You can run the browser smoke test with:
 ```shell
-. /opt/emsdk/emsdk_env.sh
-embuilder build zlib bzip2 MINIMAL_PIC
-embuilder --pic build zlib bzip2 MINIMAL_PIC
+./Tools/wasm/emscripten/browser_test/run_test.sh
 ```
 
+### The Web Example
 
-### Compile and build Python interpreter
+When building for Emscripten, a small web example will be built automatically
+in the ``web_example`` directory. To run the web example, ``cd`` into the
+``web_example`` directory, then run ``python server.py``. This will start a web
+server; you can then visit ``http://localhost:8000/`` in a browser to see a
+simple REPL example.
 
-From within the container, run the following command:
+The web example relies on a bug fix in Emscripten version 3.1.73 so if you build
+with earlier versions of Emscripten it may not work. The web example uses
+``SharedArrayBuffer``. For security reasons browsers only provide
+``SharedArrayBuffer`` in secure environments with cross-origin isolation. The
+webserver must send cross-origin headers and correct MIME types for the
+JavaScript and WebAssembly files. Otherwise the terminal will fail to load with
+an error message like ``ReferenceError: SharedArrayBuffer is not defined``. See
+more information here:
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements
 
-```shell
-./Tools/wasm/wasm_build.py build
+Note that ``SharedArrayBuffer`` is _not required_ to use Python itself, only the
+web example. If cross-origin isolation is not appropriate for your use case you
+may make your own application embedding `python.mjs` which does not use
+``SharedArrayBuffer`` and serve it without the cross-origin isolation headers.
+
+### Embedding Python in a custom JavaScript application
+
+You can look at `python.worker.mjs` and `node_entry.mjs` for inspiration. At a
+minimum you must import ``createEmscriptenModule`` and you need to call
+``createEmscriptenModule`` with an appropriate settings object. This settings
+object will need a prerun hook that installs the Python standard library into
+the Emscripten file system.
+
+#### NodeJs
+
+In Node, you can use the NodeFS to mount the standard library in your native
+file system into the Emscripten file system:
+```js
+import createEmscriptenModule from "./python.mjs";
+
+await createEmscriptenModule({
+    preRun(Module) {
+        Module.FS.mount(
+            Module.FS.filesystems.NODEFS,
+            { root: "/path/to/python/stdlib" },
+            "/lib/",
+        );
+    },
+});
 ```
 
-The command is roughly equivalent to:
+#### Browser
 
-```shell
-mkdir -p builddir/build
-pushd builddir/build
-../../configure -C
-make -j$(nproc)
-popd
+In the browser, the simplest approach is to put the standard library in a zip
+file it and install it. With Python 3.14 this could look like:
+```js
+import createEmscriptenModule from "./python.mjs";
+
+await createEmscriptenModule({
+  async preRun(Module) {
+    Module.FS.mkdirTree("/lib/python3.14/lib-dynload/");
+    Module.addRunDependency("install-stdlib");
+    const resp = await fetch("python3.14.zip");
+    const stdlibBuffer = await resp.arrayBuffer();
+    Module.FS.writeFile(`/lib/python314.zip`, new Uint8Array(stdlibBuffer), {
+      canOwn: true,
+    });
+    Module.removeRunDependency("install-stdlib");
+  },
+});
 ```
-
-#### Cross-compile to wasm32-emscripten for browser
-
-```shell
-./Tools/wasm/wasm_build.py emscripten-browser
-```
-
-The command is roughly equivalent to:
-
-```shell
-mkdir -p builddir/emscripten-browser
-pushd builddir/emscripten-browser
-
-CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../configure -C \
-    --host=wasm32-unknown-emscripten \
-    --build=$(../../config.guess) \
-    --with-emscripten-target=browser \
-    --with-build-python=$(pwd)/../build/python
-
-emmake make -j$(nproc)
-popd
-```
-
-Serve `python.html` with a local webserver and open the file in a browser.
-Python comes with a minimal web server script that sets necessary HTTP
-headers like COOP, COEP, and mimetypes. Run the script outside the container
-and from the root of the CPython checkout.
-
-```shell
-./Tools/wasm/wasm_webserver.py
-```
-
-and open http://localhost:8000/builddir/emscripten-browser/python.html . This
-directory structure enables the *C/C++ DevTools Support (DWARF)* to load C
-and header files with debug builds.
-
-
-#### Cross compile to wasm32-emscripten for node
-
-```shell
-./Tools/wasm/wasm_build.py emscripten-node-dl
-```
-
-The command is roughly equivalent to:
-
-```shell
-mkdir -p builddir/emscripten-node-dl
-pushd builddir/emscripten-node-dl
-
-CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
-  emconfigure ../../configure -C \
-    --host=wasm32-unknown-emscripten \
-    --build=$(../../config.guess) \
-    --with-emscripten-target=node \
-    --enable-wasm-dynamic-linking \
-    --with-build-python=$(pwd)/../build/python
-
-emmake make -j$(nproc)
-popd
-```
-
-```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node-dl/python.js
-```
-
-(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
 
 ### Limitations and issues
-
-Emscripten before 3.1.8 has known bugs that can cause memory corruption and
-resource leaks. 3.1.8 contains several fixes for bugs in date and time
-functions.
 
 #### Network stack
 
@@ -234,15 +172,13 @@ functions.
   e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
-  option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
-  supports. It's currently known to crash in combination with threading.
+  option ``--enable-wasm-dynamic-linking`` enables dynamic extension
+  support. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
   [gh-90548](https://github.com/python/cpython/issues/90548).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
-- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
-   NodeJS option ``--experimental-wasm-bigint``.
 
 #### In the browser
 
@@ -255,47 +191,6 @@ functions.
 - In-memory file system (MEMFS) is not persistent and limited.
 - Test modules are disabled by default. Use ``--enable-test-modules`` build
   test modules like ``_testcapi``.
-
-### wasm32-emscripten in node
-
-Node builds use ``NODERAWFS``.
-
-- Node RawFS allows direct access to the host file system without need to
-  perform ``FS.mount()`` call.
-
-### wasm64-emscripten
-
-- wasm64 requires recent NodeJS and ``--experimental-wasm-memory64``.
-- ``EM_JS`` functions must return ``BigInt()``.
-- ``Py_BuildValue()`` format strings must match size of types. Confusing 32
-  and 64 bits types leads to memory corruption, see
-  [gh-95876](https://github.com/python/cpython/issues/95876) and
-  [gh-95878](https://github.com/python/cpython/issues/95878).
-
-### Hosting Python WASM builds
-
-The simple REPL terminal uses SharedArrayBuffer. For security reasons
-browsers only provide the feature in secure environments with cross-origin
-isolation. The webserver must send cross-origin headers and correct MIME types
-for the JavaScript and WASM files. Otherwise the terminal will fail to load
-with an error message like ``Browsers disable shared array buffer``.
-
-#### Apache HTTP .htaccess
-
-Place a ``.htaccess`` file in the same directory as ``python.wasm``.
-
-```
-# .htaccess
-Header set Cross-Origin-Opener-Policy same-origin
-Header set Cross-Origin-Embedder-Policy require-corp
-
-AddType application/javascript js
-AddType application/wasm wasm
-
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html application/javascript application/wasm
-</IfModule>
-```
 
 ## WASI (wasm32-wasi)
 
@@ -329,7 +224,7 @@ if os.name == "posix":
 posix.uname_result(
     sysname='Emscripten',
     nodename='emscripten',
-    release='3.1.19',
+    release='4.0.2',
     version='#1',
     machine='wasm32'
 )
