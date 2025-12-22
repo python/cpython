@@ -11,6 +11,7 @@
 
 #include "binary_io.h"
 #include "_remote_debugging.h"
+#include "pycore_bitutils.h"   /* _Py_bswap32, _Py_bswap64 for cross-endian reading */
 #include <string.h>
 
 #ifdef HAVE_ZSTD
@@ -49,7 +50,13 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     memcpy(&magic, &data[0], sizeof(magic));
     memcpy(&version, &data[4], sizeof(version));
 
-    if (magic != BINARY_FORMAT_MAGIC) {
+    /* Detect endianness from magic number */
+    if (magic == BINARY_FORMAT_MAGIC) {
+        reader->needs_swap = 0;
+    } else if (magic == BINARY_FORMAT_MAGIC_SWAPPED) {
+        reader->needs_swap = 1;
+        version = _Py_bswap32(version);
+    } else {
         PyErr_Format(PyExc_ValueError, "Invalid magic number: 0x%08x", magic);
         return -1;
     }
@@ -77,13 +84,26 @@ reader_parse_header(BinaryReader *reader, const uint8_t *data, size_t file_size)
     reader->py_major = data[HDR_OFF_PY_MAJOR];
     reader->py_minor = data[HDR_OFF_PY_MINOR];
     reader->py_micro = data[HDR_OFF_PY_MICRO];
-    memcpy(&reader->start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
-    memcpy(&reader->sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
-    memcpy(&reader->sample_count, &data[HDR_OFF_SAMPLES], HDR_SIZE_SAMPLES);
-    memcpy(&reader->thread_count, &data[HDR_OFF_THREADS], HDR_SIZE_THREADS);
-    memcpy(&reader->string_table_offset, &data[HDR_OFF_STR_TABLE], HDR_SIZE_STR_TABLE);
-    memcpy(&reader->frame_table_offset, &data[HDR_OFF_FRAME_TABLE], HDR_SIZE_FRAME_TABLE);
-    memcpy(&reader->compression_type, &data[HDR_OFF_COMPRESSION], HDR_SIZE_COMPRESSION);
+
+    /* Read header fields with byte-swapping if needed */
+    uint64_t start_time_us, sample_interval_us, string_table_offset, frame_table_offset;
+    uint32_t sample_count, thread_count, compression_type;
+
+    memcpy(&start_time_us, &data[HDR_OFF_START_TIME], HDR_SIZE_START_TIME);
+    memcpy(&sample_interval_us, &data[HDR_OFF_INTERVAL], HDR_SIZE_INTERVAL);
+    memcpy(&sample_count, &data[HDR_OFF_SAMPLES], HDR_SIZE_SAMPLES);
+    memcpy(&thread_count, &data[HDR_OFF_THREADS], HDR_SIZE_THREADS);
+    memcpy(&string_table_offset, &data[HDR_OFF_STR_TABLE], HDR_SIZE_STR_TABLE);
+    memcpy(&frame_table_offset, &data[HDR_OFF_FRAME_TABLE], HDR_SIZE_FRAME_TABLE);
+    memcpy(&compression_type, &data[HDR_OFF_COMPRESSION], HDR_SIZE_COMPRESSION);
+
+    reader->start_time_us = SWAP64_IF(reader->needs_swap, start_time_us);
+    reader->sample_interval_us = SWAP64_IF(reader->needs_swap, sample_interval_us);
+    reader->sample_count = SWAP32_IF(reader->needs_swap, sample_count);
+    reader->thread_count = SWAP32_IF(reader->needs_swap, thread_count);
+    reader->string_table_offset = SWAP64_IF(reader->needs_swap, string_table_offset);
+    reader->frame_table_offset = SWAP64_IF(reader->needs_swap, frame_table_offset);
+    reader->compression_type = (int)SWAP32_IF(reader->needs_swap, compression_type);
 
     return 0;
 }
@@ -98,8 +118,12 @@ reader_parse_footer(BinaryReader *reader, const uint8_t *data, size_t file_size)
 
     const uint8_t *footer = data + file_size - FILE_FOOTER_SIZE;
     /* Use memcpy to avoid strict aliasing violations */
-    memcpy(&reader->strings_count, &footer[0], sizeof(reader->strings_count));
-    memcpy(&reader->frames_count, &footer[4], sizeof(reader->frames_count));
+    uint32_t strings_count, frames_count;
+    memcpy(&strings_count, &footer[0], sizeof(strings_count));
+    memcpy(&frames_count, &footer[4], sizeof(frames_count));
+
+    reader->strings_count = SWAP32_IF(reader->needs_swap, strings_count);
+    reader->frames_count = SWAP32_IF(reader->needs_swap, frames_count);
 
     return 0;
 }
@@ -857,14 +881,17 @@ binary_reader_replay(BinaryReader *reader, PyObject *collector, PyObject *progre
             break;  /* End of data */
         }
 
-        /* Use memcpy to avoid strict aliasing violations */
-        uint64_t thread_id;
-        uint32_t interpreter_id;
-        memcpy(&thread_id, &reader->sample_data[offset], sizeof(thread_id));
+        /* Use memcpy to avoid strict aliasing violations, then byte-swap if needed */
+        uint64_t thread_id_raw;
+        uint32_t interpreter_id_raw;
+        memcpy(&thread_id_raw, &reader->sample_data[offset], sizeof(thread_id_raw));
         offset += 8;
 
-        memcpy(&interpreter_id, &reader->sample_data[offset], sizeof(interpreter_id));
+        memcpy(&interpreter_id_raw, &reader->sample_data[offset], sizeof(interpreter_id_raw));
         offset += 4;
+
+        uint64_t thread_id = SWAP64_IF(reader->needs_swap, thread_id_raw);
+        uint32_t interpreter_id = SWAP32_IF(reader->needs_swap, interpreter_id_raw);
 
         /* Get or create thread state for reconstruction */
         ReaderThreadState *ts = reader_get_or_create_thread_state(reader, thread_id, interpreter_id);

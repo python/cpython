@@ -5,7 +5,8 @@ profiler data. This document describes the format's structure and the
 design decisions behind it.
 
 The implementation is in
-[`Modules/_remote_debugging/binary_io.c`](../Modules/_remote_debugging/binary_io.c)
+[`Modules/_remote_debugging/binary_io_writer.c`](../Modules/_remote_debugging/binary_io_writer.c)
+and [`Modules/_remote_debugging/binary_io_reader.c`](../Modules/_remote_debugging/binary_io_reader.c),
 with declarations in
 [`Modules/_remote_debugging/binary_io.h`](../Modules/_remote_debugging/binary_io.h).
 
@@ -411,6 +412,36 @@ The reader builds lookup arrays rather than dictionaries since it only needs
 index-to-value mapping, not value-to-index.
 
 ## Platform Considerations
+
+### Byte Ordering and Cross-Platform Portability
+
+The binary format uses **native byte order** for all multi-byte integer
+fields when writing. However, the reader supports **cross-endian reading**:
+files written on a little-endian system (x86, ARM) can be read on a
+big-endian system (s390x, PowerPC), and vice versa.
+
+**Endianness Detection**: The magic number serves as an endianness marker.
+When read on a system with different byte order, it appears byte-swapped
+(`0x48434154` instead of `0x54414348`). The reader detects this and
+automatically byte-swaps all fixed-width integer fields during parsing.
+
+**Writer Requirements**: Fixed-width integer fields must be written using
+`memcpy()` from properly-sized integer types. When the source variable's
+type differs from the field width (e.g., `size_t` being written as 4 bytes),
+explicit casting to the correct type (e.g., `uint32_t`) is required before
+`memcpy()`. On big-endian systems, copying from an oversized type would
+copy the wrong bytes (high-order zeros instead of the actual value).
+
+**Reader Implementation**: The reader tracks whether byte-swapping is needed
+via a `needs_swap` flag set during header parsing. All fixed-width fields
+in the header, footer, and sample data are conditionally byte-swapped using
+inline swap functions (`bswap32`, `bswap64`).
+
+Variable-length integers (varints) are byte-order independent since they
+encode values one byte at a time using the LEB128 scheme, so they require
+no special handling for cross-endian reading.
+
+### Memory-Mapped I/O
 
 On Unix systems (Linux, macOS), the reader uses `mmap()` to map the file
 into the process address space. The kernel handles paging data in and out

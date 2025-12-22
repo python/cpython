@@ -21,8 +21,15 @@ extern "C" {
  * BINARY FORMAT CONSTANTS
  * ============================================================================ */
 
-#define BINARY_FORMAT_MAGIC     0x54414348  /* "TACH" (Tachyon) */
+#define BINARY_FORMAT_MAGIC     0x54414348  /* "TACH" (Tachyon) in native byte order */
+#define BINARY_FORMAT_MAGIC_SWAPPED 0x48434154  /* Byte-swapped magic for endianness detection */
 #define BINARY_FORMAT_VERSION   1
+
+/* Conditional byte-swap macros for cross-endian file reading.
+ * Uses Python's optimized byte-swap functions from pycore_bitutils.h */
+#define SWAP16_IF(swap, x) ((swap) ? _Py_bswap16(x) : (x))
+#define SWAP32_IF(swap, x) ((swap) ? _Py_bswap32(x) : (x))
+#define SWAP64_IF(swap, x) ((swap) ? _Py_bswap64(x) : (x))
 
 /* Header field offsets and sizes */
 #define HDR_OFF_MAGIC        0
@@ -286,6 +293,7 @@ typedef struct {
     uint8_t py_major;
     uint8_t py_minor;
     uint8_t py_micro;
+    int needs_swap;  /* Non-zero if file was written on different-endian system */
     uint64_t start_time_us;
     uint64_t sample_interval_us;
     uint32_t sample_count;

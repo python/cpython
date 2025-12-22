@@ -1055,8 +1055,12 @@ binary_writer_finalize(BinaryWriter *writer)
     }
     uint64_t file_size = (uint64_t)footer_offset + 32;
     uint8_t footer[32] = {0};
-    memcpy(footer + 0, &writer->string_count, 4);
-    memcpy(footer + 4, &writer->frame_count, 4);
+    /* Cast size_t to uint32_t before memcpy to ensure correct bytes are copied
+     * on both little-endian and big-endian systems (size_t is 8 bytes on 64-bit) */
+    uint32_t string_count_u32 = (uint32_t)writer->string_count;
+    uint32_t frame_count_u32 = (uint32_t)writer->frame_count;
+    memcpy(footer + 0, &string_count_u32, 4);
+    memcpy(footer + 4, &frame_count_u32, 4);
     memcpy(footer + 8, &file_size, 8);
     /* bytes 16-31: checksum placeholder (zeros) */
     if (fwrite_checked_allow_threads(footer, 32, writer->fp) < 0) {
@@ -1068,9 +1072,12 @@ binary_writer_finalize(BinaryWriter *writer)
         return -1;
     }
 
-    /* Convert file offsets to uint64_t for portable header format */
+    /* Convert file offsets and counts to fixed-width types for portable header format.
+     * This ensures correct behavior on both little-endian and big-endian systems. */
     uint64_t string_table_offset_u64 = (uint64_t)string_table_offset;
     uint64_t frame_table_offset_u64 = (uint64_t)frame_table_offset;
+    uint32_t thread_count_u32 = (uint32_t)writer->thread_count;
+    uint32_t compression_type_u32 = (uint32_t)writer->compression_type;
 
     uint8_t header[FILE_HEADER_SIZE] = {0};
     uint32_t magic = BINARY_FORMAT_MAGIC;
@@ -1083,10 +1090,10 @@ binary_writer_finalize(BinaryWriter *writer)
     memcpy(header + HDR_OFF_START_TIME, &writer->start_time_us, HDR_SIZE_START_TIME);
     memcpy(header + HDR_OFF_INTERVAL, &writer->sample_interval_us, HDR_SIZE_INTERVAL);
     memcpy(header + HDR_OFF_SAMPLES, &writer->total_samples, HDR_SIZE_SAMPLES);
-    memcpy(header + HDR_OFF_THREADS, &writer->thread_count, HDR_SIZE_THREADS);
+    memcpy(header + HDR_OFF_THREADS, &thread_count_u32, HDR_SIZE_THREADS);
     memcpy(header + HDR_OFF_STR_TABLE, &string_table_offset_u64, HDR_SIZE_STR_TABLE);
     memcpy(header + HDR_OFF_FRAME_TABLE, &frame_table_offset_u64, HDR_SIZE_FRAME_TABLE);
-    memcpy(header + HDR_OFF_COMPRESSION, &writer->compression_type, HDR_SIZE_COMPRESSION);
+    memcpy(header + HDR_OFF_COMPRESSION, &compression_type_u32, HDR_SIZE_COMPRESSION);
     if (fwrite_checked_allow_threads(header, FILE_HEADER_SIZE, writer->fp) < 0) {
         return -1;
     }
