@@ -1,6 +1,5 @@
 import _remote_debugging
 import os
-import pstats
 import statistics
 import sys
 import sysconfig
@@ -8,10 +7,6 @@ import time
 from collections import deque
 from _colorize import ANSIColors
 
-from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
-from .heatmap_collector import HeatmapCollector
-from .gecko_collector import GeckoCollector
 from .constants import (
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
@@ -19,6 +14,7 @@ from .constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_EXCEPTION,
 )
+from ._format_utils import fmt
 try:
     from .live_collector import LiveStatsCollector
 except ImportError:
@@ -34,23 +30,29 @@ class SampleProfiler:
         self.all_threads = all_threads
         self.mode = mode  # Store mode for later use
         self.collect_stats = collect_stats
-        if _FREE_THREADED_BUILD:
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
-        else:
-            only_active_threads = bool(self.all_threads)
-            self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, mode=mode, native=native, gc=gc,
-                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
-                cache_frames=True, stats=collect_stats
-            )
+        try:
+            self.unwinder = self._new_unwinder(native, gc, opcodes, skip_non_matching_threads)
+        except RuntimeError as err:
+            raise SystemExit(err) from err
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
         self.total_samples = 0
         self.realtime_stats = False
+
+    def _new_unwinder(self, native, gc, opcodes, skip_non_matching_threads):
+        if _FREE_THREADED_BUILD:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, all_threads=self.all_threads, mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        else:
+            unwinder = _remote_debugging.RemoteUnwinder(
+                self.pid, only_active_thread=bool(self.all_threads), mode=self.mode, native=native, gc=gc,
+                opcodes=opcodes, skip_non_matching_threads=skip_non_matching_threads,
+                cache_frames=True, stats=self.collect_stats
+            )
+        return unwinder
 
     def sample(self, collector, duration_sec=10, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
@@ -86,7 +88,7 @@ class SampleProfiler:
                         collector.collect_failed_sample()
                         errors += 1
                     except Exception as e:
-                        if not self._is_process_running():
+                        if not _is_process_running(self.pid):
                             break
                         raise e from None
 
@@ -129,9 +131,9 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-            print(f"Sample rate: {sample_rate:.2f} samples/sec")
-            print(f"Error rate: {error_rate:.2f}%")
+            print(f"Captured {num_samples:n} samples in {fmt(running_time, 2)} seconds")
+            print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
+            print(f"Error rate: {fmt(error_rate, 2)}")
 
             # Print unwinder stats if stats collection is enabled
             if self.collect_stats:
@@ -145,24 +147,8 @@ class SampleProfiler:
             print(
                 f"Warning: missed {expected_samples - num_samples} samples "
                 f"from the expected total of {expected_samples} "
-                f"({(expected_samples - num_samples) / expected_samples * 100:.2f}%)"
+                f"({fmt((expected_samples - num_samples) / expected_samples * 100, 2)}%)"
             )
-
-    def _is_process_running(self):
-        if sys.platform == "linux" or sys.platform == "darwin":
-            try:
-                os.kill(self.pid, 0)
-                return True
-            except ProcessLookupError:
-                return False
-        elif sys.platform == "win32":
-            try:
-                _remote_debugging.RemoteUnwinder(self.pid)
-            except Exception:
-                return False
-            return True
-        else:
-            raise ValueError(f"Unsupported platform: {sys.platform}")
 
     def _print_realtime_stats(self):
         """Print real-time sampling statistics."""
@@ -195,16 +181,16 @@ class SampleProfiler:
                 total = hits + partial + misses
                 if total > 0:
                     hit_pct = (hits + partial) / total * 100
-                    cache_stats_str = f" {ANSIColors.MAGENTA}Cache: {hit_pct:.1f}% ({hits}+{partial}/{misses}){ANSIColors.RESET}"
+                    cache_stats_str = f" {ANSIColors.MAGENTA}Cache: {fmt(hit_pct)}% ({hits}+{partial}/{misses}){ANSIColors.RESET}"
             except RuntimeError:
                 pass
 
         # Clear line and print stats
         print(
             f"\r\033[K{ANSIColors.BOLD_BLUE}Stats:{ANSIColors.RESET} "
-            f"{ANSIColors.YELLOW}{mean_hz:.1f}Hz ({mean_us_per_sample:.1f}µs){ANSIColors.RESET} "
-            f"{ANSIColors.GREEN}Min: {min_hz:.1f}Hz{ANSIColors.RESET} "
-            f"{ANSIColors.RED}Max: {max_hz:.1f}Hz{ANSIColors.RESET} "
+            f"{ANSIColors.YELLOW}{fmt(mean_hz)}Hz ({fmt(mean_us_per_sample)}µs){ANSIColors.RESET} "
+            f"{ANSIColors.GREEN}Min: {fmt(min_hz)}Hz{ANSIColors.RESET} "
+            f"{ANSIColors.RED}Max: {fmt(max_hz)}Hz{ANSIColors.RESET} "
             f"{ANSIColors.CYAN}N={self.total_samples}{ANSIColors.RESET}"
             f"{cache_stats_str}",
             end="",
@@ -234,10 +220,10 @@ class SampleProfiler:
         misses_pct = (frame_cache_misses / total_lookups * 100) if total_lookups > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Frame Cache:{ANSIColors.RESET}")
-        print(f"    Total samples:    {total_samples:,}")
-        print(f"    Full hits:        {frame_cache_hits:,} ({ANSIColors.GREEN}{hits_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Partial hits:     {frame_cache_partial_hits:,} ({ANSIColors.YELLOW}{partial_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Misses:           {frame_cache_misses:,} ({ANSIColors.RED}{misses_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    Total samples:    {total_samples:n}")
+        print(f"    Full hits:        {frame_cache_hits:n} ({ANSIColors.GREEN}{fmt(hits_pct)}%{ANSIColors.RESET})")
+        print(f"    Partial hits:     {frame_cache_partial_hits:n} ({ANSIColors.YELLOW}{fmt(partial_pct)}%{ANSIColors.RESET})")
+        print(f"    Misses:           {frame_cache_misses:n} ({ANSIColors.RED}{fmt(misses_pct)}%{ANSIColors.RESET})")
 
         # Frame read stats
         frames_from_cache = stats.get('frames_read_from_cache', 0)
@@ -247,8 +233,8 @@ class SampleProfiler:
         memory_frame_pct = (frames_from_memory / total_frames * 100) if total_frames > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Frame Reads:{ANSIColors.RESET}")
-        print(f"    From cache:       {frames_from_cache:,} ({ANSIColors.GREEN}{cache_frame_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    From memory:      {frames_from_memory:,} ({ANSIColors.RED}{memory_frame_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    From cache:       {frames_from_cache:n} ({ANSIColors.GREEN}{fmt(cache_frame_pct)}%{ANSIColors.RESET})")
+        print(f"    From memory:      {frames_from_memory:n} ({ANSIColors.RED}{fmt(memory_frame_pct)}%{ANSIColors.RESET})")
 
         # Code object cache stats
         code_hits = stats.get('code_object_cache_hits', 0)
@@ -258,25 +244,47 @@ class SampleProfiler:
         code_misses_pct = (code_misses / total_code * 100) if total_code > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Code Object Cache:{ANSIColors.RESET}")
-        print(f"    Hits:             {code_hits:,} ({ANSIColors.GREEN}{code_hits_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Misses:           {code_misses:,} ({ANSIColors.RED}{code_misses_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
+        print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
 
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)
         memory_bytes = stats.get('memory_bytes_read', 0)
         if memory_bytes >= 1024 * 1024:
-            memory_str = f"{memory_bytes / (1024 * 1024):.1f} MB"
+            memory_str = f"{fmt(memory_bytes / (1024 * 1024))} MB"
         elif memory_bytes >= 1024:
-            memory_str = f"{memory_bytes / 1024:.1f} KB"
+            memory_str = f"{fmt(memory_bytes / 1024)} KB"
         else:
             memory_str = f"{memory_bytes} B"
         print(f"  {ANSIColors.CYAN}Memory:{ANSIColors.RESET}")
-        print(f"    Read operations:  {memory_reads:,} ({memory_str})")
+        print(f"    Read operations:  {memory_reads:n} ({memory_str})")
 
         # Stale invalidations
         stale_invalidations = stats.get('stale_cache_invalidations', 0)
         if stale_invalidations > 0:
             print(f"  {ANSIColors.YELLOW}Stale cache invalidations: {stale_invalidations}{ANSIColors.RESET}")
+
+
+def _is_process_running(pid):
+    if pid <= 0:
+        return False
+    if os.name == "posix":
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            # EPERM means process exists but we can't signal it
+            return True
+    elif sys.platform == "win32":
+        try:
+            _remote_debugging.RemoteUnwinder(pid)
+        except Exception:
+            return False
+        return True
+    else:
+        raise ValueError(f"Unsupported platform: {sys.platform}")
 
 
 def sample(
