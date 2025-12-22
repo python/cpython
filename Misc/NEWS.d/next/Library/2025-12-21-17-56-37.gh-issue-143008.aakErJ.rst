@@ -1,1 +1,1 @@
-Fix crash in :class:`io.TextIOWrapper` when reentrant ``detach()`` called.
+Fix crash in :class:`io.TextIOWrapper` when reentrant :meth:`io.TextIOBase.detach` called.
