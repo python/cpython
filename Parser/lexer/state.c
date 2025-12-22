@@ -43,6 +43,7 @@ _PyTokenizer_tok_new(void)
     tok->encoding = NULL;
     tok->cont_line = 0;
     tok->filename = NULL;
+    tok->module = NULL;
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
     tok->readline = NULL;
@@ -91,6 +92,7 @@ _PyTokenizer_Free(struct tok_state *tok)
     Py_XDECREF(tok->decoding_buffer);
     Py_XDECREF(tok->readline);
     Py_XDECREF(tok->filename);
+    Py_XDECREF(tok->module);
     if ((tok->readline != NULL || tok->fp != NULL ) && tok->buf != NULL) {
         PyMem_Free(tok->buf);
     }

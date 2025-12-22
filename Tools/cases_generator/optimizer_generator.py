@@ -190,6 +190,7 @@ class OptimizerEmitter(Emitter):
         input_identifiers_as_str = {tkn.text for tkn in input_identifiers}
         used_stack_inputs = [inp for inp in uop.stack.inputs if inp.name in input_identifiers_as_str]
         assert len(used_stack_inputs) > 0
+        self.out.start_line()
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
         emitter.emit("if (\n")
         for inp in used_stack_inputs[:-1]:
@@ -232,6 +233,29 @@ class OptimizerEmitter(Emitter):
                 emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
             else:
                 emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+        if len(self.original_uop.stack.outputs) == 1:
+            outp = self.original_uop.stack.outputs[0]
+            if not outp.peek:
+                if self.original_uop.name.startswith('_'):
+                    # Map input count to the appropriate constant-loading uop
+                    input_count_to_uop = {
+                        1: "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+                        2: "_POP_TWO_LOAD_CONST_INLINE_BORROW"
+                    }
+
+                    input_count = len(used_stack_inputs)
+                    if input_count in input_count_to_uop:
+                        replacement_uop = input_count_to_uop[input_count]
+                        input_desc = "one input" if input_count == 1 else "two inputs"
+
+                        emitter.emit(f"if (sym_is_const(ctx, {outp.name})) {{\n")
+                        emitter.emit(f"PyObject *result = sym_get_const(ctx, {outp.name});\n")
+                        emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
+                        emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
+                        emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
+                        emitter.emit("}\n")
+                        emitter.emit("}\n")
+
         storage.flush(self.out)
         emitter.emit("break;\n")
         emitter.emit("}\n")
@@ -245,6 +269,7 @@ class OptimizerConstantEmitter(OptimizerEmitter):
             outp.name: self.emit_stackref_override for outp in self.original_uop.stack.outputs
         }
         self._replacers = {**self._replacers, **overrides}
+        self.cannot_escape = True
 
     def emit_to_with_replacement(
         self,
@@ -397,9 +422,9 @@ def generate_abstract_interpreter(
     out.emit("\n")
     base_uop_names = set([uop.name for uop in base.uops.values()])
     for abstract_uop_name in abstract.uops:
-        assert (
-            abstract_uop_name in base_uop_names
-        ), f"All abstract uops should override base uops, but {abstract_uop_name} is not."
+        if abstract_uop_name not in base_uop_names:
+            raise ValueError(f"All abstract uops should override base uops, "
+                                 "but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
         override: Uop | None = None
@@ -420,7 +445,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack()
+        stack = Stack(check_stack_bounds=True)
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")

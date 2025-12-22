@@ -1,2 +1,0 @@
-If possible, indicate which :mod:`curses` C function or macro is responsible
-for raising a :exc:`curses.error` exception. Patch by Bénédikt Tran.

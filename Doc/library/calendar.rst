@@ -158,6 +158,11 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+   .. method:: prweek(theweek, width)
+
+      Print a week's calendar as returned by :meth:`formatweek` and without a
+      final newline.
+
 
    .. method:: formatday(theday, weekday, width)
 
@@ -501,6 +506,14 @@ The :mod:`calendar` module exports the following data attributes:
        >>> list(calendar.month_name)
        ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
+   .. caution::
+
+      In locales with alternative month names forms, the :data:`!month_name` sequence
+      may not be suitable when a month name stands by itself and not as part of a date.
+      For instance, in Greek and in many Slavic and Baltic languages, :data:`!month_name`
+      will produce the month in genitive case. Use :data:`standalone_month_name` for a form
+      suitable for standalone use.
+
 
 .. data:: month_abbr
 
@@ -511,6 +524,31 @@ The :mod:`calendar` module exports the following data attributes:
        >>> import calendar
        >>> list(calendar.month_abbr)
        ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+   .. caution::
+
+      In locales with alternative month names forms, the :data:`!month_abbr` sequence
+      may not be suitable when a month name stands by itself and not as part of a date.
+      Use :data:`standalone_month_abbr` for a form suitable for standalone use.
+
+
+.. data:: standalone_month_name
+
+   A sequence that represents the months of the year in the current locale
+   in the standalone form if the locale provides one. Else it is equivalent
+   to :data:`month_name`.
+
+   .. versionadded:: 3.15
+
+
+.. data:: standalone_month_abbr
+
+   A sequence that represents the abbreviated months of the year in the current
+   locale in the standalone form if the locale provides one. Else it is
+   equivalent to :data:`month_abbr`.
+
+   .. versionadded:: 3.15
+
 
 .. data:: JANUARY
           FEBRUARY
@@ -677,8 +715,7 @@ The following options are accepted:
 .. option:: month
 
    The month of the specified :option:`year` to print the calendar for.
-   Must be a number between 1 and 12,
-   and may only be used in text mode.
+   Must be a number between 1 and 12.
    Defaults to printing a calendar for the full year.
 
 

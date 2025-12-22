@@ -22,8 +22,7 @@ to this, the :mod:`multiprocessing` module allows the programmer to fully
 leverage multiple processors on a given machine.  It runs on both POSIX and
 Windows.
 
-The :mod:`multiprocessing` module also introduces APIs which do not have
-analogs in the :mod:`threading` module.  A prime example of this is the
+The :mod:`multiprocessing` module also introduces the
 :class:`~multiprocessing.pool.Pool` object which offers a convenient means of
 parallelizing the execution of a function across multiple input values,
 distributing the input data across processes (data parallelism).  The following
@@ -44,6 +43,10 @@ will print to standard output ::
 
    [1, 4, 9]
 
+The :mod:`multiprocessing` module also introduces APIs which do not have
+analogs in the :mod:`threading` module, like the ability to :meth:`terminate
+<Process.terminate>`, :meth:`interrupt <Process.interrupt>` or :meth:`kill
+<Process.kill>` a running process.
 
 .. seealso::
 
@@ -97,6 +100,10 @@ To show the individual process IDs involved, here is an expanded example::
 For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
 
+The arguments to :class:`Process` usually need to be unpickleable from within
+the child process. If you tried typing the above example directly into a REPL it
+could lead to an :exc:`AttributeError` in the child process trying to locate the
+*f* function in the ``__main__`` module.
 
 
 .. _multiprocessing-start-methods:
@@ -233,9 +240,12 @@ processes for a different context.  In particular, locks created using
 the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
-A library which wants to use a particular start method should probably
-use :func:`get_context` to avoid interfering with the choice of the
-library user.
+Libraries using :mod:`multiprocessing` or
+:class:`~concurrent.futures.ProcessPoolExecutor` should be designed to allow
+their users to provide their own multiprocessing context.  Using a specific
+context of your own within a library can lead to incompatibilities with the
+rest of the library user's application.  Always document if your library
+requires a specific start method.
 
 .. warning::
 
@@ -511,6 +521,21 @@ Reference
 The :mod:`multiprocessing` package mostly replicates the API of the
 :mod:`threading` module.
 
+.. _global-start-method:
+
+Global start method
+^^^^^^^^^^^^^^^^^^^
+
+Python supports several ways to create and initialize a process.
+The global start method sets the default mechanism for creating a process.
+
+Several multiprocessing functions and methods that may also instantiate
+certain objects will implicitly set the global start method to the system's default,
+if it hasn’t been set already. The global start method can only be set once.
+If you need to change the start method from the system default, you must
+proactively set the global start method before calling functions or methods,
+or creating these objects.
+
 
 :class:`Process` and exceptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -538,8 +563,41 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    to pass to *target*.
 
    If a subclass overrides the constructor, it must make sure it invokes the
-   base class constructor (:meth:`Process.__init__`) before doing anything else
+   base class constructor (``super().__init__()``) before doing anything else
    to the process.
+
+   .. note::
+
+      In general, all arguments to :class:`Process` must be picklable.  This is
+      frequently observed when trying to create a :class:`Process` or use a
+      :class:`concurrent.futures.ProcessPoolExecutor` from a REPL with a
+      locally defined *target* function.
+
+      Passing a callable object defined in the current REPL session causes the
+      child process to die via an uncaught :exc:`AttributeError` exception when
+      starting as *target* must have been defined within an importable module
+      in order to be loaded during unpickling.
+
+      Example of this uncatchable error from the child::
+
+         >>> import multiprocessing as mp
+         >>> def knigit():
+         ...     print("Ni!")
+         ...
+         >>> process = mp.Process(target=knigit)
+         >>> process.start()
+         >>> Traceback (most recent call last):
+           File ".../multiprocessing/spawn.py", line ..., in spawn_main
+           File ".../multiprocessing/spawn.py", line ..., in _main
+         AttributeError: module '__main__' has no attribute 'knigit'
+         >>> process
+         <SpawnProcess name='SpawnProcess-1' pid=379473 parent=378707 stopped exitcode=1>
+
+      See :ref:`multiprocessing-programming-spawn`.  While this restriction is
+      not true if using the ``"fork"`` start method, as of Python ``3.14`` that
+      is no longer the default on any platform.  See
+      :ref:`multiprocessing-start-methods`.
+      See also :gh:`132898`.
 
    .. versionchanged:: 3.3
       Added the *daemon* parameter.
@@ -789,8 +847,8 @@ raising an exception.
 
 One difference from other Python queue implementations, is that :mod:`multiprocessing`
 queues serializes all objects that are put into them using :mod:`pickle`.
-The object return by the get method is a re-created object that does not share memory
-with the original object.
+The object returned by the get method is a re-created object that does not share
+memory with the original object.
 
 Note that one can also create a shared queue by using a manager object -- see
 :ref:`multiprocessing-managers`.
@@ -847,7 +905,7 @@ For an example of the usage of queues for interprocess communication see
 :ref:`multiprocessing-examples`.
 
 
-.. function:: Pipe([duplex])
+.. function:: Pipe(duplex=True)
 
    Returns a pair ``(conn1, conn2)`` of
    :class:`~multiprocessing.connection.Connection` objects representing the
@@ -866,6 +924,9 @@ For an example of the usage of queues for interprocess communication see
    Returns a process shared queue implemented using a pipe and a few
    locks/semaphores.  When a process first puts an item on the queue a feeder
    thread is started which transfers objects from a buffer into the pipe.
+
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    The usual :exc:`queue.Empty` and :exc:`queue.Full` exceptions from the
    standard library's :mod:`queue` module are raised to signal timeouts.
@@ -936,8 +997,13 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: close()
 
-      Indicate that no more data will be put on this queue by the current
-      process.  The background thread will quit once it has flushed all buffered
+      Close the queue: release internal resources.
+
+      A queue must not be used anymore after it is closed. For example,
+      :meth:`~Queue.get`, :meth:`~Queue.put` and :meth:`~Queue.empty`
+      methods must no longer be called.
+
+      The background thread will quit once it has flushed all buffered
       data to the pipe.  This is called automatically when the queue is garbage
       collected.
 
@@ -977,6 +1043,9 @@ For an example of the usage of queues for interprocess communication see
 
    It is a simplified :class:`Queue` type, very close to a locked :class:`Pipe`.
 
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
+
    .. method:: close()
 
       Close the queue: release internal resources.
@@ -1006,6 +1075,9 @@ For an example of the usage of queues for interprocess communication see
 
    :class:`JoinableQueue`, a :class:`Queue` subclass, is a queue which
    additionally has :meth:`task_done` and :meth:`join` methods.
+
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    .. method:: task_done()
 
@@ -1118,7 +1190,9 @@ Miscellaneous
    Return a context object which has the same attributes as the
    :mod:`multiprocessing` module.
 
-   If *method* is ``None`` then the default context is returned.
+   If *method* is ``None`` then the default context is returned. Note that if
+   the global start method has not been set, this will set it to the system default
+   See :ref:`global-start-method` for more details.
    Otherwise *method* should be ``'fork'``, ``'spawn'``,
    ``'forkserver'``.  :exc:`ValueError` is raised if the specified
    start method is not available.  See :ref:`multiprocessing-start-methods`.
@@ -1129,10 +1203,9 @@ Miscellaneous
 
    Return the name of start method used for starting processes.
 
-   If the start method has not been fixed and *allow_none* is false,
-   then the start method is fixed to the default and the name is
-   returned.  If the start method has not been fixed and *allow_none*
-   is true then ``None`` is returned.
+   If the global start method is not set and *allow_none* is ``False``, the global start
+   method is set to the default, and its name is returned. See
+   :ref:`global-start-method` for more details.
 
    The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
    or ``None``.  See :ref:`multiprocessing-start-methods`.
@@ -1359,12 +1432,18 @@ object -- see :ref:`multiprocessing-managers`.
 
    A barrier object: a clone of :class:`threading.Barrier`.
 
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
+
    .. versionadded:: 3.3
 
 .. class:: BoundedSemaphore([value])
 
    A bounded semaphore object: a close analog of
    :class:`threading.BoundedSemaphore`.
+
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
@@ -1386,6 +1465,9 @@ object -- see :ref:`multiprocessing-managers`.
    If *lock* is specified then it should be a :class:`Lock` or :class:`RLock`
    object from :mod:`multiprocessing`.
 
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
+
    .. versionchanged:: 3.3
       The :meth:`~threading.Condition.wait_for` method was added.
 
@@ -1393,6 +1475,8 @@ object -- see :ref:`multiprocessing-managers`.
 
    A clone of :class:`threading.Event`.
 
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
 .. class:: Lock()
 
@@ -1407,6 +1491,9 @@ object -- see :ref:`multiprocessing-managers`.
    Note that :class:`Lock` is actually a factory function which returns an
    instance of ``multiprocessing.synchronize.Lock`` initialized with a
    default context.
+
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    :class:`Lock` supports the :term:`context manager` protocol and thus may be
    used in :keyword:`with` statements.
@@ -1464,6 +1551,9 @@ object -- see :ref:`multiprocessing-managers`.
    Note that :class:`RLock` is actually a factory function which returns an
    instance of ``multiprocessing.synchronize.RLock`` initialized with a
    default context.
+
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    :class:`RLock` supports the :term:`context manager` protocol and thus may be
    used in :keyword:`with` statements.
@@ -1524,14 +1614,27 @@ object -- see :ref:`multiprocessing-managers`.
 
    A semaphore object: a close analog of :class:`threading.Semaphore`.
 
+   Instantiating this class may set the global start method. See
+   :ref:`global-start-method` for more details.
+
    A solitary difference from its close analog exists: its ``acquire`` method's
    first argument is named *block*, as is consistent with :meth:`Lock.acquire`.
+
+
+   .. method:: get_value()
+
+      Return the current value of semaphore.
+
+      Note that this may raise :exc:`NotImplementedError` on platforms like
+      macOS where ``sem_getvalue()`` is not implemented.
+
 
    .. method:: locked()
 
       Return a boolean indicating whether this object is locked right now.
 
       .. versionadded:: 3.14
+
 
 .. note::
 
@@ -1658,7 +1761,7 @@ processes.
    attributes which allow one to use it to store and retrieve strings -- see
    documentation for :mod:`ctypes`.
 
-.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True)
+.. function:: Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None)
 
    The same as :func:`RawArray` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -1672,9 +1775,13 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword-only argument.
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
-.. function:: Value(typecode_or_type, *args, lock=True)
+   Note that *lock* and *ctx* are keyword-only parameters.
+
+.. function:: Value(typecode_or_type, *args, lock=True, ctx=None)
 
    The same as :func:`RawValue` except that depending on the value of *lock* a
    process-safe synchronization wrapper may be returned instead of a raw ctypes
@@ -1687,18 +1794,26 @@ processes.
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
 
-   Note that *lock* is a keyword-only argument.
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
+
+   Note that *lock* and *ctx* are keyword-only parameters.
 
 .. function:: copy(obj)
 
    Return a ctypes object allocated from shared memory which is a copy of the
    ctypes object *obj*.
 
-.. function:: synchronized(obj[, lock])
+.. function:: synchronized(obj, lock=None, ctx=None)
 
    Return a process-safe wrapper object for a ctypes object which uses *lock* to
    synchronize access.  If *lock* is ``None`` (the default) then a
    :class:`multiprocessing.RLock` object is created automatically.
+
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    A synchronized wrapper will have two methods in addition to those of the
    object it wraps: :meth:`get_obj` returns the wrapped object and
@@ -1817,8 +1932,9 @@ their parent process exits.  The manager classes are defined in the
    *serializer* must be ``'pickle'`` (use :mod:`pickle` serialization) or
    ``'xmlrpclib'`` (use :mod:`xmlrpc.client` serialization).
 
-   *ctx* is a context object, or ``None`` (use the current context). See the
-   :func:`get_context` function.
+   *ctx* is a context object, or ``None`` (use the current context). If ``None``,
+   calling this may set the global start method. See
+   :ref:`global-start-method` for more details.
 
    *shutdown_timeout* is a timeout in seconds used to wait until the process
    used by the manager completes in the :meth:`shutdown` method. If the
@@ -2311,7 +2427,9 @@ with the :class:`Pool` class.
    the worker processes.  Usually a pool is created using the
    function :func:`multiprocessing.Pool` or the :meth:`Pool` method
    of a context object.  In both cases *context* is set
-   appropriately.
+   appropriately. If ``None``, calling this function will have the side effect
+   of setting the current global start method if it has not been set already.
+   See the :func:`get_context` function.
 
    Note that the methods of the pool object should only be called by
    the process which created the pool.
@@ -3063,10 +3181,10 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.
-    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
-    instances will be picklable when the :meth:`Process.start
-    <multiprocessing.Process.start>` method is called.
+    Ensure that all arguments to :class:`~multiprocessing.Process` are
+    picklable.  Also, if you subclass ``Process.__init__``, you must make sure
+    that instances will be picklable when the
+    :meth:`Process.start <multiprocessing.Process.start>` method is called.
 
 Global variables
 

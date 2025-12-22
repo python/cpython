@@ -8,6 +8,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 /* undefine macro trampoline to PyCFunction_NewEx */
@@ -167,9 +168,7 @@ meth_dealloc(PyObject *self)
 {
     PyCFunctionObject *m = _PyCFunctionObject_CAST(self);
     PyObject_GC_UnTrack(m);
-    if (m->m_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*) m);
-    }
+    FT_CLEAR_WEAKREFS(self, m->m_weakreflist);
     // We need to access ml_flags here rather than later.
     // `m->m_ml` might have the same lifetime
     // as `m_self` when it's dynamically allocated.

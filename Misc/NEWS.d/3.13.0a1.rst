@@ -153,7 +153,7 @@ about a 10% improvement.
 .. section: Core and Builtins
 
 Guard ``assert(tstate->thread_id > 0)`` with ``#ifndef HAVE_PTHREAD_STUBS``.
-This allows for for pydebug builds to work under WASI which (currently)
+This allows for pydebug builds to work under WASI which (currently)
 lacks thread support.
 
 ..
@@ -3426,7 +3426,7 @@ This bug was introduced in Python 3.12.0 beta 1.
 .. nonce: hSlB17
 .. section: Library
 
-Deprecate :func:`typing.no_type_check_decorator`. No major type checker ever
+Deprecate :func:`!typing.no_type_check_decorator`. No major type checker ever
 added support for this decorator. Patch by Alex Waygood.
 
 ..
@@ -3476,7 +3476,7 @@ Fix rare concurrency bug in lock acquisition by the logging package.
 .. nonce: ya5jBT
 .. section: Library
 
-Added PY_THROW event hook for :mod:`cProfile` for generators
+Added PY_THROW event hook for :mod:`!cProfile` for generators
 
 ..
 
@@ -6458,8 +6458,8 @@ Victor Stinner.
 .. nonce: GRxZtI
 .. section: C API
 
-Deprecate the :c:func:`PyWeakref_GetObject` and
-:c:func:`PyWeakref_GET_OBJECT` functions: use the new
+Deprecate the :c:func:`!PyWeakref_GetObject` and
+:c:func:`!PyWeakref_GET_OBJECT` functions: use the new
 :c:func:`PyWeakref_GetRef` function instead. Patch by Victor Stinner.
 
 ..
@@ -6470,7 +6470,7 @@ Deprecate the :c:func:`PyWeakref_GetObject` and
 .. section: C API
 
 Add :c:func:`PyWeakref_GetRef` function: similar to
-:c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
+:c:func:`!PyWeakref_GetObject` but returns a :term:`strong reference`, or
 ``NULL`` if the referent is no longer live. Patch by Victor Stinner.
 
 ..
@@ -6592,7 +6592,7 @@ functions, deprecated in Python 3.9. Patch by Victor Stinner.
 
 Deprecate old Python initialization functions:
 
-* :c:func:`PySys_ResetWarnOptions`
+* :c:func:`!PySys_ResetWarnOptions`
 * :c:func:`!Py_GetExecPrefix`
 * :c:func:`!Py_GetPath`
 * :c:func:`!Py_GetPrefix`
