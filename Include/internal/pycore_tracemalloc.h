@@ -20,8 +20,7 @@ struct _PyTraceMalloc_Config {
         TRACEMALLOC_FINALIZED
     } initialized;
 
-    /* Is tracemalloc tracing memory allocations?
-       Variable protected by the TABLES_LOCK(). */
+    /* Is tracemalloc tracing memory allocations? (Atomic.) */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.
