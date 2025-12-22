@@ -77,15 +77,19 @@ def expandvars(str, vars):
             if name[-1] != ')':
                 return m[0]
             name = name[1:-1]
-        if name in vars and name not in seen:
-            seen.add(name)
-            result = expandvars(vars[name])
-            seen.remove(name)
+
+        if name in resolved:
+            result = resolved[name]
+            if result is not None:
+                return result
+        elif name in vars:
+            resolved[name] = None
+            result = resolved[name] = expandvars(vars[name])
             return result
         return m[0]
 
     def expandvars(str):
         return re.sub(r'(?m)\$(\([^)]*\)?|.)', repl, str)
 
-    seen = set()
+    resolved = {}
     return expandvars(str)
