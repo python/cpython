@@ -22,7 +22,7 @@ extern "C" {
  * ============================================================================ */
 
 #define BINARY_FORMAT_MAGIC     0x54414348  /* "TACH" (Tachyon) */
-#define BINARY_FORMAT_VERSION   3
+#define BINARY_FORMAT_VERSION   1
 
 /* Header field offsets and sizes */
 #define HDR_OFF_MAGIC        0
