@@ -496,3 +496,28 @@ check_periodics(PyThreadState *tstate) {
     return 0;
 }
 
+// Mark the generator as executing. Returns true if the state was changed,
+// false if it was already executing or finished.
+static inline bool
+gen_try_set_executing(PyGenObject *gen)
+{
+#ifdef Py_GIL_DISABLED
+    if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+        int8_t frame_state = _Py_atomic_load_int8_relaxed(&gen->gi_frame_state);
+        while (frame_state < FRAME_EXECUTING) {
+            if (_Py_atomic_compare_exchange_int8(&gen->gi_frame_state,
+                                                 &frame_state,
+                                                 FRAME_EXECUTING)) {
+                return true;
+            }
+        }
+    }
+#endif
+    // Use faster non-atomic modifications in the GIL-enabled build and when
+    // the object is uniquely referenced in the free-threaded build.
+    if (gen->gi_frame_state < FRAME_EXECUTING) {
+        gen->gi_frame_state = FRAME_EXECUTING;
+        return true;
+    }
+    return false;
+}
