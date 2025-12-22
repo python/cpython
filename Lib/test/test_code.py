@@ -1259,12 +1259,15 @@ class CodeConstsTest(unittest.TestCase):
             with self.subTest(global_string=global_string):
                 self.assertIsInterned(eval(f"'{global_string}'"))
 
-    noninternable_by_default = textwrap.dedent('''
+    noninternable_by_default = textwrap.dedent(f'''
         not-internable
         not.internable
         не_интернируемый
         str with spaces
-    ''' + '\U00100000')
+        {chr(0x011111)}
+        {chr(0x9999)}
+        {chr(0x100)}
+    ''')
 
     @cpython_only
     @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
