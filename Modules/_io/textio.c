@@ -2686,6 +2686,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
         Py_XSETREF(self->snapshot, snapshot);
+
         decoded = PyObject_CallMethodObjArgs(self->decoder, &_Py_ID(decode),
             input_chunk, cookie.need_eof ? Py_True : Py_False, NULL);
 
