@@ -44,7 +44,7 @@ on efficient attribute extraction for output formatting and manipulation.
 
 .. _datetime-naive-aware:
 
-Aware and Naive Objects
+Aware and naive objects
 -----------------------
 
 Date and time objects may be categorized as "aware" or "naive" depending on
@@ -99,7 +99,7 @@ The :mod:`!datetime` module exports the following constants:
 
    .. versionadded:: 3.11
 
-Available Types
+Available types
 ---------------
 
 .. class:: date
@@ -162,7 +162,7 @@ Subclass relationships::
        date
            datetime
 
-Common Properties
+Common properties
 ^^^^^^^^^^^^^^^^^
 
 The :class:`date`, :class:`.datetime`, :class:`.time`, and :class:`timezone` types
@@ -173,7 +173,7 @@ share these common features:
   dictionary keys.
 - Objects of these types support efficient pickling via the :mod:`pickle` module.
 
-Determining if an Object is Aware or Naive
+Determining if an object is aware or naive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Objects of the :class:`date` type are always naive.
@@ -199,7 +199,7 @@ objects.
 
 .. _datetime-timedelta:
 
-:class:`timedelta` Objects
+:class:`timedelta` objects
 --------------------------
 
 A :class:`timedelta` object represents a duration, the difference between two
@@ -487,7 +487,7 @@ Examples of :class:`timedelta` arithmetic::
 
 .. _datetime-date:
 
-:class:`date` Objects
+:class:`date` objects
 ---------------------
 
 A :class:`date` object represents a date (year, month and day) in an idealized
@@ -835,7 +835,7 @@ Instance methods:
    literals <f-strings>` and when using :meth:`str.format`.
    See also :ref:`strftime-strptime-behavior` and :meth:`date.isoformat`.
 
-Examples of Usage: :class:`date`
+Examples of usage: :class:`date`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of counting days to an event::
@@ -905,7 +905,7 @@ More examples of working with :class:`date`:
 
 .. _datetime-datetime:
 
-:class:`.datetime` Objects
+:class:`.datetime` objects
 --------------------------
 
 A :class:`.datetime` object is a single object containing all the information
@@ -1675,7 +1675,7 @@ Instance methods:
    See also :ref:`strftime-strptime-behavior` and :meth:`datetime.isoformat`.
 
 
-Examples of Usage: :class:`.datetime`
+Examples of usage: :class:`.datetime`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with :class:`.datetime` objects:
@@ -1803,7 +1803,7 @@ Usage of ``KabulTz`` from above::
 
 .. _datetime-time:
 
-:class:`.time` Objects
+:class:`.time` objects
 ----------------------
 
 A :class:`.time` object represents a (local) time of day, independent of any particular
@@ -2072,7 +2072,7 @@ Instance methods:
    ``self.tzinfo.tzname(None)``, or raises an exception if the latter doesn't
    return ``None`` or a string object.
 
-Examples of Usage: :class:`.time`
+Examples of usage: :class:`.time`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of working with a :class:`.time` object::
@@ -2105,7 +2105,7 @@ Examples of working with a :class:`.time` object::
 
 .. _datetime-tzinfo:
 
-:class:`tzinfo` Objects
+:class:`tzinfo` objects
 -----------------------
 
 .. class:: tzinfo()
@@ -2381,7 +2381,7 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. _datetime-timezone:
 
-:class:`timezone` Objects
+:class:`timezone` objects
 -------------------------
 
 The :class:`timezone` class is a subclass of :class:`tzinfo`, each
@@ -2457,7 +2457,7 @@ Class attributes:
 
 .. _strftime-strptime-behavior:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Behavior
+:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` behavior
 --------------------------------------------------------------------
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
@@ -2484,7 +2484,7 @@ versus :meth:`~.datetime.strptime`:
 
    .. _format-codes:
 
-:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Format Codes
+:meth:`~.datetime.strftime` and :meth:`~.datetime.strptime` Format codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods accept format codes that can be used to parse and format dates::
@@ -2644,7 +2644,7 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.15
    ``%:z`` was added for :meth:`~.datetime.strptime`
 
-Technical Detail
+Technical detail
 ^^^^^^^^^^^^^^^^
 
 Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
