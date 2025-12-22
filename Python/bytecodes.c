@@ -1508,7 +1508,7 @@ dummy_func(
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
             int err;
-            PyObject *bc_o = PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
+            PyObject *bc_o = _PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
             ERROR_IF(err < 0);
             if (bc_o == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
@@ -1712,7 +1712,7 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err;
-            PyObject *v_o = PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
+            PyObject *v_o = _PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
 
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
@@ -1736,11 +1736,11 @@ dummy_func(
                 else {
                     /* Slow-path if globals or builtins is not a dict */
                     /* namespace 1: globals */
-                    v_o = PyMapping_GetOptionalItem2(GLOBALS(), name, &err);
+                    v_o = _PyMapping_GetOptionalItem2(GLOBALS(), name, &err);
                     ERROR_IF(err < 0);
                     if (v_o == NULL) {
                         /* namespace 2: builtins */
-                        v_o = PyMapping_GetOptionalItem2(BUILTINS(), name, &err);
+                        v_o = _PyMapping_GetOptionalItem2(BUILTINS(), name, &err);
                         ERROR_IF(err < 0);
                         if (v_o == NULL) {
                             _PyEval_FormatExcCheckArg(
@@ -1906,7 +1906,7 @@ dummy_func(
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             int err;
-            PyObject* value_o = PyMapping_GetOptionalItem2(class_dict, name, &err);
+            PyObject* value_o = _PyMapping_GetOptionalItem2(class_dict, name, &err);
             if (err < 0) {
                 ERROR_NO_POP();
             }
@@ -2082,7 +2082,7 @@ dummy_func(
             }
             /* check if __annotations__ in locals()... */
             int err;
-            PyObject* ann_dict = PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
+            PyObject* ann_dict = _PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
             ERROR_IF(err < 0);
             if (ann_dict == NULL) {
                 ann_dict = PyDict_New();
@@ -2188,6 +2188,7 @@ dummy_func(
             // handle any case whose performance we care about
             PyObject *super;
             {
+                // scope to tell MSVC that stack is not escaping
                 PyObject *stack[] = {class, self};
                 super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
             }
@@ -2251,6 +2252,7 @@ dummy_func(
             int method_found = 0;
             PyObject *attr_o;
             {
+                // scope to tell MSVC that method_found_ptr is not escaping
                 int *method_found_ptr = &method_found;
                 attr_o = _PySuper_Lookup(cls, self, name,
                     Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? method_found_ptr : NULL);
@@ -3482,6 +3484,7 @@ dummy_func(
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject* res_o;
             {
+                // scope to tell MSVC that stack is not escaping
                 PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
                 int has_self = !PyStackRef_IsNull(exit_self);
                 res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,

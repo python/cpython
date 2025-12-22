@@ -225,7 +225,7 @@ PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
 }
 
 PyObject*
-PyMapping_GetOptionalItem2(PyObject *obj, PyObject *key, int *err)
+_PyMapping_GetOptionalItem2(PyObject *obj, PyObject *key, int *err)
 {
     PyObject* result;
     *err = PyMapping_GetOptionalItem(obj, key, &result);

@@ -475,6 +475,11 @@ _Py_assert_within_stack_bounds(
     _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
     const char *filename, int lineno);
 
+// Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
+// it as an out parameter. This helps MSVC's escape analysis when used with
+// tail calling.
+PyAPI_FUNC(PyObject*) _PyMapping_GetOptionalItem2(PyObject* obj, PyObject* key, int* err);
+
 #ifdef __cplusplus
 }
 #endif

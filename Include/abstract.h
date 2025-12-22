@@ -887,7 +887,6 @@ PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
 */
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
-PyAPI_FUNC(PyObject*) PyMapping_GetOptionalItem2(PyObject *, PyObject *, int *);
 PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
 #endif
 

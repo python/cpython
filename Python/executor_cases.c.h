@@ -5967,7 +5967,7 @@
             _PyStackRef bc;
             int err;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *bc_o = PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
+            PyObject *bc_o = _PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -6822,7 +6822,7 @@
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject* value_o = PyMapping_GetOptionalItem2(class_dict, name, &err);
+            PyObject* value_o = _PyMapping_GetOptionalItem2(class_dict, name, &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -7349,7 +7349,7 @@
             }
             int err;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject* ann_dict = PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
+            PyObject* ann_dict = _PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
