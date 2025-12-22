@@ -1213,14 +1213,16 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
     }
     PyGILState_STATE gil_state = PyGILState_Ensure();
     TABLES_LOCK();
-    // Check again now that we hold the lock
-    if (!tracemalloc_config.tracing) {
-        TABLES_UNLOCK();
-        PyGILState_Release(gil_state);
-        /* tracemalloc is not tracing: do nothing */
-        return -2;
+
+    int result;
+    if (tracemalloc_config.tracing) {
+        result = tracemalloc_add_trace_unlocked(domain, ptr, size);
     }
-    int result = tracemalloc_add_trace_unlocked(domain, ptr, size);
+    else {
+        /* tracemalloc is not tracing: do nothing */
+        result = -2;
+    }
+
     TABLES_UNLOCK();
     PyGILState_Release(gil_state);
     return result;
@@ -1236,15 +1238,19 @@ PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
     }
 
     TABLES_LOCK();
-    // Check again now that we hold the lock
-    if (!tracemalloc_config.tracing) {
-        TABLES_UNLOCK();
-        /* tracemalloc is not tracing: do nothing */
-        return -2;
+
+    int result;
+    if (tracemalloc_config.tracing) {
+        tracemalloc_remove_trace_unlocked(domain, ptr);
+        result = 0;
     }
-    tracemalloc_remove_trace_unlocked(domain, ptr);
+    else {
+        /* tracemalloc is not tracing: do nothing */
+        result = -2;
+    }
+
     TABLES_UNLOCK();
-    return 0;
+    return result;
 }
 
 
