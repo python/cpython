@@ -1,0 +1,4 @@
+Mac framework Info.plist CFBundleShortVersionString now uses x.y.z only
+format to comply with `this Apple developer guideline
+<https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleshortversionstring>`
+Contributed by Martinus Verburg.
