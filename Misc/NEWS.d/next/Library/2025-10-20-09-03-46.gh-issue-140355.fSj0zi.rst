@@ -1,0 +1,2 @@
+Refactor and simplify the asyncio REPL by removing the threading and future handling.
+This fixes an issue on MacOS that the readline module will be broken after pressing Ctrl+C.
