@@ -205,9 +205,6 @@ static int
 intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-#if !defined(Py_GIL_DISABLED)
-    PyObject *interned_dict = get_interned_dict(interp);
-#endif
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v) && PyUnicode_GET_LENGTH(v) > 1) {
@@ -217,7 +214,7 @@ intern_constants(PyObject *tuple, int *modified)
 #if !defined(Py_GIL_DISABLED)
             PyObject *interned = _Py_hashtable_get(INTERNED_STRINGS, v);
             if (interned == NULL) {
-                interned = PyDict_GetItemWithError(interned_dict, v);
+                interned = PyDict_GetItemWithError(get_interned_dict(interp), v);
                 if (PyErr_Occurred()) return -1;
             }
             if (interned != NULL && interned != v) {
