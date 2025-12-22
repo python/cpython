@@ -206,8 +206,7 @@ intern_constants(PyObject *tuple, int *modified)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #if !defined(Py_GIL_DISABLED)
-    PyObject *interned_dict = _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
-    Py_INCREF(interned_dict);
+    PyObject *interned_dict = get_interned_dict(interp);
 #endif
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
@@ -219,7 +218,7 @@ intern_constants(PyObject *tuple, int *modified)
             PyObject *interned = _Py_hashtable_get(INTERNED_STRINGS, v);
             if (interned == NULL) {
                 interned = PyDict_GetItemWithError(interned_dict, v);
-                if (PyErr_Occurred()) goto error;
+                if (PyErr_Occurred()) return -1;
             }
             if (interned != NULL && interned != v) {
                 Py_INCREF(interned);
@@ -239,25 +238,25 @@ intern_constants(PyObject *tuple, int *modified)
         }
         else if (PyTuple_CheckExact(v)) {
             if (intern_constants(v, NULL) < 0) {
-                goto error;
+                return -1;
             }
         }
         else if (PyFrozenSet_CheckExact(v)) {
             PyObject *w = v;
             PyObject *tmp = PySequence_Tuple(v);
             if (tmp == NULL) {
-                goto error;
+                return -1;
             }
             int tmp_modified = 0;
             if (intern_constants(tmp, &tmp_modified) < 0) {
                 Py_DECREF(tmp);
-                goto error;
+                return -1;
             }
             if (tmp_modified) {
                 v = PyFrozenSet_New(tmp);
                 if (v == NULL) {
                     Py_DECREF(tmp);
-                    goto error;
+                    return -1;
                 }
 
                 PyTuple_SET_ITEM(tuple, i, v);
@@ -271,7 +270,7 @@ intern_constants(PyObject *tuple, int *modified)
             PySliceObject *slice = (PySliceObject *)v;
             PyObject *tmp = PyTuple_New(3);
             if (tmp == NULL) {
-                goto error;
+                return -1;
             }
             PyTuple_SET_ITEM(tmp, 0, Py_NewRef(slice->start));
             PyTuple_SET_ITEM(tmp, 1, Py_NewRef(slice->stop));
@@ -279,7 +278,7 @@ intern_constants(PyObject *tuple, int *modified)
             int tmp_modified = 0;
             if (intern_constants(tmp, &tmp_modified) < 0) {
                 Py_DECREF(tmp);
-                goto error;
+                return -1;
             }
             if (tmp_modified) {
                 v = PySlice_New(PyTuple_GET_ITEM(tmp, 0),
@@ -287,7 +286,7 @@ intern_constants(PyObject *tuple, int *modified)
                                 PyTuple_GET_ITEM(tmp, 2));
                 if (v == NULL) {
                     Py_DECREF(tmp);
-                    goto error;
+                    return -1;
                 }
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(slice);
@@ -304,7 +303,7 @@ intern_constants(PyObject *tuple, int *modified)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
-                goto error;
+                return -1;
             }
             else if (interned != v) {
                 PyTuple_SET_ITEM(tuple, i, interned);
@@ -314,16 +313,7 @@ intern_constants(PyObject *tuple, int *modified)
         }
 #endif
     }
-#if !defined(Py_GIL_DISABLED)
-    Py_DECREF(interned_dict);
-#endif
     return 0;
-
-error:
-#if !defined(Py_GIL_DISABLED)
-    Py_DECREF(interned_dict);
-#endif
-    return -1;
 }
 
 /* Return a shallow copy of a tuple that is
