@@ -84,14 +84,15 @@ class REPLThread(threading.Thread):
         global return_code
 
         try:
-            banner = (
-                f'asyncio REPL {sys.version} on {sys.platform}\n'
-                f'Use "await" directly instead of "asyncio.run()".\n'
-                f'Type "help", "copyright", "credits" or "license" '
-                f'for more information.\n'
-            )
+            if not sys.flags.quiet:
+                banner = (
+                    f'asyncio REPL {sys.version} on {sys.platform}\n'
+                    f'Use "await" directly instead of "asyncio.run()".\n'
+                    f'Type "help", "copyright", "credits" or "license" '
+                    f'for more information.\n'
+                )
 
-            console.write(banner)
+                console.write(banner)
 
             if startup_path := os.getenv("PYTHONSTARTUP"):
                 sys.audit("cpython.run_startup", startup_path)
