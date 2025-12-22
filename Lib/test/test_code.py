@@ -204,8 +204,6 @@ import textwrap
 import weakref
 import dis
 
-from test.support.constants_helper import iter_global_strings
-
 try:
     import ctypes
 except ImportError:
@@ -213,6 +211,7 @@ except ImportError:
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED)
+from test.support.constants_helper import iter_global_strings
 from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
