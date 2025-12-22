@@ -1961,6 +1961,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_TYPE_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_tuple_1_pop_top(self):
         def testfunc(n):
