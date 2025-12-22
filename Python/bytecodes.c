@@ -1507,8 +1507,8 @@ dummy_func(
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
-            PyObject *bc_o;
-            int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
+            int err;
+            PyObject *bc_o = PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
             ERROR_IF(err < 0);
             if (bc_o == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
@@ -1711,8 +1711,9 @@ dummy_func(
 
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            PyObject *v_o;
-            int err = PyMapping_GetOptionalItem(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &v_o);
+            int err;
+            PyObject *v_o = PyMapping_GetOptionalItem2(PyStackRef_AsPyObjectBorrow(mod_or_class_dict), name, &err);
+
             PyStackRef_CLOSE(mod_or_class_dict);
             ERROR_IF(err < 0);
             if (v_o == NULL) {
@@ -1735,11 +1736,11 @@ dummy_func(
                 else {
                     /* Slow-path if globals or builtins is not a dict */
                     /* namespace 1: globals */
-                    int err = PyMapping_GetOptionalItem(GLOBALS(), name, &v_o);
+                    v_o = PyMapping_GetOptionalItem2(GLOBALS(), name, &err);
                     ERROR_IF(err < 0);
                     if (v_o == NULL) {
                         /* namespace 2: builtins */
-                        int err = PyMapping_GetOptionalItem(BUILTINS(), name, &v_o);
+                        v_o = PyMapping_GetOptionalItem2(BUILTINS(), name, &err);
                         ERROR_IF(err < 0);
                         if (v_o == NULL) {
                             _PyEval_FormatExcCheckArg(
@@ -1898,14 +1899,14 @@ dummy_func(
         }
 
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict_st -- value)) {
-            PyObject *value_o;
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
 
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
-            int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
+            int err;
+            PyObject* value_o = PyMapping_GetOptionalItem2(class_dict, name, &err);
             if (err < 0) {
                 ERROR_NO_POP();
             }
@@ -2074,14 +2075,14 @@ dummy_func(
         }
 
         inst(SETUP_ANNOTATIONS, (--)) {
-            PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
                 ERROR_IF(true);
             }
             /* check if __annotations__ in locals()... */
-            int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
+            int err;
+            PyObject* ann_dict = PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
             ERROR_IF(err < 0);
             if (ann_dict == NULL) {
                 ann_dict = PyDict_New();

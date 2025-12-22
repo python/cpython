@@ -5965,9 +5965,9 @@
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             _PyStackRef bc;
-            PyObject *bc_o;
+            int err;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
+            PyObject *bc_o = PyMapping_GetOptionalItem2(BUILTINS(), &_Py_ID(__build_class__), &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -6812,17 +6812,17 @@
             _PyStackRef _stack_item_0 = _tos_cache0;
             oparg = CURRENT_OPARG();
             class_dict_st = _stack_item_0;
-            PyObject *value_o;
             PyObject *name;
             PyObject *class_dict = PyStackRef_AsPyObjectBorrow(class_dict_st);
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
+            int err;
             stack_pointer[0] = class_dict_st;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
+            PyObject* value_o = PyMapping_GetOptionalItem2(class_dict, name, &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
@@ -7339,7 +7339,6 @@
         case _SETUP_ANNOTATIONS_r00: {
             CHECK_CURRENT_CACHED_VALUES(0);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
-            PyObject *ann_dict;
             if (LOCALS() == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_Format(tstate, PyExc_SystemError,
@@ -7348,8 +7347,9 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
+            int err;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
+            PyObject* ann_dict = PyMapping_GetOptionalItem2(LOCALS(), &_Py_ID(__annotations__), &err);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
                 SET_CURRENT_CACHED_VALUES(0);
