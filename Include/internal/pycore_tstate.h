@@ -82,6 +82,13 @@ typedef struct _PyThreadStateImpl {
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference
 
+    // Distinguishes between yield and return from PyEval_EvalFrame().
+    // See gen_send_ex2() in Objects/genobject.c
+    enum {
+        GENERATOR_RETURN = 0,
+        GENERATOR_YIELD = 1,
+    } generator_return_kind;
+
     /* Head of circular linked-list of all tasks which are instances of `asyncio.Task`
        or subclasses of it used in `asyncio.all_tasks`.
     */

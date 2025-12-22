@@ -592,6 +592,11 @@ mmap
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
 
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
+
 
 os
 --
@@ -1104,9 +1109,9 @@ New deprecations
 
 * ``__version__``
 
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
 
     - :mod:`argparse`
     - :mod:`csv`
@@ -1127,6 +1132,9 @@ New deprecations
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
     - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
     - :mod:`zlib`
 
     (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)

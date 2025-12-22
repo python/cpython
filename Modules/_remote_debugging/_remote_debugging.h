@@ -279,6 +279,35 @@ typedef struct {
     size_t count;
 } StackChunkList;
 
+/*
+ * Context for frame chain traversal operations.
+ */
+typedef struct {
+    /* Inputs */
+    uintptr_t frame_addr;           // Starting frame address
+    uintptr_t base_frame_addr;      // Sentinel at bottom (for validation)
+    uintptr_t gc_frame;             // GC frame address (0 if not tracking)
+    uintptr_t last_profiled_frame;  // Last cached frame (0 if no cache)
+    StackChunkList *chunks;         // Pre-copied stack chunks
+
+    /* Outputs */
+    PyObject *frame_info;           // List to append FrameInfo objects
+    uintptr_t *frame_addrs;         // Array of visited frame addresses
+    Py_ssize_t num_addrs;           // Count of addresses collected
+    Py_ssize_t max_addrs;           // Capacity of frame_addrs array
+    uintptr_t last_frame_visited;   // Last frame address visited
+    int stopped_at_cached_frame;    // Whether we stopped at cached frame
+} FrameWalkContext;
+
+/*
+ * Context for code object parsing.
+ */
+typedef struct {
+    uintptr_t code_addr;            // Code object address in remote process
+    uintptr_t instruction_pointer;  // Current instruction pointer
+    int32_t tlbc_index;             // Thread-local bytecode index (free-threading)
+} CodeObjectContext;
+
 /* Function pointer types for iteration callbacks */
 typedef int (*thread_processor_func)(
     RemoteUnwinderObject *unwinder,
@@ -343,10 +372,7 @@ extern long read_py_long(RemoteUnwinderObject *unwinder, uintptr_t address);
 extern int parse_code_object(
     RemoteUnwinderObject *unwinder,
     PyObject **result,
-    uintptr_t address,
-    uintptr_t instruction_pointer,
-    uintptr_t *previous_frame,
-    int32_t tlbc_index
+    const CodeObjectContext *ctx
 );
 
 extern PyObject *make_location_info(
@@ -420,17 +446,7 @@ extern void *find_frame_in_chunks(StackChunkList *chunks, uintptr_t remote_ptr);
 
 extern int process_frame_chain(
     RemoteUnwinderObject *unwinder,
-    uintptr_t initial_frame_addr,
-    StackChunkList *chunks,
-    PyObject *frame_info,
-    uintptr_t base_frame_addr,
-    uintptr_t gc_frame,
-    uintptr_t last_profiled_frame,
-    int *stopped_at_cached_frame,
-    uintptr_t *frame_addrs,
-    Py_ssize_t *num_addrs,
-    Py_ssize_t max_addrs,
-    uintptr_t *out_last_frame_addr
+    FrameWalkContext *ctx
 );
 
 /* Frame cache functions */
@@ -460,12 +476,7 @@ extern int frame_cache_store(
 
 extern int collect_frames_with_cache(
     RemoteUnwinderObject *unwinder,
-    uintptr_t frame_addr,
-    StackChunkList *chunks,
-    PyObject *frame_info,
-    uintptr_t base_frame_addr,
-    uintptr_t gc_frame,
-    uintptr_t last_profiled_frame,
+    FrameWalkContext *ctx,
     uint64_t thread_id);
 
 /* ============================================================================

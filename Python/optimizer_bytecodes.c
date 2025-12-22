@@ -298,12 +298,14 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+    op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
         REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyUnicode_Type);
+        l = left;
+        r = right;
     }
 
-    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
         JitOptRef res;
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
@@ -327,8 +329,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res)) {
+    op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
         res = sym_new_type(ctx, &PyUnicode_Type);
+        s = str_st;
+        i = sub_st;
     }
 
     op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
@@ -525,10 +529,6 @@ dummy_func(void) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
 
-    op(_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused -- value)) {
-        value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
-    }
-
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
     }
@@ -558,6 +558,12 @@ dummy_func(void) {
     }
 
     op(_POP_TOP_FLOAT, (value --)) {
+        if (PyJitRef_IsBorrowed(value)) {
+            REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
+        }
+    }
+
+    op(_POP_TOP_UNICODE, (value --)) {
         if (PyJitRef_IsBorrowed(value)) {
             REPLACE_OP(this_instr, _POP_TOP_NOP, 0, 0);
         }
@@ -1253,7 +1259,7 @@ dummy_func(void) {
                 goto error;
             }
             if (_Py_IsImmortal(temp)) {
-                REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
+                REPLACE_OP(this_instr, _SHUFFLE_3_LOAD_CONST_INLINE_BORROW,
                            0, (uintptr_t)temp);
             }
             res = sym_new_const(ctx, temp);
@@ -1370,7 +1376,12 @@ dummy_func(void) {
             res = sym_new_not_null(ctx);
         }
         else {
-            res = sym_new_const(ctx, cnst);
+            if (_Py_IsImmortal(cnst)) {
+                res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
         }
     }
 
@@ -1405,8 +1416,19 @@ dummy_func(void) {
             res = sym_new_not_null(ctx);
         }
         else {
-            res = sym_new_const(ctx, cnst);
+            if (_Py_IsImmortal(cnst)) {
+                res = PyJitRef_Borrow(sym_new_const(ctx, cnst));
+            }
+            else {
+                res = sym_new_const(ctx, cnst);
+            }
         }
+    }
+
+    op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res, ls, ss)) {
+        res = sym_new_unknown(ctx);
+        ls = list_st;
+        ss = sub_st;
     }
 
 
