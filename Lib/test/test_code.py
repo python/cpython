@@ -1259,18 +1259,31 @@ class CodeConstsTest(unittest.TestCase):
             with self.subTest(global_string=global_string):
                 self.assertIsInterned(eval(f"'{global_string}'"))
 
+    noninternable_by_default = textwrap.dedent('''
+        not-internable
+        not.internable
+        не_интернируемый
+        str with spaces
+    ''' + '\U00100000')
+
     @cpython_only
     @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_non_internable_strings_not_interned(self):
-        noninternable_strings = (
-            "not-internable",
-            "not.internable",
-            "не_интернируемый",
-            "􀀀",
-        )
-        for noninternable in noninternable_strings:
+        for noninternable in self.noninternable_by_default.strip().splitlines():
             with self.subTest(noninternable=noninternable):
                 self.assertIsNotInterned(eval(f"'{noninternable}'"))
+
+    @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
+    def test_explicitly_interned_strings(self):
+        for noninternable in self.noninternable_by_default.strip().splitlines():
+            self.assertIsNotInterned(noninternable)
+            sys.intern(noninternable)
+            with self.subTest(noninternable=noninternable):
+                self.assertIsInterned(noninternable)
+                interned_from_code = eval(f"'{noninternable}'")
+                self.assertIsInterned(interned_from_code)
+                self.assertIs(noninternable, interned_from_code)
 
 class CodeWeakRefTest(unittest.TestCase):
 
