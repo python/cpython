@@ -207,13 +207,6 @@ _PyUnicode_GetEmpty(void)
     return &_Py_STR(empty);
 }
 
-/* This dictionary holds per-interpreter interned strings.
- * See InternalDocs/string_interning.md for details.
- */
-static inline PyObject *get_interned_dict(PyInterpreterState *interp)
-{
-    return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
-}
 
 /* Get number of all interned strings for the current interpreter. */
 Py_ssize_t
