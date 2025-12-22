@@ -292,13 +292,6 @@ def _append_child(self, node):
     childNodes.append(node)
     node.parentNode = self
 
-def _in_document(node):
-    # return True iff node is part of a document tree
-    while node is not None:
-        if node.nodeType == Node.DOCUMENT_NODE:
-            return True
-        node = node.parentNode
-    return False
 
 def _write_data(writer, data):
     "Writes datachars to writer."
@@ -355,6 +348,7 @@ class Attr(Node):
     def __init__(self, qName, namespaceURI=EMPTY_NAMESPACE, localName=None,
                  prefix=None):
         self.ownerElement = None
+        self.ownerDocument = None
         self._name = qName
         self.namespaceURI = namespaceURI
         self._prefix = prefix
@@ -680,6 +674,7 @@ class Element(Node):
 
     def __init__(self, tagName, namespaceURI=EMPTY_NAMESPACE, prefix=None,
                  localName=None):
+        self.ownerDocument = None
         self.parentNode = None
         self.tagName = self.nodeName = tagName
         self.prefix = prefix
@@ -1539,7 +1534,7 @@ def _clear_id_cache(node):
     if node.nodeType == Node.DOCUMENT_NODE:
         node._id_cache.clear()
         node._id_search_stack = None
-    elif _in_document(node):
+    elif node.ownerDocument:
         node.ownerDocument._id_cache.clear()
         node.ownerDocument._id_search_stack= None
 
