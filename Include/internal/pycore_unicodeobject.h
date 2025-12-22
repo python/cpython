@@ -10,15 +10,12 @@ extern "C" {
 
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+#include "pycore_global_objects.h"// _Py_INTERP_CACHED_OBJECT
 
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 #define _Py_MAX_UNICODE 0x10ffff
 
-/* This hashtable holds statically allocated interned strings.
- * See InternalDocs/string_interning.md for details.
- */
-#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
 
 extern int _PyUnicode_IsModifiable(PyObject *unicode);
 extern void _PyUnicodeWriter_InitWithBuffer(
@@ -361,6 +358,19 @@ extern PyTypeObject _PyUnicodeASCIIIter_Type;
 /* --- Interning ---------------------------------------------------------- */
 
 // All these are "ref-neutral", like the public PyUnicode_InternInPlace.
+
+/* This hashtable holds statically allocated interned strings.
+ * See InternalDocs/string_interning.md for details.
+ */
+#define INTERNED_STRINGS _PyRuntime.cached_objects.interned_strings
+
+/* This dictionary holds per-interpreter interned strings.
+ * See InternalDocs/string_interning.md for details.
+ */
+static inline PyObject *get_interned_dict(PyInterpreterState *interp)
+{
+    return _Py_INTERP_CACHED_OBJECT(interp, interned_strings);
+}
 
 // Explicit interning routines:
 PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
