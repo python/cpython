@@ -7,6 +7,7 @@ import time
 from collections import deque
 from _colorize import ANSIColors
 
+from .binary_collector import BinaryCollector
 from .constants import (
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
@@ -139,6 +140,9 @@ class SampleProfiler:
             if self.collect_stats:
                 self._print_unwinder_stats()
 
+            if isinstance(collector, BinaryCollector):
+                self._print_binary_stats(collector)
+
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
             collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate, missed_samples, mode=self.mode)
@@ -263,6 +267,53 @@ class SampleProfiler:
         stale_invalidations = stats.get('stale_cache_invalidations', 0)
         if stale_invalidations > 0:
             print(f"  {ANSIColors.YELLOW}Stale cache invalidations: {stale_invalidations}{ANSIColors.RESET}")
+
+    def _print_binary_stats(self, collector):
+        """Print binary I/O encoding statistics."""
+        try:
+            stats = collector.get_stats()
+        except (ValueError, RuntimeError):
+            return  # Collector closed or stats unavailable
+
+        print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
+
+        repeat_records = stats.get('repeat_records', 0)
+        repeat_samples = stats.get('repeat_samples', 0)
+        full_records = stats.get('full_records', 0)
+        suffix_records = stats.get('suffix_records', 0)
+        pop_push_records = stats.get('pop_push_records', 0)
+        total_records = stats.get('total_records', 0)
+
+        if total_records > 0:
+            repeat_pct = repeat_records / total_records * 100
+            full_pct = full_records / total_records * 100
+            suffix_pct = suffix_records / total_records * 100
+            pop_push_pct = pop_push_records / total_records * 100
+        else:
+            repeat_pct = full_pct = suffix_pct = pop_push_pct = 0
+
+        print(f"    Records:          {total_records:,}")
+        print(f"      RLE repeat:     {repeat_records:,} ({ANSIColors.GREEN}{repeat_pct:.1f}%{ANSIColors.RESET}) [{repeat_samples:,} samples]")
+        print(f"      Full stack:     {full_records:,} ({full_pct:.1f}%)")
+        print(f"      Suffix match:   {suffix_records:,} ({suffix_pct:.1f}%)")
+        print(f"      Pop-push:       {pop_push_records:,} ({pop_push_pct:.1f}%)")
+
+        frames_written = stats.get('total_frames_written', 0)
+        frames_saved = stats.get('frames_saved', 0)
+        compression_pct = stats.get('frame_compression_pct', 0)
+
+        print(f"  {ANSIColors.CYAN}Frame Efficiency:{ANSIColors.RESET}")
+        print(f"    Frames written:   {frames_written:,}")
+        print(f"    Frames saved:     {frames_saved:,} ({ANSIColors.GREEN}{compression_pct:.1f}%{ANSIColors.RESET})")
+
+        bytes_written = stats.get('bytes_written', 0)
+        if bytes_written >= 1024 * 1024:
+            bytes_str = f"{bytes_written / (1024 * 1024):.1f} MB"
+        elif bytes_written >= 1024:
+            bytes_str = f"{bytes_written / 1024:.1f} KB"
+        else:
+            bytes_str = f"{bytes_written} B"
+        print(f"    Bytes (pre-zstd): {bytes_str}")
 
 
 def _is_process_running(pid):

@@ -44,8 +44,17 @@ def extract_lineno(location):
 
 class Collector(ABC):
     @abstractmethod
-    def collect(self, stack_frames):
-        """Collect profiling data from stack frames."""
+    def collect(self, stack_frames, timestamps_us=None):
+        """Collect profiling data from stack frames.
+
+        Args:
+            stack_frames: List of InterpreterInfo objects
+            timestamps_us: Optional list of timestamps in microseconds. If provided
+                (from binary replay with RLE batching), use these instead of current
+                time. If None, collectors should use time.monotonic() or similar.
+                The list may contain multiple timestamps when samples are batched
+                together (same stack, different times).
+        """
 
     def collect_failed_sample(self):
         """Collect data about a failed sample attempt."""
@@ -78,6 +87,17 @@ class Collector(ABC):
 
         # Phase 3: Build linear stacks from each leaf to root (optimized - no sorting!)
         yield from self._build_linear_stacks(leaf_task_ids, task_map, child_to_parent)
+
+    def _iter_stacks(self, stack_frames, skip_idle=False):
+        """Yield (frames, thread_id) for all stacks, handling both sync and async modes."""
+        if stack_frames and hasattr(stack_frames[0], "awaited_by"):
+            for frames, thread_id, _ in self._iter_async_frames(stack_frames):
+                if frames:
+                    yield frames, thread_id
+        else:
+            for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
+                if frames:
+                    yield frames, thread_id
 
     def _build_task_graph(self, awaited_info_list):
         task_map = {}
