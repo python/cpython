@@ -76,17 +76,24 @@ with a single seek to `file_size - 32`, without first reading the header.
  Offset   Size   Type      Description
 +--------+------+---------+----------------------------------------+
 |    0   |  4   | uint32  | Magic number (0x54414348 = "TACH")     |
-|    4   |  4   | uint32  | Format version (currently 2)           |
-|    8   |  8   | uint64  | Start timestamp (microseconds)         |
-|   16   |  8   | uint64  | Sample interval (microseconds)         |
-|   24   |  4   | uint32  | Total sample count                     |
-|   28   |  4   | uint32  | Thread count                           |
-|   32   |  8   | uint64  | String table offset                    |
-|   40   |  8   | uint64  | Frame table offset                     |
-|   48   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
-|   52   | 12   | bytes   | Reserved (zero-filled)                 |
+|    4   |  4   | uint32  | Format version                         |
+|    8   |  4   | bytes   | Python version (major, minor, micro,   |
+|        |      |         | reserved)                              |
+|   12   |  8   | uint64  | Start timestamp (microseconds)         |
+|   20   |  8   | uint64  | Sample interval (microseconds)         |
+|   28   |  4   | uint32  | Total sample count                     |
+|   32   |  4   | uint32  | Thread count                           |
+|   36   |  8   | uint64  | String table offset                    |
+|   44   |  8   | uint64  | Frame table offset                     |
+|   52   |  4   | uint32  | Compression type (0=none, 1=zstd)      |
+|   56   |  8   | bytes   | Reserved (zero-filled)                 |
 +--------+------+---------+----------------------------------------+
 ```
+
+The Python version field records the major, minor, and micro version numbers
+of the Python interpreter that generated the file. This allows analysis tools
+to detect version mismatches when replaying data collected on a different
+Python version, which may have different internal structures or behaviors.
 
 The header is written as zeros initially, then overwritten with actual values
 during finalization. This requires the output stream to be seekable, which
