@@ -2,6 +2,7 @@
 
 import argparse
 import importlib.util
+import locale
 import os
 import selectors
 import socket
@@ -634,6 +635,16 @@ def _validate_args(args, parser):
 
 def main():
     """Main entry point for the CLI."""
+    # Set locale for number formatting, restore on exit
+    old_locale = locale.setlocale(locale.LC_ALL, None)
+    locale.setlocale(locale.LC_ALL, "")
+    try:
+        _main()
+    finally:
+        locale.setlocale(locale.LC_ALL, old_locale)
+
+
+def _main():
     # Create the main parser
     parser = argparse.ArgumentParser(
         description=_HELP_DESCRIPTION,
