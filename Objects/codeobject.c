@@ -207,7 +207,7 @@ intern_constants(PyObject *tuple, int *modified)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
-        if (PyUnicode_CheckExact(v) && PyUnicode_GET_LENGTH(v) > 1) {
+        if (PyUnicode_CheckExact(v)) {
             if (PyUnicode_CHECK_INTERNED(v) != 0) {
                 continue;
             }
