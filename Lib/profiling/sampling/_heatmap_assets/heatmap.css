@@ -69,12 +69,10 @@
   overflow: hidden;
 }
 
-.stat-card:nth-child(1) { --i: 0; --card-color: 55, 118, 171; }
-.stat-card:nth-child(2) { --i: 1; --card-color: 40, 167, 69; }
-.stat-card:nth-child(3) { --i: 2; --card-color: 184, 140, 5; }
-.stat-card:nth-child(4) { --i: 3; --card-color: 116, 69, 201; }
-.stat-card:nth-child(5) { --i: 4; --card-color: 220, 53, 69; }
-.stat-card:nth-child(6) { --i: 5; --card-color: 23, 162, 184; }
+.stat-card:nth-child(1) { --i: 0; --card-color: var(--card-blue); }
+.stat-card:nth-child(2) { --i: 1; --card-color: var(--card-green); }
+.stat-card:nth-child(3) { --i: 2; --card-color: var(--card-yellow); }
+.stat-card:nth-child(4) { --i: 3; --card-color: var(--card-purple); }
 
 .stat-card:hover {
   border-color: rgba(var(--card-color), 0.6);
@@ -159,8 +157,8 @@
   overflow: hidden;
 }
 
-.rate-card:nth-child(5) { animation-delay: 0.32s; --rate-color: 220, 53, 69; }
-.rate-card:nth-child(6) { animation-delay: 0.40s; --rate-color: 212, 126, 0; }
+.rate-card:nth-child(5) { animation-delay: 0.32s; --rate-color: var(--card-red); }
+.rate-card:nth-child(6) { animation-delay: 0.40s; --rate-color: var(--card-orange); }
 
 .rate-card:hover {
   border-color: rgba(var(--rate-color), 0.5);
