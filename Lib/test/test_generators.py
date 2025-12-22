@@ -112,6 +112,18 @@ class FinalizationTest(unittest.TestCase):
                 gen.send(2)
             self.assertEqual(cm.exception.value, 2)
 
+    def test_exhausted_generator_frame_cycle(self):
+        def g():
+            yield
+
+        generator = g()
+        frame = generator.gi_frame
+        self.assertIsNone(frame.f_back)
+        next(generator)
+        self.assertIsNone(frame.f_back)
+        next(generator, None)
+        self.assertIsNone(frame.f_back)
+
 
 class GeneratorTest(unittest.TestCase):
 
@@ -246,6 +258,33 @@ class GeneratorTest(unittest.TestCase):
         #This should not raise
         loop()
 
+    def test_close_clears_frame(self):
+        # gh-142766: Test that closing a generator clears its frame
+        class DetectDelete:
+            def __init__(self):
+                DetectDelete.deleted = False
+
+            def __del__(self):
+                DetectDelete.deleted = True
+
+        def generator(arg):
+            yield
+
+        # Test a freshly created generator (not suspended)
+        g = generator(DetectDelete())
+        g.close()
+        self.assertTrue(DetectDelete.deleted)
+
+        # Test a suspended generator
+        g = generator(DetectDelete())
+        next(g)
+        g.close()
+        self.assertTrue(DetectDelete.deleted)
+
+        # Clear via gi_frame.clear()
+        g = generator(DetectDelete())
+        g.gi_frame.clear()
+        self.assertTrue(DetectDelete.deleted)
 
 class ModifyUnderlyingIterableTest(unittest.TestCase):
     iterables = [

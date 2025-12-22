@@ -1696,10 +1696,10 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     gen->gi_exc_state.previous_item = NULL;
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    frame->previous = NULL;
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
     tstate->c_recursion_remaining++;
-    frame->previous = NULL;
 }
 
 void
@@ -2272,6 +2272,10 @@ monitor_unwind(PyThreadState *tstate,
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
 }
 
+bool
+_PyEval_NoToolsForUnwind(PyThreadState *tstate) {
+    return no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND);
+}
 
 static int
 monitor_handled(PyThreadState *tstate,

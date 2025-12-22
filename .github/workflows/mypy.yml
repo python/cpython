@@ -23,6 +23,7 @@ on:
       - "Tools/build/update_file.py"
       - "Tools/build/umarshal.py"
       - "Tools/cases_generator/**"
+      - "Tools/check-c-api-docs/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
@@ -55,6 +56,7 @@ jobs:
           "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
+          "Tools/check-c-api-docs",
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
