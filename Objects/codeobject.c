@@ -196,6 +196,8 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
+#define _constants_tuple_modified(modified) if (modified) *modified = 1
+
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
    constants. */
@@ -223,9 +225,7 @@ intern_constants(PyObject *tuple, int *modified)
                 Py_INCREF(interned);
                 PyTuple_SET_ITEM(tuple, i, interned);
                 Py_DECREF(v);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             } else
 #endif
             if (should_intern_string(v)) {
@@ -233,9 +233,7 @@ intern_constants(PyObject *tuple, int *modified)
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
-                    if (modified) {
-                        *modified = 1;
-                    }
+                    _constants_tuple_modified(modified);
                 }
             }
         }
@@ -264,9 +262,7 @@ intern_constants(PyObject *tuple, int *modified)
 
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(w);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
             Py_DECREF(tmp);
         }
@@ -295,9 +291,7 @@ intern_constants(PyObject *tuple, int *modified)
                 }
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(slice);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
             Py_DECREF(tmp);
         }
@@ -315,9 +309,7 @@ intern_constants(PyObject *tuple, int *modified)
             else if (interned != v) {
                 PyTuple_SET_ITEM(tuple, i, interned);
                 Py_SETREF(v, interned);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
         }
 #endif
