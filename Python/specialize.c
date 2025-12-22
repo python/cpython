@@ -360,6 +360,10 @@ static void
 maybe_enable_deferred_ref_count(PyObject *op)
 {
     if (!_Py_IsOwnedByCurrentThread(op)) {
+        // For module level variables that are heavily used from multiple
+        // threads, deferred reference counting provides good scaling
+        // benefits.  The downside is that the object will only be deallocated
+        // by a GC run.
         PyUnstable_Object_EnableDeferredRefcount(op);
     }
 }
