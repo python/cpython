@@ -3,154 +3,20 @@
 
 .. _extending-intro:
 
-******************************
-Extending Python with C or C++
-******************************
+********************************
+Using the C API: Assorted topics
+********************************
 
-It is quite easy to add new built-in modules to Python, if you know how to
-program in C.  Such :dfn:`extension modules` can do two things that can't be
-done directly in Python: they can implement new built-in object types, and they
-can call C library functions and system calls.
-
-To support extensions, the Python API (Application Programmers Interface)
-defines a set of functions, macros and variables that provide access to most
-aspects of the Python run-time system.  The Python API is incorporated in a C
-source file by including the header ``"Python.h"``.
-
-The compilation of an extension module depends on its intended use as well as on
-your system setup; details are given in later chapters.
-
-.. note::
-
-   The C extension interface is specific to CPython, and extension modules do
-   not work on other Python implementations.  In many cases, it is possible to
-   avoid writing C extensions and preserve portability to other implementations.
-   For example, if your use case is calling C library functions or system calls,
-   you should consider using the :mod:`ctypes` module or the `cffi
-   <https://cffi.readthedocs.io/>`_ library rather than writing
-   custom C code.
-   These modules let you write Python code to interface with C code and are more
-   portable between implementations of Python than writing and compiling a C
-   extension module.
-
-
-.. _extending-simpleexample:
-
-A Simple Example
-================
-
-Let's create an extension module called ``spam`` (the favorite food of Monty
-Python fans...) and let's say we want to create a Python interface to the C
-library function :c:func:`system` [#]_. This function takes a null-terminated
-character string as argument and returns an integer.  We want this function to
-be callable from Python as follows:
-
-.. code-block:: pycon
-
-   >>> import spam
-   >>> status = spam.system("ls -l")
-
-Begin by creating a file :file:`spammodule.c`.  (Historically, if a module is
-called ``spam``, the C file containing its implementation is called
-:file:`spammodule.c`; if the module name is very long, like ``spammify``, the
-module name can be just :file:`spammify.c`.)
-
-The first two lines of our file can be::
-
-   #define PY_SSIZE_T_CLEAN
-   #include <Python.h>
-
-which pulls in the Python API (you can add a comment describing the purpose of
-the module and a copyright notice if you like).
-
-.. note::
-
-   Since Python may define some pre-processor definitions which affect the standard
-   headers on some systems, you *must* include :file:`Python.h` before any standard
-   headers are included.
-
-   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
-   used in some APIs instead of ``int``.
-   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
-   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
-
-All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
-``PY``, except those defined in standard header files.
-
-.. tip::
-
-   For backward compatibility, :file:`Python.h` includes several standard header files.
-   C extensions should include the standard headers that they use,
-   and should not rely on these implicit includes.
-   If using the limited C API version 3.13 or newer, the implicit includes are:
-
-   * ``<assert.h>``
-   * ``<intrin.h>`` (on Windows)
-   * ``<inttypes.h>``
-   * ``<limits.h>``
-   * ``<math.h>``
-   * ``<stdarg.h>``
-   * ``<wchar.h>``
-   * ``<sys/types.h>`` (if present)
-
-   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.12 or older,
-   the headers below are also included:
-
-   * ``<ctype.h>``
-   * ``<unistd.h>`` (on POSIX)
-
-   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.10 or older,
-   the headers below are also included:
-
-   * ``<errno.h>``
-   * ``<stdio.h>``
-   * ``<stdlib.h>``
-   * ``<string.h>``
-
-The next thing we add to our module file is the C function that will be called
-when the Python expression ``spam.system(string)`` is evaluated (we'll see
-shortly how it ends up being called)::
-
-   static PyObject *
-   spam_system(PyObject *self, PyObject *args)
-   {
-       const char *command;
-       int sts;
-
-       if (!PyArg_ParseTuple(args, "s", &command))
-           return NULL;
-       sts = system(command);
-       return PyLong_FromLong(sts);
-   }
-
-There is a straightforward translation from the argument list in Python (for
-example, the single expression ``"ls -l"``) to the arguments passed to the C
-function.  The C function always has two arguments, conventionally named *self*
-and *args*.
-
-The *self* argument points to the module object for module-level functions;
-for a method it would point to the object instance.
-
-The *args* argument will be a pointer to a Python tuple object containing the
-arguments.  Each item of the tuple corresponds to an argument in the call's
-argument list.  The arguments are Python objects --- in order to do anything
-with them in our C function we have to convert them to C values.  The function
-:c:func:`PyArg_ParseTuple` in the Python API checks the argument types and
-converts them to C values.  It uses a template string to determine the required
-types of the arguments as well as the types of the C variables into which to
-store the converted values.  More about this later.
-
-:c:func:`PyArg_ParseTuple` returns true (nonzero) if all arguments have the right
-type and its components have been stored in the variables whose addresses are
-passed.  It returns false (zero) if an invalid argument list was passed.  In the
-latter case it also raises an appropriate exception so the calling function can
-return ``NULL`` immediately (as we saw in the example).
+The :ref:`tutorial <first-extension-module>` walked you through
+creating a C API extension module, but left many areas unexplained.
+This document looks at several concepts that you'll need to learn
+in order to write more complex extensions.
 
 
 .. _extending-errors:
 
-Intermezzo: Errors and Exceptions
-=================================
+Errors and Exceptions
+=====================
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
@@ -321,194 +187,14 @@ call to :c:func:`PyErr_SetString` as shown below::
    }
 
 
-.. _backtoexample:
-
-Back to the Example
-===================
-
-Going back to our example function, you should now be able to understand this
-statement::
-
-   if (!PyArg_ParseTuple(args, "s", &command))
-       return NULL;
-
-It returns ``NULL`` (the error indicator for functions returning object pointers)
-if an error is detected in the argument list, relying on the exception set by
-:c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
-copied to the local variable :c:data:`!command`.  This is a pointer assignment and
-you are not supposed to modify the string to which it points (so in Standard C,
-the variable :c:data:`!command` should properly be declared as ``const char
-*command``).
-
-The next statement is a call to the Unix function :c:func:`system`, passing it
-the string we just got from :c:func:`PyArg_ParseTuple`::
-
-   sts = system(command);
-
-Our :func:`!spam.system` function must return the value of :c:data:`!sts` as a
-Python object.  This is done using the function :c:func:`PyLong_FromLong`. ::
-
-   return PyLong_FromLong(sts);
-
-In this case, it will return an integer object.  (Yes, even integers are objects
-on the heap in Python!)
-
-If you have a C function that returns no useful argument (a function returning
-:c:expr:`void`), the corresponding Python function must return ``None``.   You
-need this idiom to do so (which is implemented by the :c:macro:`Py_RETURN_NONE`
-macro)::
-
-   Py_INCREF(Py_None);
-   return Py_None;
-
-:c:data:`Py_None` is the C name for the special Python object ``None``.  It is a
-genuine Python object rather than a ``NULL`` pointer, which means "error" in most
-contexts, as we have seen.
-
-
-.. _methodtable:
-
-The Module's Method Table and Initialization Function
-=====================================================
-
-I promised to show how :c:func:`!spam_system` is called from Python programs.
-First, we need to list its name and address in a "method table"::
-
-   static PyMethodDef spam_methods[] = {
-       ...
-       {"system",  spam_system, METH_VARARGS,
-        "Execute a shell command."},
-       ...
-       {NULL, NULL, 0, NULL}        /* Sentinel */
-   };
-
-Note the third entry (``METH_VARARGS``).  This is a flag telling the interpreter
-the calling convention to be used for the C function.  It should normally always
-be ``METH_VARARGS`` or ``METH_VARARGS | METH_KEYWORDS``; a value of ``0`` means
-that an obsolete variant of :c:func:`PyArg_ParseTuple` is used.
-
-When using only ``METH_VARARGS``, the function should expect the Python-level
-parameters to be passed in as a tuple acceptable for parsing via
-:c:func:`PyArg_ParseTuple`; more information on this function is provided below.
-
-The :c:macro:`METH_KEYWORDS` bit may be set in the third field if keyword
-arguments should be passed to the function.  In this case, the C function should
-accept a third ``PyObject *`` parameter which will be a dictionary of keywords.
-Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
-function.
-
-The method table must be referenced in the module definition structure::
-
-   static struct PyModuleDef spam_module = {
-       ...
-       .m_methods = spam_methods,
-       ...
-   };
-
-This structure, in turn, must be passed to the interpreter in the module's
-initialization function.  The initialization function must be named
-:c:func:`!PyInit_name`, where *name* is the name of the module, and should be the
-only non-\ ``static`` item defined in the module file::
-
-   PyMODINIT_FUNC
-   PyInit_spam(void)
-   {
-       return PyModuleDef_Init(&spam_module);
-   }
-
-Note that :c:macro:`PyMODINIT_FUNC` declares the function as ``PyObject *`` return type,
-declares any special linkage declarations required by the platform, and for C++
-declares the function as ``extern "C"``.
-
-:c:func:`!PyInit_spam` is called when each interpreter imports its module
-:mod:`!spam` for the first time.  (See below for comments about embedding Python.)
-A pointer to the module definition must be returned via :c:func:`PyModuleDef_Init`,
-so that the import machinery can create the module and store it in ``sys.modules``.
-
-When embedding Python, the :c:func:`!PyInit_spam` function is not called
-automatically unless there's an entry in the :c:data:`PyImport_Inittab` table.
-To add the module to the initialization table, use :c:func:`PyImport_AppendInittab`,
-optionally followed by an import of the module::
-
-   #define PY_SSIZE_T_CLEAN
-   #include <Python.h>
-
-   int
-   main(int argc, char *argv[])
-   {
-       PyStatus status;
-       PyConfig config;
-       PyConfig_InitPythonConfig(&config);
-
-       /* Add a built-in module, before Py_Initialize */
-       if (PyImport_AppendInittab("spam", PyInit_spam) == -1) {
-           fprintf(stderr, "Error: could not extend in-built modules table\n");
-           exit(1);
-       }
-
-       /* Pass argv[0] to the Python interpreter */
-       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
-       if (PyStatus_Exception(status)) {
-           goto exception;
-       }
-
-       /* Initialize the Python interpreter.  Required.
-          If this step fails, it will be a fatal error. */
-       status = Py_InitializeFromConfig(&config);
-       if (PyStatus_Exception(status)) {
-           goto exception;
-       }
-       PyConfig_Clear(&config);
-
-       /* Optionally import the module; alternatively,
-          import can be deferred until the embedded script
-          imports it. */
-       PyObject *pmodule = PyImport_ImportModule("spam");
-       if (!pmodule) {
-           PyErr_Print();
-           fprintf(stderr, "Error: could not import module 'spam'\n");
-       }
-
-       // ... use Python C API here ...
-
-       return 0;
-
-     exception:
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-   }
-
-.. note::
-
-   If you declare a global variable or a local static one, the module may
-   experience unintended side-effects on re-initialisation, for example when
-   removing entries from ``sys.modules`` or importing compiled modules into
-   multiple interpreters within a process
-   (or following a :c:func:`fork` without an intervening :c:func:`exec`).
-   If module state is not yet fully :ref:`isolated <isolating-extensions-howto>`,
-   authors should consider marking the module as having no support for subinterpreters
-   (via :c:macro:`Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED`).
-
-A more substantial example module is included in the Python source distribution
-as :file:`Modules/xxlimited.c`.  This file may be used as a template or simply
-read as an example.
-
-
 .. _compilation:
 
-Compilation and Linkage
-=======================
+Embedding an extension
+======================
 
-There are two more things to do before you can use your new extension: compiling
-and linking it with the Python system.  If you use dynamic loading, the details
-may depend on the style of dynamic loading your system uses; see the chapters
-about building extension modules (chapter :ref:`building`) and additional
-information that pertains only to building on Windows (chapter
-:ref:`building-on-windows`) for more information about this.
-
-If you can't use dynamic loading, or if you want to make your module a permanent
+If you want to make your module a permanent
 part of the Python interpreter, you will have to change the configuration setup
-and rebuild the interpreter.  Luckily, this is very simple on Unix: just place
+and rebuild the interpreter.  On Unix, place
 your file (:file:`spammodule.c` for example) in the :file:`Modules/` directory
 of an unpacked source distribution, add a line to the file
 :file:`Modules/Setup.local` describing your file:
@@ -536,7 +222,7 @@ on the line in the configuration file as well, for instance:
 Calling Python Functions from C
 ===============================
 
-So far we have concentrated on making C functions callable from Python.  The
+The tutorial concentrated on making C functions callable from Python.  The
 reverse is also useful: calling Python functions from C. This is especially the
 case for libraries that support so-called "callback" functions.  If a C
 interface makes use of callbacks, the equivalent Python often needs to provide a
@@ -581,7 +267,7 @@ be part of a module definition::
    }
 
 This function must be registered with the interpreter using the
-:c:macro:`METH_VARARGS` flag; this is described in section :ref:`methodtable`.  The
+:c:macro:`METH_VARARGS` flag in :c:type:`PyMethodDef.ml_flags`.  The
 :c:func:`PyArg_ParseTuple` function and its arguments are documented in section
 :ref:`parsetuple`.
 
@@ -676,14 +362,21 @@ the above example, we use :c:func:`Py_BuildValue` to construct the dictionary. :
    Py_DECREF(result);
 
 
+.. index:: single: PyArg_ParseTuple (C function)
+
 .. _parsetuple:
 
 Extracting Parameters in Extension Functions
 ============================================
 
-.. index:: single: PyArg_ParseTuple (C function)
+The :ref:`tutorial <first-extension-module>` uses a ":c:data:`METH_O`"
+function, which is limited to a single Python argument.
+If you want more, you can use :c:data:`METH_VARARGS` instead.
+With this flag, the C function will receive a :py:class:`tuple` of arguments
+instead of a single object.
 
-The :c:func:`PyArg_ParseTuple` function is declared as follows::
+For unpacking the tuple, CPython provides the :c:func:`PyArg_ParseTuple`
+function, declared as follows::
 
    int PyArg_ParseTuple(PyObject *arg, const char *format, ...);
 
@@ -692,6 +385,19 @@ from Python to a C function.  The *format* argument must be a format string,
 whose syntax is explained in :ref:`arg-parsing` in the Python/C API Reference
 Manual.  The remaining arguments must be addresses of variables whose type is
 determined by the format string.
+
+For example, to receive a single Python :py:class:`str` object and turn it
+into a C buffer, you would use ``"s"`` as the format string::
+
+   const char *command;
+   if (!PyArg_ParseTuple(args, "s", &command)) {
+       return NULL;
+   }
+
+If an error is detected in the argument list, :c:func:`!PyArg_ParseTuple`
+returns ``NULL`` (the error indicator for functions returning object pointers);
+your function may return ``NULL``, relying on the exception set by
+:c:func:`PyArg_ParseTuple`.
 
 Note that while :c:func:`PyArg_ParseTuple` checks that the Python arguments have
 the required types, it cannot check the validity of the addresses of C variables
@@ -703,7 +409,6 @@ Note that any Python object references which are provided to the caller are
 
 Some example calls::
 
-   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
 ::
@@ -773,6 +478,17 @@ Some example calls::
 Keyword Parameters for Extension Functions
 ==========================================
 
+If you also want your function to accept
+:term:`keyword arguments <keyword argument>`, use the :c:data:`METH_KEYWORDS`
+flag in combination with :c:data:`METH_VARARGS`.
+(:c:data:`!METH_KEYWORDS` can also be used with other flags; see its
+documentation for the allowed combinations.)
+
+In this case, the C function should accept a third ``PyObject *`` parameter
+which will be a dictionary of keywords.
+Use :c:func:`PyArg_ParseTupleAndKeywords` to parse the arguments to such a
+function.
+
 .. index:: single: PyArg_ParseTupleAndKeywords (C function)
 
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
@@ -832,19 +548,6 @@ Philbrick (philbrick@hks.com)::
         "Print a lovely skit to standard output."},
        {NULL, NULL, 0, NULL}   /* sentinel */
    };
-
-   static struct PyModuleDef keywdarg_module = {
-       .m_base = PyModuleDef_HEAD_INIT,
-       .m_name = "keywdarg",
-       .m_size = 0,
-       .m_methods = keywdarg_methods,
-   };
-
-   PyMODINIT_FUNC
-   PyInit_keywdarg(void)
-   {
-       return PyModuleDef_Init(&keywdarg_module);
-   }
 
 
 .. _buildvalue:
@@ -986,11 +689,11 @@ needed.  Ownership of a reference can be transferred.  There are three ways to
 dispose of an owned reference: pass it on, store it, or call :c:func:`Py_DECREF`.
 Forgetting to dispose of an owned reference creates a memory leak.
 
-It is also possible to :dfn:`borrow` [#]_ a reference to an object.  The
+It is also possible to :dfn:`borrow` [#borrow]_ a reference to an object.  The
 borrower of a reference should not call :c:func:`Py_DECREF`.  The borrower must
 not hold on to the object longer than the owner from which it was borrowed.
 Using a borrowed reference after the owner has disposed of it risks using freed
-memory and should be avoided completely [#]_.
+memory and should be avoided completely [#dont-check-refcount]_.
 
 The advantage of borrowing over owning a reference is that you don't need to
 take care of disposing of the reference on all possible paths through the code
@@ -1169,7 +872,7 @@ checking.
 
 The C function calling mechanism guarantees that the argument list passed to C
 functions (``args`` in the examples) is never ``NULL`` --- in fact it guarantees
-that it is always a tuple [#]_.
+that it is always a tuple [#old-calling-convention]_.
 
 It is a severe error to ever let a ``NULL`` pointer "escape" to the Python user.
 
@@ -1226,8 +929,8 @@ the module whose functions one wishes to call might not have been loaded yet!
 Portability therefore requires not to make any assumptions about symbol
 visibility. This means that all symbols in extension modules should be declared
 ``static``, except for the module's initialization function, in order to
-avoid name clashes with other extension modules (as discussed in section
-:ref:`methodtable`). And it means that symbols that *should* be accessible from
+avoid name clashes with other extension modules. And it means that symbols
+that *should* be accessible from
 other extension modules must be exported in a different way.
 
 Python provides a special mechanism to pass C-level information (pointers) from
@@ -1269,8 +972,9 @@ file corresponding to the module provides a macro that takes care of importing
 the module and retrieving its C API pointers; client modules only have to call
 this macro before accessing the C API.
 
-The exporting module is a modification of the :mod:`!spam` module from section
-:ref:`extending-simpleexample`. The function :func:`!spam.system` does not call
+The exporting module is a modification of the :mod:`!spam` module from the
+:ref:`tutorial <first-extension-module>`.
+The function :func:`!spam.system` does not call
 the C library function :c:func:`system` directly, but a function
 :c:func:`!PySpam_System`, which would of course do something more complicated in
 reality (such as adding "spam" to every command). This function
@@ -1412,15 +1116,14 @@ code distribution).
 
 .. rubric:: Footnotes
 
-.. [#] An interface for this function already exists in the standard module :mod:`os`
-   --- it was chosen as a simple and straightforward example.
+.. [#borrow] The metaphor of "borrowing" a reference is not completely correct:
+   the owner still has a copy of the reference.
 
-.. [#] The metaphor of "borrowing" a reference is not completely correct: the owner
-   still has a copy of the reference.
-
-.. [#] Checking that the reference count is at least 1 **does not work** --- the
+.. [#dont-check-refcount] Checking that the reference count is at least 1
+   **does not work** --- the
    reference count itself could be in freed memory and may thus be reused for
    another object!
 
-.. [#] These guarantees don't hold when you use the "old" style calling convention ---
+.. [#old-calling-convention] These guarantees don't hold when you use the
+   "old" style calling convention ---
    this is still found in much existing code.
