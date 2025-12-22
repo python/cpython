@@ -91,6 +91,12 @@ with a single seek to `file_size - 32`, without first reading the header.
 +--------+------+---------+----------------------------------------+
 ```
 
+The magic number `0x54414348` ("TACH" for Tachyon) identifies the file format
+and also serves as an **endianness marker**. When read on a system with
+different byte order than the writer, it appears as `0x48434154`. The reader
+uses this to detect cross-endian files and automatically byte-swap all
+multi-byte integer fields.
+
 The Python version field records the major, minor, and micro version numbers
 of the Python interpreter that generated the file. This allows analysis tools
 to detect version mismatches when replaying data collected on a different
@@ -399,14 +405,17 @@ enable O(1) lookup during interning.
 
 ### Reading
 
-1. Read the header and validate magic/version
-2. Seek to end − 32 and read the footer
-3. Allocate string array of `string_count` elements
-4. Parse the string table, populating the array
-5. Allocate frame array of `frame_count * 3` uint32 elements
-6. Parse the frame table, populating the array
-7. If compressed, decompress the sample data region
-8. Iterate through samples, resolving indices to strings/frames
+1. Read the header magic number to detect endianness (set `needs_swap` flag
+   if the magic appears byte-swapped)
+2. Validate version and read remaining header fields (byte-swapping if needed)
+3. Seek to end − 32 and read the footer (byte-swapping counts if needed)
+4. Allocate string array of `string_count` elements
+5. Parse the string table, populating the array
+6. Allocate frame array of `frame_count * 3` uint32 elements
+7. Parse the frame table, populating the array
+8. If compressed, decompress the sample data region
+9. Iterate through samples, resolving indices to strings/frames
+   (byte-swapping thread_id and interpreter_id if needed)
 
 The reader builds lookup arrays rather than dictionaries since it only needs
 index-to-value mapping, not value-to-index.
@@ -420,22 +429,22 @@ fields when writing. However, the reader supports **cross-endian reading**:
 files written on a little-endian system (x86, ARM) can be read on a
 big-endian system (s390x, PowerPC), and vice versa.
 
-**Endianness Detection**: The magic number serves as an endianness marker.
-When read on a system with different byte order, it appears byte-swapped
-(`0x48434154` instead of `0x54414348`). The reader detects this and
-automatically byte-swaps all fixed-width integer fields during parsing.
+The magic number doubles as an endianness marker. When read on a system with
+different byte order, it appears byte-swapped (`0x48434154` instead of
+`0x54414348`). The reader detects this and automatically byte-swaps all
+fixed-width integer fields during parsing.
 
-**Writer Requirements**: Fixed-width integer fields must be written using
-`memcpy()` from properly-sized integer types. When the source variable's
-type differs from the field width (e.g., `size_t` being written as 4 bytes),
-explicit casting to the correct type (e.g., `uint32_t`) is required before
-`memcpy()`. On big-endian systems, copying from an oversized type would
-copy the wrong bytes (high-order zeros instead of the actual value).
+Writers must use `memcpy()` from properly-sized integer types when writing
+fixed-width integer fields. When the source variable's type differs from the
+field width (e.g., `size_t` written as 4 bytes), explicit casting to the
+correct type (e.g., `uint32_t`) is required before `memcpy()`. On big-endian
+systems, copying from an oversized type would copy the wrong bytes—high-order
+zeros instead of the actual value.
 
-**Reader Implementation**: The reader tracks whether byte-swapping is needed
-via a `needs_swap` flag set during header parsing. All fixed-width fields
-in the header, footer, and sample data are conditionally byte-swapped using
-inline swap functions (`bswap32`, `bswap64`).
+The reader tracks whether byte-swapping is needed via a `needs_swap` flag set
+during header parsing. All fixed-width fields in the header, footer, and
+sample data are conditionally byte-swapped using Python's internal byte-swap
+functions (`_Py_bswap32`, `_Py_bswap64` from `pycore_bitutils.h`).
 
 Variable-length integers (varints) are byte-order independent since they
 encode values one byte at a time using the LEB128 scheme, so they require
