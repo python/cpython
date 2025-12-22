@@ -546,6 +546,9 @@ The available presentation types for :class:`float` and
    |         | :class:`float`, and shows all coefficient digits         |
    |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
    |         | point is omitted unless the ``#`` option is used.        |
+   |         |                                                          |
+   |         | For :class:`float`, the exponent always contains at      |
+   |         | least two digits, and is zero if the value is zero.      |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |

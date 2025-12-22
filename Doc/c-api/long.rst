@@ -161,6 +161,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
+.. c:macro:: PyLong_FromPid(pid)
+
+   Macro for creating a Python integer from a process identifier.
+
+   This can be defined as an alias to :c:func:`PyLong_FromLong` or
+   :c:func:`PyLong_FromLongLong`, depending on the size of the system's
+   PID type.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: long PyLong_AsLong(PyObject *obj)
 
    .. index::
@@ -573,6 +584,17 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       This matches typical C cast behavior.
 
    .. versionadded:: 3.13
+
+
+.. c:macro:: PyLong_AsPid(pid)
+
+   Macro for converting a Python integer into a process identifier.
+
+   This can be defined as an alias to :c:func:`PyLong_AsLong`,
+   :c:func:`PyLong_FromLongLong`, or :c:func:`PyLong_AsInt`, depending on the
+   size of the system's PID type.
+
+   .. versionadded:: 3.2
 
 
 .. c:function:: int PyLong_GetSign(PyObject *obj, int *sign)

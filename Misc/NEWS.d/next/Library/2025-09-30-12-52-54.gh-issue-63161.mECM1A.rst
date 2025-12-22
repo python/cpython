@@ -1,3 +1,0 @@
-Fix :func:`tokenize.detect_encoding`. Support non-UTF-8 shebang and comments
-if non-UTF-8 encoding is specified. Detect decoding error for non-UTF-8
-encoding. Detect null bytes in source code.

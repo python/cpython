@@ -111,9 +111,10 @@ class JSONEncoder(object):
         encoding of keys that are not str, int, float, bool or None.
         If skipkeys is True, such items are simply skipped.
 
-        If ensure_ascii is true, the output is guaranteed to be str
-        objects with all incoming non-ASCII characters escaped.  If
-        ensure_ascii is false, the output can contain non-ASCII characters.
+        If ensure_ascii is true, the output is guaranteed to be str objects
+        with all incoming non-ASCII and non-printable characters escaped.
+        If ensure_ascii is false, the output can contain non-ASCII and
+        non-printable characters.
 
         If check_circular is true, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
@@ -134,14 +135,15 @@ class JSONEncoder(object):
         indent level.  An indent level of 0 will only insert newlines.
         None is the most compact representation.
 
-        If specified, separators should be an (item_separator, key_separator)
-        tuple.  The default is (', ', ': ') if *indent* is ``None`` and
-        (',', ': ') otherwise.  To get the most compact JSON representation,
-        you should specify (',', ':') to eliminate whitespace.
+        If specified, separators should be an (item_separator,
+        key_separator) tuple.  The default is (', ', ': ') if *indent* is
+        ``None`` and (',', ': ') otherwise.  To get the most compact JSON
+        representation, you should specify (',', ':') to eliminate
+        whitespace.
 
         If specified, default is a function that gets called for objects
-        that can't otherwise be serialized.  It should return a JSON encodable
-        version of the object or raise a ``TypeError``.
+        that can't otherwise be serialized.  It should return a JSON
+        encodable version of the object or raise a ``TypeError``.
 
         """
 
@@ -262,17 +264,6 @@ class JSONEncoder(object):
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
-        ## HACK: hand-optimized bytecode; turn globals into locals
-        ValueError=ValueError,
-        dict=dict,
-        float=float,
-        id=id,
-        int=int,
-        isinstance=isinstance,
-        list=list,
-        str=str,
-        tuple=tuple,
-        _intstr=int.__repr__,
     ):
 
     def _iterencode_list(lst, _current_indent_level):
@@ -309,7 +300,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     # Subclasses of int/float may override __repr__, but we still
                     # want to encode them as integers/floats in JSON. One example
                     # within the standard library is IntEnum.
-                    yield buf + _intstr(value)
+                    yield buf + int.__repr__(value)
                 elif isinstance(value, float):
                     # see comment above for int
                     yield buf + _floatstr(value)
@@ -372,7 +363,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = 'null'
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
-                key = _intstr(key)
+                key = int.__repr__(key)
             elif _skipkeys:
                 continue
             else:
@@ -397,7 +388,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     yield 'false'
                 elif isinstance(value, int):
                     # see comment for int/float in _make_iterencode
-                    yield _intstr(value)
+                    yield int.__repr__(value)
                 elif isinstance(value, float):
                     # see comment for int/float in _make_iterencode
                     yield _floatstr(value)
@@ -432,7 +423,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield 'false'
         elif isinstance(o, int):
             # see comment for int/float in _make_iterencode
-            yield _intstr(o)
+            yield int.__repr__(o)
         elif isinstance(o, float):
             # see comment for int/float in _make_iterencode
             yield _floatstr(o)
@@ -456,4 +447,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 raise
             if markers is not None:
                 del markers[markerid]
-    return _iterencode
+
+    def _iterencode_once(o, _current_indent_level):
+        nonlocal _iterencode, _iterencode_dict, _iterencode_list
+        try:
+            yield from _iterencode(o, _current_indent_level)
+        finally:
+            # Break reference cycles due to mutually recursive closures:
+            del _iterencode, _iterencode_dict, _iterencode_list
+
+    return _iterencode_once

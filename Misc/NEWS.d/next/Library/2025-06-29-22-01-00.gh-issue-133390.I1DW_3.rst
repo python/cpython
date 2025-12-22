@@ -1,2 +1,0 @@
-Support table, index, trigger, view, column, function, and schema completion
-for :mod:`sqlite3`'s :ref:`command-line interface <sqlite3-cli>`.

@@ -1,2 +1,0 @@
-Fix :class:`logging.LoggerAdapter` with ``merge_extra=True`` and without the
-*extra* argument.

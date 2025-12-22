@@ -76,6 +76,9 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   If the process object is garbage collected while the process is still
+   running, the child process will be killed.
+
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
@@ -94,6 +97,9 @@ Creating Subprocesses
 
    See the documentation of :meth:`loop.subprocess_shell` for other
    parameters.
+
+   If the process object is garbage collected while the process is still
+   running, the child process will be killed.
 
    .. important::
 

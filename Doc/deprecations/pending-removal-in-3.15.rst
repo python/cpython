@@ -3,9 +3,9 @@ Pending removal in Python 3.15
 
 * The import system:
 
-  * Setting :attr:`~module.__cached__` on a module while
+  * Setting ``__cached__`` on a module while
     failing to set :attr:`__spec__.cached <importlib.machinery.ModuleSpec.cached>`
-    is deprecated. In Python 3.15, :attr:`!__cached__` will cease to be set or
+    is deprecated. In Python 3.15, ``__cached__`` will cease to be set or
     take into consideration by the import system or standard library. (:gh:`97879`)
 
   * Setting :attr:`~module.__package__` on a module while

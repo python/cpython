@@ -83,14 +83,11 @@ __all__ = [
     "SubElement",
     "tostring", "tostringlist",
     "TreeBuilder",
-    "VERSION",
     "XML", "XMLID",
     "XMLParser", "XMLPullParser",
     "register_namespace",
     "canonicalize", "C14NWriterTarget",
     ]
-
-VERSION = "1.3.0"
 
 import sys
 import re
@@ -1261,16 +1258,20 @@ def iterparse(source, events=None, parser=None):
     gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
         __next__ = gen.__next__
+
         def close(self):
+            nonlocal close_source
             if close_source:
                 source.close()
+                close_source = False
             gen.close()
 
-        def __del__(self):
-            # TODO: Emit a ResourceWarning if it was not explicitly closed.
-            # (When the close() method will be supported in all maintained Python versions.)
+        def __del__(self, _warn=warnings.warn):
             if close_source:
-                source.close()
+                try:
+                    _warn(f"unclosed iterparse iterator {source.name!r}", ResourceWarning, stacklevel=2)
+                finally:
+                    source.close()
 
     it = IterParseIterator()
     it.root = None
@@ -2100,3 +2101,14 @@ except ImportError:
     pass
 else:
     _set_factories(Comment, ProcessingInstruction)
+
+
+# --------------------------------------------------------------------
+
+def __getattr__(name):
+    if name == "VERSION":
+        from warnings import _deprecated
+
+        _deprecated("VERSION", remove=(3, 20))
+        return "1.3.0"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

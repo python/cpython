@@ -513,7 +513,7 @@ Available Functions
    .. versionchanged:: 3.6
       Add the *source* parameter.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       If no module is passed, test the filter regular expression against
       module names created from the path, not only the path itself.
 

@@ -259,22 +259,44 @@ class LineCacheTests(unittest.TestCase):
     def test_loader(self):
         filename = 'scheme://path'
 
-        for loader in (None, object(), NoSourceLoader()):
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': None}
+        self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        for loader in object(), NoSourceLoader():
             linecache.clearcache()
             module_globals = {'__name__': 'a.b.c', '__loader__': loader}
-            self.assertEqual(linecache.getlines(filename, module_globals), [])
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals), [])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
 
         linecache.clearcache()
         module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
-        self.assertEqual(linecache.getlines(filename, module_globals),
-                         ['source for a.b.c\n'])
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals is missing a __spec__.loader')
 
-        for spec in (None, object(), ModuleSpec('', FakeLoader())):
+        for spec in None, object():
             linecache.clearcache()
             module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
                               '__spec__': spec}
+            with self.assertWarns(DeprecationWarning) as w:
+                self.assertEqual(linecache.getlines(filename, module_globals),
+                                 ['source for a.b.c\n'])
+            self.assertEqual(str(w.warning),
+                             'Module globals is missing a __spec__.loader')
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                          '__spec__': ModuleSpec('', FakeLoader())}
+        with self.assertWarns(DeprecationWarning) as w:
             self.assertEqual(linecache.getlines(filename, module_globals),
                              ['source for a.b.c\n'])
+        self.assertEqual(str(w.warning),
+                         'Module globals; __loader__ != __spec__.loader')
 
         linecache.clearcache()
         spec = ModuleSpec('x.y.z', FakeLoader())

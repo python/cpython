@@ -1,0 +1,1 @@
+Avoid locking in :c:func:`PyTraceMalloc_Track` and :c:func:`PyTraceMalloc_Untrack` when :mod:`tracemalloc` is not enabled.

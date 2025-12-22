@@ -794,7 +794,8 @@ class RawConfigParser(MutableMapping):
         """
         elements_added = set()
         for section, keys in dictionary.items():
-            section = str(section)
+            if section is not UNNAMED_SECTION:
+                section = str(section)
             try:
                 self.add_section(section)
             except (DuplicateSectionError, ValueError):

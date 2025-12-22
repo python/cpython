@@ -709,8 +709,7 @@ if sys.platform == 'win32':
                 # written data and then disconnected -- see Issue 14725.
             else:
                 try:
-                    res = _winapi.WaitForMultipleObjects(
-                        [ov.event], False, INFINITE)
+                    _winapi.WaitForMultipleObjects([ov.event], False, INFINITE)
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)

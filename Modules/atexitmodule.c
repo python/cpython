@@ -257,10 +257,11 @@ static int
 atexit_unregister_locked(PyObject *callbacks, PyObject *func)
 {
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(callbacks); ++i) {
-        PyObject *tuple = PyList_GET_ITEM(callbacks, i);
+        PyObject *tuple = Py_NewRef(PyList_GET_ITEM(callbacks, i));
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
         int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
+        Py_DECREF(tuple);
         if (cmp < 0)
         {
             return -1;

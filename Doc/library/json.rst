@@ -183,8 +183,10 @@ Basic Usage
 
    :param bool ensure_ascii:
       If ``True`` (the default), the output is guaranteed to
-      have all incoming non-ASCII characters escaped.
-      If ``False``, these characters will be outputted as-is.
+      have all incoming non-ASCII and non-printable characters escaped.
+      If ``False``, all characters will be outputted as-is, except for
+      the characters that must be escaped: quotation mark, reverse solidus,
+      and the control characters U+0000 through U+001F.
 
    :param bool check_circular:
       If ``False``, the circular reference check for container types is skipped
@@ -495,8 +497,10 @@ Encoders and Decoders
    :class:`bool` or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
-   have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
-   false, these characters will be output as-is.
+   have all incoming non-ASCII and non-printable characters escaped.
+   If *ensure_ascii* is false, all characters will be output as-is, except for
+   the characters that must be escaped: quotation mark, reverse solidus,
+   and the control characters U+0000 through U+001F.
 
    If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
@@ -636,7 +640,7 @@ UTF-32, with UTF-8 being the recommended default for maximum interoperability.
 
 As permitted, though not required, by the RFC, this module's serializer sets
 *ensure_ascii=True* by default, thus escaping the output so that the resulting
-strings only contain ASCII characters.
+strings only contain printable ASCII characters.
 
 Other than the *ensure_ascii* parameter, this module is defined strictly in
 terms of conversion between Python objects and

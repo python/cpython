@@ -3275,8 +3275,8 @@ Types created with :c:func:`PyType_FromSpec` now make any signature in their
 .. nonce: u6Xfr2
 .. section: C API
 
-Fix bug in PyOS_mystrnicmp and PyOS_mystricmp that incremented pointers
-beyond the end of a string.
+Fix bug in :c:func:`PyOS_mystrnicmp` and :c:func:`PyOS_mystricmp` that
+incremented pointers beyond the end of a string.
 
 ..
 

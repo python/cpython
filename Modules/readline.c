@@ -572,6 +572,26 @@ readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
     return set_hook("pre_input_hook", &state->pre_input_hook,
             function);
 }
+
+/* Get pre-input hook */
+
+/*[clinic input]
+readline.get_pre_input_hook
+
+Get the current pre-input hook function.
+[clinic start generated code]*/
+
+static PyObject *
+readline_get_pre_input_hook_impl(PyObject *module)
+/*[clinic end generated code: output=ad56b77a8e8981ca input=fb1e1b1fbd94e4e5]*/
+{
+    readlinestate *state = get_readline_state(module);
+    if (state->pre_input_hook == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(state->pre_input_hook);
+}
+
 #endif
 
 
@@ -1074,6 +1094,7 @@ static struct PyMethodDef readline_methods[] =
     READLINE_SET_STARTUP_HOOK_METHODDEF
 #ifdef HAVE_RL_PRE_INPUT_HOOK
     READLINE_SET_PRE_INPUT_HOOK_METHODDEF
+    READLINE_GET_PRE_INPUT_HOOK_METHODDEF
 #endif
 #ifdef HAVE_RL_COMPLETION_APPEND_CHARACTER
     READLINE_CLEAR_HISTORY_METHODDEF

@@ -479,6 +479,42 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(mmap_mmap_set_name__doc__,
+"set_name($self, name, /)\n"
+"--\n"
+"\n");
+
+#define MMAP_MMAP_SET_NAME_METHODDEF    \
+    {"set_name", (PyCFunction)mmap_mmap_set_name, METH_O, mmap_mmap_set_name__doc__},
+
+static PyObject *
+mmap_mmap_set_name_impl(mmap_object *self, const char *name);
+
+static PyObject *
+mmap_mmap_set_name(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("set_name", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
+    if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = mmap_mmap_set_name_impl((mmap_object *)self, name);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(mmap_mmap_seekable__doc__,
 "seekable($self, /)\n"
 "--\n"
@@ -796,4 +832,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=381f6cf4986ac867 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd9ca0ef425af934 input=a9049054013a1b77]*/

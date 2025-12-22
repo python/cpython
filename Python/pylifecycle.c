@@ -2571,7 +2571,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate != _PyThreadState_GET()) {
         Py_FatalError("thread is not current");
     }
-    if (tstate->current_frame != NULL) {
+    if (tstate->current_frame != tstate->base_frame) {
         Py_FatalError("thread still has a frame");
     }
     interp->finalizing = 1;
@@ -2643,7 +2643,7 @@ finalize_subinterpreters(void)
     (void)PyErr_WarnEx(
             PyExc_RuntimeWarning,
             "remaining subinterpreters; "
-            "destroy them with _interpreters.destroy()",
+            "close them with Interpreter.close()",
             0);
 
     /* Swap out the current tstate, which we know must belong

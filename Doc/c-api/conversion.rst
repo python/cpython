@@ -105,7 +105,7 @@ The following functions provide locale-independent string to number conversions.
 
    If ``s`` represents a value that is too large to store in a float
    (for example, ``"1e500"`` is such a string on many platforms) then
-   if ``overflow_exception`` is ``NULL`` return ``Py_INFINITY`` (with
+   if ``overflow_exception`` is ``NULL`` return :c:macro:`!INFINITY` (with
    an appropriate sign) and don't set any exception.  Otherwise,
    ``overflow_exception`` must point to a Python exception object;
    raise that exception and return ``-1.0``.  In both cases, set
@@ -128,18 +128,28 @@ The following functions provide locale-independent string to number conversions.
    must be 0 and is ignored.  The ``'r'`` format code specifies the
    standard :func:`repr` format.
 
-   *flags* can be zero or more of the values ``Py_DTSF_SIGN``,
-   ``Py_DTSF_ADD_DOT_0``, or ``Py_DTSF_ALT``, or-ed together:
+   *flags* can be zero or more of the following values or-ed together:
 
-   * ``Py_DTSF_SIGN`` means to always precede the returned string with a sign
-     character, even if *val* is non-negative.
+   .. c:macro:: Py_DTSF_SIGN
 
-   * ``Py_DTSF_ADD_DOT_0`` means to ensure that the returned string will not look
-     like an integer.
+      Always precede the returned string with a sign
+      character, even if *val* is non-negative.
 
-   * ``Py_DTSF_ALT`` means to apply "alternate" formatting rules.  See the
-     documentation for the :c:func:`PyOS_snprintf` ``'#'`` specifier for
-     details.
+   .. c:macro:: Py_DTSF_ADD_DOT_0
+
+      Ensure that the returned string will not look like an integer.
+
+   .. c:macro:: Py_DTSF_ALT
+
+      Apply "alternate" formatting rules.
+      See the documentation for the :c:func:`PyOS_snprintf` ``'#'`` specifier for
+      details.
+
+   .. c:macro:: Py_DTSF_NO_NEG_0
+
+      Negative zero is converted to positive zero.
+
+      .. versionadded:: 3.11
 
    If *ptype* is non-``NULL``, then the value it points to will be set to one of
    ``Py_DTST_FINITE``, ``Py_DTST_INFINITE``, or ``Py_DTST_NAN``, signifying that
@@ -152,13 +162,85 @@ The following functions provide locale-independent string to number conversions.
    .. versionadded:: 3.1
 
 
-.. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
+.. c:function:: int PyOS_mystricmp(const char *str1, const char *str2)
+                int PyOS_mystrnicmp(const char *str1, const char *str2, Py_ssize_t size)
 
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strcmp` except that it ignores the case.
+   Case insensitive comparison of strings. These functions work almost
+   identically to :c:func:`!strcmp` and :c:func:`!strncmp` (respectively),
+   except that they ignore the case of ASCII characters.
+
+   Return ``0`` if the strings are equal, a negative value if *str1* sorts
+   lexicographically before *str2*, or a positive value if it sorts after.
+
+   In the *str1* or *str2* arguments, a NUL byte marks the end of the string.
+   For :c:func:`!PyOS_mystrnicmp`, the *size* argument gives the maximum size
+   of the string, as if NUL was present at the index given by *size*.
+
+   These functions do not use the locale.
 
 
-.. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
+.. c:function:: int PyOS_stricmp(const char *str1, const char *str2)
+                int PyOS_strnicmp(const char *str1, const char *str2, Py_ssize_t  size)
 
-   Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`!strncmp` except that it ignores the case.
+   Case insensitive comparison of strings.
+
+   On Windows, these are aliases of :c:func:`!stricmp` and :c:func:`!strnicmp`,
+   respectively.
+
+   On other platforms, they are aliases of :c:func:`PyOS_mystricmp` and
+   :c:func:`PyOS_mystrnicmp`, respectively.
+
+
+Character classification and conversion
+=======================================
+
+The following macros provide locale-independent (unlike the C standard library
+``ctype.h``) character classification and conversion.
+The argument must be a signed or unsigned :c:expr:`char`.
+
+
+.. c:macro:: Py_ISALNUM(c)
+
+   Return true if the character *c* is an alphanumeric character.
+
+
+.. c:macro:: Py_ISALPHA(c)
+
+   Return true if the character *c* is an alphabetic character (``a-z`` and ``A-Z``).
+
+
+.. c:macro:: Py_ISDIGIT(c)
+
+   Return true if the character *c* is a decimal digit (``0-9``).
+
+
+.. c:macro:: Py_ISLOWER(c)
+
+   Return true if the character *c* is a lowercase ASCII letter (``a-z``).
+
+
+.. c:macro:: Py_ISUPPER(c)
+
+   Return true if the character *c* is an uppercase ASCII letter (``A-Z``).
+
+
+.. c:macro:: Py_ISSPACE(c)
+
+   Return true if the character *c* is a whitespace character (space, tab,
+   carriage return, newline, vertical tab, or form feed).
+
+
+.. c:macro:: Py_ISXDIGIT(c)
+
+   Return true if the character *c* is a hexadecimal digit (``0-9``, ``a-f``, and
+   ``A-F``).
+
+
+.. c:macro:: Py_TOLOWER(c)
+
+   Return the lowercase equivalent of the character *c*.
+
+
+.. c:macro:: Py_TOUPPER(c)
+
+   Return the uppercase equivalent of the character *c*.

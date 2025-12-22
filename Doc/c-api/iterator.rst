@@ -52,6 +52,45 @@ sentinel value is returned.
    *sentinel*, the iteration will be terminated.
 
 
+Range Objects
+^^^^^^^^^^^^^
+
+.. c:var:: PyTypeObject PyRange_Type
+
+   The type object for :class:`range` objects.
+
+
+.. c:function:: int PyRange_Check(PyObject *o)
+
+   Return true if the object *o* is an instance of a :class:`range` object.
+   This function always succeeds.
+
+
+Builtin Iterator Types
+^^^^^^^^^^^^^^^^^^^^^^
+
+These are built-in iteration types that are included in Python's C API, but
+provide no additional functions. They are here for completeness.
+
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * C type
+     * Python type
+   * * .. c:var:: PyTypeObject PyEnum_Type
+     * :py:class:`enumerate`
+   * * .. c:var:: PyTypeObject PyFilter_Type
+     * :py:class:`filter`
+   * * .. c:var:: PyTypeObject PyMap_Type
+     * :py:class:`map`
+   * * .. c:var:: PyTypeObject PyReversed_Type
+     * :py:class:`reversed`
+   * * .. c:var:: PyTypeObject PyZip_Type
+     * :py:class:`zip`
+
+
 Other Iterator Objects
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -69,6 +108,7 @@ Other Iterator Objects
 .. c:var:: PyTypeObject PyDictRevIterValue_Type
 .. c:var:: PyTypeObject PyDictIterItem_Type
 .. c:var:: PyTypeObject PyDictRevIterItem_Type
+.. c:var:: PyTypeObject PyODictIter_Type
 
    Type objects for iterators of various built-in objects.
 

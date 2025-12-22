@@ -79,7 +79,7 @@ android {
     val androidEnvFile = file("../../android-env.sh").absoluteFile
 
     namespace = "org.python.testbed"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "org.python.testbed"
@@ -92,7 +92,7 @@ android {
             }
             throw GradleException("Failed to find API level in $androidEnvFile")
         }
-        targetSdk = 34
+        targetSdk = 35
 
         versionCode = 1
         versionName = "1.0"

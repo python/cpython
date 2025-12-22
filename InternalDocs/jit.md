@@ -53,7 +53,7 @@ and an instance of `_PyUOpExecutor_Type` is created to contain it.
 ## The JIT interpreter
 
 After a `JUMP_BACKWARD` instruction invokes the uop optimizer to create a uop
-executor, it transfers control to this executor via the `GOTO_TIER_TWO` macro.
+executor, it transfers control to this executor via the `TIER1_TO_TIER2` macro.
 
 CPython implements two executors. Here we describe the JIT interpreter,
 which is the simpler of them and is therefore useful for debugging and analyzing

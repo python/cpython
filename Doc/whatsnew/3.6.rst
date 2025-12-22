@@ -2006,10 +2006,10 @@ deprecated.
 importlib
 ~~~~~~~~~
 
-The :meth:`importlib.machinery.SourceFileLoader.load_module` and
-:meth:`importlib.machinery.SourcelessFileLoader.load_module` methods
+The ``importlib.machinery.SourceFileLoader.load_module`` and
+``importlib.machinery.SourcelessFileLoader.load_module`` methods
 are now deprecated. They were the only remaining implementations of
-:meth:`importlib.abc.Loader.load_module` in :mod:`importlib` that had not
+``importlib.abc.Loader.load_module`` in :mod:`importlib` that had not
 been deprecated in previous versions of Python in favour of
 :meth:`importlib.abc.Loader.exec_module`.
 

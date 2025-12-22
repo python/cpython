@@ -14,6 +14,34 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
+#ifdef HAVE_DYNAMIC_LOADING
+/* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
+   supported on this platform. configure will then compile and link in one
+   of the dynload_*.c files, as appropriate. We will call a function in
+   those modules to get a function pointer to the module's init function.
+
+   The function should return:
+   - The function pointer on success
+   - NULL with exception set if the library cannot be loaded
+   - NULL *without* an extension set if the library could be loaded but the
+     function cannot be found in it.
+*/
+#ifdef MS_WINDOWS
+#include <windows.h>
+typedef FARPROC dl_funcptr;
+extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
+                                                     const char *shortname,
+                                                     PyObject *pathname,
+                                                     FILE *fp);
+#else
+typedef void (*dl_funcptr)(void);
+extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                              const char *shortname,
+                                              const char *pathname, FILE *fp);
+#endif
+
+#endif /* HAVE_DYNAMIC_LOADING */
+
 
 typedef enum ext_module_kind {
     _Py_ext_module_kind_UNKNOWN = 0,
@@ -112,8 +140,6 @@ extern int _PyImport_RunModInitFunc(
 #define MAXSUFFIXSIZE 12
 
 #ifdef MS_WINDOWS
-#include <windows.h>
-typedef FARPROC dl_funcptr;
 
 #ifdef Py_DEBUG
 #  define PYD_DEBUG_SUFFIX "_d"
@@ -136,8 +162,6 @@ typedef FARPROC dl_funcptr;
 #define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX "." PYD_SOABI ".pyd"
 #define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
 
-#else
-typedef void (*dl_funcptr)(void);
 #endif
 
 
