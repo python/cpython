@@ -204,6 +204,8 @@ import textwrap
 import weakref
 import dis
 
+from test.support.constants_helper import iter_global_strings
+
 try:
     import ctypes
 except ImportError:
@@ -1168,34 +1170,6 @@ class CodeTest(unittest.TestCase):
 def isinterned(s):
     return s is sys.intern(('_' + s + '_')[1:-1])
 
-# copypaste from 'Tools/build/generate_global_objects.py'
-import os
-import re
-from pathlib import Path
-ROOT = Path(__file__).resolve().parents[2]
-def iter_files():
-    for name in ('Modules', 'Objects', 'Parser', 'PC', 'Programs', 'Python'):
-        root = os.path.join(ROOT, name)
-        for dirname, _, files in os.walk(root):
-            for name in files:
-                if not name.endswith(('.c', '.h')):
-                    continue
-                yield os.path.join(dirname, name)
-
-def iter_global_strings():
-    str_regex = re.compile(r'\b_Py_DECLARE_STR\((\w+), "(.*?)"\)')
-    for filename in iter_files():
-        try:
-            infile = open(filename, encoding='utf-8')
-        except FileNotFoundError:
-            # The file must have been a temporary file.
-            continue
-        with infile:
-            for lno, line in enumerate(infile, 1):
-                for m in str_regex.finditer(line):
-                    varname, string = m.groups()
-                    yield string
-
 class CodeConstsTest(unittest.TestCase):
 
     def find_const(self, consts, value):
@@ -1283,15 +1257,21 @@ class CodeConstsTest(unittest.TestCase):
     @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test__Py_DECLARE_STR_is_interned(self):
         for global_string in iter_global_strings():
-            # compile given string to a codeobject
-            global_string = eval(f"'{global_string}'")
-            self.assertIsInterned(global_string)
+            with self.subTest(global_string=global_string):
+                self.assertIsInterned(eval(f"'{global_string}'"))
 
     @cpython_only
     @unittest.skipIf(Py_GIL_DISABLED, "free-threaded build interns all string constants")
     def test_non_internable_strings_not_interned(self):
-        self.assertIsNotInterned("not-internable")
-        self.assertIsNotInterned("not.internable")
+        noninternable_strings = (
+            "not-internable",
+            "not.internable",
+            "не_интернируемый",
+            "􀀀",
+        )
+        for noninternable in noninternable_strings:
+            with self.subTest(noninternable=noninternable):
+                self.assertIsNotInterned(eval(f"'{noninternable}'"))
 
 class CodeWeakRefTest(unittest.TestCase):
 
