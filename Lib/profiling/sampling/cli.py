@@ -369,7 +369,7 @@ def _add_mode_options(parser):
     )
 
 
-def _add_format_options(parser, include_compression=True):
+def _add_format_options(parser, include_compression=True, include_binary=True):
     """Add output format options to a parser."""
     output_group = parser.add_argument_group("Output options")
     format_group = output_group.add_mutually_exclusive_group()
@@ -408,13 +408,14 @@ def _add_format_options(parser, include_compression=True):
         dest="format",
         help="Generate interactive HTML heatmap visualization with line-level sample counts",
     )
-    format_group.add_argument(
-        "--binary",
-        action="store_const",
-        const="binary",
-        dest="format",
-        help="Generate high-performance binary format (use 'replay' command to convert)",
-    )
+    if include_binary:
+        format_group.add_argument(
+            "--binary",
+            action="store_const",
+            const="binary",
+            dest="format",
+            help="Generate high-performance binary format (use 'replay' command to convert)",
+        )
     parser.set_defaults(format="pstats")
 
     if include_compression:
@@ -579,11 +580,8 @@ def _validate_args(args, parser):
         args: Parsed command-line arguments
         parser: ArgumentParser instance for error reporting
     """
-    # Replay command has minimal validation
+    # Replay command has no special validation needed
     if getattr(args, 'command', None) == "replay":
-        # Can't replay to binary format
-        if args.format == "binary":
-            parser.error("Cannot replay to binary format. Use a different output format.")
         return
 
     # Check if live mode is available
@@ -784,7 +782,7 @@ Examples:
         "input_file",
         help="Binary profile file to replay",
     )
-    _add_format_options(replay_parser, include_compression=False)
+    _add_format_options(replay_parser, include_compression=False, include_binary=False)
     _add_pstats_options(replay_parser)
 
     # Parse arguments
@@ -1040,10 +1038,6 @@ def _handle_replay(args):
 
     if not os.path.exists(args.input_file):
         sys.exit(f"Error: Input file not found: {args.input_file}")
-
-    # Can't replay to binary format
-    if args.format == "binary":
-        sys.exit("Error: Cannot replay to binary format. Use a different output format.")
 
     with BinaryReader(args.input_file) as reader:
         info = reader.get_info()
