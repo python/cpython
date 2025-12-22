@@ -6,6 +6,7 @@ from typing import Iterable
 from test.support.project_files_helper import iter_all_c_files
 
 
+# copypaste from 'Tools/build/generate_global_objects.py'
 def iter_global_strings() -> Iterable[str]:
     id_regex = re.compile(r"\b_Py_ID\((\w+)\)")
     str_regex = re.compile(r'\b_Py_DECLARE_STR\((?:\w+), "(.*?)"\)')

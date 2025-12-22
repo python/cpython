@@ -2,9 +2,10 @@ from pathlib import Path
 
 from typing import Iterable
 
-python_root = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[3]
 
 
+# copypaste from 'Tools/build/generate_global_objects.py'
 def iter_all_c_files() -> Iterable[Path]:
     for top_directory_name in (
         "Modules",
@@ -14,7 +15,7 @@ def iter_all_c_files() -> Iterable[Path]:
         "Programs",
         "Python",
     ):
-        for dirname, _, files in (python_root / top_directory_name).walk():
+        for dirname, _, files in (ROOT / top_directory_name).walk():
             for name in files:
                 if not name.endswith((".c", ".h")):
                     continue
