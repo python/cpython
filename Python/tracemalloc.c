@@ -850,7 +850,7 @@ _PyTraceMalloc_Start(int max_nframe)
 
     /* everything is ready: start tracing Python memory allocations */
     TABLES_LOCK();
-    tracemalloc_config.tracing = 1;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 1);
     TABLES_UNLOCK();
 
     return 0;
@@ -867,7 +867,7 @@ _PyTraceMalloc_Stop(void)
     }
 
     /* stop tracing Python memory allocations */
-    tracemalloc_config.tracing = 0;
+    _Py_atomic_store_int_relaxed(&tracemalloc_config.tracing, 0);
 
     /* unregister the hook on memory allocators */
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
@@ -1207,18 +1207,20 @@ int
 PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
                     size_t size)
 {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
     PyGILState_STATE gil_state = PyGILState_Ensure();
     TABLES_LOCK();
-
-    int result;
-    if (tracemalloc_config.tracing) {
-        result = tracemalloc_add_trace_unlocked(domain, ptr, size);
-    }
-    else {
+    // Check again now that we hold the lock
+    if (!tracemalloc_config.tracing) {
+        TABLES_UNLOCK();
+        PyGILState_Release(gil_state);
         /* tracemalloc is not tracing: do nothing */
-        result = -2;
+        return -2;
     }
-
+    int result = tracemalloc_add_trace_unlocked(domain, ptr, size);
     TABLES_UNLOCK();
     PyGILState_Release(gil_state);
     return result;
@@ -1228,20 +1230,21 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 int
 PyTraceMalloc_Untrack(unsigned int domain, uintptr_t ptr)
 {
-    TABLES_LOCK();
-
-    int result;
-    if (tracemalloc_config.tracing) {
-        tracemalloc_remove_trace_unlocked(domain, ptr);
-        result = 0;
-    }
-    else {
+    if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing) == 0) {
         /* tracemalloc is not tracing: do nothing */
-        result = -2;
+        return -2;
     }
 
+    TABLES_LOCK();
+    // Check again now that we hold the lock
+    if (!tracemalloc_config.tracing) {
+        TABLES_UNLOCK();
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
+    tracemalloc_remove_trace_unlocked(domain, ptr);
     TABLES_UNLOCK();
-    return result;
+    return 0;
 }
 
 
