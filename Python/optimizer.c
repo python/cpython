@@ -1773,6 +1773,7 @@ static int
 executor_clear(PyObject *op)
 {
     executor_invalidate(op);
+    return 0;
 }
 
 void
