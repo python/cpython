@@ -436,7 +436,7 @@ A tuple consists of a number of values separated by commas, for instance::
    >>> v
    ([1, 2, 3], [3, 2, 1])
    >>> # they support unpacking just like lists:
-   >>> x = [1,2,3]
+   >>> x = [1, 2, 3]
    >>> 0, *x, 4
    (0, 1, 2, 3, 4)
 

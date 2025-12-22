@@ -433,7 +433,7 @@ produced.
 The second form uses a single expression prefixed by the ``**`` dictionary
 unpacking operator followed by the usual "for" and "if" clauses.  When the
 comprehension is run, the expression is evaluated and then unpacked, inserting
-0 or more key/value pairs into the new dictionary.
+zero or more key/value pairs into the new dictionary.
 
 Both forms of dictionary comprehension retain the property that if the same key
 is specified multiple times, the associated value in the resulting dictionary

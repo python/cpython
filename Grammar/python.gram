@@ -893,7 +893,7 @@ atom[expr_ty]:
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &(STRING|FSTRING_START|TSTRING_START) strings
     | NUMBER
-    | &'(' ( genexp | tuple | group)
+    | &'(' (genexp | tuple | group)
     | &'[' (listcomp | list)
     | &'{' (dictcomp | setcomp | dict | set)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
