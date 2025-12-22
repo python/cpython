@@ -66,8 +66,8 @@ Use `python -m profiling.sampling <command> --help` for command-specific help.""
 
 
 # Constants for socket synchronization
-_SYNC_TIMEOUT = 5.0
-_PROCESS_KILL_TIMEOUT = 2.0
+_SYNC_TIMEOUT_SEC = 5.0
+_PROCESS_KILL_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
 
@@ -239,7 +239,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
         sync_sock.bind(("127.0.0.1", 0))  # Let OS choose a free port
         sync_port = sync_sock.getsockname()[1]
         sync_sock.listen(1)
-        sync_sock.settimeout(_SYNC_TIMEOUT)
+        sync_sock.settimeout(_SYNC_TIMEOUT_SEC)
 
         # Get current working directory to preserve it
         cwd = os.getcwd()
@@ -268,7 +268,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT_SEC)
 
             # Close stderr pipe if we were capturing it
             if process.stderr:
@@ -279,7 +279,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
             if process.poll() is None:
                 process.terminate()
                 try:
-                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
@@ -965,7 +965,7 @@ def _handle_run(args):
             if process.poll() is None:
                 process.terminate()
                 try:
-                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
