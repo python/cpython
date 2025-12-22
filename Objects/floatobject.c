@@ -474,9 +474,10 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                 if (ww == NULL)
                     goto Error;
                 else if (!PyLong_Check(ww)) {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "unexpected type from negation "
-                                    "of integer operand");
+                    PyErr_Format(PyExc_TypeError,
+                                 "unexpected type from negation "
+                                 "of integer operand; expected int, got %T",
+                                 ww);
                     goto Error;
                 }
             }
