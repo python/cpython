@@ -11553,6 +11553,8 @@
             (void)this_instr;
             _PyStackRef seq;
             _PyStackRef *top;
+            _PyStackRef s;
+            _PyStackRef value;
             // _SPECIALIZE_UNPACK_SEQUENCE
             {
                 seq = stack_pointer[-1];
@@ -11575,19 +11577,29 @@
             // _UNPACK_SEQUENCE
             {
                 top = &stack_pointer[-1 + oparg];
-                PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
-                stack_pointer += -1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg, -1, top);
-                Py_DECREF(seq_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res == 0) {
+                    stack_pointer += -1;
+                    ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(seq);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     JUMP_TO_LABEL(error);
                 }
+                s = seq;
             }
-            stack_pointer += oparg;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            // _POP_TOP
+            {
+                value = s;
+                stack_pointer += -1 + oparg;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             DISPATCH();
         }
 
@@ -11605,6 +11617,8 @@
             _PyStackRef tos;
             _PyStackRef seq;
             _PyStackRef *values;
+            _PyStackRef s;
+            _PyStackRef value;
             // _GUARD_TOS_LIST
             {
                 tos = stack_pointer[-1];
@@ -11641,10 +11655,15 @@
                     *values++ = PyStackRef_FromPyObjectNew(items[i]);
                 }
                 UNLOCK_OBJECT(seq_o);
+                s = seq;
+            }
+            // _POP_TOP
+            {
+                value = s;
                 stack_pointer += -1 + oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(seq);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -11664,6 +11683,8 @@
             _PyStackRef tos;
             _PyStackRef seq;
             _PyStackRef *values;
+            _PyStackRef s;
+            _PyStackRef value;
             // _GUARD_TOS_TUPLE
             {
                 tos = stack_pointer[-1];
@@ -11691,10 +11712,15 @@
                 for (int i = oparg; --i >= 0; ) {
                     *values++ = PyStackRef_FromPyObjectNew(items[i]);
                 }
+                s = seq;
+            }
+            // _POP_TOP
+            {
+                value = s;
                 stack_pointer += -1 + oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(seq);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -11715,6 +11741,8 @@
             _PyStackRef seq;
             _PyStackRef val1;
             _PyStackRef val0;
+            _PyStackRef s;
+            _PyStackRef value;
             // _GUARD_TOS_TUPLE
             {
                 tos = stack_pointer[-1];
@@ -11740,12 +11768,17 @@
                 STAT_INC(UNPACK_SEQUENCE, hit);
                 val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
                 val1 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 1));
+                s = seq;
+            }
+            // _POP_TOP
+            {
+                value = s;
                 stack_pointer[-1] = val1;
                 stack_pointer[0] = val0;
                 stack_pointer += 1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(seq);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
