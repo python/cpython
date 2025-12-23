@@ -1,1 +1,1 @@
-Fixed bug where :meth:`SMTP.starttls` could fail if :meth:`SMTP.connect` is called explicitly rather than implicitly.
+Fixed bug where :meth:`smtplib.SMTP.starttls` could fail if :meth:`smtplib.SMTP.connect` is called explicitly rather than implicitly.
