@@ -1605,7 +1605,7 @@ Copying, moving and deleting
    .. versionadded:: 3.14
 
    .. versionchanged:: 3.15
-      Added exist_ok argument to allow copy duplicate directory
+      The *exist_ok* parameter is added to allow copying duplicate directories.
 
 
 .. method:: Path.rename(target)
