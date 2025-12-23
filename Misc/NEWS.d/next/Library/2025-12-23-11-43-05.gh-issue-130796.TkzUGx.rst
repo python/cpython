@@ -1,0 +1,1 @@
+Undeprecate :func:`locale.getdefaultlocale`. Patch by Victor Stinner.
