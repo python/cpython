@@ -1024,6 +1024,8 @@
             _PyStackRef tuple_st;
             _PyStackRef sub_st;
             _PyStackRef res;
+            _PyStackRef ts;
+            _PyStackRef ss;
             // _GUARD_TOS_INT
             {
                 value = stack_pointer[-1];
@@ -1067,15 +1069,24 @@
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
                 assert(res_o != NULL);
-                PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
                 res = PyStackRef_FromPyObjectNew(res_o);
+                ts = tuple_st;
+                ss = sub_st;
+            }
+            // _POP_TOP_INT
+            {
+                value = ss;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            // _POP_TOP
+            {
+                value = ts;
+                stack_pointer[-2] = res;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = tuple_st;
-                tuple_st = res;
-                stack_pointer[-1] = tuple_st;
-                PyStackRef_CLOSE(tmp);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
