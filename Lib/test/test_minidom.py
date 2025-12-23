@@ -173,10 +173,8 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(dom.documentElement.childNodes[-1].data, "Hello")
         dom.unlink()
 
+    @support.requires_resource('cpu')
     def testAppendChildNoQuadraticComplexity(self):
-        # Don't use wall-clock timing (too flaky). Instead count a proxy for the
-        # old quadratic behavior: repeated attribute access, such as of
-        # parentNode/nodeType during document-membership checks.
         impl = getDOMImplementation()
 
         def work(n):
@@ -184,6 +182,7 @@ class MinidomTest(unittest.TestCase):
             element = doc.documentElement
             total_calls = 0
 
+            # Count attribute accesses as a proxy for work done
             def getattribute_counter(self, attr):
                 nonlocal total_calls
                 total_calls += 1
