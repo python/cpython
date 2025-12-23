@@ -1,1 +1,0 @@
-:func:`os.forkpty` does now make the returned file descriptor non-inheritable.

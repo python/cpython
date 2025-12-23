@@ -265,12 +265,18 @@ The variables defined in the :mod:`signal` module are:
 
    .. availability:: Unix.
 
+.. data:: SIGXCPU
+
+   CPU time limit exceeded.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
    is defined as :const:`signal.SIGHUP`; the variable names are identical to the
    names used in C programs, as found in ``<signal.h>``.  The Unix man page for
-   ':c:func:`signal`' lists the existing signals (on some systems this is
+   '``signal``' lists the existing signals (on some systems this is
    :manpage:`signal(2)`, on others the list is in :manpage:`signal(7)`). Note that
    not all systems define the same set of signal names; only those names defined by
    the system are defined by this module.
@@ -523,7 +529,7 @@ The :mod:`signal` module defines the following functions:
 
    .. availability:: Unix.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real numbers as *seconds* and *interval*, not only integers
       or floats.
 
@@ -666,9 +672,8 @@ The :mod:`signal` module defines the following functions:
    *sigset*.
 
    The return value is an object representing the data contained in the
-   :c:type:`siginfo_t` structure, namely: :attr:`si_signo`, :attr:`si_code`,
-   :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
-   :attr:`si_band`.
+   ``siginfo_t`` structure, namely: ``si_signo``, ``si_code``,
+   ``si_errno``, ``si_pid``, ``si_uid``, ``si_status``, ``si_band``.
 
    .. availability:: Unix.
 
@@ -703,7 +708,7 @@ The :mod:`signal` module defines the following functions:
       by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number as *timeout*, not only integer or float.
 
 

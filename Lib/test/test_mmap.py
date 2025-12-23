@@ -6,6 +6,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
+import errno
 import unittest
 import os
 import re
@@ -1173,6 +1174,45 @@ class MmapTests(unittest.TestCase):
                 m.flush(PAGESIZE * 2, mmap.MS_INVALIDATE)
             if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
                 m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
+    @support.requires_linux_version(5, 17, 0)
+    def test_set_name(self):
+        # Test setting name on anonymous mmap
+        m = mmap.mmap(-1, PAGESIZE)
+        self.addCleanup(m.close)
+        try:
+            result = m.set_name('test_mapping')
+        except OSError as exc:
+            if exc.errno == errno.EINVAL:
+                # gh-142419: On Fedora, prctl(PR_SET_VMA_ANON_NAME) fails with
+                # EINVAL because the kernel option CONFIG_ANON_VMA_NAME is
+                # disabled.
+                # See: https://bugzilla.redhat.com/show_bug.cgi?id=2302746
+                self.skipTest("prctl() failed with EINVAL")
+            else:
+                raise
+        self.assertIsNone(result)
+
+        # Test name length limit (80 chars including prefix "cpython:mmap:" and '\0')
+        # Prefix is 13 chars, so max name is 66 chars
+        long_name = 'x' * 66
+        result = m.set_name(long_name)
+        self.assertIsNone(result)
+
+        # Test name too long
+        too_long_name = 'x' * 67
+        with self.assertRaises(ValueError):
+            m.set_name(too_long_name)
+
+        # Test that file-backed mmap raises error
+        with open(TESTFN, 'wb+') as f:
+            f.write(b'x' * PAGESIZE)
+            f.flush()
+            m2 = mmap.mmap(f.fileno(), PAGESIZE)
+            self.addCleanup(m2.close)
+
+            with self.assertRaises(ValueError):
+                m2.set_name('should_fail')
 
 
 class LargeMmapTests(unittest.TestCase):
