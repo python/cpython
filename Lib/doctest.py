@@ -1031,6 +1031,15 @@ class DocTestFinder:
             for valname, val in obj.__dict__.items():
                 valname = '%s.%s' % (name, valname)
 
+                try:
+                    inspect.unwrap(val)
+                except ValueError:
+                    # Do not catch the ValueError raised when a cycle is encountered.
+                    pass
+                except Exception as exc:
+                    raise ValueError("DocTestFinder.find: __wrapped__ threw %r: %r"
+                                     % (exc, type(val))) from None
+
                 # Recurse to functions & classes.
                 if ((self._is_routine(val) or inspect.isclass(val)) and
                     self._from_module(module, val)):
