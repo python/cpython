@@ -1,1 +1,1 @@
-In smtplib.SMTP, set ._host in .connect() and not immediately during instantiation. This allows .starttls() to work if the instance was created without arguments and host and port were only provided via an explicit .connect() call. If will also set ._host to the correct host value if the host and port were specified using the 'host:port' notation, which according to the documentation is supported by .connect().
+Fixed bug where :meth:SMTP.starttls could fail if :meth:SMTP.connect is called explicitly rather than implicitly.
