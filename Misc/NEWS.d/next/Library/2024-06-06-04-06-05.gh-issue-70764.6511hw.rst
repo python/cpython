@@ -1,1 +1,0 @@
-Fixed an issue where :func:`inspect.getclosurevars` would incorrectly classify an attribute name as a global variable when the name exists both as an attribute name and a global variable.

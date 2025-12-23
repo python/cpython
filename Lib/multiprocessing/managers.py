@@ -759,22 +759,29 @@ class BaseProxy(object):
     _address_to_local = {}
     _mutex = util.ForkAwareThreadLock()
 
+    # Each instance gets a `_serial` number. Unlike `id(...)`, this number
+    # is never reused.
+    _next_serial = 1
+
     def __init__(self, token, serializer, manager=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
-            tls_idset = BaseProxy._address_to_local.get(token.address, None)
-            if tls_idset is None:
-                tls_idset = util.ForkAwareLocal(), ProcessLocalSet()
-                BaseProxy._address_to_local[token.address] = tls_idset
+            tls_serials = BaseProxy._address_to_local.get(token.address, None)
+            if tls_serials is None:
+                tls_serials = util.ForkAwareLocal(), ProcessLocalSet()
+                BaseProxy._address_to_local[token.address] = tls_serials
+
+            self._serial = BaseProxy._next_serial
+            BaseProxy._next_serial += 1
 
         # self._tls is used to record the connection used by this
         # thread to communicate with the manager at token.address
-        self._tls = tls_idset[0]
+        self._tls = tls_serials[0]
 
-        # self._idset is used to record the identities of all shared
-        # objects for which the current process owns references and
+        # self._all_serials is a set used to record the identities of all
+        # shared objects for which the current process owns references and
         # which are in the manager at token.address
-        self._idset = tls_idset[1]
+        self._all_serials = tls_serials[1]
 
         self._token = token
         self._id = self._token.id
@@ -857,20 +864,20 @@ class BaseProxy(object):
         dispatch(conn, None, 'incref', (self._id,))
         util.debug('INCREF %r', self._token.id)
 
-        self._idset.add(self._id)
+        self._all_serials.add(self._serial)
 
         state = self._manager and self._manager._state
 
         self._close = util.Finalize(
             self, BaseProxy._decref,
-            args=(self._token, self._authkey, state,
-                  self._tls, self._idset, self._Client),
+            args=(self._token, self._serial, self._authkey, state,
+                  self._tls, self._all_serials, self._Client),
             exitpriority=10
             )
 
     @staticmethod
-    def _decref(token, authkey, state, tls, idset, _Client):
-        idset.discard(token.id)
+    def _decref(token, serial, authkey, state, tls, idset, _Client):
+        idset.discard(serial)
 
         # check whether manager is still alive
         if state is None or state.value == State.STARTED:
@@ -1052,12 +1059,14 @@ class IteratorProxy(BaseProxy):
 
 
 class AcquirerProxy(BaseProxy):
-    _exposed_ = ('acquire', 'release')
+    _exposed_ = ('acquire', 'release', 'locked')
     def acquire(self, blocking=True, timeout=None):
         args = (blocking,) if timeout is None else (blocking, timeout)
         return self._callmethod('acquire', args)
     def release(self):
         return self._callmethod('release')
+    def locked(self):
+        return self._callmethod('locked')
     def __enter__(self):
         return self._callmethod('acquire')
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -1065,7 +1074,7 @@ class AcquirerProxy(BaseProxy):
 
 
 class ConditionProxy(AcquirerProxy):
-    _exposed_ = ('acquire', 'release', 'wait', 'notify', 'notify_all')
+    _exposed_ = ('acquire', 'release', 'locked', 'wait', 'notify', 'notify_all')
     def wait(self, timeout=None):
         return self._callmethod('wait', (timeout,))
     def notify(self, n=1):
@@ -1188,6 +1197,36 @@ class DictProxy(_BaseDictProxy):
 
 collections.abc.MutableMapping.register(_BaseDictProxy)
 
+_BaseSetProxy = MakeProxyType("_BaseSetProxy", (
+    '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+    '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+    '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+    '__ge__', '__gt__', '__le__', '__lt__',
+    'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+    'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+    'issuperset', 'pop', 'remove', 'symmetric_difference',
+    'symmetric_difference_update', 'union', 'update',
+))
+
+class SetProxy(_BaseSetProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+    def __iand__(self, value):
+        self._callmethod('__iand__', (value,))
+        return self
+    def __ixor__(self, value):
+        self._callmethod('__ixor__', (value,))
+        return self
+    def __isub__(self, value):
+        self._callmethod('__isub__', (value,))
+        return self
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
+
+
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'
     ))
@@ -1238,6 +1277,7 @@ SyncManager.register('Barrier', threading.Barrier, BarrierProxy)
 SyncManager.register('Pool', pool.Pool, PoolProxy)
 SyncManager.register('list', list, ListProxy)
 SyncManager.register('dict', dict, DictProxy)
+SyncManager.register('set', set, SetProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)

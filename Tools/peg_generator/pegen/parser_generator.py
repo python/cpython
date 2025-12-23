@@ -1,21 +1,10 @@
 import ast
 import contextlib
 import re
+import sys
 from abc import abstractmethod
-from typing import (
-    IO,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Text,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Iterator, Set
+from typing import IO, Any
 
 from pegen import sccutils
 from pegen.grammar import (
@@ -43,8 +32,7 @@ from pegen.grammar import (
 class RuleCollectorVisitor(GrammarVisitor):
     """Visitor that invokes a provided callmaker visitor with just the NamedItem nodes"""
 
-    def __init__(self, rules: Dict[str, Rule], callmakervisitor: GrammarVisitor) -> None:
-        self.rulses = rules
+    def __init__(self, callmakervisitor: GrammarVisitor) -> None:
         self.callmaker = callmakervisitor
 
     def visit_Rule(self, rule: Rule) -> None:
@@ -55,9 +43,9 @@ class RuleCollectorVisitor(GrammarVisitor):
 
 
 class KeywordCollectorVisitor(GrammarVisitor):
-    """Visitor that collects all the keywods and soft keywords in the Grammar"""
+    """Visitor that collects all the keywords and soft keywords in the Grammar"""
 
-    def __init__(self, gen: "ParserGenerator", keywords: Dict[str, int], soft_keywords: Set[str]):
+    def __init__(self, gen: "ParserGenerator", keywords: dict[str, int], soft_keywords: set[str]):
         self.generator = gen
         self.keywords = keywords
         self.soft_keywords = soft_keywords
@@ -72,9 +60,19 @@ class KeywordCollectorVisitor(GrammarVisitor):
 
 
 class RuleCheckingVisitor(GrammarVisitor):
-    def __init__(self, rules: Dict[str, Rule], tokens: Set[str]):
+    def __init__(self, rules: dict[str, Rule], tokens: set[str]):
         self.rules = rules
         self.tokens = tokens
+        # If python < 3.12 add the virtual fstring tokens
+        if sys.version_info < (3, 12):
+            self.tokens.add("FSTRING_START")
+            self.tokens.add("FSTRING_END")
+            self.tokens.add("FSTRING_MIDDLE")
+        # If python < 3.14 add the virtual tstring tokens
+        if sys.version_info < (3, 14, 0, 'beta', 1):
+            self.tokens.add("TSTRING_START")
+            self.tokens.add("TSTRING_END")
+            self.tokens.add("TSTRING_MIDDLE")
 
     def visit_NameLeaf(self, node: NameLeaf) -> None:
         if node.value not in self.rules and node.value not in self.tokens:
@@ -89,11 +87,11 @@ class RuleCheckingVisitor(GrammarVisitor):
 class ParserGenerator:
     callmakervisitor: GrammarVisitor
 
-    def __init__(self, grammar: Grammar, tokens: Set[str], file: Optional[IO[Text]]):
+    def __init__(self, grammar: Grammar, tokens: set[str], file: IO[str] | None):
         self.grammar = grammar
         self.tokens = tokens
-        self.keywords: Dict[str, int] = {}
-        self.soft_keywords: Set[str] = set()
+        self.keywords: dict[str, int] = {}
+        self.soft_keywords: set[str] = set()
         self.rules = grammar.rules
         self.validate_rule_names()
         if "trailer" not in grammar.metas and "start" not in self.rules:
@@ -106,8 +104,8 @@ class ParserGenerator:
         self.first_graph, self.first_sccs = compute_left_recursives(self.rules)
         self.counter = 0  # For name_rule()/name_loop()
         self.keyword_counter = 499  # For keyword_type()
-        self.all_rules: Dict[str, Rule] = self.rules.copy()  # Rules + temporal rules
-        self._local_variable_stack: List[List[str]] = []
+        self.all_rules: dict[str, Rule] = self.rules.copy()  # Rules + temporal rules
+        self._local_variable_stack: list[list[str]] = []
 
     def validate_rule_names(self) -> None:
         for rule in self.rules:
@@ -121,7 +119,7 @@ class ParserGenerator:
         self._local_variable_stack.pop()
 
     @property
-    def local_variable_names(self) -> List[str]:
+    def local_variable_names(self) -> list[str]:
         return self._local_variable_stack[-1]
 
     @abstractmethod
@@ -152,8 +150,8 @@ class ParserGenerator:
         for rule in self.all_rules.values():
             keyword_collector.visit(rule)
 
-        rule_collector = RuleCollectorVisitor(self.rules, self.callmakervisitor)
-        done: Set[str] = set()
+        rule_collector = RuleCollectorVisitor(self.callmakervisitor)
+        done: set[str] = set()
         while True:
             computed_rules = list(self.all_rules)
             todo = [i for i in computed_rules if i not in done]
@@ -218,10 +216,10 @@ class ParserGenerator:
 
 
 class NullableVisitor(GrammarVisitor):
-    def __init__(self, rules: Dict[str, Rule]) -> None:
+    def __init__(self, rules: dict[str, Rule]) -> None:
         self.rules = rules
-        self.visited: Set[Any] = set()
-        self.nullables: Set[Union[Rule, NamedItem]] = set()
+        self.visited: set[Any] = set()
+        self.nullables: set[Rule | NamedItem] = set()
 
     def visit_Rule(self, rule: Rule) -> bool:
         if rule in self.visited:
@@ -283,7 +281,7 @@ class NullableVisitor(GrammarVisitor):
         return not node.value
 
 
-def compute_nullables(rules: Dict[str, Rule]) -> Set[Any]:
+def compute_nullables(rules: dict[str, Rule]) -> set[Any]:
     """Compute which rules in a grammar are nullable.
 
     Thanks to TatSu (tatsu/leftrec.py) for inspiration.
@@ -295,12 +293,12 @@ def compute_nullables(rules: Dict[str, Rule]) -> Set[Any]:
 
 
 class InitialNamesVisitor(GrammarVisitor):
-    def __init__(self, rules: Dict[str, Rule]) -> None:
+    def __init__(self, rules: dict[str, Rule]) -> None:
         self.rules = rules
         self.nullables = compute_nullables(rules)
 
-    def generic_visit(self, node: Iterable[Any], *args: Any, **kwargs: Any) -> Set[Any]:
-        names: Set[str] = set()
+    def generic_visit(self, node: Iterable[Any], *args: Any, **kwargs: Any) -> set[Any]:
+        names: set[str] = set()
         for value in node:
             if isinstance(value, list):
                 for item in value:
@@ -309,33 +307,33 @@ class InitialNamesVisitor(GrammarVisitor):
                 names |= self.visit(value, *args, **kwargs)
         return names
 
-    def visit_Alt(self, alt: Alt) -> Set[Any]:
-        names: Set[str] = set()
+    def visit_Alt(self, alt: Alt) -> set[Any]:
+        names: set[str] = set()
         for item in alt.items:
             names |= self.visit(item)
             if item not in self.nullables:
                 break
         return names
 
-    def visit_Forced(self, force: Forced) -> Set[Any]:
+    def visit_Forced(self, force: Forced) -> set[Any]:
         return set()
 
-    def visit_LookAhead(self, lookahead: Lookahead) -> Set[Any]:
+    def visit_LookAhead(self, lookahead: Lookahead) -> set[Any]:
         return set()
 
-    def visit_Cut(self, cut: Cut) -> Set[Any]:
+    def visit_Cut(self, cut: Cut) -> set[Any]:
         return set()
 
-    def visit_NameLeaf(self, node: NameLeaf) -> Set[Any]:
+    def visit_NameLeaf(self, node: NameLeaf) -> set[Any]:
         return {node.value}
 
-    def visit_StringLeaf(self, node: StringLeaf) -> Set[Any]:
+    def visit_StringLeaf(self, node: StringLeaf) -> set[Any]:
         return set()
 
 
 def compute_left_recursives(
-    rules: Dict[str, Rule]
-) -> Tuple[Dict[str, AbstractSet[str]], List[AbstractSet[str]]]:
+    rules: dict[str, Rule]
+) -> tuple[dict[str, Set[str]], list[Set[str]]]:
     graph = make_first_graph(rules)
     sccs = list(sccutils.strongly_connected_components(graph.keys(), graph))
     for scc in sccs:
@@ -363,7 +361,7 @@ def compute_left_recursives(
     return graph, sccs
 
 
-def make_first_graph(rules: Dict[str, Rule]) -> Dict[str, AbstractSet[str]]:
+def make_first_graph(rules: dict[str, Rule]) -> dict[str, Set[str]]:
     """Compute the graph of left-invocations.
 
     There's an edge from A to B if A may invoke B at its initial
@@ -373,7 +371,7 @@ def make_first_graph(rules: Dict[str, Rule]) -> Dict[str, AbstractSet[str]]:
     """
     initial_name_visitor = InitialNamesVisitor(rules)
     graph = {}
-    vertices: Set[str] = set()
+    vertices: set[str] = set()
     for rulename, rhs in rules.items():
         graph[rulename] = names = initial_name_visitor.visit(rhs)
         vertices |= names

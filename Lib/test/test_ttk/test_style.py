@@ -205,7 +205,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
         style = self.style
         with self.assertRaises(IndexError):
             style.element_create('plain.newelem', 'from')
-        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+        with self.assertRaisesRegex(TclError,
+            'theme "spam" (does not|doesn\'t) exist'):
             style.element_create('plain.newelem', 'from', 'spam')
 
     def test_element_create_image(self):

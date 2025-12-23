@@ -1,4 +1,0 @@
-Fix :func:`urllib.parse.urljoin` for base URI with undefined authority.
-Although :rfc:`3986` only specify reference resolution for absolute base
-URI, :func:`!urljoin` should continue to return sensible result for relative
-base URI.

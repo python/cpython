@@ -1,2 +1,0 @@
-Avoid temporary tuple creation for vararg in argument passing with Argument
-Clinic generated code (if arguments either vararg or positional-only).

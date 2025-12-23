@@ -1,2 +1,0 @@
-Replace the ``os.environ.refresh()`` method with a new
-:func:`os.reload_environ` function. Patch by Victor Stinner.

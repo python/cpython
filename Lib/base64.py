@@ -4,7 +4,6 @@
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
 # Modified 22-May-2007 by Guido van Rossum to use bytes everywhere
 
-import re
 import struct
 import binascii
 
@@ -194,7 +193,7 @@ def _b32encode(alphabet, s):
         encoded[-3:] = b'==='
     elif leftover == 4:
         encoded[-1:] = b'='
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
     # Delay the initialization of the table to not waste memory
@@ -239,7 +238,7 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
         last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
-    return bytes(decoded)
+    return decoded.take_bytes()
 
 
 def b32encode(s):
@@ -284,7 +283,7 @@ def b16decode(s, casefold=False):
     s = _bytes_from_decode_data(s)
     if casefold:
         s = s.upper()
-    if re.search(b'[^0-9A-F]', s):
+    if s.translate(None, delete=b'0123456789ABCDEF'):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
@@ -463,9 +462,12 @@ def b85decode(b):
     # Delay the initialization of tables to not waste memory
     # if the function is never called
     if _b85dec is None:
-        _b85dec = [None] * 256
+        # we don't assign to _b85dec directly to avoid issues when
+        # multiple threads call this function simultaneously
+        b85dec_tmp = [None] * 256
         for i, c in enumerate(_b85alphabet):
-            _b85dec[c] = i
+            b85dec_tmp[c] = i
+        _b85dec = b85dec_tmp
 
     b = _bytes_from_decode_data(b)
     padding = (-len(b)) % 5
@@ -602,7 +604,14 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        func(sys.stdin.buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-138775: read terminal input data all at once to detect EOF
+            import io
+            data = sys.stdin.buffer.read()
+            buffer = io.BytesIO(data)
+        else:
+            buffer = sys.stdin.buffer
+        func(buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':

@@ -264,7 +264,8 @@ Improve performance of :func:`os.path.join` and :func:`os.path.expanduser`.
 .. nonce: hqk9Hn
 .. section: Library
 
-Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath`.
+Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath
+<os.path.relpath>`.
 
 ..
 
@@ -273,7 +274,8 @@ Raise :exc:`TypeError` for non-paths in :func:`posixpath.relpath`.
 .. nonce: l6rWlj
 .. section: Library
 
-Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush`.
+Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush
+<mailbox.Mailbox.flush>`.
 Patch by Tony Mountifield.
 
 ..
@@ -642,7 +644,7 @@ Also in the corresponding :class:`ipaddress.IPv4Network` and
 .. nonce: OToJnG
 .. section: Library
 
-In :mod:`encodings.idna`, any capitalization of the the ACE prefix
+In :mod:`encodings.idna`, any capitalization of the ACE prefix
 (``xn--``) is now acceptable. Patch by Pepijn de Vos and Zackery Spytz.
 
 ..

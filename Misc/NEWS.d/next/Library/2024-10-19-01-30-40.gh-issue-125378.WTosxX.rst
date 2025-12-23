@@ -1,1 +1,0 @@
-Fixed the bug in :mod:`pdb` where after a multi-line command, an empty line repeats the first line of the multi-line command, instead of the full command.

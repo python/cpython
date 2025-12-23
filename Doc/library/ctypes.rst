@@ -14,6 +14,8 @@
 data types, and allows calling functions in DLLs or shared libraries.  It can be
 used to wrap these libraries in pure Python.
 
+.. include:: ../includes/optional-module.rst
+
 
 .. _ctypes-ctypes-tutorial:
 
@@ -232,7 +234,23 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -266,8 +284,8 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
-complex types are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
+in both C and ``libffi``, the following complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
@@ -306,7 +324,7 @@ Since these types are mutable, their value can also be changed afterwards::
 Assigning a new value to instances of the pointer types :class:`c_char_p`,
 :class:`c_wchar_p`, and :class:`c_void_p` changes the *memory location* they
 point to, *not the contents* of the memory block (of course not, because Python
-bytes objects are immutable)::
+string objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
@@ -657,12 +675,13 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT((1, 2), (3, 4))
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
-for debugging because they can provide useful information::
+for debugging because they can provide useful information.
+See :class:`CField`::
 
-   >>> print(POINT.x)
-   <Field type=c_long, ofs=0, size=4>
-   >>> print(POINT.y)
-   <Field type=c_long, ofs=4, size=4>
+   >>> POINT.x
+   <ctypes.CField 'x' type=c_int, ofs=0, size=4>
+   >>> POINT.y
+   <ctypes.CField 'y' type=c_int, ofs=4, size=4>
    >>>
 
 
@@ -683,14 +702,10 @@ compiler does it.  It is possible to override this behavior entirely by specifyi
 :attr:`~Structure._layout_` class attribute in the subclass definition; see
 the attribute documentation for details.
 
-It is possible to specify the maximum alignment for the fields by setting
-the :attr:`~Structure._pack_` class attribute to a positive integer.
-This matches what ``#pragma pack(n)`` does in MSVC.
-
-It is also possible to set a minimum alignment for how the subclass itself is packed in the
-same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
-in the subclass definition.
+It is possible to specify the maximum alignment for the fields and/or for the
+structure itself by setting the class attributes :attr:`~Structure._pack_`
+and/or :attr:`~Structure._align_`, respectively.
+See the attribute documentation for details.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -713,10 +728,16 @@ item in the :attr:`~Structure._fields_` tuples::
    ...                 ("second_16", c_int, 16)]
    ...
    >>> print(Int.first_16)
-   <Field type=c_long, ofs=0:0, bits=16>
+   <ctypes.CField 'first_16' type=c_int, ofs=0, bit_size=16, bit_offset=0>
    >>> print(Int.second_16)
-   <Field type=c_long, ofs=0:16, bits=16>
-   >>>
+   <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
+
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
+By default, Python will attempt to match the behavior of a "native" compiler
+for the current platform.
+See the :attr:`~Structure._layout_` attribute for details on the default
+behavior and how to change it.
 
 
 .. _ctypes-arrays:
@@ -869,6 +890,36 @@ invalid non-\ ``NULL`` pointers would crash Python)::
        ....
    ValueError: NULL pointer access
    >>>
+
+.. _ctypes-thread-safety:
+
+Thread safety without the GIL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
+In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
+
+   .. code-block:: pycon
+
+      >>> number = c_int(42)
+      >>> pointer_a = pointer(number)
+      >>> pointer_b = pointer(number)
+
+In the above, it's only safe for one object to read and write to the address at once if the GIL is disabled.
+So, ``pointer_a`` can be shared and written to across multiple threads, but only if ``pointer_b``
+is not also attempting to do the same. If this is an issue, consider using a :class:`threading.Lock`
+to synchronize access to memory:
+
+   .. code-block:: pycon
+
+      >>> import threading
+      >>> lock = threading.Lock()
+      >>> # Thread 1
+      >>> with lock:
+      ...    pointer_a.contents = 24
+      >>> # Thread 2
+      >>> with lock:
+      ...    pointer_b.contents = 42
 
 
 .. _ctypes-type-conversions:
@@ -1337,6 +1388,9 @@ On Linux, :func:`~ctypes.util.find_library` tries to run external programs
 (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
 It returns the filename of the library file.
 
+Note that if the output of these programs does not correspond to the dynamic
+linker used by Python, the result of this function may be misleading.
+
 .. versionchanged:: 3.6
    On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
    when searching for libraries, if a library cannot be found by any other means.
@@ -1376,6 +1430,28 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -1413,12 +1489,14 @@ way is to instantiate one of the following classes:
 
 .. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Windows only: Instances of this class represent loaded shared libraries,
+   Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return the windows specific :class:`HRESULT` code.  :class:`HRESULT`
    values contain information specifying whether the function call failed or
    succeeded, together with additional error code.  If the return value signals a
    failure, an :class:`OSError` is automatically raised.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.3
       :exc:`WindowsError` used to be raised,
@@ -1431,13 +1509,16 @@ way is to instantiate one of the following classes:
 
 .. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=None)
 
-   Windows only: Instances of this class represent loaded shared libraries,
+   Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
    assumed to return :c:expr:`int` by default.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.12
 
       The *name* parameter can now be a :term:`path-like object`.
+
 
 The Python :term:`global interpreter lock` is released before calling any
 function exported by these libraries, and reacquired afterwards.
@@ -1574,13 +1655,17 @@ These prefabricated library loaders are available:
 .. data:: windll
    :noindex:
 
-   Windows only: Creates :class:`WinDLL` instances.
+   Creates :class:`WinDLL` instances.
+
+   .. availability:: Windows
 
 
 .. data:: oledll
    :noindex:
 
-   Windows only: Creates :class:`OleDLL` instances.
+   Creates :class:`OleDLL` instances.
+
+   .. availability:: Windows
 
 
 .. data:: pydll
@@ -1707,12 +1792,6 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
       and raise an exception if the foreign function call failed.
 
 
-.. exception:: ArgumentError
-
-   This exception is raised when a foreign function call cannot convert one of the
-   passed arguments.
-
-
 .. audit-event:: ctypes.set_exception code foreign-functions
 
    On Windows, when a foreign function call raises a system exception (for
@@ -1723,7 +1802,8 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
-   Some ways to invoke foreign function calls may raise an auditing event
+   Some ways to invoke foreign function calls as well as some of the
+   functions in this module may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
@@ -1752,10 +1832,12 @@ See :ref:`ctypes-callback-functions` for examples.
 
 .. function:: WINFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
 
-   Windows only: The returned function prototype creates functions that use the
+   The returned function prototype creates functions that use the
    ``stdcall`` calling convention.  The function will
    release the GIL during the call.  *use_errno* and *use_last_error* have the
    same meaning as above.
+
+   .. availability:: Windows
 
 
 .. function:: PYFUNCTYPE(restype, *argtypes)
@@ -1799,9 +1881,16 @@ different ways, depending on the type and number of the parameters in the call:
    integer. *name* is name of the COM method. *iid* is an optional pointer to
    the interface identifier which is used in extended error reporting.
 
+   If *iid* is not specified, an :exc:`OSError` is raised if the COM method
+   call fails. If *iid* is specified, a :exc:`~ctypes.COMError` is raised
+   instead.
+
    COM methods use a special calling convention: They require a pointer to
    the COM interface as first argument, in addition to those parameters that
    are specified in the :attr:`!argtypes` tuple.
+
+   .. availability:: Windows
+
 
 The optional *paramflags* parameter creates foreign function wrappers with much
 more functionality than the features described above.
@@ -1939,6 +2028,24 @@ Utility functions
    It behaves similar to ``pointer(obj)``, but the construction is a lot faster.
 
 
+.. function:: CopyComPointer(src, dst)
+
+   Copies a COM pointer from *src* to *dst* and returns the Windows specific
+   :c:type:`!HRESULT` value.
+
+   If *src* is not ``NULL``, its ``AddRef`` method is called, incrementing the
+   reference count.
+
+   In contrast, the reference count of *dst* will not be decremented before
+   assigning the new value. Unless *dst* is ``NULL``, the caller is responsible
+   for decrementing the reference count by calling its ``Release`` method when
+   necessary.
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.14
+
+
 .. function:: cast(obj, type)
 
    This function is similar to the cast operator in C. It returns a new instance
@@ -1947,51 +2054,75 @@ Utility functions
    pointer.
 
 
-.. function:: create_string_buffer(init_or_size, size=None)
+.. function:: create_string_buffer(init, size=None)
+              create_string_buffer(size)
 
    This function creates a mutable character buffer. The returned object is a
    ctypes array of :class:`c_char`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   bytes object which will be used to initialize the array items.
+   If *size* is given (and not ``None``), it must be an :class:`int`.
+   It specifies the size of the returned array.
 
-   If a bytes object is specified as first argument, the buffer is made one item
-   larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   If the *init* argument is given, it must be :class:`bytes`. It is used
+   to initialize the array items. Bytes not initialized this way are
+   set to zero (NUL).
+
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
+
+   If both arguments are given, *size* must not be less than ``len(init)``.
+
+   .. warning::
+
+      If *size* is equal to ``len(init)``, a NUL terminator is
+      not added. Do not treat such a buffer as a C string.
+
+   For example::
+
+      >>> bytes(create_string_buffer(2))
+      b'\x00\x00'
+      >>> bytes(create_string_buffer(b'ab'))
+      b'ab\x00'
+      >>> bytes(create_string_buffer(b'ab', 2))
+      b'ab'
+      >>> bytes(create_string_buffer(b'ab', 4))
+      b'ab\x00\x00'
+      >>> bytes(create_string_buffer(b'abcdef', 2))
+      Traceback (most recent call last):
+         ...
+      ValueError: byte string too long
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
-.. function:: create_unicode_buffer(init_or_size, size=None)
+.. function:: create_unicode_buffer(init, size=None)
+              create_unicode_buffer(size)
 
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   string which will be used to initialize the array items.
-
-   If a string is specified as first argument, the buffer is made one item
-   larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
 
 .. function:: DllCanUnloadNow()
 
-   Windows only: This function is a hook which allows implementing in-process
+   This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllCanUnloadNow function that
    the _ctypes extension dll exports.
+
+   .. availability:: Windows
 
 
 .. function:: DllGetClassObject()
 
-   Windows only: This function is a hook which allows implementing in-process
+   This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllGetClassObject function
    that the ``_ctypes`` extension dll exports.
+
+   .. availability:: Windows
 
 
 .. function:: find_library(name)
@@ -2004,11 +2135,13 @@ Utility functions
 
    The exact functionality is system dependent.
 
+   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
+
 
 .. function:: find_msvcrt()
    :module: ctypes.util
 
-   Windows only: return the filename of the VC runtime library used by Python,
+   Returns the filename of the VC runtime library used by Python,
    and by the extension modules.  If the name of the library cannot be
    determined, ``None`` is returned.
 
@@ -2016,19 +2149,40 @@ Utility functions
    with a call to the ``free(void *)``, it is important that you use the
    function in the same library that allocated the memory.
 
+   .. availability:: Windows
+
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
+
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
+   .. versionadded:: 3.14
 
 .. function:: FormatError([code])
 
-   Windows only: Returns a textual description of the error code *code*.  If no
-   error code is specified, the last error code is used by calling the Windows
-   api function GetLastError.
+   Returns a textual description of the error code *code*.  If no error code is
+   specified, the last error code is used by calling the Windows API function
+   :func:`GetLastError`.
+
+   .. availability:: Windows
 
 
 .. function:: GetLastError()
 
-   Windows only: Returns the last error code set by Windows in the calling thread.
+   Returns the last error code set by Windows in the calling thread.
    This function calls the Windows ``GetLastError()`` function directly,
    it does not return the ctypes-private copy of the error code.
+
+   .. availability:: Windows
+
 
 .. function:: get_errno()
 
@@ -2039,10 +2193,13 @@ Utility functions
 
 .. function:: get_last_error()
 
-   Windows only: returns the current value of the ctypes-private copy of the system
+   Returns the current value of the ctypes-private copy of the system
    :data:`!LastError` variable in the calling thread.
 
+   .. availability:: Windows
+
    .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
+
 
 .. function:: memmove(dst, src, count)
 
@@ -2060,9 +2217,19 @@ Utility functions
 
 .. function:: POINTER(type, /)
 
-   Create and return a new ctypes pointer type. Pointer types are cached and
+   Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
    *type* must be a ctypes type.
+
+   .. impl-detail::
+
+      The resulting pointer type is cached in the ``__pointer_type__``
+      attribute of *type*.
+      It is possible to set this attribute before the first call to
+      ``POINTER`` in order to set a custom pointer type.
+      However, doing this is discouraged: manually creating a suitable
+      pointer type is difficult without relying on implementation
+      details that may change in future Python versions.
 
 
 .. function:: pointer(obj, /)
@@ -2092,9 +2259,11 @@ Utility functions
 
 .. function:: set_last_error(value)
 
-   Windows only: set the current value of the ctypes-private copy of the system
+   Sets the current value of the ctypes-private copy of the system
    :data:`!LastError` variable in the calling thread to *value* and return the
    previous value.
+
+   .. availability:: Windows
 
    .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
 
@@ -2116,11 +2285,12 @@ Utility functions
 
 .. function:: WinError(code=None, descr=None)
 
-   Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of :exc:`OSError`.  If *code* is not specified,
-   ``GetLastError`` is called to determine the error code. If *descr* is not
+   Creates an instance of :exc:`OSError`.  If *code* is not specified,
+   :func:`GetLastError` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
+
+   .. availability:: Windows
 
    .. versionchanged:: 3.3
       An instance of :exc:`WindowsError` used to be created, which is now an
@@ -2135,6 +2305,28 @@ Utility functions
    zero-terminated.
 
    .. audit-event:: ctypes.wstring_at ptr,size ctypes.wstring_at
+
+
+.. function:: memoryview_at(ptr, size, readonly=False)
+
+   Return a :class:`memoryview` object of length *size* that references memory
+   starting at *void \*ptr*.
+
+   If *readonly* is true, the returned :class:`!memoryview` object can
+   not be used to modify the underlying memory.
+   (Changes made by other means will still be reflected in the returned
+   object.)
+
+   This function is similar to :func:`string_at` with the key
+   difference of not making a copy of the specified memory.
+   It is a semantically equivalent (but more efficient) alternative to
+   ``memoryview((c_byte * size).from_address(ptr))``.
+   (While :meth:`~_CData.from_address` only takes integers, *ptr* can also
+   be given as a :class:`ctypes.POINTER` or a :func:`~ctypes.byref` object.)
+
+   .. audit-event:: ctypes.memoryview_at address,size,readonly
+
+   .. versionadded:: 3.14
 
 
 .. _ctypes-data-types:
@@ -2202,6 +2394,16 @@ Data types
       This method returns a ctypes type instance exported by a shared
       library. *name* is the name of the symbol that exports the data, *library*
       is the loaded shared library.
+
+   Common class variables of ctypes data types:
+
+   .. attribute:: __pointer_type__
+
+      The pointer type that was created by calling
+      :func:`POINTER` for corresponding ctypes data type. If a pointer type
+      was not yet created, the attribute is missing.
+
+      .. versionadded:: 3.14
 
    Common instance variables of ctypes data types:
 
@@ -2341,7 +2543,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  It is an alias for
    :class:`c_byte`.
 
 
@@ -2416,7 +2618,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  It is an alias for
    :class:`c_ubyte`.
 
 
@@ -2485,14 +2687,19 @@ These are the fundamental ctypes data types:
 
 .. class:: HRESULT
 
-   Windows only: Represents a :c:type:`!HRESULT` value, which contains success or
+   Represents a :c:type:`!HRESULT` value, which contains success or
    error information for a function or method call.
+
+   .. availability:: Windows
 
 
 .. class:: py_object
 
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
+
+   .. versionchanged:: 3.14
+      :class:`!py_object` is now a :term:`generic type`.
 
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
@@ -2588,16 +2795,46 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: _pack_
 
       An optional small integer that allows overriding the alignment of
-      structure fields in the instance.  :attr:`_pack_` must already be defined
-      when :attr:`_fields_` is assigned, otherwise it will have no effect.
-      Setting this attribute to 0 is the same as not setting it at all.
+      structure fields in the instance.
 
+      This is only implemented for the MSVC-compatible memory layout
+      (see :attr:`_layout_`).
+
+      Setting :attr:`!_pack_` to 0 is the same as not setting it at all.
+      Otherwise, the value must be a positive power of two.
+      The effect is equivalent to ``#pragma pack(N)`` in C, except
+      :mod:`ctypes` may allow larger *n* than what the compiler accepts.
+
+      :attr:`!_pack_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
+
+      .. deprecated-removed:: 3.14 3.19
+
+         For historical reasons, if :attr:`!_pack_` is non-zero,
+         the MSVC-compatible layout will be used by default.
+         On non-Windows platforms, this default is deprecated and is slated to
+         become an error in Python 3.19.
+         If it is intended, set :attr:`~Structure._layout_` to ``'ms'``
+         explicitly.
 
    .. attribute:: _align_
 
-      An optional small integer that allows overriding the alignment of
+      An optional small integer that allows increasing the alignment of
       the structure when being packed or unpacked to/from memory.
-      Setting this attribute to 0 is the same as not setting it at all.
+
+      The value must not be negative.
+      The effect is equivalent to ``__attribute__((aligned(N)))`` on GCC
+      or ``#pragma align(N)`` on MSVC, except :mod:`ctypes` may allow
+      values that the compiler would reject.
+
+      :attr:`!_align_` can only *increase* a structure's alignment
+      requirements. Setting it to 0 or 1 has no effect.
+
+      Using values that are not powers of two is discouraged and may lead to
+      surprising behavior.
+
+      :attr:`!_align_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
       .. versionadded:: 3.13
 
@@ -2620,11 +2857,14 @@ fields, or any other data types containing pointer type fields.
       Currently the default will be:
 
       - On Windows: ``"ms"``
-      - When :attr:`~Structure._pack_` is specified: ``"ms"``
+      - When :attr:`~Structure._pack_` is specified: ``"ms"``.
+        (This is deprecated; see :attr:`~Structure._pack_` documentation.)
       - Otherwise: ``"gcc-sysv"``
 
       :attr:`!_layout_` must already be defined when
       :attr:`~Structure._fields_` is assigned, otherwise it will have no effect.
+
+      .. versionadded:: 3.14
 
    .. attribute:: _anonymous_
 
@@ -2673,6 +2913,98 @@ fields, or any other data types containing pointer type fields.
    constructor are interpreted as attribute assignments, so they will initialize
    :attr:`_fields_` with the same name, or create new attributes for names not
    present in :attr:`_fields_`.
+
+
+.. class:: CField(*args, **kw)
+
+   Descriptor for fields of a :class:`Structure` and :class:`Union`.
+   For example::
+
+      >>> class Color(Structure):
+      ...     _fields_ = (
+      ...         ('red', c_uint8),
+      ...         ('green', c_uint8),
+      ...         ('blue', c_uint8),
+      ...         ('intense', c_bool, 1),
+      ...         ('blinking', c_bool, 1),
+      ...    )
+      ...
+      >>> Color.red
+      <ctypes.CField 'red' type=c_ubyte, ofs=0, size=1>
+      >>> Color.green.type
+      <class 'ctypes.c_ubyte'>
+      >>> Color.blue.byte_offset
+      2
+      >>> Color.intense
+      <ctypes.CField 'intense' type=c_bool, ofs=3, bit_size=1, bit_offset=0>
+      >>> Color.blinking.bit_offset
+      1
+
+   All attributes are read-only.
+
+   :class:`!CField` objects are created via :attr:`~Structure._fields_`;
+   do not instantiate the class directly.
+
+   .. versionadded:: 3.14
+
+      Previously, descriptors only had ``offset`` and ``size`` attributes
+      and a readable string representation; the :class:`!CField` class was not
+      available directly.
+
+   .. attribute:: name
+
+      Name of the field, as a string.
+
+   .. attribute:: type
+
+      Type of the field, as a :ref:`ctypes class <ctypes-data-types>`.
+
+   .. attribute:: offset
+                  byte_offset
+
+      Offset of the field, in bytes.
+
+      For bitfields, this is the offset of the underlying byte-aligned
+      *storage unit*; see :attr:`~CField.bit_offset`.
+
+   .. attribute:: byte_size
+
+      Size of the field, in bytes.
+
+      For bitfields, this is the size of the underlying *storage unit*.
+      Typically, it has the same size as the bitfield's type.
+
+   .. attribute:: size
+
+      For non-bitfields, equivalent to :attr:`~CField.byte_size`.
+
+      For bitfields, this contains a backwards-compatible bit-packed
+      value that combines :attr:`~CField.bit_size` and
+      :attr:`~CField.bit_offset`.
+      Prefer using the explicit attributes instead.
+
+   .. attribute:: is_bitfield
+
+      True if this is a bitfield.
+
+   .. attribute:: bit_offset
+                  bit_size
+
+      The location of a bitfield within its *storage unit*, that is, within
+      :attr:`~CField.byte_size` bytes of memory starting at
+      :attr:`~CField.byte_offset`.
+
+      To get the field's value, read the storage unit as an integer,
+      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      take the :attr:`!bit_size` least significant bits.
+
+      For non-bitfields, :attr:`!bit_offset` is zero
+      and :attr:`!bit_size` is equal to ``byte_size * 8``.
+
+   .. attribute:: is_anonymous
+
+      True if this field is anonymous, that is, it contains nested sub-fields
+      that should be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:
@@ -2741,3 +3073,41 @@ Arrays and pointers
 
         Returns the object to which to pointer points.  Assigning to this
         attribute changes the pointer to point to the assigned object.
+
+
+.. _ctypes-exceptions:
+
+Exceptions
+^^^^^^^^^^
+
+.. exception:: ArgumentError
+
+   This exception is raised when a foreign function call cannot convert one of the
+   passed arguments.
+
+
+.. exception:: COMError(hresult, text, details)
+
+   This exception is raised when a COM method call failed.
+
+   .. attribute:: hresult
+
+      The integer value representing the error code.
+
+   .. attribute:: text
+
+      The error message.
+
+   .. attribute:: details
+
+      The 5-tuple ``(descr, source, helpfile, helpcontext, progid)``.
+
+      *descr* is the textual description.  *source* is the language-dependent
+      ``ProgID`` for the class or application that raised the error.  *helpfile*
+      is the path of the help file.  *helpcontext* is the help context
+      identifier.  *progid* is the ``ProgID`` of the interface that defined the
+      error.
+
+   .. availability:: Windows
+
+   .. versionadded:: 3.14
