@@ -347,10 +347,180 @@ hasconst.append(35)  # or maybe not, depends on design
 
 The `teaching-cpython-solution` branch contains:
 - `Include/recordobject.h` - Complete header
-- `Objects/recordobject.c` - Full implementation (~200 lines)
-- Modified `Lib/opcode.py` - BUILD_RECORD definition
+- `Objects/recordobject.c` - Full implementation (~490 lines)
+- Modified `Lib/opcode.py` - BUILD_RECORD opcode 166
 - Modified `Python/ceval.c` - BUILD_RECORD handler
-- Modified build files
-- Test script demonstrating all features
+- Modified `Makefile.pre.in` - Build integration
+- Modified `Objects/object.c` - Type initialization
+- Modified `Python/bltinmodule.c` - Builtin registration
 
 Use this as reference when student gets stuck, but guide them to discover solutions themselves first.
+
+---
+
+## Lessons Learned During Implementation
+
+These are practical issues encountered during actual implementation:
+
+### 1. Hash Constants Not Publicly Exposed
+
+The XXH3-style hash constants (`_PyHASH_XXPRIME_1`, `_PyHASH_XXPRIME_2`, `_PyHASH_XXPRIME_5`) used by `tupleobject.c` are defined locally in that file, not in a header. Had to copy them into `recordobject.c`:
+
+```c
+#if SIZEOF_PY_UHASH_T > 4
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
+#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))
+#else
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
+#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))
+#endif
+```
+
+**Teaching point:** Internal implementation details are often not exposed. Look at how existing code solves the same problem.
+
+### 2. GC Trashcan for Deep Recursion
+
+Deallocation needs `Py_TRASHCAN_BEGIN`/`Py_TRASHCAN_END` to prevent stack overflow when destroying deeply nested structures:
+
+```c
+static void
+record_dealloc(RecordObject *r)
+{
+    PyObject_GC_UnTrack(r);
+    Py_TRASHCAN_BEGIN(r, record_dealloc)
+
+    // ... cleanup code ...
+
+    Py_TRASHCAN_END
+}
+```
+
+**Teaching point:** Check how `tuple_dealloc` and `list_dealloc` handle this.
+
+### 3. PyUnicode_Compare Error Handling
+
+`PyUnicode_Compare` can raise exceptions (e.g., if comparison fails). Must check `PyErr_Occurred()`:
+
+```c
+int cmp = PyUnicode_Compare(name, field);
+if (cmp == 0) {
+    // found match
+}
+if (PyErr_Occurred()) {
+    return NULL;
+}
+```
+
+### 4. Opcode Number Selection
+
+Originally planned opcode 35, but ended up using 166 (right after `DICT_UPDATE` at 165). The gaps in the opcode table exist for historical reasons and some are reserved.
+
+**Teaching point:** Look at recent additions to see where new opcodes go. `Lib/opcode.py` is the source of truth.
+
+### 5. Python-Level Constructor (tp_new)
+
+To test the Record type without emitting bytecode, need a Python constructor:
+
+```c
+static PyObject *
+record_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    // Record() only accepts keyword arguments
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Record() takes no positional arguments");
+        return NULL;
+    }
+    // ... iterate kwds, build names tuple and values array
+}
+```
+
+This allows: `Record(x=10, y=20)` without needing compiler changes.
+
+### 6. Type Initialization Order
+
+The type must be initialized in `_PyTypes_Init()` in `Objects/object.c`:
+
+```c
+INIT_TYPE(PyRecord_Type);
+```
+
+And exposed as builtin in `Python/bltinmodule.c`:
+
+```c
+SETBUILTIN("Record", &PyRecord_Type);
+```
+
+### 7. Correct Allocator for GC-Tracked VarObjects
+
+Use `PyObject_GC_NewVar` for variable-size objects that participate in GC:
+
+```c
+record = PyObject_GC_NewVar(RecordObject, &PyRecord_Type, n);
+```
+
+Not `PyObject_NewVar` (which doesn't set up GC tracking).
+
+### 8. tp_basicsize Calculation
+
+For variable-size objects, `tp_basicsize` should be the size WITHOUT the variable part:
+
+```c
+sizeof(RecordObject) - sizeof(PyObject *)  /* tp_basicsize */
+sizeof(PyObject *)                          /* tp_itemsize */
+```
+
+The `- sizeof(PyObject *)` accounts for the `r_values[1]` flexible array member.
+
+---
+
+## Testing Checklist
+
+After implementation, verify:
+
+```python
+# Basic construction
+r = Record(x=10, y=20)
+
+# repr
+assert repr(r) == "Record(x=10, y=20)"
+
+# Attribute access
+assert r.x == 10
+assert r.y == 20
+
+# Indexing
+assert r[0] == 10
+assert r[-1] == 20
+assert len(r) == 2
+
+# Hashing (usable as dict key)
+d = {r: "value"}
+r2 = Record(x=10, y=20)
+assert d[r2] == "value"
+
+# Equality
+assert r == r2
+assert r != Record(x=10, y=30)
+assert r != Record(a=10, b=20)  # different names
+
+# Error handling
+try:
+    r[5]
+except IndexError:
+    pass
+
+try:
+    Record()  # no kwargs
+except TypeError:
+    pass
+
+try:
+    Record(1, 2, 3)  # positional args
+except TypeError:
+    pass
+```
