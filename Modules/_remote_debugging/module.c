@@ -342,6 +342,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->skip_non_matching_threads = skip_non_matching_threads;
     self->cached_state = NULL;
     self->frame_cache = NULL;
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    self->threads_stopped = 0;
+#endif
     // Initialize stats to zero
     memset(&self->stats, 0, sizeof(self->stats));
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
@@ -422,6 +425,10 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 #ifdef MS_WINDOWS
     self->win_process_buffer = NULL;
     self->win_process_buffer_size = 0;
+#endif
+#ifdef __linux__
+    self->thread_tids = NULL;
+    self->thread_tids_capacity = 0;
 #endif
 
     if (cache_frames && frame_cache_init(self) < 0) {
@@ -930,11 +937,81 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+_remote_debugging.RemoteUnwinder.pause_threads
+
+Pause all threads in the target process.
+
+This stops all threads in the target process to allow for consistent
+memory reads during sampling. Must be paired with a call to resume_threads().
+
+Returns True if threads were successfully paused, False if they were already paused.
+
+Raises:
+    RuntimeError: If there is an error stopping the threads
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=aaf2bdc0a725750c input=78601c60dbc245fe]*/
+{
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (self->threads_stopped) {
+        Py_RETURN_FALSE;
+    }
+
+    _Py_RemoteDebug_InitThreadsState(self, &self->threads_state);
+    if (_Py_RemoteDebug_StopAllThreads(self, &self->threads_state) < 0) {
+        return NULL;
+    }
+
+    self->threads_stopped = 1;
+    Py_RETURN_TRUE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "pause_threads is not supported on this platform");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_remote_debugging.RemoteUnwinder.resume_threads
+
+Resume all threads in the target process.
+
+This resumes threads that were previously paused with pause_threads().
+
+Returns True if threads were successfully resumed, False if they were not paused.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=8d6781ea37095536 input=67ca813bd804289e]*/
+{
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (!self->threads_stopped) {
+        Py_RETURN_FALSE;
+    }
+
+    _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
+    self->threads_stopped = 0;
+    Py_RETURN_TRUE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "resume_threads is not supported on this platform");
+    return NULL;
+#endif
+}
+
 static PyMethodDef RemoteUnwinder_methods[] = {
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ALL_AWAITED_BY_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STATS_METHODDEF
+    _REMOTE_DEBUGGING_REMOTEUNWINDER_PAUSE_THREADS_METHODDEF
+    _REMOTE_DEBUGGING_REMOTEUNWINDER_RESUME_THREADS_METHODDEF
     {NULL, NULL}
 };
 
@@ -943,6 +1020,20 @@ RemoteUnwinder_dealloc(PyObject *op)
 {
     RemoteUnwinderObject *self = RemoteUnwinder_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
+
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (self->threads_stopped) {
+        _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
+        self->threads_stopped = 0;
+    }
+#endif
+#ifdef __linux__
+    if (self->thread_tids != NULL) {
+        PyMem_RawFree(self->thread_tids);
+        self->thread_tids = NULL;
+    }
+#endif
+
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
     }

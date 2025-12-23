@@ -167,7 +167,7 @@ CODE_EXAMPLES = {
 }
 
 
-def benchmark(unwinder, duration_seconds=10):
+def benchmark(unwinder, duration_seconds=10, blocking=False):
     """Benchmark mode - measure raw sampling speed for specified duration"""
     sample_count = 0
     fail_count = 0
@@ -187,9 +187,15 @@ def benchmark(unwinder, duration_seconds=10):
             total_attempts += 1
             work_start = time.perf_counter()
             try:
-                stack_trace = unwinder.get_stack_trace()
-                if stack_trace:
-                    sample_count += 1
+                if blocking:
+                    unwinder.pause_threads()
+                try:
+                    stack_trace = unwinder.get_stack_trace()
+                    if stack_trace:
+                        sample_count += 1
+                finally:
+                    if blocking:
+                        unwinder.resume_threads()
             except (OSError, RuntimeError, UnicodeDecodeError) as e:
                 fail_count += 1
 
@@ -353,6 +359,12 @@ Available code examples:
         help="Which threads to include in the benchmark (default: all)",
     )
 
+    parser.add_argument(
+        "--blocking",
+        action="store_true",
+        help="Stop all threads before sampling for consistent snapshots",
+    )
+
     return parser.parse_args()
 
 
@@ -408,6 +420,9 @@ def main():
     print(
         f"{colors.CYAN}Benchmark Duration:{colors.RESET} {colors.YELLOW}{args.duration}{colors.RESET} seconds"
     )
+    print(
+        f"{colors.CYAN}Blocking Mode:{colors.RESET} {colors.GREEN if args.blocking else colors.YELLOW}{'enabled' if args.blocking else 'disabled'}{colors.RESET}"
+    )
 
     process = None
     temp_file_path = None
@@ -436,7 +451,7 @@ def main():
                     unwinder = _remote_debugging.RemoteUnwinder(
                         process.pid, cache_frames=True, **kwargs
                     )
-                    results = benchmark(unwinder, duration_seconds=args.duration)
+                    results = benchmark(unwinder, duration_seconds=args.duration, blocking=args.blocking)
                 finally:
                     cleanup_process(process, temp_file_path)
 

@@ -37,6 +37,10 @@ THREAD_STATUS_HAS_EXCEPTION = 1 << 4
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
+RETRY_DELAY = 0.1
+
+# Exceptions that can occur transiently when reading from a live process
+TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
@@ -1713,7 +1717,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         )
                         if found:
                             break
-                        time.sleep(0.1)
+                        time.sleep(RETRY_DELAY)
                     else:
                         self.fail(
                             "Main thread did not start its busy work on time"
@@ -2505,7 +2509,11 @@ t.join()
         # Collect multiple samples for reliability
         results = []
         for _ in range(MAX_TRIES):
-            traces = unwinder.get_stack_trace()
+            try:
+                traces = unwinder.get_stack_trace()
+            except TRANSIENT_ERRORS:
+                time.sleep(RETRY_DELAY)
+                continue
             statuses = self._get_thread_statuses(traces)
 
             if thread_tid in statuses:
@@ -2515,7 +2523,7 @@ t.join()
                 if len(results) >= 3:
                     break
 
-            time.sleep(0.2)
+            time.sleep(RETRY_DELAY)
 
         # Check majority of samples match expected
         if not results:
@@ -2648,14 +2656,14 @@ sock.connect(('localhost', {port}))
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
         for _ in range(MAX_TRIES):
-            with contextlib.suppress(OSError, RuntimeError):
+            with contextlib.suppress(*TRANSIENT_ERRORS):
                 traces = unwinder.get_stack_trace()
                 for interp in traces:
                     for thread in interp.threads:
                         funcs = {f.funcname for f in thread.frame_info}
                         if required_funcs.issubset(funcs):
                             return thread.frame_info
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         return None
 
     def _sample_frames(
@@ -2674,7 +2682,7 @@ sock.connect(('localhost', {port}))
             frames = self._get_frames_with_retry(unwinder, required_funcs)
             if frames and len(frames) >= expected_frames:
                 break
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         client_socket.sendall(send_ack)
         return frames
 
@@ -2931,24 +2939,24 @@ sock.connect(('localhost', {port}))
         "Test only runs on Linux with process_vm_readv support",
     )
     def test_partial_stack_reuse(self):
-        """Test that unchanged bottom frames are reused when top changes (A→B→C to A→B→D)."""
+        """Test that unchanged parent frames are reused from cache when top frame moves."""
         script_body = """\
-            def func_c():
-                sock.sendall(b"at_c")
+            def level4():
+                sock.sendall(b"sync1")
+                sock.recv(16)
+                sock.sendall(b"sync2")
                 sock.recv(16)
 
-            def func_d():
-                sock.sendall(b"at_d")
-                sock.recv(16)
+            def level3():
+                level4()
 
-            def func_b():
-                func_c()
-                func_d()
+            def level2():
+                level3()
 
-            def func_a():
-                func_b()
+            def level1():
+                level2()
 
-            func_a()
+            level1()
             """
 
         with self._target_process(script_body) as (
@@ -2958,54 +2966,50 @@ sock.connect(('localhost', {port}))
         ):
             unwinder = make_unwinder(cache_frames=True)
 
-            # Sample at C: stack is A→B→C
-            frames_c = self._sample_frames(
+            # Sample 1: level4 at first sendall
+            frames1 = self._sample_frames(
                 client_socket,
                 unwinder,
-                b"at_c",
+                b"sync1",
                 b"ack",
-                {"func_a", "func_b", "func_c"},
+                {"level1", "level2", "level3", "level4"},
             )
-            # Sample at D: stack is A→B→D (C returned, D called)
-            frames_d = self._sample_frames(
+            # Sample 2: level4 at second sendall (same stack, different line)
+            frames2 = self._sample_frames(
                 client_socket,
                 unwinder,
-                b"at_d",
+                b"sync2",
                 b"done",
-                {"func_a", "func_b", "func_d"},
+                {"level1", "level2", "level3", "level4"},
             )
 
-        self.assertIsNotNone(frames_c)
-        self.assertIsNotNone(frames_d)
+        self.assertIsNotNone(frames1)
+        self.assertIsNotNone(frames2)
 
-        # Find func_a and func_b frames in both samples
         def find_frame(frames, funcname):
             for f in frames:
                 if f.funcname == funcname:
                     return f
             return None
 
-        frame_a_in_c = find_frame(frames_c, "func_a")
-        frame_b_in_c = find_frame(frames_c, "func_b")
-        frame_a_in_d = find_frame(frames_d, "func_a")
-        frame_b_in_d = find_frame(frames_d, "func_b")
-
-        self.assertIsNotNone(frame_a_in_c)
-        self.assertIsNotNone(frame_b_in_c)
-        self.assertIsNotNone(frame_a_in_d)
-        self.assertIsNotNone(frame_b_in_d)
-
-        # The bottom frames (A, B) should be the SAME objects (cache reuse)
-        self.assertIs(
-            frame_a_in_c,
-            frame_a_in_d,
-            "func_a frame should be reused from cache",
+        # level4 should have different line numbers (it moved)
+        l4_1 = find_frame(frames1, "level4")
+        l4_2 = find_frame(frames2, "level4")
+        self.assertIsNotNone(l4_1)
+        self.assertIsNotNone(l4_2)
+        self.assertNotEqual(
+            l4_1.location.lineno,
+            l4_2.location.lineno,
+            "level4 should be at different lines",
         )
-        self.assertIs(
-            frame_b_in_c,
-            frame_b_in_d,
-            "func_b frame should be reused from cache",
-        )
+
+        # Parent frames (level1, level2, level3) should be reused from cache
+        for name in ["level1", "level2", "level3"]:
+            f1 = find_frame(frames1, name)
+            f2 = find_frame(frames2, name)
+            self.assertIsNotNone(f1, f"{name} missing from sample 1")
+            self.assertIsNotNone(f2, f"{name} missing from sample 2")
+            self.assertIs(f1, f2, f"{name} should be reused from cache")
 
     @skip_if_not_supported
     @unittest.skipIf(
