@@ -12,6 +12,7 @@ import abc
 import _py_abc
 from inspect import isabstract
 
+
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
 
@@ -73,22 +74,22 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
         def check_isinstance(self, obj, target_class):
             self.assertIsInstance(obj, target_class)
             self.assertIsInstance(obj, (target_class,))
-            self.assertIsInstance(obj, target_class | target_class)
+            self.assertIsInstance(obj, target_class | int)
 
         def check_not_isinstance(self, obj, target_class):
             self.assertNotIsInstance(obj, target_class)
             self.assertNotIsInstance(obj, (target_class,))
-            self.assertNotIsInstance(obj, target_class | target_class)
+            self.assertNotIsInstance(obj, target_class | int)
 
         def check_issubclass(self, klass, target_class):
             self.assertIsSubclass(klass, target_class)
             self.assertIsSubclass(klass, (target_class,))
-            self.assertIsSubclass(klass, target_class | target_class)
+            self.assertIsSubclass(klass, target_class | int)
 
         def check_not_issubclass(self, klass, target_class):
             self.assertNotIsSubclass(klass, target_class)
             self.assertNotIsSubclass(klass, (target_class,))
-            self.assertNotIsSubclass(klass, target_class | target_class)
+            self.assertNotIsSubclass(klass, target_class | int)
 
         def test_ABC_helper(self):
             # create an ABC using the helper class and perform basic checks

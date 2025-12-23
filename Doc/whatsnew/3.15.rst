@@ -833,7 +833,7 @@ abc
 * Reduce memory usage of :func:`issubclass` checks for classes inheriting abstract classes.
 
   :class:`abc.ABCMeta` hook ``__subclasscheck__`` now includes
-  a guard which is triggered then the hook is called from a parent class
+  a guard which is triggered when the hook is called from a parent class
   (``issubclass(cls, RootClass)`` -> ``issubclass(cls, NestedClass)`` -> ...).
   This guard prevents adding ``cls`` to ``NestedClass`` positive and negative caches,
   preventing memory bloat in some cases (thousands of classes inherited from ABC).
