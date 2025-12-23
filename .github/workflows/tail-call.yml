@@ -81,7 +81,7 @@ jobs:
 
       - name: Native Windows MSVC (release)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install visualstudio2026buildtools --no-progress -y --force --params "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64  --locale en-US --passive"
           $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\bin;$env:PATH"
@@ -91,12 +91,12 @@ jobs:
       # No tests (yet):
       - name: Emulated Windows Clang (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
+          $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)
