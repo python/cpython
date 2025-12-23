@@ -87,10 +87,22 @@ dummy_func(void) {
 
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
+        PyObject *const_val = sym_get_const(ctx, value);
+        if (const_val != NULL && _Py_IsImmortal(const_val)) {
+            // Note: non-immortal is not safe to replace
+            // to _LOAD_CONST_INLINE, as it might not be held in co_const.
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
+        }
     }
 
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
+        PyObject *const_val = sym_get_const(ctx, value);
+        if (const_val != NULL) {
+            // It's safe to always borrow here, because
+            // _LOAD_FAST_BORROW guarantees it.
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
+        }
     }
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
