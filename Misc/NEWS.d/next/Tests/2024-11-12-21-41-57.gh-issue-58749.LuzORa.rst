@@ -1,5 +1,0 @@
-Added tests to verify that `global` and `nonlocal` statement names are only
-restricted from use or assignment before their declaration, aligning with
-the updated language specification and CPython's behavior. The tests also
-ensure that `global` and `nonlocal` statements exhibit correct behavior.
-Change by Beomsoo Kim.
