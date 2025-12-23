@@ -255,7 +255,7 @@ following functions:
 
    Converting an emitted item to string  returns a substring corresponding to
    the grapheme cluster.
-   It's ``start`` and ``end`` attributes denote the start and the end of
+   Its ``start`` and ``end`` attributes denote the start and the end of
    the grapheme cluster.
 
    It uses extended grapheme cluster rules defined by Unicode
