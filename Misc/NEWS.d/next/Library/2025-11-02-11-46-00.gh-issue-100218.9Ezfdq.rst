@@ -1,3 +1,0 @@
-Correctly set :attr:`~OSError.errno` when :func:`socket.if_nametoindex` or
-:func:`socket.if_indextoname` raise an :exc:`OSError`. Patch by Bénédikt
-Tran.

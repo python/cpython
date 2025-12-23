@@ -113,6 +113,9 @@ struct _ts {
     /* Currently holds the GIL. Must be its own field to avoid data races */
     int holds_gil;
 
+    /* Currently requesting the GIL */
+    int gil_requested;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
@@ -131,6 +134,15 @@ struct _ts {
 
     /* Pointer to currently executing frame. */
     struct _PyInterpreterFrame *current_frame;
+
+    /* Pointer to the base frame (bottommost sentinel frame).
+       Used by profilers to validate complete stack unwinding.
+       Points to the embedded base_frame in _PyThreadStateImpl.
+       The frame is embedded there rather than here because _PyInterpreterFrame
+       is defined in internal headers that cannot be exposed in the public API. */
+    struct _PyInterpreterFrame *base_frame;
+
+    struct _PyInterpreterFrame *last_profiled_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;

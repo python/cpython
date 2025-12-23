@@ -931,6 +931,6 @@ integer handle, and also disconnect the Windows handle from the handle object.
    will automatically close *key* when control leaves the :keyword:`with` block.
 
 
-.. versionchanged:: next
+.. versionchanged:: 3.15
    Handle objects are now compared by their underlying Windows handle value
    instead of object identity for equality comparisons.
