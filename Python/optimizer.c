@@ -703,12 +703,6 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 #endif
 
-    // Skip over super instructions.
-    if (_tstate->jit_tracer_state.prev_state.instr_is_super) {
-        _tstate->jit_tracer_state.prev_state.instr_is_super = false;
-        return 1;
-    }
-
     if (opcode == ENTER_EXECUTOR) {
         goto full;
     }
@@ -957,12 +951,6 @@ _PyJit_translate_single_bytecode_to_trace(
                     trace[trace_length - 1].operand1 = PyStackRef_IsNone(frame->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
                     break;
                 }
-                if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
-                    assert(i + 1 == nuops);
-                    _Py_CODEUNIT *next = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-                    assert(next->op.code == STORE_FAST);
-                    operand = next->op.arg;
-                }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
             }
@@ -1077,7 +1065,6 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
     _tstate->jit_tracer_state.prev_state.instr_stacklevel = curr_stackdepth;
-    _tstate->jit_tracer_state.prev_state.instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _tstate->jit_tracer_state.initial_state.jump_backward_instr = curr_instr;
 

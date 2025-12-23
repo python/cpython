@@ -610,7 +610,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CALL_LEN:
             return 1;
         case CALL_LIST_APPEND:
-            return 0;
+            return 1;
         case CALL_METHOD_DESCRIPTOR_FAST:
             return 1;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:

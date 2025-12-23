@@ -3239,6 +3239,7 @@
             _PyStackRef nos;
             _PyStackRef self;
             _PyStackRef arg;
+            _PyStackRef none;
             _PyStackRef c;
             _PyStackRef s;
             _PyStackRef value;
@@ -3293,17 +3294,14 @@
                 }
                 c = callable;
                 s = self;
-                #if TIER_ONE
-
-                assert(next_instr->op.code == POP_TOP);
-                SKIP_OVER(1);
-                #endif
+                none = PyStackRef_None;
             }
             // _POP_TOP
             {
                 value = s;
-                stack_pointer[-3] = c;
-                stack_pointer += -2;
+                stack_pointer[-3] = none;
+                stack_pointer[-2] = c;
+                stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
@@ -11414,15 +11412,8 @@
                 DISPATCH();
             }
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            if ((_tstate->jit_tracer_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
-                 opcode == POP_TOP) ||
-                (_tstate->jit_tracer_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
-                 opcode == STORE_FAST)) {
-                _tstate->jit_tracer_state.prev_state.instr_is_super = true;
-            }
-            else {
-                _tstate->jit_tracer_state.prev_state.instr = next_instr;
-            }
+            assert(opcode != BINARY_OP_INPLACE_ADD_UNICODE);
+            _tstate->jit_tracer_state.prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);

@@ -4329,8 +4329,7 @@ dummy_func(
             DEOPT_IF(callable_o != interp->callable_cache.list_append);
         }
 
-        // This is secretly a super-instruction
-        op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+        op(_CALL_LIST_APPEND, (callable, self, arg -- none, c, s)) {
             assert(oparg == 1);
             PyObject *self_o = PyStackRef_AsPyObjectBorrow(self);
 
@@ -4343,13 +4342,9 @@ dummy_func(
             }
             c = callable;
             s = self;
-            INPUTS_DEAD();
-        #if TIER_ONE
-            // Skip the following POP_TOP. This is done here in tier one, and
-            // during trace projection in tier two:
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
-        #endif
+            DEAD(callable);
+            DEAD(self);
+            none = PyStackRef_None;
         }
 
          op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
@@ -5597,15 +5592,10 @@ dummy_func(
             // Super instructions. Instruction deopted. There's a mismatch in what the stack expects
             // in the optimizer. So we have to reflect in the trace correctly.
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            if ((_tstate->jit_tracer_state.prev_state.instr->op.code == CALL_LIST_APPEND &&
-                opcode == POP_TOP) ||
-                (_tstate->jit_tracer_state.prev_state.instr->op.code == BINARY_OP_INPLACE_ADD_UNICODE &&
-                opcode == STORE_FAST)) {
-                _tstate->jit_tracer_state.prev_state.instr_is_super = true;
-            }
-            else {
-                _tstate->jit_tracer_state.prev_state.instr = next_instr;
-            }
+            // JIT should have disabled super instructions, as we can
+            // do these optimizations ourselves in the JIT.
+            assert(opcode != BINARY_OP_INPLACE_ADD_UNICODE);
+            _tstate->jit_tracer_state.prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {
                 Py_SETREF(_tstate->jit_tracer_state.prev_state.instr_code, (PyCodeObject*)Py_NewRef((prev_code)));

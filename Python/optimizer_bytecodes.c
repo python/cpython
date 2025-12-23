@@ -299,8 +299,21 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyUnicode_Type);
+        // Re-implement the BINARY_OP_INPLACE_ADD_UNICODE super-instruction.
+        if ((this_instr + 5)->opcode == _STORE_FAST) {
+            assert((this_instr + 1)->opcode == _POP_TOP_UNICODE);
+            assert((this_instr + 2)->opcode == _POP_TOP_UNICODE);
+            assert((this_instr + 3)->opcode == _CHECK_VALIDITY);
+            assert((this_instr + 4)->opcode == _SET_IP);
+            int local_slot = (this_instr + 5)->oparg;
+            if (PyJitRef_Unwrap(left) == PyJitRef_Unwrap(GETLOCAL(local_slot))) {
+                REPLACE_OP(this_instr, _BINARY_OP_INPLACE_ADD_UNICODE, oparg, local_slot);
+                REPLACE_OP(this_instr + 1, _NOP, 0, 0);
+                REPLACE_OP(this_instr + 2, _NOP, 0, 0);
+                REPLACE_OP(this_instr + 5, _NOP, 0, 0);
+            }
+        }
         l = left;
         r = right;
     }
@@ -1041,10 +1054,11 @@ dummy_func(void) {
         sym_set_const(flag, Py_True);
     }
 
-    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+    op(_CALL_LIST_APPEND, (callable, self, arg -- none, c, s)) {
         (void)(arg);
         c = callable;
         s = self;
+        none = sym_new_const(ctx, Py_None);
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {

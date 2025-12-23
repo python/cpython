@@ -1623,10 +1623,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, PyObject *self_or_null,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_CALL + 1];
-            bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
-            if ((PyObject *)descr == list_append && oparg == 1 && pop) {
+            if ((PyObject *)descr == list_append && oparg == 1) {
                 assert(self_or_null != NULL);
                 if (PyList_CheckExact(self_or_null)) {
                     specialize(instr, CALL_LIST_APPEND);
@@ -2186,12 +2184,14 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 break;
             }
             if (PyUnicode_CheckExact(lhs)) {
+#ifndef _Py_TIER2 // JIT doesn't support super instructions.
                 _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
                 bool to_store = (next.op.code == STORE_FAST);
                 if (to_store && PyStackRef_AsPyObjectBorrow(locals[next.op.arg]) == lhs) {
                     specialize(instr, BINARY_OP_INPLACE_ADD_UNICODE);
                     return;
                 }
+#endif
                 specialize(instr, BINARY_OP_ADD_UNICODE);
                 return;
             }
