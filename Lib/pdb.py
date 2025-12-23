@@ -2085,6 +2085,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """retval
 
         Print the return value for the last return of a function.
+        Alternatively, the return value can be accessed with the local
+        variable ``__return__``
         """
         if arg:
             self._print_invalid_arg(arg)
