@@ -29,10 +29,17 @@ except ImportError:
     )
 
 
-def make_frame(filename, lineno, funcname):
-    """Create a FrameInfo struct sequence."""
-    location = LocationInfo((lineno, lineno, -1, -1))
-    return FrameInfo((filename, location, funcname, None))
+def make_frame(filename, lineno, funcname, end_lineno=None, column=None,
+               end_column=None, opcode=None):
+    """Create a FrameInfo struct sequence with full location info and opcode."""
+    if end_lineno is None:
+        end_lineno = lineno
+    if column is None:
+        column = 0
+    if end_column is None:
+        end_column = 0
+    location = LocationInfo((lineno, end_lineno, column, end_column))
+    return FrameInfo((filename, location, funcname, opcode))
 
 
 def make_thread(thread_id, frames, status=0):
@@ -54,6 +61,22 @@ def extract_lineno(location):
     return location
 
 
+def extract_location(location):
+    """Extract full location info as dict from location tuple or None."""
+    if location is None:
+        return {"lineno": 0, "end_lineno": 0, "column": 0, "end_column": 0}
+    if isinstance(location, tuple) and len(location) >= 4:
+        return {
+            "lineno": location[0] if location[0] is not None else 0,
+            "end_lineno": location[1] if location[1] is not None else 0,
+            "column": location[2] if location[2] is not None else 0,
+            "end_column": location[3] if location[3] is not None else 0,
+        }
+    # Fallback for old-style location
+    lineno = location[0] if isinstance(location, tuple) else location
+    return {"lineno": lineno or 0, "end_lineno": lineno or 0, "column": 0, "end_column": 0}
+
+
 class RawCollector:
     """Collector that captures all raw data grouped by thread."""
 
@@ -70,11 +93,16 @@ class RawCollector:
             for thread in interp.threads:
                 frames = []
                 for frame in thread.frame_info:
+                    loc = extract_location(frame.location)
                     frames.append(
                         {
                             "filename": frame.filename,
                             "funcname": frame.funcname,
-                            "lineno": extract_lineno(frame.location),
+                            "lineno": loc["lineno"],
+                            "end_lineno": loc["end_lineno"],
+                            "column": loc["column"],
+                            "end_column": loc["end_column"],
+                            "opcode": frame.opcode,
                         }
                     )
                 key = (interp.interpreter_id, thread.thread_id)
@@ -95,11 +123,16 @@ def samples_to_by_thread(samples):
             for thread in interp.threads:
                 frames = []
                 for frame in thread.frame_info:
+                    loc = extract_location(frame.location)
                     frames.append(
                         {
                             "filename": frame.filename,
                             "funcname": frame.funcname,
-                            "lineno": extract_lineno(frame.location),
+                            "lineno": loc["lineno"],
+                            "end_lineno": loc["end_lineno"],
+                            "column": loc["column"],
+                            "end_column": loc["end_column"],
+                            "opcode": frame.opcode,
                         }
                     )
                 key = (interp.interpreter_id, thread.thread_id)
@@ -205,6 +238,34 @@ class BinaryFormatTestBase(unittest.TestCase):
                         f"Thread ({interp_id}, {thread_id}), sample {i}, "
                         f"frame {j}: lineno mismatch "
                         f"(expected {exp_frame['lineno']}, got {act_frame['lineno']})",
+                    )
+                    self.assertEqual(
+                        exp_frame["end_lineno"],
+                        act_frame["end_lineno"],
+                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
+                        f"frame {j}: end_lineno mismatch "
+                        f"(expected {exp_frame['end_lineno']}, got {act_frame['end_lineno']})",
+                    )
+                    self.assertEqual(
+                        exp_frame["column"],
+                        act_frame["column"],
+                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
+                        f"frame {j}: column mismatch "
+                        f"(expected {exp_frame['column']}, got {act_frame['column']})",
+                    )
+                    self.assertEqual(
+                        exp_frame["end_column"],
+                        act_frame["end_column"],
+                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
+                        f"frame {j}: end_column mismatch "
+                        f"(expected {exp_frame['end_column']}, got {act_frame['end_column']})",
+                    )
+                    self.assertEqual(
+                        exp_frame["opcode"],
+                        act_frame["opcode"],
+                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
+                        f"frame {j}: opcode mismatch "
+                        f"(expected {exp_frame['opcode']}, got {act_frame['opcode']})",
                     )
 
 
@@ -483,6 +544,97 @@ class TestBinaryRoundTrip(BinaryFormatTestBase):
         collector, count = self.roundtrip(samples)
         self.assertEqual(count, 60)
         self.assert_samples_equal(samples, collector)
+
+    def test_full_location_roundtrip(self):
+        """Full source location (end_lineno, column, end_column) roundtrips."""
+        frames = [
+            make_frame("test.py", 10, "func1", end_lineno=12, column=4, end_column=20),
+            make_frame("test.py", 20, "func2", end_lineno=20, column=8, end_column=45),
+            make_frame("test.py", 30, "func3", end_lineno=35, column=0, end_column=100),
+        ]
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
+    def test_opcode_roundtrip(self):
+        """Opcode values roundtrip exactly."""
+        opcodes = [0, 1, 50, 100, 150, 200, 254]  # Valid Python opcodes
+        samples = []
+        for opcode in opcodes:
+            frame = make_frame("test.py", 10, "func", opcode=opcode)
+            samples.append([make_interpreter(0, [make_thread(1, [frame])])])
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, len(opcodes))
+        self.assert_samples_equal(samples, collector)
+
+    def test_opcode_none_roundtrip(self):
+        """Opcode=None (sentinel 255) roundtrips as None."""
+        frame = make_frame("test.py", 10, "func", opcode=None)
+        samples = [[make_interpreter(0, [make_thread(1, [frame])])]]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
+    def test_mixed_location_and_opcode(self):
+        """Mixed full location and opcode data roundtrips."""
+        frames = [
+            make_frame("a.py", 10, "a", end_lineno=15, column=4, end_column=30, opcode=100),
+            make_frame("b.py", 20, "b", end_lineno=20, column=0, end_column=50, opcode=None),
+            make_frame("c.py", 30, "c", end_lineno=32, column=8, end_column=25, opcode=50),
+        ]
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
+    def test_delta_encoding_multiline(self):
+        """Multi-line spans (large end_lineno delta) roundtrip correctly."""
+        # This tests the delta encoding: end_lineno = lineno + delta
+        frames = [
+            make_frame("test.py", 1, "small", end_lineno=1, column=0, end_column=10),
+            make_frame("test.py", 100, "medium", end_lineno=110, column=0, end_column=50),
+            make_frame("test.py", 1000, "large", end_lineno=1500, column=0, end_column=200),
+        ]
+        samples = [[make_interpreter(0, [make_thread(1, frames)])]]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 1)
+        self.assert_samples_equal(samples, collector)
+
+    def test_column_positions_preserved(self):
+        """Various column positions are preserved exactly."""
+        columns = [(0, 10), (4, 50), (8, 100), (100, 200)]
+        samples = []
+        for col, end_col in columns:
+            frame = make_frame("test.py", 10, "func", column=col, end_column=end_col)
+            samples.append([make_interpreter(0, [make_thread(1, [frame])])])
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, len(columns))
+        self.assert_samples_equal(samples, collector)
+
+    def test_same_line_different_opcodes(self):
+        """Same line with different opcodes creates distinct frames."""
+        # This tests that opcode is part of the frame key
+        frames = [
+            make_frame("test.py", 10, "func", opcode=100),
+            make_frame("test.py", 10, "func", opcode=101),
+            make_frame("test.py", 10, "func", opcode=102),
+        ]
+        samples = [[make_interpreter(0, [make_thread(1, [f])]) for f in frames]]
+        collector, count = self.roundtrip(samples)
+        # Verify all three opcodes are preserved distinctly
+        self.assertEqual(count, 3)
+
+    def test_same_line_different_columns(self):
+        """Same line with different columns creates distinct frames."""
+        frames = [
+            make_frame("test.py", 10, "func", column=0, end_column=10),
+            make_frame("test.py", 10, "func", column=15, end_column=25),
+            make_frame("test.py", 10, "func", column=30, end_column=40),
+        ]
+        samples = [[make_interpreter(0, [make_thread(1, [f])]) for f in frames]]
+        collector, count = self.roundtrip(samples)
+        self.assertEqual(count, 3)
 
 
 class TestBinaryEdgeCases(BinaryFormatTestBase):

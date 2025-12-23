@@ -649,7 +649,7 @@ def _validate_args(args, parser):
         )
 
     # Validate --opcodes is only used with compatible formats
-    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap")
+    opcodes_compatible_formats = ("live", "gecko", "flamegraph", "heatmap", "binary")
     if getattr(args, 'opcodes', False) and args.format not in opcodes_compatible_formats:
         parser.error(
             f"--opcodes is only compatible with {', '.join('--' + f for f in opcodes_compatible_formats)}."
