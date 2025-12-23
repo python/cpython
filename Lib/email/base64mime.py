@@ -35,6 +35,8 @@ __all__ = [
 
 
 from base64 import b64encode
+from typing import ByteString, Callable
+
 from binascii import b2a_base64, a2b_base64
 
 CRLF = '\r\n'
@@ -108,6 +110,65 @@ def decode(string):
         return a2b_base64(string.encode('raw-unicode-escape'))
     else:
         return a2b_base64(string)
+
+
+class Base64FeedDecoder:
+    """
+    Adaptation of RFC 2045, s. 6.8 that performs incremental decoding for
+     FeedParser API.
+
+    Note that there is no parsing-related functionality in this class.
+     Therefore, this class could be generalized, by making the _feed variable
+     optional, a new _decode_buffer variable that is returned by close(),
+     and _decode a constructor kwarg, for example; and refactored/moved to the
+     top-level, base64 package.
+    """
+
+    def __init__(self, feed: Callable[[ByteString], None]):
+        """
+        :param feed: function that, when specified, consumes the decoded data.
+        """
+        self._decode = a2b_base64  # Underlying decoder implementation.
+        self._feed = feed  # Consumes the decoded data.
+        # This buffers an incomplete base-64 block that can't be decoded or
+        # parsed yet:
+        self._encoded_buffer = bytearray()
+
+    def feed(self, data: ByteString):
+        """
+        Feed the parser some more base-64-encoded data. data should be a
+         bytes-like object representing one or more decoded octets. The octets
+         can be partial and the decoder will stitch such partial octets together
+         properly.
+        :param data: bytes-like object of arbitrary-length.
+        """
+        # Remove whitespace to ensure accurate length calculation:
+        data = bytes(encoded_byte
+                     for encoded_byte in data
+                     if encoded_byte not in b'\r\n')
+        # Update buffer and decode any complete base-64 blocks:
+        self._encoded_buffer.extend(data)
+        decodable_length = int(len(self._encoded_buffer) / 4) * 4
+        if decodable_length >= 1:
+            decodable_bytes = self._encoded_buffer[:decodable_length]
+            self._encoded_buffer = self._encoded_buffer[decodable_length:]
+            decoded_bytes = self._decode(decodable_bytes)
+            # If _feed were made optional, then the decoded bytes could be
+            # appended to a new self._decoded_buffer variable when _feed is
+            # None:
+            self._feed(decoded_bytes)
+
+    def close(self):
+        """
+        Ensure the decoding of all previously fed data; and validate the input
+         length.  It is undefined what happens if feed() is called after this
+         method has been called.
+        :raises: ValueError if the input fails length validation.
+        """
+        if len(self._encoded_buffer) >= 1:
+            raise ValueError('The base-64 input has invalid length.')
+        # If _feed were made optional, then a new self._decoded_buffer variable
+        # could be returned when _feed is None.
 
 
 # For convenience and backwards compatibility w/ standard base64 module
