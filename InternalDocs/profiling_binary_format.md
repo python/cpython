@@ -289,15 +289,15 @@ information and bytecode opcode:
 
 ### Field Definitions
 
-| Field | Type | Description |
-|-------|------|-------------|
-| filename_idx | varint | Index into string table for file name |
-| funcname_idx | varint | Index into string table for function name |
-| lineno | zigzag varint | Start line number (-1 for synthetic frames) |
-| end_lineno_delta | zigzag varint | Delta from lineno (end_lineno = lineno + delta) |
-| column | zigzag varint | Start column offset in UTF-8 bytes (-1 if not available) |
-| end_column_delta | zigzag varint | Delta from column (end_column = column + delta) |
-| opcode | u8 | Python bytecode opcode (0-254) or 255 for None |
+| Field            | Type          | Description                                              |
+|------------------|---------------|----------------------------------------------------------|
+| filename_idx     | varint        | Index into string table for file name                    |
+| funcname_idx     | varint        | Index into string table for function name                |
+| lineno           | zigzag varint | Start line number (-1 for synthetic frames)              |
+| end_lineno_delta | zigzag varint | Delta from lineno (end_lineno = lineno + delta)          |
+| column           | zigzag varint | Start column offset in UTF-8 bytes (-1 if not available) |
+| end_column_delta | zigzag varint | Delta from column (end_column = column + delta)          |
+| opcode           | u8            | Python bytecode opcode (0-254) or 255 for None           |
 
 ### Delta Encoding
 
