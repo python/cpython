@@ -2649,6 +2649,15 @@ class TestAddSubparsers(TestCase):
             self.parser.parse_known_args('0.5 -W 1 b -X Y -w 7 Z'.split()),
             (NS(foo=False, bar=0.5, w=7, x='b'), ['-W', '-X', 'Y', 'Z']),
         )
+        self.assertEqual(
+            self.parser.parse_known_args(['0.5', '--opt="with space"']),
+            (NS(foo=False, bar=0.5), ['--opt="with space"']),
+        )
+        self.assertRaisesRegex(
+            ArgumentParserError,
+            "invalid choice: '--opt with space'",
+            self.parser.parse_known_args,
+            ['0.5', '--opt with space'])
 
     def test_parse_known_args_to_class_namespace(self):
         class C:
