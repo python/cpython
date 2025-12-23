@@ -540,9 +540,8 @@ class MyHandler(rpc.RPCHandler):
                                    iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
-        # page help() text to shell.
-        import pydoc # import must be done here to capture i/o binding
-        pydoc.pager = pydoc.plainpager
+        import pydoc  # import must be done here to capture i/o binding
+        pydoc.pager = self.console.pager
 
         # Keep a reference to stdin so that it won't try to exit IDLE if
         # sys.stdin gets changed from within IDLE's shell. See issue17838.
