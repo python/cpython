@@ -704,12 +704,12 @@ mappingproxy(OrderedDict([('the', 0),
     def test_empty_simple_namespace(self):
         ns = types.SimpleNamespace()
         formatted = pprint.pformat(ns)
-        self.assertEqual(formatted, "namespace()")
+        self.assertEqual(formatted, "SimpleNamespace()")
 
     def test_small_simple_namespace(self):
         ns = types.SimpleNamespace(a=1, b=2)
         formatted = pprint.pformat(ns)
-        self.assertEqual(formatted, "namespace(a=1, b=2)")
+        self.assertEqual(formatted, "SimpleNamespace(a=1, b=2)")
 
     def test_simple_namespace(self):
         ns = types.SimpleNamespace(
