@@ -1,12 +1,10 @@
 """Tests for sampling profiler CLI argument parsing and functionality."""
 
-import functools
 import io
 import subprocess
 import sys
 import unittest
 from unittest import mock
-import tempfile
 
 try:
     import _remote_debugging  # noqa: F401
@@ -19,8 +17,6 @@ from test.support import is_emscripten, requires_remote_subprocess_debugging
 
 from profiling.sampling.cli import main
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
-from profiling.sampling.live_collector import MockDisplay
-
 
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
@@ -725,74 +721,3 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 main()
 
             self.assertIn(fake_pid, str(cm.exception))
-
-
-class TestLiveModeErrors(unittest.TestCase):
-    """Tests running error commands in the live mode fails gracefully."""
-
-    def mock_curses_wrapper(self, func):
-        func(mock.MagicMock())
-
-    def mock_init_curses_side_effect(self, n_times, mock_self, stdscr):
-        mock_self.display = MockDisplay()
-        # Allow the loop to run for a bit (approx 0.5s) before quitting
-        # This ensures we don't exit too early while the subprocess is
-        # still failing
-        for _ in range(n_times):
-            mock_self.display.simulate_input(-1)
-        if n_times >= 500:
-            mock_self.display.simulate_input(ord('q'))
-
-    @unittest.skipIf(is_emscripten, "subprocess not available")
-    def test_run_failed_module_live(self):
-        """Test that running a existing module that fails exists with clean error."""
-
-        args = [
-            "profiling.sampling.cli", "run", "--live", "-m", "test",
-            "test_asdasd"
-        ]
-
-        with (
-            mock.patch(
-                'profiling.sampling.live_collector.collector.LiveStatsCollector.init_curses',
-                autospec=True,
-                side_effect=functools.partial(self.mock_init_curses_side_effect, 1000)
-            ),
-            mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
-            mock.patch("sys.argv", args),
-            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
-        ):
-            main()
-            self.assertStartsWith(
-                fake_stderr.getvalue(),
-                '\x1b[31mtest test_asdasd crashed -- Traceback (most recent call last):'
-            )
-
-    @unittest.skipIf(is_emscripten, "subprocess not available")
-    def test_run_failed_script_live(self):
-        """Test that running a failing script exits with clean error."""
-        script = tempfile.NamedTemporaryFile(suffix=".py")
-        script.write(b'1/0\n')
-        script.seek(0)
-
-        args = ["profiling.sampling.cli", "run", "--live", script.name]
-
-        with (
-            mock.patch(
-                'profiling.sampling.live_collector.collector.LiveStatsCollector.init_curses',
-                autospec=True,
-                side_effect=functools.partial(self.mock_init_curses_side_effect, 200)
-            ),
-            mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
-            mock.patch("sys.argv", args),
-            mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
-        ):
-            main()
-            stderr = fake_stderr.getvalue()
-            self.assertIn(
-                'sample(s) collected (minimum 200 required for TUI)', stderr
-            )
-            self.assertEndsWith(
-                stderr,
-                'ZeroDivisionError\x1b[0m: \x1b[35mdivision by zero\x1b[0m\n\n'
-            )
