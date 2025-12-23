@@ -81,24 +81,24 @@ jobs:
 
       - name: Native Windows (debug)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
-          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
-          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
+          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        shell: cmd
+        shell: pwsh
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
-          set LLVMInstallDir=C:\Program Files\LLVM
+          $env:PlatformToolset = "clangcl"
+          $env:LLVMToolsVersion = "${{ matrix.llvm }}.1.0"
+          $env:LLVMInstallDir = "C:\Program Files\LLVM"
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
       - name: Native macOS (release)
