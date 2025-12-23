@@ -198,7 +198,7 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added support for Solaris.
 
 
@@ -632,7 +632,7 @@ since it is impossible to detect the termination of alien threads.
 
          May raise :exc:`PythonFinalizationError`.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Accepts any real number as *timeout*, not only integer or float.
 
    .. attribute:: name
@@ -786,7 +786,7 @@ All methods are executed atomically.
       .. versionchanged:: 3.14
          Lock acquisition can now be interrupted by signals on Windows.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -896,7 +896,7 @@ call release as many times the lock has been acquired can lead to deadlock.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Accepts any real number as *timeout*, not only integer or float.
 
 
@@ -1159,7 +1159,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.15
          Accepts any real number as *timeout*, not only integer or float.
 
    .. method:: release(n=1)

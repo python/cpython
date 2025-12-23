@@ -160,7 +160,7 @@ There are three ways strings and buffers can be converted to C:
 ``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
-   The buffer may contain embedded null bytes. The caller have to call
+   The buffer may contain embedded null bytes. The caller has to call
    :c:func:`PyBuffer_Release` when it is done with the buffer.
 
 ``es`` (:class:`str`) [const char \*encoding, char \*\*buffer]
@@ -305,7 +305,7 @@ the minimal value for the corresponding signed integer type of the same size.
 ``D`` (:class:`complex`) [Py_complex]
    Convert a Python complex number to a C :c:type:`Py_complex` structure.
 
-.. deprecated:: next
+.. deprecated:: 3.15
 
    For unsigned integer formats ``B``, ``H``, ``I``, ``k`` and ``K``,
    :exc:`DeprecationWarning` is emitted when the value is larger than

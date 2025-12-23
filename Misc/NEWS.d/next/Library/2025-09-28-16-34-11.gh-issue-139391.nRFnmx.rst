@@ -1,3 +1,0 @@
-Fix an issue when, on non-Windows platforms, it was not possible to
-gracefully exit a ``python -m asyncio`` process suspended by Ctrl+Z
-and later resumed by :manpage:`fg` other than with :manpage:`kill`.

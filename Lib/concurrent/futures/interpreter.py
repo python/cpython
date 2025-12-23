@@ -2,7 +2,6 @@
 
 from concurrent import interpreters
 import sys
-import textwrap
 from . import thread as _thread
 import traceback
 

@@ -295,8 +295,8 @@ The :mod:`csv` module defines the following classes:
       - the second through n-th rows contain strings where at least one value's
         length differs from that of the putative header of that column.
 
-      Twenty rows after the first row are sampled; if more than half of columns +
-      rows meet the criteria, :const:`True` is returned.
+      Twenty-one rows after the header are sampled; if more than half of the
+      columns + rows meet the criteria, :const:`True` is returned.
 
    .. note::
 

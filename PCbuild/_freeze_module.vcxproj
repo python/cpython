@@ -167,6 +167,7 @@
     <ClCompile Include="..\Objects\unicode_format.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicode_formatter.c" />
+    <ClCompile Include="..\Objects\unicode_writer.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
@@ -256,6 +257,7 @@
     <ClCompile Include="..\Python\pylifecycle.c" />
     <ClCompile Include="..\Python\pymath.c" />
     <ClCompile Include="..\Python\pystate.c" />
+    <ClCompile Include="..\Python\pystats.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />

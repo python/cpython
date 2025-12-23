@@ -466,17 +466,6 @@ class ImportSideEffectTests(unittest.TestCase):
         """Restore sys.path"""
         sys.path[:] = self.sys_path
 
-    def test_abs_paths_cached_None(self):
-        """Test for __cached__ is None.
-
-        Regarding to PEP 3147, __cached__ can be None.
-
-        See also: https://bugs.python.org/issue30167
-        """
-        sys.modules['test'].__cached__ = None
-        site.abs_paths()
-        self.assertIsNone(sys.modules['test'].__cached__)
-
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
         # Handled by removeduppaths()
@@ -855,12 +844,15 @@ class CommandLineTests(unittest.TestCase):
             return 10, None
 
     def invoke_command_line(self, *args):
-        args = ["-m", "site", *args]
+        cmd_args = []
+        if sys.flags.no_user_site:
+            cmd_args.append("-s")
+        cmd_args.extend(["-m", "site", *args])
 
         with EnvironmentVarGuard() as env:
             env["PYTHONUTF8"] = "1"
             env["PYTHONIOENCODING"] = "utf-8"
-            proc = spawn_python(*args, text=True, env=env,
+            proc = spawn_python(*cmd_args, text=True, env=env,
                                 encoding='utf-8', errors='replace')
 
         output = kill_python(proc)

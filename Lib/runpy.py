@@ -80,7 +80,6 @@ def _run_code(code, run_globals, init_globals=None,
             pkg_name = mod_spec.parent
     run_globals.update(__name__ = mod_name,
                        __file__ = fname,
-                       __cached__ = cached,
                        __doc__ = None,
                        __loader__ = loader,
                        __package__ = pkg_name,
@@ -180,7 +179,6 @@ def _run_module_as_main(mod_name, alter_argv=True):
        At the very least, these variables in __main__ will be overwritten:
            __name__
            __file__
-           __cached__
            __loader__
            __package__
     """
@@ -247,7 +245,7 @@ def _get_main_module_details(error=ImportError):
         sys.modules[main_name] = saved_main
 
 
-def _get_code_from_file(fname):
+def _get_code_from_file(fname, module):
     # Check for a compiled file first
     from pkgutil import read_code
     code_path = os.path.abspath(fname)
@@ -256,7 +254,7 @@ def _get_code_from_file(fname):
     if code is None:
         # That didn't work, so try it as normal source code
         with io.open_code(code_path) as f:
-            code = compile(f.read(), fname, 'exec')
+            code = compile(f.read(), fname, 'exec', module=module)
     return code
 
 def run_path(path_name, init_globals=None, run_name=None):
@@ -283,7 +281,7 @@ def run_path(path_name, init_globals=None, run_name=None):
     if isinstance(importer, type(None)):
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
-        code = _get_code_from_file(path_name)
+        code = _get_code_from_file(path_name, run_name)
         return _run_module_code(code, init_globals, run_name,
                                 pkg_name=pkg_name, script_name=path_name)
     else:

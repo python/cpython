@@ -349,10 +349,12 @@ class ListTest(list_tests.CommonTest):
         # gh-132011: it used to crash, because
         # of `CALL_LIST_APPEND` specialization failure.
         code = textwrap.dedent("""
+            import _testinternalcapi
+
             l = []
             def lappend(l, x, y):
                 l.append((x, y))
-            for x in range(3):
+            for x in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
                 lappend(l, None, None)
             try:
                 lappend(list, None, None)

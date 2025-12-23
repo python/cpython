@@ -619,16 +619,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 Retrieving source code
 ----------------------
 
-.. function:: getdoc(object)
+.. function:: getdoc(object, *, inherit_class_doc=True, fallback_to_class_doc=True)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
-   If the documentation string for an object is not provided and the object is
-   a class, a method, a property or a descriptor, retrieve the documentation
-   string from the inheritance hierarchy.
+   If the documentation string for an object is not provided:
+
+   * if the object is a class and *inherit_class_doc* is true (by default),
+     retrieve the documentation string from the inheritance hierarchy;
+   * if the object is a method, a property or a descriptor, retrieve
+     the documentation string from the inheritance hierarchy;
+   * otherwise, if *fallback_to_class_doc* is true (by default), retrieve
+     the documentation string from the class of the object.
+
    Return ``None`` if the documentation string is invalid or missing.
 
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
+
+   .. versionchanged:: 3.15
+      Added parameters *inherit_class_doc* and *fallback_to_class_doc*.
+
+      Documentation strings on :class:`~functools.cached_property`
+      objects are now inherited if not overridden.
 
 
 .. function:: getcomments(object)
@@ -1776,7 +1788,7 @@ Buffer flags
 
 .. _inspect-module-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`inspect` module also provides a basic introspection capability

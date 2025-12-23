@@ -267,7 +267,7 @@ against some common XML vulnerabilities.
       Activation thresholds below 4 MiB are known to break support for DITA 1.3
       payload and are hence not recommended.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetBillionLaughsAttackProtectionMaximumAmplification(max_factor, /)
 
@@ -304,7 +304,7 @@ against some common XML vulnerabilities.
       that can be adjusted by :meth:`.SetBillionLaughsAttackProtectionActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
 
@@ -324,7 +324,7 @@ against some common XML vulnerabilities.
    Check for availability using :func:`hasattr` if used in code running
    across a variety of Python versions.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
@@ -360,7 +360,7 @@ against some common XML vulnerabilities.
       that can be adjusted by :meth:`.SetAllocTrackerActivationThreshold`
       is exceeded.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 :class:`xmlparser` objects have the following attributes:
@@ -633,6 +633,15 @@ otherwise stated.
 
 
 .. method:: xmlparser.ExternalEntityRefHandler(context, base, systemId, publicId)
+
+   .. warning::
+
+      Implementing a handler that accesses local files and/or the network
+      may create a vulnerability to
+      `external entity attacks <https://en.wikipedia.org/wiki/XML_external_entity_attack>`_
+      if :class:`xmlparser` is used with user-provided XML content.
+      Please reflect on your `threat model <https://en.wikipedia.org/wiki/Threat_model>`_
+      before implementing this handler.
 
    Called for references to external entities.  *base* is the current base, as set
    by a previous call to :meth:`SetBase`.  The public and system identifiers,

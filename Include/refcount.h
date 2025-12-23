@@ -114,6 +114,8 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     }
     #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
+    #else
+    #  define Py_REFCNT(ob) _Py_REFCNT(ob)
     #endif
 #endif
 

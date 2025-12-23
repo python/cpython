@@ -460,6 +460,10 @@ def collapse_rfc2231_value(value, errors='replace',
         charset = fallback_charset
     rawbytes = bytes(text, 'raw-unicode-escape')
     try:
+        # Explicitly look up the codec for warning generation, see gh-140030
+        # Can be removed in 3.17
+        import codecs
+        codecs.lookup(charset)
         return str(rawbytes, charset, errors)
     except LookupError:
         # charset is not a known codec.

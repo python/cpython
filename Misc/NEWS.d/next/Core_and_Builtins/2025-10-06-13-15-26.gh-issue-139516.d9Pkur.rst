@@ -1,1 +1,0 @@
-Fix lambda colon erroneously start format spec in f-string in tokenizer.

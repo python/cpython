@@ -1,3 +1,0 @@
-The default REPL now avoids highlighting built-in names (for instance :class:`set`
-or :func:`format`) when they are used as attribute names (for instance in ``value.set``
-or ``text.format``).

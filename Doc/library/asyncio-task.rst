@@ -1221,8 +1221,8 @@ Task Object
 
    To cancel a running Task use the :meth:`cancel` method.  Calling it
    will cause the Task to throw a :exc:`CancelledError` exception into
-   the wrapped coroutine.  If a coroutine is awaiting on a Future
-   object during cancellation, the Future object will be cancelled.
+   the wrapped coroutine.  If a coroutine is awaiting on a future-like
+   object during cancellation, the awaited object will be cancelled.
 
    :meth:`cancelled` can be used to check if the Task was cancelled.
    The method returns ``True`` if the wrapped coroutine did not
@@ -1410,6 +1410,10 @@ Task Object
       discouraged.  Should the coroutine nevertheless decide to suppress
       the cancellation, it needs to call :meth:`Task.uncancel` in addition
       to catching the exception.
+
+      If the Task being cancelled is currently awaiting on a future-like
+      object, that awaited object will also be cancelled. This cancellation
+      propagates down the entire chain of awaited objects.
 
       .. versionchanged:: 3.9
          Added the *msg* parameter.

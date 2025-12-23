@@ -1,2 +1,0 @@
-Fix a crash when a generic object's ``__typing_subst__`` returns an object
-that isn't a :class:`tuple`.

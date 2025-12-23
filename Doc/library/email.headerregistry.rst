@@ -294,7 +294,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
        ``inline`` and ``attachment`` are the only valid values in common use.
 
 
-.. class:: ContentTransferEncoding
+.. class:: ContentTransferEncodingHeader
 
    Handles the :mailheader:`Content-Transfer-Encoding` header.
 

@@ -25,8 +25,9 @@ The :mod:`wave` module defines the following function and exception:
 
 .. function:: open(file, mode=None)
 
-   If *file* is a string, open the file by that name, otherwise treat it as a
-   file-like object.  *mode* can be:
+   If *file* is a string, a :term:`path-like object` or a
+   :term:`bytes-like object` open the file by that name, otherwise treat it as
+   a file-like object.  *mode* can be:
 
    ``'rb'``
       Read only mode.
@@ -51,6 +52,10 @@ The :mod:`wave` module defines the following function and exception:
 
    .. versionchanged:: 3.4
       Added support for unseekable files.
+
+   .. versionchanged:: 3.15
+      Added support for :term:`path-like objects <path-like object>`
+      and :term:`bytes-like objects <bytes-like object>`.
 
 .. exception:: Error
 

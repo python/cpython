@@ -1,2 +1,0 @@
-Move the globals-to-const JIT optimizer pass into to the main JIT optimizer
-pass

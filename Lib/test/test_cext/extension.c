@@ -78,7 +78,7 @@ _testcext_exec(
     return 0;
 }
 
-#define _FUNC_NAME(NAME) PyInit_ ## NAME
+#define _FUNC_NAME(NAME) PyModExport_ ## NAME
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
 // Converting from function pointer to void* has undefined behavior, but
@@ -88,58 +88,40 @@ _testcext_exec(
 _Py_COMP_DIAG_PUSH
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #elif defined(__clang__)
 #pragma clang diagnostic ignored "-Wpedantic"
+#pragma clang diagnostic ignored "-Wcast-qual"
 #endif
 
+PyDoc_STRVAR(_testcext_doc, "C test extension.");
+
 static PyModuleDef_Slot _testcext_slots[] = {
+    {Py_mod_name, STR(MODULE_NAME)},
+    {Py_mod_doc, (void*)(char*)_testcext_doc},
     {Py_mod_exec, (void*)_testcext_exec},
+    {Py_mod_methods, _testcext_methods},
     {0, NULL}
 };
 
 _Py_COMP_DIAG_POP
 
-PyDoc_STRVAR(_testcext_doc, "C test extension.");
-
-#ifndef _Py_OPAQUE_PYOBJECT
-
-static struct PyModuleDef _testcext_module = {
-    PyModuleDef_HEAD_INIT,  // m_base
-    STR(MODULE_NAME),  // m_name
-    _testcext_doc,  // m_doc
-    0,  // m_size
-    _testcext_methods,  // m_methods
-    _testcext_slots,  // m_slots
-    NULL,  // m_traverse
-    NULL,  // m_clear
-    NULL,  // m_free
-};
-
-
-PyMODINIT_FUNC
+PyMODEXPORT_FUNC
 FUNC_NAME(MODULE_NAME)(void)
 {
-    return PyModuleDef_Init(&_testcext_module);
+    return _testcext_slots;
 }
 
-#else  // _Py_OPAQUE_PYOBJECT
+// Also define the soft-deprecated entrypoint to ensure it isn't called
 
-// Opaque PyObject means that PyModuleDef is also opaque and cannot be
-// declared statically. See PEP 793.
-// So, this part of module creation is split into a separate source file
-// which uses non-limited API.
-
-// (repeated definition to avoid creating a header)
-extern PyObject *testcext_create_moduledef(
-    const char *name, const char *doc,
-    PyMethodDef *methods, PyModuleDef_Slot *slots);
-
+#define _INITFUNC_NAME(NAME) PyInit_ ## NAME
+#define INITFUNC_NAME(NAME) _INITFUNC_NAME(NAME)
 
 PyMODINIT_FUNC
-FUNC_NAME(MODULE_NAME)(void)
+INITFUNC_NAME(MODULE_NAME)(void)
 {
-    return testcext_create_moduledef(
-        STR(MODULE_NAME), _testcext_doc, _testcext_methods, _testcext_slots);
+    PyErr_SetString(
+        PyExc_AssertionError,
+        "PyInit_* function called while a PyModExport_* one is available");
+    return NULL;
 }
-
-#endif  // _Py_OPAQUE_PYOBJECT

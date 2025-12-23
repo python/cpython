@@ -482,6 +482,9 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    .. versionchanged:: 3.14
       Added support for ``TCP_QUICKACK`` on Windows platforms when available.
 
+   .. versionchanged:: 3.15
+      ``IPV6_HDRINCL`` was added.
+
 
 .. data:: AF_CAN
           PF_CAN
@@ -1412,7 +1415,7 @@ The :mod:`socket` module also offers various network-related services:
    :meth:`~socket.settimeout` for possible values and their respective
    meanings.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
@@ -2088,15 +2091,12 @@ to sockets.
       The method no longer toggles :const:`SOCK_NONBLOCK` flag on
       :attr:`socket.type`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Accepts any real number, not only integer or float.
 
 
-.. method:: socket.setsockopt(level, optname, value: int)
-.. method:: socket.setsockopt(level, optname, value: buffer)
-   :noindex:
-.. method:: socket.setsockopt(level, optname, None, optlen: int)
-   :noindex:
+.. method:: socket.setsockopt(level, optname, value: int | Buffer)
+            socket.setsockopt(level, optname, None, optlen: int)
 
    .. index:: pair: module; struct
 

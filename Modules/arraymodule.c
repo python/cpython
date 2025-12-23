@@ -2833,6 +2833,9 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         Py_SET_SIZE(self, n);
                         self->allocated = n;
                     }
+                    else {
+                        PyMem_Free(ustr);
+                    }
                 }
                 else { // c == 'w'
                     Py_ssize_t n = PyUnicode_GET_LENGTH(initial);

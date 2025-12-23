@@ -1,3 +1,0 @@
-Remove the code deprecation of ``importlib.abc.ResourceLoader``. It is
-documented as deprecated, but left for backwards compatibility with other
-classes in ``importlib.abc``.

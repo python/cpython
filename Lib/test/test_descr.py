@@ -1329,18 +1329,17 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertNotHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
 
         class W(object):
             __slots__ = ["__weakref__"]
         a = W()
         self.assertHasAttr(a, "__weakref__")
         self.assertNotHasAttr(a, "__dict__")
-        try:
+        with self.assertRaises(AttributeError):
             a.foo = 42
-        except AttributeError:
-            pass
-        else:
-            self.fail("shouldn't be allowed to set a.foo")
+        self.assertIs(weakref.ref(a)(), a)
 
         class C1(W, D):
             __slots__ = []
@@ -1349,6 +1348,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        self.assertIs(weakref.ref(a)(), a)
 
         class C2(D, W):
             __slots__ = []
@@ -1357,6 +1357,77 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertHasAttr(a, "__weakref__")
         a.foo = 42
         self.assertEqual(a.__dict__, {"foo": 42})
+        self.assertIs(weakref.ref(a)(), a)
+
+    @unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+    def test_slots_special_before_items(self):
+        class D(_testcapi.HeapCCollection):
+            __slots__ = ["__dict__"]
+        a = D(1, 2, 3)
+        self.assertHasAttr(a, "__dict__")
+        self.assertNotHasAttr(a, "__weakref__")
+        a.foo = 42
+        self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
+        del a.__dict__
+        self.assertNotHasAttr(a, "foo")
+        self.assertEqual(a.__dict__, {})
+        self.assertEqual(list(a), [1, 2, 3])
+
+        class W(_testcapi.HeapCCollection):
+            __slots__ = ["__weakref__"]
+        a = W(1, 2, 3)
+        self.assertHasAttr(a, "__weakref__")
+        self.assertNotHasAttr(a, "__dict__")
+        with self.assertRaises(AttributeError):
+            a.foo = 42
+        self.assertIs(weakref.ref(a)(), a)
+
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['x']
+
+        with self.assertRaises(TypeError):
+            class X(_testcapi.HeapCCollection):
+                __slots__ = ['__dict__', 'x']
+
+    @support.subTests(('base', 'arg'), [
+        (tuple, (1, 2, 3)),
+        (int, 9876543210**2),
+        (bytes, b'ab'),
+    ])
+    def test_slots_special_after_items(self, base, arg):
+        class D(base):
+            __slots__ = ["__dict__"]
+        a = D(arg)
+        self.assertHasAttr(a, "__dict__")
+        self.assertNotHasAttr(a, "__weakref__")
+        a.foo = 42
+        self.assertEqual(a.__dict__, {"foo": 42})
+        with self.assertRaises(TypeError):
+            weakref.ref(a)
+        del a.__dict__
+        self.assertNotHasAttr(a, "foo")
+        self.assertEqual(a.__dict__, {})
+        self.assertEqual(a, base(arg))
+
+        class W(base):
+            __slots__ = ["__weakref__"]
+        a = W(arg)
+        self.assertHasAttr(a, "__weakref__")
+        self.assertNotHasAttr(a, "__dict__")
+        with self.assertRaises(AttributeError):
+            a.foo = 42
+        self.assertIs(weakref.ref(a)(), a)
+        self.assertEqual(a, base(arg))
+
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['x']
+        with self.assertRaises(TypeError):
+            class X(base):
+                __slots__ = ['__dict__', 'x']
 
     def test_slots_special2(self):
         # Testing __qualname__ and __classcell__ in __slots__

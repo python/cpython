@@ -4,7 +4,7 @@
   Functional Programming HOWTO
 ********************************
 
-:Author: A. M. Kuchling
+:Author: \A. M. Kuchling
 :Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for

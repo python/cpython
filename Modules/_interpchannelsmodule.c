@@ -580,7 +580,7 @@ _channelitem_clear_data(_channelitem *item, int removed)
 {
     if (item->data != NULL) {
         // It was allocated in channel_send().
-        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC | XID_FREE);
         item->data = NULL;
     }
 

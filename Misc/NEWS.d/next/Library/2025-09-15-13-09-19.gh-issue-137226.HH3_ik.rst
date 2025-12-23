@@ -1,2 +1,0 @@
-Fix :func:`typing.get_type_hints` calls on generic :class:`typing.TypedDict`
-classes defined with string annotations.

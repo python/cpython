@@ -3045,6 +3045,26 @@ class BaseTaskIntrospectionTests:
     _enter_task = None
     _leave_task = None
     all_tasks = None
+    Task = None
+
+    def test_register_task_resurrection(self):
+        register_task = self._register_task
+        class EvilLoop:
+            def get_debug(self):
+                return False
+
+            def call_exception_handler(self, context):
+                register_task(context["task"])
+
+        async def coro_fn ():
+            pass
+
+        coro = coro_fn()
+        self.addCleanup(coro.close)
+        loop = EvilLoop()
+        with self.assertRaises(AttributeError):
+            self.Task(coro, loop=loop)
+
 
     def test__register_task_1(self):
         class TaskLike:
@@ -3175,6 +3195,7 @@ class PyIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
     _leave_task = staticmethod(tasks._py_leave_task)
     all_tasks = staticmethod(tasks._py_all_tasks)
     current_task = staticmethod(tasks._py_current_task)
+    Task = tasks._PyTask
 
 
 @unittest.skipUnless(hasattr(tasks, '_c_register_task'),
@@ -3187,8 +3208,10 @@ class CIntrospectionTests(test_utils.TestCase, BaseTaskIntrospectionTests):
         _leave_task = staticmethod(tasks._c_leave_task)
         all_tasks = staticmethod(tasks._c_all_tasks)
         current_task = staticmethod(tasks._c_current_task)
+        Task = tasks._CTask
     else:
         _register_task = _unregister_task = _enter_task = _leave_task = None
+
 
 
 class BaseCurrentLoopTests:
@@ -3679,6 +3702,30 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(len(callback.call_args_list), 1)
         (loop, context), kwargs = callback.call_args
         self.assertEqual(context['exception'], exc_context.exception)
+
+    def test_run_coroutine_threadsafe_and_cancel(self):
+        task = None
+        thread_future = None
+        # Use a custom task factory to capture the created Task
+        def task_factory(loop, coro):
+            nonlocal task
+            task = asyncio.Task(coro, loop=loop)
+            return task
+
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
+
+        async def target():
+            nonlocal thread_future
+            self.loop.set_task_factory(task_factory)
+            thread_future = asyncio.run_coroutine_threadsafe(asyncio.sleep(10), self.loop)
+            await asyncio.sleep(0)
+
+            thread_future.cancel()
+
+        self.loop.run_until_complete(target())
+        self.assertTrue(task.cancelled())
+        self.assertTrue(thread_future.cancelled())
 
 
 class SleepTests(test_utils.TestCase):

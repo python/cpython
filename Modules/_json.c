@@ -18,6 +18,12 @@
 
 #include <stdbool.h>              // bool
 
+#include "clinic/_json.c.h"
+
+/*[clinic input]
+module _json
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=549fa53592c925b2]*/
 
 typedef struct _PyScannerObject {
     PyObject_HEAD
@@ -637,89 +643,62 @@ bail:
     return NULL;
 }
 
-PyDoc_STRVAR(pydoc_scanstring,
-    "scanstring(string, end, strict=True) -> (string, end)\n"
-    "\n"
-    "Scan the string s for a JSON string. End is the index of the\n"
-    "character in s after the quote that started the JSON string.\n"
-    "Unescapes all valid JSON string escape sequences and raises ValueError\n"
-    "on attempt to decode an invalid string. If strict is False then literal\n"
-    "control characters are allowed in the string.\n"
-    "\n"
-    "Returns a tuple of the decoded string and the index of the character in s\n"
-    "after the end quote."
-);
+/*[clinic input]
+_json.scanstring as py_scanstring
+    pystr: unicode
+    end: Py_ssize_t
+    strict: bool = True
+    /
+
+Scan the string s for a JSON string.
+
+End is the index of the character in s after the quote that started the
+JSON string. Unescapes all valid JSON string escape sequences and raises
+ValueError on attempt to decode an invalid string. If strict is False
+then literal control characters are allowed in the string.
+
+Returns a tuple of the decoded string and the index of the character in s
+after the end quote.
+[clinic start generated code]*/
 
 static PyObject *
-py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
+py_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
+                   int strict)
+/*[clinic end generated code: output=961740cfae07cdb3 input=cff59e47498f4d8e]*/
 {
-    PyObject *pystr;
-    PyObject *rval;
-    Py_ssize_t end;
     Py_ssize_t next_end = -1;
-    int strict = 1;
-    if (!PyArg_ParseTuple(args, "On|p:scanstring", &pystr, &end, &strict)) {
-        return NULL;
-    }
-    if (PyUnicode_Check(pystr)) {
-        rval = scanstring_unicode(pystr, end, strict, &next_end);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
+    PyObject *rval = scanstring_unicode(pystr, end, strict, &next_end);
     return _build_rval_index_tuple(rval, next_end);
 }
 
-PyDoc_STRVAR(pydoc_encode_basestring_ascii,
-    "encode_basestring_ascii(string) -> string\n"
-    "\n"
-    "Return an ASCII-only JSON representation of a Python string"
-);
+/*[clinic input]
+_json.encode_basestring_ascii as py_encode_basestring_ascii
+    pystr: unicode
+    /
+
+Return an ASCII-only JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring_ascii_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=7b3841287cf211df input=4f3609498aff2de5]*/
 {
-    PyObject *rval;
-    /* Return an ASCII-only JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = ascii_escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return ascii_escape_unicode(pystr);
 }
 
+/*[clinic input]
+_json.encode_basestring as py_encode_basestring
+    pystr: unicode
+    /
 
-PyDoc_STRVAR(pydoc_encode_basestring,
-    "encode_basestring(string) -> string\n"
-    "\n"
-    "Return a JSON representation of a Python string"
-);
+Return a JSON representation of a Python string
+[clinic start generated code]*/
 
 static PyObject *
-py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
+py_encode_basestring_impl(PyObject *module, PyObject *pystr)
+/*[clinic end generated code: output=900950f95df3f1c9 input=d42ef714b2c07386]*/
 {
-    PyObject *rval;
-    /* Return a JSON representation of a Python string */
-    /* METH_O */
-    if (PyUnicode_Check(pystr)) {
-        rval = escape_unicode(pystr);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "first argument must be a string, not %.80s",
-                     Py_TYPE(pystr)->tp_name);
-        return NULL;
-    }
-    return rval;
+    return escape_unicode(pystr);
 }
 
 static void
@@ -2080,18 +2059,9 @@ static PyType_Spec PyEncoderType_spec = {
 };
 
 static PyMethodDef speedups_methods[] = {
-    {"encode_basestring_ascii",
-        py_encode_basestring_ascii,
-        METH_O,
-        pydoc_encode_basestring_ascii},
-    {"encode_basestring",
-        py_encode_basestring,
-        METH_O,
-        pydoc_encode_basestring},
-    {"scanstring",
-        py_scanstring,
-        METH_VARARGS,
-        pydoc_scanstring},
+    PY_ENCODE_BASESTRING_ASCII_METHODDEF
+    PY_ENCODE_BASESTRING_METHODDEF
+    PY_SCANSTRING_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

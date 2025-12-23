@@ -1,0 +1,4 @@
+Add binary output format to :mod:`profiling.sampling` for compact storage of
+profiling data. The new ``--binary`` option captures samples to a file that
+can be converted to other formats using the ``replay`` command. Patch by
+Pablo Galindo

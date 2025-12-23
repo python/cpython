@@ -397,9 +397,12 @@ class Scanner:
         s = _parser.State()
         s.flags = flags
         for phrase, action in lexicon:
+            sub_pattern = _parser.parse(phrase, flags)
+            if sub_pattern.state.groups != 1:
+                raise ValueError("Cannot use capturing groups in re.Scanner")
             gid = s.opengroup()
             p.append(_parser.SubPattern(s, [
-                (SUBPATTERN, (gid, 0, 0, _parser.parse(phrase, flags))),
+                (SUBPATTERN, (gid, 0, 0, sub_pattern)),
                 ]))
             s.closegroup(gid, p[-1])
         p = _parser.SubPattern(s, [(BRANCH, (None, p))])

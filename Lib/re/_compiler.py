@@ -375,7 +375,7 @@ def _optimize_charset(charset, iscased=None, fixup=None, fixes=None):
     # less significant byte is a bit index in the chunk (just like the
     # CHARSET matching).
 
-    charmap = bytes(charmap) # should be hashable
+    charmap = charmap.take_bytes() # should be hashable
     comps = {}
     mapping = bytearray(256)
     block = 0

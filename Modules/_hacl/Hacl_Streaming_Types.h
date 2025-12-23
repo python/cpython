@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_Streaming_Types_H
-#define __Hacl_Streaming_Types_H
+#ifndef Hacl_Streaming_Types_H
+#define Hacl_Streaming_Types_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -68,5 +68,5 @@ typedef struct Hacl_Streaming_MD_state_64_s Hacl_Streaming_MD_state_64;
 }
 #endif
 
-#define __Hacl_Streaming_Types_H_DEFINED
-#endif
+#define Hacl_Streaming_Types_H_DEFINED
+#endif /* Hacl_Streaming_Types_H */

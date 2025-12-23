@@ -286,6 +286,7 @@ Known values:
     Python 3.15a1 3653 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
     Python 3.15a1 3654 (Fix missing exception handlers in logical expression)
     Python 3.15a1 3655 (Fix miscompilation of some module-level annotations)
+    Python 3.15a1 3656 (Add TRACE_RECORD instruction, for platforms with switch based interpreter)
 
 
     Python 3.16 will start with 3700
@@ -299,7 +300,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3655
+#define PYC_MAGIC_NUMBER 3656
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

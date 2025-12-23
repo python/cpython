@@ -1,4 +1,0 @@
-Fix potential memory leak when a reference cycle exists between an instance
-of :class:`typing.TypeAliasType`, :class:`typing.TypeVar`,
-:class:`typing.ParamSpec`, or :class:`typing.TypeVarTuple` and its
-``__name__`` attribute. Patch by Mikhail Efimov.

@@ -1,1 +1,0 @@
-Fix building with MSVC when passing option ``/std:clatest``.

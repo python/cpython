@@ -1,0 +1,1 @@
+Allow building CPython with the tail calling interpreter on Visual Studio 2026 MSVC. This provides a performance gain over the prior interpreter for MSVC. Patch by Ken Jin, Brandt Bucher, and Chris Eibl. With help from the MSVC team including Hulon Jenkins.

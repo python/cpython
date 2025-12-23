@@ -918,6 +918,14 @@ class TestDictFields(unittest.TestCase):
         reader = csv.DictReader(f, fieldnames)
         self.assertEqual(reader.fieldnames, fieldnames)
 
+    def test_dict_reader_set_fieldnames(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f)
+        self.assertIsNone(reader.fieldnames)
+        reader.fieldnames = fieldnames
+        self.assertEqual(reader.fieldnames, fieldnames)
+
     def test_dict_writer_fieldnames_rejects_iter(self):
         fieldnames = ["a", "b", "c"]
         f = StringIO()
@@ -933,6 +941,7 @@ class TestDictFields(unittest.TestCase):
     def test_dict_reader_fieldnames_is_optional(self):
         f = StringIO()
         reader = csv.DictReader(f, fieldnames=None)
+        self.assertIsNone(reader.fieldnames)
 
     def test_read_dict_fields(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
@@ -1353,6 +1362,19 @@ ghijkl\0mno
 ghi\0jkl
 """
 
+    sample15 = "\n\n\n"
+    sample16 = "abc\ndef\nghi"
+
+    sample17 = ["letter,offset"]
+    sample17.extend(f"{chr(ord('a') + i)},{i}" for i in range(20))
+    sample17.append("v,twenty_one")  # 'u' was skipped
+    sample17 = '\n'.join(sample17)
+
+    sample18 = ["letter,offset"]
+    sample18.extend(f"{chr(ord('a') + i)},{i}" for i in range(21))
+    sample18.append("v,twenty_one")  # 'u' was not skipped
+    sample18 = '\n'.join(sample18)
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
@@ -1373,6 +1395,11 @@ ghi\0jkl
         sniffer = csv.Sniffer()
         self.assertIs(sniffer.has_header(self.sample8), False)
         self.assertIs(sniffer.has_header(self.header2 + self.sample8), True)
+
+    def test_has_header_checks_20_rows(self):
+        sniffer = csv.Sniffer()
+        self.assertFalse(sniffer.has_header(self.sample17))
+        self.assertTrue(sniffer.has_header(self.sample18))
 
     def test_guess_quote_and_delimiter(self):
         sniffer = csv.Sniffer()
@@ -1423,6 +1450,10 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         dialect = sniffer.sniff(self.sample14)
         self.assertEqual(dialect.delimiter, '\0')
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, self.sample15)
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, self.sample16)
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
@@ -1436,6 +1467,56 @@ ghi\0jkl
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
+
+    def test_guess_delimiter_crlf_not_chosen(self):
+        # Ensure that we pick the real delimiter ("|") over "\r" in a tie.
+        sniffer = csv.Sniffer()
+        sample = "a|b\r\nc|d\r\ne|f\r\n"
+        self.assertEqual(sniffer.sniff(sample).delimiter, "|")
+        self.assertNotEqual(sniffer.sniff(sample).delimiter, "\r")
+
+    def test_zero_mode_tie_order_independence(self):
+        sniffer = csv.Sniffer()
+        # ":" appears in half the rows (1, 0, 1, 0) - a tie between
+        #     0 and 1 per line.
+        # "," appears once every row (true delimiter).
+        #
+        # Even if the zero-frequency bucket is appended vs. inserted, the tie
+        # yields an adjusted score of 0, so ":" should not be promoted and
+        # "," must be selected.
+        sample = (
+            "a,b:c\n"
+            "d,e\n"
+            "f,g:c\n"
+            "h,i\n"
+        )
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ",")
+
+    def test_zero_mode_tie_order_comma_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a,b\n"
+            "c:d\n"
+            "e,f\n"
+            "g:h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample)
+
+    def test_zero_mode_tie_order_colon_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a:b\n"
+            "c,d\n"
+            "e:f\n"
+            "g,h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
+            sniffer.sniff(sample)
+
 
 class NUL:
     def write(s, *args):

@@ -21,6 +21,14 @@ Some facts and figures:
 * reads and writes :mod:`gzip`, :mod:`bz2`, :mod:`compression.zstd`, and
   :mod:`lzma` compressed archives if the respective modules are available.
 
+  ..
+     The following paragraph should be similar to ../includes/optional-module.rst
+
+  If any of these :term:`optional modules <optional module>` are missing from
+  your copy of CPython, look for documentation from your distributor (that is,
+  whoever provided Python to you).
+  If you are the distributor, see :ref:`optional-module-requirements`.
+
 * read/write support for the POSIX.1-1988 (ustar) format.
 
 * read/write support for the GNU tar format including *longname* and *longlink*
@@ -198,7 +206,7 @@ Some facts and figures:
    .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The default compression level was reduced to 6 (down from 9).
       It is the default level used by most compression tools and a better
       tradeoff between speed and performance.
@@ -294,7 +302,7 @@ The :mod:`tarfile` module defines the following exceptions:
    The exception that was raised to reject the replacement member is available
    as :attr:`!BaseException.__context__`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 The following constants are available at the module level:
@@ -1146,7 +1154,7 @@ reused in custom filters:
   Note that this filter does not block *all* dangerous archive features.
   See :ref:`tarfile-further-verification`  for details.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.15
 
      Link targets are now normalized.
 

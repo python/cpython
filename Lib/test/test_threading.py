@@ -1776,6 +1776,7 @@ class SubinterpThreadingTests(BaseTestCase):
         self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
+    @support.skip_if_sanitizer(thread=True, memory=True)
     def test_daemon_threads_fatal_error(self):
         import_module("_testcapi")
         subinterp_code = f"""if 1:

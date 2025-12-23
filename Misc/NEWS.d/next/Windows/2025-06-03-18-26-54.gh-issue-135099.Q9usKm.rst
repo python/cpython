@@ -1,2 +1,0 @@
-Fix a crash that could occur on Windows when a background thread waits on a
-:c:type:`PyMutex` while the main thread is shutting down the interpreter.

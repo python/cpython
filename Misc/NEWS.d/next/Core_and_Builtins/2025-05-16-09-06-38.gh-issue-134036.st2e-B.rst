@@ -1,2 +1,0 @@
-Improve :exc:`SyntaxError` message when using invalid :keyword:`raise`
-statements.

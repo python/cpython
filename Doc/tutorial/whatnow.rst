@@ -30,7 +30,7 @@ the set are:
 
 More Python resources:
 
-* https://www.python.org:  The major Python web site.  It contains code,
+* https://www.python.org:  The major Python website.  It contains code,
   documentation, and pointers to Python-related pages around the web.
 
 * https://docs.python.org:  Fast access to Python's  documentation.

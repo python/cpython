@@ -1,2 +1,0 @@
-Remove compatibility shim for deprecated parameter *package* in
-:func:`importlib.resources.files`. Patch by Semyon Moroz.

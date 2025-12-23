@@ -37,10 +37,11 @@
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
 @MODULE__JSON_TRUE@_json _json.c
 @MODULE__LSPROF_TRUE@_lsprof _lsprof.c rotatingtree.c
+@MODULE__MATH_INTEGER_TRUE@_math_integer mathintegermodule.c
 @MODULE__PICKLE_TRUE@_pickle _pickle.c
 @MODULE__QUEUE_TRUE@_queue _queuemodule.c
 @MODULE__RANDOM_TRUE@_random _randommodule.c
-@MODULE__REMOTE_DEBUGGING_TRUE@_remote_debugging _remote_debugging_module.c
+@MODULE__REMOTE_DEBUGGING_TRUE@_remote_debugging _remote_debugging/module.c _remote_debugging/object_reading.c _remote_debugging/code_objects.c _remote_debugging/frames.c _remote_debugging/frame_cache.c _remote_debugging/threads.c _remote_debugging/asyncio.c _remote_debugging/binary_io_writer.c _remote_debugging/binary_io_reader.c _remote_debugging/subprocess.c
 @MODULE__STRUCT_TRUE@_struct _struct.c
 
 # build supports subinterpreters
@@ -174,7 +175,7 @@
 @MODULE__XXTESTFUZZ_TRUE@_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 @MODULE__TESTBUFFER_TRUE@_testbuffer _testbuffer.c
 @MODULE__TESTINTERNALCAPI_TRUE@_testinternalcapi _testinternalcapi.c _testinternalcapi/test_lock.c _testinternalcapi/pytime.c _testinternalcapi/set.c _testinternalcapi/test_critical_sections.c _testinternalcapi/complex.c
-@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/heaptype.c _testcapi/abstract.c _testcapi/unicode.c _testcapi/dict.c _testcapi/set.c _testcapi/list.c _testcapi/tuple.c _testcapi/getargs.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/complex.c _testcapi/numbers.c _testcapi/structmember.c _testcapi/exceptions.c _testcapi/code.c _testcapi/buffer.c _testcapi/pyatomic.c _testcapi/run.c _testcapi/file.c _testcapi/codec.c _testcapi/immortal.c _testcapi/gc.c _testcapi/hash.c _testcapi/time.c _testcapi/bytes.c _testcapi/object.c _testcapi/modsupport.c _testcapi/monitoring.c _testcapi/config.c _testcapi/import.c _testcapi/frame.c _testcapi/type.c _testcapi/function.c
+@MODULE__TESTCAPI_TRUE@_testcapi _testcapimodule.c _testcapi/vectorcall.c _testcapi/heaptype.c _testcapi/abstract.c _testcapi/unicode.c _testcapi/dict.c _testcapi/set.c _testcapi/list.c _testcapi/tuple.c _testcapi/getargs.c _testcapi/datetime.c _testcapi/docstring.c _testcapi/mem.c _testcapi/watchers.c _testcapi/long.c _testcapi/float.c _testcapi/complex.c _testcapi/numbers.c _testcapi/structmember.c _testcapi/exceptions.c _testcapi/code.c _testcapi/buffer.c _testcapi/pyatomic.c _testcapi/run.c _testcapi/file.c _testcapi/codec.c _testcapi/immortal.c _testcapi/gc.c _testcapi/hash.c _testcapi/time.c _testcapi/bytes.c _testcapi/object.c _testcapi/modsupport.c _testcapi/monitoring.c _testcapi/config.c _testcapi/import.c _testcapi/frame.c _testcapi/type.c _testcapi/function.c _testcapi/module.c
 @MODULE__TESTLIMITEDCAPI_TRUE@_testlimitedcapi _testlimitedcapi.c _testlimitedcapi/abstract.c _testlimitedcapi/bytearray.c _testlimitedcapi/bytes.c _testlimitedcapi/codec.c _testlimitedcapi/complex.c _testlimitedcapi/dict.c _testlimitedcapi/eval.c _testlimitedcapi/float.c _testlimitedcapi/heaptype_relative.c _testlimitedcapi/import.c _testlimitedcapi/list.c _testlimitedcapi/long.c _testlimitedcapi/object.c _testlimitedcapi/pyos.c _testlimitedcapi/set.c _testlimitedcapi/sys.c _testlimitedcapi/tuple.c _testlimitedcapi/unicode.c _testlimitedcapi/vectorcall_limited.c _testlimitedcapi/version.c _testlimitedcapi/file.c
 @MODULE__TESTCLINIC_TRUE@_testclinic _testclinic.c
 @MODULE__TESTCLINIC_LIMITED_TRUE@_testclinic_limited _testclinic_limited.c

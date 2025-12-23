@@ -259,6 +259,10 @@ def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
             #        raise OSError('socket error', msg) from msg
             elif len(a) >= 2 and isinstance(a[1], OSError):
                 err = a[1]
+            # The error can also be wrapped as __cause__:
+            #    raise URLError(f"ftp error: {exp}") from exp
+            elif isinstance(err, urllib.error.URLError) and err.__cause__:
+                err = err.__cause__
             else:
                 break
         filter_error(err)

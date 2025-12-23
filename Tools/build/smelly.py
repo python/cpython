@@ -21,8 +21,6 @@ EXCEPTIONS = frozenset({
 })
 
 IGNORED_EXTENSION = "_ctypes_test"
-# Ignore constructor and destructor functions
-IGNORED_SYMBOLS = {'_init', '_fini'}
 
 
 def is_local_symbol_type(symtype):
@@ -34,19 +32,12 @@ def is_local_symbol_type(symtype):
     if symtype.islower() and symtype not in "uvw":
         return True
 
-    # Ignore the initialized data section (d and D) and the BSS data
-    # section. For example, ignore "__bss_start (type: B)"
-    # and "_edata (type: D)".
-    if symtype in "bBdD":
-        return True
-
     return False
 
 
 def get_exported_symbols(library, dynamic=False):
     print(f"Check that {library} only exports symbols starting with Py or _Py")
 
-    # Only look at dynamic symbols
     args = ['nm', '--no-sort']
     if dynamic:
         args.append('--dynamic')
@@ -88,8 +79,6 @@ def get_smelly_symbols(stdout, dynamic=False):
             continue
 
         if is_local_symbol_type(symtype):
-            local_symbols.append(result)
-        elif symbol in IGNORED_SYMBOLS:
             local_symbols.append(result)
         else:
             smelly_symbols.append(result)

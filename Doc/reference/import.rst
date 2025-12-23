@@ -359,21 +359,16 @@ of what happens during the loading portion of import::
     if spec.loader is None:
         # unsupported
         raise ImportError
-    if spec.origin is None and spec.submodule_search_locations is not None:
-        # namespace package
-        sys.modules[spec.name] = module
-    elif not hasattr(spec.loader, 'exec_module'):
-        module = spec.loader.load_module(spec.name)
-    else:
-        sys.modules[spec.name] = module
+
+    sys.modules[spec.name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
         try:
-            spec.loader.exec_module(module)
-        except BaseException:
-            try:
-                del sys.modules[spec.name]
-            except KeyError:
-                pass
-            raise
+            del sys.modules[spec.name]
+        except KeyError:
+            pass
+        raise
     return sys.modules[spec.name]
 
 Note the following details:
@@ -408,7 +403,10 @@ Note the following details:
 .. versionchanged:: 3.4
    The import system has taken over the boilerplate responsibilities of
    loaders.  These were previously performed by the
-   :meth:`importlib.abc.Loader.load_module` method.
+   ``importlib.abc.Loader.load_module`` method.
+
+.. versionchanged:: 3.15
+    The ``load_module`` method is no longer used.
 
 Loaders
 -------
@@ -443,7 +441,7 @@ import machinery will create the new module itself.
    The :meth:`~importlib.abc.Loader.create_module` method of loaders.
 
 .. versionchanged:: 3.4
-   The :meth:`~importlib.abc.Loader.load_module` method was replaced by
+   The ``importlib.abc.Loader.load_module`` method was replaced by
    :meth:`~importlib.abc.Loader.exec_module` and the import
    machinery assumed all the boilerplate responsibilities of loading.
 

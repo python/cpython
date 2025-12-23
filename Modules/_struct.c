@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce()
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -1505,6 +1506,53 @@ static formatdef lilendian_table[] = {
     {0}
 };
 
+/* Ensure endian table optimization happens exactly once across all interpreters */
+static _PyOnceFlag endian_tables_init_once = {0};
+
+static int
+init_endian_tables(void *Py_UNUSED(arg))
+{
+    const formatdef *native = native_table;
+    formatdef *other, *ptr;
+#if PY_LITTLE_ENDIAN
+    other = lilendian_table;
+#else
+    other = bigendian_table;
+#endif
+    /* Scan through the native table, find a matching
+        entry in the endian table and swap in the
+        native implementations whenever possible
+        (64-bit platforms may not have "standard" sizes) */
+    while (native->format != '\0' && other->format != '\0') {
+        ptr = other;
+        while (ptr->format != '\0') {
+            if (ptr->format == native->format) {
+                /* Match faster when formats are
+                    listed in the same order */
+                if (ptr == other)
+                    other++;
+                /* Only use the trick if the
+                    size matches */
+                if (ptr->size != native->size)
+                    break;
+                /* Skip float and double, could be
+                    "unknown" float format */
+                if (ptr->format == 'd' || ptr->format == 'f')
+                    break;
+                /* Skip _Bool, semantics are different for standard size */
+                if (ptr->format == '?')
+                    break;
+                ptr->pack = native->pack;
+                ptr->unpack = native->unpack;
+                break;
+            }
+            ptr++;
+        }
+        native++;
+    }
+    return 0;
+}
+
 
 static const formatdef *
 whichtable(const char **pfmt)
@@ -2710,47 +2758,8 @@ _structmodule_exec(PyObject *m)
         return -1;
     }
 
-    /* Check endian and swap in faster functions */
-    {
-        const formatdef *native = native_table;
-        formatdef *other, *ptr;
-#if PY_LITTLE_ENDIAN
-        other = lilendian_table;
-#else
-        other = bigendian_table;
-#endif
-        /* Scan through the native table, find a matching
-           entry in the endian table and swap in the
-           native implementations whenever possible
-           (64-bit platforms may not have "standard" sizes) */
-        while (native->format != '\0' && other->format != '\0') {
-            ptr = other;
-            while (ptr->format != '\0') {
-                if (ptr->format == native->format) {
-                    /* Match faster when formats are
-                       listed in the same order */
-                    if (ptr == other)
-                        other++;
-                    /* Only use the trick if the
-                       size matches */
-                    if (ptr->size != native->size)
-                        break;
-                    /* Skip float and double, could be
-                       "unknown" float format */
-                    if (ptr->format == 'd' || ptr->format == 'f')
-                        break;
-                    /* Skip _Bool, semantics are different for standard size */
-                    if (ptr->format == '?')
-                        break;
-                    ptr->pack = native->pack;
-                    ptr->unpack = native->unpack;
-                    break;
-                }
-                ptr++;
-            }
-            native++;
-        }
-    }
+    /* init cannot fail */
+    (void)_PyOnceFlag_CallOnce(&endian_tables_init_once, init_endian_tables, NULL);
 
     /* Add some symbolic constants to the module */
     state->StructError = PyErr_NewException("struct.error", NULL, NULL);

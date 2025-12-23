@@ -457,7 +457,7 @@ class Distribution(metaclass=abc.ABCMeta):
         try:
             return next(iter(cls._prefer_valid(cls.discover(name=name))))
         except StopIteration:
-            raise PackageNotFoundError(name)
+            raise PackageNotFoundError(name) from None
 
     @classmethod
     def discover(

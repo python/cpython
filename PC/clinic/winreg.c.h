@@ -73,19 +73,13 @@ PyDoc_STRVAR(winreg_HKEYType___enter____doc__,
 #define WINREG_HKEYTYPE___ENTER___METHODDEF    \
     {"__enter__", (PyCFunction)winreg_HKEYType___enter__, METH_NOARGS, winreg_HKEYType___enter____doc__},
 
-static PyHKEYObject *
+static PyObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self);
 
 static PyObject *
 winreg_HKEYType___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    PyHKEYObject *_return_value;
-
-    _return_value = winreg_HKEYType___enter___impl((PyHKEYObject *)self);
-    return_value = (PyObject *)_return_value;
-
-    return return_value;
+    return winreg_HKEYType___enter___impl((PyHKEYObject *)self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -1842,4 +1836,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=ce7e8e38884851fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97295995db2c24e9 input=a9049054013a1b77]*/

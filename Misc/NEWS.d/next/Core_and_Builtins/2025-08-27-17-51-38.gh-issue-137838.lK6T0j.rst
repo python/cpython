@@ -1,2 +1,0 @@
-Fix JIT trace buffer overrun by increasing possible exit stubs.
-Patch by Donghee Na.

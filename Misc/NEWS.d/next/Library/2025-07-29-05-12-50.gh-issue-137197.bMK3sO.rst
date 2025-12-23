@@ -1,2 +1,0 @@
-:class:`~ssl.SSLContext` objects can now set TLS 1.3 cipher suites
-via :meth:`~ssl.SSLContext.set_ciphersuites`.

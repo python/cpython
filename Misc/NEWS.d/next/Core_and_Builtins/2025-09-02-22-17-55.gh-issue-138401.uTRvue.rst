@@ -1,2 +1,0 @@
-Add missing validation of argument ``count`` in :func:`os.sendfile` to be
-non-negative.

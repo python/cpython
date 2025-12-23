@@ -1,2 +1,0 @@
-Fix trailing space before a wrapped long word if the line length is exactly
-*width* in :mod:`textwrap`.

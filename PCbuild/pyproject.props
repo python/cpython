@@ -13,6 +13,7 @@
     <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
     <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
     <GeneratedJitStencilsDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_$(Configuration)</GeneratedJitStencilsDir>
+    <GeneratedJitStencilsDir Condition="$(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_PGInstrument</GeneratedJitStencilsDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>

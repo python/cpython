@@ -1,1 +1,0 @@
-Exception text when trying to delete attributes of types was clarified.

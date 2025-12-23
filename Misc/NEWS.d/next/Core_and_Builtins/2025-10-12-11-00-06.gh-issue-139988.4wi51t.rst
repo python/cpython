@@ -1,2 +1,0 @@
-Fix a memory leak when failing to create a :class:`~typing.Union` type.
-Patch by Bénédikt Tran.

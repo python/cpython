@@ -1,2 +1,0 @@
-The ``time_clockid_converter()`` function now selects correct type for
-``clockid_t`` on Cygwin which fixes a build error.
