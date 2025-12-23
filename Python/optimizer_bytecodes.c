@@ -335,7 +335,7 @@ dummy_func(void) {
         i = sub_st;
     }
 
-    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
         assert(sym_matches_type(tuple_st, &PyTuple_Type));
         if (sym_is_const(ctx, sub_st)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
@@ -354,6 +354,8 @@ dummy_func(void) {
         else {
             res = sym_new_not_null(ctx);
         }
+        ts = tuple_st;
+        ss = sub_st;
     }
 
     op(_TO_BOOL, (value -- res)) {
