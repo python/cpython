@@ -9,14 +9,18 @@
 #define Py_REMOTE_DEBUGGING_H
 
 /* _GNU_SOURCE must be defined before any system headers */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE_BUILTIN
+#  ifndef Py_BUILD_CORE_MODULE
 #    define Py_BUILD_CORE_MODULE 1
+#  endif
 #endif
 
 #include "Python.h"
@@ -245,6 +249,8 @@ typedef struct {
     PyTypeObject *ThreadInfo_Type;
     PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
+    PyTypeObject *BinaryWriter_Type;
+    PyTypeObject *BinaryReader_Type;
 } RemoteDebuggingState;
 
 enum _ThreadState {

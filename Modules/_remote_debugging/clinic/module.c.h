@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
@@ -492,6 +493,659 @@ _remote_debugging_RemoteUnwinder_resume_threads(PyObject *self, PyObject *Py_UNU
     Py_END_CRITICAL_SECTION();
 
     return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter___init____doc__,
+"BinaryWriter(filename, sample_interval_us, start_time_us, *,\n"
+"             compression=0)\n"
+"--\n"
+"\n"
+"High-performance binary writer for profiling data.\n"
+"\n"
+"Arguments:\n"
+"    filename: Path to output file\n"
+"    sample_interval_us: Sampling interval in microseconds\n"
+"    start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)\n"
+"    compression: 0=none, 1=zstd (default: 0)\n"
+"\n"
+"Use as a context manager or call finalize() when done.");
+
+static int
+_remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
+                                             const char *filename,
+                                             unsigned long long sample_interval_us,
+                                             unsigned long long start_time_us,
+                                             int compression);
+
+static int
+_remote_debugging_BinaryWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(filename), &_Py_ID(sample_interval_us), &_Py_ID(start_time_us), &_Py_ID(compression), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filename", "sample_interval_us", "start_time_us", "compression", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BinaryWriter",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 3;
+    const char *filename;
+    unsigned long long sample_interval_us;
+    unsigned long long start_time_us;
+    int compression = 0;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(fastargs[0])) {
+        _PyArg_BadArgument("BinaryWriter", "argument 'filename'", "str", fastargs[0]);
+        goto exit;
+    }
+    Py_ssize_t filename_length;
+    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
+    if (filename == NULL) {
+        goto exit;
+    }
+    if (strlen(filename) != (size_t)filename_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(fastargs[1], &sample_interval_us)) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(fastargs[2], &start_time_us)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    compression = PyLong_AsInt(fastargs[3]);
+    if (compression == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _remote_debugging_BinaryWriter___init___impl((BinaryWriterObject *)self, filename, sample_interval_us, start_time_us, compression);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_write_sample__doc__,
+"write_sample($self, /, stack_frames, timestamp_us)\n"
+"--\n"
+"\n"
+"Write a sample to the binary file.\n"
+"\n"
+"Arguments:\n"
+"    stack_frames: List of InterpreterInfo objects\n"
+"    timestamp_us: Current timestamp in microseconds (from time.monotonic() * 1e6)");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF    \
+    {"write_sample", _PyCFunction_CAST(_remote_debugging_BinaryWriter_write_sample), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter_write_sample__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
+                                                 PyObject *stack_frames,
+                                                 unsigned long long timestamp_us);
+
+static PyObject *
+_remote_debugging_BinaryWriter_write_sample(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(stack_frames), &_Py_ID(timestamp_us), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"stack_frames", "timestamp_us", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "write_sample",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *stack_frames;
+    unsigned long long timestamp_us;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    stack_frames = args[0];
+    if (!_PyLong_UnsignedLongLong_Converter(args[1], &timestamp_us)) {
+        goto exit;
+    }
+    return_value = _remote_debugging_BinaryWriter_write_sample_impl((BinaryWriterObject *)self, stack_frames, timestamp_us);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_finalize__doc__,
+"finalize($self, /)\n"
+"--\n"
+"\n"
+"Finalize and close the binary file.\n"
+"\n"
+"Writes string/frame tables, footer, and updates header.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF    \
+    {"finalize", (PyCFunction)_remote_debugging_BinaryWriter_finalize, METH_NOARGS, _remote_debugging_BinaryWriter_finalize__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self);
+
+static PyObject *
+_remote_debugging_BinaryWriter_finalize(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryWriter_finalize_impl((BinaryWriterObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"Close the writer without finalizing (discards data).");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_remote_debugging_BinaryWriter_close, METH_NOARGS, _remote_debugging_BinaryWriter_close__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_close_impl(BinaryWriterObject *self);
+
+static PyObject *
+_remote_debugging_BinaryWriter_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryWriter_close_impl((BinaryWriterObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter___enter____doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Enter context manager.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)_remote_debugging_BinaryWriter___enter__, METH_NOARGS, _remote_debugging_BinaryWriter___enter____doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter___enter___impl(BinaryWriterObject *self);
+
+static PyObject *
+_remote_debugging_BinaryWriter___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryWriter___enter___impl((BinaryWriterObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter___exit____doc__,
+"__exit__($self, /, exc_type=None, exc_val=None, exc_tb=None)\n"
+"--\n"
+"\n"
+"Exit context manager, finalizing the file.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_remote_debugging_BinaryWriter___exit__), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryWriter___exit____doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
+                                             PyObject *exc_type,
+                                             PyObject *exc_val,
+                                             PyObject *exc_tb);
+
+static PyObject *
+_remote_debugging_BinaryWriter___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(exc_type), &_Py_ID(exc_val), &_Py_ID(exc_tb), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"exc_type", "exc_val", "exc_tb", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__exit__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *exc_type = Py_None;
+    PyObject *exc_val = Py_None;
+    PyObject *exc_tb = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        exc_type = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[1]) {
+        exc_val = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    exc_tb = args[2];
+skip_optional_pos:
+    return_value = _remote_debugging_BinaryWriter___exit___impl((BinaryWriterObject *)self, exc_type, exc_val, exc_tb);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryWriter_get_stats__doc__,
+"get_stats($self, /)\n"
+"--\n"
+"\n"
+"Get encoding statistics for the writer.\n"
+"\n"
+"Returns a dict with encoding statistics including repeat/full/suffix/pop-push\n"
+"record counts, frames written/saved, and compression ratio.");
+
+#define _REMOTE_DEBUGGING_BINARYWRITER_GET_STATS_METHODDEF    \
+    {"get_stats", (PyCFunction)_remote_debugging_BinaryWriter_get_stats, METH_NOARGS, _remote_debugging_BinaryWriter_get_stats__doc__},
+
+static PyObject *
+_remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self);
+
+static PyObject *
+_remote_debugging_BinaryWriter_get_stats(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryWriter_get_stats_impl((BinaryWriterObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader___init____doc__,
+"BinaryReader(filename)\n"
+"--\n"
+"\n"
+"High-performance binary reader for profiling data.\n"
+"\n"
+"Arguments:\n"
+"    filename: Path to input file\n"
+"\n"
+"Use as a context manager or call close() when done.");
+
+static int
+_remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
+                                             const char *filename);
+
+static int
+_remote_debugging_BinaryReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(filename), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"filename", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "BinaryReader",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    const char *filename;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(fastargs[0])) {
+        _PyArg_BadArgument("BinaryReader", "argument 'filename'", "str", fastargs[0]);
+        goto exit;
+    }
+    Py_ssize_t filename_length;
+    filename = PyUnicode_AsUTF8AndSize(fastargs[0], &filename_length);
+    if (filename == NULL) {
+        goto exit;
+    }
+    if (strlen(filename) != (size_t)filename_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = _remote_debugging_BinaryReader___init___impl((BinaryReaderObject *)self, filename);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader_replay__doc__,
+"replay($self, /, collector, progress_callback=None)\n"
+"--\n"
+"\n"
+"Replay samples through a collector.\n"
+"\n"
+"Arguments:\n"
+"    collector: Collector object with collect() method\n"
+"    progress_callback: Optional callable(current, total)\n"
+"\n"
+"Returns:\n"
+"    Number of samples replayed");
+
+#define _REMOTE_DEBUGGING_BINARYREADER_REPLAY_METHODDEF    \
+    {"replay", _PyCFunction_CAST(_remote_debugging_BinaryReader_replay), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryReader_replay__doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader_replay_impl(BinaryReaderObject *self,
+                                           PyObject *collector,
+                                           PyObject *progress_callback);
+
+static PyObject *
+_remote_debugging_BinaryReader_replay(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(collector), &_Py_ID(progress_callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"collector", "progress_callback", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "replay",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *collector;
+    PyObject *progress_callback = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    collector = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    progress_callback = args[1];
+skip_optional_pos:
+    return_value = _remote_debugging_BinaryReader_replay_impl((BinaryReaderObject *)self, collector, progress_callback);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader_get_info__doc__,
+"get_info($self, /)\n"
+"--\n"
+"\n"
+"Get metadata about the binary file.\n"
+"\n"
+"Returns:\n"
+"    Dict with file metadata");
+
+#define _REMOTE_DEBUGGING_BINARYREADER_GET_INFO_METHODDEF    \
+    {"get_info", (PyCFunction)_remote_debugging_BinaryReader_get_info, METH_NOARGS, _remote_debugging_BinaryReader_get_info__doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader_get_info_impl(BinaryReaderObject *self);
+
+static PyObject *
+_remote_debugging_BinaryReader_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryReader_get_info_impl((BinaryReaderObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader_get_stats__doc__,
+"get_stats($self, /)\n"
+"--\n"
+"\n"
+"Get reconstruction statistics from replay.\n"
+"\n"
+"Returns a dict with statistics about record types decoded and samples\n"
+"reconstructed during replay.");
+
+#define _REMOTE_DEBUGGING_BINARYREADER_GET_STATS_METHODDEF    \
+    {"get_stats", (PyCFunction)_remote_debugging_BinaryReader_get_stats, METH_NOARGS, _remote_debugging_BinaryReader_get_stats__doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader_get_stats_impl(BinaryReaderObject *self);
+
+static PyObject *
+_remote_debugging_BinaryReader_get_stats(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryReader_get_stats_impl((BinaryReaderObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"Close the reader and free resources.");
+
+#define _REMOTE_DEBUGGING_BINARYREADER_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_remote_debugging_BinaryReader_close, METH_NOARGS, _remote_debugging_BinaryReader_close__doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self);
+
+static PyObject *
+_remote_debugging_BinaryReader_close(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryReader_close_impl((BinaryReaderObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader___enter____doc__,
+"__enter__($self, /)\n"
+"--\n"
+"\n"
+"Enter context manager.");
+
+#define _REMOTE_DEBUGGING_BINARYREADER___ENTER___METHODDEF    \
+    {"__enter__", (PyCFunction)_remote_debugging_BinaryReader___enter__, METH_NOARGS, _remote_debugging_BinaryReader___enter____doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader___enter___impl(BinaryReaderObject *self);
+
+static PyObject *
+_remote_debugging_BinaryReader___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_BinaryReader___enter___impl((BinaryReaderObject *)self);
+}
+
+PyDoc_STRVAR(_remote_debugging_BinaryReader___exit____doc__,
+"__exit__($self, /, exc_type=None, exc_val=None, exc_tb=None)\n"
+"--\n"
+"\n"
+"Exit context manager, closing the file.");
+
+#define _REMOTE_DEBUGGING_BINARYREADER___EXIT___METHODDEF    \
+    {"__exit__", _PyCFunction_CAST(_remote_debugging_BinaryReader___exit__), METH_FASTCALL|METH_KEYWORDS, _remote_debugging_BinaryReader___exit____doc__},
+
+static PyObject *
+_remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
+                                             PyObject *exc_type,
+                                             PyObject *exc_val,
+                                             PyObject *exc_tb);
+
+static PyObject *
+_remote_debugging_BinaryReader___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(exc_type), &_Py_ID(exc_val), &_Py_ID(exc_tb), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"exc_type", "exc_val", "exc_tb", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__exit__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *exc_type = Py_None;
+    PyObject *exc_val = Py_None;
+    PyObject *exc_tb = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        exc_type = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[1]) {
+        exc_val = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    exc_tb = args[2];
+skip_optional_pos:
+    return_value = _remote_debugging_BinaryReader___exit___impl((BinaryReaderObject *)self, exc_type, exc_val, exc_tb);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_remote_debugging_zstd_available__doc__,
+"zstd_available($module, /)\n"
+"--\n"
+"\n"
+"Check if zstd compression is available.\n"
+"\n"
+"Returns:\n"
+"    True if zstd available, False otherwise");
+
+#define _REMOTE_DEBUGGING_ZSTD_AVAILABLE_METHODDEF    \
+    {"zstd_available", (PyCFunction)_remote_debugging_zstd_available, METH_NOARGS, _remote_debugging_zstd_available__doc__},
+
+static PyObject *
+_remote_debugging_zstd_available_impl(PyObject *module);
+
+static PyObject *
+_remote_debugging_zstd_available(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _remote_debugging_zstd_available_impl(module);
 }
 
 PyDoc_STRVAR(_remote_debugging_get_child_pids__doc__,
