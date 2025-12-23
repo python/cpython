@@ -1658,11 +1658,19 @@
         }
 
         case _LOAD_ATTR_WITH_HINT: {
+            JitOptRef owner;
             JitOptRef attr;
+            JitOptRef o;
+            owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             (void)hint;
+            o = owner;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
+            stack_pointer[0] = o;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 

@@ -2426,7 +2426,7 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
@@ -2462,13 +2462,15 @@ dummy_func(
 #else
             attr = PyStackRef_FromPyObjectNew(attr_o);
 #endif
-            PyStackRef_CLOSE(owner);
+            o = owner;
+            DEAD(owner);
         }
 
         macro(LOAD_ATTR_WITH_HINT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_WITH_HINT +
+            POP_TOP +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
