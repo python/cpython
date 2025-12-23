@@ -756,7 +756,7 @@ class TestLiveModeErrors(unittest.TestCase):
             mock.patch(
                 'profiling.sampling.live_collector.collector.LiveStatsCollector.init_curses',
                 autospec=True,
-                side_effect=functools.partial(self.mock_init_curses_side_effect, 750)
+                side_effect=functools.partial(self.mock_init_curses_side_effect, 1000)
             ),
             mock.patch('curses.wrapper', side_effect=self.mock_curses_wrapper),
             mock.patch("sys.argv", args),
