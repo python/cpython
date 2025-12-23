@@ -323,7 +323,7 @@ See also :pep:`530`.
    asynchronous functions. Outer comprehensions implicitly become
    asynchronous.
 
-.. versionchanged:: 3.15
+.. versionchanged:: next
    Unpacking with the ``*`` operator is now allowed in the expression.
 
 
@@ -455,7 +455,7 @@ prevails.
    the key.  Starting with 3.8, the key is evaluated before the value, as
    proposed by :pep:`572`.
 
-.. versionchanged:: 3.15
+.. versionchanged:: next
    Unpacking with the ``**`` operator is now allowed in dictionary comprehensions.
 
 .. _genexpr:
