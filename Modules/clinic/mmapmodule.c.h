@@ -879,4 +879,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=fd9ca0ef425af934 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13545cf8b75bfad6 input=a9049054013a1b77]*/
