@@ -469,6 +469,32 @@ class PydocDocTest(unittest.TestCase):
         result, doc_loc = get_pydoc_text(xml.etree)
         self.assertEqual(doc_loc, "", "MODULE DOCS incorrectly includes a link")
 
+    def test_online_docs_link(self):
+        import encodings.idna
+        import importlib._bootstrap
+
+        module_docs = {
+            'encodings': 'codecs#module-encodings',
+            'encodings.idna': 'codecs#module-encodings.idna',
+        }
+
+        with unittest.mock.patch('pydoc_data.module_docs.module_docs', module_docs):
+            doc = pydoc.TextDoc()
+
+            basedir = os.path.dirname(encodings.__file__)
+            doc_link = doc.getdocloc(encodings, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings', doc_link)
+            self.assertNotIn('encodings.html', doc_link)
+
+            doc_link = doc.getdocloc(encodings.idna, basedir=basedir)
+            self.assertIsNotNone(doc_link)
+            self.assertIn('codecs#module-encodings.idna', doc_link)
+            self.assertNotIn('encodings.idna.html', doc_link)
+
+            doc_link = doc.getdocloc(importlib._bootstrap, basedir=basedir)
+            self.assertIsNone(doc_link)
+
     def test_getpager_with_stdin_none(self):
         previous_stdin = sys.stdin
         try:

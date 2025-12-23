@@ -28,11 +28,11 @@ repos:
         files: ^Tools/wasm/
       - id: ruff-format
         name: Run Ruff (format) on Doc/
-        args: [--check]
+        args: [--exit-non-zero-on-fix]
         files: ^Doc/
       - id: ruff-format
         name: Run Ruff (format) on Tools/wasm/
-        args: [--check, --config=Tools/wasm/.ruff.toml]
+        args: [--exit-non-zero-on-fix, --config=Tools/wasm/.ruff.toml]
         files: ^Tools/wasm/
 
   - repo: https://github.com/psf/black-pre-commit-mirror
