@@ -37,6 +37,10 @@ THREAD_STATUS_HAS_EXCEPTION = 1 << 4
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
+RETRY_DELAY = 0.1
+
+# Exceptions that can occur transiently when reading from a live process
+TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
@@ -1713,7 +1717,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                         )
                         if found:
                             break
-                        time.sleep(0.1)
+                        time.sleep(RETRY_DELAY)
                     else:
                         self.fail(
                             "Main thread did not start its busy work on time"
@@ -2505,7 +2509,11 @@ t.join()
         # Collect multiple samples for reliability
         results = []
         for _ in range(MAX_TRIES):
-            traces = unwinder.get_stack_trace()
+            try:
+                traces = unwinder.get_stack_trace()
+            except TRANSIENT_ERRORS:
+                time.sleep(RETRY_DELAY)
+                continue
             statuses = self._get_thread_statuses(traces)
 
             if thread_tid in statuses:
@@ -2515,7 +2523,7 @@ t.join()
                 if len(results) >= 3:
                     break
 
-            time.sleep(0.2)
+            time.sleep(RETRY_DELAY)
 
         # Check majority of samples match expected
         if not results:
@@ -2648,14 +2656,14 @@ sock.connect(('localhost', {port}))
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
         for _ in range(MAX_TRIES):
-            with contextlib.suppress(OSError, RuntimeError):
+            with contextlib.suppress(*TRANSIENT_ERRORS):
                 traces = unwinder.get_stack_trace()
                 for interp in traces:
                     for thread in interp.threads:
                         funcs = {f.funcname for f in thread.frame_info}
                         if required_funcs.issubset(funcs):
                             return thread.frame_info
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         return None
 
     def _sample_frames(
@@ -2674,7 +2682,7 @@ sock.connect(('localhost', {port}))
             frames = self._get_frames_with_retry(unwinder, required_funcs)
             if frames and len(frames) >= expected_frames:
                 break
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         client_socket.sendall(send_ack)
         return frames
 
