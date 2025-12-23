@@ -692,8 +692,8 @@ For more information, see `Registry Value Types
 .. data:: REG_BINARY
 
    Binary data in any form.
-   *value* must be a :term:`bytes-like object` for this type.
-   Returns a :class:`bytes` object, or :const:`None` for empty values.
+   *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_DWORD
 
@@ -720,6 +720,7 @@ For more information, see `Registry Value Types
 
    A Unicode symbolic link.
    *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_MULTI_SZ
 
@@ -732,6 +733,7 @@ For more information, see `Registry Value Types
 
    No defined value type.
    *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_QWORD
 
@@ -751,23 +753,26 @@ For more information, see `Registry Value Types
 
    A device-driver resource list.
    *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_FULL_RESOURCE_DESCRIPTOR
 
    A hardware setting.
    *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_RESOURCE_REQUIREMENTS_LIST
 
    A hardware resource list.
    *value* must be a :term:`bytes-like object` in Python for this type.
+   Returns a :class:`bytes` object, or ``None`` for empty values.
 
 .. data:: REG_SZ
 
    A null-terminated string.
    *value* must be a :class:`str` in Python for this type.
 
-Note that :const:`None` is also accepted for these types. when :const:`None`
+Note that ``None`` is also accepted for these types. When ``None``
 is passed, it is converted to the corresponding zero or empty value for the type
 (0 for integers, empty string for strings, empty list for multi-strings, etc.).
 
