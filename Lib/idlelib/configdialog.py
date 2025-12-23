@@ -1960,12 +1960,15 @@ class ExtPage(Frame):
     def load_extensions(self):
         "Fill self.extensions with data from the default and user configs."
         self.extensions = {}
+
         for ext_name in idleConf.GetExtensions(active_only=False):
             # Former built-in extensions are already filtered out.
             self.extensions[ext_name] = []
 
         for ext_name in self.extensions:
-            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
+            default = set(self.ext_defaultCfg.GetOptionList(ext_name))
+            user = set(self.ext_userCfg.GetOptionList(ext_name))
+            opt_list = sorted(default | user)
 
             # Bring 'enable' options to the beginning of the list.
             enables = [opt_name for opt_name in opt_list
@@ -1975,8 +1978,12 @@ class ExtPage(Frame):
             opt_list = enables + opt_list
 
             for opt_name in opt_list:
-                def_str = self.ext_defaultCfg.Get(
-                        ext_name, opt_name, raw=True)
+                if opt_name in user:
+                    def_str = self.ext_userCfg.Get(
+                            ext_name, opt_name, raw=True)
+                else:
+                    def_str = self.ext_defaultCfg.Get(
+                            ext_name, opt_name, raw=True)
                 try:
                     def_obj = {'True':True, 'False':False}[def_str]
                     opt_type = 'bool'
@@ -1988,9 +1995,14 @@ class ExtPage(Frame):
                         def_obj = def_str
                         opt_type = None
                 try:
-                    value = self.ext_userCfg.Get(
-                            ext_name, opt_name, type=opt_type, raw=True,
-                            default=def_obj)
+                    if opt_name in user:
+                        value = self.ext_userCfg.Get(
+                                ext_name, opt_name, type=opt_type, raw=True,
+                                default=def_obj)
+                    else:
+                        value = self.ext_defaultCfg.Get(
+                                ext_name, opt_name, type=opt_type, raw=True,
+                                default=def_obj)
                 except ValueError:  # Need this until .Get fixed.
                     value = def_obj  # Bad values overwritten by entry.
                 var = StringVar(self)
@@ -2054,10 +2066,11 @@ class ExtPage(Frame):
         default = opt['default']
         value = opt['var'].get().strip() or default
         opt['var'].set(value)
-        # if self.defaultCfg.has_section(section):
-        # Currently, always true; if not, indent to return.
-        if (value == default):
+
+        # Only save option in user config if it differs from the default
+        if self.ext_defaultCfg.has_section(section) and value == default:
             return self.ext_userCfg.RemoveOption(section, name)
+
         # Set the option.
         return self.ext_userCfg.SetOption(section, name, value)
 
