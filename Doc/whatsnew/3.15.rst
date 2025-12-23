@@ -562,6 +562,9 @@ locale
   but included in the language code.
   (Contributed by Serhiy Storchaka in :gh:`137729`.)
 
+* Undeprecate the :func:`locale.getdefaultlocale` function.
+  (Contributed by Victor Stinner in :gh:`130796`.)
+
 
 math
 ----
