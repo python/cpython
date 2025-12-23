@@ -188,7 +188,7 @@ _PyOptimizer_Optimize(
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
     _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
-    if (exit != NULL) {
+    if (exit != NULL && !progress_needed) {
         exit->executor = executor;
     }
     else {
@@ -710,7 +710,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
-        goto done;
+        goto full;
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
@@ -1773,6 +1773,7 @@ static int
 executor_clear(PyObject *op)
 {
     executor_invalidate(op);
+    return 0;
 }
 
 void

@@ -1,6 +1,5 @@
 import _remote_debugging
 import os
-import pstats
 import statistics
 import sys
 import sysconfig
@@ -8,10 +7,7 @@ import time
 from collections import deque
 from _colorize import ANSIColors
 
-from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector, FlamegraphCollector
-from .heatmap_collector import HeatmapCollector
-from .gecko_collector import GeckoCollector
+from .binary_collector import BinaryCollector
 from .constants import (
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
@@ -19,6 +15,7 @@ from .constants import (
     PROFILING_MODE_ALL,
     PROFILING_MODE_EXCEPTION,
 )
+from ._format_utils import fmt
 try:
     from .live_collector import LiveStatsCollector
 except ImportError:
@@ -135,13 +132,16 @@ class SampleProfiler:
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-            print(f"Sample rate: {sample_rate:.2f} samples/sec")
-            print(f"Error rate: {error_rate:.2f}%")
+            print(f"Captured {num_samples:n} samples in {fmt(running_time, 2)} seconds")
+            print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
+            print(f"Error rate: {fmt(error_rate, 2)}")
 
             # Print unwinder stats if stats collection is enabled
             if self.collect_stats:
                 self._print_unwinder_stats()
+
+            if isinstance(collector, BinaryCollector):
+                self._print_binary_stats(collector)
 
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
@@ -151,7 +151,7 @@ class SampleProfiler:
             print(
                 f"Warning: missed {expected_samples - num_samples} samples "
                 f"from the expected total of {expected_samples} "
-                f"({(expected_samples - num_samples) / expected_samples * 100:.2f}%)"
+                f"({fmt((expected_samples - num_samples) / expected_samples * 100, 2)}%)"
             )
 
     def _print_realtime_stats(self):
@@ -185,16 +185,16 @@ class SampleProfiler:
                 total = hits + partial + misses
                 if total > 0:
                     hit_pct = (hits + partial) / total * 100
-                    cache_stats_str = f" {ANSIColors.MAGENTA}Cache: {hit_pct:.1f}% ({hits}+{partial}/{misses}){ANSIColors.RESET}"
+                    cache_stats_str = f" {ANSIColors.MAGENTA}Cache: {fmt(hit_pct)}% ({hits}+{partial}/{misses}){ANSIColors.RESET}"
             except RuntimeError:
                 pass
 
         # Clear line and print stats
         print(
             f"\r\033[K{ANSIColors.BOLD_BLUE}Stats:{ANSIColors.RESET} "
-            f"{ANSIColors.YELLOW}{mean_hz:.1f}Hz ({mean_us_per_sample:.1f}µs){ANSIColors.RESET} "
-            f"{ANSIColors.GREEN}Min: {min_hz:.1f}Hz{ANSIColors.RESET} "
-            f"{ANSIColors.RED}Max: {max_hz:.1f}Hz{ANSIColors.RESET} "
+            f"{ANSIColors.YELLOW}{fmt(mean_hz)}Hz ({fmt(mean_us_per_sample)}µs){ANSIColors.RESET} "
+            f"{ANSIColors.GREEN}Min: {fmt(min_hz)}Hz{ANSIColors.RESET} "
+            f"{ANSIColors.RED}Max: {fmt(max_hz)}Hz{ANSIColors.RESET} "
             f"{ANSIColors.CYAN}N={self.total_samples}{ANSIColors.RESET}"
             f"{cache_stats_str}",
             end="",
@@ -224,10 +224,10 @@ class SampleProfiler:
         misses_pct = (frame_cache_misses / total_lookups * 100) if total_lookups > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Frame Cache:{ANSIColors.RESET}")
-        print(f"    Total samples:    {total_samples:,}")
-        print(f"    Full hits:        {frame_cache_hits:,} ({ANSIColors.GREEN}{hits_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Partial hits:     {frame_cache_partial_hits:,} ({ANSIColors.YELLOW}{partial_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Misses:           {frame_cache_misses:,} ({ANSIColors.RED}{misses_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    Total samples:    {total_samples:n}")
+        print(f"    Full hits:        {frame_cache_hits:n} ({ANSIColors.GREEN}{fmt(hits_pct)}%{ANSIColors.RESET})")
+        print(f"    Partial hits:     {frame_cache_partial_hits:n} ({ANSIColors.YELLOW}{fmt(partial_pct)}%{ANSIColors.RESET})")
+        print(f"    Misses:           {frame_cache_misses:n} ({ANSIColors.RED}{fmt(misses_pct)}%{ANSIColors.RESET})")
 
         # Frame read stats
         frames_from_cache = stats.get('frames_read_from_cache', 0)
@@ -237,8 +237,8 @@ class SampleProfiler:
         memory_frame_pct = (frames_from_memory / total_frames * 100) if total_frames > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Frame Reads:{ANSIColors.RESET}")
-        print(f"    From cache:       {frames_from_cache:,} ({ANSIColors.GREEN}{cache_frame_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    From memory:      {frames_from_memory:,} ({ANSIColors.RED}{memory_frame_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    From cache:       {frames_from_cache:n} ({ANSIColors.GREEN}{fmt(cache_frame_pct)}%{ANSIColors.RESET})")
+        print(f"    From memory:      {frames_from_memory:n} ({ANSIColors.RED}{fmt(memory_frame_pct)}%{ANSIColors.RESET})")
 
         # Code object cache stats
         code_hits = stats.get('code_object_cache_hits', 0)
@@ -248,25 +248,72 @@ class SampleProfiler:
         code_misses_pct = (code_misses / total_code * 100) if total_code > 0 else 0
 
         print(f"  {ANSIColors.CYAN}Code Object Cache:{ANSIColors.RESET}")
-        print(f"    Hits:             {code_hits:,} ({ANSIColors.GREEN}{code_hits_pct:.1f}%{ANSIColors.RESET})")
-        print(f"    Misses:           {code_misses:,} ({ANSIColors.RED}{code_misses_pct:.1f}%{ANSIColors.RESET})")
+        print(f"    Hits:             {code_hits:n} ({ANSIColors.GREEN}{fmt(code_hits_pct)}%{ANSIColors.RESET})")
+        print(f"    Misses:           {code_misses:n} ({ANSIColors.RED}{fmt(code_misses_pct)}%{ANSIColors.RESET})")
 
         # Memory operations
         memory_reads = stats.get('memory_reads', 0)
         memory_bytes = stats.get('memory_bytes_read', 0)
         if memory_bytes >= 1024 * 1024:
-            memory_str = f"{memory_bytes / (1024 * 1024):.1f} MB"
+            memory_str = f"{fmt(memory_bytes / (1024 * 1024))} MB"
         elif memory_bytes >= 1024:
-            memory_str = f"{memory_bytes / 1024:.1f} KB"
+            memory_str = f"{fmt(memory_bytes / 1024)} KB"
         else:
             memory_str = f"{memory_bytes} B"
         print(f"  {ANSIColors.CYAN}Memory:{ANSIColors.RESET}")
-        print(f"    Read operations:  {memory_reads:,} ({memory_str})")
+        print(f"    Read operations:  {memory_reads:n} ({memory_str})")
 
         # Stale invalidations
         stale_invalidations = stats.get('stale_cache_invalidations', 0)
         if stale_invalidations > 0:
             print(f"  {ANSIColors.YELLOW}Stale cache invalidations: {stale_invalidations}{ANSIColors.RESET}")
+
+    def _print_binary_stats(self, collector):
+        """Print binary I/O encoding statistics."""
+        try:
+            stats = collector.get_stats()
+        except (ValueError, RuntimeError):
+            return  # Collector closed or stats unavailable
+
+        print(f"  {ANSIColors.CYAN}Binary Encoding:{ANSIColors.RESET}")
+
+        repeat_records = stats.get('repeat_records', 0)
+        repeat_samples = stats.get('repeat_samples', 0)
+        full_records = stats.get('full_records', 0)
+        suffix_records = stats.get('suffix_records', 0)
+        pop_push_records = stats.get('pop_push_records', 0)
+        total_records = stats.get('total_records', 0)
+
+        if total_records > 0:
+            repeat_pct = repeat_records / total_records * 100
+            full_pct = full_records / total_records * 100
+            suffix_pct = suffix_records / total_records * 100
+            pop_push_pct = pop_push_records / total_records * 100
+        else:
+            repeat_pct = full_pct = suffix_pct = pop_push_pct = 0
+
+        print(f"    Records:          {total_records:,}")
+        print(f"      RLE repeat:     {repeat_records:,} ({ANSIColors.GREEN}{repeat_pct:.1f}%{ANSIColors.RESET}) [{repeat_samples:,} samples]")
+        print(f"      Full stack:     {full_records:,} ({full_pct:.1f}%)")
+        print(f"      Suffix match:   {suffix_records:,} ({suffix_pct:.1f}%)")
+        print(f"      Pop-push:       {pop_push_records:,} ({pop_push_pct:.1f}%)")
+
+        frames_written = stats.get('total_frames_written', 0)
+        frames_saved = stats.get('frames_saved', 0)
+        compression_pct = stats.get('frame_compression_pct', 0)
+
+        print(f"  {ANSIColors.CYAN}Frame Efficiency:{ANSIColors.RESET}")
+        print(f"    Frames written:   {frames_written:,}")
+        print(f"    Frames saved:     {frames_saved:,} ({ANSIColors.GREEN}{compression_pct:.1f}%{ANSIColors.RESET})")
+
+        bytes_written = stats.get('bytes_written', 0)
+        if bytes_written >= 1024 * 1024:
+            bytes_str = f"{bytes_written / (1024 * 1024):.1f} MB"
+        elif bytes_written >= 1024:
+            bytes_str = f"{bytes_written / 1024:.1f} KB"
+        else:
+            bytes_str = f"{bytes_written} B"
+        print(f"    Bytes (pre-zstd): {bytes_str}")
 
 
 def _is_process_running(pid):
