@@ -4173,8 +4173,8 @@
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
                 assert(oparg == 1);
                 STAT_INC(CALL, hit);
-                res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
                 a = arg;
+                res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             }
             // _POP_TOP
             {

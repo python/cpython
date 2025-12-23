@@ -3991,9 +3991,9 @@ dummy_func(
 
             assert(oparg == 1);
             STAT_INC(CALL, hit);
+            a = arg;
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
-            a = arg;
         }
 
         macro(CALL_TYPE_1) =

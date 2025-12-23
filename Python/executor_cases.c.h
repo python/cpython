@@ -12821,8 +12821,8 @@
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             a = arg;
+            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             _tos_cache1 = a;
             _tos_cache0 = res;
             SET_CURRENT_CACHED_VALUES(2);
@@ -12844,8 +12844,8 @@
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             a = arg;
+            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             _tos_cache1 = a;
             _tos_cache0 = res;
             SET_CURRENT_CACHED_VALUES(2);
@@ -12868,8 +12868,8 @@
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             a = arg;
+            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             _tos_cache1 = a;
             _tos_cache0 = res;
             SET_CURRENT_CACHED_VALUES(2);
@@ -12893,8 +12893,8 @@
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             a = arg;
+            res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             _tos_cache1 = a;
             _tos_cache0 = res;
             SET_CURRENT_CACHED_VALUES(2);
