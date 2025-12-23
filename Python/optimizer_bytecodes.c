@@ -88,12 +88,10 @@ dummy_func(void) {
     op(_LOAD_FAST, (-- value)) {
         value = GETLOCAL(oparg);
         PyObject *const_val = sym_get_const(ctx, value);
-        PyCodeObject *co = get_current_code_object(ctx);
-        // We don't reason about free variables yet, so we need to forbid
-        // anything with those.
-        if (const_val != NULL && co->co_nfreevars == 0) {
+        if (const_val != NULL) {
             // It's safe to always borrow here, for
-            // the same reason as _LOAD_CONST.
+            // the same reason as _LOAD_CONST..
+            value = PyJitRef_Borrow(value);
             REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
         }
     }
@@ -101,10 +99,7 @@ dummy_func(void) {
     op(_LOAD_FAST_BORROW, (-- value)) {
         value = PyJitRef_Borrow(GETLOCAL(oparg));
         PyObject *const_val = sym_get_const(ctx, value);
-        PyCodeObject *co = get_current_code_object(ctx);
-        // We don't reason about free variables yet, so we need to forbid
-        // anything with those.
-        if (const_val != NULL && co->co_nfreevars == 0) {
+        if (const_val != NULL) {
             // It's safe to always borrow here, because
             // _LOAD_FAST_BORROW guarantees it.
             REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
@@ -128,7 +123,7 @@ dummy_func(void) {
     }
 
     op(_STORE_FAST, (value --)) {
-        GETLOCAL(oparg) = value;
+        GETLOCAL(oparg) = PyJitRef_StripReferenceInfo(value);
     }
 
     op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {

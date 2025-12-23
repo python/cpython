@@ -44,14 +44,14 @@
             JitOptRef value;
             value = GETLOCAL(oparg);
             PyObject *const_val = sym_get_const(ctx, value);
+            if (const_val != NULL) {
+                value = PyJitRef_Borrow(value);
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            PyCodeObject *co = get_current_code_object(ctx);
-            if (const_val != NULL && co->co_nfreevars == 0) {
-                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
-            }
             break;
         }
 
@@ -59,14 +59,13 @@
             JitOptRef value;
             value = PyJitRef_Borrow(GETLOCAL(oparg));
             PyObject *const_val = sym_get_const(ctx, value);
+            if (const_val != NULL) {
+                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
+            }
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = value;
             stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-            PyCodeObject *co = get_current_code_object(ctx);
-            if (const_val != NULL && co->co_nfreevars == 0) {
-                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)const_val);
-            }
             break;
         }
 
@@ -112,7 +111,7 @@
         case _STORE_FAST: {
             JitOptRef value;
             value = stack_pointer[-1];
-            GETLOCAL(oparg) = value;
+            GETLOCAL(oparg) = PyJitRef_StripReferenceInfo(value);
             CHECK_STACK_BOUNDS(-1);
             stack_pointer += -1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
