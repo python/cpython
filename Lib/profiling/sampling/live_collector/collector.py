@@ -348,7 +348,7 @@ class LiveStatsCollector(Collector):
         self.failed_samples += 1
         self.total_samples += 1
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         """Collect and display profiling data."""
         if self.start_time is None:
             self.start_time = time.perf_counter()

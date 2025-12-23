@@ -639,9 +639,10 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)hint;
+        o = owner;
     }
 
     op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
