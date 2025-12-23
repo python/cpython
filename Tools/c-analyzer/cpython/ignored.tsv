@@ -16,6 +16,7 @@ filename	funcname	name	reason
 ## indicators for resource availability/capability
 # (set during first init)
 Python/bootstrap_hash.c	py_getrandom	getrandom_works	-
+Python/bootstrap_hash.c	py_getentropy	getentropy_works	-
 Python/fileutils.c	-	_Py_open_cloexec_works	-
 Python/fileutils.c	set_inheritable	ioctl_works	-
 # (set lazily, *after* first init)
@@ -359,6 +360,7 @@ Parser/parser.c	-	soft_keywords	-
 Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-

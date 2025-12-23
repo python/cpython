@@ -1,1 +1,0 @@
-:mod:`dataclasses` Fix annotations for generated ``__init__`` methods by replacing the annotations that were in-line in the generated source code with ``__annotate__`` functions attached to the methods.

@@ -2,10 +2,6 @@ name: Reusable WASI
 
 on:
   workflow_call:
-    inputs:
-      config_hash:
-        required: true
-        type: string
 
 env:
   FORCE_COLOR: 1
@@ -17,7 +13,7 @@ jobs:
     timeout-minutes: 60
     env:
       WASMTIME_VERSION: 38.0.3
-      WASI_SDK_VERSION: 25
+      WASI_SDK_VERSION: 29
       WASI_SDK_PATH: /opt/wasi-sdk
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
@@ -53,7 +49,7 @@ jobs:
     - name: "Configure build Python"
       run: python3 Tools/wasm/wasi configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
-      run: python3 Tools/wasm/wasi.py make-build-python
+      run: python3 Tools/wasm/wasi make-build-python
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi configure-host -- --config-cache

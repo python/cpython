@@ -142,6 +142,9 @@ jobs:
       - name: Check for unsupported C global variables
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
+      - name: Check for undocumented C APIs
+        run: make check-c-api-docs
+
 
   build-windows:
     name: >-
@@ -188,7 +191,7 @@ jobs:
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-macos == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -205,7 +208,6 @@ jobs:
           free-threading: true
     uses: ./.github/workflows/reusable-macos.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
@@ -215,7 +217,7 @@ jobs:
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
       ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -237,7 +239,6 @@ jobs:
           bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
@@ -247,7 +248,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -303,7 +304,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -367,7 +368,7 @@ jobs:
   build-android:
     name: Android (${{ matrix.arch }})
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-android == 'true'
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -389,9 +390,9 @@ jobs:
   build-ios:
     name: iOS
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ios == 'true'
     timeout-minutes: 60
-    runs-on: macos-15
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
         with:
@@ -404,25 +405,23 @@ jobs:
       # https://github.com/actions/runner-images/issues/12751.
       - name: Select Xcode version
         run: |
-          sudo xcode-select --switch /Applications/Xcode_16.4.app
+          sudo xcode-select --switch /Applications/Xcode_15.4.app
 
       - name: Build and test
-        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone 16e,OS=18.5'
+        run: python3 Apple ci iOS --fast-ci --simulator 'iPhone SE (3rd generation),OS=17.5'
 
   build-wasi:
     name: 'WASI'
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-wasi == 'true'
     uses: ./.github/workflows/reusable-wasi.yml
-    with:
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
 
   test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     env:
       OPENSSL_VER: 3.0.18
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -529,7 +528,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -582,7 +581,7 @@ jobs:
     # ${{ '' } is a hack to nest jobs under the same sidebar category.
     name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -600,7 +599,6 @@ jobs:
     uses: ./.github/workflows/reusable-san.yml
     with:
       sanitizer: ${{ matrix.sanitizer }}
-      config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   cross-build-linux:
@@ -608,7 +606,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: build-context
-    if: needs.build-context.outputs.run-tests == 'true'
+    if: needs.build-context.outputs.run-ubuntu == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -714,25 +712,24 @@ jobs:
           test-hypothesis,
           cifuzz,
         allowed-skips: >-
-          ${{
-            !fromJSON(needs.build-context.outputs.run-docs)
-            && '
-            check-docs,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-docs) && 'check-docs,' || '' }}
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
             check-autoconf-regen,
             check-generated-files,
-            build-macos,
+            '
+            || ''
+          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-windows-tests) && 'build-windows,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ci-fuzz) && 'cifuzz,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-macos) && 'build-macos,' || '' }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-ubuntu)
+            && '
             build-ubuntu,
             build-ubuntu-ssltests-awslc,
             build-ubuntu-ssltests-openssl,
-            build-android,
-            build-ios,
-            build-wasi,
             test-hypothesis,
             build-asan,
             build-san,
@@ -740,18 +737,7 @@ jobs:
             '
             || ''
           }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-windows-tests)
-            && '
-            build-windows,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run-ci-fuzz)
-            && '
-            cifuzz,
-            '
-            || ''
-          }}
+          ${{ !fromJSON(needs.build-context.outputs.run-android) && 'build-android,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-ios) && 'build-ios,' || '' }}
+          ${{ !fromJSON(needs.build-context.outputs.run-wasi) && 'build-wasi,' || '' }}
         jobs: ${{ toJSON(needs) }}

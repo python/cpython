@@ -4367,7 +4367,7 @@ Stinner.
 .. date: 2025-09-21-14-33-17
 .. gh-issue: 116738
 .. nonce: vNaI4h
-.. section: Core and Builtins
+.. section: Library
 
 Make :mod:`mmap` thread-safe on the :term:`free threaded <free threading>`
 build.
@@ -4480,7 +4480,7 @@ pass
 .. date: 2025-09-02-22-17-55
 .. gh-issue: 138401
 .. nonce: uTRvue
-.. section: Core and Builtins
+.. section: Library
 
 Add missing validation of argument ``count`` in :func:`os.sendfile` to be
 non-negative.
@@ -4552,9 +4552,9 @@ auto-completion of imports.
 .. date: 2025-08-28-09-29-46
 .. gh-issue: 116738
 .. nonce: yLZJpV
-.. section: Core and Builtins
+.. section: Library
 
-Make :mod:`cProfile` thread-safe on the :term:`free threaded <free
+Make :mod:`!cProfile` thread-safe on the :term:`free threaded <free
 threading>` build.
 
 ..
@@ -4593,7 +4593,7 @@ shutdown. Patch by Kumar Aditya.
 .. date: 2025-08-21-06-31-42
 .. gh-issue: 138004
 .. nonce: FH2Hre
-.. section: Core and Builtins
+.. section: Library
 
 On Solaris/Illumos platforms, thread names are now encoded as ASCII to avoid
 errors on systems (e.g. OpenIndiana) that don't support non-ASCII names.
@@ -4603,7 +4603,7 @@ errors on systems (e.g. OpenIndiana) that don't support non-ASCII names.
 .. date: 2025-08-21-01-46-39
 .. gh-issue: 137976
 .. nonce: p4sb4x
-.. section: Core and Builtins
+.. section: Library
 
 Removed ``localtime`` from the list of reported system timezones.
 
@@ -4920,7 +4920,7 @@ time. Patch by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir
 .. date: 2025-07-18-08-43-35
 .. gh-issue: 116738
 .. nonce: i0HWtP
-.. section: Core and Builtins
+.. section: Library
 
 Make functions in :mod:`syslog` thread-safe on the :term:`free threaded
 <free threading>` build.
@@ -4930,7 +4930,7 @@ Make functions in :mod:`syslog` thread-safe on the :term:`free threaded
 .. date: 2025-07-15-10-03-57
 .. gh-issue: 116738
 .. nonce: oFttKl
-.. section: Core and Builtins
+.. section: Library
 
 Make functions in :mod:`pwd` thread-safe on the :term:`free threaded <free
 threading>` build.
@@ -4959,7 +4959,7 @@ Improve performance of :class:`int` hash calculations.
 .. date: 2025-07-12-09-59-14
 .. gh-issue: 136421
 .. nonce: ZD1rNj
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when initializing :mod:`datetime` concurrently.
 
@@ -4979,7 +4979,7 @@ lead to the perf integration not working correctly. Patch by Pablo Galindo.
 .. date: 2025-07-11-12-29-09
 .. gh-issue: 107545
 .. nonce: ipfl7U
-.. section: Core and Builtins
+.. section: Library
 
 Improve the error messages that may be raised by
 :meth:`~socket.socket.setsockopt`.
@@ -5285,7 +5285,7 @@ Fix regression in :exc:`SyntaxError` messages after :gh:`134036`.
 .. date: 2025-06-12-00-03-34
 .. gh-issue: 116738
 .. nonce: iBBAdo
-.. section: Core and Builtins
+.. section: Library
 
 Make functions in :mod:`grp` thread-safe on the :term:`free threaded <free
 threading>` build.
@@ -5295,7 +5295,7 @@ threading>` build.
 .. date: 2025-06-11-15-08-10
 .. gh-issue: 127319
 .. nonce: OVGFSZ
-.. section: Core and Builtins
+.. section: Library
 
 Set the ``allow_reuse_port`` class variable to ``False`` on the XMLRPC,
 logging, and HTTP servers. This matches the behavior in prior Python
@@ -5384,7 +5384,7 @@ in JIT-compiled code.
 .. date: 2025-06-02-13-57-40
 .. gh-issue: 116738
 .. nonce: ycJsL8
-.. section: Core and Builtins
+.. section: Library
 
 Make methods in :mod:`heapq` thread-safe on the :term:`free threaded <free
 threading>` build.
@@ -5424,7 +5424,7 @@ optimizing ``LOAD_FAST``.
 .. date: 2025-05-30-15-56-19
 .. gh-issue: 134908
 .. nonce: 3a7PxM
-.. section: Core and Builtins
+.. section: Library
 
 Fix crash when iterating over lines in a text file on the :term:`free
 threaded <free threading>` build.
@@ -5512,7 +5512,7 @@ Optimize ``_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW``.
 .. date: 2025-05-22-14-48-19
 .. gh-issue: 134381
 .. nonce: 2BXhth
-.. section: Core and Builtins
+.. section: Library
 
 Fix :exc:`RuntimeError` when using a not-started :class:`threading.Thread`
 after calling :func:`os.fork`
@@ -5823,7 +5823,7 @@ Update :attr:`Thread.native_id <threading.Thread.native_id>` after
 .. date: 2025-04-19-16-22-47
 .. gh-issue: 132732
 .. nonce: jgqhlF
-.. section: Core and Builtins
+.. section: Library
 
 Automatically constant evaluate bytecode operations marked as pure in the
 JIT optimizer.
@@ -5894,7 +5894,7 @@ Fix a crash when using threads inside of a subinterpreter.
 .. date: 2024-06-04-20-26-21
 .. gh-issue: 116738
 .. nonce: q_hPYq
-.. section: Core and Builtins
+.. section: Library
 
 Make the module :mod:`json` safe to use under the free-threading build.
 

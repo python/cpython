@@ -558,7 +558,7 @@ process and user.
 
 .. function:: initgroups(username, gid, /)
 
-   Call the system initgroups() to initialize the group access list with all of
+   Call the system ``initgroups()`` to initialize the group access list with all of
    the groups of which the specified username is a member, plus the specified
    group id.
 
@@ -3404,7 +3404,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. class:: statx_result
@@ -3661,7 +3661,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: STATX_TYPE
@@ -3690,7 +3690,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_FORCE_SYNC
 
@@ -3700,7 +3700,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_DONT_SYNC
 
@@ -3709,7 +3709,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 .. data:: AT_STATX_SYNC_AS_STAT
 
@@ -3721,7 +3721,7 @@ features:
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. data:: AT_NO_AUTOMOUNT
@@ -3733,7 +3733,7 @@ features:
 
    .. availability:: Linux.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 .. function:: statvfs(path)

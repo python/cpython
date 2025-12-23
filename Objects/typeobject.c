@@ -81,7 +81,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) || defined(Py_DEBUG)
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -4343,14 +4343,6 @@ type_new_slots_bases(type_new_ctx *ctx)
 static int
 type_new_slots_impl(type_new_ctx *ctx, PyObject *dict)
 {
-    /* Are slots allowed? */
-    if (ctx->nslot > 0 && ctx->base->tp_itemsize != 0) {
-        PyErr_Format(PyExc_TypeError,
-                     "nonempty __slots__ not supported for subtype of '%s'",
-                     ctx->base->tp_name);
-        return -1;
-    }
-
     if (type_new_visit_slots(ctx) < 0) {
         return -1;
     }
@@ -4377,14 +4369,13 @@ type_new_slots(type_new_ctx *ctx, PyObject *dict)
     ctx->add_dict = 0;
     ctx->add_weak = 0;
     ctx->may_add_dict = (ctx->base->tp_dictoffset == 0);
-    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0
-                         && ctx->base->tp_itemsize == 0);
+    ctx->may_add_weak = (ctx->base->tp_weaklistoffset == 0);
 
     if (ctx->slots == NULL) {
         if (ctx->may_add_dict) {
             ctx->add_dict++;
         }
-        if (ctx->may_add_weak) {
+        if (ctx->may_add_weak && ctx->base->tp_itemsize == 0) {
             ctx->add_weak++;
         }
     }
@@ -4650,6 +4641,12 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     if (et->ht_slots != NULL) {
         PyMemberDef *mp = _PyHeapType_GET_MEMBERS(et);
         Py_ssize_t nslot = PyTuple_GET_SIZE(et->ht_slots);
+        if (ctx->base->tp_itemsize != 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "arbitrary __slots__ not supported for subtype of '%s'",
+                         ctx->base->tp_name);
+            return -1;
+        }
         for (Py_ssize_t i = 0; i < nslot; i++, mp++) {
             mp->name = PyUnicode_AsUTF8(
                 PyTuple_GET_ITEM(et->ht_slots, i));
@@ -4889,8 +4886,14 @@ type_new_init(type_new_ctx *ctx)
     set_tp_dict(type, dict);
 
     PyHeapTypeObject *et = (PyHeapTypeObject*)type;
-    et->ht_slots = ctx->slots;
-    ctx->slots = NULL;
+    if (ctx->slots && PyTuple_GET_SIZE(ctx->slots)) {
+        et->ht_slots = ctx->slots;
+        ctx->slots = NULL;
+    }
+    else {
+        et->ht_slots = NULL;
+        Py_CLEAR(ctx->slots);
+    }
 
     return type;
 
@@ -5874,21 +5877,13 @@ get_base_by_token_recursive(PyObject *bases, void *token)
 }
 
 int
-PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+_PyType_GetBaseByToken_Borrow(PyTypeObject *type, void *token, PyTypeObject **result)
 {
+    assert(token != NULL);
+    assert(PyType_Check(type));
+
     if (result != NULL) {
         *result = NULL;
-    }
-
-    if (token == NULL) {
-        PyErr_Format(PyExc_SystemError,
-                     "PyType_GetBaseByToken called with token=NULL");
-        return -1;
-    }
-    if (!PyType_Check(type)) {
-        PyErr_Format(PyExc_TypeError,
-                     "expected a type, got a '%T' object", type);
-        return -1;
     }
 
     if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -5899,7 +5894,7 @@ PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
     if (((PyHeapTypeObject*)type)->ht_token == token) {
 found:
         if (result != NULL) {
-            *result = (PyTypeObject *)Py_NewRef(type);
+            *result = type;
         }
         return 1;
     }
@@ -5931,6 +5926,30 @@ found:
         }
     }
     return 0;
+}
+
+int
+PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
+{
+    if (result != NULL) {
+         *result = NULL;
+    }
+    if (token == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "PyType_GetBaseByToken called with token=NULL");
+        return -1;
+    }
+    if (!PyType_Check(type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a type, got a '%T' object", type);
+        return -1;
+    }
+
+    int res = _PyType_GetBaseByToken_Borrow(type, token, result);
+    if (res > 0 && result) {
+        Py_INCREF(*result);
+    }
+    return res;
 }
 
 
@@ -6036,7 +6055,7 @@ static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
-    assert(_PyASCIIObject_CAST(name)->hash != -1);
+    assert(PyUnstable_Unicode_GET_CACHED_HASH(name) != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
     // We're releasing this under the lock for simplicity sake because it's always a
     // exact unicode object or Py_None so it's safe to do so.
@@ -6545,6 +6564,18 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     PyTypeObject *metatype = Py_TYPE(type);
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_INLINE_VALUES));
     assert(!_PyType_HasFeature(metatype, Py_TPFLAGS_MANAGED_DICT));
+
+#ifdef Py_GIL_DISABLED
+    // gh-139103: Enable deferred refcounting for functions assigned
+    // to type objects.  This is important for `dataclass.__init__`,
+    // which is generated dynamically.
+    if (value != NULL &&
+        PyFunction_Check(value) &&
+        !_PyObject_HasDeferredRefcount(value))
+    {
+        PyUnstable_Object_EnableDeferredRefcount(value);
+    }
+#endif
 
     PyObject *old_value = NULL;
     PyObject *descr = _PyType_LookupRef(metatype, name);

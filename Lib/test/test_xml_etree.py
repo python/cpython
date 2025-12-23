@@ -1436,17 +1436,39 @@ class IterparseTest(unittest.TestCase):
 
     def test_resource_warnings_not_exhausted(self):
         # Not exhausting the iterator still closes the underlying file (bpo-43292)
+        # Not closing before del should emit ResourceWarning
         it = ET.iterparse(SIMPLE_XMLFILE)
         with warnings_helper.check_no_resource_warning(self):
+            it.close()
             del it
             gc_collect()
 
         it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
+            del it
+            gc_collect()
+        # Not 'unclosed file'.
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
         with warnings_helper.check_no_resource_warning(self):
+            action, elem = next(it)
+            it.close()
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+            gc_collect()
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
             action, elem = next(it)
             self.assertEqual((action, elem.tag), ('end', 'element'))
             del it, elem
             gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
 
     def test_resource_warnings_failed_iteration(self):
         self.addCleanup(os_helper.unlink, TESTFN)
@@ -1461,15 +1483,40 @@ class IterparseTest(unittest.TestCase):
                 next(it)
             self.assertEqual(str(cm.exception),
                     'junk after document element: line 1, column 12')
+            it.close()
             del cm, it
             gc_collect()
+
+        it = ET.iterparse(TESTFN)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'document'))
+        with self.assertWarns(ResourceWarning) as wm:
+            with self.assertRaises(ET.ParseError) as cm:
+                next(it)
+            self.assertEqual(str(cm.exception),
+                    'junk after document element: line 1, column 12')
+            del cm, it
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(TESTFN), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
 
     def test_resource_warnings_exhausted(self):
         it = ET.iterparse(SIMPLE_XMLFILE)
         with warnings_helper.check_no_resource_warning(self):
             list(it)
+            it.close()
             del it
             gc_collect()
+
+        it = ET.iterparse(SIMPLE_XMLFILE)
+        with self.assertWarns(ResourceWarning) as wm:
+            list(it)
+            del it
+            gc_collect()
+        self.assertIn('unclosed iterparse iterator', str(wm.warning))
+        self.assertIn(repr(SIMPLE_XMLFILE), str(wm.warning))
+        self.assertEqual(wm.filename, __file__)
 
     def test_close_not_exhausted(self):
         iterparse = ET.iterparse
@@ -4655,6 +4702,19 @@ class C14NTest(unittest.TestCase):
                             expected = expected.replace(' attr="default"', '')
                             text = text.replace(' attr="default"', '')
                     self.assertEqual(expected, text)
+
+# --------------------------------------------------------------------
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated_version(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'VERSION' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+                getattr(ET, "VERSION")
+        self.assertEqual(cm.filename, __file__)
+
 
 # --------------------------------------------------------------------
 

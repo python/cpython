@@ -44,9 +44,9 @@ extern PyObject * _Py_CompileStringObjectWithModule(
  * no two calls to check recursion depth are more than this far
  * apart. In practice, that means it must be larger than the C
  * stack consumption of PyEval_EvalDefault */
-#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
-#  define _PyOS_LOG2_STACK_MARGIN 12
-#elif defined(Py_DEBUG) && defined(WIN32)
+#if (defined(Py_DEBUG) \
+     || defined(_Py_ADDRESS_SANITIZER) \
+     || defined(_Py_THREAD_SANITIZER))
 #  define _PyOS_LOG2_STACK_MARGIN 12
 #else
 #  define _PyOS_LOG2_STACK_MARGIN 11
@@ -58,6 +58,12 @@ extern PyObject * _Py_CompileStringObjectWithModule(
 #  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 3)
 #else
 #  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 2)
+#endif
+
+#ifdef _Py_THREAD_SANITIZER
+#  define _PyOS_MIN_STACK_SIZE (_PyOS_STACK_MARGIN_BYTES * 6)
+#else
+#  define _PyOS_MIN_STACK_SIZE (_PyOS_STACK_MARGIN_BYTES * 3)
 #endif
 
 
