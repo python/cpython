@@ -38,7 +38,7 @@ class Timer:
             self._cond.notify_all()
 
 
-class TestCase(unittest.TestCase):
+class TestScheduler(unittest.TestCase):
 
     def test_enter(self):
         l = []
@@ -220,6 +220,27 @@ class TestCase(unittest.TestCase):
             scheduler.enter(x, 1, fun, (x,))
         scheduler.run(blocking=False)
         self.assertEqual(l, [])
+
+
+class TestCancellations(unittest.TestCase):
+
+    def test_cancel_twice(self):
+        scheduler = sched.scheduler()
+        ev = scheduler.enter(0.01, 1, lambda: 0)
+        scheduler.cancel(ev)
+        self.assertRaises(ValueError, scheduler.cancel, ev)
+
+    def test_queue(self):
+        scheduler = sched.scheduler()
+        ev = scheduler.enter(0.01, 1, lambda: 0)
+        scheduler.cancel(ev)
+        self.assertEqual(list(scheduler.queue), [])
+
+    def test_empty(self):
+        scheduler = sched.scheduler()
+        ev = scheduler.enter(0.01, 1, lambda: 0)
+        scheduler.cancel(ev)
+        self.assertTrue(scheduler.empty())
 
 
 if __name__ == "__main__":
