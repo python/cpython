@@ -16,6 +16,7 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
@@ -45,6 +46,28 @@
 #  endif
 #endif
 
+#if defined(Py_GIL_DISABLED)
+#  if defined(Py_LIMITED_API) && !defined(_Py_OPAQUE_PYOBJECT)
+#    error "Py_LIMITED_API is not currently supported in the free-threaded build"
+#  endif
+
+#  if defined(_MSC_VER)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+
+#  if defined(__MINGW32__)
+#    include <intrin.h>             // __readgsqword()
+#  endif
+#endif // Py_GIL_DISABLED
+
+#ifdef _MSC_VER
+// Ignore MSC warning C4201: "nonstandard extension used: nameless
+// struct/union".  (Only generated for C standard versions less than C11, which
+// we don't *officially* support.)
+__pragma(warning(push))
+__pragma(warning(disable: 4201))
+#endif
+
 
 // Include Python header files
 #include "pyport.h"
@@ -55,7 +78,10 @@
 #include "pybuffer.h"
 #include "pystats.h"
 #include "pyatomic.h"
+#include "cpython/pylock.h"
+#include "critical_section.h"
 #include "object.h"
+#include "refcount.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
@@ -63,6 +89,7 @@
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
+#include "pyerrors.h"
 #include "longobject.h"
 #include "cpython/longintrepr.h"
 #include "boolobject.h"
@@ -78,6 +105,7 @@
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
+#include "cpython/monitoring.h"
 #include "cpython/funcobject.h"
 #include "cpython/classobject.h"
 #include "fileobject.h"
@@ -99,7 +127,6 @@
 #include "cpython/picklebufobject.h"
 #include "cpython/pytime.h"
 #include "codecs.h"
-#include "pyerrors.h"
 #include "pythread.h"
 #include "cpython/context.h"
 #include "modsupport.h"
@@ -108,6 +135,7 @@
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#include "audit.h"
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
@@ -119,6 +147,9 @@
 #include "fileutils.h"
 #include "cpython/pyfpe.h"
 #include "cpython/tracemalloc.h"
-#include "cpython/optimizer.h"
+
+#ifdef _MSC_VER
+__pragma(warning(pop))  // warning(disable: 4201)
+#endif
 
 #endif /* !Py_PYTHON_H */

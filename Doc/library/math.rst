@@ -1,5 +1,5 @@
-:mod:`math` --- Mathematical functions
-======================================
+:mod:`!math` --- Mathematical functions
+=======================================
 
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).
@@ -10,8 +10,8 @@
 
 --------------
 
-This module provides access to the mathematical functions defined by the C
-standard.
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -26,8 +26,99 @@ The following functions are provided by this module.  Except when explicitly
 noted otherwise, all return values are floats.
 
 
-Number-theoretic and representation functions
----------------------------------------------
+====================================================  ============================================
+**Floating point arithmetic**
+--------------------------------------------------------------------------------------------------
+:func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
+:func:`fabs(x) <fabs>`                                Absolute value of *x*
+:func:`floor(x)  <floor>`                             Floor of *x*, the largest integer less than or equal to *x*
+:func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
+:func:`fmax(x, y) <fmax>`                             Maximum of two floating-point values
+:func:`fmin(x, y) <fmin>`                             Minimum of two floating-point values
+:func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
+:func:`modf(x) <modf>`                                Fractional and integer parts of *x*
+:func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
+:func:`trunc(x) <trunc>`                              Integer part of *x*
+
+**Floating point manipulation functions**
+--------------------------------------------------------------------------------------------------
+:func:`copysign(x, y) <copysign>`                     Magnitude (absolute value) of *x* with the sign of *y*
+:func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
+:func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
+:func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isnormal(x) <isnormal>`                        Check if *x* is a normal number
+:func:`issubnormal(x) <issubnormal>`                  Check if *x* is a subnormal number
+:func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
+:func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
+:func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
+:func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
+:func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
+
+**Power, exponential and logarithmic functions**
+--------------------------------------------------------------------------------------------------
+:func:`cbrt(x) <cbrt>`                                Cube root of *x*
+:func:`exp(x) <exp>`                                  *e* raised to the power *x*
+:func:`exp2(x) <exp2>`                                *2* raised to the power *x*
+:func:`expm1(x) <expm1>`                              *e* raised to the power *x*, minus 1
+:func:`log(x, base) <log>`                            Logarithm of *x* to the given base (*e* by default)
+:func:`log1p(x) <log1p>`                              Natural logarithm of *1+x* (base *e*)
+:func:`log2(x) <log2>`                                Base-2 logarithm of *x*
+:func:`log10(x) <log10>`                              Base-10 logarithm of *x*
+:func:`pow(x, y) <math.pow>`                          *x* raised to the power *y*
+:func:`sqrt(x) <sqrt>`                                Square root of *x*
+
+**Summation and product functions**
+--------------------------------------------------------------------------------------------------
+:func:`dist(p, q) <dist>`                             Euclidean distance between two points *p* and *q* given as an iterable of coordinates
+:func:`fsum(iterable) <fsum>`                         Sum of values in the input *iterable*
+:func:`hypot(*coordinates) <hypot>`                   Euclidean norm of an iterable of coordinates
+:func:`prod(iterable, start) <prod>`                  Product of elements in the input *iterable* with a *start* value
+:func:`sumprod(p, q) <sumprod>`                       Sum of products from two iterables *p* and *q*
+
+**Angular conversion**
+--------------------------------------------------------------------------------------------------
+:func:`degrees(x) <degrees>`                          Convert angle *x* from radians to degrees
+:func:`radians(x) <radians>`                          Convert angle *x* from degrees to radians
+
+**Trigonometric functions**
+--------------------------------------------------------------------------------------------------
+:func:`acos(x) <acos>`                                Arc cosine of *x*
+:func:`asin(x) <asin>`                                Arc sine of *x*
+:func:`atan(x) <atan>`                                Arc tangent of *x*
+:func:`atan2(y, x) <atan2>`                           ``atan(y / x)``
+:func:`cos(x) <cos>`                                  Cosine of *x*
+:func:`sin(x) <sin>`                                  Sine of *x*
+:func:`tan(x) <tan>`                                  Tangent of *x*
+
+**Hyperbolic functions**
+--------------------------------------------------------------------------------------------------
+:func:`acosh(x) <acosh>`                              Inverse hyperbolic cosine of *x*
+:func:`asinh(x) <asinh>`                              Inverse hyperbolic sine of *x*
+:func:`atanh(x) <atanh>`                              Inverse hyperbolic tangent of *x*
+:func:`cosh(x) <cosh>`                                Hyperbolic cosine of *x*
+:func:`sinh(x) <sinh>`                                Hyperbolic sine of *x*
+:func:`tanh(x) <tanh>`                                Hyperbolic tangent of *x*
+
+**Special functions**
+--------------------------------------------------------------------------------------------------
+:func:`erf(x) <erf>`                                  `Error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
+:func:`erfc(x) <erfc>`                                `Complementary error function <https://en.wikipedia.org/wiki/Error_function>`_ at *x*
+:func:`gamma(x) <gamma>`                              `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at *x*
+:func:`lgamma(x) <lgamma>`                            Natural logarithm of the absolute value of the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at *x*
+
+**Constants**
+--------------------------------------------------------------------------------------------------
+:data:`pi`                                            *π* = 3.141592...
+:data:`e`                                             *e* = 2.718281...
+:data:`tau`                                           *τ* = 2\ *π* = 6.283185...
+:data:`inf`                                           Positive infinity
+:data:`nan`                                           "Not a number" (NaN)
+====================================================  ============================================
+
+
+Floating point arithmetic
+-------------------------
 
 .. function:: ceil(x)
 
@@ -36,43 +127,9 @@ Number-theoretic and representation functions
    which should return an :class:`~numbers.Integral` value.
 
 
-.. function:: comb(n, k)
-
-   Return the number of ways to choose *k* items from *n* items without repetition
-   and without order.
-
-   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
-
-   Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of
-   ``(1 + x)ⁿ``.
-
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
-
-   .. versionadded:: 3.8
-
-
-.. function:: copysign(x, y)
-
-   Return a float with the magnitude (absolute value) of *x* but the sign of
-   *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
-   returns *-1.0*.
-
-
 .. function:: fabs(x)
 
    Return the absolute value of *x*.
-
-
-.. function:: factorial(n)
-
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
-
-   .. versionchanged:: 3.10
-      Floats with integral values (like ``5.0``) are no longer accepted.
 
 
 .. function:: floor(x)
@@ -82,9 +139,50 @@ Number-theoretic and representation functions
    should return an :class:`~numbers.Integral` value.
 
 
+.. function:: fma(x, y, z)
+
+   Fused multiply-add operation. Return ``(x * y) + z``, computed as though with
+   infinite precision and range followed by a single round to the ``float``
+   format. This operation often provides better accuracy than the direct
+   expression ``(x * y) + z``.
+
+   This function follows the specification of the fusedMultiplyAdd operation
+   described in the IEEE 754 standard. The standard leaves one case
+   implementation-defined, namely the result of ``fma(0, inf, nan)``
+   and ``fma(inf, 0, nan)``. In these cases, ``math.fma`` returns a NaN,
+   and does not raise any exception.
+
+   .. versionadded:: 3.13
+
+
+.. function:: fmax(x, y)
+
+   Get the larger of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmax` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.2).
+
+   .. versionadded:: 3.15
+
+
+.. function:: fmin(x, y)
+
+   Get the smaller of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmin` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.3).
+
+   .. versionadded:: 3.15
+
+
 .. function:: fmod(x, y)
 
-   Return ``fmod(x, y)``, as defined by the platform C library. Note that the
+   Return the floating-point remainder of ``x / y``,
+   as defined by the platform C library function ``fmod(x, y)``. Note that the
    Python expression ``x % y`` may not return the same result.  The intent of the C
    standard is that ``fmod(x, y)`` be exactly (mathematically; to infinite
    precision) equal to ``x - n*y`` for some integer *n* such that the result has
@@ -97,6 +195,64 @@ Number-theoretic and representation functions
    floats, while Python's ``x % y`` is preferred when working with integers.
 
 
+.. function:: modf(x)
+
+   Return the fractional and integer parts of *x*.  Both results carry the sign
+   of *x* and are floats.
+
+   Note that :func:`modf` has a different call/return pattern
+   than its C equivalents: it takes a single argument and return a pair of
+   values, rather than returning its second return value through an 'output
+   parameter' (there is no such thing in Python).
+
+
+.. function:: remainder(x, y)
+
+   Return the IEEE 754-style remainder of *x* with respect to *y*.  For
+   finite *x* and finite nonzero *y*, this is the difference ``x - n*y``,
+   where ``n`` is the closest integer to the exact value of the quotient ``x /
+   y``.  If ``x / y`` is exactly halfway between two consecutive integers, the
+   nearest *even* integer is used for ``n``.  The remainder ``r = remainder(x,
+   y)`` thus always satisfies ``abs(r) <= 0.5 * abs(y)``.
+
+   Special cases follow IEEE 754: in particular, ``remainder(x, math.inf)`` is
+   *x* for any finite *x*, and ``remainder(x, 0)`` and
+   ``remainder(math.inf, x)`` raise :exc:`ValueError` for any non-NaN *x*.
+   If the result of the remainder operation is zero, that zero will have
+   the same sign as *x*.
+
+   On platforms using IEEE 754 binary floating point, the result of this
+   operation is always exactly representable: no rounding error is introduced.
+
+   .. versionadded:: 3.7
+
+
+.. function:: trunc(x)
+
+   Return *x* with the fractional part
+   removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
+   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
+   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
+
+
+For the :func:`ceil`, :func:`floor`, and :func:`modf` functions, note that *all*
+floating-point numbers of sufficiently large magnitude are exact integers.
+Python floats typically carry no more than 53 bits of precision (the same as the
+platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
+necessarily has no fractional bits.
+
+
+Floating point manipulation functions
+-------------------------------------
+
+.. function:: copysign(x, y)
+
+   Return a float with the magnitude (absolute value) of *x* but the sign of
+   *y*.  On platforms that support signed zeros, ``copysign(1.0, -0.0)``
+   returns *-1.0*.
+
+
 .. function:: frexp(x)
 
    Return the mantissa and exponent of *x* as the pair ``(m, e)``.  *m* is a float
@@ -104,37 +260,10 @@ Number-theoretic and representation functions
    returns ``(0.0, 0)``, otherwise ``0.5 <= abs(m) < 1``.  This is used to "pick
    apart" the internal representation of a float in a portable way.
 
-
-.. function:: fsum(iterable)
-
-   Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums.
-
-   The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
-   typical case where the rounding mode is half-even.  On some non-Windows
-   builds, the underlying C library uses extended precision addition and may
-   occasionally double-round an intermediate sum causing it to be off in its
-   least significant bit.
-
-   For further discussion and two alternative approaches, see the `ASPN cookbook
-   recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
-
-
-.. function:: gcd(*integers)
-
-   Return the greatest common divisor of the specified integer arguments.
-   If any of the arguments is nonzero, then the returned value is the largest
-   positive integer that is a divisor of all arguments.  If all arguments
-   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
-   returns ``0``.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.9
-      Added support for an arbitrary number of arguments. Formerly, only two
-      arguments were supported.
-
+   Note that :func:`frexp` has a different call/return pattern
+   than its C equivalents: it takes a single argument and return a pair of
+   values, rather than returning its second return value through an 'output
+   parameter' (there is no such thing in Python).
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
 
@@ -142,19 +271,21 @@ Number-theoretic and representation functions
    ``False`` otherwise.
 
    Whether or not two values are considered close is determined according to
-   given absolute and relative tolerances.
+   given absolute and relative tolerances.  If no errors occur, the result will
+   be: ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
 
    *rel_tol* is the relative tolerance -- it is the maximum allowed difference
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be greater than zero.
+   within about 9 decimal digits.  *rel_tol* must be nonnegative and less
+   than ``1.0``.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
-
-   If no errors occur, the result will be:
-   ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any nonzero ``x`` and
+   *rel_tol* less than ``1.0``.  So add an appropriate positive *abs_tol* argument
+   to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
    handled according to IEEE rules.  Specifically, ``NaN`` is not considered
@@ -176,6 +307,24 @@ Number-theoretic and representation functions
    .. versionadded:: 3.2
 
 
+.. function:: isnormal(x)
+
+   Return ``True`` if *x* is a normal number, that is a finite
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
+.. function:: issubnormal(x)
+
+   Return ``True`` if *x* is a subnormal number, that is a finite
+   nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
+   Return ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
 .. function:: isinf(x)
 
    Return ``True`` if *x* is a positive or negative infinity, and
@@ -187,41 +336,10 @@ Number-theoretic and representation functions
    Return ``True`` if *x* is a NaN (not a number), and ``False`` otherwise.
 
 
-.. function:: isqrt(n)
-
-   Return the integer square root of the nonnegative integer *n*. This is the
-   floor of the exact square root of *n*, or equivalently the greatest integer
-   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
-
-   For some applications, it may be more convenient to have the least integer
-   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
-   the exact square root of *n*. For positive *n*, this can be computed using
-   ``a = 1 + isqrt(n - 1)``.
-
-   .. versionadded:: 3.8
-
-
-.. function:: lcm(*integers)
-
-   Return the least common multiple of the specified integer arguments.
-   If all arguments are nonzero, then the returned value is the smallest
-   positive integer that is a multiple of all arguments.  If any of the arguments
-   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
-   returns ``1``.
-
-   .. versionadded:: 3.9
-
-
 .. function:: ldexp(x, i)
 
    Return ``x * (2**i)``.  This is essentially the inverse of function
    :func:`frexp`.
-
-
-.. function:: modf(x)
-
-   Return the fractional and integer parts of *x*.  Both results carry the sign
-   of *x* and are floats.
 
 
 .. function:: nextafter(x, y, steps=1)
@@ -244,79 +362,15 @@ Number-theoretic and representation functions
    .. versionchanged:: 3.12
       Added the *steps* argument.
 
-.. function:: perm(n, k=None)
 
-   Return the number of ways to choose *k* items from *n* items
-   without repetition and with order.
+.. function:: signbit(x)
 
-   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
 
-   If *k* is not specified or is None, then *k* defaults to *n*
-   and the function returns ``n!``.
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
 
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
+   .. versionadded:: 3.15
 
-   .. versionadded:: 3.8
-
-
-.. function:: prod(iterable, *, start=1)
-
-   Calculate the product of all the elements in the input *iterable*.
-   The default *start* value for the product is ``1``.
-
-   When the iterable is empty, return the start value.  This function is
-   intended specifically for use with numeric values and may reject
-   non-numeric types.
-
-   .. versionadded:: 3.8
-
-
-.. function:: remainder(x, y)
-
-   Return the IEEE 754-style remainder of *x* with respect to *y*.  For
-   finite *x* and finite nonzero *y*, this is the difference ``x - n*y``,
-   where ``n`` is the closest integer to the exact value of the quotient ``x /
-   y``.  If ``x / y`` is exactly halfway between two consecutive integers, the
-   nearest *even* integer is used for ``n``.  The remainder ``r = remainder(x,
-   y)`` thus always satisfies ``abs(r) <= 0.5 * abs(y)``.
-
-   Special cases follow IEEE 754: in particular, ``remainder(x, math.inf)`` is
-   *x* for any finite *x*, and ``remainder(x, 0)`` and
-   ``remainder(math.inf, x)`` raise :exc:`ValueError` for any non-NaN *x*.
-   If the result of the remainder operation is zero, that zero will have
-   the same sign as *x*.
-
-   On platforms using IEEE 754 binary floating-point, the result of this
-   operation is always exactly representable: no rounding error is introduced.
-
-   .. versionadded:: 3.7
-
-
-.. function:: sumprod(p, q)
-
-   Return the sum of products of values from two iterables *p* and *q*.
-
-   Raises :exc:`ValueError` if the inputs do not have the same length.
-
-   Roughly equivalent to::
-
-       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
-
-   For float and mixed int/float inputs, the intermediate products
-   and sums are computed with extended precision.
-
-   .. versionadded:: 3.12
-
-
-.. function:: trunc(x)
-
-   Return *x* with the fractional part
-   removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
-   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
-   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
-   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
@@ -343,20 +397,8 @@ Number-theoretic and representation functions
    .. versionadded:: 3.9
 
 
-Note that :func:`frexp` and :func:`modf` have a different call/return pattern
-than their C equivalents: they take a single argument and return a pair of
-values, rather than returning their second return value through an 'output
-parameter' (there is no such thing in Python).
-
-For the :func:`ceil`, :func:`floor`, and :func:`modf` functions, note that *all*
-floating-point numbers of sufficiently large magnitude are exact integers.
-Python floats typically carry no more than 53 bits of precision (the same as the
-platform C double type), in which case any float *x* with ``abs(x) >= 2**52``
-necessarily has no fractional bits.
-
-
-Power and logarithmic functions
--------------------------------
+Power, exponential and logarithmic functions
+--------------------------------------------
 
 .. function:: cbrt(x)
 
@@ -431,11 +473,11 @@ Power and logarithmic functions
 
 .. function:: pow(x, y)
 
-   Return ``x`` raised to the power ``y``.  Exceptional cases follow
+   Return *x* raised to the power *y*.  Exceptional cases follow
    the IEEE 754 standard as far as possible.  In particular,
    ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
-   when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
-   ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
+   when *x* is a zero or a NaN.  If both *x* and *y* are finite,
+   *x* is negative, and *y* is not an integer then ``pow(x, y)``
    is undefined, and raises :exc:`ValueError`.
 
    Unlike the built-in ``**`` operator, :func:`math.pow` converts both
@@ -451,6 +493,99 @@ Power and logarithmic functions
 .. function:: sqrt(x)
 
    Return the square root of *x*.
+
+
+Summation and product functions
+-------------------------------
+
+.. function:: dist(p, q)
+
+   Return the Euclidean distance between two points *p* and *q*, each
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
+
+   Roughly equivalent to::
+
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q, strict=True)))
+
+   .. versionadded:: 3.8
+
+
+.. function:: fsum(iterable)
+
+   Return an accurate floating-point sum of values in the iterable.  Avoids
+   loss of precision by tracking multiple intermediate partial sums.
+
+   The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
+   typical case where the rounding mode is half-even.  On some non-Windows
+   builds, the underlying C library uses extended precision addition and may
+   occasionally double-round an intermediate sum causing it to be off in its
+   least significant bit.
+
+   For further discussion and two alternative approaches, see the `ASPN cookbook
+   recipes for accurate floating-point summation
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
+
+
+.. function:: hypot(*coordinates)
+
+   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
+   This is the length of the vector from the origin to the point
+   given by the coordinates.
+
+   For a two dimensional point ``(x, y)``, this is equivalent to computing
+   the hypotenuse of a right triangle using the Pythagorean theorem,
+   ``sqrt(x*x + y*y)``.
+
+   .. versionchanged:: 3.8
+      Added support for n-dimensional points. Formerly, only the two
+      dimensional case was supported.
+
+   .. versionchanged:: 3.10
+      Improved the algorithm's accuracy so that the maximum error is
+      under 1 ulp (unit in the last place).  More typically, the result
+      is almost always correctly rounded to within 1/2 ulp.
+
+
+.. function:: prod(iterable, *, start=1)
+
+   Calculate the product of all the elements in the input *iterable*.
+   The default *start* value for the product is ``1``.
+
+   When the iterable is empty, return the start value.  This function is
+   intended specifically for use with numeric values and may reject
+   non-numeric types.
+
+   .. versionadded:: 3.8
+
+
+.. function:: sumprod(p, q)
+
+   Return the sum of products of values from two iterables *p* and *q*.
+
+   Raises :exc:`ValueError` if the inputs do not have the same length.
+
+   Roughly equivalent to::
+
+       sum(map(operator.mul, p, q, strict=True))
+
+   For float and mixed int/float inputs, the intermediate products
+   and sums are computed with extended precision.
+
+   .. versionadded:: 3.12
+
+
+Angular conversion
+------------------
+
+.. function:: degrees(x)
+
+   Convert angle *x* from radians to degrees.
+
+
+.. function:: radians(x)
+
+   Convert angle *x* from degrees to radians.
 
 
 Trigonometric functions
@@ -489,39 +624,6 @@ Trigonometric functions
    Return the cosine of *x* radians.
 
 
-.. function:: dist(p, q)
-
-   Return the Euclidean distance between two points *p* and *q*, each
-   given as a sequence (or iterable) of coordinates.  The two points
-   must have the same dimension.
-
-   Roughly equivalent to::
-
-       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
-
-   .. versionadded:: 3.8
-
-
-.. function:: hypot(*coordinates)
-
-   Return the Euclidean norm, ``sqrt(sum(x**2 for x in coordinates))``.
-   This is the length of the vector from the origin to the point
-   given by the coordinates.
-
-   For a two dimensional point ``(x, y)``, this is equivalent to computing
-   the hypotenuse of a right triangle using the Pythagorean theorem,
-   ``sqrt(x*x + y*y)``.
-
-   .. versionchanged:: 3.8
-      Added support for n-dimensional points. Formerly, only the two
-      dimensional case was supported.
-
-   .. versionchanged:: 3.10
-      Improved the algorithm's accuracy so that the maximum error is
-      under 1 ulp (unit in the last place).  More typically, the result
-      is almost always correctly rounded to within 1/2 ulp.
-
-
 .. function:: sin(x)
 
    Return the sine of *x* radians.
@@ -530,19 +632,6 @@ Trigonometric functions
 .. function:: tan(x)
 
    Return the tangent of *x* radians.
-
-
-Angular conversion
-------------------
-
-.. function:: degrees(x)
-
-   Convert angle *x* from radians to degrees.
-
-
-.. function:: radians(x)
-
-   Convert angle *x* from degrees to radians.
 
 
 Hyperbolic functions
@@ -592,7 +681,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
+   <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -628,6 +717,75 @@ Special functions
    .. versionadded:: 3.2
 
 
+Number-theoretic functions
+--------------------------
+
+For backward compatibility, the :mod:`math` module provides also aliases of
+the following functions from the :mod:`math.integer` module:
+
+.. list-table::
+
+   * - .. function:: comb(n, k)
+          :no-typesetting:
+
+       :func:`comb(n, k) <math.integer.comb>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and without order
+
+   * - .. function:: factorial(n)
+          :no-typesetting:
+
+       :func:`factorial(n) <math.integer.factorial>`
+     - *n* factorial
+
+   * - .. function:: gcd(*integers)
+          :no-typesetting:
+
+       :func:`gcd(*integers) <math.integer.gcd>`
+     - Greatest common divisor of the integer arguments
+
+   * - .. function:: isqrt(n)
+          :no-typesetting:
+
+       :func:`isqrt(n) <math.integer.isqrt>`
+     - Integer square root of a nonnegative integer *n*
+
+   * - .. function:: lcm(*integers)
+          :no-typesetting:
+
+       :func:`lcm(*integers) <math.integer.lcm>`
+     - Least common multiple of the integer arguments
+
+   * - .. function:: perm(n, k)
+          :no-typesetting:
+
+       :func:`perm(n, k) <math.integer.perm>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and with order
+
+.. versionadded:: 3.5
+   The :func:`gcd` function.
+
+.. versionadded:: 3.8
+   The :func:`comb`, :func:`perm` and :func:`isqrt` functions.
+
+.. versionadded:: 3.9
+   The :func:`lcm` function.
+
+.. versionchanged:: 3.9
+   Added support for an arbitrary number of arguments in the :func:`gcd`
+   function.
+   Formerly, only two arguments were supported.
+
+.. versionchanged:: 3.10
+   Floats with integral values (like ``5.0``) are no longer accepted in the
+   :func:`factorial` function.
+
+.. deprecated:: 3.15
+   These aliases are :term:`soft deprecated` in favor of the
+   :mod:`math.integer` functions.
+
+
 Constants
 ---------
 
@@ -646,7 +804,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
@@ -710,5 +868,5 @@ Constants
    Module :mod:`cmath`
       Complex number versions of many of these functions.
 
-.. |nbsp| unicode:: 0xA0
-   :trim:
+   Module :mod:`math.integer`
+      Integer-specific mathematics functions.

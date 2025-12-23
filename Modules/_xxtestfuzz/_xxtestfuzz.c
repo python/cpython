@@ -24,8 +24,13 @@ static PyObject* _fuzz_run(PyObject* self, PyObject* args) {
 }
 
 static PyMethodDef module_methods[] = {
-    {"run", (PyCFunction)_fuzz_run, METH_VARARGS, ""},
+    {"run", _fuzz_run, METH_VARARGS, ""},
     {NULL},
+};
+
+static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
 };
 
 static struct PyModuleDef _fuzzmodule = {
@@ -34,7 +39,7 @@ static struct PyModuleDef _fuzzmodule = {
         NULL,
         0,
         module_methods,
-        NULL,
+        module_slots,
         NULL,
         NULL,
         NULL
@@ -43,5 +48,5 @@ static struct PyModuleDef _fuzzmodule = {
 PyMODINIT_FUNC
 PyInit__xxtestfuzz(void)
 {
-    return PyModule_Create(&_fuzzmodule);
+    return PyModuleDef_Init(&_fuzzmodule);
 }

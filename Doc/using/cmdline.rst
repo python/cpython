@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -42,6 +42,7 @@ additional methods of invocation:
 * When called with standard input connected to a tty device, it prompts for
   commands and executes them until an EOF (an end-of-file character, you can
   produce that with :kbd:`Ctrl-D` on UNIX or :kbd:`Ctrl-Z, Enter` on Windows) is read.
+  For more on interactive mode, see :ref:`tut-interac`.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
 * When called with a directory name argument, it reads and executes an
@@ -71,6 +72,9 @@ source.
    level modules).
 
    .. audit-event:: cpython.run_command command cmdoption-c
+
+   .. versionchanged:: 3.14
+      *command* is automatically dedented before execution.
 
 .. option:: -m <module-name>
 
@@ -242,12 +246,22 @@ Miscellaneous options
 
 .. option:: -b
 
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
-   option is given twice (:option:`!-bb`).
+   Issue a warning when converting :class:`bytes` or :class:`bytearray` to
+   :class:`str` without specifying encoding or comparing :class:`!bytes` or
+   :class:`!bytearray` with :class:`!str` or :class:`!bytes` with :class:`int`.
+   Issue an error when the option is given twice (:option:`!-bb`).
 
    .. versionchanged:: 3.5
-      Affects comparisons of :class:`bytes` with :class:`int`.
+      Affects also comparisons of :class:`bytes` with :class:`int`.
+
+   .. deprecated:: 3.15
+
+      Deprecate :option:`-b` and :option:`!-bb` command line options
+      and schedule them to become no-op in Python 3.17.
+      These were primarily helpers for the Python 2 -> 3 transition.
+      Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+      for these cases; use a type checker instead.
+
 
 .. option:: -B
 
@@ -288,9 +302,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
@@ -358,8 +378,8 @@ Miscellaneous options
 .. option:: -R
 
    Turn on hash randomization. This option only has an effect if the
-   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
-   randomization is enabled by default.
+   :envvar:`PYTHONHASHSEED` environment variable is set to anything other
+   than ``random``, since hash randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`~object.__hash__` values of str and bytes objects
@@ -375,16 +395,18 @@ Miscellaneous options
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
 
+   .. versionadded:: 3.2.3
+
    .. versionchanged:: 3.7
       The option is no longer ignored.
-
-   .. versionadded:: 3.2.3
 
 
 .. option:: -s
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
+
+   See also :envvar:`PYTHONNOUSERSITE`.
 
    .. seealso::
 
@@ -437,6 +459,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -456,8 +479,10 @@ Miscellaneous options
    The *action* field is as explained above but only applies to warnings that
    match the remaining fields.
 
-   The *message* field must match the whole warning message; this match is
-   case-insensitive.
+   The *message* field must match the start of the warning message;
+   this match is case-insensitive.
+   If it starts and ends with a forward slash (``/``), it specifies
+   a regular expression, otherwise it specifies a literal string.
 
    The *category* field matches the warning category
    (ex: ``DeprecationWarning``). This must be a class name; the match test
@@ -466,6 +491,10 @@ Miscellaneous options
 
    The *module* field matches the (fully qualified) module name; this match is
    case-sensitive.
+   If it starts and ends with a forward slash (``/``), it specifies
+   a regular expression that the start of the fully qualified module name
+   must match, otherwise it specifies a literal string that the fully
+   qualified module name must be equal to.
 
    The *lineno* field matches the line number, where zero matches all line
    numbers and is thus equivalent to an omitted line number.
@@ -483,6 +512,9 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
+   .. versionchanged:: 3.15
+      Added regular expression support for *message* and *module*.
+
 
 .. option:: -x
 
@@ -497,43 +529,83 @@ Miscellaneous options
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`.
      See also :envvar:`PYTHONFAULTHANDLER`.
+
+     .. versionadded:: 3.3
+
    * ``-X showrefcount`` to output the total reference count and number of used
      memory blocks when the program finishes or after each statement in the
      interactive interpreter. This only works on :ref:`debug builds
      <debug-build>`.
+
+     .. versionadded:: 3.4
+
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames.
      See :func:`tracemalloc.start` and :envvar:`PYTHONTRACEMALLOC`
      for more information.
+
+     .. versionadded:: 3.4
+
    * ``-X int_max_str_digits`` configures the :ref:`integer string conversion
      length limitation <int_max_str_digits>`.  See also
      :envvar:`PYTHONINTMAXSTRDIGITS`.
+
+     .. versionadded:: 3.11
+
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
-     application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+     application.  Typical usage is ``python -X importtime -c 'import asyncio'``.
+
+     ``-X importtime=2`` enables additional output that indicates when an
+     imported module has already been loaded.  In such cases, the string
+     ``cached`` will be printed in both time columns.
+
+     See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+
+     .. versionadded:: 3.7
+
+     .. versionchanged:: 3.14
+
+         Added ``-X importtime=2`` to also trace imports of loaded modules,
+         and reserved values other than ``1`` and ``2`` for future use.
+
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
-     default.
+     default.  See also :envvar:`PYTHONDEVMODE`.
+
+     .. versionadded:: 3.7
+
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
      See also :envvar:`PYTHONUTF8`.
+
+     .. versionadded:: 3.7
+
    * ``-X pycache_prefix=PATH`` enables writing ``.pyc`` files to a parallel
      tree rooted at the given directory instead of to the code tree. See also
      :envvar:`PYTHONPYCACHEPREFIX`.
+
+     .. versionadded:: 3.8
+
    * ``-X warn_default_encoding`` issues a :class:`EncodingWarning` when the
      locale-specific default encoding is used for opening files.
      See also :envvar:`PYTHONWARNDEFAULTENCODING`.
+
+     .. versionadded:: 3.10
+
    * ``-X no_debug_ranges`` disables the inclusion of the tables mapping extra
      location information (end line, start column offset and end column offset)
      to every instruction in code objects. This is useful when smaller code
      objects and pyc files are desired as well as suppressing the extra visual
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
+
+     .. versionadded:: 3.11
+
    * ``-X frozen_modules`` determines whether or not frozen modules are
      ignored by the import machinery.  A value of ``on`` means they get
      imported and ``off`` means they are ignored.  The default is ``on``
@@ -542,17 +614,46 @@ Miscellaneous options
      Note that the :mod:`!importlib_bootstrap` and
      :mod:`!importlib_bootstrap_external` frozen modules are always used, even
      if this flag is set to ``off``. See also :envvar:`PYTHON_FROZEN_MODULES`.
+
+     .. versionadded:: 3.11
+
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
+
+     .. versionadded:: 3.12
+
+   * ``-X perf_jit`` enables support for the Linux ``perf`` profiler with DWARF
+     support. When this option is provided, the ``perf`` profiler will be able
+     to report Python calls using DWARF information. This option is only available on
+     some platforms and will do nothing if is not supported on the current
+     system. The default value is "off". See also :envvar:`PYTHON_PERF_JIT_SUPPORT`
+     and :ref:`perf_profiling`.
+
+     .. versionadded:: 3.13
+
+   * ``-X disable_remote_debug`` disables the remote debugging support as described
+     in :pep:`768`.  This includes both the functionality to schedule code for
+     execution in another process and the functionality to receive code for
+     execution in the current process.
+
+     This option is only available on some platforms and will do nothing
+     if is not supported on the current system. See also
+     :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
+
+     .. versionadded:: 3.14
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
      This option may be useful for users who need to limit CPU resources of a
      container system. See also :envvar:`PYTHON_CPU_COUNT`.
      If *n* is ``default``, nothing is overridden.
+
+     .. versionadded:: 3.13
+
    * :samp:`-X presite={package.module}` specifies a module that should be
      imported before the :mod:`site` module is executed and before the
      :mod:`__main__` module exists.  Therefore, the imported module isn't
@@ -560,55 +661,56 @@ Miscellaneous options
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
 
+     .. versionadded:: 3.13
+
+   * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
+     respectively. Setting to ``0`` is only available in builds configured with
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
+     :ref:`whatsnew313-free-threaded-cpython`.
+
+     .. versionadded:: 3.13
+
+   * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
+     to, by default, use a copy of context of the caller of
+     ``Thread.start()`` when starting.  Otherwise, threads will start
+     with an empty context.  If unset, the value of this option defaults
+     to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
+     :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X context_aware_warnings={0,1}` causes the
+     :class:`warnings.catch_warnings` context manager to use a
+     :class:`~contextvars.ContextVar` to store warnings filter state.  If
+     unset, the value of this option defaults to ``1`` on free-threaded builds
+     and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
+     bytecode in builds configured with :option:`--disable-gil`.  When disabled,
+     this also disables the specializing interpreter.  See also
+     :envvar:`PYTHON_TLBC`.
+
+     .. versionadded:: 3.14
+
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
-   .. versionchanged:: 3.2
-      The :option:`-X` option was added.
-
-   .. versionadded:: 3.3
-      The ``-X faulthandler`` option.
-
-   .. versionadded:: 3.4
-      The ``-X showrefcount`` and ``-X tracemalloc`` options.
-
-   .. versionadded:: 3.6
-      The ``-X showalloccount`` option.
-
-   .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
-
-   .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
-      ``close()`` exceptions in :class:`io.IOBase` destructor.
+   .. versionadded:: 3.2
 
    .. versionchanged:: 3.9
-      Using ``-X dev`` option, check *encoding* and *errors* arguments on
-      string encoding and decoding operations.
+      Removed the ``-X showalloccount`` option.
 
-      The ``-X showalloccount`` option has been removed.
-
-   .. versionadded:: 3.10
-      The ``-X warn_default_encoding`` option.
+   .. versionchanged:: 3.10
       Removed the ``-X oldparser`` option.
 
-   .. versionadded:: 3.11
-      The ``-X no_debug_ranges`` option.
+.. versionremoved:: 3.14
 
-   .. versionadded:: 3.11
-      The ``-X frozen_modules`` option.
+   :option:`!-J` is no longer reserved for use by Jython_,
+   and now has no special meaning.
 
-   .. versionadded:: 3.11
-      The ``-X int_max_str_digits`` option.
-
-   .. versionadded:: 3.12
-      The ``-X perf`` option.
-
-   .. versionadded:: 3.13
-      The ``-X cpu_count`` option.
-
-   .. versionadded:: 3.13
-      The ``-X presite`` option.
+   .. _Jython: https://www.jython.org/
 
 .. _using-on-controlling-color:
 
@@ -621,11 +723,11 @@ behavior can be controlled by setting different environment variables.
 
 Setting the environment variable ``TERM`` to ``dumb`` will disable color.
 
-If the environment variable ``FORCE_COLOR`` is set, then color will be
+If the |FORCE_COLOR|_ environment variable is set, then color will be
 enabled regardless of the value of TERM. This is useful on CI systems which
 aren’t terminals but can still display ANSI escape sequences.
 
-If the environment variable ``NO_COLOR`` is set, Python will disable all color
+If the |NO_COLOR|_ environment variable is set, Python will disable all color
 in the output. This takes precedence over ``FORCE_COLOR``.
 
 All these environment variables are used also by other tools to control color
@@ -633,15 +735,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-Options you shouldn't use
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. option:: -J
-
-   Reserved for use by Jython_.
-
-.. _Jython: https://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -755,6 +848,15 @@ conflict.
 
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
+
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
+   .. versionchanged:: 3.13
+      Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+      also executed. Emits audit events.
 
 
 .. envvar:: PYTHONUNBUFFERED
@@ -879,12 +981,16 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
 
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
+
+   .. versionchanged:: 3.15
+      Added regular expression support for *message* and *module*.
 
 
 .. envvar:: PYTHONFAULTHANDLER
@@ -914,11 +1020,16 @@ conflict.
 
 .. envvar:: PYTHONPROFILEIMPORTTIME
 
-   If this environment variable is set to a non-empty string, Python will
-   show how long each import takes.
+   If this environment variable is set to ``1``, Python will show
+   how long each import takes. If set to ``2``, Python will include output for
+   imported modules that have already been loaded.
    This is equivalent to setting the :option:`-X` ``importtime`` option.
 
    .. versionadded:: 3.7
+
+   .. versionchanged:: 3.14
+
+      Added ``PYTHONPROFILEIMPORTTIME=2`` to also trace imports of loaded modules.
 
 
 .. envvar:: PYTHONASYNCIODEBUG
@@ -955,10 +1066,10 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. versionadded:: 3.6
+
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
-
-   .. versionadded:: 3.6
 
 
 .. envvar:: PYTHONMALLOCSTATS
@@ -984,7 +1095,7 @@ conflict.
    'surrogatepass' are used.
 
    This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding()`.
+   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 
@@ -1108,6 +1219,30 @@ conflict.
 
    .. versionadded:: 3.12
 
+.. envvar:: PYTHON_PERF_JIT_SUPPORT
+
+   If this variable is set to a nonzero value, it enables support for
+   the Linux ``perf`` profiler so Python calls can be detected by it
+   using DWARF information.
+
+   If set to ``0``, disable Linux ``perf`` profiler support.
+
+   See also the :option:`-X perf_jit <-X>` command-line option
+   and :ref:`perf_profiling`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
+
+   If this variable is set to a non-empty string, it disables the remote
+   debugging feature described in :pep:`768`. This includes both the functionality
+   to schedule code for execution in another process and the functionality to
+   receive code for execution in the current process.
+
+   See also the :option:`-X disable_remote_debug` command-line option.
+
+   .. versionadded:: 3.14
+
 .. envvar:: PYTHON_CPU_COUNT
 
    If this variable is set to a positive integer, it overrides the return
@@ -1139,6 +1274,14 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_REPL
+
+   If this variable is set to any value, the interpreter will not attempt to
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
+
+   .. versionadded:: 3.13
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
@@ -1146,6 +1289,55 @@ conflict.
    user's home directory).
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off (needs Python configured with
+   the :option:`--disable-gil` build option).
+
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
+
+   If this variable is set to ``1`` then :class:`~threading.Thread` will,
+   by default, use a copy of context of the caller of ``Thread.start()``
+   when starting.  Otherwise, new threads will start with an empty context.
+   If unset, this variable defaults to ``1`` on free-threaded builds and to
+   ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_CONTEXT_AWARE_WARNINGS
+
+   If set to ``1`` then the :class:`warnings.catch_warnings` context
+   manager will use a :class:`~contextvars.ContextVar` to store warnings
+   filter state.  If unset, this variable defaults to ``1`` on
+   free-threaded builds and to ``0`` otherwise.  See :option:`-X
+   context_aware_warnings<-X>`.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_JIT
+
+   On builds where experimental just-in-time compilation is available, this
+   variable can force the JIT to be disabled (``0``) or enabled (``1``) at
+   interpreter startup.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_TLBC
+
+   If set to ``1`` enables thread-local bytecode. If set to ``0`` thread-local
+   bytecode and the specializing interpreter are disabled.  Only applies to
+   builds configured with :option:`--disable-gil`.
+
+   See also the :option:`-X tlbc <-X>` command-line option.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

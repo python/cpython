@@ -18,11 +18,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(PyTime_MIN, -2**63)
         self.assertEqual(PyTime_MAX, 2**63 - 1)
 
-    def check_clock(self, c_func, py_func):
-        t1 = c_func()
-        t2 = py_func()
-        self.assertAlmostEqual(t1, t2, delta=CLOCK_RES)
-
     def test_assecondsdouble(self):
         # Test PyTime_AsSecondsDouble()
         def ns_to_sec(ns):
@@ -58,14 +53,26 @@ class CAPITest(unittest.TestCase):
                 self.assertEqual(_testcapi.PyTime_AsSecondsDouble(ns),
                                  ns_to_sec(ns))
 
+    def check_clock(self, c_func, py_func):
+        t1 = c_func()
+        t2 = py_func()
+        self.assertAlmostEqual(t1, t2, delta=CLOCK_RES)
+
     def test_monotonic(self):
-        # Test PyTime_Monotonic()
+        # Test PyTime_Monotonic() and PyTime_MonotonicRaw()
         self.check_clock(_testcapi.PyTime_Monotonic, time.monotonic)
+        self.check_clock(_testcapi.PyTime_MonotonicRaw, time.monotonic)
 
     def test_perf_counter(self):
-        # Test PyTime_PerfCounter()
+        # Test PyTime_PerfCounter() and PyTime_PerfCounterRaw()
         self.check_clock(_testcapi.PyTime_PerfCounter, time.perf_counter)
+        self.check_clock(_testcapi.PyTime_PerfCounterRaw, time.perf_counter)
 
     def test_time(self):
-        # Test PyTime_time()
+        # Test PyTime_Time() and PyTime_TimeRaw()
         self.check_clock(_testcapi.PyTime_Time, time.time)
+        self.check_clock(_testcapi.PyTime_TimeRaw, time.time)
+
+
+if __name__ == "__main__":
+    unittest.main()

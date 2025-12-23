@@ -31,6 +31,18 @@ Unicode Type
 These are the basic Unicode object types used for the Unicode implementation in
 Python:
 
+.. c:var:: PyTypeObject PyUnicode_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
+
+
 .. c:type:: Py_UCS4
             Py_UCS2
             Py_UCS1
@@ -42,19 +54,6 @@ Python:
    .. versionadded:: 3.3
 
 
-.. c:type:: Py_UNICODE
-
-   This is a typedef of :c:type:`wchar_t`, which is a 16-bit type or 32-bit type
-   depending on the platform.
-
-   .. versionchanged:: 3.3
-      In previous versions, this was a 16-bit type or a 32-bit type depending on
-      whether you selected a "narrow" or "wide" Unicode version of Python at
-      build time.
-
-   .. deprecated-removed:: 3.13 3.15
-
-
 .. c:type:: PyASCIIObject
             PyCompactUnicodeObject
             PyUnicodeObject
@@ -64,12 +63,6 @@ Python:
    that deal with Unicode objects take and return :c:type:`PyObject` pointers.
 
    .. versionadded:: 3.3
-
-
-.. c:var:: PyTypeObject PyUnicode_Type
-
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as ``str``.
 
 
 The following APIs are C macros and static inlined functions for fast checks and
@@ -85,16 +78,6 @@ access to internal read-only data of Unicode objects:
 
    Return true if the object *obj* is a Unicode object, but not an instance of a
    subtype.  This function always succeeds.
-
-
-.. c:function:: int PyUnicode_READY(PyObject *unicode)
-
-   Returns ``0``. This API is kept only for backward compatibility.
-
-   .. versionadded:: 3.3
-
-   .. deprecated:: 3.10
-      This API does nothing since Python 3.12.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GET_LENGTH(PyObject *unicode)
@@ -149,12 +132,16 @@ access to internal read-only data of Unicode objects:
 .. c:function:: void PyUnicode_WRITE(int kind, void *data, \
                                      Py_ssize_t index, Py_UCS4 value)
 
-   Write into a canonical representation *data* (as obtained with
-   :c:func:`PyUnicode_DATA`).  This function performs no sanity checks, and is
-   intended for usage in loops.  The caller should cache the *kind* value and
-   *data* pointer as obtained from other calls.  *index* is the index in
-   the string (starts at 0) and *value* is the new code point value which should
-   be written to that location.
+   Write the code point *value* to the given zero-based *index* in a string.
+
+   The *kind* value and *data* pointer must have been obtained from a
+   string using :c:func:`PyUnicode_KIND` and :c:func:`PyUnicode_DATA`
+   respectively. You must hold a reference to that string while calling
+   :c:func:`!PyUnicode_WRITE`. All requirements of
+   :c:func:`PyUnicode_WriteChar` also apply.
+
+   The function performs no checks for any of its requirements,
+   and is intended for usage in loops.
 
    .. versionadded:: 3.3
 
@@ -194,6 +181,30 @@ access to internal read-only data of Unicode objects:
    .. versionchanged:: 3.9
       The function does not call :c:func:`Py_FatalError` anymore if the string
       is not ready.
+
+
+.. c:function:: unsigned int PyUnicode_IS_ASCII(PyObject *unicode)
+
+   Return true if the string only contains ASCII characters.
+   Equivalent to :py:meth:`str.isascii`.
+
+   .. versionadded:: 3.2
+
+
+.. c:function:: Py_hash_t PyUnstable_Unicode_GET_CACHED_HASH(PyObject *str)
+
+   If the hash of *str*, as returned by :c:func:`PyObject_Hash`, has been
+   cached and is immediately available, return it.
+   Otherwise, return ``-1`` *without* setting an exception.
+
+   If *str* is not a string (that is, if ``PyUnicode_Check(obj)``
+   is false), the behavior is undefined.
+
+   This function never fails with an exception.
+
+   Note that there are no guarantees on when an object's hash is cached,
+   and the (non-)existence of a cached hash does not imply that the string has
+   any other properties.
 
 
 Unicode Character Properties
@@ -256,13 +267,8 @@ the Python configuration.
 
 .. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UCS4 ch)
 
-   Return ``1`` or ``0`` depending on whether *ch* is a printable character.
-   Nonprintable characters are those characters defined in the Unicode character
-   database as "Other" or "Separator", excepting the ASCII space (0x20) which is
-   considered printable.  (Note that printable characters in this context are
-   those which should not be escaped when :func:`repr` is invoked on a string.
-   It has no bearing on the handling of strings written to :data:`sys.stdout` or
-   :data:`sys.stderr`.)
+   Return ``1`` or ``0`` depending on whether *ch* is a printable character,
+   in the sense of :meth:`str.isprintable`.
 
 
 These APIs can be used for fast direct character conversions:
@@ -315,12 +321,22 @@ These APIs can be used to work with surrogates:
 
    Check if *ch* is a low surrogate (``0xDC00 <= ch <= 0xDFFF``).
 
+.. c:function:: Py_UCS4 Py_UNICODE_HIGH_SURROGATE(Py_UCS4 ch)
+
+    Return the high UTF-16 surrogate (``0xD800`` to ``0xDBFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
+.. c:function:: Py_UCS4 Py_UNICODE_LOW_SURROGATE(Py_UCS4 ch)
+
+    Return the low UTF-16 surrogate (``0xDC00`` to ``0xDFFF``) for a Unicode
+    code point in the range ``[0x10000; 0x10FFFF]``.
+
 .. c:function:: Py_UCS4 Py_UNICODE_JOIN_SURROGATES(Py_UCS4 high, Py_UCS4 low)
 
-   Join two surrogate characters and return a single :c:type:`Py_UCS4` value.
+   Join two surrogate code points and return a single :c:type:`Py_UCS4` value.
    *high* and *low* are respectively the leading and trailing surrogates in a
-   surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
-   be in the range [0xDC00; 0xDFFF].
+   surrogate pair. *high* must be in the range ``[0xD800; 0xDBFF]`` and *low* must
+   be in the range ``[0xDC00; 0xDFFF]``.
 
 
 Creating and accessing Unicode strings
@@ -335,8 +351,28 @@ APIs:
    to be placed in the string.  As an approximation, it can be rounded up to the
    nearest value in the sequence 127, 255, 65535, 1114111.
 
-   This is the recommended way to allocate a new Unicode object.  Objects
-   created using this function are not resizable.
+   On error, set an exception and return ``NULL``.
+
+   After creation, the string can be filled by :c:func:`PyUnicode_WriteChar`,
+   :c:func:`PyUnicode_CopyCharacters`, :c:func:`PyUnicode_Fill`,
+   :c:func:`PyUnicode_WRITE` or similar.
+   Since strings are supposed to be immutable, take care to not “use” the
+   result while it is being modified. In particular, before it's filled
+   with its final contents, a string:
+
+   - must not be hashed,
+   - must not be :c:func:`converted to UTF-8 <PyUnicode_AsUTF8AndSize>`,
+     or another non-"canonical" representation,
+   - must not have its reference count changed,
+   - must not be shared with code that might do one of the above.
+
+   This list is not exhaustive. Avoiding these uses is your responsibility;
+   Python does not always check these requirements.
+
+   To avoid accidentally exposing a partially-written string object, prefer
+   using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
+   functions below.
+
 
    .. versionadded:: 3.3
 
@@ -518,6 +554,26 @@ APIs:
         - :c:expr:`PyObject*`
         - The result of calling :c:func:`PyObject_Repr`.
 
+      * - ``T``
+        - :c:expr:`PyObject*`
+        - Get the fully qualified name of an object type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``#T``
+        - :c:expr:`PyObject*`
+        - Similar to ``T`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
+      * - ``N``
+        - :c:expr:`PyTypeObject*`
+        - Get the fully qualified name of a type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``#N``
+        - :c:expr:`PyTypeObject*`
+        - Similar to ``N`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes or :c:type:`wchar_t`
@@ -553,6 +609,9 @@ APIs:
       In previous versions it caused all the rest of the format string to be
       copied as-is to the result string, and any extra arguments discarded.
 
+   .. versionchanged:: 3.13
+      Support for ``%T``, ``%#T``, ``%N`` and ``%#N`` formats added.
+
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)
 
@@ -567,6 +626,14 @@ APIs:
    return a new :term:`strong reference` to the object.
 
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
+
+
+.. c:function:: PyObject* PyUnicode_FromOrdinal(int ordinal)
+
+   Create a Unicode Object from the given Unicode code point *ordinal*.
+
+   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is
+   raised in the case it is not.
 
 
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
@@ -587,9 +654,48 @@ APIs:
    decref'ing the returned objects.
 
 
+.. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
+   Append the string *right* to the end of *p_left*.
+   *p_left* must point to a :term:`strong reference` to a Unicode object;
+   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+
+   On error, set *\*p_left* to ``NULL`` and set an exception.
+
+   On success, set *\*p_left* to a new strong reference to the result.
+
+
+.. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
+
+   The function is similar to :c:func:`PyUnicode_Append`, with the only
+   difference being that it decrements the reference count of *right* by one.
+
+
+.. c:function:: PyObject* PyUnicode_BuildEncodingMap(PyObject* string)
+
+   Return a mapping suitable for decoding a custom single-byte encoding.
+   Given a Unicode string *string* of up to 256 characters representing an encoding
+   table, returns either a compact internal mapping object or a dictionary
+   mapping character ordinals to byte values. Raises a :exc:`TypeError` and
+   return ``NULL`` on invalid input.
+
+   .. versionadded:: 3.2
+
+
+.. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
+
+   Return the name of the default string encoding, ``"utf-8"``.
+   See :func:`sys.getdefaultencoding`.
+
+   The returned string does not need to be freed, and is valid
+   until interpreter shutdown.
+
+
 .. c:function:: Py_ssize_t PyUnicode_GetLength(PyObject *unicode)
 
    Return the length of the Unicode object, in code points.
+
+   On error, set an exception and return ``-1``.
 
    .. versionadded:: 3.3
 
@@ -605,7 +711,25 @@ APIs:
    possible.  Returns ``-1`` and sets an exception on error, otherwise returns
    the number of copied characters.
 
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
+
    .. versionadded:: 3.3
+
+
+.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
+
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
+
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copying characters), or create a new string.
+
+   *\*unicode* is modified to point to the new (resized) object and ``0`` is
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
+   and *\*unicode* is left untouched.
+
+   The function doesn't check string content, the result may not be a
+   string in canonical representation.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
@@ -617,6 +741,9 @@ APIs:
    Fail if *fill_char* is bigger than the string maximum character, or if the
    string has more than 1 reference.
 
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
+
    Return the number of written character, or return ``-1`` and raise an
    exception on error.
 
@@ -626,13 +753,16 @@ APIs:
 .. c:function:: int PyUnicode_WriteChar(PyObject *unicode, Py_ssize_t index, \
                                         Py_UCS4 character)
 
-   Write a character to a string.  The string must have been created through
-   :c:func:`PyUnicode_New`.  Since Unicode strings are supposed to be immutable,
-   the string must not be shared, or have been hashed yet.
+   Write a *character* to the string *unicode* at the zero-based *index*.
+   Return ``0`` on success, ``-1`` on error with an exception set.
 
    This function checks that *unicode* is a Unicode object, that the index is
-   not out of bounds, and that the object can be modified safely (i.e. that it
-   its reference count is one).
+   not out of bounds, and that the object's reference count is one.
+   See :c:func:`PyUnicode_WRITE` for a version that skips these checks,
+   making them your responsibility.
+
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
 
    .. versionadded:: 3.3
 
@@ -643,6 +773,8 @@ APIs:
    Unicode object and the index is not out of bounds, in contrast to
    :c:func:`PyUnicode_READ_CHAR`, which performs no error checking.
 
+   Return character on success, ``-1`` on error with an exception set.
+
    .. versionadded:: 3.3
 
 
@@ -651,6 +783,7 @@ APIs:
 
    Return a substring of *unicode*, from character index *start* (included) to
    character index *end* (excluded).  Negative indices are not supported.
+   On error, set an exception and return ``NULL``.
 
    .. versionadded:: 3.3
 
@@ -754,16 +887,25 @@ Functions encoding to and decoding from the :term:`filesystem encoding and
 error handler` (:pep:`383` and :pep:`529`).
 
 To encode file names to :class:`bytes` during argument parsing, the ``"O&"``
-converter should be used, passing :c:func:`PyUnicode_FSConverter` as the
+converter should be used, passing :c:func:`!PyUnicode_FSConverter` as the
 conversion function:
 
 .. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
-   ParseTuple converter: encode :class:`str` objects -- obtained directly or
+   :ref:`PyArg_Parse\* converter <arg-parsing>`: encode :class:`str` objects -- obtained directly or
    through the :class:`os.PathLike` interface -- to :class:`bytes` using
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
-   *result* must be a :c:expr:`PyBytesObject*` which must be released when it is
-   no longer used.
+   *result* must be an address of a C variable of type :c:expr:`PyObject*`
+   (or :c:expr:`PyBytesObject*`).
+   On success, set the variable to a new :term:`strong reference` to
+   a :ref:`bytes object <bytesobjects>` which must be released
+   when it is no longer used and return a non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
+   Embedded null bytes are not allowed in the result.
+   On failure, return ``0`` with an exception set.
+
+   If *obj* is ``NULL``, the function releases a strong reference
+   stored in the variable referred by *result* and returns ``1``.
 
    .. versionadded:: 3.1
 
@@ -771,16 +913,26 @@ conversion function:
       Accepts a :term:`path-like object`.
 
 To decode file names to :class:`str` during argument parsing, the ``"O&"``
-converter should be used, passing :c:func:`PyUnicode_FSDecoder` as the
+converter should be used, passing :c:func:`!PyUnicode_FSDecoder` as the
 conversion function:
 
 .. c:function:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
-   ParseTuple converter: decode :class:`bytes` objects -- obtained either
+   :ref:`PyArg_Parse\* converter <arg-parsing>`: decode :class:`bytes` objects -- obtained either
    directly or indirectly through the :class:`os.PathLike` interface -- to
    :class:`str` using :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str`
-   objects are output as-is. *result* must be a :c:expr:`PyUnicodeObject*` which
-   must be released when it is no longer used.
+   objects are output as-is.
+   *result* must be an address of a C variable of type :c:expr:`PyObject*`
+   (or :c:expr:`PyUnicodeObject*`).
+   On success, set the variable to a new :term:`strong reference` to
+   a :ref:`Unicode object <unicodeobjects>` which must be released
+   when it is no longer used and return a non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
+   Embedded null characters are not allowed in the result.
+   On failure, return ``0`` with an exception set.
+
+   If *obj* is ``NULL``, release the strong reference
+   to the object referred to by *result* and return ``1``.
 
    .. versionadded:: 3.2
 
@@ -917,6 +1069,17 @@ generic ones are documented for simplicity.
 Generic Codecs
 """"""""""""""
 
+The following macro is provided:
+
+
+.. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
+
+   The Unicode code point ``U+FFFD`` (replacement character).
+
+   This Unicode character is used as the replacement character during
+   decoding if the *errors* argument is set to "replace".
+
+
 These are the generic codec APIs:
 
 
@@ -967,6 +1130,9 @@ These are the UTF-8 codec APIs:
    object.  Error handling is "strict".  Return ``NULL`` if an exception was
    raised by the codec.
 
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
+
 
 .. c:function:: const char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
@@ -978,6 +1144,9 @@ These are the UTF-8 codec APIs:
 
    On error, set an exception, set *size* to ``-1`` (if it's not NULL) and
    return ``NULL``.
+
+   The function fails if the string contains surrogate code points
+   (``U+D800`` - ``U+DFFF``).
 
    This caches the UTF-8 representation of the string in the Unicode object, and
    subsequent calls will return a pointer to the same buffer.  The caller is not
@@ -996,6 +1165,15 @@ These are the UTF-8 codec APIs:
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
+
+   .. warning::
+
+      This function does not have any special behavior for
+      `null characters <https://en.wikipedia.org/wiki/Null_character>`_ embedded within
+      *unicode*. As a result, strings containing null characters will remain in the returned
+      string, which some C functions might interpret as the end of the string, leading to
+      truncation. If truncation is an issue, it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize`
+      instead.
 
    .. versionadded:: 3.3
 
@@ -1286,6 +1464,13 @@ the user settings on the machine running the codec.
    in *consumed*.
 
 
+.. c:function:: PyObject* PyUnicode_DecodeCodePageStateful(int code_page, const char *str, \
+                              Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
+
+   Similar to :c:func:`PyUnicode_DecodeMBCSStateful`, except uses the code page
+   specified by *code_page*.
+
+
 .. c:function:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)
 
    Encode a Unicode object using MBCS and return the result as Python bytes
@@ -1300,10 +1485,6 @@ the user settings on the machine running the codec.
    :c:macro:`!CP_ACP` code page to get the MBCS encoder.
 
    .. versionadded:: 3.3
-
-
-Methods & Slots
-"""""""""""""""
 
 
 .. _unicodemethodsandslots:
@@ -1330,12 +1511,53 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    separator.  At most *maxsplit* splits will be done.  If negative, no limit is
    set.  Separators are not included in the resulting list.
 
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.split`.
+
+
+.. c:function:: PyObject* PyUnicode_RSplit(PyObject *unicode, PyObject *sep, Py_ssize_t maxsplit)
+
+   Similar to :c:func:`PyUnicode_Split`, but splitting will be done beginning
+   at the end of the string.
+
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.rsplit`.
+
 
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *unicode, int keepends)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
    CRLF is considered to be one line break.  If *keepends* is ``0``, the Line break
    characters are not included in the resulting strings.
+
+
+.. c:function:: PyObject* PyUnicode_Partition(PyObject *unicode, PyObject *sep)
+
+   Split a Unicode string at the first occurrence of *sep*, and return
+   a 3-tuple containing the part before the separator, the separator itself,
+   and the part after the separator. If the separator is not found,
+   return a 3-tuple containing the string itself, followed by two empty strings.
+
+   *sep* must not be empty.
+
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.partition`.
+
+
+.. c:function:: PyObject* PyUnicode_RPartition(PyObject *unicode, PyObject *sep)
+
+   Similar to :c:func:`PyUnicode_Partition`, but split a Unicode string at the
+   last occurrence of *sep*. If the separator is not found, return a 3-tuple
+   containing two empty strings, followed by the string itself.
+
+   *sep* must not be empty.
+
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.rpartition`.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)
@@ -1400,14 +1622,40 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    This function returns ``-1`` upon failure, so one should call
    :c:func:`PyErr_Occurred` to check for errors.
 
+   .. seealso::
+
+      The :c:func:`PyUnicode_Equal` function.
+
+
+.. c:function:: int PyUnicode_Equal(PyObject *a, PyObject *b)
+
+   Test if two strings are equal:
+
+   * Return ``1`` if *a* is equal to *b*.
+   * Return ``0`` if *a* is not equal to *b*.
+   * Set a :exc:`TypeError` exception and return ``-1`` if *a* or *b* is not a
+     :class:`str` object.
+
+   The function always succeeds if *a* and *b* are :class:`str` objects.
+
+   The function works for :class:`str` subclasses, but does not honor custom
+   ``__eq__()`` method.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_Compare` function.
+
+   .. versionadded:: 3.14
+
 
 .. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
 
    Compare a Unicode object with a char buffer which is interpreted as
    being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
    or false (``0``) otherwise.
-   If the Unicode object contains surrogate characters or
-   the C string is not valid UTF-8, false (``0``) is returned.
+   If the Unicode object contains surrogate code points
+   (``U+D800`` - ``U+DFFF``) or the C string is not valid UTF-8,
+   false (``0``) is returned.
 
    This function does not raise exceptions.
 
@@ -1467,15 +1715,244 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    existing interned string that is the same as :c:expr:`*p_unicode`, it sets :c:expr:`*p_unicode` to
    it (releasing the reference to the old string object and creating a new
    :term:`strong reference` to the interned string object), otherwise it leaves
-   :c:expr:`*p_unicode` alone and interns it (creating a new :term:`strong reference`).
+   :c:expr:`*p_unicode` alone and interns it.
+
    (Clarification: even though there is a lot of talk about references, think
-   of this function as reference-neutral; you own the object after the call
-   if and only if you owned it before the call.)
+   of this function as reference-neutral. You must own the object you pass in;
+   after the call you no longer own the passed-in reference, but you newly own
+   the result.)
+
+   This function never raises an exception.
+   On error, it leaves its argument unchanged without interning it.
+
+   Instances of subclasses of :py:class:`str` may not be interned, that is,
+   :c:expr:`PyUnicode_CheckExact(*p_unicode)` must be true. If it is not,
+   then -- as with any other error -- the argument is left unchanged.
+
+   Note that interned strings are not “immortal”.
+   You must keep a reference to the result to benefit from interning.
 
 
 .. c:function:: PyObject* PyUnicode_InternFromString(const char *str)
 
    A combination of :c:func:`PyUnicode_FromString` and
-   :c:func:`PyUnicode_InternInPlace`, returning either a new Unicode string
-   object that has been interned, or a new ("owned") reference to an earlier
-   interned string object with the same value.
+   :c:func:`PyUnicode_InternInPlace`, meant for statically allocated strings.
+
+   Return a new ("owned") reference to either a new Unicode string object
+   that has been interned, or an earlier interned string object with the
+   same value.
+
+   Python may keep a reference to the result, or make it :term:`immortal`,
+   preventing it from being garbage-collected promptly.
+   For interning an unbounded number of different strings, such as ones coming
+   from user input, prefer calling :c:func:`PyUnicode_FromString` and
+   :c:func:`PyUnicode_InternInPlace` directly.
+
+
+.. c:function:: unsigned int PyUnicode_CHECK_INTERNED(PyObject *str)
+
+   Return a non-zero value if *str* is interned, zero if not.
+   The *str* argument must be a string; this is not checked.
+   This function always succeeds.
+
+   .. impl-detail::
+
+      A non-zero return value may carry additional information
+      about *how* the string is interned.
+      The meaning of such non-zero values, as well as each specific string's
+      intern-related details, may change between CPython versions.
+
+
+PyUnicodeWriter
+^^^^^^^^^^^^^^^
+
+The :c:type:`PyUnicodeWriter` API can be used to create a Python :class:`str`
+object.
+
+.. versionadded:: 3.14
+
+.. c:type:: PyUnicodeWriter
+
+   A Unicode writer instance.
+
+   The instance must be destroyed by :c:func:`PyUnicodeWriter_Finish` on
+   success, or :c:func:`PyUnicodeWriter_Discard` on error.
+
+.. c:function:: PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length)
+
+   Create a Unicode writer instance.
+
+   *length* must be greater than or equal to ``0``.
+
+   If *length* is greater than ``0``, preallocate an internal buffer of
+   *length* characters.
+
+   Set an exception and return ``NULL`` on error.
+
+.. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
+
+   Return the final Python :class:`str` object and destroy the writer instance.
+
+   Set an exception and return ``NULL`` on error.
+
+   The writer instance is invalid after this call.
+
+.. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
+
+   Discard the internal Unicode buffer and destroy the writer instance.
+
+   If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
+
+.. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
+
+   Write the single Unicode character *ch* into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Decode the string *str* from UTF-8 in strict mode and write the output into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   See also :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`.
+
+.. c:function:: int PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer, const char *str, Py_ssize_t size)
+
+   Write the ASCII string *str* into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *str* must only contain ASCII characters. The behavior is undefined if
+   *str* contains non-ASCII characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size)
+
+   Write the wide string *str* into *writer*.
+
+   *size* is a number of wide characters. If *size* is equal to ``-1``, call
+   ``wcslen(str)`` to get the string length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteUCS4(PyUnicodeWriter *writer, Py_UCS4 *str, Py_ssize_t size)
+
+   Writer the UCS4 string *str* into *writer*.
+
+   *size* is a number of UCS4 characters.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteStr(PyUnicodeWriter *writer, PyObject *obj)
+
+   Call :c:func:`PyObject_Str` on *obj* and write the output into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteRepr(PyUnicodeWriter *writer, PyObject *obj)
+
+   Call :c:func:`PyObject_Repr` on *obj* and write the output into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, PyObject *str, Py_ssize_t start, Py_ssize_t end)
+
+   Write the substring ``str[start:end]`` into *writer*.
+
+   *str* must be Python :class:`str` object. *start* must be greater than or
+   equal to 0, and less than or equal to *end*. *end* must be less than or
+   equal to *str* length.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
+
+   Similar to :c:func:`PyUnicode_FromFormat`, but write the output directly into *writer*.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+.. c:function:: int PyUnicodeWriter_DecodeUTF8Stateful(PyUnicodeWriter *writer, const char *string, Py_ssize_t length, const char *errors, Py_ssize_t *consumed)
+
+   Decode the string *str* from UTF-8 with *errors* error handler and write the
+   output into *writer*.
+
+   *size* is the string length in bytes. If *size* is equal to ``-1``, call
+   ``strlen(str)`` to get the string length.
+
+   *errors* is an :ref:`error handler <error-handlers>` name, such as
+   ``"replace"``. If *errors* is ``NULL``, use the strict error handler.
+
+   If *consumed* is not ``NULL``, set *\*consumed* to the number of decoded
+   bytes on success.
+   If *consumed* is ``NULL``, treat trailing incomplete UTF-8 byte sequences
+   as an error.
+
+   On success, return ``0``.
+   On error, set an exception, leave the writer unchanged, and return ``-1``.
+
+   See also :c:func:`PyUnicodeWriter_WriteUTF8`.
+
+Deprecated API
+^^^^^^^^^^^^^^
+
+The following API is deprecated.
+
+.. c:type:: Py_UNICODE
+
+   This is a typedef of :c:type:`wchar_t`, which is a 16-bit type or 32-bit type
+   depending on the platform.
+   Please use :c:type:`wchar_t` directly instead.
+
+   .. versionchanged:: 3.3
+      In previous versions, this was a 16-bit type or a 32-bit type depending on
+      whether you selected a "narrow" or "wide" Unicode version of Python at
+      build time.
+
+   .. deprecated-removed:: 3.13 3.15
+
+
+.. c:function:: int PyUnicode_READY(PyObject *unicode)
+
+   Do nothing and return ``0``.
+   This API is kept only for backward compatibility, but there are no plans
+   to remove it.
+
+   .. versionadded:: 3.3
+
+   .. deprecated:: 3.10
+      This API does nothing since Python 3.12.
+      Previously, this needed to be called for each string created using
+      the old API (:c:func:`!PyUnicode_FromUnicode` or similar).
+
+
+.. c:function:: unsigned int PyUnicode_IS_READY(PyObject *unicode)
+
+   Do nothing and return ``1``.
+   This API is kept only for backward compatibility, but there are no plans
+   to remove it.
+
+   .. versionadded:: 3.3
+
+   .. deprecated:: 3.14
+      This API does nothing since Python 3.12.
+      Previously, this could be called to check if
+      :c:func:`PyUnicode_READY` is necessary.

@@ -2,7 +2,7 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
-import locale
+import fractions
 import math
 import platform
 import sys
@@ -19,7 +19,7 @@ try:
 except ImportError:
     _testinternalcapi = None
 
-from test.support import skip_if_buggy_ucrt_strfptime
+from test.support import skip_if_buggy_ucrt_strfptime, SuppressCrashReport
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -117,6 +117,7 @@ class TimeTestCase(unittest.TestCase):
                          'need time.pthread_getcpuclockid()')
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
+    @unittest.skipIf(support.is_emscripten, "Fails to find clock")
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
@@ -158,10 +159,26 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(int(time.mktime(time.localtime(self.t))),
                          int(self.t))
 
-    def test_sleep(self):
+    def test_sleep_exceptions(self):
+        self.assertRaises(TypeError, time.sleep, [])
+        self.assertRaises(TypeError, time.sleep, "a")
+        self.assertRaises(TypeError, time.sleep, complex(0, 0))
+
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
+        self.assertRaises(ValueError, time.sleep, -0.1)
+
+        # Improved exception #81267
+        with self.assertRaises(TypeError) as errmsg:
+            time.sleep([])
+        self.assertIn("real number", str(errmsg.exception))
+
+    def test_sleep(self):
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2,
+                      decimal.Decimal('0.02'),
+                      fractions.Fraction(1, 50)]:
+            with self.subTest(value=value):
+                time.sleep(value)
 
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
@@ -182,8 +199,44 @@ class TimeTestCase(unittest.TestCase):
                 self.fail('conversion specifier: %r failed.' % format)
 
         self.assertRaises(TypeError, time.strftime, b'%S', tt)
-        # embedded null character
-        self.assertRaises(ValueError, time.strftime, '%S\0', tt)
+
+    def test_strftime_invalid_format(self):
+        tt = time.gmtime(self.t)
+        with SuppressCrashReport():
+            for i in range(1, 128):
+                format = ' %' + chr(i)
+                with self.subTest(format=format):
+                    try:
+                        time.strftime(format, tt)
+                    except ValueError as exc:
+                        self.assertEqual(str(exc), 'Invalid format string')
+
+    def test_strftime_special(self):
+        tt = time.gmtime(self.t)
+        s1 = time.strftime('%c', tt)
+        s2 = time.strftime('%B', tt)
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(time.strftime('\U0001f40d', tt), '\U0001f40d')
+        self.assertEqual(time.strftime('\U0001f4bb%c\U0001f40d%B', tt), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(time.strftime('%c\U0001f4bb%B\U0001f40d', tt), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(time.strftime('\ud83d', tt), '\ud83d')
+        self.assertEqual(time.strftime('\udc0d', tt), '\udc0d')
+        self.assertEqual(time.strftime('\ud83d%c\udc0d%B', tt), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(time.strftime('%c\ud83d%B\udc0d', tt), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(time.strftime('%c\udc0d%B\ud83d', tt), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(time.strftime('\ud83d\udc0d', tt), '\ud83d\udc0d')
+        self.assertEqual(time.strftime('%c\ud83d\udc0d%B', tt), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(time.strftime('\udcf0\udc9f\udc90\udc8d', tt), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(time.strftime('%c\udcf0\udc9f\udc90\udc8d%B', tt), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(time.strftime('\0', tt), '\0')
+        self.assertEqual(time.strftime('\0'*1000, tt), '\0'*1000)
+        self.assertEqual(time.strftime('\0%c\0%B', tt), f'\0{s1}\0{s2}')
+        self.assertEqual(time.strftime('%c\0%B\0', tt), f'{s1}\0{s2}\0')
 
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
@@ -277,6 +330,8 @@ class TimeTestCase(unittest.TestCase):
                           'j', 'm', 'M', 'p', 'S',
                           'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
             format = '%' + directive
+            if directive == 'd':
+                format += ',%Y'  # Avoid GH-70647.
             strf_output = time.strftime(format, tt)
             try:
                 time.strptime(strf_output, format)
@@ -293,11 +348,17 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            time.strptime('19', '%Y %')
-        self.assertIs(e.exception.__suppress_context__, True)
+            time.strptime('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
+
+    def test_strptime_leap_year(self):
+        # GH-70647: warns if parsing a format with a day and no year.
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r'.*day of month without a year.*'):
+            time.strptime('02-07 18:28', '%m-%d %H:%M')
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
@@ -317,9 +378,6 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_ctime(self):
         t = time.mktime((1973, 9, 16, 1, 3, 52, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
@@ -496,6 +554,9 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipIf(
         support.is_wasi, "process_time not available on WASI"
     )
+    @unittest.skipIf(
+        support.is_emscripten, "process_time present but doesn't exclude sleep"
+    )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
         start = time.process_time()
@@ -511,7 +572,7 @@ class TimeTestCase(unittest.TestCase):
 
     def test_thread_time(self):
         if not hasattr(time, 'thread_time'):
-            if sys.platform.startswith(('linux', 'win')):
+            if sys.platform.startswith(('linux', 'android', 'win')):
                 self.fail("time.thread_time() should be available on %r"
                           % (sys.platform,))
             else:
@@ -592,17 +653,8 @@ class TimeTestCase(unittest.TestCase):
 
 
 class TestLocale(unittest.TestCase):
-    def setUp(self):
-        self.oldloc = locale.setlocale(locale.LC_ALL)
-
-    def tearDown(self):
-        locale.setlocale(locale.LC_ALL, self.oldloc)
-
+    @support.run_with_locale('LC_ALL', 'fr_FR', '')
     def test_bug_3061(self):
-        try:
-            tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
-        except locale.Error:
-            self.skipTest('could not set locale.LC_ALL to fr_FR')
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 
@@ -646,8 +698,7 @@ class _TestStrftimeYear:
             self.test_year('%04d', func=year4d)
 
     def skip_if_not_supported(y):
-        msg = "strftime() is limited to [1; 9999] with Visual Studio"
-        # Check that it doesn't crash for year > 9999
+        msg = f"strftime() does not support year {y} on this platform"
         try:
             time.strftime('%Y', (y,) + (0,) * 8)
         except ValueError:
@@ -708,25 +759,21 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.
         lt = time.localtime()
-        self.assertTrue(hasattr(lt, "tm_gmtoff"))
-        self.assertTrue(hasattr(lt, "tm_zone"))
+        self.assertHasAttr(lt, "tm_gmtoff")
+        self.assertHasAttr(lt, "tm_zone")
 
         # See if the offset and zone are similar to the module
         # attributes.
         if lt.tm_gmtoff is None:
-            self.assertTrue(not hasattr(time, "timezone"))
+            self.assertNotHasAttr(time, "timezone")
         else:
             self.assertEqual(lt.tm_gmtoff, -[time.timezone, time.altzone][lt.tm_isdst])
         if lt.tm_zone is None:
-            self.assertTrue(not hasattr(time, "tzname"))
+            self.assertNotHasAttr(time, "tzname")
         else:
             self.assertEqual(lt.tm_zone, time.tzname[lt.tm_isdst])
 
@@ -746,14 +793,12 @@ class TestPytime(unittest.TestCase):
         self.assertEqual(new_lt.tm_gmtoff, lt.tm_gmtoff)
         self.assertEqual(new_lt9.tm_zone, lt.tm_zone)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_strptime_timezone(self):
         t = time.strptime("UTC", "%Z")
         self.assertEqual(t.tm_zone, 'UTC')
         t = time.strptime("+0500", "%z")
         self.assertEqual(t.tm_gmtoff, 5 * 3600)
 
-    @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_short_times(self):
 
         import pickle
@@ -1139,11 +1184,11 @@ class TestTimeWeaklinking(unittest.TestCase):
 
         if mac_ver >= (10, 12):
             for name in clock_names:
-                self.assertTrue(hasattr(time, name), f"time.{name} is not available")
+                self.assertHasAttr(time, name)
 
         else:
             for name in clock_names:
-                self.assertFalse(hasattr(time, name), f"time.{name} is available")
+                self.assertNotHasAttr(time, name)
 
 
 if __name__ == "__main__":

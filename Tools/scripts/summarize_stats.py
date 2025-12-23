@@ -102,6 +102,10 @@ def load_raw_data(input: Path) -> RawData:
                             file=sys.stderr,
                         )
                         continue
+                    # Hack to handle older data files where some uops
+                    # are missing an underscore prefix in their name
+                    if key.startswith("uops[") and key[5:6] != "_":
+                        key = "uops[_" + key[5:]
                     stats[key.strip()] += int(value)
             stats["__nfiles__"] += 1
 
@@ -110,7 +114,7 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
 
 def save_raw_data(data: RawData, json_output: TextIO):
@@ -284,7 +288,7 @@ class OpcodeStats:
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"
-            elif opcode in ("FOR_ITER", "SEND"):
+            elif opcode in ("FOR_ITER", "GET_ITER", "SEND"):
                 opcode = "ITER"
             elif opcode.endswith("SUBSCR"):
                 opcode = "SUBSCR"
@@ -294,12 +298,20 @@ class OpcodeStats:
             return "kind " + str(kind)
 
         family_stats = self._get_stats_for_opcode(opcode)
-        failure_kinds = [0] * 40
+
+        def key_to_index(key):
+            return int(key[:-1].split("[")[1])
+
+        max_index = 0
+        for key in family_stats:
+            if key.startswith("specialization.failure_kind"):
+                max_index = max(max_index, key_to_index(key))
+
+        failure_kinds = [0] * (max_index + 1)
         for key in family_stats:
             if not key.startswith("specialization.failure_kind"):
                 continue
-            index = int(key[:-1].split("[")[1])
-            failure_kinds[index] = family_stats[key]
+            failure_kinds[key_to_index(key)] = family_stats[key]
         return {
             kind_to_text(index, opcode): value
             for (index, value) in enumerate(failure_kinds)
@@ -390,16 +402,22 @@ class Stats:
         return result
 
     def get_object_stats(self) -> dict[str, tuple[int, int]]:
-        total_materializations = self._data.get("Object new values", 0)
+        total_materializations = self._data.get("Object inline values", 0)
         total_allocations = self._data.get("Object allocations", 0) + self._data.get(
             "Object allocations from freelist", 0
         )
-        total_increfs = self._data.get(
-            "Object interpreter increfs", 0
-        ) + self._data.get("Object increfs", 0)
-        total_decrefs = self._data.get(
-            "Object interpreter decrefs", 0
-        ) + self._data.get("Object decrefs", 0)
+        total_increfs = (
+            self._data.get("Object interpreter mortal increfs", 0) +
+            self._data.get("Object mortal increfs", 0) +
+            self._data.get("Object interpreter immortal increfs", 0) +
+            self._data.get("Object immortal increfs", 0)
+        )
+        total_decrefs = (
+            self._data.get("Object interpreter mortal decrefs", 0) +
+            self._data.get("Object mortal decrefs", 0) +
+            self._data.get("Object interpreter immortal decrefs", 0) +
+            self._data.get("Object immortal decrefs", 0)
+        )
 
         result = {}
         for key, value in self._data.items():
@@ -447,6 +465,8 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        unknown_callee = self._data["Optimization unknown callee"]
+        executors_invalidated = self._data["Executors invalidated"]
 
         return {
             Doc(
@@ -454,10 +474,7 @@ class Stats:
                 "The number of times a potential trace is identified.  Specifically, this "
                 "occurs in the JUMP BACKWARD instruction when the counter reaches a "
                 "threshold.",
-            ): (
-                attempts,
-                None,
-            ),
+            ): (attempts, None),
             Doc(
                 "Traces created", "The number of traces that were successfully created."
             ): (created, attempts),
@@ -475,7 +492,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoced because it it too short.",
+                "A potential trace is abandoned because it is too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
@@ -489,14 +506,91 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Unknown callee",
+                "A trace is abandoned because the target of a call is unknown.",
+            ): (unknown_callee, attempts),
+            Doc(
+                "Executors invalidated",
+                "The number of executors that were invalidated due to watched "
+                "dictionary changes.",
+            ): (executors_invalidated, created),
             Doc("Traces executed", "The number of traces that were executed"): (
                 executed,
                 None,
             ),
-            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
+            Doc(
+                "Uops executed",
+                "The total number of uops (micro-operations) that were executed",
+            ): (
                 uops,
                 executed,
             ),
+        }
+
+    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+        attempts = self._data["Optimization optimizer attempts"]
+        successes = self._data["Optimization optimizer successes"]
+        no_memory = self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
+
+        return {
+            Doc(
+                "Optimizer attempts",
+                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run.",
+            ): (attempts, None),
+            Doc(
+                "Optimizer successes",
+                "The number of traces that were successfully optimized.",
+            ): (successes, attempts),
+            Doc(
+                "Optimizer no memory",
+                "The number of optimizations that failed due to no memory.",
+            ): (no_memory, attempts),
+            Doc(
+                "Remove globals builtins changed",
+                "The builtins changed during optimization",
+            ): (builtins_changed, attempts),
+            Doc(
+                "Remove globals incorrect keys",
+                "The keys in the globals dictionary aren't what was expected",
+            ): (incorrect_keys, attempts),
+        }
+
+    def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
+        jit_total_memory_size = self._data["JIT total memory size"]
+        jit_code_size = self._data["JIT code size"]
+        jit_trampoline_size = self._data["JIT trampoline size"]
+        jit_data_size = self._data["JIT data size"]
+        jit_padding_size = self._data["JIT padding size"]
+        jit_freed_memory_size = self._data["JIT freed memory size"]
+
+        return {
+            Doc(
+                "Total memory size",
+                "The total size of the memory allocated for the JIT traces",
+            ): (jit_total_memory_size, None),
+            Doc(
+                "Code size",
+                "The size of the memory allocated for the code of the JIT traces",
+            ): (jit_code_size, jit_total_memory_size),
+            Doc(
+                "Trampoline size",
+                "The size of the memory allocated for the trampolines of the JIT traces",
+            ): (jit_trampoline_size, jit_total_memory_size),
+            Doc(
+                "Data size",
+                "The size of the memory allocated for the data of the JIT traces",
+            ): (jit_data_size, jit_total_memory_size),
+            Doc(
+                "Padding size",
+                "The size of the memory allocated for the padding of the JIT traces",
+            ): (jit_padding_size, jit_total_memory_size),
+            Doc(
+                "Freed memory size",
+                "The size of the memory freed from the JIT traces",
+            ): (jit_freed_memory_size, jit_total_memory_size),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -696,9 +790,9 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section() -> Section:
+def pair_count_section(prefix: str, title=None) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        opcode_stats = stats.get_opcode_stats("opcode")
+        opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
         total = opcode_stats.get_total_execution_count()
 
@@ -720,7 +814,7 @@ def pair_count_section() -> Section:
 
     return Section(
         "Pair counts",
-        "Pair counts for top 100 Tier 1 instructions",
+        f"Pair counts for top 100 {title if title else prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),
@@ -1054,8 +1148,7 @@ def object_stats_section() -> Section:
         Below, "allocations" means "allocations that are not from a freelist".
         Total allocations = "Allocations from freelist" + "Allocations".
 
-        "New values" is the number of values arrays created for objects with
-        managed dicts.
+        "Inline values" is the number of values arrays inlined into objects.
 
         The cache hit/miss numbers are for the MRO cache, split into dunder and
         other names.
@@ -1073,6 +1166,8 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
+                Count(gen["objects reachable from roots"]),
+                Count(gen["objects not reachable from roots"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1082,7 +1177,8 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
+                 "Reachable from roots:", "Not reachable from roots:"),
                 calc_gc_stats,
             )
         ],
@@ -1105,16 +1201,39 @@ def optimization_section() -> Section:
             for label, (value, den) in optimization_stats.items()
         ]
 
-    def calc_histogram_table(key: str, den: str) -> RowCalculator:
+    def calc_optimizer_table(stats: Stats) -> Rows:
+        optimizer_stats = stats.get_optimizer_stats()
+
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in optimizer_stats.items()
+        ]
+
+    def calc_jit_memory_table(stats: Stats) -> Rows:
+        jit_memory_stats = stats.get_jit_memory_stats()
+
+        return [
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Total memory size"),
+            )
+            for label, (value, den) in jit_memory_stats.items()
+        ]
+
+    def calc_histogram_table(key: str, den: str | None = None) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
-            denominator = stats.get(den)
+
+            if den:
+                denominator = stats.get(den)
+            else:
+                denominator = 0
+                for _, v in histogram:
+                    denominator += v
 
             rows: Rows = []
-            last_non_zero = 0
             for k, v in histogram:
-                if v != 0:
-                    last_non_zero = len(rows)
                 rows.append(
                     (
                         f"<= {k:,d}",
@@ -1122,9 +1241,19 @@ def optimization_section() -> Section:
                         Ratio(v, denominator),
                     )
                 )
-            # Don't include any zero entries at the end
-            rows = rows[: last_non_zero + 1]
-            return rows
+            # Don't include any leading and trailing zero entries
+            start = 0
+            end = len(rows) - 1
+
+            while start <= end:
+                if rows[start][1] == 0:
+                    start += 1
+                elif rows[end][1] == 0:
+                    end -= 1
+                else:
+                    break
+
+            return rows[start:end+1]
 
         return calc
 
@@ -1139,6 +1268,17 @@ def optimization_section() -> Section:
             reverse=True,
         )
 
+    def calc_error_in_opcodes_table(stats: Stats) -> Rows:
+        error_in_opcodes = stats.get_opcode_stats("error_in_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in error_in_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
         if not base_stats.get_optimization_stats() or (
             head_stats is not None and not head_stats.get_optimization_stats()
@@ -1146,6 +1286,29 @@ def optimization_section() -> Section:
             return
 
         yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
+        yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
+        yield Section(
+            "JIT memory stats",
+            "JIT memory stats",
+            [
+                Table(
+                    ("", "Size (bytes):", "Ratio:"),
+                    calc_jit_memory_table,
+                    JoinMode.CHANGE
+                )
+            ],
+        )
+        yield Section(
+            "JIT trace total memory histogram",
+            "JIT trace total memory histogram",
+            [
+                Table(
+                    ("Size (bytes)", "Count", "Ratio:"),
+                    calc_histogram_table("Trace total memory size"),
+                    JoinMode.CHANGE_NO_SORT,
+                )
+            ],
+        )
         for name, den in [
             ("Trace length", "Optimization traces created"),
             ("Optimized trace length", "Optimization traces created"),
@@ -1173,6 +1336,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
+        yield pair_count_section(prefix="uop", title="Non-JIT uop")
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1183,6 +1347,11 @@ def optimization_section() -> Section:
                     JoinMode.CHANGE,
                 )
             ],
+        )
+        yield Section(
+            "Optimizer errored out with opcode",
+            "Optimization stopped after encountering this opcode",
+            [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
 
     return Section(
@@ -1228,7 +1397,7 @@ def meta_stats_section() -> Section:
 
 LAYOUT = [
     execution_count_section(),
-    pair_count_section(),
+    pair_count_section("opcode"),
     pre_succ_pairs_section(),
     specialization_section(),
     specialization_effectiveness_section(),

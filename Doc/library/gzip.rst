@@ -1,5 +1,5 @@
-:mod:`gzip` --- Support for :program:`gzip` files
-=================================================
+:mod:`!gzip` --- Support for :program:`gzip` files
+==================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.
@@ -10,6 +10,8 @@
 
 This module provides a simple interface to compress and decompress files just
 like the GNU programs :program:`gzip` and :program:`gunzip` would.
+
+.. include:: ../includes/optional-module.rst
 
 The data compression is provided by the :mod:`zlib` module.
 
@@ -26,7 +28,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -59,6 +61,11 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
 .. exception:: BadGzipFile
 
    An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
@@ -67,7 +74,7 @@ The module defines the following items:
 
    .. versionadded:: 3.8
 
-.. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
+.. class:: GzipFile(filename=None, mode=None, compresslevel=6, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
    methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
@@ -100,10 +107,12 @@ The module defines the following items:
    compression, and ``9`` is slowest and produces the most compression. ``0``
    is no compression. The default is ``9``.
 
-   The *mtime* argument is an optional numeric timestamp to be written to
-   the last modification time field in the stream when compressing.  It
-   should only be provided in compression mode.  If omitted or ``None``, the
-   current time is used.  See the :attr:`mtime` attribute for more details.
+   The optional *mtime* argument is the timestamp requested by gzip. The time
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+   If *mtime* is omitted or ``None``, the current time is used. Use *mtime* = 0
+   to generate a compressed stream that does not depend on creation time.
+
+   See below for the :attr:`mtime` attribute that is set when decompressing.
 
    Calling a :class:`GzipFile` object's :meth:`!close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
@@ -120,9 +129,7 @@ The module defines the following items:
    .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
-      At most one single read on the compressed stream is done to satisfy
-      the call.  The number of bytes returned may be more or less than
-      requested.
+      The number of bytes returned may be more or less than requested.
 
       .. note:: While calling :meth:`peek` does not change the file position of
          the :class:`GzipFile`, it may change the position of the underlying
@@ -131,17 +138,19 @@ The module defines the following items:
 
       .. versionadded:: 3.2
 
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionchanged:: 3.13
+         In previous versions it was an integer ``1`` or ``2``.
+
    .. attribute:: mtime
 
-      When decompressing, the value of the last modification time field in
-      the most recently read header may be read from this attribute, as an
-      integer.  The initial value before reading any headers is ``None``.
-
-      All :program:`gzip` compressed streams are required to contain this
-      timestamp field.  Some programs, such as :program:`gunzip`\ , make use
-      of the timestamp.  The format is the same as the return value of
-      :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
-      the object returned by :func:`os.stat`.
+      When decompressing, this attribute is set to the last timestamp in the most
+      recently read header.  It is an integer, holding the number of seconds
+      since the Unix epoch (00:00:00 UTC, January 1, 1970).
+      The initial value before reading any headers is ``None``.
 
    .. attribute:: name
 
@@ -171,22 +180,26 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
-      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
-      attribute instead.
-
    .. deprecated:: 3.9
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
 
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
 
-.. function:: compress(data, compresslevel=9, *, mtime=None)
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
+
+
+.. function:: compress(data, compresslevel=6, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in
-   the :class:`GzipFile` constructor above. When *mtime* is set to ``0``, this
-   function is equivalent to :func:`zlib.compress` with *wbits* set to ``31``.
-   The zlib function is faster.
+   the :class:`GzipFile` constructor above,
+   but *mtime* defaults to 0 for reproducible output.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.8
@@ -194,7 +207,21 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by compressing all data at once instead of in a
       streamed fashion. Calls with *mtime* set to ``0`` are delegated to
-      :func:`zlib.compress` for better speed.
+      :func:`zlib.compress` for better speed. In this situation the
+      output may contain a gzip header "OS" byte value other than 255
+      "unknown" as supplied by the underlying zlib implementation.
+
+   .. versionchanged:: 3.13
+      The gzip header OS byte is guaranteed to be set to 255 when this function
+      is used as was the case in 3.10 and earlier.
+   .. versionchanged:: 3.14
+      The *mtime* parameter now defaults to 0 for reproducible output.
+      For the previous behaviour of using the current time,
+      pass ``None`` to *mtime*.
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. function:: decompress(data)
 
@@ -247,12 +274,16 @@ Example of how to GZIP compress a binary string::
       The basic data compression module needed to support the :program:`gzip` file
       format.
 
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
 
 .. program:: gzip
 
 .. _gzip-cli:
 
-Command Line Interface
+Command-line interface
 ----------------------
 
 The :mod:`gzip` module provides a simple command line interface to compress or
@@ -265,7 +296,7 @@ Once executed the :mod:`gzip` module keeps the input file(s).
    Add a new command line interface with a usage.
    By default, when you will execute the CLI, the default compression level is 6.
 
-Command line options
+Command-line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. option:: file

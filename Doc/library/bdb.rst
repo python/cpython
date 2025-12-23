@@ -1,5 +1,5 @@
-:mod:`bdb` --- Debugger framework
-=================================
+:mod:`!bdb` --- Debugger framework
+==================================
 
 .. module:: bdb
    :synopsis: Debugger framework.
@@ -86,7 +86,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. attribute:: temporary
 
-      True if a :class:`Breakpoint` at (file, line) is temporary.
+      ``True`` if a :class:`Breakpoint` at (file, line) is temporary.
 
    .. attribute:: cond
 
@@ -99,7 +99,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. attribute:: enabled
 
-      True if :class:`Breakpoint` is enabled.
+      ``True`` if :class:`Breakpoint` is enabled.
 
    .. attribute:: bpbynumber
 
@@ -118,7 +118,7 @@ The :mod:`bdb` module also defines two classes:
 
       Count of the number of times a :class:`Breakpoint` has been hit.
 
-.. class:: Bdb(skip=None)
+.. class:: Bdb(skip=None, backend='settrace')
 
    The :class:`Bdb` class acts as a generic Python debugger base class.
 
@@ -132,8 +132,21 @@ The :mod:`bdb` module also defines two classes:
    frame is considered to originate in a certain module is determined
    by the ``__name__`` in the frame globals.
 
+   The *backend* argument specifies the backend to use for :class:`Bdb`. It
+   can be either ``'settrace'`` or ``'monitoring'``. ``'settrace'`` uses
+   :func:`sys.settrace` which has the best backward compatibility. The
+   ``'monitoring'`` backend uses the new :mod:`sys.monitoring` that was
+   introduced in Python 3.12, which can be much more efficient because it
+   can disable unused events. We are trying to keep the exact interfaces
+   for both backends, but there are some differences. The debugger developers
+   are encouraged to use the ``'monitoring'`` backend to achieve better
+   performance.
+
    .. versionchanged:: 3.1
       Added the *skip* parameter.
+
+   .. versionchanged:: 3.14
+      Added the *backend* parameter.
 
    The following methods of :class:`Bdb` normally don't need to be overridden.
 
@@ -145,6 +158,20 @@ The :mod:`bdb` module also defines two classes:
       :func:`case-normalized <os.path.normcase>` :func:`absolute path
       <os.path.abspath>`. A *filename* with angle brackets, such as ``"<stdin>"``
       generated in interactive mode, is returned unchanged.
+
+   .. method:: start_trace(self)
+
+      Start tracing. For ``'settrace'`` backend, this method is equivalent to
+      ``sys.settrace(self.trace_dispatch)``
+
+      .. versionadded:: 3.14
+
+   .. method:: stop_trace(self)
+
+      Stop tracing. For ``'settrace'`` backend, this method is equivalent to
+      ``sys.settrace(None)``
+
+      .. versionadded:: 3.14
 
    .. method:: reset()
 
@@ -165,12 +192,8 @@ The :mod:`bdb` module also defines two classes:
         entered.
       * ``"return"``: A function or other code block is about to return.
       * ``"exception"``: An exception has occurred.
-      * ``"c_call"``: A C function is about to be called.
-      * ``"c_return"``: A C function has returned.
-      * ``"c_exception"``: A C function has raised an exception.
 
-      For the Python events, specialized functions (see below) are called.  For
-      the C events, no action is taken.
+      For all the events, specialized functions (see below) are called.
 
       The *arg* parameter depends on the previous event.
 
@@ -213,24 +236,24 @@ The :mod:`bdb` module also defines two classes:
    Normally derived classes don't override the following methods, but they may
    if they want to redefine the definition of stopping and breakpoints.
 
-   .. method:: is_skipped_line(module_name)
+   .. method:: is_skipped_module(module_name)
 
-      Return True if *module_name* matches any skip pattern.
+      Return ``True`` if *module_name* matches any skip pattern.
 
    .. method:: stop_here(frame)
 
-      Return True if *frame* is below the starting frame in the stack.
+      Return ``True`` if *frame* is below the starting frame in the stack.
 
    .. method:: break_here(frame)
 
-      Return True if there is an effective breakpoint for this line.
+      Return ``True`` if there is an effective breakpoint for this line.
 
       Check whether a line or function breakpoint exists and is in effect.  Delete temporary
       breakpoints based on information from :func:`effective`.
 
    .. method:: break_anywhere(frame)
 
-      Return True if any breakpoint exists for *frame*'s filename.
+      Return ``True`` if any breakpoint exists for *frame*'s filename.
 
    Derived classes should override these methods to gain control over debugger
    operation.
@@ -239,6 +262,9 @@ The :mod:`bdb` module also defines two classes:
 
       Called from :meth:`dispatch_call` if a break might stop inside the
       called function.
+
+      *argument_list* is not used anymore and will always be ``None``.
+      The argument is kept for backwards compatibility.
 
    .. method:: user_line(frame)
 
@@ -285,6 +311,10 @@ The :mod:`bdb` module also defines two classes:
 
       Start debugging from *frame*.  If *frame* is not specified, debugging
       starts from caller's frame.
+
+      .. versionchanged:: 3.13
+         :func:`set_trace` will enter the debugger immediately, rather than
+         on the next line of code to be executed.
 
    .. method:: set_continue()
 
@@ -341,7 +371,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: get_break(filename, lineno)
 
-      Return True if there is a breakpoint for *lineno* in *filename*.
+      Return ``True`` if there is a breakpoint for *lineno* in *filename*.
 
    .. method:: get_breaks(filename, lineno)
 
@@ -355,6 +385,28 @@ The :mod:`bdb` module also defines two classes:
    .. method:: get_all_breaks()
 
       Return all breakpoints that are set.
+
+
+   Derived classes and clients can call the following methods to disable and
+   restart events to achieve better performance. These methods only work
+   when using the ``'monitoring'`` backend.
+
+   .. method:: disable_current_event()
+
+      Disable the current event until the next time :func:`restart_events` is
+      called. This is helpful when the debugger is not interested in the current
+      line.
+
+      .. versionadded:: 3.14
+
+   .. method:: restart_events()
+
+      Restart all the disabled events. This function is automatically called in
+      ``dispatch_*`` methods after ``user_*`` methods are called. If the
+      ``dispatch_*`` methods are not overridden, the disabled events will be
+      restarted after each user interaction.
+
+      .. versionadded:: 3.14
 
 
    Derived classes and clients can call the following methods to get a data
@@ -405,7 +457,7 @@ Finally, the module defines the following functions:
 
 .. function:: checkfuncname(b, frame)
 
-   Return True if we should break here, depending on the way the
+   Return ``True`` if we should break here, depending on the way the
    :class:`Breakpoint` *b* was set.
 
    If it was set via line number, it checks if
@@ -424,14 +476,14 @@ Finally, the module defines the following functions:
    :attr:`bplist <bdb.Breakpoint.bplist>` for the
    (:attr:`file <bdb.Breakpoint.file>`, :attr:`line <bdb.Breakpoint.line>`)
    (which must exist) that is :attr:`enabled <bdb.Breakpoint.enabled>`, for
-   which :func:`checkfuncname` is True, and that has neither a False
+   which :func:`checkfuncname` is true, and that has neither a false
    :attr:`condition <bdb.Breakpoint.cond>` nor positive
    :attr:`ignore <bdb.Breakpoint.ignore>` count.  The *flag*, meaning that a
-   temporary breakpoint should be deleted, is False only when the
+   temporary breakpoint should be deleted, is ``False`` only when the
    :attr:`cond <bdb.Breakpoint.cond>` cannot be evaluated (in which case,
    :attr:`ignore <bdb.Breakpoint.ignore>` count is ignored).
 
-   If no such entry exists, then (None, None) is returned.
+   If no such entry exists, then ``(None, None)`` is returned.
 
 
 .. function:: set_trace()

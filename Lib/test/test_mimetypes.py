@@ -1,12 +1,13 @@
 import io
 import mimetypes
-import pathlib
+import os
+import shlex
 import sys
 import unittest.mock
-
-from test import support
-from test.support import os_helper
 from platform import win32_edition
+from test import support
+from test.support import cpython_only, force_not_colorized, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 try:
     import _winapi
@@ -35,20 +36,28 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_case_sensitivity(self):
         eq = self.assertEqual
-        eq(self.db.guess_type("foobar.HTML"), self.db.guess_type("foobar.html"))
-        eq(self.db.guess_type("foobar.TGZ"), self.db.guess_type("foobar.tgz"))
-        eq(self.db.guess_type("foobar.tar.Z"), ("application/x-tar", "compress"))
-        eq(self.db.guess_type("foobar.tar.z"), (None, None))
+        eq(self.db.guess_file_type("foobar.html"), ("text/html", None))
+        eq(self.db.guess_type("scheme:foobar.html"), ("text/html", None))
+        eq(self.db.guess_file_type("foobar.HTML"), ("text/html", None))
+        eq(self.db.guess_type("scheme:foobar.HTML"), ("text/html", None))
+        eq(self.db.guess_file_type("foobar.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("scheme:foobar.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foobar.TGZ"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_type("scheme:foobar.TGZ"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_type("scheme:foobar.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_file_type("foobar.tar.z"), (None, None))
+        eq(self.db.guess_type("scheme:foobar.tar.z"), (None, None))
 
     def test_default_data(self):
         eq = self.assertEqual
-        eq(self.db.guess_type("foo.html"), ("text/html", None))
-        eq(self.db.guess_type("foo.HTML"), ("text/html", None))
-        eq(self.db.guess_type("foo.tgz"), ("application/x-tar", "gzip"))
-        eq(self.db.guess_type("foo.tar.gz"), ("application/x-tar", "gzip"))
-        eq(self.db.guess_type("foo.tar.Z"), ("application/x-tar", "compress"))
-        eq(self.db.guess_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
-        eq(self.db.guess_type("foo.tar.xz"), ("application/x-tar", "xz"))
+        eq(self.db.guess_file_type("foo.html"), ("text/html", None))
+        eq(self.db.guess_file_type("foo.HTML"), ("text/html", None))
+        eq(self.db.guess_file_type("foo.tgz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foo.tar.gz"), ("application/x-tar", "gzip"))
+        eq(self.db.guess_file_type("foo.tar.Z"), ("application/x-tar", "compress"))
+        eq(self.db.guess_file_type("foo.tar.bz2"), ("application/x-tar", "bzip2"))
+        eq(self.db.guess_file_type("foo.tar.xz"), ("application/x-tar", "xz"))
 
     def test_data_urls(self):
         eq = self.assertEqual
@@ -62,7 +71,7 @@ class MimeTypesTestCase(unittest.TestCase):
         eq = self.assertEqual
         sio = io.StringIO("x-application/x-unittest pyunit\n")
         self.db.readfp(sio)
-        eq(self.db.guess_type("foo.pyunit"),
+        eq(self.db.guess_file_type("foo.pyunit"),
            ("x-application/x-unittest", None))
         eq(self.db.guess_extension("x-application/x-unittest"), ".pyunit")
 
@@ -74,10 +83,18 @@ class MimeTypesTestCase(unittest.TestCase):
 
         with os_helper.temp_dir() as directory:
             data = "x-application/x-unittest pyunit\n"
-            file = pathlib.Path(directory, "sample.mimetype")
-            file.write_text(data, encoding="utf-8")
+            file = os.path.join(directory, "sample.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
             mime_dict = mimetypes.read_mime_types(file)
             eq(mime_dict[".pyunit"], "x-application/x-unittest")
+
+            data = "x-application/x-unittest2 pyunit2\n"
+            file = os.path.join(directory, "sample2.mimetype")
+            with open(file, 'w', encoding="utf-8") as f:
+                f.write(data)
+            mime_dict = mimetypes.read_mime_types(os_helper.FakePath(file))
+            eq(mime_dict[".pyunit2"], "x-application/x-unittest2")
 
         # bpo-41048: read_mime_types should read the rule file with 'utf-8' encoding.
         # Not with locale encoding. _bootlocale has been imported because io.open(...)
@@ -94,14 +111,13 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_non_standard_types(self):
         eq = self.assertEqual
         # First try strict
-        eq(self.db.guess_type('foo.xul', strict=True), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=True), None)
+        eq(self.db.guess_file_type('foo.xul', strict=True), (None, None))
         # And then non-strict
-        eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
-        eq(self.db.guess_type('foo.XUL', strict=False), ('text/xul', None))
-        eq(self.db.guess_type('foo.invalid', strict=False), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
-        eq(self.db.guess_extension('image/JPG', strict=False), '.jpg')
+        eq(self.db.guess_file_type('foo.xul', strict=False), ('text/xul', None))
+        eq(self.db.guess_file_type('foo.XUL', strict=False), ('text/xul', None))
+        eq(self.db.guess_file_type('foo.invalid', strict=False), (None, None))
+        eq(self.db.guess_extension('image/jpeg', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/JPEG', strict=False), '.jpg')
 
     def test_filename_with_url_delimiters(self):
         # bpo-38449: URL delimiters cases should be handled also.
@@ -109,14 +125,50 @@ class MimeTypesTestCase(unittest.TestCase):
         # compared to when interpreted as filename because of the semicolon.
         eq = self.assertEqual
         gzip_expected = ('application/x-tar', 'gzip')
-        eq(self.db.guess_type(";1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("?1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("#1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("#1#.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(";1#.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(";&1=123;?.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("?k1=v1&k2=v2.tar.gz"), gzip_expected)
+        for name in (
+                ';1.tar.gz',
+                '?1.tar.gz',
+                '#1.tar.gz',
+                '#1#.tar.gz',
+                ';1#.tar.gz',
+                ';&1=123;?.tar.gz',
+                '?k1=v1&k2=v2.tar.gz',
+            ):
+            for prefix in ('', '/', '\\',
+                           'c:', 'c:/', 'c:\\', 'c:/d/', 'c:\\d\\',
+                           '//share/server/', '\\\\share\\server\\'):
+                path = prefix + name
+                with self.subTest(path=path):
+                    eq(self.db.guess_file_type(path), gzip_expected)
+                    eq(self.db.guess_type(path), gzip_expected)
+            expected = (None, None) if os.name == 'nt' else gzip_expected
+            for prefix in ('//', '\\\\', '//share/', '\\\\share\\'):
+                path = prefix + name
+                with self.subTest(path=path):
+                    eq(self.db.guess_file_type(path), expected)
+                    eq(self.db.guess_type(path), expected)
+        eq(self.db.guess_file_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
         eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
+
+        eq(self.db.guess_file_type(r'foo/.tar.gz'), (None, 'gzip'))
+        eq(self.db.guess_type(r'foo/.tar.gz'), (None, 'gzip'))
+        expected = (None, 'gzip') if os.name == 'nt' else gzip_expected
+        eq(self.db.guess_file_type(r'foo\.tar.gz'), expected)
+        eq(self.db.guess_type(r'foo\.tar.gz'), expected)
+        eq(self.db.guess_type(r'scheme:foo\.tar.gz'), gzip_expected)
+
+    def test_url(self):
+        result = self.db.guess_type('http://example.com/host.html')
+        result = self.db.guess_type('http://host.html')
+        msg = 'URL only has a host name, not a file'
+        self.assertSequenceEqual(result, (None, None), msg)
+        result = self.db.guess_type('http://example.com/host.html')
+        msg = 'Should be text/html'
+        self.assertSequenceEqual(result, ('text/html', None), msg)
+        result = self.db.guess_type('http://example.com/host.html#x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
+        result = self.db.guess_type('http://example.com/host.html?q=x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
 
     def test_guess_all_types(self):
         # First try strict.  Use a set here for testing the results because if
@@ -126,8 +178,8 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertTrue(set(all) >= {'.bat', '.c', '.h', '.ksh', '.pl', '.txt'})
         self.assertEqual(len(set(all)), len(all))  # no duplicates
         # And now non-strict
-        all = self.db.guess_all_extensions('image/jpg', strict=False)
-        self.assertEqual(all, ['.jpg'])
+        all = self.db.guess_all_extensions('image/jpeg', strict=False)
+        self.assertEqual(all, ['.jpg', '.jpe', '.jpeg'])
         # And now for no hits
         all = self.db.guess_all_extensions('image/jpg', strict=True)
         self.assertEqual(all, [])
@@ -171,28 +223,100 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_preferred_extension(self):
         def check_extensions():
-            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
-            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
-            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
-            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
-            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
-            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
-            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
-            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
-            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
-            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
-            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
-            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
-            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
-            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
-            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
+            for mime_type, ext in (
+                ("application/epub+zip", ".epub"),
+                ("application/octet-stream", ".bin"),
+                ("application/gzip", ".gz"),
+                ("application/ogg", ".ogx"),
+                ("application/pdf", ".pdf"),
+                ("application/postscript", ".ps"),
+                ("application/rtf", ".rtf"),
+                ("application/texinfo", ".texi"),
+                ("application/toml", ".toml"),
+                ("application/vnd.apple.mpegurl", ".m3u"),
+                ("application/vnd.ms-excel", ".xls"),
+                ("application/vnd.ms-fontobject", ".eot"),
+                ("application/vnd.ms-powerpoint", ".ppt"),
+                ("application/vnd.oasis.opendocument.graphics", ".odg"),
+                ("application/vnd.oasis.opendocument.presentation", ".odp"),
+                ("application/vnd.oasis.opendocument.spreadsheet", ".ods"),
+                ("application/vnd.oasis.opendocument.text", ".odt"),
+                ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+                ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+                ("application/vnd.rar", ".rar"),
+                ("application/x-7z-compressed", ".7z"),
+                ("application/x-debian-package", ".deb"),
+                ("application/x-httpd-php", ".php"),
+                ("application/x-rpm", ".rpm"),
+                ("application/x-troff", ".roff"),
+                ("application/xml", ".xsl"),
+                ("application/yaml", ".yaml"),
+                ("audio/flac", ".flac"),
+                ("audio/matroska", ".mka"),
+                ("audio/mp4", ".m4a"),
+                ("audio/mpeg", ".mp3"),
+                ("audio/ogg", ".ogg"),
+                ("audio/vnd.wave", ".wav"),
+                ("audio/webm", ".weba"),
+                ("font/otf", ".otf"),
+                ("font/ttf", ".ttf"),
+                ("font/woff", ".woff"),
+                ("font/woff2", ".woff2"),
+                ("image/avif", ".avif"),
+                ("image/emf", ".emf"),
+                ("image/fits", ".fits"),
+                ("image/g3fax", ".g3"),
+                ("image/jp2", ".jp2"),
+                ("image/jpeg", ".jpg"),
+                ("image/jpm", ".jpm"),
+                ("image/t38", ".t38"),
+                ("image/tiff", ".tiff"),
+                ("image/tiff-fx", ".tfx"),
+                ("image/webp", ".webp"),
+                ("image/wmf", ".wmf"),
+                ("message/rfc822", ".eml"),
+                ("model/gltf+json", ".gltf"),
+                ("model/gltf-binary", ".glb"),
+                ("model/stl", ".stl"),
+                ("text/html", ".html"),
+                ("text/plain", ".txt"),
+                ("text/x-rst", ".rst"),
+                ("video/matroska", ".mkv"),
+                ("video/matroska-3d", ".mk3d"),
+                ("video/mpeg", ".mpeg"),
+                ("video/ogg", ".ogv"),
+                ("video/quicktime", ".mov"),
+                ("video/vnd.avi", ".avi"),
+                ("video/x-m4v", ".m4v"),
+                ("video/x-ms-wmv", ".wmv"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
         check_extensions()
         mimetypes.init()
         check_extensions()
+
+    def test_guess_file_type(self):
+        def check_file_type():
+            for mime_type, ext in (
+                ("application/yaml", ".yaml"),
+                ("application/yaml", ".yml"),
+                ("audio/mpeg", ".mp2"),
+                ("audio/mpeg", ".mp3"),
+                ("video/mpeg", ".m1v"),
+                ("video/mpeg", ".mpe"),
+                ("video/mpeg", ".mpeg"),
+                ("video/mpeg", ".mpg"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    result, _ = mimetypes.guess_file_type(f"filename{ext}")
+                    self.assertEqual(result, mime_type)
+
+        check_file_type()
+        mimetypes.init()
+        check_file_type()
 
     def test_init_stability(self):
         mimetypes.init()
@@ -214,26 +338,56 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"
-        filepath = pathlib.Path(filename)
-        filepath_with_abs_dir = pathlib.Path('/dir/'+filename)
-        filepath_relative = pathlib.Path('../dir/'+filename)
-        path_dir = pathlib.Path('./')
+        filepath = os_helper.FakePath(filename)
+        filepath_with_abs_dir = os_helper.FakePath('/dir/'+filename)
+        filepath_relative = os_helper.FakePath('../dir/'+filename)
+        path_dir = os_helper.FakePath('./')
 
-        expected = self.db.guess_type(filename)
+        expected = self.db.guess_file_type(filename)
 
+        self.assertEqual(self.db.guess_file_type(filepath), expected)
         self.assertEqual(self.db.guess_type(filepath), expected)
+        self.assertEqual(self.db.guess_file_type(
+            filepath_with_abs_dir), expected)
         self.assertEqual(self.db.guess_type(
             filepath_with_abs_dir), expected)
+        self.assertEqual(self.db.guess_file_type(filepath_relative), expected)
         self.assertEqual(self.db.guess_type(filepath_relative), expected)
+
+        self.assertEqual(self.db.guess_file_type(path_dir), (None, None))
         self.assertEqual(self.db.guess_type(path_dir), (None, None))
 
+    def test_bytes_path(self):
+        self.assertEqual(self.db.guess_file_type(b'foo.html'),
+                         self.db.guess_file_type('foo.html'))
+        self.assertEqual(self.db.guess_file_type(b'foo.tar.gz'),
+                         self.db.guess_file_type('foo.tar.gz'))
+        self.assertEqual(self.db.guess_file_type(b'foo.tgz'),
+                         self.db.guess_file_type('foo.tgz'))
+
     def test_keywords_args_api(self):
+        self.assertEqual(self.db.guess_file_type(
+            path="foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_type(
-            url="foo.html", strict=True), ("text/html", None))
+            url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
-            type='image/jpg', strict=True), [])
-        self.assertEqual(self.db.guess_extension(
-            type='image/jpg', strict=False), '.jpg')
+            type='image/jpeg', strict=True), ['.jpg', '.jpe', '.jpeg'])
+
+    def test_added_types_are_used(self):
+        mimetypes.add_type('testing/default-type', '')
+        mime_type, _ = mimetypes.guess_type('')
+        self.assertEqual(mime_type, 'testing/default-type')
+
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, None)
+
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, 'testing/type')
+
+    def test_add_type_with_undotted_extension_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            mimetypes.add_type("testing/type", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
@@ -281,53 +435,74 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, mimetypes)
 
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse", "argparse"})
 
-class MimetypesCliTestCase(unittest.TestCase):
 
-    def mimetypes_cmd(self, *args, **kwargs):
-        support.patch(self, sys, "argv", [sys.executable, *args])
-        with support.captured_stdout() as output:
-            mimetypes._main()
-            return output.getvalue().strip()
+class CommandLineTest(unittest.TestCase):
+    @force_not_colorized
+    def test_parse_args(self):
+        args, help_text = mimetypes._parse_args("-h")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def test_help_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "-h"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
+        args, help_text = mimetypes._parse_args("--invalid")
+        self.assertTrue(help_text.startswith("usage: "))
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 0)
+        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpeg"))
+        self.assertTrue(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["image/jpeg"])
 
-    def test_invalid_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
+        args, _ = mimetypes._parse_args(shlex.split("-e image/jpeg"))
+        self.assertTrue(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["image/jpeg"])
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 1)
+        args, _ = mimetypes._parse_args(shlex.split("-l foo.webp"))
+        self.assertFalse(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["foo.webp"])
 
-    def test_guess_extension(self):
-        eq = self.assertEqual
+        args, _ = mimetypes._parse_args(shlex.split("foo.pic"))
+        self.assertFalse(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["foo.pic"])
 
-        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
-        eq(extension, ".jpg")
+    def test_multiple_inputs(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.png")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "type: image/png encoding: None"
+        )
 
-        extension = self.mimetypes_cmd("-e", "image/jpg")
-        eq(extension, "I don't know anything about type image/jpg")
+    def test_multiple_inputs_error(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.bar_ext")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "error: media type unknown for foo.bar_ext"
+        )
 
-        extension = self.mimetypes_cmd("-e", "image/jpeg")
-        eq(extension, ".jpg")
 
-    def test_guess_type(self):
-        eq = self.assertEqual
+    def test_invocation(self):
+        for command, expected in [
+            ("-e image/jpeg", ".jpg"),
+            ("-l foo.webp", "type: image/webp encoding: None"),
+        ]:
+            result = "\n".join(mimetypes._main(shlex.split(command)))
+            self.assertEqual(result, expected)
 
-        type_info = self.mimetypes_cmd("-l", "foo.pic")
-        eq(type_info, "type: image/pict encoding: None")
+    def test_invocation_error(self):
+        for command, expected in [
+            ("-e image/jpg", "error: unknown type image/jpg"),
+            ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
+        ]:
+            with self.subTest(command=command):
+                result = "\n".join(mimetypes._main(shlex.split(command)))
+                self.assertEqual(result, expected)
 
-        type_info = self.mimetypes_cmd("foo.pic")
-        eq(type_info, "I don't know anything about type foo.pic")
 
 if __name__ == "__main__":
     unittest.main()

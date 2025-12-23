@@ -1,5 +1,5 @@
-:mod:`stat` --- Interpreting :func:`~os.stat` results
-=====================================================
+:mod:`!stat` --- Interpreting :func:`~os.stat` results
+======================================================
 
 .. module:: stat
    :synopsis: Utilities for interpreting the results of os.stat(),
@@ -354,7 +354,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    All user settable flags.
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_NODUMP
 
@@ -384,13 +384,13 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    Used for handling document IDs (macOS)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_DATAVAULT
 
    The file needs an entitlement for reading or writing (macOS 10.13+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_HIDDEN
 
@@ -400,7 +400,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    All super-user changeable flags
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_SUPPORTED
 
@@ -408,7 +408,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    .. availability:: macOS
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_SYNTHETIC
 
@@ -416,7 +416,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    .. availability:: macOS
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_ARCHIVED
 
@@ -434,7 +434,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file needs an entitlement to write to (macOS 10.13+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_NOUNLINK
 
@@ -448,13 +448,13 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file is a firmlink (macOS 10.15+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_DATALESS
 
    The file is a dataless object (macOS 10.15+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 See the \*BSD or macOS systems man page :manpage:`chflags(2)` for more information.
 
@@ -493,3 +493,22 @@ constants, but are not an exhaustive list.
           IO_REPARSE_TAG_APPEXECLINK
 
    .. versionadded:: 3.8
+
+On Linux, the following file attribute constants are available for use when
+testing bits in the :attr:`~os.statx_result.stx_attributes` and
+:attr:`~os.statx_result.stx_attributes_mask` members returned by
+:func:`os.statx`.  See the :manpage:`statx(2)` man page for more detail on the
+meaning of these constants.
+
+.. data:: STATX_ATTR_COMPRESSED
+          STATX_ATTR_IMMUTABLE
+          STATX_ATTR_APPEND
+          STATX_ATTR_NODUMP
+          STATX_ATTR_ENCRYPTED
+          STATX_ATTR_AUTOMOUNT
+          STATX_ATTR_MOUNT_ROOT
+          STATX_ATTR_VERITY
+          STATX_ATTR_DAX
+          STATX_ATTR_WRITE_ATOMIC
+
+   .. versionadded:: 3.15

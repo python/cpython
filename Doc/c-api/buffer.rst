@@ -26,17 +26,19 @@ characteristic of being backed by a possibly large memory buffer.  It is
 then desirable, in some situations, to access that buffer directly and
 without intermediate copying.
 
-Python provides such a facility at the C level in the form of the :ref:`buffer
-protocol <bufferobjects>`.  This protocol has two sides:
+Python provides such a facility at the C and Python level in the form of the
+:ref:`buffer protocol <bufferobjects>`.  This protocol has two sides:
 
 .. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.
-  This interface is described in the section :ref:`buffer-structs`;
+  This interface is described in the section :ref:`buffer-structs`; for
+  Python see :ref:`python-buffer-protocol`.
 
 - on the consumer side, several means are available to obtain a pointer to
-  the raw underlying data of an object (for example a method parameter).
+  the raw underlying data of an object (for example a method parameter). For
+  Python see :class:`memoryview`.
 
 Simple objects such as :class:`bytes` and :class:`bytearray` expose their
 underlying buffer in byte-oriented form.  Other forms are possible; for example,
@@ -62,6 +64,10 @@ In both cases, :c:func:`PyBuffer_Release` must be called when the buffer
 isn't needed anymore.  Failure to do so could lead to various issues such as
 resource leaks.
 
+.. versionadded:: 3.12
+
+   The buffer protocol is now accessible in Python, see
+   :ref:`python-buffer-protocol` and :class:`memoryview`.
 
 .. _buffer-structure:
 
@@ -147,9 +153,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       or a :c:macro:`PyBUF_WRITABLE` request, the consumer must disregard
       :c:member:`~Py_buffer.itemsize` and assume ``itemsize == 1``.
 
-   .. c:member:: const char *format
+   .. c:member:: char *format
 
-      A *NUL* terminated string in :mod:`struct` module style syntax describing
+      A *NULL* terminated string in :mod:`struct` module style syntax describing
       the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
       is assumed.
 
@@ -244,7 +250,6 @@ The following fields are not influenced by *flags* and must always be filled in
 with the correct values: :c:member:`~Py_buffer.obj`, :c:member:`~Py_buffer.buf`,
 :c:member:`~Py_buffer.len`, :c:member:`~Py_buffer.itemsize`, :c:member:`~Py_buffer.ndim`.
 
-
 readonly, format
 ~~~~~~~~~~~~~~~~
 
@@ -253,7 +258,12 @@ readonly, format
       Controls the :c:member:`~Py_buffer.readonly` field. If set, the exporter
       MUST provide a writable buffer or else report failure. Otherwise, the
       exporter MAY provide either a read-only or writable buffer, but the choice
-      MUST be consistent for all consumers.
+      MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
+      can be used to request a simple writable buffer.
+
+   .. c:macro:: PyBUF_WRITEABLE
+
+      This is a :term:`soft deprecated` alias to :c:macro:`PyBUF_WRITABLE`.
 
    .. c:macro:: PyBUF_FORMAT
 
@@ -265,8 +275,9 @@ readonly, format
 Since :c:macro:`PyBUF_SIMPLE` is defined as 0, :c:macro:`PyBUF_WRITABLE`
 can be used as a stand-alone flag to request a simple writable buffer.
 
-:c:macro:`PyBUF_FORMAT` can be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`.
-The latter already implies format ``B`` (unsigned bytes).
+:c:macro:`PyBUF_FORMAT` must be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`, because
+the latter already implies format ``B`` (unsigned bytes). :c:macro:`!PyBUF_FORMAT` cannot be
+used on its own.
 
 
 shape, strides, suboffsets

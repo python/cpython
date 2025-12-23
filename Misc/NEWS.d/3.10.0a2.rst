@@ -226,8 +226,8 @@ thread at the time the function is called.
 .. section: Core and Builtins
 
 Enable ``from __future__ import annotations`` (:pep:`563`) by default. The
-values found in :attr:`__annotations__` dicts are now strings, e.g. ``{"x":
-"int"}`` instead of ``{"x": int}``.
+values found in :attr:`~object.__annotations__` dicts are now strings, for
+example ``{"x": "int"}`` instead of ``{"x": int}``.
 
 ..
 
@@ -362,7 +362,7 @@ plistlib: fix parsing XML plists with hexadecimal integer values
 .. nonce: 85BsRA
 .. section: Library
 
-Fix an incorrectly formatted error from :meth:`_codecs.charmap_decode` when
+Fix an incorrectly formatted error from :meth:`!_codecs.charmap_decode` when
 called with a mapped value outside the range of valid Unicode code points.
 PR by Max Bernstein.
 
@@ -383,7 +383,7 @@ Inwood.
 .. nonce: jd_gkA
 .. section: Library
 
-:meth:`sched.scheduler.cancel()` will now cancel the correct event, if two
+:meth:`sched.scheduler.cancel` will now cancel the correct event, if two
 events with same priority are scheduled for the same time. Patch by Bar
 Harel.
 
@@ -593,7 +593,7 @@ of treating them as a match.
 .. nonce: ONk9Na
 .. section: Library
 
-Fix ``--outfile`` for :mod:`cProfile` / :mod:`profile` not writing the
+Fix ``--outfile`` for :mod:`!cProfile` / :mod:`!profile` not writing the
 output file in the original directory when the program being profiled
 changes the working directory.  PR by Anthony Sottile.
 

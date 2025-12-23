@@ -309,7 +309,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[0].type_comment, None)
 
     def test_parenthesized_withstmt(self):
-        for tree in self.parse_all(parenthesized_withstmt, minver=9):
+        for tree in self.parse_all(parenthesized_withstmt):
             self.assertEqual(tree.body[0].type_comment, "int")
             self.assertEqual(tree.body[1].type_comment, "int")
         tree = self.classic_parse(parenthesized_withstmt)
@@ -344,7 +344,7 @@ class TypeCommentTests(unittest.TestCase):
                 todo = set(t.name[1:])
                 self.assertEqual(len(t.args.args) + len(t.args.posonlyargs),
                                  len(todo) - bool(t.args.vararg) - bool(t.args.kwarg))
-                self.assertTrue(t.name.startswith('f'), t.name)
+                self.assertStartsWith(t.name, 'f')
                 for index, c in enumerate(t.name[1:]):
                     todo.remove(c)
                     if c == 'v':

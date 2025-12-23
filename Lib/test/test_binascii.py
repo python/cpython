@@ -38,13 +38,13 @@ class BinASCIITest(unittest.TestCase):
 
     def test_exceptions(self):
         # Check module exceptions
-        self.assertTrue(issubclass(binascii.Error, Exception))
-        self.assertTrue(issubclass(binascii.Incomplete, Exception))
+        self.assertIsSubclass(binascii.Error, Exception)
+        self.assertIsSubclass(binascii.Incomplete, Exception)
 
     def test_functions(self):
         # Check presence of all functions
         for name in all_functions:
-            self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
+            self.assertHasAttr(getattr(binascii, name), '__call__')
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_returned_value(self):
@@ -139,13 +139,21 @@ class BinASCIITest(unittest.TestCase):
         def assertDiscontinuousPadding(data, non_strict_mode_expected_result: bytes):
             _assertRegexTemplate(r'(?i)Discontinuous padding', data, non_strict_mode_expected_result)
 
+        def assertExcessPadding(data, non_strict_mode_expected_result: bytes):
+            _assertRegexTemplate(r'(?i)Excess padding', data, non_strict_mode_expected_result)
+
         # Test excess data exceptions
         assertExcessData(b'ab==a', b'i')
         assertExcessData(b'ab===', b'i')
+        assertExcessData(b'ab====', b'i')
         assertExcessData(b'ab==:', b'i')
         assertExcessData(b'abc=a', b'i\xb7')
         assertExcessData(b'abc=:', b'i\xb7')
         assertExcessData(b'ab==\n', b'i')
+        assertExcessData(b'abc==', b'i\xb7')
+        assertExcessData(b'abc===', b'i\xb7')
+        assertExcessData(b'abc====', b'i\xb7')
+        assertExcessData(b'abc=====', b'i\xb7')
 
         # Test non-base64 data exceptions
         assertNonBase64Data(b'\nab==', b'i')
@@ -157,8 +165,15 @@ class BinASCIITest(unittest.TestCase):
         assertLeadingPadding(b'=', b'')
         assertLeadingPadding(b'==', b'')
         assertLeadingPadding(b'===', b'')
+        assertLeadingPadding(b'====', b'')
+        assertLeadingPadding(b'=====', b'')
         assertDiscontinuousPadding(b'ab=c=', b'i\xb7')
         assertDiscontinuousPadding(b'ab=ab==', b'i\xb6\x9b')
+        assertExcessPadding(b'abcd=', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd==', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd===', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd====', b'i\xb7\x1d')
+        assertExcessPadding(b'abcd=====', b'i\xb7\x1d')
 
 
     def test_base64errors(self):

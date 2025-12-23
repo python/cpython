@@ -10,7 +10,15 @@ try:
 except ImportError:
     SimpleQueue = None
 
-__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue', 'SimpleQueue']
+__all__ = [
+    'Empty',
+    'Full',
+    'ShutDown',
+    'Queue',
+    'PriorityQueue',
+    'LifoQueue',
+    'SimpleQueue',
+]
 
 
 try:
@@ -74,8 +82,6 @@ class Queue:
 
         Raises a ValueError if called more times than there were items
         placed in the queue.
-
-        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             unfinished = self.unfinished_tasks - 1
@@ -93,8 +99,6 @@ class Queue:
         to indicate the item was retrieved and all work on it is complete.
 
         When the count of unfinished tasks drops to zero, join() unblocks.
-
-        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             while self.unfinished_tasks:
@@ -227,25 +231,28 @@ class Queue:
         return self.get(block=False)
 
     def shutdown(self, immediate=False):
-        '''Shut-down the queue, making queue gets and puts raise.
+        '''Shut-down the queue, making queue gets and puts raise ShutDown.
 
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put() will be unblocked, and also get()
-        and join() if 'immediate'. The ShutDown exception is raised.
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
         '''
         with self.mutex:
             self.is_shutdown = True
             if immediate:
-                n_items = self._qsize()
                 while self._qsize():
                     self._get()
                     if self.unfinished_tasks > 0:
                         self.unfinished_tasks -= 1
-                self.not_empty.notify_all()
                 # release all blocked threads in `join()`
                 self.all_tasks_done.notify_all()
+            # All getters need to re-check queue-empty to raise ShutDown
+            self.not_empty.notify_all()
             self.not_full.notify_all()
 
     # Override these methods to implement other queue organizations

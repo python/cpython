@@ -312,8 +312,8 @@ cluttering source directories, the *pyc* files are now collected in a
 Aside from the filenames and target directories, the new scheme has a few
 aspects that are visible to the programmer:
 
-* Imported modules now have a :attr:`__cached__` attribute which stores the name
-  of the actual file that was imported:
+* Imported modules now have a ``__cached__`` attribute which stores
+  the name of the actual file that was imported:
 
    >>> import collections
    >>> collections.__cached__ # doctest: +SKIP
@@ -458,7 +458,7 @@ Some smaller changes made to the core Python language are:
   :class:`~collections.defaultdict`, :class:`~shelve.Shelf`,
   :class:`~configparser.ConfigParser`, or :mod:`dbm`.  It is also useful with
   custom :class:`dict` subclasses that normalize keys before look-up or that
-  supply a :meth:`__missing__` method for unknown keys::
+  supply a :meth:`~object.__missing__` method for unknown keys::
 
     >>> import shelve
     >>> d = shelve.open('tmp.shl')
@@ -531,7 +531,7 @@ Some smaller changes made to the core Python language are:
 
   (Proposed and implemented by Mark Dickinson; :issue:`9337`.)
 
-* :class:`memoryview` objects now have a :meth:`~memoryview.release()` method
+* :class:`memoryview` objects now have a :meth:`~memoryview.release` method
   and they also now support the context management protocol.  This allows timely
   release of any resources that were acquired when requesting a buffer from the
   original object.
@@ -785,8 +785,8 @@ functools
 
   (Contributed by Raymond Hettinger and incorporating design ideas from Jim
   Baker, Miki Tebeka, and Nick Coghlan; see `recipe 498245
-  <https://code.activestate.com/recipes/498245/>`_\, `recipe 577479
-  <https://code.activestate.com/recipes/577479/>`_\, :issue:`10586`, and
+  <https://code.activestate.com/recipes/498245-lru-and-lfu-cache-decorators/>`_\, `recipe 577479
+  <https://code.activestate.com/recipes/577479-simple-caching-decorator/>`_\, :issue:`10586`, and
   :issue:`10593`.)
 
 * The :func:`functools.wraps` decorator now adds a :attr:`__wrapped__` attribute
@@ -1312,7 +1312,7 @@ An early decision to limit the interoperability of various numeric types has
 been relaxed.  It is still unsupported (and ill-advised) to have implicit
 mixing in arithmetic expressions such as ``Decimal('1.1') + float('1.1')``
 because the latter loses information in the process of constructing the binary
-float.  However, since existing floating point value can be converted losslessly
+float.  However, since existing floating-point value can be converted losslessly
 to either a decimal or rational representation, it makes sense to add them to
 the constructor and to support mixed-type comparisons.
 
@@ -1325,7 +1325,7 @@ the constructor and to support mixed-type comparisons.
   and :class:`fractions.Fraction` (:issue:`2531` and :issue:`8188`).
 
 Similar changes were made to :class:`fractions.Fraction` so that the
-:meth:`~fractions.Fraction.from_float()` and :meth:`~fractions.Fraction.from_decimal`
+:meth:`~fractions.Fraction.from_float` and :meth:`~fractions.Fraction.from_decimal`
 methods are no longer needed (:issue:`8294`):
 
 >>> from decimal import Decimal
@@ -1622,7 +1622,7 @@ socket
 
 The :mod:`socket` module has two new improvements.
 
-* Socket objects now have a :meth:`~socket.socket.detach()` method which puts
+* Socket objects now have a :meth:`~socket.socket.detach` method which puts
   the socket into closed state without actually closing the underlying file
   descriptor.  The latter can then be reused for other purposes.
   (Added by Antoine Pitrou; :issue:`8524`.)
@@ -1650,7 +1650,7 @@ for secure (encrypted, authenticated) internet connections:
 * The :func:`ssl.wrap_socket() <ssl.SSLContext.wrap_socket>` constructor function now takes a *ciphers*
   argument.  The *ciphers* string lists the allowed encryption algorithms using
   the format described in the `OpenSSL documentation
-  <https://www.openssl.org/docs/man1.0.2/man1/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://docs.openssl.org/1.0.2/man1/ciphers/#cipher-list-format>`__.
 
 * When linked against recent versions of OpenSSL, the :mod:`ssl` module now
   supports the Server Name Indication extension to the TLS protocol, allowing
@@ -1859,11 +1859,11 @@ asyncore
 --------
 
 :class:`!asyncore.dispatcher` now provides a
-:meth:`!handle_accepted()` method
+:meth:`!handle_accepted` method
 returning a ``(sock, addr)`` pair which is called when a connection has actually
 been established with a new remote endpoint. This is supposed to be used as a
-replacement for old :meth:`!handle_accept()` and avoids
-the user  to call :meth:`!accept()` directly.
+replacement for old :meth:`!handle_accept` and avoids
+the user  to call :meth:`!accept` directly.
 
 (Contributed by Giampaolo Rodolà; :issue:`6706`.)
 
@@ -2321,7 +2321,7 @@ Multi-threading
   intervals and reduced overhead due to lock contention and the number of
   ensuing system calls.  The notion of a "check interval" to allow thread
   switches has been abandoned and replaced by an absolute duration expressed in
-  seconds.  This parameter is tunable through :func:`sys.setswitchinterval()`.
+  seconds.  This parameter is tunable through :func:`sys.setswitchinterval`.
   It currently defaults to 5 milliseconds.
 
   Additional details about the implementation can be read from a `python-dev

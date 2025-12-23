@@ -1,5 +1,5 @@
-:mod:`xml.etree.ElementTree` --- The ElementTree XML API
-========================================================
+:mod:`!xml.etree.ElementTree` --- The ElementTree XML API
+=========================================================
 
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
@@ -20,11 +20,10 @@ for parsing and creating XML data.
    The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------
@@ -49,7 +48,7 @@ and its sub-elements are done on the :class:`Element` level.
 Parsing XML
 ^^^^^^^^^^^
 
-We'll be using the following XML document as the sample data for this section:
+We'll be using the fictive :file:`country_data.xml` XML document as the sample data for this section:
 
 .. code-block:: xml
 
@@ -165,6 +164,11 @@ simpler use-cases.  If you don't mind your application blocking on reading XML
 data but would still like to have incremental parsing capabilities, take a look
 at :func:`iterparse`.  It can be useful when you're reading a large XML document
 and don't want to hold it wholly in memory.
+
+Where *immediate* feedback through events is wanted, calling method
+:meth:`XMLPullParser.flush` can help reduce delay;
+please make sure to study the related security notes.
+
 
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -503,7 +507,7 @@ Functions
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
    Canonicalization is a way to normalise XML output in a way that allows
-   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   byte-by-byte comparisons and digital signatures.  It reduces the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
@@ -651,6 +655,10 @@ Functions
 
    .. versionchanged:: 3.13
       Added the :meth:`!close` method.
+
+   .. versionchanged:: 3.15
+      A :exc:`ResourceWarning` is now emitted if the iterator opened a file
+      and is not explicitly closed.
 
 
 .. function:: parse(source, parser=None)
@@ -835,33 +843,28 @@ Functions
 
 .. module:: xml.etree.ElementInclude
 
-.. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
-   :module:
+.. function:: default_loader(href, parse, encoding=None)
 
-   Default loader. This default loader reads an included resource from disk.  *href* is a URL.
-   *parse* is for parse mode either "xml" or "text".  *encoding*
-   is an optional text encoding.  If not given, encoding is ``utf-8``.  Returns the
-   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree
-   instance.  If the parse mode is "text", this is a Unicode string.  If the
-   loader fails, it can return None or raise an exception.
+   Default loader. This default loader reads an included resource from disk.
+   *href* is a URL.  *parse* is for parse mode either "xml" or "text".
+   *encoding* is an optional text encoding.  If not given, encoding is ``utf-8``.
+   Returns the expanded resource.
+   If the parse mode is ``"xml"``, this is an :class:`~xml.etree.ElementTree.Element` instance.
+   If the parse mode is ``"text"``, this is a string.
+   If the loader fails, it can return ``None`` or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
-                                                max_depth=6)
-   :module:
+.. function:: include(elem, loader=None, base_url=None, max_depth=6)
 
-   This function expands XInclude directives.  *elem* is the root element.  *loader* is
-   an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   This function expands XInclude directives in-place in tree pointed by *elem*.
+   *elem* is either the root :class:`~xml.etree.ElementTree.Element` or an
+   :class:`~xml.etree.ElementTree.ElementTree` instance to find such element.
+   *loader* is an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
    relative include file references.  *max_depth* is the maximum number of recursive
-   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
-   negative value to disable the limitation.
-
-   Returns the expanded resource.  If the parse mode is
-   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
-   this is a Unicode string.  If the loader fails, it can return None or
-   raise an exception.
+   inclusions.  Limited to reduce the risk of malicious content explosion.
+   Pass ``None`` to disable the limitation.
 
    .. versionchanged:: 3.9
       Added the *base_url* and *max_depth* parameters.
@@ -874,6 +877,7 @@ Element Objects
 
 .. module:: xml.etree.ElementTree
    :noindex:
+   :no-index:
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -970,7 +974,7 @@ Element Objects
 
    .. method:: extend(subelements)
 
-      Appends *subelements* from a sequence object with zero or more elements.
+      Appends *subelements* from an iterable of elements.
       Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
@@ -1058,9 +1062,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 
@@ -1373,7 +1378,7 @@ XMLParser Objects
 
    .. versionchanged:: 3.8
       Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-      The *html* argument no longer supported.
+      The *html* argument is no longer supported.
 
 
    .. method:: close()
@@ -1386,6 +1391,24 @@ XMLParser Objects
    .. method:: feed(data)
 
       Feeds data to the parser.  *data* is encoded data.
+
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
+
+      .. versionadded:: 3.13
+
 
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
@@ -1447,6 +1470,22 @@ XMLPullParser Objects
    .. method:: feed(data)
 
       Feed the given bytes data to the parser.
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      :meth:`!flush`
+      has been backported to some prior releases of CPython as a security fix.
+      Check for availability using :func:`hasattr` if used in code running
+      across a variety of Python versions.
+
+      .. versionadded:: 3.13
 
    .. method:: close()
 

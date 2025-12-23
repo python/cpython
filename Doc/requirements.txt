@@ -3,16 +3,16 @@
 # Note that when updating this file, you will likely also have to update
 # the Doc/constraints.txt file.
 
-# Sphinx version is pinned so that new versions that introduce new warnings
+# The Sphinx version is pinned so that new versions that introduce new warnings
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
-sphinx~=7.2.0
+# Keep this version in sync with ``Doc/conf.py``.
+sphinx~=9.0.0
 
 blurb
 
-sphinx-autobuild
-sphinxext-opengraph==0.7.5
-sphinx-notfound-page==1.0.0
+sphinxext-opengraph~=0.13.0
+sphinx-notfound-page~=1.0.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.

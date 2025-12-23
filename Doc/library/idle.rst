@@ -1,7 +1,7 @@
 .. _idle:
 
-IDLE
-====
+IDLE --- Python editor and shell
+================================
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
@@ -11,6 +11,9 @@ IDLE
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
+
+..
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_strip() when modifying this file.
 
 --------------
 
@@ -33,6 +36,10 @@ IDLE has the following features:
   of global and local namespaces
 
 * configuration, browsers, and other dialogs
+
+The IDLE application is implemented in the :mod:`idlelib` package.
+
+.. include:: ../includes/optional-module.rst
 
 Menus
 -----
@@ -85,7 +92,7 @@ Save
 
 Save As...
    Save the current window with a Save As dialog.  The file saved becomes the
-   new associated file for the window. (If your file namager is set to hide
+   new associated file for the window. (If your file manager is set to hide
    extensions, the current extension will be omitted in the file name box.
    If the new filename has no '.', '.py' and '.txt' will be added for Python
    and text files, except that on macOS Aqua,'.py' is added for all files.)
@@ -201,9 +208,9 @@ New Indent Width
    Open a dialog to change indent width. The accepted default by the Python
    community is 4 spaces.
 
-Strip Trailing Chitespace
+Strip Trailing Whitespace
    Remove trailing space and other whitespace characters after the last
-   non-whitespace character of a line by applying str.rstrip to each line,
+   non-whitespace character of a line by applying :meth:`str.rstrip` to each line,
    including lines within multiline strings.  Except for Shell windows,
    remove extra newlines at the end of the file.
 
@@ -429,7 +436,7 @@ Several non-character keys move the cursor and possibly
 delete characters.  Deletion does not puts text on the clipboard,
 but IDLE has an undo list.  Wherever this doc discusses keys,
 'C' refers to the :kbd:`Control` key on Windows and
-Unix and the :kbd:`Command` key on macOS.  (And all such dicussions
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
 assume that the keys have not been re-bound to something else.)
 
 * Arrow keys move the cursor one character or line.
@@ -604,7 +611,7 @@ in an editor window.
 The editing features described in previous subsections work when entering
 code interactively.  IDLE's Shell window also responds to the following:
 
-* :kbd:`C-c` attemps to interrupt statement execution (but may fail).
+* :kbd:`C-c` attempts to interrupt statement execution (but may fail).
 
 * :kbd:`C-d` closes Shell if typed at a ``>>>`` prompt.
 
@@ -654,32 +661,66 @@ looked for in the user's home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE's Python shell.
 
-Command line usage
+.. _idlelib-cli:
+
+Command-line usage
 ^^^^^^^^^^^^^^^^^^
 
-.. code-block:: none
+.. program:: idle
 
-   idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
+IDLE can be invoked from the command line with various options. The general syntax is:
 
-   -c command  run command in the shell window
-   -d          enable debugger and open shell window
-   -e          open editor window
-   -h          print help message with legal combinations and exit
-   -i          open shell window
-   -r file     run file in shell window
-   -s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
-   -t title    set title of shell window
-   -           run stdin in shell (- must be last option before args)
+.. code-block:: bash
 
-If there are arguments:
+   python -m idlelib [options] [file ...]
 
-* If ``-``, ``-c``, or ``r`` is used, all arguments are placed in
-  ``sys.argv[1:...]`` and ``sys.argv[0]`` is set to ``''``, ``'-c'``,
-  or ``'-r'``.  No editor window is opened, even if that is the default
-  set in the Options dialog.
+The following options are available:
 
-* Otherwise, arguments are files opened for editing and
-  ``sys.argv`` reflects the arguments passed to IDLE itself.
+.. option:: -c <command>
+
+   Run the specified Python command in the shell window.
+   For example, pass ``-c "print('Hello, World!')"``.
+   On Windows, the outer quotes must be double quotes as shown.
+
+.. option:: -d
+
+   Enable the debugger and open the shell window.
+
+.. option:: -e
+
+   Open an editor window.
+
+.. option:: -h
+
+   Print a help message with legal combinations of options and exit.
+
+.. option:: -i
+
+   Open a shell window.
+
+.. option:: -r <file>
+
+   Run the specified file in the shell window.
+
+.. option:: -s
+
+   Run the startup file (as defined by the environment variables :envvar:`IDLESTARTUP` or :envvar:`PYTHONSTARTUP`) before opening the shell window.
+
+.. option:: -t <title>
+
+   Set the title of the shell window.
+
+.. option:: -
+
+   Read and execute standard input in the shell window. This option must be the last one before any arguments.
+
+If arguments are provided:
+
+- If ``-``, ``-c``, or ``-r`` is used, all arguments are placed in ``sys.argv[1:]``,
+  and ``sys.argv[0]`` is set to ``''``, ``'-c'``, or ``'-r'`` respectively.
+  No editor window is opened, even if that is the default set in the *Options* dialog.
+- Otherwise, arguments are treated as files to be opened for editing, and ``sys.argv`` reflects the arguments passed to IDLE itself.
+
 
 Startup failure
 ^^^^^^^^^^^^^^^
@@ -971,8 +1012,8 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
--------
+idlelib --- implementation of IDLE application
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.

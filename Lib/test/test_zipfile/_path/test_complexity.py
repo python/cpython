@@ -8,9 +8,7 @@ import zipfile
 
 from ._functools import compose
 from ._itertools import consume
-
 from ._support import import_or_skip
-
 
 big_o = import_or_skip('big_o')
 pytest = import_or_skip('pytest')
@@ -20,7 +18,7 @@ class TestComplexity(unittest.TestCase):
     @pytest.mark.flaky
     def test_implied_dirs_performance(self):
         best, others = big_o.big_o(
-            compose(consume, zipfile.CompleteDirs._implied_dirs),
+            compose(consume, zipfile._path.CompleteDirs._implied_dirs),
             lambda size: [
                 '/'.join(string.ascii_lowercase + str(n)) for n in range(size)
             ],
@@ -43,13 +41,17 @@ class TestComplexity(unittest.TestCase):
     @classmethod
     def make_names(cls, width, letters=string.ascii_lowercase):
         """
+        >>> list(TestComplexity.make_names(1))
+        ['a']
         >>> list(TestComplexity.make_names(2))
         ['a', 'b']
         >>> list(TestComplexity.make_names(30))
         ['aa', 'ab', ..., 'bd']
+        >>> list(TestComplexity.make_names(17124))
+        ['aaa', 'aab', ..., 'zip']
         """
         # determine how many products are needed to produce width
-        n_products = math.ceil(math.log(width, len(letters)))
+        n_products = max(1, math.ceil(math.log(width, len(letters))))
         inputs = (letters,) * n_products
         combinations = itertools.product(*inputs)
         names = map(''.join, combinations)
@@ -80,7 +82,7 @@ class TestComplexity(unittest.TestCase):
             max_n=100,
             min_n=1,
         )
-        assert best <= big_o.complexities.Quadratic
+        assert best <= big_o.complexities.Linear
 
     @pytest.mark.flaky
     def test_glob_width(self):

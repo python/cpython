@@ -66,7 +66,6 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
-
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
@@ -78,7 +77,16 @@ def _managed_dict_offset():
     else:
         return -3 * _sizeof_void_p()
 
+_INTERP_FRAME_HAS_TLBC_INDEX = None
+def interp_frame_has_tlbc_index():
+    global _INTERP_FRAME_HAS_TLBC_INDEX
+    if _INTERP_FRAME_HAS_TLBC_INDEX is None:
+        interp_frame = gdb.lookup_type("_PyInterpreterFrame")
+        _INTERP_FRAME_HAS_TLBC_INDEX = any(field.name == "tlbc_index"
+                                           for field in interp_frame.fields())
+    return _INTERP_FRAME_HAS_TLBC_INDEX
 
+Py_TPFLAGS_INLINE_VALUES     = (1 << 2)
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
@@ -91,17 +99,20 @@ Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
 Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 #From pycore_frame.h
-FRAME_OWNED_BY_CSTACK = 3
+FRAME_OWNED_BY_INTERPRETER = 3
 
 MAX_OUTPUT_LEN=1024
 
 hexdigits = "0123456789abcdef"
+
+USED_TAGS = 0b11
 
 ENCODING = locale.getpreferredencoding()
 
 FRAME_INFO_OPTIMIZED_OUT = '(frame information optimized out)'
 UNABLE_READ_INFO_PYTHON_FRAME = 'Unable to read information on python frame'
 EVALFRAME = '_PyEval_EvalFrameDefault'
+
 
 class NullPyObjectPtr(RuntimeError):
     pass
@@ -155,7 +166,12 @@ class PyObjectPtr(object):
     _typename = 'PyObject'
 
     def __init__(self, gdbval, cast_to=None):
-        if cast_to:
+        # Clear the tagged pointer
+        if gdbval.type.name == '_PyStackRef':
+            if cast_to is None:
+                cast_to = gdb.lookup_type('PyObject').pointer()
+            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+        elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
             self._gdbval = gdbval
@@ -252,7 +268,7 @@ class PyObjectPtr(object):
 
         Derived classes will override this.
 
-        For example, a PyIntObject* with ob_ival 42 in the inferior process
+        For example, a PyLongObjectPtr* with long_value 42 in the inferior process
         should result in an int(42) in this process.
 
         visited: a set of all gdb.Value pyobject pointers already visited
@@ -493,11 +509,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        ptr = self._gdbval.cast(_type_char_ptr()) + _managed_dict_offset()
-        char_ptr = ptr.cast(_type_char_ptr().pointer()).dereference()
-        if (int(char_ptr) & 1) == 0:
+        obj_ptr = self._gdbval.cast(_type_char_ptr())
+        dict_ptr_ptr = obj_ptr + _managed_dict_offset()
+        dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
+        if int(dict_ptr):
             return None
-        char_ptr += 1
+        char_ptr = obj_ptr + typeobj.field('tp_basicsize')
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
@@ -685,6 +702,16 @@ def parse_location_table(firstlineno, linetable):
         yield addr, end_addr, line
         addr = end_addr
 
+
+class PyCodeArrayPtr:
+    def __init__(self, gdbval):
+        self._gdbval = gdbval
+
+    def get_entry(self, index):
+        assert (index >= 0) and (index < self._gdbval["size"])
+        return self._gdbval["entries"][index]
+
+
 class PyCodeObjectPtr(PyObjectPtr):
     """
     Class wrapping a gdb.Value that's a PyCodeObject* i.e. a <code> instance
@@ -863,7 +890,7 @@ class PyLongObjectPtr(PyObjectPtr):
 
     def proxyval(self, visited):
         '''
-        Python's Include/longobjrep.h has this declaration:
+        Python's Include/cpython/longinterpr.h has this declaration:
 
             typedef struct _PyLongValue {
                 uintptr_t lv_tag; /* Number of digits, sign and flags */
@@ -872,14 +899,17 @@ class PyLongObjectPtr(PyObjectPtr):
 
             struct _longobject {
                 PyObject_HEAD
-               _PyLongValue long_value;
+                _PyLongValue long_value;
             };
 
         with this description:
             The absolute value of a number is equal to
-                 SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-            Negative numbers are represented with ob_size < 0;
-            zero is represented by ob_size == 0.
+                SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+            The sign of the value is stored in the lower 2 bits of lv_tag.
+                - 0: Positive
+                - 1: Zero
+                - 2: Negative
+            The third lowest bit of lv_tag is set to 1 for the small ints and 0 otherwise.
 
         where SHIFT can be either:
             #define PyLong_SHIFT        30
@@ -1043,7 +1073,7 @@ class PyFramePtr:
 
         obj_ptr_ptr = gdb.lookup_type("PyObject").pointer().pointer()
 
-        localsplus = self._gdbval["localsplus"].cast(obj_ptr_ptr)
+        localsplus = self._gdbval["localsplus"]
 
         for i in safe_range(self.co_nlocals):
             pyop_value = PyObjectPtr.from_pyobject_ptr(localsplus[i])
@@ -1073,11 +1103,16 @@ class PyFramePtr:
     def _f_lasti(self):
         codeunit_p = gdb.lookup_type("_Py_CODEUNIT").pointer()
         instr_ptr = self._gdbval["instr_ptr"]
-        first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
+        if interp_frame_has_tlbc_index():
+            tlbc_index = self._gdbval["tlbc_index"]
+            code_arr = PyCodeArrayPtr(self._f_code().field("co_tlbc"))
+            first_instr = code_arr.get_entry(tlbc_index).cast(codeunit_p)
+        else:
+            first_instr = self._f_code().field("co_code_adaptive").cast(codeunit_p)
         return int(instr_ptr - first_instr)
 
     def is_shim(self):
-        return self._f_special("owner", int) == FRAME_OWNED_BY_CSTACK
+        return self._f_special("owner", int) == FRAME_OWNED_BY_INTERPRETER
 
     def previous(self):
         return self._f_special("previous", PyFramePtr)
@@ -1572,7 +1607,10 @@ class PyObjectPtrPrinter:
             return stringify(proxyval)
 
 def pretty_printer_lookup(gdbval):
-    type = gdbval.type.unqualified()
+    type = gdbval.type.strip_typedefs().unqualified()
+    if type.code == gdb.TYPE_CODE_UNION and type.tag == '_PyStackRef':
+        return PyObjectPtrPrinter(gdbval)
+
     if type.code != gdb.TYPE_CODE_PTR:
         return None
 
@@ -1753,8 +1791,11 @@ class Frame(object):
             return (name == 'take_gil')
 
     def is_gc_collect(self):
-        '''Is this frame gc_collect_main() within the garbage-collector?'''
-        return self._gdbframe.name() in ('collect', 'gc_collect_main')
+        '''Is this frame a collector within the garbage-collector?'''
+        return self._gdbframe.name() in (
+            'collect', 'gc_collect_full', 'gc_collect_main',
+            'gc_collect_young', 'gc_collect_increment',
+        )
 
     def get_pyop(self):
         try:

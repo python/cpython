@@ -3,8 +3,6 @@ SAX driver for the pyexpat C module.  This driver works with
 pyexpat.__version__ == '2.22'.
 """
 
-version = "0.20"
-
 from xml.sax._exceptions import *
 from xml.sax.handler import feature_validation, feature_namespaces
 from xml.sax.handler import feature_namespace_prefixes
@@ -213,6 +211,20 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             exc = SAXParseException(expat.ErrorString(e.code), e, self)
             # FIXME: when to invoke error()?
             self._err_handler.fatalError(exc)
+
+    def flush(self):
+        if self._parser is None:
+            return
+
+        was_enabled = self._parser.GetReparseDeferralEnabled()
+        try:
+            self._parser.SetReparseDeferralEnabled(False)
+            self._parser.Parse(b"", False)
+        except expat.error as e:
+            exc = SAXParseException(expat.ErrorString(e.code), e, self)
+            self._err_handler.fatalError(exc)
+        finally:
+            self._parser.SetReparseDeferralEnabled(was_enabled)
 
     def _close_source(self):
         source = self._source
@@ -429,6 +441,16 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
 def create_parser(*args, **kwargs):
     return ExpatParser(*args, **kwargs)
+
+# ---
+
+def __getattr__(name):
+    if name == "version":
+        from warnings import _deprecated
+
+        _deprecated("version", remove=(3, 20))
+        return "0.20"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # ---
 

@@ -1,5 +1,5 @@
-:mod:`pickle` --- Python object serialization
-=============================================
+:mod:`!pickle` --- Python object serialization
+==============================================
 
 .. module:: pickle
    :synopsis: Convert Python objects to streams of bytes and back.
@@ -156,13 +156,14 @@ to read the pickle produced.
 
 * Protocol version 4 was added in Python 3.4.  It adds support for very large
   objects, pickling more kinds of objects, and some data format
-  optimizations.  It is the default protocol starting with Python 3.8.
+  optimizations.  This was the default protocol in Python 3.8--3.13.
   Refer to :pep:`3154` for information about improvements brought by
   protocol 4.
 
 * Protocol version 5 was added in Python 3.8.  It adds support for out-of-band
-  data and speedup for in-band data.  Refer to :pep:`574` for information about
-  improvements brought by protocol 5.
+  data and speedup for in-band data.  It is the default protocol starting with
+  Python 3.14.  Refer to :pep:`574` for information about improvements brought
+  by protocol 5.
 
 .. note::
    Serialization is a more primitive notion than persistence; although
@@ -199,8 +200,10 @@ The :mod:`pickle` module provides the following constants:
 
    An integer, the default :ref:`protocol version <pickle-protocols>` used
    for pickling.  May be less than :data:`HIGHEST_PROTOCOL`.  Currently the
-   default protocol is 4, first introduced in Python 3.4 and incompatible
-   with previous versions.
+   default protocol is 5, introduced in Python 3.8 and incompatible
+   with previous versions. This version introduces support for out-of-band
+   buffers, where :pep:`3118`-compatible data can be transmitted separately
+   from the main pickle stream.
 
    .. versionchanged:: 3.0
 
@@ -209,6 +212,10 @@ The :mod:`pickle` module provides the following constants:
    .. versionchanged:: 3.8
 
       The default protocol is 4.
+
+   .. versionchanged:: 3.14
+
+      The default protocol is 5.
 
 The :mod:`pickle` module provides the following functions to make the pickling
 process more convenient:
@@ -314,16 +321,16 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
    map the new Python 3 names to the old module names used in Python 2, so
    that the pickle data stream is readable with Python 2.
 
-   If *buffer_callback* is None (the default), buffer views are
+   If *buffer_callback* is ``None`` (the default), buffer views are
    serialized into *file* as part of the pickle stream.
 
-   If *buffer_callback* is not None, then it can be called any number
+   If *buffer_callback* is not ``None``, then it can be called any number
    of times with a buffer view.  If the callback returns a false value
-   (such as None), the given buffer is :ref:`out-of-band <pickle-oob>`;
+   (such as ``None``), the given buffer is :ref:`out-of-band <pickle-oob>`;
    otherwise the buffer is serialized in-band, i.e. inside the pickle stream.
 
-   It is an error if *buffer_callback* is not None and *protocol* is
-   None or smaller than 5.
+   It is an error if *buffer_callback* is not ``None`` and *protocol* is
+   ``None`` or smaller than 5.
 
    .. versionchanged:: 3.8
       The *buffer_callback* argument was added.
@@ -377,7 +384,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
       should conform to the same interface as a :meth:`~object.__reduce__` method, and
-      can optionally return ``NotImplemented`` to fallback on
+      can optionally return :data:`NotImplemented` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
       For a detailed example, see :ref:`reducer_override`.
@@ -393,6 +400,15 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       recurse infinitely.
 
       Use :func:`pickletools.optimize` if you need more compact pickles.
+
+   .. method:: clear_memo()
+
+      Clears the pickler's "memo".
+
+      The memo is the data structure that remembers which objects the
+      pickler has already seen, so that shared or recursive objects
+      are pickled by reference and not by value.  This method is
+      useful when re-using picklers.
 
 
 .. class:: Unpickler(file, *, fix_imports=True, encoding="ASCII", errors="strict", buffers=None)
@@ -420,12 +436,12 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
    instances of :class:`~datetime.datetime`, :class:`~datetime.date` and
    :class:`~datetime.time` pickled by Python 2.
 
-   If *buffers* is None (the default), then all data necessary for
+   If *buffers* is ``None`` (the default), then all data necessary for
    deserialization must be contained in the pickle stream.  This means
-   that the *buffer_callback* argument was None when a :class:`Pickler`
+   that the *buffer_callback* argument was ``None`` when a :class:`Pickler`
    was instantiated (or when :func:`dump` or :func:`dumps` was called).
 
-   If *buffers* is not None, it should be an iterable of buffer-enabled
+   If *buffers* is not ``None``, it should be an iterable of buffer-enabled
    objects that is consumed each time the pickle stream references
    an :ref:`out-of-band <pickle-oob>` buffer view.  Such buffers have been
    given in order to the *buffer_callback* of a Pickler object.
@@ -503,7 +519,7 @@ What can be pickled and unpickled?
 The following types can be pickled:
 
 * built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
-  ``NotImplemented``);
+  :data:`NotImplemented`);
 
 * integers, floating-point numbers, complex numbers;
 
@@ -716,8 +732,8 @@ or both.
      These items will be appended to the object either using
      ``obj.append(item)`` or, in batch, using ``obj.extend(list_of_items)``.
      This is primarily used for list subclasses, but may be used by other
-     classes as long as they have
-     :ref:`append and extend methods <typesseq-common>` with
+     classes as long as they have :meth:`~sequence.append`
+     and :meth:`~sequence.extend` methods with
      the appropriate signature.  (Whether :meth:`!append` or :meth:`!extend` is
      used depends on which pickle protocol version is used as well as the number
      of items to append, so both must be supported.)
@@ -905,7 +921,7 @@ functions and classes.
 For those cases, it is possible to subclass from the :class:`Pickler` class and
 implement a :meth:`~Pickler.reducer_override` method. This method can return an
 arbitrary reduction tuple (see :meth:`~object.__reduce__`). It can alternatively return
-``NotImplemented`` to fallback to the traditional behavior.
+:data:`NotImplemented` to fallback to the traditional behavior.
 
 If both the :attr:`~Pickler.dispatch_table` and
 :meth:`~Pickler.reducer_override` are defined, then
@@ -1192,6 +1208,30 @@ The following example reads the resulting pickled data. ::
 
 .. XXX: Add examples showing how to optimize pickles for size (like using
 .. pickletools.optimize() or the gzip module).
+
+
+.. _pickle-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`pickle` module can be invoked as a script from the command line,
+it will display contents of the pickle files. However, when the pickle file
+that you want to examine comes from an untrusted source, ``-m pickletools``
+is a safer option because it does not execute pickle bytecode, see
+:ref:`pickletools CLI usage <pickletools-cli>`.
+
+.. code-block:: bash
+
+   python -m pickle pickle_file [pickle_file ...]
+
+The following option is accepted:
+
+.. program:: pickle
+
+.. option:: pickle_file
+
+   A pickle file to read, or ``-`` to indicate reading from standard input.
 
 
 .. seealso::

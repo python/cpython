@@ -2,10 +2,10 @@
 
 #include "parts.h"
 
-#include "pycore_time.h"
+#include "pycore_time.h"          // _PyTime_FromSeconds()
 
 #ifdef MS_WINDOWS
-#  include <winsock2.h>          // struct timeval
+#  include <winsock2.h>           // struct timeval
 #endif
 
 
@@ -16,8 +16,8 @@ test_pytime_fromseconds(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i", &seconds)) {
         return NULL;
     }
-    _PyTime_t ts = _PyTime_FromSeconds(seconds);
-    return _PyTime_AsNanosecondsObject(ts);
+    PyTime_t ts = _PyTime_FromSeconds(seconds);
+    return PyLong_FromInt64(ts);
 }
 
 static int
@@ -45,11 +45,11 @@ test_pytime_fromsecondsobject(PyObject *self, PyObject *args)
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
-    _PyTime_t ts;
+    PyTime_t ts;
     if (_PyTime_FromSecondsObject(&ts, obj, round) == -1) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(ts);
+    return PyLong_FromInt64(ts);
 }
 
 static PyObject *
@@ -63,8 +63,8 @@ test_PyTime_AsTimeval(PyObject *self, PyObject *args)
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timeval tv;
@@ -90,8 +90,8 @@ test_PyTime_AsTimeval_clamp(PyObject *self, PyObject *args)
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timeval tv;
@@ -112,8 +112,8 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timespec ts;
@@ -130,8 +130,8 @@ test_PyTime_AsTimespec_clamp(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     struct timespec ts;
@@ -148,16 +148,15 @@ test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
-    _PyTime_t ms = _PyTime_AsMilliseconds(t, round);
-    _PyTime_t ns = _PyTime_FromNanoseconds(ms);
-    return _PyTime_AsNanosecondsObject(ns);
+    PyTime_t ms = _PyTime_AsMilliseconds(t, round);
+    return PyLong_FromInt64(ms);
 }
 
 static PyObject *
@@ -168,16 +167,15 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &obj, &round)) {
         return NULL;
     }
-    _PyTime_t t;
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    PyTime_t t;
+    if (PyLong_AsInt64(obj, &t) < 0) {
         return NULL;
     }
     if (check_time_rounding(round) < 0) {
         return NULL;
     }
-    _PyTime_t us = _PyTime_AsMicroseconds(t, round);
-    _PyTime_t ns = _PyTime_FromNanoseconds(us);
-    return _PyTime_AsNanosecondsObject(ns);
+    PyTime_t us = _PyTime_AsMicroseconds(t, round);
+    return PyLong_FromInt64(us);
 }
 
 static PyObject *

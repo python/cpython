@@ -1,5 +1,5 @@
-:mod:`gc` --- Garbage Collector interface
-=========================================
+:mod:`!gc` --- Garbage Collector interface
+==========================================
 
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
@@ -40,10 +40,17 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: collect(generation=2)
 
-   With no arguments, run a full collection.  The optional argument *generation*
+   Perform a collection.  The optional argument *generation*
    may be an integer specifying which generation to collect (from 0 to 2).  A
-   :exc:`ValueError` is raised if the generation number  is invalid. The sum of
+   :exc:`ValueError` is raised if the generation number is invalid. The sum of
    collected objects and uncollectable objects is returned.
+
+   Calling ``gc.collect(0)`` will perform a GC collection on the young generation.
+
+   Calling ``gc.collect(1)`` will perform a GC collection on the young generation
+   and an increment of the old generation.
+
+   Calling ``gc.collect(2)`` or ``gc.collect()`` performs a full collection
 
    The free lists maintained for a number of built-in types are cleared
    whenever a full collection or collection of the highest generation (2)
@@ -52,6 +59,9 @@ The :mod:`gc` module provides the following functions:
 
    The effect of calling ``gc.collect()`` while the interpreter is already
    performing a collection is undefined.
+
+   .. versionchanged:: 3.14
+      ``generation=1`` performs an increment of collection.
 
 
 .. function:: set_debug(flags)
@@ -68,12 +78,19 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: get_objects(generation=None)
 
+
    Returns a list of all objects tracked by the collector, excluding the list
-   returned. If *generation* is not None, return only the objects tracked by
-   the collector that are in that generation.
+   returned. If *generation* is not ``None``, return only the objects as follows:
+
+   * 0: All objects in the young generation
+   * 1: No objects, as there is no generation 1 (as of Python 3.14)
+   * 2: All objects in the old generation
 
    .. versionchanged:: 3.8
       New *generation* parameter.
+
+   .. versionchanged:: 3.14
+      Generation 1 is removed
 
    .. audit-event:: gc.get_objects generation gc.get_objects
 
@@ -91,9 +108,18 @@ The :mod:`gc` module provides the following functions:
 
    * ``uncollectable`` is the total number of objects which were found
      to be uncollectable (and were therefore moved to the :data:`garbage`
-     list) inside this generation.
+     list) inside this generation;
+
+   * ``candidates`` is the total number of objects in this generation which were
+     considered for collection and traversed;
+
+   * ``duration`` is the total time in seconds spent in collections for this
+     generation.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.15
+      Add ``duration`` and ``candidates``.
 
 
 .. function:: set_threshold(threshold0, [threshold1, [threshold2]])
@@ -101,19 +127,32 @@ The :mod:`gc` module provides the following functions:
    Set the garbage collection thresholds (the collection frequency). Setting
    *threshold0* to zero disables collection.
 
-   The GC classifies objects into three generations depending on how many
-   collection sweeps they have survived.  New objects are placed in the youngest
-   generation (generation ``0``).  If an object survives a collection it is moved
-   into the next older generation.  Since generation ``2`` is the oldest
-   generation, objects in that generation remain there after a collection.  In
-   order to decide when to run, the collector keeps track of the number object
+   The GC classifies objects into two generations depending on whether they have
+   survived a collection. New objects are placed in the young generation. If an
+   object survives a collection it is moved into the old generation.
+
+   In order to decide when to run, the collector keeps track of the number of object
    allocations and deallocations since the last collection.  When the number of
    allocations minus the number of deallocations exceeds *threshold0*, collection
-   starts.  Initially only generation ``0`` is examined.  If generation ``0`` has
-   been examined more than *threshold1* times since generation ``1`` has been
-   examined, then generation ``1`` is examined as well.
-   With the third generation, things are a bit more complicated,
-   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
+   starts. For each collection, all the objects in the young generation and some
+   fraction of the old generation is collected.
+
+   In the free-threaded build, the increase in process memory usage is also
+   checked before running the collector.  If the memory usage has not increased
+   by 10% since the last collection and the net number of object allocations
+   has not exceeded 40 times *threshold0*, the collection is not run.
+
+   The fraction of the old generation that is collected is **inversely** proportional
+   to *threshold1*. The larger *threshold1* is, the slower objects in the old generation
+   are collected.
+   For the default value of 10, 1% of the old generation is scanned during each collection.
+
+   *threshold2* is ignored.
+
+   See `Garbage collector design <https://devguide.python.org/garbage_collector>`_ for more information.
+
+   .. versionchanged:: 3.14
+      *threshold2* is ignored
 
 
 .. function:: get_count()
@@ -179,8 +218,6 @@ The :mod:`gc` module provides the following functions:
       >>> gc.is_tracked({})
       False
       >>> gc.is_tracked({"a": 1})
-      False
-      >>> gc.is_tracked({"a": []})
       True
 
    .. versionadded:: 3.1
@@ -285,6 +322,12 @@ values but should not rebind them):
       "uncollectable": When *phase* is "stop", the number of objects
       that could not be collected and were put in :data:`garbage`.
 
+      "candidates": When *phase* is "stop", the total number of objects in this
+      generation which were considered for collection and traversed.
+
+      "duration": When *phase* is "stop", the time in seconds spent in the
+      collection.
+
    Applications can add their own callbacks to this list.  The primary
    use cases are:
 
@@ -296,6 +339,9 @@ values but should not rebind them):
       types when they appear in :data:`garbage`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.15
+      Add "duration" and "candidates".
 
 
 The following constants are provided for use with :func:`set_debug`:

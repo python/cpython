@@ -43,6 +43,7 @@ Objects/enumobject.c	-	PyReversed_Type	-
 Objects/fileobject.c	-	PyStdPrinter_Type	-
 Objects/floatobject.c	-	PyFloat_Type	-
 Objects/frameobject.c	-	PyFrame_Type	-
+Objects/frameobject.c	-	PyFrameLocalsProxy_Type	-
 Objects/funcobject.c	-	PyClassMethod_Type	-
 Objects/funcobject.c	-	PyFunction_Type	-
 Objects/funcobject.c	-	PyStaticMethod_Type	-
@@ -54,7 +55,7 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
+Objects/interpolationobject.c	-	_PyInterpolation_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
@@ -86,6 +87,8 @@ Objects/setobject.c	-	PySetIter_Type	-
 Objects/setobject.c	-	PySet_Type	-
 Objects/sliceobject.c	-	PyEllipsis_Type	-
 Objects/sliceobject.c	-	PySlice_Type	-
+Objects/templateobject.c	-	_PyTemplateIter_Type	-
+Objects/templateobject.c	-	_PyTemplate_Type	-
 Objects/tupleobject.c	-	PyTupleIter_Type	-
 Objects/tupleobject.c	-	PyTuple_Type	-
 Objects/typeobject.c	-	_PyBufferWrapper_Type	-
@@ -93,6 +96,7 @@ Objects/typeobject.c	-	PyBaseObject_Type	-
 Objects/typeobject.c	-	PySuper_Type	-
 Objects/typeobject.c	-	PyType_Type	-
 Objects/typevarobject.c	-	_PyTypeAlias_Type	-
+Objects/typevarobject.c	-	_PyNoDefault_Type	-
 Objects/unicodeobject.c	-	PyUnicodeIter_Type	-
 Objects/unicodeobject.c	-	PyUnicode_Type	-
 Objects/weakrefobject.c	-	_PyWeakref_CallableProxyType	-
@@ -104,6 +108,9 @@ Python/bltinmodule.c	-	PyZip_Type	-
 Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
+Python/instruction_sequence.c	-	_PyInstructionSequence_Type	-
+Python/instrumentation.c	-	_PyLegacyBranchEventHandler_Type	-
+Python/instrumentation.c	-	_PyBranchesIterator	-
 Python/traceback.c	-	PyTraceBack_Type	-
 
 ##-----------------------
@@ -302,6 +309,10 @@ Python/crossinterp_exceptions.h	-	PyExc_InterpreterNotFoundError	-
 ##-----------------------
 ## singletons
 
+Modules/_datetimemodule.c	-	zero_delta	-
+Modules/_datetimemodule.c	-	utc_timezone	-
+Modules/_datetimemodule.c	-	capi	-
+Modules/_datetimemodule.c	-	_globals	-
 Objects/boolobject.c	-	_Py_FalseStruct	-
 Objects/boolobject.c	-	_Py_TrueStruct	-
 Objects/dictobject.c	-	empty_keys_struct	-
@@ -310,6 +321,7 @@ Objects/object.c	-	_Py_NotImplementedStruct	-
 Objects/setobject.c	-	_dummy_struct	-
 Objects/setobject.c	-	_PySet_Dummy	-
 Objects/sliceobject.c	-	_Py_EllipsisObject	-
+Objects/typevarobject.c	-	_Py_NoDefaultStruct	-
 Python/instrumentation.c	-	_PyInstrumentation_DISABLE	-
 Python/instrumentation.c	-	_PyInstrumentation_MISSING	-
 
@@ -351,38 +363,6 @@ Modules/_testclinic.c	-	TestClass	-
 ##-----------------------
 ## static types
 
-Modules/_ctypes/_ctypes.c	-	PyCArrayType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCArray_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCData_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCFuncPtr_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCPointerType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCPointer_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCSimpleType_Type	-
-Modules/_ctypes/_ctypes.c	-	PyCStructType_Type	-
-Modules/_ctypes/_ctypes.c	-	Simple_Type	-
-Modules/_ctypes/_ctypes.c	-	Struct_Type	-
-Modules/_ctypes/_ctypes.c	-	UnionType_Type	-
-Modules/_ctypes/_ctypes.c	-	Union_Type	-
-Modules/_ctypes/callproc.c	-	PyCArg_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArg_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArrayType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCArray_Type	-
-Modules/_ctypes/ctypes.h	-	PyCData_Type	-
-Modules/_ctypes/ctypes.h	-	PyCFuncPtrType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCFuncPtr_Type	-
-Modules/_ctypes/ctypes.h	-	PyCPointerType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCPointer_Type	-
-Modules/_ctypes/ctypes.h	-	PyCSimpleType_Type	-
-Modules/_ctypes/ctypes.h	-	PyCStgDict_Type	-
-Modules/_ctypes/ctypes.h	-	PyCStructType_Type	-
-Modules/_ctypes/ctypes.h	-	PyExc_ArgError	-
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_encoding	-
-Modules/_ctypes/ctypes.h	-	_ctypes_conversion_errors	-
-Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
-Modules/_ctypes/ctypes.h	-	basespec_string	-
-Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
-Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
 Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
 Modules/_datetimemodule.c	-	PyDateTime_DateType	-
 Modules/_datetimemodule.c	-	PyDateTime_DeltaType	-
@@ -395,6 +375,7 @@ Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
 Modules/xxsubtype.c	-	spamdict_type	-
 Modules/xxsubtype.c	-	spamlist_type	-
+Modules/_testcapi/monitoring.c	-	PyCodeLike_Type	-
 
 ##-----------------------
 ## non-static types - initialized once
@@ -406,37 +387,20 @@ Modules/_tkinter.c	-	Tktt_Type	-
 Modules/xxlimited_35.c	-	Xxo_Type	-
 
 ## exception types
-Modules/_ctypes/_ctypes.c	-	PyExc_ArgError	-
-Modules/_cursesmodule.c	-	PyCursesError	-
 Modules/_tkinter.c	-	Tkinter_TclError	-
 Modules/xxlimited_35.c	-	ErrorObject	-
 Modules/xxmodule.c	-	ErrorObject	-
 
 ##-----------------------
-## cached - initialized once
-
-## manually cached PyUnicodeOjbect
-Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
-Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
-
-##-----------------------
 ## other
 
-## initialized once
-Modules/_ctypes/_ctypes.c	-	_unpickle	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
-Modules/_cursesmodule.c	-	ModDict	-
-Modules/_datetimemodule.c	datetime_strptime	module	-
-
 ## state
-Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
-Modules/_ctypes/_ctypes.c	-	global_state	-
-Modules/_ctypes/ctypes.h	-	global_state	-
 Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
 Modules/_tkinter.c	-	trbInCmd	-
+Modules/socketmodule.c 	- 	netdb_lock 	-
 
 
 ##################################
@@ -447,12 +411,14 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
-Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	_ctypes_init_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
-Modules/_cursesmodule.c	-	initialised	-
-Modules/_cursesmodule.c	-	initialised_setupterm	-
-Modules/_cursesmodule.c	-	initialisedcolors	-
-Modules/_cursesmodule.c	-	screen_encoding	-
+Modules/_cursesmodule.c	-	curses_module_loaded	-
+Modules/_cursesmodule.c	-	curses_initscr_called	-
+Modules/_cursesmodule.c	-	curses_setupterm_called	-
+Modules/_cursesmodule.c	-	curses_start_color_called	-
+Modules/_cursesmodule.c	-	curses_screen_encoding	-
 Modules/_elementtree.c	-	expat_capi	-
 Modules/readline.c	-	libedit_append_replace_history_offset	-
 Modules/readline.c	-	using_libedit_emulation	-
@@ -461,7 +427,6 @@ Modules/readline.c	-	libedit_history_start	-
 ##-----------------------
 ## state
 
-Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
@@ -482,3 +447,6 @@ Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
+Modules/rotatingtree.c	-	random_mutex	-
+Modules/socketmodule.c	-	accept4_works	-
+Modules/socketmodule.c	-	sock_cloexec_works	-

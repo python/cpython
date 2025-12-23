@@ -1,17 +1,14 @@
-import sys
 import unittest
 from test.support import (
-    is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+    is_android, is_apple_mobile, is_wasm32, reap_children, verbose, warnings_helper
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
 
 # Skip these tests if termios is not available
 import_module('termios')
 
-# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
-if is_apple_mobile or is_emscripten or is_wasi:
-    raise unittest.SkipTest(f"pty tests not required on {sys.platform}")
+if is_android or is_apple_mobile or is_wasm32:
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
@@ -22,7 +19,6 @@ import select
 import signal
 import socket
 import io # readline
-import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
@@ -137,8 +133,10 @@ class PtyTest(unittest.TestCase):
                 new_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
                 self.assertEqual(new_dim, target_dim,
                                  "pty.STDIN_FILENO window size unchanged")
-            except OSError:
-                warnings.warn("Failed to set pty.STDIN_FILENO window size.")
+            except OSError as e:
+                logging.getLogger(__name__).warning(
+                    "Failed to set pty.STDIN_FILENO window size.", exc_info=e,
+                )
                 pass
 
         try:
@@ -195,6 +193,7 @@ class PtyTest(unittest.TestCase):
         s2 = _readline(master_fd)
         self.assertEqual(b'For my pet fish, Eric.\n', normalize_output(s2))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_fork(self):
         debug("calling pty.fork()")
         pid, master_fd = pty.fork()
@@ -230,6 +229,7 @@ class PtyTest(unittest.TestCase):
                 os._exit(2)
             os._exit(4)
         else:
+            self.assertFalse(os.get_inheritable(master_fd))
             debug("Waiting for child (%d) to finish." % pid)
             # In verbose mode, we have to consume the debug output from the
             # child or the child will block, causing this test to hang in the
@@ -296,27 +296,29 @@ class PtyTest(unittest.TestCase):
 
         self.assertEqual(data, b"")
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_doesnt_hang(self):
-        self.addCleanup(unlink, TESTFN)
-        with open(TESTFN, 'wb') as f:
-            STDOUT_FILENO = 1
-            dup_stdout = os.dup(STDOUT_FILENO)
-            os.dup2(f.fileno(), STDOUT_FILENO)
-            buf = b''
-            def master_read(fd):
-                nonlocal buf
-                data = os.read(fd, 1024)
-                buf += data
-                return data
+        # gh-140482: Do the test in a pty.fork() child to avoid messing
+        # with the interactive test runner's terminal settings.
+        pid, fd = pty.fork()
+        if pid == pty.CHILD:
+            pty.spawn([sys.executable, '-c', 'print("hi there")'])
+            os._exit(0)
+
+        try:
+            buf = bytearray()
             try:
-                pty.spawn([sys.executable, '-c', 'print("hi there")'],
-                          master_read)
-            finally:
-                os.dup2(dup_stdout, STDOUT_FILENO)
-                os.close(dup_stdout)
-        self.assertEqual(buf, b'hi there\r\n')
-        with open(TESTFN, 'rb') as f:
-            self.assertEqual(f.read(), b'hi there\r\n')
+                while (data := os.read(fd, 1024)) != b'':
+                    buf.extend(data)
+            except OSError as e:
+                if e.errno != errno.EIO:
+                    raise
+
+            (pid, status) = os.waitpid(pid, 0)
+            self.assertEqual(status, 0)
+            self.assertEqual(buf.take_bytes(), b"hi there\r\n")
+        finally:
+            os.close(fd)
 
 class SmallPtyTests(unittest.TestCase):
     """These tests don't spawn children or hang."""

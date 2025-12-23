@@ -21,7 +21,7 @@ static PyObject *
 _winapi_Overlapped_GetOverlappedResult_impl(OverlappedObject *self, int wait);
 
 static PyObject *
-_winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
+_winapi_Overlapped_GetOverlappedResult(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int wait;
@@ -30,7 +30,7 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     if (wait < 0) {
         goto exit;
     }
-    return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
+    return_value = _winapi_Overlapped_GetOverlappedResult_impl((OverlappedObject *)self, wait);
 
 exit:
     return return_value;
@@ -48,9 +48,9 @@ static PyObject *
 _winapi_Overlapped_getbuffer_impl(OverlappedObject *self);
 
 static PyObject *
-_winapi_Overlapped_getbuffer(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
+_winapi_Overlapped_getbuffer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _winapi_Overlapped_getbuffer_impl(self);
+    return _winapi_Overlapped_getbuffer_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_Overlapped_cancel__doc__,
@@ -65,9 +65,9 @@ static PyObject *
 _winapi_Overlapped_cancel_impl(OverlappedObject *self);
 
 static PyObject *
-_winapi_Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
+_winapi_Overlapped_cancel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _winapi_Overlapped_cancel_impl(self);
+    return _winapi_Overlapped_cancel_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_CloseHandle__doc__,
@@ -119,9 +119,11 @@ _winapi_ConnectNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(handle), &_Py_ID(overlapped), },
     };
     #undef NUM_KEYWORDS
@@ -176,9 +178,11 @@ _winapi_CreateEventW(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(security_attributes), &_Py_ID(manual_reset), &_Py_ID(initial_state), &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -390,9 +394,11 @@ _winapi_CreateMutexW(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(security_attributes), &_Py_ID(initial_owner), &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -445,7 +451,7 @@ PyDoc_STRVAR(_winapi_CreateNamedPipe__doc__,
     {"CreateNamedPipe", _PyCFunction_CAST(_winapi_CreateNamedPipe), METH_FASTCALL, _winapi_CreateNamedPipe__doc__},
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
@@ -455,7 +461,7 @@ static PyObject *
 _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD open_mode;
     DWORD pipe_mode;
     DWORD max_instances;
@@ -465,8 +471,8 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skkkkkk" F_POINTER ":CreateNamedPipe",
-        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kkkkkk" F_POINTER ":CreateNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
         goto exit;
     }
     _return_value = _winapi_CreateNamedPipe_impl(module, name, open_mode, pipe_mode, max_instances, out_buffer_size, in_buffer_size, default_timeout, security_attributes);
@@ -479,6 +485,9 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -741,6 +750,79 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_GetLongPathName__doc__,
+"GetLongPathName($module, /, path)\n"
+"--\n"
+"\n"
+"Return the long version of the provided path.\n"
+"\n"
+"If the path is already in its long form, returns the same value.\n"
+"\n"
+"The path must already be a \'str\'. If the type is not known, use\n"
+"os.fsdecode before calling this function.");
+
+#define _WINAPI_GETLONGPATHNAME_METHODDEF    \
+    {"GetLongPathName", _PyCFunction_CAST(_winapi_GetLongPathName), METH_FASTCALL|METH_KEYWORDS, _winapi_GetLongPathName__doc__},
+
+static PyObject *
+_winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path);
+
+static PyObject *
+_winapi_GetLongPathName(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "GetLongPathName",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    LPCWSTR path = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("GetLongPathName", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    path = PyUnicode_AsWideCharString(args[0], NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    return_value = _winapi_GetLongPathName_impl(module, path);
+
+exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_GetModuleFileName__doc__,
 "GetModuleFileName($module, module_handle, /)\n"
 "--\n"
@@ -774,6 +856,83 @@ _winapi_GetModuleFileName(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
+PyDoc_STRVAR(_winapi_GetShortPathName__doc__,
+"GetShortPathName($module, /, path)\n"
+"--\n"
+"\n"
+"Return the short version of the provided path.\n"
+"\n"
+"If the path is already in its short form, returns the same value.\n"
+"\n"
+"The path must already be a \'str\'. If the type is not known, use\n"
+"os.fsdecode before calling this function.");
+
+#define _WINAPI_GETSHORTPATHNAME_METHODDEF    \
+    {"GetShortPathName", _PyCFunction_CAST(_winapi_GetShortPathName), METH_FASTCALL|METH_KEYWORDS, _winapi_GetShortPathName__doc__},
+
+static PyObject *
+_winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path);
+
+static PyObject *
+_winapi_GetShortPathName(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "GetShortPathName",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    LPCWSTR path = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("GetShortPathName", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    path = PyUnicode_AsWideCharString(args[0], NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    return_value = _winapi_GetShortPathName_impl(module, path);
+
+exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
+    return return_value;
+}
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
 "GetStdHandle($module, std_handle, /)\n"
@@ -930,9 +1089,11 @@ _winapi_OpenEventW(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(desired_access), &_Py_ID(inherit_handle), &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -996,9 +1157,11 @@ _winapi_OpenMutexW(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(desired_access), &_Py_ID(inherit_handle), &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -1169,9 +1332,11 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(locale), &_Py_ID(flags), &_Py_ID(src), },
     };
     #undef NUM_KEYWORDS
@@ -1227,9 +1392,11 @@ _winapi_ReadFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(handle), &_Py_ID(size), &_Py_ID(overlapped), },
     };
     #undef NUM_KEYWORDS
@@ -1281,9 +1448,11 @@ _winapi_ReleaseMutex(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(mutex), },
     };
     #undef NUM_KEYWORDS
@@ -1333,9 +1502,11 @@ _winapi_ResetEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(event), },
     };
     #undef NUM_KEYWORDS
@@ -1385,9 +1556,11 @@ _winapi_SetEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(event), },
     };
     #undef NUM_KEYWORDS
@@ -1520,22 +1693,25 @@ PyDoc_STRVAR(_winapi_WaitNamedPipe__doc__,
     {"WaitNamedPipe", _PyCFunction_CAST(_winapi_WaitNamedPipe), METH_FASTCALL, _winapi_WaitNamedPipe__doc__},
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout);
 
 static PyObject *
 _winapi_WaitNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD timeout;
 
-    if (!_PyArg_ParseStack(args, nargs, "sk:WaitNamedPipe",
-        &name, &timeout)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&k:WaitNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &timeout)) {
         goto exit;
     }
     return_value = _winapi_WaitNamedPipe_impl(module, name, timeout);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -1577,9 +1753,11 @@ _winapi_BatchedWaitForMultipleObjects(PyObject *module, PyObject *const *args, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(handle_seq), &_Py_ID(wait_all), &_Py_ID(milliseconds), },
     };
     #undef NUM_KEYWORDS
@@ -1702,9 +1880,11 @@ _winapi_WriteFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(handle), &_Py_ID(buffer), &_Py_ID(overlapped), },
     };
     #undef NUM_KEYWORDS
@@ -1753,6 +1933,24 @@ _winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _winapi_GetACP_impl(module);
 }
 
+PyDoc_STRVAR(_winapi_GetOEMCP__doc__,
+"GetOEMCP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETOEMCP_METHODDEF    \
+    {"GetOEMCP", (PyCFunction)_winapi_GetOEMCP, METH_NOARGS, _winapi_GetOEMCP__doc__},
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetOEMCP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetOEMCP_impl(module);
+}
+
 PyDoc_STRVAR(_winapi_GetFileType__doc__,
 "GetFileType($module, /, handle)\n"
 "--\n"
@@ -1774,9 +1972,11 @@ _winapi_GetFileType(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(handle), },
     };
     #undef NUM_KEYWORDS
@@ -1836,9 +2036,11 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(on_type_read), },
     };
     #undef NUM_KEYWORDS
@@ -1858,7 +2060,8 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
     PyObject *argsbuf[1];
     PyObject *on_type_read;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1940,9 +2143,11 @@ _winapi_CopyFile2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(existing_file_name), &_Py_ID(new_file_name), &_Py_ID(flags), &_Py_ID(progress_routine), },
     };
     #undef NUM_KEYWORDS
@@ -1978,4 +2183,8 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1f5bbcfa8d1847c5 input=a9049054013a1b77]*/
+
+#ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
+    #define _WINAPI_GETSHORTPATHNAME_METHODDEF
+#endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
+/*[clinic end generated code: output=4581fd481c3c6293 input=a9049054013a1b77]*/

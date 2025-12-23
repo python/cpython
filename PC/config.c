@@ -13,20 +13,27 @@ extern PyObject* PyInit_errno(void);
 extern PyObject* PyInit_faulthandler(void);
 extern PyObject* PyInit__tracemalloc(void);
 extern PyObject* PyInit_gc(void);
+extern PyObject* PyInit__math_integer(void);
 extern PyObject* PyInit_math(void);
-extern PyObject* PyInit__md5(void);
 extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit__signal(void);
+extern PyObject* PyInit__statistics(void);
+extern PyObject* PyInit__sysconfig(void);
+extern PyObject* PyInit__types(void);
+extern PyObject* PyInit__typing(void);
+extern PyObject* PyInit_time(void);
+extern PyObject* PyInit__thread(void);
+
+/* cryptographic hash functions */
+extern PyObject* PyInit__blake2(void);
+extern PyObject* PyInit__md5(void);
 extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha2(void);
 extern PyObject* PyInit__sha3(void);
-extern PyObject* PyInit__statistics(void);
-extern PyObject* PyInit__sysconfig(void);
-extern PyObject* PyInit__typing(void);
-extern PyObject* PyInit__blake2(void);
-extern PyObject* PyInit_time(void);
-extern PyObject* PyInit__thread(void);
+/* other cryptographic primitives */
+extern PyObject* PyInit__hmac(void);
+
 #ifdef WIN32
 extern PyObject* PyInit_msvcrt(void);
 extern PyObject* PyInit__locale(void);
@@ -35,9 +42,9 @@ extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
 /* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
-extern PyObject* PyInit__xxsubinterpreters(void);
-extern PyObject* PyInit__xxinterpchannels(void);
-extern PyObject* PyInit__xxinterpqueues(void);
+extern PyObject* PyInit__interpreters(void);
+extern PyObject* PyInit__interpchannels(void);
+extern PyObject* PyInit__interpqueues(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -77,6 +84,7 @@ extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 extern PyObject* PyInit__contextvars(void);
 extern PyObject* PyInit__tokenize(void);
+extern PyObject* PyInit__suggestions(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -93,21 +101,28 @@ struct _inittab _PyImport_Inittab[] = {
     {"errno", PyInit_errno},
     {"faulthandler", PyInit_faulthandler},
     {"gc", PyInit_gc},
+    {"_math_integer", PyInit__math_integer},
     {"math", PyInit_math},
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
     {"_operator", PyInit__operator},
     {"_signal", PyInit__signal},
-    {"_md5", PyInit__md5},
-    {"_sha1", PyInit__sha1},
-    {"_sha2", PyInit__sha2},
-    {"_sha3", PyInit__sha3},
-    {"_blake2", PyInit__blake2},
     {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
     {"_tokenize", PyInit__tokenize},
+    {"_types", PyInit__types},
     {"_typing", PyInit__typing},
     {"_statistics", PyInit__statistics},
+
+    /* cryptographic hash functions */
+    {"_blake2", PyInit__blake2},
+    {"_md5", PyInit__md5},
+    {"_sha1", PyInit__sha1},
+    {"_sha2", PyInit__sha2},
+    {"_sha3", PyInit__sha3},
+    /* other cryptographic primitives */
+    {"_hmac", PyInit__hmac},
+
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
@@ -137,11 +152,12 @@ struct _inittab _PyImport_Inittab[] = {
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},
     {"_json", PyInit__json},
+    {"_suggestions", PyInit__suggestions},
 
     {"xxsubtype", PyInit_xxsubtype},
-    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
-    {"_xxinterpchannels", PyInit__xxinterpchannels},
-    {"_xxinterpqueues", PyInit__xxinterpqueues},
+    {"_interpreters", PyInit__interpreters},
+    {"_interpchannels", PyInit__interpchannels},
+    {"_interpqueues", PyInit__interpqueues},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif

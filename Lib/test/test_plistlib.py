@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2013 Python Software Foundation
+# Copyright (C) 2003 Python Software Foundation
 import copy
 import operator
 import pickle
@@ -13,7 +13,6 @@ import codecs
 import subprocess
 import binascii
 import collections
-import time
 import zoneinfo
 from test import support
 from test.support import os_helper
@@ -904,8 +903,7 @@ class TestPlistlib(unittest.TestCase):
 
 class TestBinaryPlistlib(unittest.TestCase):
 
-    @staticmethod
-    def decode(*objects, offset_size=1, ref_size=1):
+    def build(self, *objects, offset_size=1, ref_size=1):
         data = [b'bplist00']
         offset = 8
         offsets = []
@@ -917,7 +915,11 @@ class TestBinaryPlistlib(unittest.TestCase):
                            len(objects), 0, offset)
         data.extend(offsets)
         data.append(tail)
-        return plistlib.loads(b''.join(data), fmt=plistlib.FMT_BINARY)
+        return b''.join(data)
+
+    def decode(self, *objects, offset_size=1, ref_size=1):
+        data = self.build(*objects, offset_size=offset_size, ref_size=ref_size)
+        return plistlib.loads(data, fmt=plistlib.FMT_BINARY)
 
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
@@ -1024,6 +1026,34 @@ class TestBinaryPlistlib(unittest.TestCase):
             with self.subTest(name):
                 with self.assertRaises(plistlib.InvalidFileException):
                     plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
+
+    def test_truncated_large_data(self):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        def check(data):
+            with open(os_helper.TESTFN, 'wb') as f:
+                f.write(data)
+            # buffered file
+            with open(os_helper.TESTFN, 'rb') as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+            # unbuffered file
+            with open(os_helper.TESTFN, 'rb', buffering=0) as f:
+                with self.assertRaises(plistlib.InvalidFileException):
+                    plistlib.load(f, fmt=plistlib.FMT_BINARY)
+        for w in range(20, 64):
+            s = 1 << w
+            # data
+            check(self.build(b'\x4f\x13' + s.to_bytes(8, 'big')))
+            # ascii string
+            check(self.build(b'\x5f\x13' + s.to_bytes(8, 'big')))
+            # unicode string
+            check(self.build(b'\x6f\x13' + s.to_bytes(8, 'big')))
+            # array
+            check(self.build(b'\xaf\x13' + s.to_bytes(8, 'big')))
+            # dict
+            check(self.build(b'\xdf\x13' + s.to_bytes(8, 'big')))
+            # number of objects
+            check(b'bplist00' + struct.pack('>6xBBQQQ', 1, 1, s, 0, 8))
 
     def test_load_aware_datetime(self):
         data = (b'bplist003B\x04>\xd0d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00'

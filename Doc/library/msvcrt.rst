@@ -1,5 +1,5 @@
-:mod:`msvcrt` --- Useful routines from the MS VC++ runtime
-==========================================================
+:mod:`!msvcrt` --- Useful routines from the MS VC++ runtime
+===========================================================
 
 .. module:: msvcrt
    :platform: Windows
@@ -21,6 +21,8 @@ The module implements both the normal and wide char variants of the console I/O
 api. The normal API deals only with ASCII characters and is of limited use
 for internationalized applications. The wide char API should be used where
 ever possible.
+
+.. availability:: Windows.
 
 .. versionchanged:: 3.3
    Operations in this module now raise :exc:`OSError` where :exc:`IOError`
@@ -211,7 +213,7 @@ Other Functions
 
    After you use :func:`CrtSetReportMode` to specify :const:`CRTDBG_MODE_FILE`,
    you can specify the file handle to receive the message text. *type* must be
-   one of the :const:`!CRT_\*` constants listed below. *file* shuld be the file
+   one of the :const:`!CRT_\*` constants listed below. *file* should be the file
    handle your want specified. Only available in
    :ref:`debug build of Python <debug-build>`.
 

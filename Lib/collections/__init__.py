@@ -29,6 +29,9 @@ __all__ = [
 import _collections_abc
 import sys as _sys
 
+_sys.modules['collections.abc'] = _collections_abc
+abc = _collections_abc
+
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -46,7 +49,8 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
-    from _collections import _deque_iterator
+    # Expose _deque_iterator to support pickling deque iterators
+    from _collections import _deque_iterator  # noqa: F401
 except ImportError:
     pass
 
@@ -54,6 +58,8 @@ try:
     from _collections import defaultdict
 except ImportError:
     pass
+
+heapq = None  # Lazily imported
 
 
 ################################################################################
@@ -589,7 +595,7 @@ class Counter(dict):
     # References:
     #   http://en.wikipedia.org/wiki/Multiset
     #   http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html
-    #   http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
+    #   http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
@@ -629,7 +635,10 @@ class Counter(dict):
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
-        import heapq
+        global heapq
+        if heapq is None:
+            import heapq
+
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
@@ -639,7 +648,8 @@ class Counter(dict):
         >>> sorted(c.elements())
         ['A', 'A', 'B', 'B', 'C', 'C']
 
-        # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+
         >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
         >>> math.prod(prime_factors.elements())
@@ -680,7 +690,7 @@ class Counter(dict):
 
         '''
         # The regular dict.update() operation makes no sense here because the
-        # replace behavior results in the some of original untouched counts
+        # replace behavior results in some of the original untouched counts
         # being mixed-in with all of the other counts for a mismash that
         # doesn't have a straight-forward interpretation in most counting
         # contexts.  Instead, we implement straight-addition.  Both the inputs
@@ -766,23 +776,27 @@ class Counter(dict):
     # When the multiplicities are all zero or one, multiset operations
     # are guaranteed to be equivalent to the corresponding operations
     # for regular sets.
+    #
     #     Given counter multisets such as:
     #         cp = Counter(a=1, b=0, c=1)
     #         cq = Counter(c=1, d=0, e=1)
+    #
     #     The corresponding regular sets would be:
     #         sp = {'a', 'c'}
     #         sq = {'c', 'e'}
+    #
     #     All of the following relations would hold:
-    #         set(cp + cq) == sp | sq
-    #         set(cp - cq) == sp - sq
-    #         set(cp | cq) == sp | sq
-    #         set(cp & cq) == sp & sq
     #         (cp == cq) == (sp == sq)
     #         (cp != cq) == (sp != sq)
     #         (cp <= cq) == (sp <= sq)
     #         (cp < cq) == (sp < sq)
     #         (cp >= cq) == (sp >= sq)
     #         (cp > cq) == (sp > sq)
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
+    #         set(cp ^ cq) == sp ^ sq
 
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'
@@ -895,6 +909,33 @@ class Counter(dict):
                 result[elem] = newcount
         return result
 
+    def __xor__(self, other):
+        '''Symmetric difference. Absolute value of count differences.
+
+        The symmetric difference p ^ q is equivalent to:
+
+            (p - q) | (q - p).
+
+        For each element, symmetric difference gives the same result as:
+
+            max(p[elem], q[elem]) - min(p[elem], q[elem])
+
+        >>> Counter(a=5, b=3, c=2, d=2) ^ Counter(a=1, b=3, c=5, e=1)
+        Counter({'a': 4, 'c': 3, 'd': 2, 'e': 1})
+
+        '''
+        if not isinstance(other, Counter):
+            return NotImplemented
+        result = Counter()
+        for elem, count in self.items():
+            newcount = abs(count - other[elem])
+            if newcount:
+                result[elem] = newcount
+        for elem, count in other.items():
+            if elem not in self and count:
+                result[elem] = abs(count)
+        return result
+
     def __pos__(self):
         'Adds an empty counter, effectively stripping negative and zero counts'
         result = Counter()
@@ -977,6 +1018,22 @@ class Counter(dict):
                 self[elem] = other_count
         return self._keep_positive()
 
+    def __ixor__(self, other):
+        '''Inplace symmetric difference. Absolute value of count differences.
+
+        >>> c = Counter(a=5, b=3, c=2, d=2)
+        >>> c ^= Counter(a=1, b=3, c=5, e=1)
+        >>> c
+        Counter({'a': 4, 'c': 3, 'd': 2, 'e': 1})
+
+        '''
+        for elem, count in self.items():
+            self[elem] = abs(count - other[elem])
+        for elem, count in other.items():
+            if elem not in self:
+                self[elem] = abs(count)
+        return self._keep_positive()
+
 
 ########################################################################
 ###  ChainMap
@@ -1015,7 +1072,7 @@ class ChainMap(_collections_abc.MutableMapping):
         return self.__missing__(key)            # support subclasses that define __missing__
 
     def get(self, key, default=None):
-        return self[key] if key in self else default
+        return self[key] if key in self else default    # needs to make use of __contains__
 
     def __len__(self):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
@@ -1027,7 +1084,10 @@ class ChainMap(_collections_abc.MutableMapping):
         return iter(d)
 
     def __contains__(self, key):
-        return any(key in m for m in self.maps)
+        for mapping in self.maps:
+            if key in mapping:
+                return True
+        return False
 
     def __bool__(self):
         return any(self.maps)
@@ -1037,9 +1097,9 @@ class ChainMap(_collections_abc.MutableMapping):
         return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
-    def fromkeys(cls, iterable, *args):
-        'Create a ChainMap with a single dict created from the iterable.'
-        return cls(dict.fromkeys(iterable, *args))
+    def fromkeys(cls, iterable, value=None, /):
+        'Create a new ChainMap with keys from iterable and values set to value.'
+        return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'
@@ -1482,6 +1542,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.format_map(mapping)
 
     def index(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.index(sub, start, end)
 
     def isalpha(self):
@@ -1550,6 +1612,8 @@ class UserString(_collections_abc.Sequence):
         return self.data.rfind(sub, start, end)
 
     def rindex(self, sub, start=0, end=_sys.maxsize):
+        if isinstance(sub, UserString):
+            sub = sub.data
         return self.data.rindex(sub, start, end)
 
     def rjust(self, width, *args):

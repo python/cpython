@@ -47,7 +47,7 @@ def make_pat():
                    name not in keyword.kwlist]
     builtin = r"([^.'\"\\#]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
-    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb)?"
+    stringprefix = r"(?i:r|u|f|fr|rf|b|br|rb|t|rt|tr)?"
     sqstring = stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"
     dqstring = stringprefix + r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'
     sq3string = stringprefix + r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"

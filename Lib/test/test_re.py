@@ -1,12 +1,11 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
-                          check_disallow_instantiation, is_emscripten, is_wasi,
-                          warnings_helper, SHORT_TIMEOUT)
+                          check_disallow_instantiation, linked_to_musl,
+                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
 import sys
-import time
 import unittest
 import warnings
 from re import Scanner
@@ -14,7 +13,7 @@ from weakref import proxy
 
 # some platforms lack working multiprocessing
 try:
-    import _multiprocessing
+    import _multiprocessing  # noqa: F401
 except ImportError:
     multiprocessing = None
 else:
@@ -620,6 +619,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.fullmatch(r"a.*?b", "axxb").span(), (0, 4))
         self.assertIsNone(re.fullmatch(r"a+", "ab"))
         self.assertIsNone(re.fullmatch(r"abc$", "abc\n"))
+        self.assertIsNone(re.fullmatch(r"abc\z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"abc\Z", "abc\n"))
         self.assertIsNone(re.fullmatch(r"(?m)abc$", "abc\n"))
         self.assertEqual(re.fullmatch(r"ab(?=c)cd", "abcd").span(), (0, 4))
@@ -803,6 +803,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(r"\B(b.)\B",
                                    "abc bcd bc abxd", re.ASCII).group(1), "bx")
         self.assertEqual(re.search(r"^abc$", "\nabc\n", re.M).group(0), "abc")
+        self.assertEqual(re.search(r"^\Aabc\z$", "abc", re.M).group(0), "abc")
+        self.assertIsNone(re.search(r"^\Aabc\z$", "\nabc\n", re.M))
         self.assertEqual(re.search(r"^\Aabc\Z$", "abc", re.M).group(0), "abc")
         self.assertIsNone(re.search(r"^\Aabc\Z$", "\nabc\n", re.M))
         self.assertEqual(re.search(br"\b(b.)\b",
@@ -814,6 +816,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.search(br"\B(b.)\B",
                                    b"abc bcd bc abxd", re.LOCALE).group(1), b"bx")
         self.assertEqual(re.search(br"^abc$", b"\nabc\n", re.M).group(0), b"abc")
+        self.assertEqual(re.search(br"^\Aabc\z$", b"abc", re.M).group(0), b"abc")
+        self.assertIsNone(re.search(br"^\Aabc\z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(br"^\Aabc\Z$", b"abc", re.M).group(0), b"abc")
         self.assertIsNone(re.search(br"^\Aabc\Z$", b"\nabc\n", re.M))
         self.assertEqual(re.search(r"\d\D\w\W\s\S",
@@ -837,7 +841,7 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match(r"[\^a]+", 'a^').group(), 'a^')
         self.assertIsNone(re.match(r"[\^a]+", 'b'))
         re.purge()  # for warnings
-        for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
+        for c in 'ceghijklmopqyCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
                 self.assertRaises(re.PatternError, re.compile, '\\%c' % c)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
@@ -884,31 +888,134 @@ class ReTests(unittest.TestCase):
         self.checkPatternError(br'\N{LESS-THAN SIGN}', r'bad escape \N', 0)
         self.checkPatternError(br'[\N{LESS-THAN SIGN}]', r'bad escape \N', 1)
 
-    def test_string_boundaries(self):
+    def test_word_boundaries(self):
         # See http://bugs.python.org/issue10713
-        self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1),
-                         "abc")
+        self.assertEqual(re.search(r"\b(abc)\b", "abc").group(1), "abc")
+        self.assertEqual(re.search(r"\b(abc)\b", "abc", re.ASCII).group(1), "abc")
+        self.assertEqual(re.search(br"\b(abc)\b", b"abc").group(1), b"abc")
+        self.assertEqual(re.search(br"\b(abc)\b", b"abc", re.LOCALE).group(1), b"abc")
+        self.assertEqual(re.search(r"\b(ьюя)\b", "ьюя").group(1), "ьюя")
+        self.assertIsNone(re.search(r"\b(ьюя)\b", "ьюя", re.ASCII))
+        # There's a word boundary between a word and a non-word.
+        self.assertTrue(re.match(r".\b", "a="))
+        self.assertTrue(re.match(r".\b", "a=", re.ASCII))
+        self.assertTrue(re.match(br".\b", b"a="))
+        self.assertTrue(re.match(br".\b", b"a=", re.LOCALE))
+        self.assertTrue(re.match(r".\b", "я="))
+        self.assertIsNone(re.match(r".\b", "я=", re.ASCII))
+        # There's a word boundary between a non-word and a word.
+        self.assertTrue(re.match(r".\b", "=a"))
+        self.assertTrue(re.match(r".\b", "=a", re.ASCII))
+        self.assertTrue(re.match(br".\b", b"=a"))
+        self.assertTrue(re.match(br".\b", b"=a", re.LOCALE))
+        self.assertTrue(re.match(r".\b", "=я"))
+        self.assertIsNone(re.match(r".\b", "=я", re.ASCII))
+        # There is no word boundary inside a word.
+        self.assertIsNone(re.match(r".\b", "ab"))
+        self.assertIsNone(re.match(r".\b", "ab", re.ASCII))
+        self.assertIsNone(re.match(br".\b", b"ab"))
+        self.assertIsNone(re.match(br".\b", b"ab", re.LOCALE))
+        self.assertIsNone(re.match(r".\b", "юя"))
+        self.assertIsNone(re.match(r".\b", "юя", re.ASCII))
+        # There is no word boundary between a non-word characters.
+        self.assertIsNone(re.match(r".\b", "=-"))
+        self.assertIsNone(re.match(r".\b", "=-", re.ASCII))
+        self.assertIsNone(re.match(br".\b", b"=-"))
+        self.assertIsNone(re.match(br".\b", b"=-", re.LOCALE))
+        # There is no non-boundary match between a word and a non-word.
+        self.assertIsNone(re.match(r".\B", "a="))
+        self.assertIsNone(re.match(r".\B", "a=", re.ASCII))
+        self.assertIsNone(re.match(br".\B", b"a="))
+        self.assertIsNone(re.match(br".\B", b"a=", re.LOCALE))
+        self.assertIsNone(re.match(r".\B", "я="))
+        self.assertTrue(re.match(r".\B", "я=", re.ASCII))
+        # There is no non-boundary match between a non-word and a word.
+        self.assertIsNone(re.match(r".\B", "=a"))
+        self.assertIsNone(re.match(r".\B", "=a", re.ASCII))
+        self.assertIsNone(re.match(br".\B", b"=a"))
+        self.assertIsNone(re.match(br".\B", b"=a", re.LOCALE))
+        self.assertIsNone(re.match(r".\B", "=я"))
+        self.assertTrue(re.match(r".\B", "=я", re.ASCII))
+        # There's a non-boundary match inside a word.
+        self.assertTrue(re.match(r".\B", "ab"))
+        self.assertTrue(re.match(r".\B", "ab", re.ASCII))
+        self.assertTrue(re.match(br".\B", b"ab"))
+        self.assertTrue(re.match(br".\B", b"ab", re.LOCALE))
+        self.assertTrue(re.match(r".\B", "юя"))
+        self.assertTrue(re.match(r".\B", "юя", re.ASCII))
+        # There's a non-boundary match between a non-word characters.
+        self.assertTrue(re.match(r".\B", "=-"))
+        self.assertTrue(re.match(r".\B", "=-", re.ASCII))
+        self.assertTrue(re.match(br".\B", b"=-"))
+        self.assertTrue(re.match(br".\B", b"=-", re.LOCALE))
         # There's a word boundary at the start of a string.
         self.assertTrue(re.match(r"\b", "abc"))
+        self.assertTrue(re.match(r"\b", "abc", re.ASCII))
+        self.assertTrue(re.match(br"\b", b"abc"))
+        self.assertTrue(re.match(br"\b", b"abc", re.LOCALE))
+        self.assertTrue(re.match(r"\b", "ьюя"))
+        self.assertIsNone(re.match(r"\b", "ьюя", re.ASCII))
+        # There's a word boundary at the end of a string.
+        self.assertTrue(re.fullmatch(r".+\b", "abc"))
+        self.assertTrue(re.fullmatch(r".+\b", "abc", re.ASCII))
+        self.assertTrue(re.fullmatch(br".+\b", b"abc"))
+        self.assertTrue(re.fullmatch(br".+\b", b"abc", re.LOCALE))
+        self.assertTrue(re.fullmatch(r".+\b", "ьюя"))
+        self.assertIsNone(re.search(r"\b", "ьюя", re.ASCII))
         # A non-empty string includes a non-boundary zero-length match.
-        self.assertTrue(re.search(r"\B", "abc"))
+        self.assertEqual(re.search(r"\B", "abc").span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "abc", re.ASCII).span(), (1, 1))
+        self.assertEqual(re.search(br"\B", b"abc").span(), (1, 1))
+        self.assertEqual(re.search(br"\B", b"abc", re.LOCALE).span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "ьюя").span(), (1, 1))
+        self.assertEqual(re.search(r"\B", "ьюя", re.ASCII).span(), (0, 0))
         # There is no non-boundary match at the start of a string.
-        self.assertFalse(re.match(r"\B", "abc"))
-        # However, an empty string contains no word boundaries, and also no
-        # non-boundaries.
-        self.assertIsNone(re.search(r"\B", ""))
-        # This one is questionable and different from the perlre behaviour,
-        # but describes current behavior.
+        self.assertIsNone(re.match(r"\B", "abc"))
+        self.assertIsNone(re.match(r"\B", "abc", re.ASCII))
+        self.assertIsNone(re.match(br"\B", b"abc"))
+        self.assertIsNone(re.match(br"\B", b"abc", re.LOCALE))
+        self.assertIsNone(re.match(r"\B", "ьюя"))
+        self.assertTrue(re.match(r"\B", "ьюя", re.ASCII))
+        # There is no non-boundary match at the end of a string.
+        self.assertIsNone(re.fullmatch(r".+\B", "abc"))
+        self.assertIsNone(re.fullmatch(r".+\B", "abc", re.ASCII))
+        self.assertIsNone(re.fullmatch(br".+\B", b"abc"))
+        self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
+        self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
+        self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
+        # However, an empty string contains no word boundaries.
         self.assertIsNone(re.search(r"\b", ""))
+        self.assertIsNone(re.search(r"\b", "", re.ASCII))
+        self.assertIsNone(re.search(br"\b", b""))
+        self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
+        self.assertTrue(re.search(r"\B", ""))
+        self.assertTrue(re.search(r"\B", "", re.ASCII))
+        self.assertTrue(re.search(br"\B", b""))
+        self.assertTrue(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
+        self.assertEqual(len(re.findall(r"\b", "a", re.ASCII)), 2)
+        self.assertEqual(len(re.findall(br"\b", b"a")), 2)
+        self.assertEqual(len(re.findall(br"\b", b"a", re.LOCALE)), 2)
         self.assertEqual(len(re.findall(r"\B", "a")), 0)
+        self.assertEqual(len(re.findall(r"\B", "a", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\B", b"a")), 0)
+        self.assertEqual(len(re.findall(br"\B", b"a", re.LOCALE)), 0)
         # If there are no words, there are no boundaries
         self.assertEqual(len(re.findall(r"\b", " ")), 0)
+        self.assertEqual(len(re.findall(r"\b", " ", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\b", b" ")), 0)
+        self.assertEqual(len(re.findall(br"\b", b" ", re.LOCALE)), 0)
         self.assertEqual(len(re.findall(r"\b", "   ")), 0)
+        self.assertEqual(len(re.findall(r"\b", "   ", re.ASCII)), 0)
+        self.assertEqual(len(re.findall(br"\b", b"   ")), 0)
+        self.assertEqual(len(re.findall(br"\b", b"   ", re.LOCALE)), 0)
         # Can match around the whitespace.
         self.assertEqual(len(re.findall(r"\B", " ")), 2)
+        self.assertEqual(len(re.findall(r"\B", " ", re.ASCII)), 2)
+        self.assertEqual(len(re.findall(br"\B", b" ")), 2)
+        self.assertEqual(len(re.findall(br"\B", b" ", re.LOCALE)), 2)
 
     def test_bigcharset(self):
         self.assertEqual(re.match("([\u2222\u2223])",
@@ -1031,6 +1138,39 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br'[19a]', b'a', re.I))
         self.assertTrue(re.match(br'[19a]', b'A', re.I))
         self.assertTrue(re.match(br'[19A]', b'a', re.I))
+        self.assertTrue(re.match(r'[19\xc7]', '\xc7', re.I))
+        self.assertTrue(re.match(r'[19\xc7]', '\xe7', re.I))
+        self.assertTrue(re.match(r'[19\xe7]', '\xc7', re.I))
+        self.assertTrue(re.match(r'[19\xe7]', '\xe7', re.I))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0400', re.I))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0450', re.I))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010400', re.I))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010428', re.I))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010400', re.I))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010428', re.I))
+
+        self.assertTrue(re.match(br'[19A]', b'A', re.I))
+        self.assertTrue(re.match(br'[19a]', b'a', re.I))
+        self.assertTrue(re.match(br'[19a]', b'A', re.I))
+        self.assertTrue(re.match(br'[19A]', b'a', re.I))
+        self.assertTrue(re.match(r'[19A]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[19a]', 'a', re.I|re.A))
+        self.assertTrue(re.match(r'[19a]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[19A]', 'a', re.I|re.A))
+        self.assertTrue(re.match(r'[19\xc7]', '\xc7', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\xc7]', '\xe7', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\xe7]', '\xc7', re.I|re.A))
+        self.assertTrue(re.match(r'[19\xe7]', '\xe7', re.I|re.A))
+        self.assertTrue(re.match(r'[19\u0400]', '\u0400', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\u0400]', '\u0450', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\u0450]', '\u0400', re.I|re.A))
+        self.assertTrue(re.match(r'[19\u0450]', '\u0450', re.I|re.A))
+        self.assertTrue(re.match(r'[19\U00010400]', '\U00010400', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\U00010400]', '\U00010428', re.I|re.A))
+        self.assertIsNone(re.match(r'[19\U00010428]', '\U00010400', re.I|re.A))
+        self.assertTrue(re.match(r'[19\U00010428]', '\U00010428', re.I|re.A))
 
         # Two different characters have the same lowercase.
         assert 'K'.lower() == '\u212a'.lower() == 'k' # 'K'
@@ -1067,8 +1207,10 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(br'[9-a]', b'_', re.I))
         self.assertIsNone(re.match(br'[9-A]', b'_', re.I))
         self.assertTrue(re.match(r'[\xc0-\xde]', '\xd7', re.I))
+        self.assertTrue(re.match(r'[\xc0-\xde]', '\xe7', re.I))
         self.assertIsNone(re.match(r'[\xc0-\xde]', '\xf7', re.I))
         self.assertTrue(re.match(r'[\xe0-\xfe]', '\xf7', re.I))
+        self.assertTrue(re.match(r'[\xe0-\xfe]', '\xc7', re.I))
         self.assertIsNone(re.match(r'[\xe0-\xfe]', '\xd7', re.I))
         self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0450', re.I))
         self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0400', re.I))
@@ -1078,6 +1220,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I))
         self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I))
+
+        self.assertTrue(re.match(r'[\xc0-\xde]', '\xd7', re.I|re.A))
+        self.assertIsNone(re.match(r'[\xc0-\xde]', '\xe7', re.I|re.A))
+        self.assertTrue(re.match(r'[\xe0-\xfe]', '\xf7', re.I|re.A))
+        self.assertIsNone(re.match(r'[\xe0-\xfe]', '\xc7', re.I|re.A))
+        self.assertTrue(re.match(r'[\u0430-\u045f]', '\u0450', re.I|re.A))
+        self.assertIsNone(re.match(r'[\u0430-\u045f]', '\u0400', re.I|re.A))
+        self.assertIsNone(re.match(r'[\u0400-\u042f]', '\u0450', re.I|re.A))
+        self.assertTrue(re.match(r'[\u0400-\u042f]', '\u0400', re.I|re.A))
+        self.assertTrue(re.match(r'[\U00010428-\U0001044f]', '\U00010428', re.I|re.A))
+        self.assertIsNone(re.match(r'[\U00010428-\U0001044f]', '\U00010400', re.I|re.A))
+        self.assertIsNone(re.match(r'[\U00010400-\U00010427]', '\U00010428', re.I|re.A))
+        self.assertTrue(re.match(r'[\U00010400-\U00010427]', '\U00010400', re.I|re.A))
+
+        self.assertTrue(re.match(r'[N-\x7f]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\x7f]', 'Z', re.I|re.A))
+        self.assertTrue(re.match(r'[N-\uffff]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\uffff]', 'Z', re.I|re.A))
+        self.assertTrue(re.match(r'[N-\U00010000]', 'A', re.I|re.A))
+        self.assertTrue(re.match(r'[n-\U00010000]', 'Z', re.I|re.A))
 
         # Two different characters have the same lowercase.
         assert 'K'.lower() == '\u212a'.lower() == 'k' # 'K'
@@ -1116,47 +1278,76 @@ class ReTests(unittest.TestCase):
 
     def test_possible_set_operations(self):
         s = bytes(range(128)).decode()
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
             p = re.compile(r'[0-9--1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('-./0123456789'))
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
+            self.assertEqual(re.findall(r'[0-9--2]', s), list('-./0123456789'))
+        self.assertEqual(w.filename, __file__)
+
         self.assertEqual(re.findall(r'[--1]', s), list('-./01'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference') as w:
             p = re.compile(r'[%--1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list("%&'()*+,-1"))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set difference ') as w:
             p = re.compile(r'[%--]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list("%&'()*+,-"))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
             p = re.compile(r'[0-9&&1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('&0123456789'))
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
+            self.assertEqual(re.findall(r'[0-8&&1]', s), list('&012345678'))
+        self.assertEqual(w.filename, __file__)
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set intersection ') as w:
             p = re.compile(r'[\d&&1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('&0123456789'))
+
         self.assertEqual(re.findall(r'[&&1]', s), list('&1'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
             p = re.compile(r'[0-9||a]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789a|'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set union ') as w:
             p = re.compile(r'[\d||a]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789a|'))
+
         self.assertEqual(re.findall(r'[||1]', s), list('1|'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[0-9~~1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
-        with self.assertWarns(FutureWarning):
+
+        with self.assertWarnsRegex(FutureWarning, 'Possible set symmetric difference ') as w:
             p = re.compile(r'[\d~~1]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789~'))
+
         self.assertEqual(re.findall(r'[~~1]', s), list('1~'))
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
             p = re.compile(r'[[0-9]|]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list('0123456789[]'))
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
+            self.assertEqual(re.findall(r'[[0-8]|]', s), list('012345678[]'))
+        self.assertEqual(w.filename, __file__)
 
-        with self.assertWarns(FutureWarning):
+        with self.assertWarnsRegex(FutureWarning, 'Possible nested set ') as w:
             p = re.compile(r'[[:digit:]|]')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(p.findall(s), list(':[]dgit'))
 
     def test_search_coverage(self):
@@ -1229,7 +1420,7 @@ class ReTests(unittest.TestCase):
             newpat = pickle.loads(pickled)
             self.assertEqual(newpat, oldpat)
         # current pickle expects the _compile() reconstructor in re module
-        from re import _compile
+        from re import _compile  # noqa: F401
 
     def test_copying(self):
         import copy
@@ -1447,6 +1638,24 @@ class ReTests(unittest.TestCase):
         self.assertEqual(scanner.scan("sum = 3*foo + 312.50 + bar"),
                          (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
                            'op+', 'bar'], ''))
+
+    def test_bug_gh140797(self):
+        # gh140797: Capturing groups are not allowed in re.Scanner
+
+        msg = r"Cannot use capturing groups in re\.Scanner"
+        # Capturing group throws an error
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(a)b", None)])
+
+        # Named Group
+        with self.assertRaisesRegex(ValueError, msg):
+            Scanner([("(?P<name>a)", None)])
+
+        # Non-capturing groups should pass normally
+        s = Scanner([("(?:a)b", lambda scanner, token: token)])
+        result, rem = s.scan("ab")
+        self.assertEqual(result,['ab'])
+        self.assertEqual(rem,'')
 
     def test_bug_448951(self):
         # bug 448951 (similar to 429357, but with single char match)
@@ -1986,10 +2195,9 @@ class ReTests(unittest.TestCase):
         # with ignore case.
         self.assertEqual(re.fullmatch('[a-c]+', 'ABC', re.I).span(), (0, 3))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2026,10 +2234,9 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.match(b'(?Li)\xc5', b'\xe5'))
         self.assertIsNone(re.match(b'(?Li)\xe5', b'\xc5'))
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
+    @unittest.skipIf(sys.platform.startswith("sunos"),
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
@@ -2282,19 +2489,21 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "got 'type'"):
             re.search("x*", type)
 
+    # gh-117594: The test is not slow by itself, but it relies on
+    # the absolute computation time and can fail on very slow computers.
+    @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        start = time.perf_counter()
-        for p in r'\Ay', r'^y':
-            self.assertIsNone(re.search(p, s))
-            self.assertEqual(re.split(p, s), [s])
-            self.assertEqual(re.findall(p, s), [])
-            self.assertEqual(list(re.finditer(p, s)), [])
-            self.assertEqual(re.sub(p, '', s), s)
-        t = time.perf_counter() - start
+        with Stopwatch() as stopwatch:
+            for p in r'\Ay', r'^y':
+                self.assertIsNone(re.search(p, s))
+                self.assertEqual(re.split(p, s), [s])
+                self.assertEqual(re.findall(p, s), [])
+                self.assertEqual(list(re.finditer(p, s)), [])
+                self.assertEqual(re.sub(p, '', s), s)
         # Without optimization it takes 1 second on my computer.
         # With optimization -- 0.0003 seconds.
-        self.assertLess(t, 0.1)
+        self.assertLess(stopwatch.seconds, 0.1)
 
     def test_possessive_quantifiers(self):
         """Test Possessive Quantifiers
@@ -2426,8 +2635,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r'(?>(?:ab){1,3})', 'ababc'), ['abab'])
 
     def test_bug_gh91616(self):
-        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
-        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
+        self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\z', "a.txt")) # reproducer
+        self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\z', "a.txt"))
 
     def test_bug_gh100061(self):
         # gh-100061
@@ -2448,6 +2657,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
         self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
         self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
+    def test_bug_gh101955(self):
+        # Possessive quantifier with nested alternative with capture groups
+        self.assertEqual(re.match('((x)|y|z)*+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3}+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3,}+', 'xyz').groups(), ('z', 'x'))
 
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
@@ -2471,6 +2686,47 @@ class ReTests(unittest.TestCase):
 
     def test_fail(self):
         self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
+
+    def test_character_set_any(self):
+        # The union of complementary character sets matches any character
+        # and is equivalent to "(?s:.)".
+        s = '1x\n'
+        for p in r'[\s\S]', r'[\d\D]', r'[\w\W]', r'[\S\s]', r'\s|\S':
+            with self.subTest(pattern=p):
+                self.assertEqual(re.findall(p, s), list(s))
+                self.assertEqual(re.fullmatch('(?:' + p + ')+', s).group(), s)
+
+    def test_character_set_none(self):
+        # Negation of the union of complementary character sets does not match
+        # any character.
+        s = '1x\n'
+        for p in r'[^\s\S]', r'[^\d\D]', r'[^\w\W]', r'[^\S\s]':
+            with self.subTest(pattern=p):
+                self.assertIsNone(re.search(p, s))
+                self.assertIsNone(re.search('(?s:.)' + p, s))
+
+    def check_interrupt(self, pattern, string, maxcount):
+        class Interrupt(Exception):
+            pass
+        p = re.compile(pattern)
+        for n in range(maxcount):
+            try:
+                p._fail_after(n, Interrupt)
+                p.match(string)
+                return n
+            except Interrupt:
+                pass
+            finally:
+                p._fail_after(-1, None)
+
+    @unittest.skipUnless(hasattr(re.Pattern, '_fail_after'), 'requires debug build')
+    def test_memory_leaks(self):
+        self.check_interrupt(r'(.)*:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*?:', 'abc:', 100)
+        self.check_interrupt(r'([^:])*+:', 'abc:', 100)
+        self.check_interrupt(r'(.){2,4}:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}?:', 'abc:', 100)
+        self.check_interrupt(r'([^:]){2,4}+:', 'abc:', 100)
 
 
 def get_debug_out(pat):
@@ -2634,11 +2890,11 @@ class PatternReprTests(unittest.TestCase):
         pattern = 'Very %spattern' % ('long ' * 1000)
         r = repr(re.compile(pattern))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
         r = repr(re.compile(pattern, re.I))
         self.assertLess(len(r), 300)
-        self.assertEqual(r[:30], "re.compile('Very long long lon")
-        self.assertEqual(r[-16:], ", re.IGNORECASE)")
+        self.assertStartsWith(r, "re.compile('Very long long lon")
+        self.assertEndsWith(r, ", re.IGNORECASE)")
 
     def test_flags_repr(self):
         self.assertEqual(repr(re.I), "re.IGNORECASE")
@@ -2692,33 +2948,6 @@ class ImplementationTest(unittest.TestCase):
         check_disallow_instantiation(self, re.Pattern)
         pat = re.compile("")
         check_disallow_instantiation(self, type(pat.scanner("")))
-
-    def test_deprecated_modules(self):
-        deprecated = {
-            'sre_compile': ['compile', 'error',
-                            'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                            '_compile_info'],
-            'sre_constants': ['error', 'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                              '_NamedIntConstant'],
-            'sre_parse': ['SubPattern', 'parse',
-                          'SRE_FLAG_IGNORECASE', 'SUBPATTERN',
-                          '_parse_sub'],
-        }
-        for name in deprecated:
-            with self.subTest(module=name):
-                sys.modules.pop(name, None)
-                with self.assertWarns(DeprecationWarning) as w:
-                    __import__(name)
-                self.assertEqual(str(w.warning),
-                                 f"module {name!r} is deprecated")
-                self.assertEqual(w.filename, __file__)
-                self.assertIn(name, sys.modules)
-                mod = sys.modules[name]
-                self.assertEqual(mod.__name__, name)
-                self.assertEqual(mod.__package__, '')
-                for attr in deprecated[name]:
-                    self.assertTrue(hasattr(mod, attr))
-                del sys.modules[name]
 
     @cpython_only
     def test_case_helpers(self):
@@ -2903,6 +3132,16 @@ class ExternalTests(unittest.TestCase):
                 with self.subTest('unicode-sensitive match'):
                     obj = re.compile(pattern, re.UNICODE)
                     self.assertTrue(obj.search(s))
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.20",
+        ) as cm:
+            getattr(re, "__version__")
+        self.assertEqual(cm.filename, __file__)
 
 
 if __name__ == "__main__":
