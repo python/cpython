@@ -416,6 +416,7 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
           MSG_*
           SOL_*
           SCM_*
+          IP_PORTRANGE*
           IPPROTO_*
           IPPORT_*
           INADDR_*
@@ -829,6 +830,17 @@ The AF_* and SOCK_* constants are now :class:`AddressFamily` and
    These constants are used by the :meth:`~socket.socket.shutdown` method of socket objects.
 
    .. availability:: not WASI.
+
+.. data:: IP_PORTRANGE
+          IP_PORTRANGE_DEFAULT
+          IP_PORTRANGE_HIGH
+          IP_PORTRANGE_LOW
+
+   These constants are available for manipulating port ranges on a socket-level
+   as opposed to system-level.
+
+   .. availability:: BSD, Linux.
+   .. versionchanged:: 3.15
 
 Functions
 ^^^^^^^^^
