@@ -3114,6 +3114,26 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_143026(self):
+        # https://github.com/python/cpython/issues/143026
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import gc
+        thresholds = gc.get_threshold()
+        try:
+            gc.set_threshold(1)
+
+            def f1():
+                for i in range(5000):
+                    globals()[''] = i
+
+            f1()
+        finally:
+            gc.set_threshold(*thresholds)
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+
 def global_identity(x):
     return x
 
