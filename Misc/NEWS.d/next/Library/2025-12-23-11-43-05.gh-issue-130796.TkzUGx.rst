@@ -1,1 +1,2 @@
-Undeprecate :func:`locale.getdefaultlocale`. Patch by Victor Stinner.
+Undeprecate the :func:`locale.getdefaultlocale` function.
+Patch by Victor Stinner.
