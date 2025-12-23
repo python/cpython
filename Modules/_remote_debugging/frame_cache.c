@@ -174,8 +174,16 @@ frame_cache_lookup_and_extend(
 
     Py_ssize_t num_frames = PyList_GET_SIZE(entry->frame_list);
 
-    // Extend frame_info with frames from start_idx onwards
-    PyObject *slice = PyList_GetSlice(entry->frame_list, start_idx, num_frames);
+    // Extend frame_info with frames ABOVE start_idx (not including it).
+    // The frame at start_idx (last_profiled_frame) was the executing frame
+    // in the previous sample and its line number may have changed.
+    // Only frames above it (its callers) are frozen at their call sites.
+    Py_ssize_t cache_start = start_idx + 1;
+    if (cache_start >= num_frames) {
+        return 0;  // Nothing above last_profiled_frame to extend with
+    }
+
+    PyObject *slice = PyList_GetSlice(entry->frame_list, cache_start, num_frames);
     if (!slice) {
         return -1;
     }
@@ -188,9 +196,9 @@ frame_cache_lookup_and_extend(
         return -1;
     }
 
-    // Also extend frame_addrs with cached addresses if provided
+    // Also extend frame_addrs with cached addresses (above last_profiled_frame)
     if (frame_addrs) {
-        for (Py_ssize_t i = start_idx; i < entry->num_addrs && *num_addrs < max_addrs; i++) {
+        for (Py_ssize_t i = cache_start; i < entry->num_addrs && *num_addrs < max_addrs; i++) {
             frame_addrs[(*num_addrs)++] = entry->addrs[i];
         }
     }
