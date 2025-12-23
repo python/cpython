@@ -3115,7 +3115,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_strength_reduce_constant_load_fast(self):
-        # If we detect a _LOAD_FAST is actually loading an immortal constant,
+        # If we detect a _LOAD_FAST is actually loading a constant,
         # reduce that to a _LOAD_CONST_INLINE_BORROW which saves
         # the read from locals.
         def testfunc(n):
