@@ -138,6 +138,12 @@ _PyOptimizer_Optimize(
         // return immediately without optimization.
         return 0;
     }
+    if (_tstate->jit_tracer_state.initial_state.func == NULL) {
+        // gh-143123: It is possible for another function to finalize the current
+        // tracer's state while tracing. This might happen in a
+        // Python -> C -> Python call.
+        return 0;
+    }
     assert(!interp->compiling);
     assert(_tstate->jit_tracer_state.initial_state.stack_depth >= 0);
 #ifndef Py_GIL_DISABLED
