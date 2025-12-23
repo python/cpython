@@ -1,2 +1,2 @@
-Fix a potential use-after-free in collections.Counter.update() when user code
+Fix a potential use-after-free in :meth:`collections.Counter.update` when user code
 mutates the Counter during an update. (gh-143004)
