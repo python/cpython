@@ -151,6 +151,8 @@ typedef struct {
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
 } jit_state;
 
+static size_t _Py_jit_shim_size = 0;
+
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
 
 // value[value_start : value_start + len]
@@ -676,6 +678,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
  * We compile this once only as it effectively a normal
  * function, but we need to use the JIT because it needs
  * to understand the jit-specific calling convention.
+ * Don't forget to call _PyJIT_Fini later!
  */
 static _PyJitEntryFuncPtr
 compile_shim(void)
@@ -717,6 +720,7 @@ compile_shim(void)
         jit_free(memory, total_size);
         return NULL;
     }
+    _Py_jit_shim_size = total_size;
     return (_PyJitEntryFuncPtr)memory;
 }
 
@@ -739,6 +743,7 @@ _Py_LazyJitShim(
     return _Py_jit_entry(executor, frame, stack_pointer, tstate);
 }
 
+// Free executor's memory allocated with _PyJIT_Compile
 void
 _PyJIT_Free(_PyExecutorObject *executor)
 {
@@ -752,6 +757,24 @@ _PyJIT_Free(_PyExecutorObject *executor)
                                    "freeing JIT memory");
         }
     }
+}
+
+// Free shim memory allocated with compile_shim
+void
+_PyJIT_Fini(void)
+{
+    PyMutex_Lock(&lazy_jit_mutex);
+    unsigned char *memory = (unsigned char *)_Py_jit_entry;
+    size_t size = _Py_jit_shim_size;
+    if (size) {
+        _Py_jit_entry = _Py_LazyJitShim;
+        _Py_jit_shim_size = 0;
+        if (jit_free(memory, size)) {
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "freeing JIT entry code");
+        }
+    }
+    PyMutex_Unlock(&lazy_jit_mutex);
 }
 
 #endif  // _Py_JIT
