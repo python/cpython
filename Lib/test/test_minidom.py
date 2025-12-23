@@ -2,7 +2,6 @@
 
 import copy
 import pickle
-import time
 import io
 from test import support
 import unittest
