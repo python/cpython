@@ -4144,6 +4144,8 @@
             _PyStackRef callable;
             _PyStackRef arg;
             _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _GUARD_NOS_NULL
@@ -4170,15 +4172,18 @@
                 arg = stack_pointer[-1];
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
                 assert(oparg == 1);
-                (void)callable;
-                (void)null;
                 STAT_INC(CALL, hit);
+                a = arg;
                 res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
+            }
+            // _POP_TOP
+            {
+                value = a;
                 stack_pointer[-3] = res;
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(arg);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -11387,9 +11392,14 @@
             next_instr = this_instr;
             frame->instr_ptr = prev_instr;
             opcode = next_instr->op.code;
-            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
-                                 opcode == RERAISE || opcode == CLEANUP_THROW ||
-                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+            bool stop_tracing = (
+                                 opcode == WITH_EXCEPT_START ||
+                                 opcode == RERAISE ||
+                                 opcode == CLEANUP_THROW ||
+                                 opcode == PUSH_EXC_INFO ||
+                                 opcode == INTERPRETER_EXIT ||
+                                 (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
+            );
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             stack_pointer = _PyFrame_GetStackPointer(frame);

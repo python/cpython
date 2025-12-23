@@ -37,6 +37,10 @@ THREAD_STATUS_HAS_EXCEPTION = 1 << 4
 
 # Maximum number of retry attempts for operations that may fail transiently
 MAX_TRIES = 10
+RETRY_DELAY = 0.1
+
+# Exceptions that can occur transiently when reading from a live process
+TRANSIENT_ERRORS = (OSError, RuntimeError, UnicodeDecodeError)
 
 try:
     from concurrent import interpreters
@@ -249,24 +253,29 @@ def get_all_awaited_by(pid):
     raise RuntimeError("Failed to get all awaited_by after retries")
 
 
-def _get_stack_trace_with_retry(unwinder, timeout=SHORT_TIMEOUT):
+def _get_stack_trace_with_retry(unwinder, timeout=SHORT_TIMEOUT, condition=None):
     """Get stack trace from an existing unwinder with retry for transient errors.
 
     This handles the case where we want to reuse an existing RemoteUnwinder
     instance but still handle transient failures like "Failed to parse initial
     frame in chain" that can occur when sampling at an inopportune moment.
+    If condition is provided, keeps retrying until condition(traces) is True.
     """
     last_error = None
     for _ in busy_retry(timeout):
         try:
-            return unwinder.get_stack_trace()
-        except (OSError, RuntimeError) as e:
+            traces = unwinder.get_stack_trace()
+            if condition is None or condition(traces):
+                return traces
+            # Condition not met yet, keep retrying
+        except TRANSIENT_ERRORS as e:
             last_error = e
-            time.sleep(0.1)
             continue
-    raise RuntimeError(
-        f"Failed to get stack trace after retries: {last_error}"
-    )
+    if last_error:
+        raise RuntimeError(
+            f"Failed to get stack trace after retries: {last_error}"
+        )
+    raise RuntimeError("Condition never satisfied within timeout")
 
 
 # ============================================================================
@@ -1725,7 +1734,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     # Get stack trace with all threads
                     unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
                     for _ in busy_retry(SHORT_TIMEOUT):
-                        with contextlib.suppress(OSError, RuntimeError):
+                        with contextlib.suppress(*TRANSIENT_ERRORS):
                             all_traces = unwinder_all.get_stack_trace()
                             found = self._find_frame_in_trace(
                                 all_traces,
@@ -2019,7 +2028,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                         skip_non_matching_threads=False,
                     )
                     for _ in busy_retry(SHORT_TIMEOUT):
-                        with contextlib.suppress(OSError, RuntimeError):
+                        with contextlib.suppress(*TRANSIENT_ERRORS):
                             traces = unwinder.get_stack_trace()
                             statuses = self._get_thread_statuses(traces)
 
@@ -2171,7 +2180,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                         skip_non_matching_threads=False,
                     )
                     for _ in busy_retry(SHORT_TIMEOUT):
-                        with contextlib.suppress(OSError, RuntimeError):
+                        with contextlib.suppress(*TRANSIENT_ERRORS):
                             traces = unwinder.get_stack_trace()
                             statuses = self._get_thread_statuses(traces)
 
@@ -2317,7 +2326,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                 skip_non_matching_threads=False,
             )
             for _ in busy_retry(SHORT_TIMEOUT):
-                with contextlib.suppress(OSError, RuntimeError):
+                with contextlib.suppress(*TRANSIENT_ERRORS):
                     traces = unwinder.get_stack_trace()
                     statuses = self._get_thread_statuses(traces)
 
@@ -2360,7 +2369,7 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                 skip_non_matching_threads=True,
             )
             for _ in busy_retry(SHORT_TIMEOUT):
-                with contextlib.suppress(OSError, RuntimeError):
+                with contextlib.suppress(*TRANSIENT_ERRORS):
                     traces = unwinder.get_stack_trace()
                     statuses = self._get_thread_statuses(traces)
 
@@ -2513,8 +2522,23 @@ t.join()
             finally:
                 _cleanup_sockets(client_socket, server_socket)
 
-    def _check_exception_status(self, p, thread_tid, expect_exception):
-        """Helper to check if thread has expected exception status."""
+    def _check_thread_status(
+        self, p, thread_tid, condition, condition_name="condition"
+    ):
+        """Helper to check thread status with a custom condition.
+
+        This waits until we see 3 consecutive samples where the condition
+        returns True, which confirms the thread has reached and is stable
+        in the expected state. Samples that don't match are ignored (the
+        thread may not have reached the expected state yet).
+
+        Args:
+            p: Process object with pid attribute
+            thread_tid: Thread ID to check
+            condition: Callable(statuses, thread_tid) -> bool that returns
+                       True when the thread is in the expected state
+            condition_name: Description of condition for error messages
+        """
         unwinder = RemoteUnwinder(
             p.pid,
             all_threads=True,
@@ -2522,35 +2546,37 @@ t.join()
             skip_non_matching_threads=False,
         )
 
-        # Collect multiple samples for reliability
-        results = []
+        # Wait for 3 consecutive samples matching expected state
+        matching_samples = 0
         for _ in busy_retry(SHORT_TIMEOUT):
-            with contextlib.suppress(OSError, RuntimeError):
+            with contextlib.suppress(*TRANSIENT_ERRORS):
                 traces = unwinder.get_stack_trace()
                 statuses = self._get_thread_statuses(traces)
 
                 if thread_tid in statuses:
-                    has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                    results.append(has_exc)
+                    if condition(statuses, thread_tid):
+                        matching_samples += 1
+                        if matching_samples >= 3:
+                            return  # Success - confirmed stable in expected state
+                    else:
+                        # Thread not yet in expected state, reset counter
+                        matching_samples = 0
 
-                    if len(results) >= 3:
-                        break
+        self.fail(
+            f"Thread did not stabilize in expected state "
+            f"({condition_name}) within timeout"
+        )
 
-        # Check majority of samples match expected
-        if not results:
-            self.fail("Never found target thread in stack traces")
+    def _check_exception_status(self, p, thread_tid, expect_exception):
+        """Helper to check if thread has expected exception status."""
+        def condition(statuses, tid):
+            has_exc = bool(statuses[tid] & THREAD_STATUS_HAS_EXCEPTION)
+            return has_exc == expect_exception
 
-        majority = sum(results) > len(results) // 2
-        if expect_exception:
-            self.assertTrue(
-                majority,
-                f"Thread should have HAS_EXCEPTION flag, got {results}"
-            )
-        else:
-            self.assertFalse(
-                majority,
-                f"Thread should NOT have HAS_EXCEPTION flag, got {results}"
-            )
+        self._check_thread_status(
+            p, thread_tid, condition,
+            condition_name=f"expect_exception={expect_exception}"
+        )
 
     @unittest.skipIf(
         sys.platform not in ("linux", "darwin", "win32"),
@@ -2667,14 +2693,14 @@ sock.connect(('localhost', {port}))
     def _get_frames_with_retry(self, unwinder, required_funcs):
         """Get frames containing required_funcs, with retry for transient errors."""
         for _ in range(MAX_TRIES):
-            with contextlib.suppress(OSError, RuntimeError):
+            with contextlib.suppress(*TRANSIENT_ERRORS):
                 traces = unwinder.get_stack_trace()
                 for interp in traces:
                     for thread in interp.threads:
                         funcs = {f.funcname for f in thread.frame_info}
                         if required_funcs.issubset(funcs):
                             return thread.frame_info
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         return None
 
     def _sample_frames(
@@ -2693,7 +2719,7 @@ sock.connect(('localhost', {port}))
             frames = self._get_frames_with_retry(unwinder, required_funcs)
             if frames and len(frames) >= expected_frames:
                 break
-            time.sleep(0.1)
+            time.sleep(RETRY_DELAY)
         client_socket.sendall(send_ack)
         return frames
 
@@ -3456,7 +3482,7 @@ recurse({depth})
             _wait_for_signal(client_socket, b"ready")
 
             # Take a sample
-            unwinder.get_stack_trace()
+            _get_stack_trace_with_retry(unwinder)
 
             stats = unwinder.get_stats()
             client_socket.sendall(b"done")

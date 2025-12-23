@@ -3986,17 +3986,14 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
         }
 
-        op(_CALL_TYPE_1, (callable, null, arg -- res)) {
+        op(_CALL_TYPE_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
             STAT_INC(CALL, hit);
+            a = arg;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
-            PyStackRef_CLOSE(arg);
         }
 
         macro(CALL_TYPE_1) =
@@ -4004,7 +4001,8 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TYPE_1 +
-            _CALL_TYPE_1;
+            _CALL_TYPE_1 +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -5258,6 +5256,12 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
@@ -5575,9 +5579,14 @@ dummy_func(
             next_instr = this_instr;
             frame->instr_ptr = prev_instr;
             opcode = next_instr->op.code;
-            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
-                opcode == RERAISE || opcode == CLEANUP_THROW ||
-                opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+            bool stop_tracing = (
+                opcode == WITH_EXCEPT_START ||
+                opcode == RERAISE ||
+                opcode == CLEANUP_THROW ||
+                opcode == PUSH_EXC_INFO ||
+                opcode == INTERPRETER_EXIT ||
+                (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
+            );
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             if (full) {
                 LEAVE_TRACING();
