@@ -4,6 +4,7 @@ import os
 import sys
 import _collections_abc
 from collections import deque
+from errno import ENAMETOOLONG
 from functools import wraps
 from types import MethodType, GenericAlias
 
@@ -802,8 +803,9 @@ class nullcontext(AbstractContextManager, AbstractAsyncContextManager):
 class chdir(AbstractContextManager):
     """Non thread-safe context manager to change the current working directory."""
 
-    def __init__(self, path):
+    def __init__(self, path, *, ignore_errors=False):
         self.path = path
+        self.ignore_errors = ignore_errors
         self._old_cwd = []
 
     def __enter__(self):
@@ -811,4 +813,19 @@ class chdir(AbstractContextManager):
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):
-        os.chdir(self._old_cwd.pop())
+        abs_return = self._old_cwd.pop()
+        try:
+            os.chdir(abs_return)
+        except OSError as exc:
+            if exc.errno == ENAMETOOLONG:
+                try:
+                    cwd = os.getcwd()
+                    if os.path.commonpath([abs_return, cwd]):
+                        os.chdir(os.path.relpath(abs_return, cwd))
+                    else:
+                        raise
+                except OSError:
+                    if not self.ignore_errors:
+                        raise
+            elif not self.ignore_errors:
+                raise
