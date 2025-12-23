@@ -249,6 +249,26 @@ def get_all_awaited_by(pid):
     raise RuntimeError("Failed to get all awaited_by after retries")
 
 
+def _get_stack_trace_with_retry(unwinder, timeout=SHORT_TIMEOUT):
+    """Get stack trace from an existing unwinder with retry for transient errors.
+
+    This handles the case where we want to reuse an existing RemoteUnwinder
+    instance but still handle transient failures like "Failed to parse initial
+    frame in chain" that can occur when sampling at an inopportune moment.
+    """
+    last_error = None
+    for _ in busy_retry(timeout):
+        try:
+            return unwinder.get_stack_trace()
+        except (OSError, RuntimeError) as e:
+            last_error = e
+            time.sleep(0.1)
+            continue
+    raise RuntimeError(
+        f"Failed to get stack trace after retries: {last_error}"
+    )
+
+
 # ============================================================================
 # Base test class with shared infrastructure
 # ============================================================================
@@ -1704,16 +1724,16 @@ class TestGetStackTrace(RemoteInspectionTestBase):
 
                     # Get stack trace with all threads
                     unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
-                    for _ in range(MAX_TRIES):
-                        all_traces = unwinder_all.get_stack_trace()
-                        found = self._find_frame_in_trace(
-                            all_traces,
-                            lambda f: f.funcname == "main_work"
-                            and f.location.lineno > 12,
-                        )
-                        if found:
-                            break
-                        time.sleep(0.1)
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        with contextlib.suppress(OSError, RuntimeError):
+                            all_traces = unwinder_all.get_stack_trace()
+                            found = self._find_frame_in_trace(
+                                all_traces,
+                                lambda f: f.funcname == "main_work"
+                                and f.location.lineno > 12,
+                            )
+                            if found:
+                                break
                     else:
                         self.fail(
                             "Main thread did not start its busy work on time"
@@ -1723,7 +1743,7 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     unwinder_gil = RemoteUnwinder(
                         p.pid, only_active_thread=True
                     )
-                    gil_traces = unwinder_gil.get_stack_trace()
+                    gil_traces = _get_stack_trace_with_retry(unwinder_gil)
 
                     # Count threads
                     total_threads = sum(
@@ -1998,15 +2018,15 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                         mode=mode,
                         skip_non_matching_threads=False,
                     )
-                    for _ in range(MAX_TRIES):
-                        traces = unwinder.get_stack_trace()
-                        statuses = self._get_thread_statuses(traces)
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        with contextlib.suppress(OSError, RuntimeError):
+                            traces = unwinder.get_stack_trace()
+                            statuses = self._get_thread_statuses(traces)
 
-                        if check_condition(
-                            statuses, sleeper_tid, busy_tid
-                        ):
-                            break
-                        time.sleep(0.5)
+                            if check_condition(
+                                statuses, sleeper_tid, busy_tid
+                            ):
+                                break
 
                     return statuses, sleeper_tid, busy_tid
             finally:
@@ -2150,29 +2170,29 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                         mode=PROFILING_MODE_ALL,
                         skip_non_matching_threads=False,
                     )
-                    for _ in range(MAX_TRIES):
-                        traces = unwinder.get_stack_trace()
-                        statuses = self._get_thread_statuses(traces)
+                    for _ in busy_retry(SHORT_TIMEOUT):
+                        with contextlib.suppress(OSError, RuntimeError):
+                            traces = unwinder.get_stack_trace()
+                            statuses = self._get_thread_statuses(traces)
 
-                        # Check ALL mode provides both GIL and CPU info
-                        if (
-                            sleeper_tid in statuses
-                            and busy_tid in statuses
-                            and not (
-                                statuses[sleeper_tid]
-                                & THREAD_STATUS_ON_CPU
-                            )
-                            and not (
-                                statuses[sleeper_tid]
-                                & THREAD_STATUS_HAS_GIL
-                            )
-                            and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
-                            and (
-                                statuses[busy_tid] & THREAD_STATUS_HAS_GIL
-                            )
-                        ):
-                            break
-                        time.sleep(0.5)
+                            # Check ALL mode provides both GIL and CPU info
+                            if (
+                                sleeper_tid in statuses
+                                and busy_tid in statuses
+                                and not (
+                                    statuses[sleeper_tid]
+                                    & THREAD_STATUS_ON_CPU
+                                )
+                                and not (
+                                    statuses[sleeper_tid]
+                                    & THREAD_STATUS_HAS_GIL
+                                )
+                                and (statuses[busy_tid] & THREAD_STATUS_ON_CPU)
+                                and (
+                                    statuses[busy_tid] & THREAD_STATUS_HAS_GIL
+                                )
+                            ):
+                                break
 
                     self.assertIsNotNone(
                         sleeper_tid, "Sleeper thread id not received"
@@ -2296,18 +2316,18 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                 mode=PROFILING_MODE_ALL,
                 skip_non_matching_threads=False,
             )
-            for _ in range(MAX_TRIES):
-                traces = unwinder.get_stack_trace()
-                statuses = self._get_thread_statuses(traces)
+            for _ in busy_retry(SHORT_TIMEOUT):
+                with contextlib.suppress(OSError, RuntimeError):
+                    traces = unwinder.get_stack_trace()
+                    statuses = self._get_thread_statuses(traces)
 
-                if (
-                    exception_tid in statuses
-                    and normal_tid in statuses
-                    and (statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                    and not (statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                ):
-                    break
-                time.sleep(0.5)
+                    if (
+                        exception_tid in statuses
+                        and normal_tid in statuses
+                        and (statuses[exception_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                        and not (statuses[normal_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                    ):
+                        break
 
             self.assertIn(exception_tid, statuses)
             self.assertIn(normal_tid, statuses)
@@ -2339,18 +2359,18 @@ class TestDetectionOfThreadStatus(RemoteInspectionTestBase):
                 mode=PROFILING_MODE_EXCEPTION,
                 skip_non_matching_threads=True,
             )
-            for _ in range(MAX_TRIES):
-                traces = unwinder.get_stack_trace()
-                statuses = self._get_thread_statuses(traces)
+            for _ in busy_retry(SHORT_TIMEOUT):
+                with contextlib.suppress(OSError, RuntimeError):
+                    traces = unwinder.get_stack_trace()
+                    statuses = self._get_thread_statuses(traces)
 
-                if exception_tid in statuses:
-                    self.assertNotIn(
-                        normal_tid,
-                        statuses,
-                        "Normal thread should be filtered out in exception mode",
-                    )
-                    return
-                time.sleep(0.5)
+                    if exception_tid in statuses:
+                        self.assertNotIn(
+                            normal_tid,
+                            statuses,
+                            "Normal thread should be filtered out in exception mode",
+                        )
+                        return
 
             self.fail("Never found exception thread in exception mode")
 
@@ -2504,18 +2524,17 @@ t.join()
 
         # Collect multiple samples for reliability
         results = []
-        for _ in range(MAX_TRIES):
-            traces = unwinder.get_stack_trace()
-            statuses = self._get_thread_statuses(traces)
+        for _ in busy_retry(SHORT_TIMEOUT):
+            with contextlib.suppress(OSError, RuntimeError):
+                traces = unwinder.get_stack_trace()
+                statuses = self._get_thread_statuses(traces)
 
-            if thread_tid in statuses:
-                has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
-                results.append(has_exc)
+                if thread_tid in statuses:
+                    has_exc = bool(statuses[thread_tid] & THREAD_STATUS_HAS_EXCEPTION)
+                    results.append(has_exc)
 
-                if len(results) >= 3:
-                    break
-
-            time.sleep(0.2)
+                    if len(results) >= 3:
+                        break
 
         # Check majority of samples match expected
         if not results:
