@@ -96,6 +96,19 @@ _getrecord_ex(Py_UCS4 code)
     return &_PyUnicode_Database_Records[index];
 }
 
+typedef struct {
+    PyObject *GraphemeType;
+    PyObject *GraphemeBreakIteratorType;
+} unicodedatastate;
+
+static inline unicodedatastate *
+get_unicodedata_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (unicodedatastate *)state;
+}
+
 /* ------------- Previous-version API ------------------------------------- */
 typedef struct previous_version {
     PyObject_HEAD
@@ -1687,7 +1700,7 @@ typedef struct {
     bool ri_flag;
 } _PyGraphemeBreak;
 
-static enum ExtPictState
+static inline enum ExtPictState
 update_ext_pict_state(enum ExtPictState state, int gcb, bool ext_pict)
 {
     if (ext_pict) {
@@ -1704,7 +1717,7 @@ update_ext_pict_state(enum ExtPictState state, int gcb, bool ext_pict)
     return ExtPictState_Init;
 }
 
-static enum InCBState
+static inline enum InCBState
 update_incb_state(enum InCBState state, int incb)
 {
     if (incb == InCB_Consonant) {
@@ -1721,7 +1734,7 @@ update_incb_state(enum InCBState state, int incb)
     return InCBState_Init;
 }
 
-static bool
+static inline bool
 update_ri_flag(bool flag, int gcb)
 {
     if (gcb == GCB_Regional_Indicator) {
@@ -1732,7 +1745,7 @@ update_ri_flag(bool flag, int gcb)
     }
 }
 
-static bool
+static inline bool
 grapheme_break(int prev_gcb, int curr_gcb, enum ExtPictState ep_state,
                bool ri_flag, enum InCBState incb_state)
 {
@@ -1905,18 +1918,28 @@ static PyMemberDef Grapheme_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyTypeObject GraphemeType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "unicodedata.Grapheme",
-    .tp_basicsize = sizeof(GraphemeObject),
-    .tp_dealloc = Grapheme_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_iter = PyObject_SelfIter,
-    .tp_traverse = Grapheme_traverse,
-    .tp_clear = Grapheme_clear,
-    .tp_str = Grapheme_str,
-    .tp_members = Grapheme_members
+static PyType_Slot Grapheme_slots[] = {
+    {Py_tp_dealloc, Grapheme_dealloc},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_traverse, Grapheme_traverse},
+    {Py_tp_clear, Grapheme_clear},
+    {Py_tp_str, Grapheme_str},
+    {Py_tp_members, Grapheme_members},
+    {0, 0},
 };
+
+static PyType_Spec Grapheme_spec = {
+    .name = "unicodedata.Grapheme",
+    .basicsize = sizeof(GraphemeObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_HAVE_GC
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Grapheme_slots
+};
+
 
 /* Grapheme Cluster iterator */
 
@@ -1957,7 +1980,10 @@ GBI_iternext(PyObject *self)
     if (pos < 0) {
         return NULL;
     }
-    GraphemeObject *g = PyObject_GC_New(GraphemeObject, &GraphemeType);
+    PyObject *module = PyType_GetModule(Py_TYPE(it));
+    PyObject *GraphemeType = get_unicodedata_state(module)->GraphemeType;
+    GraphemeObject *g = PyObject_GC_New(GraphemeObject,
+                                        (PyTypeObject *)GraphemeType);
     if (!g) {
         return NULL;
     }
@@ -1970,16 +1996,25 @@ GBI_iternext(PyObject *self)
 }
 
 
-static PyTypeObject GraphemeBreakIteratorType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "unicodedata.GraphemeBreakIterator",
-    .tp_basicsize = sizeof(GraphemeBreakIterator),
-    .tp_dealloc = GBI_dealloc,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_iter = PyObject_SelfIter,
-    .tp_iternext = GBI_iternext,
-    .tp_traverse = GBI_traverse,
-    .tp_clear = GBI_clear
+static PyType_Slot GraphemeBreakIterator_slots[] = {
+    {Py_tp_dealloc, GBI_dealloc},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, GBI_iternext},
+    {Py_tp_traverse, GBI_traverse},
+    {Py_tp_clear, GBI_clear},
+    {0, 0},
+};
+
+static PyType_Spec GraphemeBreakIterator_spec = {
+    .name = "unicodedata.GraphemeBreakIterator",
+    .basicsize = sizeof(GraphemeBreakIterator),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_HAVE_GC
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = GraphemeBreakIterator_slots
 };
 
 
@@ -2001,18 +2036,19 @@ unicodedata_iter_graphemes_impl(PyObject *module, PyObject *unistr,
                                 Py_ssize_t start, Py_ssize_t end)
 /*[clinic end generated code: output=b0b831944265d36f input=a1454d9e8135951f]*/
 {
-    GraphemeBreakIterator *gci = PyObject_GC_New(GraphemeBreakIterator,
-            &GraphemeBreakIteratorType);
-    if (!gci) {
+    PyObject *GraphemeBreakIteratorType = get_unicodedata_state(module)->GraphemeBreakIteratorType;
+    GraphemeBreakIterator *gbi = PyObject_GC_New(GraphemeBreakIterator,
+            (PyTypeObject *)GraphemeBreakIteratorType);
+    if (!gbi) {
         return NULL;
     }
 
     Py_ssize_t len = PyUnicode_GET_LENGTH(unistr);
     ADJUST_INDICES(start, end, len);
     Py_INCREF(unistr);
-    _Py_InitGraphemeBreak(&gci->iter, unistr, start, end);
-    PyObject_GC_Track(gci);
-    return (PyObject*)gci;
+    _Py_InitGraphemeBreak(&gbi->iter, unistr, start, end);
+    PyObject_GC_Track(gbi);
+    return (PyObject*)gbi;
 }
 
 /*[clinic input]
@@ -2129,6 +2165,7 @@ static PyType_Spec ucd_type_spec = {
     .slots = ucd_type_slots
 };
 
+
 PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
 defines character properties for all Unicode characters. The data in\n\
@@ -2139,14 +2176,45 @@ The module uses the same names and symbols as defined by the\n\
 UnicodeData File Format " UNIDATA_VERSION ".");
 
 static int
+unicodedata_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    unicodedatastate *state = get_unicodedata_state(module);
+    Py_VISIT(state->GraphemeType);
+    Py_VISIT(state->GraphemeBreakIteratorType);
+    return 0;
+}
+
+static int
+unicodedata_clear(PyObject *module)
+{
+    unicodedatastate *state = get_unicodedata_state(module);
+    Py_CLEAR(state->GraphemeType);
+    Py_CLEAR(state->GraphemeBreakIteratorType);
+    return 0;
+}
+
+static void
+unicodedata_free(void *module)
+{
+    unicodedata_clear((PyObject *)module);
+}
+
+static int
 unicodedata_exec(PyObject *module)
 {
-    if (PyType_Ready(&GraphemeType)) {
+    unicodedatastate *state = get_unicodedata_state(module);
+
+    PyObject *GraphemeType = PyType_FromModuleAndSpec(module, &Grapheme_spec, NULL);
+    if (GraphemeType == NULL) {
         return -1;
     }
-    if (PyType_Ready(&GraphemeBreakIteratorType)) {
+    state->GraphemeType = GraphemeType;
+
+    PyObject *GraphemeBreakIteratorType = PyType_FromModuleAndSpec(module, &GraphemeBreakIterator_spec, NULL);
+    if (GraphemeBreakIteratorType == NULL) {
         return -1;
     }
+    state->GraphemeBreakIteratorType = GraphemeBreakIteratorType;
 
     if (PyModule_AddStringConstant(module, "unidata_version", UNIDATA_VERSION) < 0) {
         return -1;
@@ -2189,9 +2257,12 @@ static struct PyModuleDef unicodedata_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "unicodedata",
     .m_doc = unicodedata_docstring,
-    .m_size = 0,
+    .m_size = sizeof(unicodedatastate),
     .m_methods = unicodedata_functions,
     .m_slots = unicodedata_slots,
+    .m_traverse = unicodedata_traverse,
+    .m_clear = unicodedata_clear,
+    .m_free = unicodedata_free,
 };
 
 PyMODINIT_FUNC
