@@ -1034,6 +1034,7 @@ mmap.mmap.flush
     offset: Py_ssize_t = 0
     size: Py_ssize_t = -1
     /
+    *
     flags: int = 0
 
 [clinic start generated code]*/

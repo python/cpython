@@ -1171,7 +1171,7 @@ class MmapTests(unittest.TestCase):
             if hasattr(mmap, 'MS_ASYNC'):
                 m.flush(flags=mmap.MS_ASYNC)
             if hasattr(mmap, 'MS_INVALIDATE'):
-                m.flush(PAGESIZE * 2, mmap.MS_INVALIDATE)
+                m.flush(PAGESIZE * 2, flags=mmap.MS_INVALIDATE)
             if hasattr(mmap, 'MS_ASYNC') and hasattr(mmap, 'MS_INVALIDATE'):
                 m.flush(0, PAGESIZE, flags=mmap.MS_ASYNC | mmap.MS_INVALIDATE)
     @unittest.skipUnless(sys.platform == 'linux', 'Linux only')
