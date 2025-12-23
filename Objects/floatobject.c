@@ -449,8 +449,8 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             goto Compare;
         }
         /* v and w have the same number of bits before the radix
-         * point.  Construct two ints that have the same comparison
-         * outcome.
+         * point.  Construct an int from the integer part of v and
+         * update op if necessary, so comparing two ints has the same outcome.
          */
         {
             double fracpart;
@@ -467,22 +467,22 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                         Py_RETURN_TRUE;
                     case Py_LE:
                         if (vsign > 0) {
-                            op = Py_LT;
+                            op = Py_LT;  // v <= w <=> trunc(v) < w
                         }
                         break;
                     case Py_GE:
                         if (vsign < 0) {
-                            op = Py_GT;
+                            op = Py_GT;  // v >= w <=> trunc(v) > w
                         }
                         break;
                     case Py_LT:
                         if (vsign < 0) {
-                            op = Py_LE;
+                            op = Py_LE;  // v < w <=> trunc(v) <= w
                         }
                         break;
                     case Py_GT:
                         if (vsign > 0) {
-                            op = Py_GE;
+                            op = Py_GE;  // v > w <=> trunc(v) >= w
                         }
                         break;
                 }
