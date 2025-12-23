@@ -277,7 +277,8 @@ clauses.  In this case, the elements of the new container are those that would
 be produced by considering each of the :keyword:`!for` or :keyword:`!if`
 clauses a block, nesting from left to right, and evaluating the expression to
 produce an element each time the innermost block is reached.  If the expression
-is starred, the result will instead be unpacked to produce 0 or more elements.
+is starred, the result will instead be unpacked to produce zero or more
+elements.
 
 However, aside from the iterable expression in the leftmost :keyword:`!for` clause,
 the comprehension is executed in a separate implicitly nested scope. This ensures
