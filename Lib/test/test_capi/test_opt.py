@@ -3101,6 +3101,7 @@ class TestUopsOptimization(unittest.TestCase):
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
 
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import gc
         thresholds = gc.get_threshold()
         try:
@@ -3113,6 +3114,8 @@ class TestUopsOptimization(unittest.TestCase):
             f1()
         finally:
             gc.set_threshold(*thresholds)
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
 
 
 def global_identity(x):
