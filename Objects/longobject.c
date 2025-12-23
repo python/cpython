@@ -352,7 +352,7 @@ _PyLong_Negate(PyLongObject **x_p)
     PyLongObject *x;
 
     x = (PyLongObject *)*x_p;
-    if (Py_REFCNT(x) == 1) {
+    if (_PyObject_IsUniquelyReferenced((PyObject *)x)) {
          _PyLong_FlipSign(x);
         return;
     }
@@ -1209,13 +1209,19 @@ _PyLong_AsByteArray(PyLongObject* v,
         *p = (unsigned char)(accum & 0xff);
         p += pincr;
     }
-    else if (j == n && n > 0 && is_signed) {
+    else if (j == n && is_signed) {
         /* The main loop filled the byte array exactly, so the code
            just above didn't get to ensure there's a sign bit, and the
            loop below wouldn't add one either.  Make sure a sign bit
            exists. */
-        unsigned char msb = *(p - pincr);
-        int sign_bit_set = msb >= 0x80;
+        int sign_bit_set;
+        if (n > 0) {
+            unsigned char msb = *(p - pincr);
+            sign_bit_set = msb >= 0x80;
+        }
+        else {
+            sign_bit_set = 0;
+        }
         assert(accumbits == 0);
         if (sign_bit_set == do_twos_comp)
             return 0;
@@ -2014,7 +2020,7 @@ static int
 pylong_int_to_decimal_string(PyObject *aa,
                              PyObject **p_output,
                              _PyUnicodeWriter *writer,
-                             _PyBytesWriter *bytes_writer,
+                             PyBytesWriter *bytes_writer,
                              char **bytes_str)
 {
     PyObject *s = NULL;
@@ -2045,7 +2051,8 @@ pylong_int_to_decimal_string(PyObject *aa,
         Py_ssize_t size = PyUnicode_GET_LENGTH(s);
         const void *data = PyUnicode_DATA(s);
         int kind = PyUnicode_KIND(s);
-        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, size);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, size,
+                                                        *bytes_str);
         if (*bytes_str == NULL) {
             goto error;
         }
@@ -2082,7 +2089,7 @@ static int
 long_to_decimal_string_internal(PyObject *aa,
                                 PyObject **p_output,
                                 _PyUnicodeWriter *writer,
-                                _PyBytesWriter *bytes_writer,
+                                PyBytesWriter *bytes_writer,
                                 char **bytes_str)
 {
     PyLongObject *scratch, *a;
@@ -2208,7 +2215,8 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     else if (bytes_writer) {
-        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, strlen);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, strlen,
+                                                        *bytes_str);
         if (*bytes_str == NULL) {
             Py_DECREF(scratch);
             return -1;
@@ -2318,7 +2326,7 @@ long_to_decimal_string(PyObject *aa)
 static int
 long_format_binary(PyObject *aa, int base, int alternate,
                    PyObject **p_output, _PyUnicodeWriter *writer,
-                   _PyBytesWriter *bytes_writer, char **bytes_str)
+                   PyBytesWriter *bytes_writer, char **bytes_str)
 {
     PyLongObject *a = (PyLongObject *)aa;
     PyObject *v = NULL;
@@ -2379,7 +2387,8 @@ long_format_binary(PyObject *aa, int base, int alternate,
             return -1;
     }
     else if (bytes_writer) {
-        *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, sz);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, sz,
+                                                        *bytes_str);
         if (*bytes_str == NULL)
             return -1;
     }
@@ -2508,7 +2517,7 @@ _PyLong_FormatWriter(_PyUnicodeWriter *writer,
 }
 
 char*
-_PyLong_FormatBytesWriter(_PyBytesWriter *writer, char *str,
+_PyLong_FormatBytesWriter(PyBytesWriter *writer, char *str,
                           PyObject *obj,
                           int base, int alternate)
 {
@@ -3676,38 +3685,54 @@ long_hash(PyObject *obj)
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
-    x = 0;
-    while (--i >= 0) {
-        /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
-           want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
-           _PyHASH_MODULUS.
 
-           The computation of x * 2**PyLong_SHIFT % _PyHASH_MODULUS
+    // unroll first digit
+    Py_BUILD_ASSERT(PyHASH_BITS > PyLong_SHIFT);
+    assert(i >= 1);
+    --i;
+    x = v->long_value.ob_digit[i];
+    assert(x < PyHASH_MODULUS);
+
+#if PyHASH_BITS >= 2 * PyLong_SHIFT
+    // unroll second digit
+    assert(i >= 1);
+    --i;
+    x <<= PyLong_SHIFT;
+    x += v->long_value.ob_digit[i];
+    assert(x < PyHASH_MODULUS);
+#endif
+
+    while (--i >= 0) {
+        /* Here x is a quantity in the range [0, PyHASH_MODULUS); we
+           want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
+           PyHASH_MODULUS.
+
+           The computation of x * 2**PyLong_SHIFT % PyHASH_MODULUS
            amounts to a rotation of the bits of x.  To see this, write
 
-             x * 2**PyLong_SHIFT = y * 2**_PyHASH_BITS + z
+             x * 2**PyLong_SHIFT = y * 2**PyHASH_BITS + z
 
-           where y = x >> (_PyHASH_BITS - PyLong_SHIFT) gives the top
+           where y = x >> (PyHASH_BITS - PyLong_SHIFT) gives the top
            PyLong_SHIFT bits of x (those that are shifted out of the
-           original _PyHASH_BITS bits, and z = (x << PyLong_SHIFT) &
-           _PyHASH_MODULUS gives the bottom _PyHASH_BITS - PyLong_SHIFT
-           bits of x, shifted up.  Then since 2**_PyHASH_BITS is
-           congruent to 1 modulo _PyHASH_MODULUS, y*2**_PyHASH_BITS is
-           congruent to y modulo _PyHASH_MODULUS.  So
+           original PyHASH_BITS bits, and z = (x << PyLong_SHIFT) &
+           PyHASH_MODULUS gives the bottom PyHASH_BITS - PyLong_SHIFT
+           bits of x, shifted up.  Then since 2**PyHASH_BITS is
+           congruent to 1 modulo PyHASH_MODULUS, y*2**PyHASH_BITS is
+           congruent to y modulo PyHASH_MODULUS.  So
 
-             x * 2**PyLong_SHIFT = y + z (mod _PyHASH_MODULUS).
+             x * 2**PyLong_SHIFT = y + z (mod PyHASH_MODULUS).
 
            The right-hand side is just the result of rotating the
-           _PyHASH_BITS bits of x left by PyLong_SHIFT places; since
-           not all _PyHASH_BITS bits of x are 1s, the same is true
-           after rotation, so 0 <= y+z < _PyHASH_MODULUS and y + z is
+           PyHASH_BITS bits of x left by PyLong_SHIFT places; since
+           not all PyHASH_BITS bits of x are 1s, the same is true
+           after rotation, so 0 <= y+z < PyHASH_MODULUS and y + z is
            the reduction of x*2**PyLong_SHIFT modulo
-           _PyHASH_MODULUS. */
-        x = ((x << PyLong_SHIFT) & _PyHASH_MODULUS) |
-            (x >> (_PyHASH_BITS - PyLong_SHIFT));
+           PyHASH_MODULUS. */
+        x = ((x << PyLong_SHIFT) & PyHASH_MODULUS) |
+            (x >> (PyHASH_BITS - PyLong_SHIFT));
         x += v->long_value.ob_digit[i];
-        if (x >= _PyHASH_MODULUS)
-            x -= _PyHASH_MODULUS;
+        if (x >= PyHASH_MODULUS)
+            x -= PyHASH_MODULUS;
     }
     x = x * sign;
     if (x == (Py_uhash_t)-1)
@@ -4409,10 +4434,10 @@ pylong_int_divmod(PyLongObject *v, PyLongObject *w,
     if (result == NULL) {
         return -1;
     }
-    if (!PyTuple_Check(result)) {
+    if (!PyTuple_Check(result) || PyTuple_GET_SIZE(result) != 2) {
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError,
-                        "tuple is required from int_divmod()");
+                        "tuple of length 2 is required from int_divmod()");
         return -1;
     }
     PyObject *q = PyTuple_GET_ITEM(result, 0);
@@ -5824,7 +5849,7 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(c, 1, size_a);
         }
-        else if (Py_REFCNT(a) == 1) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)a)) {
             c = (PyLongObject*)Py_NewRef(a);
         }
         else {
@@ -5838,7 +5863,8 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
         }
-        else if (Py_REFCNT(b) == 1 && size_a <= alloc_b) {
+        else if (_PyObject_IsUniquelyReferenced((PyObject *)b)
+                 && size_a <= alloc_b) {
             d = (PyLongObject*)Py_NewRef(b);
             assert(size_a >= 0);
             _PyLong_SetSignAndDigitCount(d, 1, size_a);
@@ -6381,8 +6407,6 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
 /*[clinic end generated code: output=89c801df114050a3 input=66f9d0c20529b44f]*/
 {
     int little_endian;
-    PyObject *bytes;
-
     if (byteorder == NULL)
         little_endian = 0;
     else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
@@ -6395,18 +6419,19 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, length);
-    if (bytes == NULL)
-        return NULL;
-
-    if (_PyLong_AsByteArray((PyLongObject *)self,
-                            (unsigned char *)PyBytes_AS_STRING(bytes),
-                            length, little_endian, is_signed, 1) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (_PyLong_AsByteArray((PyLongObject *)self,
+                            PyBytesWriter_GetData(writer),
+                            length, little_endian, is_signed, 1) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]

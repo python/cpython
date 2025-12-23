@@ -190,7 +190,7 @@ context_switched(PyThreadState *ts)
 }
 
 
-static int
+int
 _PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
@@ -220,7 +220,7 @@ PyContext_Enter(PyObject *octx)
 }
 
 
-static int
+int
 _PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
@@ -342,12 +342,6 @@ PyContextVar_Set(PyObject *ovar, PyObject *val)
 {
     ENSURE_ContextVar(ovar, NULL)
     PyContextVar *var = (PyContextVar *)ovar;
-
-    if (!PyContextVar_CheckExact(var)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
 
     PyContext *ctx = context_get();
     if (ctx == NULL) {
@@ -1025,12 +1019,6 @@ static PyObject *
 _contextvars_ContextVar_get_impl(PyContextVar *self, PyObject *default_value)
 /*[clinic end generated code: output=0746bd0aa2ced7bf input=da66664d5d0af4ad]*/
 {
-    if (!PyContextVar_CheckExact(self)) {
-        PyErr_SetString(
-            PyExc_TypeError, "an instance of ContextVar was expected");
-        return NULL;
-    }
-
     PyObject *val;
     if (PyContextVar_Get((PyObject *)self, default_value, &val) < 0) {
         return NULL;
@@ -1360,11 +1348,8 @@ get_token_missing(void)
 PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
     PyObject *missing = get_token_missing();
+    assert(PyUnstable_IsImmortal(missing));
     if (PyDict_SetItemString(
         _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {

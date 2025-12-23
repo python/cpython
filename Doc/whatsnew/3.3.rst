@@ -2380,8 +2380,8 @@ Porting Python code
   for top-level modules. E.g. ``__import__('sys', level=1)`` is now an error.
 
 * Because :data:`sys.meta_path` and :data:`sys.path_hooks` now have finders on
-  them by default, you will most likely want to use :meth:`!list.insert` instead
-  of :meth:`!list.append` to add to those lists.
+  them by default, you will most likely want to use :meth:`list.insert` instead
+  of :meth:`list.append` to add to those lists.
 
 * Because ``None`` is now inserted into :data:`sys.path_importer_cache`, if you
   are clearing out entries in the dictionary of paths that do not have a

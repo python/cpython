@@ -295,8 +295,8 @@ The :mod:`csv` module defines the following classes:
       - the second through n-th rows contain strings where at least one value's
         length differs from that of the putative header of that column.
 
-      Twenty rows after the first row are sampled; if more than half of columns +
-      rows meet the criteria, :const:`True` is returned.
+      Twenty-one rows after the header are sampled; if more than half of the
+      columns + rows meet the criteria, :const:`True` is returned.
 
    .. note::
 
@@ -468,7 +468,8 @@ Dialects support the following attributes:
 .. attribute:: Dialect.skipinitialspace
 
    When :const:`True`, spaces immediately following the *delimiter* are ignored.
-   The default is :const:`False`.
+   The default is :const:`False`.  When combining ``delimiter=' '`` with
+   ``skipinitialspace=True``, unquoted empty fields are not allowed.
 
 
 .. attribute:: Dialect.strict
@@ -637,7 +638,7 @@ done::
 .. rubric:: Footnotes
 
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
-   will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
+   will not be interpreted correctly, and on platforms that use ``\r\n`` line endings
    on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own
    (:term:`universal <universal newlines>`) newline handling.

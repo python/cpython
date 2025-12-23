@@ -46,8 +46,10 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
-objects considered false:
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when called, the exception is propagated and the object does
+not have a truth value (for example, :data:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
@@ -164,7 +166,7 @@ This table summarizes the comparison operations:
    pair: object; numeric
    pair: objects; comparing
 
-Objects of different types, except different numeric types, never compare equal.
+Unless stated otherwise, objects of different types never compare equal.
 The ``==`` operator is always defined but for some object types (for example,
 class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
 operators are only defined where they make sense; for example, they raise a
@@ -1000,8 +1002,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
    pair: slice; operation
    pair: operator; in
    pair: operator; not in
-   single: count() (sequence method)
-   single: index() (sequence method)
 
 +--------------------------+--------------------------------+----------+
 | Operation                | Result                         | Notes    |
@@ -1018,7 +1018,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(8)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1030,13 +1030,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``min(s)``               | smallest item of *s*           |          |
 +--------------------------+--------------------------------+----------+
 | ``max(s)``               | largest item of *s*            |          |
-+--------------------------+--------------------------------+----------+
-| ``s.index(x[, i[, j]])`` | index of the first occurrence  | \(8)     |
-|                          | of *x* in *s* (at or after     |          |
-|                          | index *i* and before index *j*)|          |
-+--------------------------+--------------------------------+----------+
-| ``s.count(x)``           | total number of occurrences of |          |
-|                          | *x* in *s*                     |          |
 +--------------------------+--------------------------------+----------+
 
 Sequences of the same type also support comparisons.  In particular, tuples
@@ -1143,15 +1136,41 @@ Notes:
   concatenation or repetition.
 
 (8)
-   ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   Not all implementations support passing the additional arguments *i* and *j*.
-   These arguments allow efficient searching of subsections of the sequence. Passing
-   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
-   without copying any data and with the returned index being relative to
-   the start of the sequence rather than the start of the slice.
-
-(9)
    An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
+.. rubric:: Sequence Methods
+
+Sequence types also support the following methods:
+
+.. method:: list.count(value, /)
+            range.count(value, /)
+            tuple.count(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.count(value, /)
+
+   Return the total number of occurrences of *value* in *sequence*.
+
+.. method:: list.index(value[, start[, stop])
+            range.index(value[, start[, stop])
+            tuple.index(value[, start[, stop])
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.index(value[, start[, stop])
+
+   Return the index of the first occurrence of *value* in *sequence*.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+   The *start* or *stop* arguments allow for efficient searching
+   of subsections of the sequence, beginning at *start* and ending at *stop*.
+   This is roughly equivalent to ``start + sequence[start:stop].index(value)``,
+   only without copying any data.
+
+   .. caution::
+      Not all sequence types support passing the *start* and *stop* arguments.
 
 
 .. _typesseq-immutable:
@@ -1202,14 +1221,6 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    pair: subscript; assignment
    pair: slice; assignment
    pair: statement; del
-   single: append() (sequence method)
-   single: clear() (sequence method)
-   single: copy() (sequence method)
-   single: extend() (sequence method)
-   single: insert() (sequence method)
-   single: pop() (sequence method)
-   single: remove() (sequence method)
-   single: reverse() (sequence method)
 
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
@@ -1233,39 +1244,14 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``del s[i:j:k]``             | removes the elements of        |                     |
 |                              | ``s[i:j:k]`` from the list     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.append(x)``              | appends *x* to the end of the  |                     |
-|                              | sequence (same as              |                     |
-|                              | ``s[len(s):len(s)] = [x]``)    |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from *s*     | \(5)                |
-|                              | (same as ``del s[:]``)         |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
-|                              | (same as ``s[:]``)             |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.extend(t)`` or           | extends *s* with the           |                     |
-| ``s += t``                   | contents of *t* (for the       |                     |
+| ``s += t``                   | extends *s* with the           |                     |
+|                              | contents of *t* (for the       |                     |
 |                              | most part the same as          |                     |
 |                              | ``s[len(s):len(s)] = t``)      |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s *= n``                   | updates *s* with its contents  | \(6)                |
+| ``s *= n``                   | updates *s* with its contents  | \(2)                |
 |                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.insert(i, x)``           | inserts *x* into *s* at the    |                     |
-|                              | index given by *i*             |                     |
-|                              | (same as ``s[i:i] = [x]``)     |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
-|                              | also removes it from *s*       |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | removes the first item from    | \(3)                |
-|                              | *s* where ``s[i]`` is equal to |                     |
-|                              | *x*                            |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
-|                              | place                          |                     |
-+------------------------------+--------------------------------+---------------------+
-
 
 Notes:
 
@@ -1273,32 +1259,105 @@ Notes:
    If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
-   The optional argument *i* defaults to ``-1``, so that by default the last
-   item is removed and returned.
-
-(3)
-   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
-
-(4)
-   The :meth:`reverse` method modifies the sequence in place for economy of
-   space when reversing a large sequence.  To remind users that it operates by
-   side effect, it does not return the reversed sequence.
-
-(5)
-   :meth:`clear` and :meth:`!copy` are included for consistency with the
-   interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
-   :class:`collections.abc.MutableSequence` ABC, but most concrete
-   mutable sequence classes provide it.
-
-   .. versionadded:: 3.3
-      :meth:`clear` and :meth:`!copy` methods.
-
-(6)
    The value *n* is an integer, or an object implementing
    :meth:`~object.__index__`.  Zero and negative values of *n* clear
    the sequence.  Items in the sequence are not copied; they are referenced
    multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
+
+.. rubric:: Mutable Sequence Methods
+
+Mutable sequence types also support the following methods:
+
+.. method:: bytearray.append(value, /)
+            list.append(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.append(value, /)
+
+   Append *value* to the end of the sequence
+   This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
+
+.. method:: bytearray.clear()
+            list.clear()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.clear()
+
+   .. versionadded:: 3.3
+
+   Remove all items from *sequence*.
+   This is equivalent to writing ``del sequence[:]``.
+
+.. method:: bytearray.copy()
+            list.copy()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.copy()
+
+   .. versionadded:: 3.3
+
+   Create a shallow copy of *sequence*.
+   This is equivalent to writing ``sequence[:]``.
+
+   .. hint:: The :meth:`!copy` method is not part of the
+             :class:`~collections.abc.MutableSequence` :class:`~abc.ABC`,
+             but most concrete mutable sequence types provide it.
+
+.. method:: bytearray.extend(iterable, /)
+            list.extend(iterable, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.extend(iterable, /)
+
+   Extend *sequence* with the contents of *iterable*.
+   For the most part, this is the same as writing
+   ``seq[len(seq):len(seq)] = iterable``.
+
+.. method:: bytearray.insert(index, value, /)
+            list.insert(index, value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.insert(index, value, /)
+
+   Insert *value* into *sequence* at the given *index*.
+   This is equivalent to writing ``sequence[index:index] = [value]``.
+
+.. method:: bytearray.pop(index=-1, /)
+            list.pop(index=-1, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.pop(index=-1, /)
+
+   Retrieve the item at *index* and also removes it from *sequence*.
+   By default, the last item in *sequence* is removed and returned.
+
+.. method:: bytearray.remove(value, /)
+            list.remove(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.remove(value, /)
+
+   Remove the first item from *sequence* where ``sequence[i] == value``.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+.. method:: bytearray.reverse()
+            list.reverse()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.reverse()
+
+   Reverse the items of *sequence* in place.
+   This method maintains economy of space when reversing a large sequence.
+   To remind users that it operates by side-effect, it returns ``None``.
 
 
 .. _typesseq-list:
@@ -1786,9 +1845,9 @@ expression support in the :mod:`re` module).
    lowercase, :meth:`lower` would do nothing to ``'ß'``; :meth:`casefold`
    converts it to ``"ss"``.
 
-   The casefolding algorithm is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The casefolding algorithm is `described in section 3.13.3 'Default Case
+   Folding' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G53253>`__.
 
    .. versionadded:: 3.3
 
@@ -1937,10 +1996,16 @@ expression support in the :mod:`re` module).
    ``{}``.  Each replacement field contains either the numeric index of a
    positional argument, or the name of a keyword argument.  Returns a copy of
    the string where each replacement field is replaced with the string value of
-   the corresponding argument.
+   the corresponding argument. For example:
+
+   .. doctest::
 
       >>> "The sum of 1 + 2 is {0}".format(1+2)
       'The sum of 1 + 2 is 3'
+      >>> "The sum of {a} + {b} is {answer}".format(answer=1+2, a=1, b=2)
+      'The sum of 1 + 2 is 3'
+      >>> "{1} expects the {0} Inquisition!".format("Spanish", "Nobody")
+      'Nobody expects the Spanish Inquisition!'
 
    See :ref:`formatstrings` for a description of the various formatting options
    that can be specified in format strings.
@@ -1999,14 +2064,33 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G91002>`_.
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-4/#G91002>`__.
+   For example:
+
+   .. doctest::
+
+      >>> 'Letters and spaces'.isalpha()
+      False
+      >>> 'LettersOnly'.isalpha()
+      True
+      >>> 'µ'.isalpha()  # non-ASCII characters can be considered alphabetical too
+      True
+
+   See :ref:`unicode-properties`.
 
 
 .. method:: str.isascii()
 
    Return ``True`` if the string is empty or all characters in the string are ASCII,
    ``False`` otherwise.
-   ASCII characters have code points in the range U+0000-U+007F.
+   ASCII characters have code points in the range U+0000-U+007F. For example:
+
+   .. doctest::
+
+      >>> 'ASCII characters'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
 
    .. versionadded:: 3.7
 
@@ -2016,9 +2100,18 @@ expression support in the :mod:`re` module).
    Return ``True`` if all characters in the string are decimal
    characters and there is at least one character, ``False``
    otherwise. Decimal characters are those that can be used to form
-   numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
+   numbers in base 10, such as U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd".
+   General Category "Nd". For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isdecimal()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isdecimal()  # Arabic-Indic digits zero to nine
+      True
+      >>> 'alphabetic'.isdecimal()
+      False
 
 
 .. method:: str.isdigit()
@@ -2064,6 +2157,21 @@ expression support in the :mod:`re` module).
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      True
+      >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
+      True
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
+   a superset of decimal numbers.
 
 
 .. method:: str.isprintable()
@@ -2100,6 +2208,19 @@ expression support in the :mod:`re` module).
    character, for example uppercase characters may only follow uncased characters
    and lowercase characters only cased ones.  Return ``False`` otherwise.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Spam, Spam, Spam'.istitle()
+      True
+      >>> 'spam, spam, spam'.istitle()
+      False
+      >>> 'SPAM, SPAM, SPAM'.istitle()
+      False
+
+   See also :meth:`title`.
+
 
 .. method:: str.isupper()
 
@@ -2124,7 +2245,16 @@ expression support in the :mod:`re` module).
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
    *iterable*, including :class:`bytes` objects.  The separator between
-   elements is the string providing this method.
+   elements is the string providing this method. For example:
+
+   .. doctest::
+
+      >>> ', '.join(['spam', 'spam', 'spam'])
+      'spam, spam, spam'
+      >>> '-'.join('Python')
+      'P-y-t-h-o-n'
+
+   See also :meth:`split`.
 
 
 .. method:: str.ljust(width, fillchar=' ', /)
@@ -2133,15 +2263,28 @@ expression support in the :mod:`re` module).
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+      >>> 'Monty Python'.ljust(10, '.')
+      'Monty Python'
+
+   See also :meth:`rjust`.
+
 
 .. method:: str.lower()
 
    Return a copy of the string with all the cased characters [4]_ converted to
    lowercase.
 
-   The lowercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The lowercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.lstrip(chars=None, /)
@@ -2338,6 +2481,8 @@ expression support in the :mod:`re` module).
       >>> "   foo   ".split(maxsplit=0)
       ['foo   ']
 
+   See also :meth:`join`.
+
 
 .. index::
    single: universal newlines; str.splitlines method
@@ -2477,6 +2622,8 @@ expression support in the :mod:`re` module).
         >>> titlecase("they're bill's friends.")
         "They're Bill's Friends."
 
+   See also :meth:`istitle`.
+
 
 .. method:: str.translate(table, /)
 
@@ -2504,9 +2651,9 @@ expression support in the :mod:`re` module).
    character(s) is not "Lu" (Letter, uppercase), but e.g. "Lt" (Letter,
    titlecase).
 
-   The uppercasing algorithm used is
-   `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
+   The uppercasing algorithm used is `described in section 3.13.2 'Default Case
+   Conversion' of the Unicode Standard
+   <https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/#G34078>`__.
 
 
 .. method:: str.zfill(width, /)
@@ -2539,6 +2686,8 @@ expression support in the :mod:`re` module).
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
 
+.. _stdtypes-fstrings:
+
 Formatted String Literals (f-strings)
 -------------------------------------
 
@@ -2547,123 +2696,147 @@ Formatted String Literals (f-strings)
    The :keyword:`await` and :keyword:`async for` can be used in expressions
    within f-strings.
 .. versionchanged:: 3.8
-   Added the debugging operator (``=``)
+   Added the debug specifier (``=``)
 .. versionchanged:: 3.12
    Many restrictions on expressions within f-strings have been removed.
    Notably, nested strings, comments, and backslashes are now permitted.
 
 An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
 a string literal that is prefixed with ``f`` or ``F``.
-This type of string literal allows embedding arbitrary Python expressions
-within *replacement fields*, which are delimited by curly brackets (``{}``).
-These expressions are evaluated at runtime, similarly to :meth:`str.format`,
-and are converted into regular :class:`str` objects.
-For example:
+This type of string literal allows embedding the results of arbitrary Python
+expressions within *replacement fields*, which are delimited by curly
+brackets (``{}``).
+Each replacement field must contain an expression, optionally followed by:
 
-.. doctest::
+* a *debug specifier* -- an equal sign (``=``);
+* a *conversion specifier* -- ``!s``, ``!r`` or ``!a``; and/or
+* a *format specifier* prefixed with a colon (``:``).
 
-   >>> who = 'nobody'
-   >>> nationality = 'Spanish'
-   >>> f'{who.title()} expects the {nationality} Inquisition!'
-   'Nobody expects the Spanish Inquisition!'
+See the :ref:`Lexical Analysis section on f-strings <f-strings>` for details
+on the syntax of these fields.
 
-It is also possible to use a multi line f-string:
+Debug specifier
+^^^^^^^^^^^^^^^
 
-.. doctest::
+.. versionadded:: 3.8
 
-   >>> f'''This is a string
-   ... on two lines'''
-   'This is a string\non two lines'
+If a debug specifier -- an equal sign (``=``) -- appears after the replacement
+field expression, the resulting f-string will contain the expression's source,
+the equal sign, and the value of the expression.
+This is often useful for debugging::
 
-A single opening curly bracket, ``'{'``, marks a *replacement field* that
-can contain any Python expression:
+   >>> number = 14.3
+   >>> f'{number=}'
+   'number=14.3'
 
-.. doctest::
+Whitespace before, inside and after the expression, as well as whitespace
+after the equal sign, is significant --- it is retained in the result::
 
-   >>> nationality = 'Spanish'
-   >>> f'The {nationality} Inquisition!'
-   'The Spanish Inquisition!'
+   >>> f'{ number  -  4  = }'
+   ' number  -  4  = 10.3'
 
-To include a literal ``{`` or ``}``, use a double bracket:
 
-.. doctest::
+Conversion specifier
+^^^^^^^^^^^^^^^^^^^^
 
-   >>> x = 42
-   >>> f'{{x}} is {x}'
-   '{x} is 42'
-
-Functions can also be used, and :ref:`format specifiers <formatstrings>`:
-
-.. doctest::
-
-   >>> from math import sqrt
-   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
-   '√2 ≈ 1.41421'
-
-Any non-string expression is converted using :func:`str`, by default:
-
-.. doctest::
+By default, the value of a replacement field expression is converted to
+a string using :func:`str`::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)}'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third}'
    '1/3'
 
-To use an explicit conversion, use the ``!`` (exclamation mark) operator,
-followed by any of the valid formats, which are:
+When a debug specifier but no format specifier is used, the default conversion
+instead uses :func:`repr`::
 
-========== ==============
-Conversion  Meaning
-========== ==============
-``!a``      :func:`ascii`
-``!r``      :func:`repr`
-``!s``      :func:`str`
-========== ==============
+   >>> f'{one_third = }'
+   'one_third = Fraction(1, 3)'
 
-For example:
+The conversion can be specified explicitly using one of these specifiers:
 
-.. doctest::
+* ``!s`` for :func:`str`
+* ``!r`` for :func:`repr`
+* ``!a`` for :func:`ascii`
 
-   >>> from fractions import Fraction
-   >>> f'{Fraction(1, 3)!s}'
+For example::
+
+   >>> str(one_third)
    '1/3'
-   >>> f'{Fraction(1, 3)!r}'
+   >>> repr(one_third)
    'Fraction(1, 3)'
-   >>> question = '¿Dónde está el Presidente?'
-   >>> print(f'{question!a}')
-   '\xbfD\xf3nde est\xe1 el Presidente?'
 
-While debugging it may be helpful to see both the expression and its value,
-by using the equals sign (``=``) after the expression.
-This preserves spaces within the brackets, and can be used with a converter.
-By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
-For example:
+   >>> f'{one_third!s} is {one_third!r}'
+   '1/3 is Fraction(1, 3)'
 
-.. doctest::
+   >>> string = "¡kočka 😸!"
+   >>> ascii(string)
+   "'\\xa1ko\\u010dka \\U0001f638!'"
 
-   >>> from fractions import Fraction
-   >>> calculation = Fraction(1, 3)
-   >>> f'{calculation=}'
-   'calculation=Fraction(1, 3)'
-   >>> f'{calculation = }'
-   'calculation = Fraction(1, 3)'
-   >>> f'{calculation = !s}'
-   'calculation = 1/3'
+   >>> f'{string = !a}'
+   "string = '\\xa1ko\\u010dka \\U0001f638!'"
 
-Once the output has been evaluated, it can be formatted using a
-:ref:`format specifier <formatstrings>` following a colon (``':'``).
-After the expression has been evaluated, and possibly converted to a string,
-the :meth:`!__format__` method of the result is called with the format specifier,
-or the empty string if no format specifier is given.
-The formatted result is then used as the final value for the replacement field.
-For example:
 
-.. doctest::
+Format specifier
+^^^^^^^^^^^^^^^^
+
+After the expression has been evaluated, and possibly converted using an
+explicit conversion specifier, it is formatted using the :func:`format` function.
+If the replacement field includes a *format specifier* introduced by a colon
+(``:``), the specifier is passed to :func:`!format` as the second argument.
+The result of :func:`!format` is then used as the final value for the
+replacement field. For example::
 
    >>> from fractions import Fraction
-   >>> f'{Fraction(1, 7):.6f}'
-   '0.142857'
-   >>> f'{Fraction(1, 7):_^+10}'
-   '___+1/7___'
+   >>> one_third = Fraction(1, 3)
+   >>> f'{one_third:.6f}'
+   '0.333333'
+   >>> f'{one_third:_^+10}'
+   '___+1/3___'
+   >>> >>> f'{one_third!r:_^20}'
+   '___Fraction(1, 3)___'
+   >>> f'{one_third = :~>10}~'
+   'one_third = ~~~~~~~1/3~'
+
+.. _stdtypes-tstrings:
+
+Template String Literals (t-strings)
+------------------------------------
+
+An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+a string literal that is prefixed with ``t`` or ``T``.
+
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <stdtypes-fstrings>`,
+with for the following differences:
+
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
+
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
+
+* Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
+
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
 
 
 .. _old-string-formatting:
@@ -3100,6 +3273,30 @@ objects.
       (bytearray(b'abc\x00\x00'), 5)
 
       .. versionadded:: 3.14
+
+   .. method:: take_bytes(n=None, /)
+
+      Remove the first *n* bytes from the bytearray and return them as an immutable
+      :class:`bytes`.
+      By default (if *n* is ``None``), return all bytes and clear the bytearray.
+
+      If *n* is negative, index from the end and take the first :func:`len`
+      plus *n* bytes. If *n* is out of bounds, raise :exc:`IndexError`.
+
+      Taking less than the full length will leave remaining bytes in the
+      :class:`bytearray`, which requires a copy. If the remaining bytes should be
+      discarded, use :func:`~bytearray.resize` or :keyword:`del` to truncate
+      then :func:`~bytearray.take_bytes` without a size.
+
+      .. impl-detail::
+
+         Taking all bytes is a zero-copy operation.
+
+      .. versionadded:: 3.15
+
+         See the :ref:`What's New <whatsnew315-bytearray-take-bytes>` entry for
+         common code patterns which can be optimized with
+         :meth:`bytearray.take_bytes`.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -4508,7 +4705,7 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=sys.maxsize, /)
+   .. method:: index(value, start=0, stop=sys.maxsize, /)
 
       Return the index of the first occurrence of *value* (at or after
       index *start* and before index *stop*).
@@ -4659,11 +4856,12 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
-hash value and cannot be used as either a dictionary key or as an element of
-another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
-its contents cannot be altered after it is created; it can therefore be used as
-a dictionary key or as an element of another set.
+like :meth:`~set.add` and :meth:`~set.remove`.
+Since it is mutable, it has no hash value and cannot be used as
+either a dictionary key or as an element of another set.
+The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created;
+it can therefore be used as a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
@@ -4680,164 +4878,172 @@ The constructors for both classes work the same:
    objects.  If *iterable* is not specified, a new empty set is
    returned.
 
-   Sets can be created by several means:
+Sets can be created by several means:
 
-   * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
-   * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
-   * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
+* Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
+* Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
+* Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
-   Instances of :class:`set` and :class:`frozenset` provide the following
-   operations:
+Instances of :class:`set` and :class:`frozenset` provide the following
+operations:
 
-   .. describe:: len(s)
+.. describe:: len(s)
 
-      Return the number of elements in set *s* (cardinality of *s*).
+   Return the number of elements in set *s* (cardinality of *s*).
 
-   .. describe:: x in s
+.. describe:: x in s
 
-      Test *x* for membership in *s*.
+   Test *x* for membership in *s*.
 
-   .. describe:: x not in s
+.. describe:: x not in s
 
-      Test *x* for non-membership in *s*.
+   Test *x* for non-membership in *s*.
 
-   .. method:: isdisjoint(other, /)
+.. method:: frozenset.isdisjoint(other, /)
+            set.isdisjoint(other, /)
 
-      Return ``True`` if the set has no elements in common with *other*.  Sets are
-      disjoint if and only if their intersection is the empty set.
+   Return ``True`` if the set has no elements in common with *other*.  Sets are
+   disjoint if and only if their intersection is the empty set.
 
-   .. method:: issubset(other, /)
-               set <= other
+.. method:: frozenset.issubset(other, /)
+            set.issubset(other, /)
+.. describe:: set <= other
 
-      Test whether every element in the set is in *other*.
+   Test whether every element in the set is in *other*.
 
-   .. method:: set < other
+.. describe:: set < other
 
-      Test whether the set is a proper subset of *other*, that is,
-      ``set <= other and set != other``.
+   Test whether the set is a proper subset of *other*, that is,
+   ``set <= other and set != other``.
 
-   .. method:: issuperset(other, /)
-               set >= other
+.. method:: frozenset.issuperset(other, /)
+            set.issuperset(other, /)
+.. describe:: set >= other
 
-      Test whether every element in *other* is in the set.
+   Test whether every element in *other* is in the set.
 
-   .. method:: set > other
+.. describe:: set > other
 
-      Test whether the set is a proper superset of *other*, that is, ``set >=
-      other and set != other``.
+   Test whether the set is a proper superset of *other*, that is, ``set >=
+   other and set != other``.
 
-   .. method:: union(*others)
-               set | other | ...
+.. method:: frozenset.union(*others)
+            set.union(*others)
+.. describe:: set | other | ...
 
-      Return a new set with elements from the set and all others.
+   Return a new set with elements from the set and all others.
 
-   .. method:: intersection(*others)
-               set & other & ...
+.. method:: frozenset.intersection(*others)
+            set.intersection(*others)
+.. describe:: set & other & ...
 
-      Return a new set with elements common to the set and all others.
+   Return a new set with elements common to the set and all others.
 
-   .. method:: difference(*others)
-               set - other - ...
+.. method:: frozenset.difference(*others)
+            set.difference(*others)
+.. describe:: set - other - ...
 
-      Return a new set with elements in the set that are not in the others.
+   Return a new set with elements in the set that are not in the others.
 
-   .. method:: symmetric_difference(other, /)
-               set ^ other
+.. method:: frozenset.symmetric_difference(other, /)
+            set.symmetric_difference(other, /)
+.. describe:: set ^ other
 
-      Return a new set with elements in either the set or *other* but not both.
+   Return a new set with elements in either the set or *other* but not both.
 
-   .. method:: copy()
+.. method:: frozenset.copy()
+            set.copy()
 
-      Return a shallow copy of the set.
-
-
-   Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
-   :meth:`issuperset` methods will accept any iterable as an argument.  In
-   contrast, their operator based counterparts require their arguments to be
-   sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
-   in favor of the more readable ``set('abc').intersection('cbs')``.
-
-   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
-   sets are equal if and only if every element of each set is contained in the
-   other (each is a subset of the other). A set is less than another set if and
-   only if the first set is a proper subset of the second set (is a subset, but
-   is not equal). A set is greater than another set if and only if the first set
-   is a proper superset of the second set (is a superset, but is not equal).
-
-   Instances of :class:`set` are compared to instances of :class:`frozenset`
-   based on their members.  For example, ``set('abc') == frozenset('abc')``
-   returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
-
-   The subset and equality comparisons do not generalize to a total ordering
-   function.  For example, any two nonempty disjoint sets are not equal and are not
-   subsets of each other, so *all* of the following return ``False``: ``a<b``,
-   ``a==b``, or ``a>b``.
-
-   Since sets only define partial ordering (subset relationships), the output of
-   the :meth:`list.sort` method is undefined for lists of sets.
-
-   Set elements, like dictionary keys, must be :term:`hashable`.
-
-   Binary operations that mix :class:`set` instances with :class:`frozenset`
-   return the type of the first operand.  For example: ``frozenset('ab') |
-   set('bc')`` returns an instance of :class:`frozenset`.
-
-   The following table lists operations available for :class:`set` that do not
-   apply to immutable instances of :class:`frozenset`:
-
-   .. method:: update(*others)
-               set |= other | ...
-
-      Update the set, adding elements from all others.
-
-   .. method:: intersection_update(*others)
-               set &= other & ...
-
-      Update the set, keeping only elements found in it and all others.
-
-   .. method:: difference_update(*others)
-               set -= other | ...
-
-      Update the set, removing elements found in others.
-
-   .. method:: symmetric_difference_update(other, /)
-               set ^= other
-
-      Update the set, keeping only elements found in either set, but not in both.
-
-   .. method:: add(elem, /)
-
-      Add element *elem* to the set.
-
-   .. method:: remove(elem, /)
-
-      Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
-      not contained in the set.
-
-   .. method:: discard(elem, /)
-
-      Remove element *elem* from the set if it is present.
-
-   .. method:: pop()
-
-      Remove and return an arbitrary element from the set.  Raises
-      :exc:`KeyError` if the set is empty.
-
-   .. method:: clear()
-
-      Remove all elements from the set.
+   Return a shallow copy of the set.
 
 
-   Note, the non-operator versions of the :meth:`update`,
-   :meth:`intersection_update`, :meth:`difference_update`, and
-   :meth:`symmetric_difference_update` methods will accept any iterable as an
-   argument.
+Note, the non-operator versions of :meth:`~frozenset.union`,
+:meth:`~frozenset.intersection`, :meth:`~frozenset.difference`, :meth:`~frozenset.symmetric_difference`, :meth:`~frozenset.issubset`, and
+:meth:`~frozenset.issuperset` methods will accept any iterable as an argument.  In
+contrast, their operator based counterparts require their arguments to be
+sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
+in favor of the more readable ``set('abc').intersection('cbs')``.
 
-   Note, the *elem* argument to the :meth:`~object.__contains__`,
-   :meth:`remove`, and
-   :meth:`discard` methods may be a set.  To support searching for an equivalent
-   frozenset, a temporary one is created from *elem*.
+Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
+sets are equal if and only if every element of each set is contained in the
+other (each is a subset of the other). A set is less than another set if and
+only if the first set is a proper subset of the second set (is a subset, but
+is not equal). A set is greater than another set if and only if the first set
+is a proper superset of the second set (is a superset, but is not equal).
+
+Instances of :class:`set` are compared to instances of :class:`frozenset`
+based on their members.  For example, ``set('abc') == frozenset('abc')``
+returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
+
+The subset and equality comparisons do not generalize to a total ordering
+function.  For example, any two nonempty disjoint sets are not equal and are not
+subsets of each other, so *all* of the following return ``False``: ``a<b``,
+``a==b``, or ``a>b``.
+
+Since sets only define partial ordering (subset relationships), the output of
+the :meth:`list.sort` method is undefined for lists of sets.
+
+Set elements, like dictionary keys, must be :term:`hashable`.
+
+Binary operations that mix :class:`set` instances with :class:`frozenset`
+return the type of the first operand.  For example: ``frozenset('ab') |
+set('bc')`` returns an instance of :class:`frozenset`.
+
+The following table lists operations available for :class:`set` that do not
+apply to immutable instances of :class:`frozenset`:
+
+.. method:: set.update(*others)
+.. describe:: set |= other | ...
+
+   Update the set, adding elements from all others.
+
+.. method:: set.intersection_update(*others)
+.. describe:: set &= other & ...
+
+   Update the set, keeping only elements found in it and all others.
+
+.. method:: set.difference_update(*others)
+.. describe:: set -= other | ...
+
+   Update the set, removing elements found in others.
+
+.. method:: set.symmetric_difference_update(other, /)
+.. describe:: set ^= other
+
+   Update the set, keeping only elements found in either set, but not in both.
+
+.. method:: set.add(elem, /)
+
+   Add element *elem* to the set.
+
+.. method:: set.remove(elem, /)
+
+   Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
+   not contained in the set.
+
+.. method:: set.discard(elem, /)
+
+   Remove element *elem* from the set if it is present.
+
+.. method:: set.pop()
+
+   Remove and return an arbitrary element from the set.  Raises
+   :exc:`KeyError` if the set is empty.
+
+.. method:: set.clear()
+
+   Remove all elements from the set.
+
+
+Note, the non-operator versions of the :meth:`~set.update`,
+:meth:`~set.intersection_update`, :meth:`~set.difference_update`, and
+:meth:`~set.symmetric_difference_update` methods will accept any iterable as an
+argument.
+
+Note, the *elem* argument to the :meth:`~object.__contains__`,
+:meth:`~set.remove`, and
+:meth:`~set.discard` methods may be a set.  To support searching for an equivalent
+frozenset, a temporary one is created from *elem*.
 
 
 .. _typesmapping:
@@ -4895,9 +5101,6 @@ can be used interchangeably to index the same dictionary entry.
    added to the dictionary created from the positional argument.  If a key
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
-
-   Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.
 
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
@@ -4957,13 +5160,13 @@ can be used interchangeably to index the same dictionary entry.
 
       .. index:: __missing__()
 
-      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      If a subclass of dict defines a method :meth:`~object.__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
       returned or raised by the ``__missing__(key)`` call.
-      No other operations or methods invoke :meth:`__missing__`. If
-      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable::
+      No other operations or methods invoke :meth:`~object.__missing__`. If
+      :meth:`~object.__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`~object.__missing__` must be a method; it cannot be an instance variable::
 
           >>> class Counter(dict):
           ...     def __missing__(self, key):
@@ -4977,7 +5180,8 @@ can be used interchangeably to index the same dictionary entry.
           1
 
       The example above shows part of the implementation of
-      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      :class:`collections.Counter`.
+      A different :meth:`!__missing__` method is used
       by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
@@ -5283,9 +5487,11 @@ before the statement body is executed and exited when the statement ends:
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
    following the :keyword:`!with` statement. Otherwise the exception continues
-   propagating after this method has finished executing. Exceptions that occur
-   during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`!with` statement.
+   propagating after this method has finished executing.
+
+   If this method raises an exception while handling an earlier exception from the
+   :keyword:`with` block, the new exception is raised, and the original exception
+   is stored in its :attr:`~BaseException.__context__` attribute.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
@@ -5486,6 +5692,7 @@ list is non-exhaustive.
 * :class:`collections.abc.MutableMapping`
 * :class:`collections.abc.Sequence`
 * :class:`collections.abc.MutableSequence`
+* :class:`collections.abc.ByteString`
 * :class:`collections.abc.MappingView`
 * :class:`collections.abc.KeysView`
 * :class:`collections.abc.ItemsView`
@@ -5761,9 +5968,10 @@ Methods
 
 .. index:: pair: object; method
 
-Methods are functions that are called using the attribute notation. There are
-two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
-on lists) and :ref:`class instance method <instance-methods>`.
+Methods are functions that are called using the attribute notation.
+There are two flavors: :ref:`built-in methods <builtin-methods>`
+(such as :meth:`~list.append` on lists)
+and :ref:`class instance method <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
@@ -5869,7 +6077,7 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used used to indicate that something is omitted.
+This object is commonly used to indicate that something is omitted.
 It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
