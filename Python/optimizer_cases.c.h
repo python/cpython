@@ -836,6 +836,8 @@
             JitOptRef sub_st;
             JitOptRef tuple_st;
             JitOptRef res;
+            JitOptRef ts;
+            JitOptRef ss;
             sub_st = stack_pointer[-1];
             tuple_st = stack_pointer[-2];
             assert(sym_matches_type(tuple_st, &PyTuple_Type));
@@ -855,9 +857,13 @@
             else {
                 res = sym_new_not_null(ctx);
             }
-            CHECK_STACK_BOUNDS(-1);
+            ts = tuple_st;
+            ss = sub_st;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = res;
-            stack_pointer += -1;
+            stack_pointer[-1] = ts;
+            stack_pointer[0] = ss;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
