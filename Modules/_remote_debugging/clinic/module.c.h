@@ -1296,4 +1296,4 @@ _remote_debugging_is_python_process(PyObject *module, PyObject *const *args, Py_
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8c27c4032158215c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34f50b18f317b9b6 input=a9049054013a1b77]*/
