@@ -695,9 +695,12 @@ task isn't already covered by the URL parsing functions above.
    Like :func:`unquote`, but also replace plus signs with spaces, as required
    for unquoting HTML form values.
 
-   *string* must be a :class:`str`.
+   *string* may be either a :class:`str` or a :class:`bytes`.
 
    Example: ``unquote_plus('/El+Ni%C3%B1o/')`` yields ``'/El Niño/'``.
+
+   .. versionchanged:: 3.9
+       *string* parameter supports bytes and str objects (previously only str).
 
 
 .. function:: unquote_to_bytes(string)
