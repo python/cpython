@@ -703,12 +703,6 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 #endif
 
-    // Skip over super instructions.
-    if (_tstate->jit_tracer_state.prev_state.instr_is_super) {
-        _tstate->jit_tracer_state.prev_state.instr_is_super = false;
-        return 1;
-    }
-
     if (opcode == ENTER_EXECUTOR) {
         goto full;
     }
@@ -1077,7 +1071,6 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
     _tstate->jit_tracer_state.prev_state.instr_stacklevel = curr_stackdepth;
-    _tstate->jit_tracer_state.prev_state.instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _tstate->jit_tracer_state.initial_state.jump_backward_instr = curr_instr;
 
