@@ -3152,6 +3152,47 @@ class TestUopsOptimization(unittest.TestCase):
         """), PYTHON_JIT="1")
         self.assertEqual(result[0].rc, 0, result)
 
+    def test_143092(self):
+        def f1():
+            a = "a"
+            for i in range(50):
+                x = a[i % len(a)]
+
+            s = ""
+            for _ in range(10):
+                s += ""
+
+            class A: ...
+            class B: ...
+
+            match s:
+                case int(): ...
+                case str(): ...
+                case dict(): ...
+
+            (
+                u0,
+                *u1,
+                u2,
+                u4,
+                u5,
+                u6,
+                u7,
+                u8,
+                u9, u10, u11,
+                u12, u13, u14, u15, u16, u17, u18, u19, u20, u21, u22, u23, u24, u25, u26, u27, u28, u29,
+            ) = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None,]
+
+            s = ""
+            for _ in range(10):
+                s += ""
+                s += ""
+
+        for i in range(TIER2_THRESHOLD * 10):
+            f1()
 
 def global_identity(x):
     return x

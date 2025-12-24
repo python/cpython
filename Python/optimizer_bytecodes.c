@@ -299,14 +299,12 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res, l, r)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyUnicode_Type);
         l = left;
         r = right;
     }
 
-    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-        JitOptRef res;
+    op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {
         if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
             assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -320,8 +318,7 @@ dummy_func(void) {
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
         }
-        // _STORE_FAST:
-        GETLOCAL(this_instr->operand0) = res;
+        GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
     }
 
     op(_BINARY_OP_SUBSCR_INIT_CALL, (container, sub, getitem  -- new_frame)) {
@@ -1043,10 +1040,11 @@ dummy_func(void) {
         sym_set_const(flag, Py_True);
     }
 
-    op(_CALL_LIST_APPEND, (callable, self, arg -- c, s)) {
+    op(_CALL_LIST_APPEND, (callable, self, arg -- none, c, s)) {
         (void)(arg);
         c = callable;
         s = self;
+        none = sym_new_const(ctx, Py_None);
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {

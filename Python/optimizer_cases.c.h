@@ -646,42 +646,6 @@
             JitOptRef r;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (
-                sym_is_safe_const(ctx, left) &&
-                sym_is_safe_const(ctx, right)
-            ) {
-                JitOptRef left_sym = left;
-                JitOptRef right_sym = right;
-                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
-                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
-                _PyStackRef res_stackref;
-                _PyStackRef l_stackref;
-                _PyStackRef r_stackref;
-                /* Start of uop copied from bytecodes for constant evaluation */
-                PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-                assert(PyUnicode_CheckExact(left_o));
-                assert(PyUnicode_CheckExact(right_o));
-                STAT_INC(BINARY_OP, hit);
-                PyObject *res_o = PyUnicode_Concat(left_o, right_o);
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
-                if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(error);
-                }
-                l_stackref = left;
-                r_stackref = right;
-                /* End of uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
-                l = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(l_stackref));
-                r = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(r_stackref));
-                CHECK_STACK_BOUNDS(1);
-                stack_pointer[-2] = res;
-                stack_pointer[-1] = l;
-                stack_pointer[0] = r;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                break;
-            }
             res = sym_new_type(ctx, &PyUnicode_Type);
             l = left;
             r = right;
@@ -697,9 +661,9 @@
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
             JitOptRef right;
             JitOptRef left;
+            JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            JitOptRef res;
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -708,15 +672,18 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                CHECK_STACK_BOUNDS(-1);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -1;
             }
-            GETLOCAL(this_instr->operand0) = res;
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -2958,6 +2925,7 @@
             JitOptRef arg;
             JitOptRef self;
             JitOptRef callable;
+            JitOptRef none;
             JitOptRef c;
             JitOptRef s;
             arg = stack_pointer[-1];
@@ -2966,11 +2934,10 @@
             (void)(arg);
             c = callable;
             s = self;
-            CHECK_STACK_BOUNDS(-1);
-            stack_pointer[-3] = c;
-            stack_pointer[-2] = s;
-            stack_pointer += -1;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            none = sym_new_const(ctx, Py_None);
+            stack_pointer[-3] = none;
+            stack_pointer[-2] = c;
+            stack_pointer[-1] = s;
             break;
         }
 
