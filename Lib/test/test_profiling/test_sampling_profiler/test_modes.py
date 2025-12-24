@@ -306,8 +306,8 @@ class TestGilModeFiltering(unittest.TestCase):
             "12345",
             "--mode",
             "gil",
-            "-i",
-            "500",
+            "-r",
+            "2000",
             "-d",
             "5",
         ]
@@ -488,8 +488,8 @@ class TestExceptionModeFiltering(unittest.TestCase):
             "12345",
             "--mode",
             "exception",
-            "-i",
-            "500",
+            "-r",
+            "2000",
             "-d",
             "5",
         ]
