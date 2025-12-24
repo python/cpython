@@ -185,12 +185,17 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
-    if (exit != NULL) {
-        exit->executor = executor;
-    }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
+    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
+    if (exit != NULL && !progress_needed) {
+        exit->executor = executor;
+    }
+    else {
+        // An executor inserted into the code object now has a strong reference
+        // to it from the code object. Thus, we don't need this reference anymore.
+        Py_DECREF(executor);
+    }
     interp->compiling = false;
     return 1;
 #else
@@ -305,7 +310,7 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
     while (ts) {
         _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
         if (current != NULL) {
-            _Py_DECREF_NO_DEALLOC((PyObject *)current);
+            Py_DECREF((PyObject *)current);
         }
         ts = ts->next;
     }
@@ -315,6 +320,10 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
 static void
 add_to_pending_deletion_list(_PyExecutorObject *self)
 {
+    if (self->vm_data.pending_deletion) {
+        return;
+    }
+    self->vm_data.pending_deletion = 1;
     PyInterpreterState *interp = PyInterpreterState_Get();
     self->vm_data.links.previous = NULL;
     self->vm_data.links.next = interp->executor_deletion_list_head;
@@ -622,7 +631,7 @@ _PyJit_translate_single_bytecode_to_trace(
     uint32_t target = 0;
 
     target = Py_IsNone((PyObject *)old_code)
-        ? (int)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
+        ? (uint32_t)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
         : INSTR_IP(target_instr, old_code);
 
     // Rewind EXTENDED_ARG so that we see the whole thing.
@@ -705,7 +714,7 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
-        goto done;
+        goto full;
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
@@ -1661,6 +1670,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
+    executor->vm_data.pending_deletion = 0;
     for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
@@ -1768,6 +1778,7 @@ static int
 executor_clear(PyObject *op)
 {
     executor_invalidate(op);
+    return 0;
 }
 
 void

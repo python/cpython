@@ -200,6 +200,36 @@ On most systems, attaching to another process requires appropriate permissions.
 See :ref:`profiling-permissions` for platform-specific requirements.
 
 
+.. _replay-command:
+
+The ``replay`` command
+----------------------
+
+The ``replay`` command converts binary profile files to other output formats::
+
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+
+This command is useful when you have captured profiling data in binary format
+and want to analyze it later or convert it to a visualization format. Binary
+profiles can be replayed multiple times to different formats without
+re-profiling.
+
+::
+
+   # Convert binary to pstats (default, prints to stdout)
+   python -m profiling.sampling replay profile.bin
+
+   # Convert binary to flame graph
+   python -m profiling.sampling replay --flamegraph -o output.html profile.bin
+
+   # Convert binary to gecko format for Firefox Profiler
+   python -m profiling.sampling replay --gecko -o profile.json profile.bin
+
+   # Convert binary to heatmap
+   python -m profiling.sampling replay --heatmap -o my_heatmap profile.bin
+
+
 Profiling in production
 -----------------------
 
@@ -312,6 +342,8 @@ The default configuration works well for most use cases:
      - Disabled
    * - Default for ``--subprocesses``
      - Disabled
+   * - Default for ``--blocking``
+     - Disabled (non-blocking sampling)
 
 
 Sampling interval and duration
@@ -360,6 +392,50 @@ identify threads that are blocked or starved. Each thread's samples are
 combined in the output, with the ability to filter by thread in some formats.
 This option is particularly useful when investigating concurrency issues or
 when work is distributed across a thread pool.
+
+
+.. _blocking-mode:
+
+Blocking mode
+-------------
+
+By default, Tachyon reads the target process's memory without stopping it.
+This non-blocking approach is ideal for most profiling scenarios because it
+imposes virtually zero overhead on the target application: the profiled
+program runs at full speed and is unaware it is being observed.
+
+However, non-blocking sampling can occasionally produce incomplete or
+inconsistent stack traces in applications with many generators or coroutines
+that rapidly switch between yield points, or in programs with very fast-changing
+call stacks where functions enter and exit between the start and end of a single
+stack read, resulting in reconstructed stacks that mix frames from different
+execution states or that never actually existed.
+
+For these cases, the :option:`--blocking` option stops the target process during
+each sample::
+
+   python -m profiling.sampling run --blocking script.py
+   python -m profiling.sampling attach --blocking 12345
+
+When blocking mode is enabled, the profiler suspends the target process,
+reads its stack, then resumes it. This guarantees that each captured stack
+represents a real, consistent snapshot of what the process was doing at that
+instant. The trade-off is that the target process runs slower because it is
+repeatedly paused.
+
+.. warning::
+
+   Do not use very high sample rates (low ``--interval`` values) with blocking
+   mode. Suspending and resuming a process takes time, and if the sampling
+   interval is too short, the target will spend more time stopped than running.
+   For blocking mode, intervals of 1000 microseconds (1 millisecond) or higher
+   are recommended. The default 100 microsecond interval may cause noticeable
+   slowdown in the target application.
+
+Use blocking mode only when you observe inconsistent stacks in your profiles,
+particularly with generator-heavy or coroutine-heavy code. For most
+applications, the default non-blocking mode provides accurate results with
+zero impact on the target process.
 
 
 Special frames
@@ -1041,6 +1117,59 @@ intuitive view that shows exactly where time is spent without requiring
 interpretation of hierarchical visualizations.
 
 
+Binary format
+-------------
+
+Binary format (:option:`--binary`) produces a compact binary file for efficient
+storage of profiling data::
+
+   python -m profiling.sampling run --binary -o profile.bin script.py
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+The :option:`--compression` option controls data compression:
+
+- ``auto`` (default): Use zstd compression if available, otherwise no
+  compression
+- ``zstd``: Force zstd compression (requires :mod:`compression.zstd` support)
+- ``none``: Disable compression
+
+::
+
+   python -m profiling.sampling run --binary --compression=zstd -o profile.bin script.py
+
+To analyze binary profiles, use the :ref:`replay-command` to convert them to
+other formats like flame graphs or pstats output.
+
+
+Record and replay workflow
+==========================
+
+The binary format combined with the replay command enables a record-and-replay
+workflow that separates data capture from analysis. Rather than generating
+visualizations during profiling, you capture raw data to a compact binary file
+and convert it to different formats later.
+
+This approach has three main benefits:
+
+- Sampling runs faster because the work of building data structures for
+  visualization is deferred until replay.
+- A single binary capture can be converted to multiple output formats
+  without re-profiling: pstats for a quick overview, flame graph for visual
+  exploration, heatmap for line-level detail.
+- Binary files are compact and easy to share with colleagues who can convert
+  them to their preferred format.
+
+A typical workflow::
+
+   # Capture profile in production or during tests
+   python -m profiling.sampling attach --binary -o profile.bin 12345
+
+   # Later, analyze with different formats
+   python -m profiling.sampling replay profile.bin
+   python -m profiling.sampling replay --flamegraph -o profile.html profile.bin
+   python -m profiling.sampling replay --heatmap -o heatmap profile.bin
+
+
 Live mode
 =========
 
@@ -1252,6 +1381,10 @@ Global options
 
    Attach to and profile a running process by PID.
 
+.. option:: replay
+
+   Convert a binary profile file to another output format.
+
 
 Sampling options
 ----------------
@@ -1296,6 +1429,13 @@ Sampling options
    Also profile subprocesses. Each subprocess gets its own profiler
    instance and output file. Incompatible with ``--live``.
 
+.. option:: --blocking
+
+   Pause the target process during each sample. This ensures consistent
+   stack traces at the cost of slowing down the target. Use with longer
+   intervals (1000 µs or higher) to minimize impact. See :ref:`blocking-mode`
+   for details.
+
 
 Mode options
 ------------
@@ -1335,12 +1475,22 @@ Output options
 
    Generate HTML heatmap with line-level sample counts.
 
+.. option:: --binary
+
+   Generate high-performance binary format for later conversion with the
+   ``replay`` command.
+
+.. option:: --compression <type>
+
+   Compression for binary format: ``auto`` (use zstd if available, default),
+   ``zstd``, or ``none``.
+
 .. option:: -o <path>, --output <path>
 
    Output file or directory path. Default behavior varies by format:
-   ``--pstats`` writes to stdout, ``--flamegraph`` and ``--gecko`` generate
-   files like ``flamegraph.PID.html``, and ``--heatmap`` creates a directory
-   named ``heatmap_PID``.
+   :option:`--pstats` writes to stdout, while other formats generate a file
+   named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
+   :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
 
 
 pstats display options
