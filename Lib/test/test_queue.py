@@ -9,7 +9,8 @@ import weakref
 from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
-import ctypes
+import sys
+from test import support
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
@@ -1034,12 +1035,12 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
 
     def test_simplequeue_sizeof_reflects_buffer_growth(self):
         q = self.type2test()
-        before = q.__sizeof__()
+        before = sys.getsizeof(q)
         for _ in range(1000):
             q.put(object())
-        after = q.__sizeof__()
+        after = sys.getsizeof(q)
         self.assertGreater(after, before)
-        ptr = ctypes.sizeof(ctypes.c_void_p)
+        ptr = support.calcobjsize(1) - support.calcobjsize(0)
         self.assertEqual((after - before) % ptr, 0)
 
     def test_reentrancy(self):
