@@ -1040,7 +1040,7 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
             q.put(object())
         after = sys.getsizeof(q)
         self.assertGreater(after, before)
-        ptr = support.calcobjsize(1) - support.calcobjsize(0)
+        ptr = support.calcobjsize("P") - support.calcobjsize("")
         self.assertEqual((after - before) % ptr, 0)
 
     def test_reentrancy(self):
