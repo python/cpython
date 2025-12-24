@@ -24,6 +24,7 @@ from ._live_collector_helpers import (
     MockThreadInfo,
     MockInterpreterInfo,
 )
+from .helpers import close_and_unlink
 
 
 class TestLiveStatsCollectorWithMockDisplay(unittest.TestCase):
@@ -865,6 +866,7 @@ class TestLiveModeErrors(unittest.TestCase):
     def test_run_failed_script_live(self):
         """Test that running a failing script exits with clean error."""
         script = tempfile.NamedTemporaryFile(suffix=".py")
+        self.addCleanup(close_and_unlink, script)
         script.write(b'1/0\n')
         script.seek(0)
 
