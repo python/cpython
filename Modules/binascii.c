@@ -692,13 +692,11 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
 /*[clinic end generated code: output=6ab30f2a26d301a1 input=11c60c016d4f334b]*/
 {
     const unsigned char *ascii_data, *ignore_data;
-    unsigned char *bin_data;
     int group_pos = 0;
     unsigned char this_ch, this_digit;
     unsigned char ignore_map[256] = {0};
     uint32_t leftchar = 0;
     Py_ssize_t ascii_len, bin_len, chunk_len, ignore_len;
-    _PyBytesWriter writer;
     binascii_state *state;
 
     ascii_data = data->buf;
@@ -737,8 +735,11 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     }
     bin_len = 4 * ((bin_len + 4) / 5);
 
-    _PyBytesWriter_Init(&writer);
-    bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
+        return NULL;
+    }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
     if (bin_data == NULL) {
         return NULL;
     }
@@ -808,10 +809,10 @@ binascii_a2b_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         leftchar = 0;
     }
 
-    return _PyBytesWriter_Finish(&writer, bin_data);
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -838,14 +839,12 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
                           int wrap, unsigned int width, int pad)
 /*[clinic end generated code: output=78426392ad3fc75b input=d5122dbab4dbb9f2]*/
 {
-    unsigned char *ascii_data;
     const unsigned char *bin_data;
     int chunk_pos = 0;
     unsigned char this_group[5];
     uint32_t leftchar = 0;
     unsigned int line_len = 0;
     Py_ssize_t bin_len, group_len, out_len;
-    _PyBytesWriter writer;
 
     bin_data = data->buf;
     bin_len = data->len;
@@ -864,11 +863,11 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     if (!pad && (bin_len % 4))  out_len -= 4 - (bin_len % 4);
     if (width && out_len)       out_len += (out_len - 1) / width;
 
-    _PyBytesWriter_Init(&writer);
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(out_len);
+    if (writer == NULL) {
         return NULL;
     }
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     if (wrap) {
         *ascii_data++ = BASE85_A85_PREFIX;
@@ -923,7 +922,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
         *ascii_data++ = BASE85_A85_SUFFIX;
     }
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
 /*[clinic input]
@@ -948,12 +947,10 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
 /*[clinic end generated code: output=c5b9118ffe77f1cb input=65c2a532ad64ebd5]*/
 {
     const unsigned char *ascii_data, *table_a2b;
-    unsigned char *bin_data;
     int group_pos = 0;
     unsigned char this_ch, this_digit;
     uint32_t leftchar = 0;
     Py_ssize_t ascii_len, bin_len, chunk_len;
-    _PyBytesWriter writer;
     binascii_state *state;
 
     table_a2b = z85 ? table_a2b_base85_z85 : table_a2b_base85;
@@ -965,11 +962,11 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
     /* Allocate output buffer. */
     bin_len = 4 * ((ascii_len + 4) / 5);
 
-    _PyBytesWriter_Init(&writer);
-    bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
-    if (bin_data == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
         return NULL;
     }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
     for (; ascii_len > 0 || group_pos != 0; ascii_len--, ascii_data++) {
         /* Shift (in radix-85) data or padding into our buffer. */
@@ -1018,10 +1015,10 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
         leftchar = 0;
     }
 
-    return _PyBytesWriter_Finish(&writer, bin_data);
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -1046,11 +1043,9 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
                          int newline, int z85)
 /*[clinic end generated code: output=d3740e9a20c8e071 input=e4e07591f7a11ae4]*/
 {
-    unsigned char *ascii_data;
     const unsigned char *bin_data, *table_b2a;
     uint32_t leftchar = 0;
     Py_ssize_t bin_len, group_len, out_len;
-    _PyBytesWriter writer;
 
     table_b2a = z85 ? table_b2a_base85_z85 : table_b2a_base85;
     bin_data = data->buf;
@@ -1063,11 +1058,11 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
     if (!pad && (bin_len % 4))  out_len -= 4 - (bin_len % 4);
     if (newline)                out_len++;
 
-    _PyBytesWriter_Init(&writer);
-    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
-    if (ascii_data == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(out_len);
+    if (writer == NULL) {
         return NULL;
     }
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     /* Encode all full-length chunks. */
     for (; bin_len >= 4; bin_len -= 4, bin_data += 4) {
@@ -1109,7 +1104,7 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
         *ascii_data++ = '\n';
     }
 
-    return _PyBytesWriter_Finish(&writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
 /*[clinic input]
