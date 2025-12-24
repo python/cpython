@@ -1,1 +1,1 @@
-Fix when :envvar:`PYTHONINSPECT` is ``0`` not setting :data:`sys.flags.inspect`.
+Fix :data:`sys.flags.inspect` not being set when :envvar:`PYTHONINSPECT` is 0.
