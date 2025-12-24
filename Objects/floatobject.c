@@ -465,25 +465,13 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                         Py_RETURN_FALSE;
                     case Py_NE:
                         Py_RETURN_TRUE;
-                    case Py_LE:
-                        if (vsign > 0) {
-                            op = Py_LT;  // v <= w <=> trunc(v) < w
-                        }
-                        break;
-                    case Py_GE:
-                        if (vsign < 0) {
-                            op = Py_GT;  // v >= w <=> trunc(v) > w
-                        }
-                        break;
                     case Py_LT:
-                        if (vsign < 0) {
-                            op = Py_LE;  // v < w <=> trunc(v) <= w
-                        }
+                    case Py_LE:
+                        op = vsign > 0 ? Py_LT : Py_LE;
                         break;
                     case Py_GT:
-                        if (vsign > 0) {
-                            op = Py_GE;  // v > w <=> trunc(v) >= w
-                        }
+                    case Py_GE:
+                        op = vsign > 0 ? Py_GE : Py_GT;
                         break;
                 }
             }
