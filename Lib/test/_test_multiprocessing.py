@@ -5693,7 +5693,6 @@ class TestStartMethod(unittest.TestCase):
     def _dummy_func():
         pass
 
-    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_dont_set_context(self):
         # Run a process with spawn or forkserver context may change
         # the global start method, see gh-109263.
