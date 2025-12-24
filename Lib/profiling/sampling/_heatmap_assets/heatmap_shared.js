@@ -40,6 +40,42 @@ function intensityToColor(intensity) {
 }
 
 // ============================================================================
+// Theme Support
+// ============================================================================
+
+// Get the preferred theme from localStorage or browser preference
+function getPreferredTheme() {
+    const saved = localStorage.getItem('heatmap-theme');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+// Apply theme and update UI. Returns the applied theme.
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-btn');
+    if (btn) {
+        btn.querySelector('.icon-moon').style.display = theme === 'dark' ? 'none' : '';
+        btn.querySelector('.icon-sun').style.display = theme === 'dark' ? '' : 'none';
+    }
+    return theme;
+}
+
+// Toggle theme and save preference. Returns the new theme.
+function toggleAndSaveTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    localStorage.setItem('heatmap-theme', next);
+    return next;
+}
+
+// Restore theme from localStorage, or use browser preference
+function restoreUIState() {
+    applyTheme(getPreferredTheme());
+}
+
+// ============================================================================
 // Favicon (Reuse logo image as favicon)
 // ============================================================================
 

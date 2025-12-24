@@ -409,6 +409,12 @@ class TestAsyncioREPL(unittest.TestCase):
         expected = "toplevel contextvar test: ok"
         self.assertIn(expected, output, expected)
 
+    def test_quiet_mode(self):
+        p = spawn_repl("-q", "-m", "asyncio", custom=True)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(output[:3], ">>>")
+
 
 if __name__ == "__main__":
     unittest.main()
