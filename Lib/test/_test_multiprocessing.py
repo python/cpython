@@ -3169,6 +3169,7 @@ class _TestMyManager(BaseTestCase):
 
     ALLOWED_TYPES = ('manager',)
 
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3180,6 +3181,7 @@ class _TestMyManager(BaseTestCase):
         # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         with manager:
@@ -3189,6 +3191,7 @@ class _TestMyManager(BaseTestCase):
         # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context_prestarted(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3259,6 +3262,7 @@ class _TestRemoteManager(BaseTestCase):
         # Note that xmlrpclib will deserialize object as a list not a tuple
         queue.put(tuple(cls.values))
 
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_remote(self):
         authkey = os.urandom(32)
 
@@ -3300,6 +3304,7 @@ class _TestManagerRestart(BaseTestCase):
         queue = manager.get_queue()
         queue.put('hello world')
 
+    @support.skip_if_sanitizer("TSan: leaks threads", thread=True)
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
