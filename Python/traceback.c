@@ -1035,7 +1035,7 @@ _Py_DumpWideString(int fd, wchar_t *str)
 
    Return 0 on success. Return -1 if the frame is invalid. */
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
     if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
@@ -1088,7 +1088,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     return res;
 }
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 tstate_is_freed(PyThreadState *tstate)
 {
     if (_PyMem_IsPtrFreed(tstate)) {
@@ -1104,14 +1104,14 @@ tstate_is_freed(PyThreadState *tstate)
 }
 
 
-static int
+static int _Py_NO_SANITIZE_THREAD
 interp_is_freed(PyInterpreterState *interp)
 {
     return _PyMem_IsPtrFreed(interp);
 }
 
 
-static void
+static void _Py_NO_SANITIZE_THREAD
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
     if (write_header) {
@@ -1263,7 +1263,7 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
 
    The caller is responsible to call PyErr_CheckSignals() to call Python signal
    handlers if signals were received. */
-const char*
+const char* _Py_NO_SANITIZE_THREAD
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_tstate)
 {
@@ -1332,7 +1332,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         }
         dump_traceback(fd, tstate, 0);
 
-        tstate = PyThreadState_Next(tstate);
+        tstate = tstate->next;
         nthreads++;
     } while (tstate != NULL);
     _Py_END_SUPPRESS_IPH
