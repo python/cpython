@@ -1041,7 +1041,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
         }
         if (!sync_fast_locals && ((PyCodeObject *)source)->co_flags & CO_OPTIMIZED) {
             Py_DECREF(locals);
-            locals = NULL;
+            locals = globals;
         }
         result = PyEval_EvalCode(source, globals, locals);
     }

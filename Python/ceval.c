@@ -1530,7 +1530,7 @@ typedef struct {
 } _PyEntryFrame;
 
 static int
-_PyEval_SyncMappingToFast(_PyInterpreterFrame *frame)
+_PyEval_SyncLocalsToFast(_PyInterpreterFrame *frame)
 {
     PyObject *mapping = frame->f_locals;
     PyCodeObject *co = _PyFrame_GetCode(frame);
@@ -1543,14 +1543,14 @@ _PyEval_SyncMappingToFast(_PyInterpreterFrame *frame)
             frame->localsplus[i] = PyStackRef_FromPyObjectSteal(value);
         }
         else {
-            PyErr_Clear();
+            return -1;
         }
     }
     return 0;
 }
 
 static int
-_PyEval_SyncFastToMapping(_PyInterpreterFrame *frame)
+_PyEval_SyncFastToLocals(_PyInterpreterFrame *frame)
 {
     PyObject *mapping = frame->f_locals;
     PyCodeObject *co = _PyFrame_GetCode(frame);
@@ -1562,7 +1562,7 @@ _PyEval_SyncFastToMapping(_PyInterpreterFrame *frame)
             PyObject *name = PyTuple_GET_ITEM(names, i);
             PyObject *obj = PyStackRef_AsPyObjectSteal(sref);
             if (PyObject_SetItem(mapping, name, obj) < 0) {
-                PyErr_Clear();
+                return -1;
             }
         }
     }
@@ -1632,13 +1632,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     tstate->current_frame = frame;
     entry.frame.localsplus[0] = PyStackRef_NULL;
     PyCodeObject *co = _PyFrame_GetCode(frame);
-    if ((co->co_flags & CO_OPTIMIZED) && 
-        frame->f_locals != NULL && 
-        frame->f_locals != frame->f_globals) 
-    {
-        if (_PyEval_SyncMappingToFast(frame) < 0) {
-            goto early_exit;
-        }
+    if ((co->co_flags & CO_OPTIMIZED) && frame->f_locals != NULL &&
+        frame->f_locals != frame->f_globals && _PyEval_SyncLocalsToFast(frame) < 0) {
+        goto early_exit;
     }
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
@@ -2427,13 +2423,10 @@ void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     PyCodeObject *co = _PyFrame_GetCode(frame);
-    if ((co->co_flags & CO_OPTIMIZED) && 
-        frame->f_locals != NULL && 
-        frame->f_locals != frame->f_globals) 
-    {
-        if (_PyEval_SyncFastToMapping(frame) < 0) {
-            PyErr_WriteUnraisable(frame->f_locals);
-        }
+    if ((co->co_flags & CO_OPTIMIZED) && frame->f_locals != NULL &&
+        frame->f_locals != frame->f_globals && _PyEval_SyncFastToLocals(frame) < 0) {
+        /* Swallow the error while the frame is in a teardown state */
+        PyErr_WriteUnraisable(frame->f_locals);
     }
     // Update last_profiled_frame for remote profiler frame caching.
     // By this point, tstate->current_frame is already set to the parent frame.
