@@ -461,14 +461,24 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             fracpart = modf(i, &intpart);
             if (fracpart != 0.0) {
                 switch (op) {
+                    /* Non-integer float never equals to an int. */
                     case Py_EQ:
                         Py_RETURN_FALSE;
                     case Py_NE:
                         Py_RETURN_TRUE;
+                    /* For non-integer float, v <= w <=> v < w.
+                     * If v > 0: trunc(v) < v < trunc(v) + 1
+                     *   v < w => trunc(v) < w
+                     *   trunc(v) < w => trunc(v) + 1 <= w => v < w
+                     * If v < 0: trunc(v) - 1 < v < trunc(v)
+                     *   v < w => trunc(v) - 1 < w => trunc(v) <= w
+                     *   trunc(v) <= w => v < w
+                     */
                     case Py_LT:
                     case Py_LE:
                         op = vsign > 0 ? Py_LT : Py_LE;
                         break;
+                    /* The same as above, but with opposite directions. */
                     case Py_GT:
                     case Py_GE:
                         op = vsign > 0 ? Py_GE : Py_GT;
