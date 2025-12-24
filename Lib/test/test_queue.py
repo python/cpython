@@ -9,6 +9,7 @@ import weakref
 from test.support import gc_collect, bigmemtest
 from test.support import import_helper
 from test.support import threading_helper
+import ctypes
 
 # queue module depends on threading primitives
 threading_helper.requires_working_threading(module=True)
@@ -1030,6 +1031,16 @@ class CSimpleQueueTest(BaseSimpleQueueTest, unittest.TestCase):
     def test_is_default(self):
         self.assertIs(self.type2test, self.queue.SimpleQueue)
         self.assertIs(self.type2test, self.queue.SimpleQueue)
+
+    def test_simplequeue_sizeof_reflects_buffer_growth(self):
+        q = self.type2test()
+        before = q.__sizeof__()
+        for _ in range(1000):
+            q.put(object())
+        after = q.__sizeof__()
+        self.assertGreater(after, before)
+        ptr = ctypes.sizeof(ctypes.c_void_p)
+        self.assertEqual((after - before) % ptr, 0)
 
     def test_reentrancy(self):
         # bpo-14976: put() may be called reentrantly in an asynchronous

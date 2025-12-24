@@ -238,6 +238,18 @@ simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
+static PyObject *
+simplequeue_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    simplequeueobject *self = simplequeueobject_CAST(op);
+    Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
+
+    if (self->buf.items != NULL) {
+        size += (Py_ssize_t)self->buf.items_cap * (Py_ssize_t)sizeof(PyObject *);
+    }
+
+    return PyLong_FromSsize_t(size);
+}
 
 /*[clinic input]
 @classmethod
@@ -534,6 +546,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    {"__sizeof__", (PyCFunction)simplequeue_sizeof, METH_NOARGS, NULL},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
