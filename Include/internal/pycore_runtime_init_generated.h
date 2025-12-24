@@ -2078,6 +2078,7 @@ extern "C" {
     INIT_ID(sub_key), \
     INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
+    INIT_ID(sync_fast_locals), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
     INIT_ID(take_bytes), \

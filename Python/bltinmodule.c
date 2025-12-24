@@ -955,6 +955,8 @@ eval as builtin_eval
     /
     globals: object = None
     locals: object = None
+    *
+    sync_fast_locals: bool = False
 
 Evaluate the given source in the context of globals and locals.
 
@@ -967,8 +969,8 @@ If only globals is given, locals defaults to it.
 
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals)
-/*[clinic end generated code: output=0a0824aa70093116 input=7c7bce5299a89062]*/
+                  PyObject *locals, int sync_fast_locals)
+/*[clinic end generated code: output=a573401639e51347 input=440105eb08930503]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *result = NULL, *source_copy;
@@ -1037,6 +1039,10 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                 "code object passed to eval() may not contain free variables");
             goto error;
         }
+        if (!sync_fast_locals && ((PyCodeObject *)source)->co_flags & CO_OPTIMIZED) {
+            Py_DECREF(locals);
+            locals = NULL;
+        }
         result = PyEval_EvalCode(source, globals, locals);
     }
     else {
@@ -1078,6 +1084,7 @@ exec as builtin_exec
     locals: object = None
     *
     closure: object(c_default="NULL") = None
+    sync_fast_locals: bool = False
 
 Execute the given source in the context of globals and locals.
 
@@ -1092,8 +1099,8 @@ when source is a code object requiring exactly that many cellvars.
 
 static PyObject *
 builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals, PyObject *closure)
-/*[clinic end generated code: output=7579eb4e7646743d input=25e989b6d87a3a21]*/
+                  PyObject *locals, PyObject *closure, int sync_fast_locals)
+/*[clinic end generated code: output=ceab303bd7575dcf input=3a4103a242b26356]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *v;
@@ -1189,6 +1196,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             goto error;
         }
 
+        if (!sync_fast_locals && ((PyCodeObject *)source)->co_flags & CO_OPTIMIZED) {
+            Py_DECREF(locals);
+            locals = NULL;
+        }
         if (!closure) {
             v = PyEval_EvalCode(source, globals, locals);
         } else {
@@ -1225,7 +1236,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (v == NULL)
         goto error;
     Py_DECREF(globals);
-    Py_DECREF(locals);
+    Py_XDECREF(locals);
     Py_DECREF(v);
     Py_RETURN_NONE;
 

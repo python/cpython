@@ -1529,6 +1529,46 @@ typedef struct {
     _PyStackRef stack[1];
 } _PyEntryFrame;
 
+static int
+_PyEval_SyncMappingToFast(_PyInterpreterFrame *frame)
+{
+    PyObject *mapping = frame->f_locals;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    PyObject *names = co->co_localsplusnames;
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(names, i);
+        PyObject *value = PyObject_GetItem(mapping, name);
+        if (value != NULL) {
+            frame->localsplus[i] = PyStackRef_FromPyObjectSteal(value);
+        }
+        else {
+            PyErr_Clear();
+        }
+    }
+    return 0;
+}
+
+static int
+_PyEval_SyncFastToMapping(_PyInterpreterFrame *frame)
+{
+    PyObject *mapping = frame->f_locals;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    PyObject *names = co->co_localsplusnames;
+
+    for (int i = 0; i < co->co_nlocalsplus; i++) {
+        _PyStackRef sref = frame->localsplus[i];
+        if (!PyStackRef_IsNull(sref)) {
+            PyObject *name = PyTuple_GET_ITEM(names, i);
+            PyObject *obj = PyStackRef_AsPyObjectSteal(sref);
+            if (PyObject_SetItem(mapping, name, obj) < 0) {
+                PyErr_Clear();
+            }
+        }
+    }
+    return 0;
+}
+
 PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1591,6 +1631,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     frame->previous = &entry.frame;
     tstate->current_frame = frame;
     entry.frame.localsplus[0] = PyStackRef_NULL;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    if ((co->co_flags & CO_OPTIMIZED) && 
+        frame->f_locals != NULL && 
+        frame->f_locals != frame->f_globals) 
+    {
+        if (_PyEval_SyncMappingToFast(frame) < 0) {
+            goto early_exit;
+        }
+    }
 #ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
         entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
@@ -2377,6 +2426,15 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 void
 _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
+    PyCodeObject *co = _PyFrame_GetCode(frame);
+    if ((co->co_flags & CO_OPTIMIZED) && 
+        frame->f_locals != NULL && 
+        frame->f_locals != frame->f_globals) 
+    {
+        if (_PyEval_SyncFastToMapping(frame) < 0) {
+            PyErr_WriteUnraisable(frame->f_locals);
+        }
+    }
     // Update last_profiled_frame for remote profiler frame caching.
     // By this point, tstate->current_frame is already set to the parent frame.
     // Only update if we're popping the exact frame that was last profiled.

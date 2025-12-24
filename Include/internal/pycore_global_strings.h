@@ -803,6 +803,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(sub_key)
         STRUCT_FOR_ID(subcalls)
         STRUCT_FOR_ID(symmetric_difference_update)
+        STRUCT_FOR_ID(sync_fast_locals)
         STRUCT_FOR_ID(tabsize)
         STRUCT_FOR_ID(tag)
         STRUCT_FOR_ID(take_bytes)
