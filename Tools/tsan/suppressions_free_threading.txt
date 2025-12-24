@@ -12,13 +12,7 @@
 
 # These warnings trigger directly in a CPython function.
 
-race_top:dump_traceback
-race_top:fatal_error
-race_top:_PyFrame_GetCode
-race_top:_PyFrame_Initialize
 race_top:_PyObject_TryGetInstanceAttribute
-race_top:PyUnstable_InterpreterFrame_GetLine
-race_top:write_thread_id
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create
