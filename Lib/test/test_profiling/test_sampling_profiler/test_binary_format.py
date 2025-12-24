@@ -77,6 +77,20 @@ def extract_location(location):
     return {"lineno": lineno or 0, "end_lineno": lineno or 0, "column": 0, "end_column": 0}
 
 
+def frame_to_dict(frame):
+    """Convert a FrameInfo to a dict."""
+    loc = extract_location(frame.location)
+    return {
+        "filename": frame.filename,
+        "funcname": frame.funcname,
+        "lineno": loc["lineno"],
+        "end_lineno": loc["end_lineno"],
+        "column": loc["column"],
+        "end_column": loc["end_column"],
+        "opcode": frame.opcode,
+    }
+
+
 class RawCollector:
     """Collector that captures all raw data grouped by thread."""
 
@@ -91,20 +105,7 @@ class RawCollector:
         count = len(timestamps_us)
         for interp in stack_frames:
             for thread in interp.threads:
-                frames = []
-                for frame in thread.frame_info:
-                    loc = extract_location(frame.location)
-                    frames.append(
-                        {
-                            "filename": frame.filename,
-                            "funcname": frame.funcname,
-                            "lineno": loc["lineno"],
-                            "end_lineno": loc["end_lineno"],
-                            "column": loc["column"],
-                            "end_column": loc["end_column"],
-                            "opcode": frame.opcode,
-                        }
-                    )
+                frames = [frame_to_dict(f) for f in thread.frame_info]
                 key = (interp.interpreter_id, thread.thread_id)
                 sample = {"status": thread.status, "frames": frames}
                 for _ in range(count):
@@ -121,20 +122,7 @@ def samples_to_by_thread(samples):
     for sample in samples:
         for interp in sample:
             for thread in interp.threads:
-                frames = []
-                for frame in thread.frame_info:
-                    loc = extract_location(frame.location)
-                    frames.append(
-                        {
-                            "filename": frame.filename,
-                            "funcname": frame.funcname,
-                            "lineno": loc["lineno"],
-                            "end_lineno": loc["end_lineno"],
-                            "column": loc["column"],
-                            "end_column": loc["end_column"],
-                            "opcode": frame.opcode,
-                        }
-                    )
+                frames = [frame_to_dict(f) for f in thread.frame_info]
                 key = (interp.interpreter_id, thread.thread_id)
                 by_thread[key].append(
                     {
@@ -220,53 +208,15 @@ class BinaryFormatTestBase(unittest.TestCase):
                 for j, (exp_frame, act_frame) in enumerate(
                     zip(exp["frames"], act["frames"])
                 ):
-                    self.assertEqual(
-                        exp_frame["filename"],
-                        act_frame["filename"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: filename mismatch",
-                    )
-                    self.assertEqual(
-                        exp_frame["funcname"],
-                        act_frame["funcname"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: funcname mismatch",
-                    )
-                    self.assertEqual(
-                        exp_frame["lineno"],
-                        act_frame["lineno"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: lineno mismatch "
-                        f"(expected {exp_frame['lineno']}, got {act_frame['lineno']})",
-                    )
-                    self.assertEqual(
-                        exp_frame["end_lineno"],
-                        act_frame["end_lineno"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: end_lineno mismatch "
-                        f"(expected {exp_frame['end_lineno']}, got {act_frame['end_lineno']})",
-                    )
-                    self.assertEqual(
-                        exp_frame["column"],
-                        act_frame["column"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: column mismatch "
-                        f"(expected {exp_frame['column']}, got {act_frame['column']})",
-                    )
-                    self.assertEqual(
-                        exp_frame["end_column"],
-                        act_frame["end_column"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: end_column mismatch "
-                        f"(expected {exp_frame['end_column']}, got {act_frame['end_column']})",
-                    )
-                    self.assertEqual(
-                        exp_frame["opcode"],
-                        act_frame["opcode"],
-                        f"Thread ({interp_id}, {thread_id}), sample {i}, "
-                        f"frame {j}: opcode mismatch "
-                        f"(expected {exp_frame['opcode']}, got {act_frame['opcode']})",
-                    )
+                    for field in ("filename", "funcname", "lineno", "end_lineno",
+                                  "column", "end_column", "opcode"):
+                        self.assertEqual(
+                            exp_frame[field],
+                            act_frame[field],
+                            f"Thread ({interp_id}, {thread_id}), sample {i}, "
+                            f"frame {j}: {field} mismatch "
+                            f"(expected {exp_frame[field]!r}, got {act_frame[field]!r})",
+                        )
 
 
 class TestBinaryRoundTrip(BinaryFormatTestBase):
