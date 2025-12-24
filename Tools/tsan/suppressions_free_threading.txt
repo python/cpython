@@ -20,6 +20,3 @@ thread:pthread_create
 # PyObject_Realloc internally does memcpy which isn't atomic so can race
 # with non-locking reads. See #132070
 race:PyObject_Realloc
-
-# gh-143100: set_swap_bodies in setobject.c calls memcpy, which isn't atomic
-race:set_swap_bodies
