@@ -1,5 +1,9 @@
 """Constants for the sampling profiler."""
 
+# Time unit conversion constants
+MICROSECONDS_PER_SECOND = 1_000_000
+MILLISECONDS_PER_SECOND = 1_000
+
 # Profiling mode constants
 PROFILING_MODE_WALL = 0
 PROFILING_MODE_CPU = 1

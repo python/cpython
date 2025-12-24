@@ -232,7 +232,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         test_args = [
             "profiling.sampling.cli",
             "run",
-            "-i",
+            "-r",
             "1000",
             "-d",
             "30",
@@ -265,8 +265,8 @@ class TestSampleProfilerCLI(unittest.TestCase):
         test_args = [
             "profiling.sampling.cli",
             "run",
-            "-i",
-            "2000",
+            "-r",
+            "500",
             "-d",
             "60",
             "--collapsed",

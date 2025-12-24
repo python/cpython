@@ -13,7 +13,7 @@ from .constants import (
     WIDTH_THRESHOLD_CUMUL_PCT,
     WIDTH_THRESHOLD_CUMTIME,
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL,
+    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_BAR_WIDTH,
     MAX_SAMPLE_RATE_BAR_WIDTH,
     MAX_EFFICIENCY_BAR_WIDTH,
@@ -181,7 +181,7 @@ class HeaderWidget(Widget):
 
         # Calculate display refresh rate
         refresh_hz = (
-            1.0 / self.collector.display_update_interval if self.collector.display_update_interval > 0 else 0
+            1.0 / self.collector.display_update_interval_sec if self.collector.display_update_interval_sec > 0 else 0
         )
 
         # Get current view mode and thread display
@@ -235,8 +235,8 @@ class HeaderWidget(Widget):
 
     def format_rate_with_units(self, rate_hz):
         """Format a rate in Hz with appropriate units (Hz, KHz, MHz)."""
-        if rate_hz >= 1_000_000:
-            return f"{rate_hz / 1_000_000:.1f}MHz"
+        if rate_hz >= MICROSECONDS_PER_SECOND:
+            return f"{rate_hz / MICROSECONDS_PER_SECOND:.1f}MHz"
         elif rate_hz >= 1_000:
             return f"{rate_hz / 1_000:.1f}KHz"
         else:
