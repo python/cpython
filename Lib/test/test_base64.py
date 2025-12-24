@@ -78,6 +78,7 @@ class LegacyBase64TestCase:
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
     def test_bytes_encode_decode_round_trip(self, payload):
+        base64 = self.module
         encoded = base64.encodebytes(payload)
         decoded = base64.decodebytes(encoded)
         self.assertEqual(payload, decoded)
@@ -115,6 +116,7 @@ class LegacyBase64TestCase:
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
     def test_legacy_encode_decode_round_trip(self, payload):
+        base64 = self.module
         from io import BytesIO
         payload_file_r = BytesIO(payload)
         encoded_file_w = BytesIO()
@@ -271,6 +273,7 @@ class BaseXYTestCase:
 
     def test_b64decode_altchars(self):
         # Test with arbitrary alternative characters
+        base64 = self.module
         eq = self.assertEqual
         res = b'\xd3V\xbeo\xf7\x1d'
         for altchars in b'*$', b'+/', b'/+', b'+_', b'-+', b'-/', b'/_':
@@ -342,6 +345,7 @@ class BaseXYTestCase:
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', b"_-", False)
     def test_b64_encode_decode_round_trip(self, payload, altchars, validate):
+        base64 = self.module
         encoded = base64.b64encode(payload, altchars=altchars)
         decoded = base64.b64decode(encoded, altchars=altchars,
                                    validate=validate)
@@ -350,6 +354,7 @@ class BaseXYTestCase:
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
     def test_standard_b64_encode_decode_round_trip(self, payload):
+        base64 = self.module
         encoded = base64.standard_b64encode(payload)
         decoded = base64.standard_b64decode(encoded)
         self.assertEqual(payload, decoded)
@@ -357,6 +362,7 @@ class BaseXYTestCase:
     @hypothesis.given(payload=hypothesis.strategies.binary())
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz')
     def test_urlsafe_b64_encode_decode_round_trip(self, payload):
+        base64 = self.module
         encoded = base64.urlsafe_b64encode(payload)
         decoded = base64.urlsafe_b64decode(encoded)
         self.assertEqual(payload, decoded)
@@ -419,6 +425,7 @@ class BaseXYTestCase:
 
     def test_b32decode_map01(self):
         # Mapping zero and one
+        base64 = self.module
         eq = self.assertEqual
         res_L = b'b\xdd\xad\xf3\xbe'
         res_I = b'b\x1d\xad\xf3\xbe'
@@ -471,6 +478,7 @@ class BaseXYTestCase:
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True, None)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False, None)
     def test_b32_encode_decode_round_trip(self, payload, casefold, map01):
+        base64 = self.module
         encoded = base64.b32encode(payload)
         decoded = base64.b32decode(encoded, casefold=casefold, map01=map01)
         self.assertEqual(payload, decoded)
@@ -555,6 +563,7 @@ class BaseXYTestCase:
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
     def test_b32_hexencode_decode_round_trip(self, payload, casefold):
+        base64 = self.module
         encoded = base64.b32hexencode(payload)
         decoded = base64.b32hexdecode(encoded, casefold=casefold)
         self.assertEqual(payload, decoded)
@@ -603,6 +612,7 @@ class BaseXYTestCase:
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
     def test_b16_encode_decode_round_trip(self, payload, casefold):
+        base64 = self.module
         endoded = base64.b16encode(payload)
         decoded = base64.b16decode(endoded, casefold=casefold)
         self.assertEqual(payload, decoded)
@@ -971,6 +981,7 @@ class BaseXYTestCase:
     def test_a85_encode_decode_round_trip(
         self, payload, foldspaces, wrapcol, pad, adobe
     ):
+        base64 = self.module
         encoded = base64.a85encode(
             payload, foldspaces=foldspaces, wrapcol=wrapcol,
             pad=pad, adobe=adobe,
@@ -997,6 +1008,7 @@ class BaseXYTestCase:
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', True)
     @hypothesis.example(b'abcdefghijklmnopqrstuvwxyz', False)
     def test_b85_encode_decode_round_trip(self, payload, pad):
+        base64 = self.module
         encoded = base64.b85encode(payload, pad=pad)
         if pad:
             payload = self.add_padding(payload)
