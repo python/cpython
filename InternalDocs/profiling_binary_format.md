@@ -272,33 +272,85 @@ byte.
 
 ## Frame Table
 
-The frame table stores deduplicated frame entries:
+The frame table stores deduplicated frame entries with full source position
+information and bytecode opcode:
 
 ```
-+----------------------+
-| filename_idx: varint |
-| funcname_idx: varint |
-| lineno: svarint      |
-+----------------------+  (repeated for each frame)
++----------------------------+
+| filename_idx: varint       |
+| funcname_idx: varint       |
+| lineno: svarint            |
+| end_lineno_delta: svarint  |
+| column: svarint            |
+| end_column_delta: svarint  |
+| opcode: u8                 |
++----------------------------+  (repeated for each frame)
 ```
 
-Each unique (filename, funcname, lineno) combination gets one entry. Two
-calls to the same function at different line numbers produce different
-frame entries; two calls at the same line number share one entry.
+### Field Definitions
+
+| Field            | Type          | Description                                              |
+|------------------|---------------|----------------------------------------------------------|
+| filename_idx     | varint        | Index into string table for file name                    |
+| funcname_idx     | varint        | Index into string table for function name                |
+| lineno           | zigzag varint | Start line number (-1 for synthetic frames)              |
+| end_lineno_delta | zigzag varint | Delta from lineno (end_lineno = lineno + delta)          |
+| column           | zigzag varint | Start column offset in UTF-8 bytes (-1 if not available) |
+| end_column_delta | zigzag varint | Delta from column (end_column = column + delta)          |
+| opcode           | u8            | Python bytecode opcode (0-254) or 255 for None           |
+
+### Delta Encoding
+
+Position end values use delta encoding for efficiency:
+
+- `end_lineno = lineno + end_lineno_delta`
+- `end_column = column + end_column_delta`
+
+Typical values:
+- `end_lineno_delta`: Usually 0 (single-line expressions) → encodes to 1 byte
+- `end_column_delta`: Usually 5-20 (expression width) → encodes to 1 byte
+
+This saves ~1-2 bytes per frame compared to absolute encoding. When the base
+value (lineno or column) is -1 (not available), the delta is stored as 0 and
+the reconstructed value is -1.
+
+### Sentinel Values
+
+- `opcode = 255`: No opcode captured
+- `lineno = -1`: Synthetic frame (no source location)
+- `column = -1`: Column offset not available
+
+### Deduplication
+
+Each unique (filename, funcname, lineno, end_lineno, column, end_column,
+opcode) combination gets one entry. This enables instruction-level profiling
+where multiple bytecode instructions on the same line can be distinguished.
 
 Strings and frames are deduplicated separately because they have different
 cardinalities and reference patterns. A codebase might have hundreds of
 unique source files but thousands of unique functions. Many functions share
 the same filename, so storing the filename index in each frame entry (rather
 than the full string) provides an additional layer of deduplication. A frame
-entry is just three varints (typically 3-6 bytes) rather than two full
-strings plus a line number.
+entry is typically 7-9 bytes rather than two full strings plus location data.
 
-Line numbers use signed varint (zigzag encoding) rather than unsigned to
-handle edge cases. Synthetic frames—generated frames that don't correspond
-directly to Python source code, such as C extension boundaries or internal
-interpreter frames—use line number 0 or -1 to indicate the absence of a
-source location. Zigzag encoding ensures these small negative values encode
+### Size Analysis
+
+Typical frame size with delta encoding:
+- file_idx: 1-2 bytes
+- func_idx: 1-2 bytes
+- lineno: 1-2 bytes
+- end_lineno_delta: 1 byte (usually 0)
+- column: 1 byte (usually < 64)
+- end_column_delta: 1 byte (usually < 64)
+- opcode: 1 byte
+
+**Total: ~7-9 bytes per frame**
+
+Line numbers and columns use signed varint (zigzag encoding) to handle
+sentinel values efficiently. Synthetic frames—generated frames that don't
+correspond directly to Python source code, such as C extension boundaries or
+internal interpreter frames—use -1 to indicate the absence of a source
+location. Zigzag encoding ensures these small negative values encode
 efficiently (−1 becomes 1, which is one byte) rather than requiring the
 maximum varint length.
 

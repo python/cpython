@@ -276,47 +276,86 @@ reader_parse_string_table(BinaryReader *reader, const uint8_t *data, size_t file
 static inline int
 reader_parse_frame_table(BinaryReader *reader, const uint8_t *data, size_t file_size)
 {
-    /* Check for integer overflow in allocation size calculation.
-       Only needed on 32-bit where SIZE_MAX can be exceeded by uint32_t * 12. */
+    /* Check for integer overflow in allocation size calculation. */
 #if SIZEOF_SIZE_T < 8
-    if (reader->frames_count > SIZE_MAX / (3 * sizeof(uint32_t))) {
+    if (reader->frames_count > SIZE_MAX / sizeof(FrameEntry)) {
         PyErr_SetString(PyExc_OverflowError, "Frame count too large for allocation");
         return -1;
     }
 #endif
 
-    size_t alloc_size = (size_t)reader->frames_count * 3 * sizeof(uint32_t);
-    reader->frame_data = PyMem_Malloc(alloc_size);
-    if (!reader->frame_data && reader->frames_count > 0) {
+    size_t alloc_size = (size_t)reader->frames_count * sizeof(FrameEntry);
+    reader->frames = PyMem_Malloc(alloc_size);
+    if (!reader->frames && reader->frames_count > 0) {
         PyErr_NoMemory();
         return -1;
     }
 
     size_t offset = reader->frame_table_offset;
     for (uint32_t i = 0; i < reader->frames_count; i++) {
-        size_t base = (size_t)i * 3;
+        FrameEntry *frame = &reader->frames[i];
         size_t prev_offset;
 
         prev_offset = offset;
-        reader->frame_data[base] = decode_varint_u32(data, &offset, file_size);
+        frame->filename_idx = decode_varint_u32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (filename)");
             return -1;
         }
 
         prev_offset = offset;
-        reader->frame_data[base + 1] = decode_varint_u32(data, &offset, file_size);
+        frame->funcname_idx = decode_varint_u32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (funcname)");
             return -1;
         }
 
         prev_offset = offset;
-        reader->frame_data[base + 2] = (uint32_t)decode_varint_i32(data, &offset, file_size);
+        frame->lineno = decode_varint_i32(data, &offset, file_size);
         if (offset == prev_offset) {
             PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (lineno)");
             return -1;
         }
+
+        prev_offset = offset;
+        int32_t end_lineno_delta = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_lineno_delta)");
+            return -1;
+        }
+        /* Reconstruct end_lineno from delta. If lineno is -1, result is -1. */
+        if (frame->lineno == LOCATION_NOT_AVAILABLE) {
+            frame->end_lineno = LOCATION_NOT_AVAILABLE;
+        } else {
+            frame->end_lineno = frame->lineno + end_lineno_delta;
+        }
+
+        prev_offset = offset;
+        frame->column = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (column)");
+            return -1;
+        }
+
+        prev_offset = offset;
+        int32_t end_column_delta = decode_varint_i32(data, &offset, file_size);
+        if (offset == prev_offset) {
+            PyErr_SetString(PyExc_ValueError, "Malformed varint in frame table (end_column_delta)");
+            return -1;
+        }
+        /* Reconstruct end_column from delta. If column is -1, result is -1. */
+        if (frame->column == LOCATION_NOT_AVAILABLE) {
+            frame->end_column = LOCATION_NOT_AVAILABLE;
+        } else {
+            frame->end_column = frame->column + end_column_delta;
+        }
+
+        /* Read opcode byte */
+        if (offset >= file_size) {
+            PyErr_SetString(PyExc_ValueError, "Unexpected end of frame table (opcode)");
+            return -1;
+        }
+        frame->opcode = data[offset++];
     }
 
     return 0;
@@ -683,13 +722,10 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             goto error;
         }
 
-        size_t base = frame_idx * 3;
-        uint32_t filename_idx = reader->frame_data[base];
-        uint32_t funcname_idx = reader->frame_data[base + 1];
-        int32_t lineno = (int32_t)reader->frame_data[base + 2];
+        FrameEntry *frame = &reader->frames[frame_idx];
 
-        if (filename_idx >= reader->strings_count ||
-            funcname_idx >= reader->strings_count) {
+        if (frame->filename_idx >= reader->strings_count ||
+            frame->funcname_idx >= reader->strings_count) {
             PyErr_SetString(PyExc_ValueError, "Invalid string index in frame");
             goto error;
         }
@@ -699,9 +735,14 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             goto error;
         }
 
+        /* Build location tuple with full position info */
         PyObject *location;
-        if (lineno > 0) {
-            location = Py_BuildValue("(iiii)", lineno, lineno, 0, 0);
+        if (frame->lineno != LOCATION_NOT_AVAILABLE) {
+            location = Py_BuildValue("(iiii)",
+                frame->lineno,
+                frame->end_lineno != LOCATION_NOT_AVAILABLE ? frame->end_lineno : frame->lineno,
+                frame->column != LOCATION_NOT_AVAILABLE ? frame->column : 0,
+                frame->end_column != LOCATION_NOT_AVAILABLE ? frame->end_column : 0);
             if (!location) {
                 Py_DECREF(frame_info);
                 goto error;
@@ -711,10 +752,24 @@ build_frame_list(RemoteDebuggingState *state, BinaryReader *reader,
             location = Py_NewRef(Py_None);
         }
 
-        PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[filename_idx]));
+        /* Build opcode object */
+        PyObject *opcode_obj;
+        if (frame->opcode != OPCODE_NONE) {
+            opcode_obj = PyLong_FromLong(frame->opcode);
+            if (!opcode_obj) {
+                Py_DECREF(location);
+                Py_DECREF(frame_info);
+                goto error;
+            }
+        }
+        else {
+            opcode_obj = Py_NewRef(Py_None);
+        }
+
+        PyStructSequence_SetItem(frame_info, 0, Py_NewRef(reader->strings[frame->filename_idx]));
         PyStructSequence_SetItem(frame_info, 1, location);
-        PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[funcname_idx]));
-        PyStructSequence_SetItem(frame_info, 3, Py_NewRef(Py_None));
+        PyStructSequence_SetItem(frame_info, 2, Py_NewRef(reader->strings[frame->funcname_idx]));
+        PyStructSequence_SetItem(frame_info, 3, opcode_obj);
         PyList_SET_ITEM(frame_list, k, frame_info);
     }
 
@@ -1192,7 +1247,7 @@ binary_reader_close(BinaryReader *reader)
         PyMem_Free(reader->strings);
     }
 
-    PyMem_Free(reader->frame_data);
+    PyMem_Free(reader->frames);
 
     if (reader->thread_states) {
         for (size_t i = 0; i < reader->thread_state_count; i++) {
