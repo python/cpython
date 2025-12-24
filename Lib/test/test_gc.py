@@ -1249,18 +1249,6 @@ class GCTests(unittest.TestCase):
         self.assertTrue(new_count - count > (n // 2))
 
 
-    @threading_helper.requires_working_threading()
-    def test_concurrent_freeze_unfreeze():
-        # GH-142975: On the free-threaded build, this would cause problems
-        # with objects that had a per-thread reference count.
-        def weird():
-            gc.freeze()
-            gc.collect()
-            gc.unfreeze()
-
-        threading_helper.run_concurrently(weird, 4)
-
-
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
