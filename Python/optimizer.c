@@ -951,6 +951,12 @@ _PyJit_translate_single_bytecode_to_trace(
                     trace[trace_length - 1].operand1 = PyStackRef_IsNone(frame->f_executable) ? 2 : ((int)(frame->stackpointer - _PyFrame_Stackbase(frame)));
                     break;
                 }
+                if (uop == _BINARY_OP_INPLACE_ADD_UNICODE) {
+                    assert(i + 1 == nuops);
+                    _Py_CODEUNIT *next = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                    assert(next->op.code == STORE_FAST);
+                    operand = next->op.arg;
+                }
                 // All other instructions
                 ADD_TO_TRACE(uop, oparg, operand, target);
             }

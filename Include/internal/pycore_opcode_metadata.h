@@ -534,7 +534,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case BINARY_OP_EXTEND:
             return 1;
         case BINARY_OP_INPLACE_ADD_UNICODE:
-            return 0;
+            return 1;
         case BINARY_OP_MULTIPLY_FLOAT:
             return 1;
         case BINARY_OP_MULTIPLY_INT:

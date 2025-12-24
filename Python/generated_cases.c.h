@@ -382,6 +382,7 @@
             _PyStackRef nos;
             _PyStackRef left;
             _PyStackRef right;
+            _PyStackRef res;
             // _GUARD_TOS_UNICODE
             {
                 value = stack_pointer[-1];
@@ -426,27 +427,22 @@
                 }
                 STAT_INC(BINARY_OP, hit);
                 assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
-                PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
-                stack_pointer += -2;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyUnicode_Append(&temp, right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                *target_local = PyStackRef_FromPyObjectSteal(temp);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                Py_DECREF(right_o);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (PyStackRef_IsNull(*target_local)) {
-                    JUMP_TO_LABEL(error);
+                PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                if (temp == NULL) {
+                    JUMP_TO_LABEL(pop_2_error);
                 }
-                #if TIER_ONE
-
-                assert(next_instr->op.code == STORE_FAST);
-                SKIP_OVER(1);
-                #endif
+                res = PyStackRef_FromPyObjectSteal(temp);
+                *target_local = PyStackRef_NULL;
             }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             DISPATCH();
         }
 
@@ -11412,7 +11408,6 @@
                 DISPATCH();
             }
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-            assert(opcode != BINARY_OP_INPLACE_ADD_UNICODE);
             _tstate->jit_tracer_state.prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {

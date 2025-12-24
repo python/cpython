@@ -588,7 +588,7 @@ dummy_func(
             BINARY_OP_SUBSCR_STR_INT,
             BINARY_OP_SUBSCR_DICT,
             BINARY_OP_SUBSCR_GETITEM,
-            // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
+            BINARY_OP_INPLACE_ADD_UNICODE,
             BINARY_OP_EXTEND,
         };
 
@@ -762,13 +762,10 @@ dummy_func(
         macro(BINARY_OP_ADD_UNICODE) =
             _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE + _POP_TOP_UNICODE + _POP_TOP_UNICODE;
 
-        // This is a subtle one. It's a super-instruction for
-        // BINARY_OP_ADD_UNICODE followed by STORE_FAST
-        // where the store goes into the left argument.
-        // So the inputs are the same as for all BINARY_OP
-        // specializations, but there is no output.
-        // At the end we just skip over the STORE_FAST.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
+        // This is a subtle one. We write NULL to the local
+        // of the following STORE_FAST and leave the result for STORE_FAST
+        // later to store.
+        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             assert(PyUnicode_CheckExact(left_o));
             assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
@@ -796,20 +793,16 @@ dummy_func(
              * that the string is safe to mutate.
              */
             assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
+            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
+            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+            PyUnicode_Append(&temp, right_o);
+            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+            DEAD(right);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             DEAD(left);
-            PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
-            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
-            PyUnicode_Append(&temp, right_o);
-            *target_local = PyStackRef_FromPyObjectSteal(temp);
-            Py_DECREF(right_o);
-            ERROR_IF(PyStackRef_IsNull(*target_local));
-        #if TIER_ONE
-            // The STORE_FAST is already done. This is done here in tier one,
-            // and during trace projection in tier two:
-            assert(next_instr->op.code == STORE_FAST);
-            SKIP_OVER(1);
-        #endif
+            ERROR_IF(temp == NULL);
+            res = PyStackRef_FromPyObjectSteal(temp);
+            *target_local = PyStackRef_NULL;
         }
 
        op(_GUARD_BINARY_OP_EXTEND, (descr/4, left, right -- left, right)) {
@@ -5594,7 +5587,6 @@ dummy_func(
             _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
             // JIT should have disabled super instructions, as we can
             // do these optimizations ourselves in the JIT.
-            assert(opcode != BINARY_OP_INPLACE_ADD_UNICODE);
             _tstate->jit_tracer_state.prev_state.instr = next_instr;
             PyObject *prev_code = PyStackRef_AsPyObjectBorrow(frame->f_executable);
             if (_tstate->jit_tracer_state.prev_state.instr_code != (PyCodeObject *)prev_code) {

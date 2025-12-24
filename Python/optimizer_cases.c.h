@@ -647,19 +647,6 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             res = sym_new_type(ctx, &PyUnicode_Type);
-            if ((this_instr + 5)->opcode == _STORE_FAST) {
-                assert((this_instr + 1)->opcode == _POP_TOP_UNICODE);
-                assert((this_instr + 2)->opcode == _POP_TOP_UNICODE);
-                assert((this_instr + 3)->opcode == _CHECK_VALIDITY);
-                assert((this_instr + 4)->opcode == _SET_IP);
-                int local_slot = (this_instr + 5)->oparg;
-                if (PyJitRef_Unwrap(left) == PyJitRef_Unwrap(GETLOCAL(local_slot))) {
-                    REPLACE_OP(this_instr, _BINARY_OP_INPLACE_ADD_UNICODE, oparg, local_slot);
-                    REPLACE_OP(this_instr + 1, _NOP, 0, 0);
-                    REPLACE_OP(this_instr + 2, _NOP, 0, 0);
-                    REPLACE_OP(this_instr + 5, _NOP, 0, 0);
-                }
-            }
             l = left;
             r = right;
             CHECK_STACK_BOUNDS(1);
@@ -674,9 +661,9 @@
         case _BINARY_OP_INPLACE_ADD_UNICODE: {
             JitOptRef right;
             JitOptRef left;
+            JitOptRef res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            JitOptRef res;
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
@@ -685,15 +672,18 @@
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
+                CHECK_STACK_BOUNDS(-1);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -1;
             }
-            GETLOCAL(this_instr->operand0) = res;
-            CHECK_STACK_BOUNDS(-2);
-            stack_pointer += -2;
-            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            GETLOCAL(this_instr->operand0) = sym_new_null(ctx);
+            stack_pointer[-1] = res;
             break;
         }
 
