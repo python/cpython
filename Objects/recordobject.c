@@ -8,9 +8,47 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "recordobject.h"
 
+static inline void
+record_gc_track(PyRecordObject *op)
+{
+    _PyObject_GC_TRACK(op);
+}
+
+static PyRecordObject *
+record_alloc(Py_ssize_t size)
+{
+    PyRecordObject *op;
+    if (size < 0) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    {
+        /* Check for overflow */
+        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - (sizeof(PyRecordObject) -
+                    sizeof(PyObject *))) / sizeof(PyObject *)) {
+            return (PyRecordObject *)PyErr_NoMemory();
+        }
+        op = PyObject_GC_NewVar(PyRecordObject, &PyRecord_Type, size);
+        if (op == NULL)
+            return NULL;
+    }
+    return op;
+}
+
 PyAPI_FUNC(PyObject *) PyRecord_New(Py_ssize_t size)
 {
-    return NULL;
+    PyRecordObject *op;
+    op = record_alloc(size);
+    if (op == NULL) {
+        return NULL;
+    }
+    op->names = NULL;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        op->ob_item[i] = NULL;
+    }
+    record_gc_track(op);
+    return (PyObject *) op;
 }
 
 static void
