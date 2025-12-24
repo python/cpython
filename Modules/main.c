@@ -576,12 +576,8 @@ pymain_repl(PyConfig *config, int *exitcode)
 {
     /* Check this environment variable at the end, to give programs the
        opportunity to set it from Python. */
-    if (!config->inspect) {
-        int inspect_env = 0;
-        _Py_get_env_flag(config->use_environment, &inspect_env, "PYTHONINSPECT");
-        if (inspect_env) {
-            pymain_set_inspect(config, 1);
-        }
+    if (!config->inspect && _Py_GetEnv(config->use_environment, "PYTHONINSPECT")) {
+        pymain_set_inspect(config, 1);
     }
 
     if (!(config->inspect && stdin_is_interactive(config) && config_run_code(config))) {
