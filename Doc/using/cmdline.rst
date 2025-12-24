@@ -880,9 +880,10 @@ conflict.
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If this is set to a non-empty string, Python won't try to write ``.pyc``
-   files on the import of source modules.  This is equivalent to
-   specifying the :option:`-B` option.
+   If this is set to a non-zero integer value, Python won't try to write
+   ``.pyc`` files on the import of source modules. Setting it to ``0`` does
+   not disable bytecode writing. This is equivalent to specifying the
+   :option:`-B` option.
 
 
 .. envvar:: PYTHONPYCACHEPREFIX
