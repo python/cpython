@@ -131,6 +131,22 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+static PyObject *
+pyobject_is_unique_temporary(PyObject *self, PyObject *obj)
+{
+    int result = PyUnstable_Object_IsUniqueReferencedTemporary(obj);
+    return PyLong_FromLong(result);
+}
+
+static PyObject *
+pyobject_is_unique_temporary_new_object(PyObject *self, PyObject *unused)
+{
+    PyObject *obj = PyList_New(0);
+    int result = PyUnstable_Object_IsUniqueReferencedTemporary(obj);
+    Py_DECREF(obj);
+    return PyLong_FromLong(result);
+}
+
 static int MyObject_dealloc_called = 0;
 
 static void
@@ -471,6 +487,37 @@ clear_managed_dict(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject *
+is_uniquely_referenced(PyObject *self, PyObject *op)
+{
+    return PyBool_FromLong(PyUnstable_Object_IsUniquelyReferenced(op));
+}
+
+
+static PyObject *
+pyobject_dump(PyObject *self, PyObject *args)
+{
+    PyObject *op;
+    int release_gil = 0;
+
+    if (!PyArg_ParseTuple(args, "O|i", &op, &release_gil)) {
+        return NULL;
+    }
+    NULLABLE(op);
+
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        PyUnstable_Object_Dump(op);
+        Py_END_ALLOW_THREADS
+
+    }
+    else {
+        PyUnstable_Object_Dump(op);
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"call_pyobject_print", call_pyobject_print, METH_VARARGS},
     {"pyobject_print_null", pyobject_print_null, METH_VARARGS},
@@ -478,6 +525,8 @@ static PyMethodDef test_methods[] = {
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
+    {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
+    {"pyobject_is_unique_temporary_new_object", pyobject_is_unique_temporary_new_object, METH_NOARGS},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
@@ -495,6 +544,8 @@ static PyMethodDef test_methods[] = {
     {"test_py_is_macros", test_py_is_macros, METH_NOARGS},
     {"test_py_is_funcs", test_py_is_funcs, METH_NOARGS},
     {"clear_managed_dict", clear_managed_dict, METH_O, NULL},
+    {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
+    {"pyobject_dump", pyobject_dump, METH_VARARGS},
     {NULL},
 };
 

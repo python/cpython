@@ -352,6 +352,10 @@ module, supports rotation of disk log files.
       Outputs the record to the file, catering for rollover as described
       previously.
 
+   .. method:: shouldRollover(record)
+
+      See if the supplied record would cause the file to exceed the configured size limit.
+
 .. _timed-rotating-file-handler:
 
 TimedRotatingFileHandler
@@ -460,6 +464,11 @@ timed intervals.
 
       Returns a list of filenames which should be deleted as part of rollover. These
       are the absolute paths of the oldest backup log files written by the handler.
+
+   .. method:: shouldRollover(record)
+
+      See if enough time has passed for a rollover to occur and if it has, compute
+      the next rollover time.
 
 .. _socket-handler:
 
@@ -1051,6 +1060,15 @@ possible, while any potentially slow operations (such as sending an email via
    .. note:: If you are using :mod:`multiprocessing`, you should avoid using
       :class:`~queue.SimpleQueue` and instead use :class:`multiprocessing.Queue`.
 
+   .. warning::
+
+      The :mod:`multiprocessing` module uses an internal logger created and
+      accessed via :meth:`~multiprocessing.get_logger`.
+      :class:`multiprocessing.Queue` will log ``DEBUG`` level messages upon
+      items being queued. If those log messages are processed by a
+      :class:`QueueHandler` using the same :class:`multiprocessing.Queue` instance,
+      it will cause a deadlock or infinite recursion.
+
    .. method:: emit(record)
 
       Enqueues the result of preparing the LogRecord. Should an exception
@@ -1148,7 +1166,7 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       :class:`QueueListener` can now be used as a context manager via
       :keyword:`with`. When entering the context, the listener is started. When
       exiting the context, the listener is stopped.
@@ -1186,7 +1204,7 @@ possible, while any potentially slow operations (such as sending an email via
       This starts up a background thread to monitor the queue for
       LogRecords to process.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          Raises :exc:`RuntimeError` if called and the listener is already
          running.
 

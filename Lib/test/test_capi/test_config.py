@@ -1,8 +1,8 @@
 """
 Tests PyConfig_Get() and PyConfig_Set() C API (PEP 741).
 """
+import os
 import sys
-import sysconfig
 import types
 import unittest
 from test import support
@@ -56,7 +56,7 @@ class CAPITests(unittest.TestCase):
             ("home", str | None, None),
             ("thread_inherit_context", int, None),
             ("context_aware_warnings", int, None),
-            ("import_time", bool, None),
+            ("import_time", int, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
             ("int_max_str_digits", int, None),
@@ -374,12 +374,23 @@ class CAPITests(unittest.TestCase):
                 finally:
                     config_set(name, old_value)
 
+    def test_config_set_cpu_count(self):
+        config_get = _testcapi.config_get
+        config_set = _testcapi.config_set
+
+        old_value = config_get('cpu_count')
+        try:
+            config_set('cpu_count', 123)
+            self.assertEqual(os.cpu_count(), 123)
+        finally:
+            config_set('cpu_count', old_value)
+
     def test_config_set_read_only(self):
         # Test PyConfig_Set() on read-only options
         config_set = _testcapi.config_set
         for name, value in (
             ("allocator", 0),  # PyPreConfig member
-            ("cpu_count", 8),
+            ("perf_profiling", 8),
             ("dev_mode", True),
             ("filesystem_encoding", "utf-8"),
         ):

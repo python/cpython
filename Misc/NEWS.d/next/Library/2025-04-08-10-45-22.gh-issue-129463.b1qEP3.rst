@@ -1,3 +1,0 @@
-Comparison of :class:`annotationlib.ForwardRef` objects no longer uses the
-internal ``__code__`` and ``__ast_node__`` attributes, which are used as
-caches.

@@ -1,1 +1,0 @@
-Fix decoding from the locale encoding in the C.UTF-8 locale.

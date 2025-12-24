@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"
@@ -689,10 +690,8 @@ element_dealloc(PyObject *op)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, element_dealloc)
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
 
     /* element_gc_clear clears all references and deallocates extra
     */
@@ -700,7 +699,6 @@ element_dealloc(PyObject *op)
 
     tp->tp_free(self);
     Py_DECREF(tp);
-    Py_TRASHCAN_END
 }
 
 /* -------------------------------------------------------------------- */
@@ -813,6 +811,8 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
+    // The deepcopy() helper takes care of incrementing the refcount
+    // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
     if (!tag)
         return NULL;
@@ -847,11 +847,13 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     assert(!element->extra || !element->extra->length);
     if (self->extra) {
-        if (element_resize(element, self->extra->length) < 0)
+        Py_ssize_t expected_count = self->extra->length;
+        if (element_resize(element, expected_count) < 0) {
+            assert(!element->extra->length);
             goto error;
+        }
 
-        // TODO(picnixz): check for an evil child's __deepcopy__ on 'self'
-        for (i = 0; i < self->extra->length; i++) {
+        for (i = 0; self->extra && i < self->extra->length; i++) {
             PyObject* child = deepcopy(st, self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
@@ -861,11 +863,24 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
                 element->extra->length = i;
                 goto error;
             }
+            if (self->extra && expected_count != self->extra->length) {
+                // 'self->extra' got mutated and 'element' may not have
+                // sufficient space to hold the next iteration's item.
+                expected_count = self->extra->length;
+                if (element_resize(element, expected_count) < 0) {
+                    Py_DECREF(child);
+                    element->extra->length = i;
+                    goto error;
+                }
+            }
             element->extra->children[i] = child;
         }
 
         assert(!element->extra->length);
-        element->extra->length = self->extra->length;
+        // The original 'self->extra' may be gone at this point if deepcopy()
+        // has side-effects. However, 'i' is the number of copied items that
+        // we were able to successfully copy.
+        element->extra->length = i;
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
@@ -897,7 +912,7 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return Py_NewRef(object);
     }
 
-    if (Py_REFCNT(object) == 1) {
+    if (_PyObject_IsUniquelyReferenced(object)) {
         if (PyDict_CheckExact(object)) {
             PyObject *key, *value;
             Py_ssize_t pos = 0;
@@ -908,13 +923,20 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
                     break;
                 }
             }
-            if (simple)
+            if (simple) {
                 return PyDict_Copy(object);
+            }
             /* Fall through to general case */
         }
         else if (Element_CheckExact(st, object)) {
-            return _elementtree_Element___deepcopy___impl(
+            // The __deepcopy__() call may call arbitrary code even if the
+            // object to copy is a built-in XML element (one of its children
+            // any of its parents in its own __deepcopy__() implementation).
+            Py_INCREF(object);
+            PyObject *res = _elementtree_Element___deepcopy___impl(
                 (ElementObject *)object, memo);
+            Py_DECREF(object);
+            return res;
         }
     }
 
@@ -925,8 +947,11 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
+    Py_INCREF(object);
     PyObject *args[2] = {object, memo};
-    return PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    PyObject *res = PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    Py_DECREF(object);
+    return res;
 }
 
 
@@ -2769,8 +2794,9 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
         self->data = Py_NewRef(data);
     } else {
         /* more than one item; use a list to collect items */
-        if (PyBytes_CheckExact(self->data) && Py_REFCNT(self->data) == 1 &&
-            PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
+        if (PyBytes_CheckExact(self->data)
+            && _PyObject_IsUniquelyReferenced(self->data)
+            && PyBytes_CheckExact(data) && PyBytes_GET_SIZE(data) == 1) {
             /* XXX this code path unused in Python 3? */
             /* expat often generates single character data sections; handle
                the most common case by resizing the existing string... */
@@ -4189,8 +4215,8 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                 (XML_ProcessingInstructionHandler) expat_pi_handler
                 );
         } else {
-            Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
+            Py_DECREF(events_seq);
             return NULL;
         }
     }

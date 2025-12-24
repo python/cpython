@@ -32,24 +32,28 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    PyObject *module);
 
-/* AST optimizations */
-extern int _PyCompile_AstOptimize(
+/* AST preprocessing */
+extern int _PyCompile_AstPreprocess(
     struct _mod *mod,
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
     struct _arena *arena,
-    int syntax_check_only);
+    int syntax_check_only,
+    PyObject *module);
 
-extern int _PyAST_Optimize(
+extern int _PyAST_Preprocess(
     struct _mod *,
     struct _arena *arena,
     PyObject *filename,
     int optimize,
     int ff_features,
-    int syntax_check_only);
+    int syntax_check_only,
+    int enable_warnings,
+    PyObject *module);
 
 
 typedef struct {
@@ -95,6 +99,7 @@ typedef enum {
 enum _PyCompile_FBlockType {
      COMPILE_FBLOCK_WHILE_LOOP,
      COMPILE_FBLOCK_FOR_LOOP,
+     COMPILE_FBLOCK_ASYNC_FOR_LOOP,
      COMPILE_FBLOCK_TRY_EXCEPT,
      COMPILE_FBLOCK_FINALLY_TRY,
      COMPILE_FBLOCK_FINALLY_END,
@@ -133,6 +138,8 @@ int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type
 void _PyCompile_ExitScope(struct _PyCompiler *c);
 Py_ssize_t _PyCompile_AddConst(struct _PyCompiler *c, PyObject *o);
 _PyInstructionSequence *_PyCompile_InstrSequence(struct _PyCompiler *c);
+int _PyCompile_StartAnnotationSetup(struct _PyCompiler *c);
+int _PyCompile_EndAnnotationSetup(struct _PyCompiler *c);
 int _PyCompile_FutureFeatures(struct _PyCompiler *c);
 void _PyCompile_DeferredAnnotations(
     struct _PyCompiler *c, PyObject **deferred_annotations,

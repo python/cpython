@@ -22,16 +22,16 @@ struct _ceval_runtime_state;
 
 // Export for '_lsprof' shared extension
 PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetProfileAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 
 // Helper to look up a builtin object
 // Export for 'array' shared extension
 PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
-
-extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
 
 extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
 extern unsigned long _PyEval_GetSwitchInterval(void);
@@ -121,6 +121,22 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
+#ifdef _Py_TIER2
+#ifdef _Py_JIT
+_Py_CODEUNIT *_Py_LazyJitShim(
+    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+#else
+_Py_CODEUNIT *_PyTier2Interpreter(
+    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+#endif
+#endif
+
+extern _PyJitEntryFuncPtr _Py_jit_entry;
+
 extern PyObject*
 _PyEval_Vector(PyThreadState *tstate,
             PyFunctionObject *func, PyObject *locals,
@@ -196,29 +212,17 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
-static uintptr_t return_pointer_as_int(char* p) {
-    return (uintptr_t)p;
-}
-#endif
-
-static inline uintptr_t
-_Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address)
-    return (uintptr_t)__builtin_frame_address(0);
-#elif defined(_MSC_VER)
-    return (uintptr_t)_AddressOfReturnAddress();
-#else
-    char here;
-    /* Avoid compiler warning about returning stack address */
-    return return_pointer_as_int(&here);
-#endif
-}
-
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    return here_addr < _tstate->c_stack_soft_limit;
+    // Overflow if stack pointer is between soft limit and the base of the hardware stack.
+    // If it is below the hardware stack base, assume that we have the wrong stack limits, and do nothing.
+    // We could have the wrong stack limits because of limited platform support, or user-space threads.
+#if _Py_STACK_GROWS_DOWN
+    return here_addr < _tstate->c_stack_soft_limit && here_addr >= _tstate->c_stack_soft_limit - 2 * _PyOS_STACK_MARGIN_BYTES;
+#else
+    return here_addr > _tstate->c_stack_soft_limit && here_addr <= _tstate->c_stack_soft_limit + 2 * _PyOS_STACK_MARGIN_BYTES;
+#endif
 }
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
@@ -227,7 +231,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-int _Py_CheckRecursiveCallPy(
+PyAPI_FUNC(int) _Py_CheckRecursiveCallPy(
     PyThreadState *tstate);
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
@@ -249,19 +253,33 @@ PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (here_addr > _tstate->c_stack_soft_limit) {
-        return 0;
-    }
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
+    assert(_tstate->c_stack_hard_limit != 0);
+#if _Py_STACK_GROWS_DOWN
     return here_addr <= _tstate->c_stack_soft_limit;
+#else
+    return here_addr >= _tstate->c_stack_soft_limit;
+#endif
 }
+
+// Export for test_peg_generator
+PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(
+    PyThreadState *tstate,
+    int margin_count);
 
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
+
+extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
+extern int _PyEval_EnsureBuiltins(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
+extern int _PyEval_EnsureBuiltinsWithModule(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
@@ -297,6 +315,7 @@ PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+PyAPI_FUNC(bool) _PyEval_NoToolsForUnwind(PyThreadState *tstate);
 PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
@@ -358,8 +377,6 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
-PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
-
 #ifndef Py_SUPPORTS_REMOTE_DEBUG
     #if defined(__APPLE__)
     #include <TargetConditionals.h>
@@ -372,6 +389,96 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
     #    define Py_SUPPORTS_REMOTE_DEBUG 1
     #endif
 #endif
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+extern int _PyRunRemoteDebugger(PyThreadState *tstate);
+#endif
+
+PyAPI_FUNC(_PyStackRef)
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
+
+/* Special methods used by LOAD_SPECIAL */
+#define SPECIAL___ENTER__   0
+#define SPECIAL___EXIT__    1
+#define SPECIAL___AENTER__  2
+#define SPECIAL___AEXIT__   3
+#define SPECIAL_MAX   3
+
+PyAPI_DATA(const _Py_CODEUNIT *) _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR;
+
+/* Helper functions for large uops */
+
+PyAPI_FUNC(PyObject *)
+_Py_VectorCall_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args,
+    _PyStackRef kwnames);
+
+PyAPI_FUNC(PyObject*)
+_Py_VectorCallInstrumentation_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef* arguments,
+    int total_args,
+    _PyStackRef kwnames,
+    bool call_instrumentation,
+    _PyInterpreterFrame* frame,
+    _Py_CODEUNIT* this_instr,
+    PyThreadState* tstate);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFast_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuiltinCallFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFast_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_PyCallMethodDescriptorFastWithKeywords_StackRefSteal(
+    _PyStackRef callable,
+    PyMethodDef *meth,
+    PyObject *self,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_CallBuiltinClass_StackRefSteal(
+    _PyStackRef callable,
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildString_StackRefSteal(
+    _PyStackRef *arguments,
+    int total_args);
+
+PyAPI_FUNC(PyObject *)
+_Py_BuildMap_StackRefSteal(
+    _PyStackRef *arguments,
+    int half_args);
+
+PyAPI_FUNC(void)
+_Py_assert_within_stack_bounds(
+    _PyInterpreterFrame *frame, _PyStackRef *stack_pointer,
+    const char *filename, int lineno);
+
+// Like PyMapping_GetOptionalItem, but returns the PyObject* instead of taking
+// it as an out parameter. This helps MSVC's escape analysis when used with
+// tail calling.
+PyAPI_FUNC(PyObject*) _PyMapping_GetOptionalItem2(PyObject* obj, PyObject* key, int* err);
 
 #ifdef __cplusplus
 }

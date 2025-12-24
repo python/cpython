@@ -49,7 +49,8 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END_STRING), # end of string
+    r"\z": (AT, AT_END_STRING), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string (obsolete)
 }
 
 FLAGS = {
@@ -454,7 +455,6 @@ def _parse_sub(source, state, verbose, nested):
     items = []
     itemsappend = items.append
     sourcematch = source.match
-    start = source.tell()
     while True:
         itemsappend(_parse(source, state, verbose, nested + 1,
                            not nested and not items))

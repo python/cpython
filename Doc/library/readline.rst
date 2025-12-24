@@ -26,6 +26,8 @@ Readline library in general.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
   The underlying Readline library API may be implemented by
@@ -76,7 +78,7 @@ The following functions relate to the init file and user configuration:
    if given, and :code:`"<readline_init_file>"` otherwise, regardless of
    which file the library resolves.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -119,7 +121,7 @@ The following functions operate on a history file:
    and raises an :ref:`auditing event <auditing>` ``open`` with the file
    name if given and :code:`"~/.history"` otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -131,7 +133,7 @@ The following functions operate on a history file:
    :ref:`auditing event <auditing>` ``open`` with the file name if given and
    :code:`"~/.history"` otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -146,7 +148,7 @@ The following functions operate on a history file:
 
    .. versionadded:: 3.5
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -242,6 +244,15 @@ Startup hooks
    with no arguments after the first prompt has been printed and just before
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
+
+
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: 3.15
 
 
 .. _readline-completion:

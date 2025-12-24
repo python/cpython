@@ -49,44 +49,44 @@
     .. method:: open_resource(resource)
        :abstractmethod:
 
-        Returns an opened, :term:`file-like object` for binary reading
-        of the *resource*.
+       Returns an opened, :term:`file-like object` for binary reading
+       of the *resource*.
 
-        If the resource cannot be found, :exc:`FileNotFoundError` is
-        raised.
+       If the resource cannot be found, :exc:`FileNotFoundError` is
+       raised.
 
     .. method:: resource_path(resource)
        :abstractmethod:
 
-        Returns the file system path to the *resource*.
+       Returns the file system path to the *resource*.
 
-        If the resource does not concretely exist on the file system,
-        raise :exc:`FileNotFoundError`.
+       If the resource does not concretely exist on the file system,
+       raise :exc:`FileNotFoundError`.
 
     .. method:: is_resource(name)
        :abstractmethod:
 
-        Returns ``True`` if the named *name* is considered a resource.
-        :exc:`FileNotFoundError` is raised if *name* does not exist.
+       Returns ``True`` if the named *name* is considered a resource.
+       :exc:`FileNotFoundError` is raised if *name* does not exist.
 
     .. method:: contents()
        :abstractmethod:
 
-        Returns an :term:`iterable` of strings over the contents of
-        the package. Do note that it is not required that all names
-        returned by the iterator be actual resources, e.g. it is
-        acceptable to return names for which :meth:`is_resource` would
-        be false.
+       Returns an :term:`iterable` of strings over the contents of
+       the package. Do note that it is not required that all names
+       returned by the iterator be actual resources, e.g. it is
+       acceptable to return names for which :meth:`is_resource` would
+       be false.
 
-        Allowing non-resource names to be returned is to allow for
-        situations where how a package and its resources are stored
-        are known a priori and the non-resource names would be useful.
-        For instance, returning subdirectory names is allowed so that
-        when it is known that the package and resources are stored on
-        the file system then those subdirectory names can be used
-        directly.
+       Allowing non-resource names to be returned is to allow for
+       situations where how a package and its resources are stored
+       are known a priori and the non-resource names would be useful.
+       For instance, returning subdirectory names is allowed so that
+       when it is known that the package and resources are stored on
+       the file system then those subdirectory names can be used
+       directly.
 
-        The abstract method returns an iterable of no items.
+       The abstract method returns an iterable of no items.
 
 
 .. class:: Traversable

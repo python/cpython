@@ -1,3 +1,0 @@
-Fix support of Bluetooth sockets on NetBSD and DragonFly BSD. Add support
-for *cid* and *bdaddr_type* in the BTPROTO_L2CAP address on FreeBSD. Return
-*cid* in ``getsockname()`` for BTPROTO_L2CAP if it is not zero.

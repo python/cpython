@@ -207,6 +207,7 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
     if (tstate != NULL) {
         tstate->holds_gil = 0;
+        tstate->gil_requested = 0;
     }
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
@@ -320,6 +321,8 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
+    tstate->gil_requested = 1;
+
     int drop_requested = 0;
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
@@ -407,6 +410,7 @@ take_gil(PyThreadState *tstate)
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
+    tstate->gil_requested = 0;
     tstate->holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
@@ -907,13 +911,9 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 static void
 clear_pending_handling_thread(struct _pending_calls *pending)
 {
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&pending->mutex);
+    FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
-    PyMutex_Unlock(&pending->mutex);
-#else
-    pending->handling_thread = NULL;
-#endif
+    FT_MUTEX_UNLOCK(&pending->mutex);
 }
 
 static int
@@ -1195,53 +1195,104 @@ _PyEval_DisableGIL(PyThreadState *tstate)
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 // Note that this function is inline to avoid creating a PLT entry
 // that would be an easy target for a ROP gadget.
-static inline void run_remote_debugger_script(const char *path)
+static inline int run_remote_debugger_source(PyObject *source)
 {
-    if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
+    const char *str = PyBytes_AsString(source);
+    if (!str) {
+        return -1;
+    }
+
+    PyObject *ns = PyDict_New();
+    if (!ns) {
+        return -1;
+    }
+
+    PyObject *res = PyRun_String(str, Py_file_input, ns, ns);
+    Py_DECREF(ns);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
+
+// Note that this function is inline to avoid creating a PLT entry
+// that would be an easy target for a ROP gadget.
+static inline void run_remote_debugger_script(PyObject *path)
+{
+    if (0 != PySys_Audit("cpython.remote_debugger_script", "O", path)) {
         PyErr_FormatUnraisable(
-            "Audit hook failed for remote debugger script %s", path);
+            "Audit hook failed for remote debugger script %U", path);
         return;
     }
 
     // Open the debugger script with the open code hook, and reopen the
     // resulting file object to get a C FILE* object.
-    PyObject* fileobj = PyFile_OpenCode(path);
+    PyObject* fileobj = PyFile_OpenCodeObject(path);
     if (!fileobj) {
-        PyErr_FormatUnraisable("Can't open debugger script %s", path);
+        PyErr_FormatUnraisable("Can't open debugger script %U", path);
         return;
     }
 
     PyObject* source = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(read));
     if (!source) {
-        PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        PyErr_FormatUnraisable("Error reading debugger script %U", path);
     }
 
     PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
     if (!res) {
-        PyErr_FormatUnraisable("Error closing debugger script %s", path);
+        PyErr_FormatUnraisable("Error closing debugger script %U", path);
     } else {
         Py_DECREF(res);
     }
     Py_DECREF(fileobj);
 
     if (source) {
-        const char *str = PyBytes_AsString(source);
-        if (str) {
-            // PyRun_SimpleString() automatically raises an unraisable
-            // exception if it fails so we don't need to check the return value.
-            PyRun_SimpleString(str);
-        } else {
-            PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        if (0 != run_remote_debugger_source(source)) {
+            PyErr_FormatUnraisable("Error executing debugger script %U", path);
         }
         Py_DECREF(source);
     }
-
-    // Just in case something went wrong, don't leave this function
-    // with an unhandled exception.
-    if (PyErr_Occurred()) {
-        PyErr_FormatUnraisable("Error executing debugger script %s", path);
-    }
 }
+
+int _PyRunRemoteDebugger(PyThreadState *tstate)
+{
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->remote_debug == 1
+         && tstate->remote_debugger_support.debugger_pending_call == 1)
+    {
+        tstate->remote_debugger_support.debugger_pending_call = 0;
+
+        // Immediately make a copy in case of a race with another debugger
+        // process that's trying to write to the buffer. At least this way
+        // we'll be internally consistent: what we audit is what we run.
+        const size_t pathsz
+            = sizeof(tstate->remote_debugger_support.debugger_script_path);
+
+        char *path = PyMem_Malloc(pathsz);
+        if (path) {
+            // And don't assume the debugger correctly null terminated it.
+            memcpy(
+                path,
+                tstate->remote_debugger_support.debugger_script_path,
+                pathsz);
+            path[pathsz - 1] = '\0';
+            if (*path) {
+                PyObject *path_obj = PyUnicode_DecodeFSDefault(path);
+                if (path_obj == NULL) {
+                    PyErr_FormatUnraisable("Can't decode debugger script");
+                }
+                else {
+                    run_remote_debugger_script(path_obj);
+                    Py_DECREF(path_obj);
+                }
+            }
+            PyMem_Free(path);
+        }
+    }
+    return 0;
+}
+
 #endif
 
 /* Do periodic things, like check for signals and async I/0.
@@ -1336,19 +1387,29 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
         _Py_brc_merge_refcounts(tstate);
     }
+    /* Process deferred memory frees held by QSBR */
+    if (_Py_qsbr_should_process(((_PyThreadStateImpl *)tstate)->qsbr)) {
+        _PyMem_ProcessDelayed(tstate);
+    }
 #endif
 
     /* GC scheduled to run */
     if ((breaker & _PY_GC_SCHEDULED_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
         _Py_RunGC(tstate);
+#ifdef _Py_TIER2
+        _Py_ClearExecutorDeletionList(tstate->interp);
+#endif
     }
 
+#ifdef _Py_TIER2
     if ((breaker & _PY_EVAL_JIT_INVALIDATE_COLD_BIT) != 0) {
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
         _Py_Executors_InvalidateCold(tstate->interp);
-        tstate->interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
+        tstate->interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
+        _Py_ClearExecutorDeletionList(tstate->interp);
     }
+#endif
 
     /* GIL drop request */
     if ((breaker & _PY_GIL_DROP_REQUEST_BIT) != 0) {
@@ -1372,32 +1433,7 @@ _Py_HandlePending(PyThreadState *tstate)
     }
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
-    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->remote_debug == 1
-         && tstate->remote_debugger_support.debugger_pending_call == 1)
-    {
-        tstate->remote_debugger_support.debugger_pending_call = 0;
-
-        // Immediately make a copy in case of a race with another debugger
-        // process that's trying to write to the buffer. At least this way
-        // we'll be internally consistent: what we audit is what we run.
-        const size_t pathsz
-            = sizeof(tstate->remote_debugger_support.debugger_script_path);
-
-        char *path = PyMem_Malloc(pathsz);
-        if (path) {
-            // And don't assume the debugger correctly null terminated it.
-            memcpy(
-                path,
-                tstate->remote_debugger_support.debugger_script_path,
-                pathsz);
-            path[pathsz - 1] = '\0';
-            if (*path) {
-                run_remote_debugger_script(path);
-            }
-            PyMem_Free(path);
-        }
-    }
+    _PyRunRemoteDebugger(tstate);
 #endif
 
     return 0;

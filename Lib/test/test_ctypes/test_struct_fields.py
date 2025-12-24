@@ -1,6 +1,6 @@
 import unittest
 import sys
-from ctypes import Structure, Union, sizeof, c_char, c_int, CField
+from ctypes import Structure, Union, sizeof, c_byte, c_char, c_int, CField
 from ._support import Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin
 
 
@@ -74,6 +74,17 @@ class FieldsTestBase(StructCheckMixin):
         with self.assertRaisesRegex(TypeError,
                                     'ctypes state is not initialized'):
             class Subclass(BrokenStructure): ...
+
+    def test_invalid_byte_size_raises_gh132470(self):
+        with self.assertRaisesRegex(ValueError, r"does not match type size"):
+            CField(
+                name="a",
+                type=c_byte,
+                byte_size=2,  # Wrong size: c_byte is only 1 byte
+                byte_offset=2,
+                index=1,
+                _internal_use=True
+            )
 
     def test_max_field_size_gh126937(self):
         # Classes for big structs should be created successfully.

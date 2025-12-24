@@ -10,8 +10,8 @@
 
 --------------
 
-This module provides access to the mathematical functions defined by the C
-standard.
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -27,21 +27,14 @@ noted otherwise, all return values are floats.
 
 
 ====================================================  ============================================
-**Number-theoretic functions**
---------------------------------------------------------------------------------------------------
-:func:`comb(n, k) <comb>`                             Number of ways to choose *k* items from *n* items without repetition and without order
-:func:`factorial(n) <factorial>`                      *n* factorial
-:func:`gcd(*integers) <gcd>`                          Greatest common divisor of the integer arguments
-:func:`isqrt(n) <isqrt>`                              Integer square root of a nonnegative integer *n*
-:func:`lcm(*integers) <lcm>`                          Least common multiple of the integer arguments
-:func:`perm(n, k) <perm>`                             Number of ways to choose *k* items from *n* items without repetition and with order
-
 **Floating point arithmetic**
 --------------------------------------------------------------------------------------------------
 :func:`ceil(x) <ceil>`                                Ceiling of *x*, the smallest integer greater than or equal to *x*
 :func:`fabs(x) <fabs>`                                Absolute value of *x*
 :func:`floor(x)  <floor>`                             Floor of *x*, the largest integer less than or equal to *x*
 :func:`fma(x, y, z) <fma>`                            Fused multiply-add operation: ``(x * y) + z``
+:func:`fmax(x, y) <fmax>`                             Maximum of two floating-point values
+:func:`fmin(x, y) <fmin>`                             Minimum of two floating-point values
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
 :func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
@@ -53,10 +46,13 @@ noted otherwise, all return values are floats.
 :func:`frexp(x) <frexp>`                              Mantissa and exponent of *x*
 :func:`isclose(a, b, rel_tol, abs_tol) <isclose>`     Check if the values *a* and *b* are close to each other
 :func:`isfinite(x) <isfinite>`                        Check if *x* is neither an infinity nor a NaN
+:func:`isnormal(x) <isnormal>`                        Check if *x* is a normal number
+:func:`issubnormal(x) <issubnormal>`                  Check if *x* is a subnormal number
 :func:`isinf(x) <isinf>`                              Check if *x* is a positive or negative infinity
 :func:`isnan(x) <isnan>`                              Check if *x* is a NaN  (not a number)
 :func:`ldexp(x, i) <ldexp>`                           ``x * (2**i)``, inverse of function :func:`frexp`
 :func:`nextafter(x, y, steps) <nextafter>`            Floating-point value *steps* steps after *x* towards *y*
+:func:`signbit(x) <signbit>`                          Check if *x* is a negative number
 :func:`ulp(x) <ulp>`                                  Value of the least significant bit of *x*
 
 **Power, exponential and logarithmic functions**
@@ -121,93 +117,6 @@ noted otherwise, all return values are floats.
 ====================================================  ============================================
 
 
-Number-theoretic functions
---------------------------
-
-.. function:: comb(n, k)
-
-   Return the number of ways to choose *k* items from *n* items without repetition
-   and without order.
-
-   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
-
-   Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of
-   ``(1 + x)ⁿ``.
-
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
-
-   .. versionadded:: 3.8
-
-
-.. function:: factorial(n)
-
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
-
-   .. versionchanged:: 3.10
-      Floats with integral values (like ``5.0``) are no longer accepted.
-
-
-.. function:: gcd(*integers)
-
-   Return the greatest common divisor of the specified integer arguments.
-   If any of the arguments is nonzero, then the returned value is the largest
-   positive integer that is a divisor of all arguments.  If all arguments
-   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
-   returns ``0``.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.9
-      Added support for an arbitrary number of arguments. Formerly, only two
-      arguments were supported.
-
-
-.. function:: isqrt(n)
-
-   Return the integer square root of the nonnegative integer *n*. This is the
-   floor of the exact square root of *n*, or equivalently the greatest integer
-   *a* such that *a*\ ² |nbsp| ≤ |nbsp| *n*.
-
-   For some applications, it may be more convenient to have the least integer
-   *a* such that *n* |nbsp| ≤ |nbsp| *a*\ ², or in other words the ceiling of
-   the exact square root of *n*. For positive *n*, this can be computed using
-   ``a = 1 + isqrt(n - 1)``.
-
-   .. versionadded:: 3.8
-
-
-.. function:: lcm(*integers)
-
-   Return the least common multiple of the specified integer arguments.
-   If all arguments are nonzero, then the returned value is the smallest
-   positive integer that is a multiple of all arguments.  If any of the arguments
-   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
-   returns ``1``.
-
-   .. versionadded:: 3.9
-
-
-.. function:: perm(n, k=None)
-
-   Return the number of ways to choose *k* items from *n* items
-   without repetition and with order.
-
-   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
-   to zero when ``k > n``.
-
-   If *k* is not specified or is ``None``, then *k* defaults to *n*
-   and the function returns ``n!``.
-
-   Raises :exc:`TypeError` if either of the arguments are not integers.
-   Raises :exc:`ValueError` if either of the arguments are negative.
-
-   .. versionadded:: 3.8
-
-
 Floating point arithmetic
 -------------------------
 
@@ -244,6 +153,30 @@ Floating point arithmetic
    and does not raise any exception.
 
    .. versionadded:: 3.13
+
+
+.. function:: fmax(x, y)
+
+   Get the larger of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmax` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.2).
+
+   .. versionadded:: 3.15
+
+
+.. function:: fmin(x, y)
+
+   Get the smaller of two floating-point values, treating NaNs as missing data.
+
+   When both operands are (signed) NaNs or zeroes, return ``nan`` and ``0``
+   respectively and the sign of the result is implementation-defined, that
+   is, :func:`!fmin` is not required to be sensitive to the sign of such
+   operands (see Annex F of the C11 standard, §F.10.0.3 and §F.10.9.3).
+
+   .. versionadded:: 3.15
 
 
 .. function:: fmod(x, y)
@@ -374,6 +307,24 @@ Floating point manipulation functions
    .. versionadded:: 3.2
 
 
+.. function:: isnormal(x)
+
+   Return ``True`` if *x* is a normal number, that is a finite
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
+.. function:: issubnormal(x)
+
+   Return ``True`` if *x* is a subnormal number, that is a finite
+   nonzero number with a magnitude smaller than :data:`sys.float_info.min`.
+   Return ``False`` otherwise.
+
+   .. versionadded:: 3.15
+
+
 .. function:: isinf(x)
 
    Return ``True`` if *x* is a positive or negative infinity, and
@@ -410,6 +361,15 @@ Floating point manipulation functions
 
    .. versionchanged:: 3.12
       Added the *steps* argument.
+
+
+.. function:: signbit(x)
+
+   Return ``True`` if the sign of *x* is negative and ``False`` otherwise.
+
+   This is useful to detect the sign bit of zeroes, infinities and NaNs.
+
+   .. versionadded:: 3.15
 
 
 .. function:: ulp(x)
@@ -546,7 +506,7 @@ Summation and product functions
 
    Roughly equivalent to::
 
-       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
+       sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q, strict=True)))
 
    .. versionadded:: 3.8
 
@@ -757,6 +717,75 @@ Special functions
    .. versionadded:: 3.2
 
 
+Number-theoretic functions
+--------------------------
+
+For backward compatibility, the :mod:`math` module provides also aliases of
+the following functions from the :mod:`math.integer` module:
+
+.. list-table::
+
+   * - .. function:: comb(n, k)
+          :no-typesetting:
+
+       :func:`comb(n, k) <math.integer.comb>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and without order
+
+   * - .. function:: factorial(n)
+          :no-typesetting:
+
+       :func:`factorial(n) <math.integer.factorial>`
+     - *n* factorial
+
+   * - .. function:: gcd(*integers)
+          :no-typesetting:
+
+       :func:`gcd(*integers) <math.integer.gcd>`
+     - Greatest common divisor of the integer arguments
+
+   * - .. function:: isqrt(n)
+          :no-typesetting:
+
+       :func:`isqrt(n) <math.integer.isqrt>`
+     - Integer square root of a nonnegative integer *n*
+
+   * - .. function:: lcm(*integers)
+          :no-typesetting:
+
+       :func:`lcm(*integers) <math.integer.lcm>`
+     - Least common multiple of the integer arguments
+
+   * - .. function:: perm(n, k)
+          :no-typesetting:
+
+       :func:`perm(n, k) <math.integer.perm>`
+     - Number of ways to choose *k* items from *n* items without repetition
+       and with order
+
+.. versionadded:: 3.5
+   The :func:`gcd` function.
+
+.. versionadded:: 3.8
+   The :func:`comb`, :func:`perm` and :func:`isqrt` functions.
+
+.. versionadded:: 3.9
+   The :func:`lcm` function.
+
+.. versionchanged:: 3.9
+   Added support for an arbitrary number of arguments in the :func:`gcd`
+   function.
+   Formerly, only two arguments were supported.
+
+.. versionchanged:: 3.10
+   Floats with integral values (like ``5.0``) are no longer accepted in the
+   :func:`factorial` function.
+
+.. deprecated:: 3.15
+   These aliases are :term:`soft deprecated` in favor of the
+   :mod:`math.integer` functions.
+
+
 Constants
 ---------
 
@@ -775,7 +804,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6
@@ -839,5 +868,5 @@ Constants
    Module :mod:`cmath`
       Complex number versions of many of these functions.
 
-.. |nbsp| unicode:: 0xA0
-   :trim:
+   Module :mod:`math.integer`
+      Integer-specific mathematics functions.

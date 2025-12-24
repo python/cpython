@@ -1,2 +1,0 @@
-The :file:`PC\layout` script now allows passing ``--include-tcltk`` on
-Windows ARM64.

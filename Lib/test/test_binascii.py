@@ -40,13 +40,13 @@ class BinASCIITest(unittest.TestCase):
 
     def test_exceptions(self):
         # Check module exceptions
-        self.assertTrue(issubclass(binascii.Error, Exception))
-        self.assertTrue(issubclass(binascii.Incomplete, Exception))
+        self.assertIsSubclass(binascii.Error, Exception)
+        self.assertIsSubclass(binascii.Incomplete, Exception)
 
     def test_functions(self):
         # Check presence of all functions
         for name in all_functions:
-            self.assertTrue(hasattr(getattr(binascii, name), '__call__'))
+            self.assertHasAttr(getattr(binascii, name), '__call__')
             self.assertRaises(TypeError, getattr(binascii, name))
 
     def test_returned_value(self):

@@ -1,6 +1,12 @@
-target-version = "py310"
-fix = true
-line-length = 79
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
+[per-file-target-version]
+"deepfreeze.py" = "py311"  # requires `code.co_exceptiontable`
+"stable_abi.py" = "py311"  # requires 'tomllib'
+
+[format]
+preview = true
+docstring-code-format = true
 
 [lint]
 select = [
@@ -23,12 +29,7 @@ ignore = [
     "F541",    # f-string without any placeholders
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
     "PYI025",  # Use `from collections.abc import Set as AbstractSet`
-    "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
-
-[per-file-target-version]
-"deepfreeze.py" = "py310"
-"stable_abi.py" = "py311"  # requires 'tomllib'
 
 [lint.per-file-ignores]
 "{check_extension_modules,freeze_modules}.py" = [
