@@ -54,13 +54,93 @@ PyAPI_FUNC(PyObject *) PyRecord_New(Py_ssize_t size)
 static void
 record_dealloc(PyRecordObject *op)
 {
-    // TODO
+    Py_ssize_t len =  Py_SIZE(op);
+    PyObject_GC_UnTrack(op);
+    Py_TRASHCAN_BEGIN(op, record_dealloc)
+    Py_XDECREF(op->names);
+    if (len > 0) {
+        Py_ssize_t i = len;
+        while (--i >= 0) {
+            Py_XDECREF(op->ob_item[i]);
+        }
+    }
+    Py_TYPE(op)->tp_free((PyObject *)op);
+    Py_TRASHCAN_END
 }
 
 static PyObject *
 record_repr(PyRecordObject *v)
 {
-    // TODO
+    Py_ssize_t i, n;
+    _PyUnicodeWriter writer;
+
+    n = Py_SIZE(v);
+    if (n == 0)
+        return PyUnicode_FromString("record()");
+
+    /* While not mutable, it is still possible to end up with a cycle in a
+       record through an object that stores itself within a record (and thus
+       infinitely asks for the repr of itself). This should only be
+       possible within a type. */
+    i = Py_ReprEnter((PyObject *)v);
+    if (i != 0) {
+        return i > 0 ? PyUnicode_FromString("record(...)") : NULL;
+    }
+
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    if (Py_SIZE(v) > 1) {
+        /* "(" + "1" + ", 2" * (len - 1) + ")" */
+        writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
+    }
+    else {
+        /* "(1,)" */
+        writer.min_length = 4;
+    }
+
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, "record(", 7) < 0)
+        goto error;
+
+    /* Do repr() on each element. */
+    for (i = 0; i < n; ++i) {
+        PyObject *s;
+        PyObject *name;
+
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+                goto error;
+        }
+
+        name = PyTuple_GET_ITEM(v->names, i);
+        s = PyObject_Repr(v->ob_item[i]);
+        if (s == NULL)
+            goto error;
+
+        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
+            Py_DECREF(s);
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+            Py_DECREF(s);
+            goto error;
+        }
+        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
+            Py_DECREF(s);
+            goto error;
+        }
+        Py_DECREF(s);
+    }
+
+    writer.overallocate = 0;
+    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0)
+        goto error;
+
+    Py_ReprLeave((PyObject *)v);
+    return _PyUnicodeWriter_Finish(&writer);
+
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    Py_ReprLeave((PyObject *)v);
     return NULL;
 }
 
