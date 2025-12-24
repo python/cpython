@@ -559,7 +559,7 @@ failed_throw:
 static PyObject *
 gen_throw_current_exception(PyGenObject *gen)
 {
-    assert(gen->gi_frame_state == FRAME_EXECUTING);
+    assert(FT_ATOMIC_LOAD_INT8_RELAXED(gen->gi_frame_state) == FRAME_EXECUTING);
 
     PyObject *result;
     if (gen_send_ex2(gen, Py_None, &result, 1) == PYGEN_RETURN) {
