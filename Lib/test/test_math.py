@@ -553,6 +553,107 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.floor(FloatLike(+1.0)), +1.0)
         self.assertEqual(math.floor(FloatLike(-1.0)), -1.0)
 
+    @requires_IEEE_754
+    def testSign(self):
+        # For compactness
+        sign  = math.sign
+        isnan = math.isnan
+        inf   = math.inf
+        Frac  = fractions.Fraction
+        Dec   = decimal.Decimal
+
+        # --- int
+        self.assertEqual(sign(-5), -1)
+        self.assertEqual(sign(-1), -1)
+        self.assertEqual(sign(0), 0)
+        self.assertEqual(sign(1), 1)
+        self.assertEqual(sign(5), 1)
+        # ------ bool
+        self.assertEqual(sign(True), 1)
+        self.assertEqual(sign(False), 0)
+        # ------ big numbers
+        self.assertEqual(sign(10**1000), 1)
+        self.assertEqual(sign(-10**1000), -1)
+        self.assertEqual(sign(10**1000-10**1000), 0)
+
+        # --- float
+        self.assertEqual(sign(-5.0), -1)
+        self.assertEqual(sign(-1.0), -1)
+        self.assertEqual(sign(0.0), 0)
+        self.assertEqual(sign(1.0), 1)
+        self.assertEqual(sign(5.0), 1)
+        # ------ -0.0 and +0.0
+        self.assertEqual(sign(float('-0.0')), 0)
+        self.assertEqual(sign(float('+0.0')), 0)
+        # ------ -inf and inf
+        self.assertEqual(sign(NINF), -1)
+        self.assertEqual(sign(INF), 1)
+        # ------ -nan (the same as nan), nan
+        self.assertTrue(isnan(sign(NNAN)))
+        self.assertTrue(isnan(sign(NAN)))
+        self.assertTrue(isnan(sign(0.0*NAN)))
+
+        # --- Fraction
+        self.assertEqual(sign(Frac(-5, 2)), -1)
+        self.assertEqual(sign(Frac(-1, 2)), -1)
+        self.assertEqual(sign(Frac(0, 2)), 0)
+        self.assertEqual(sign(Frac(1, 2)), 1)
+        self.assertEqual(sign(Frac(5, 2)), 1)
+
+        # --- Decimal
+        self.assertEqual(sign(Dec(-5.5)), -1)
+        self.assertEqual(sign(Dec(-1.5)), -1)
+        self.assertEqual(sign(Dec(0.0)), 0)
+        self.assertEqual(sign(Dec(1.5)), 1)
+        self.assertEqual(sign(Dec(5.5)), 1)
+        # ------ Decimal NaN
+        self.assertTrue(isnan(sign(Dec('NaN'))))
+
+        # --- New custom class (testing possible future extentions)
+        #     This class has no __float__ that tests one subtle branch in the CPython sign
+        class MyNumber:
+            def __init__(self, value):
+                self.value = value
+            def __gt__(self, other):
+                return self.value > other
+            def __lt__(self, other):
+                return self.value < other
+            def __eq__(self, other):
+                return self.value == other
+            def __repr__(self):
+                return f'MyNumber({self.value})'
+
+        self.assertEqual(sign(MyNumber(-5)), -1)
+        self.assertEqual(sign(MyNumber(-1)), -1)
+        self.assertEqual(sign(MyNumber(0)), 0)
+        self.assertEqual(sign(MyNumber(1)), 1)
+        self.assertEqual(sign(MyNumber(5)), 1)
+        with self.assertRaisesRegex(TypeError, r'math\.sign: invalid argument `MyNumber\(nan\)`'):
+            sign(MyNumber(NAN))
+
+        # Testing inappropriate arguments and types (non-scalar, non-comparable, etc.)
+        # --- No arguments and three arguments
+        with self.assertRaisesRegex(TypeError, r'math\.sign\(\) takes exactly one argument \(0 given\)'):
+            sign()
+        with self.assertRaisesRegex(TypeError, r'math\.sign\(\) takes exactly one argument \(3 given\)'):
+            sign(-1, 0, 1)
+
+        # --- None, str, list, complex, set
+        tests = [(r"`None`", None),
+                 (r"`'5\.0'`", '5.0'),
+                 (r"`'nan'`", 'nan'),
+                 (r"`'number 5'`", 'number 5'),
+                 (r"`\[-8\.75\]`", [-8.75]),
+                 (r"`\(-1\+1j\)`", -1+1j),
+                 (r"`\{-3\.14\}`", {-3.14}),
+                ]
+                
+        for msg, obj in tests:
+            with self.subTest(obj=obj):
+                with self.assertRaisesRegex(TypeError,
+                                            r'math\.sign: invalid argument ' + msg):
+                    sign(obj)
+
     def testFmod(self):
         self.assertRaises(TypeError, math.fmod)
         self.ftest('fmod(10, 1)', math.fmod(10, 1), 0.0)

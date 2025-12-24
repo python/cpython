@@ -38,6 +38,7 @@ noted otherwise, all return values are floats.
 :func:`fmod(x, y) <fmod>`                             Remainder of division ``x / y``
 :func:`modf(x) <modf>`                                Fractional and integer parts of *x*
 :func:`remainder(x, y) <remainder>`                   Remainder of *x* with respect to *y*
+:func:`sign(x) <sign>`                                Sign of *x*, indicating whether *x* is negative, zero, or positive
 :func:`trunc(x) <trunc>`                              Integer part of *x*
 
 **Floating point manipulation functions**
@@ -226,6 +227,21 @@ Floating point arithmetic
 
    .. versionadded:: 3.7
 
+.. function:: sign(x)
+
+   Return the sign of *x*: ``-1`` if *x < 0*, ``0`` if *x == 0*, and ``1`` if *x > 0*.
+   
+   The function delegates to the object's rich comparison operators. This 
+   allows it to work with various numeric types including :class:`int`, 
+   :class:`float`, :class:`fractions.Fraction`, and :class:`decimal.Decimal`.
+   It is platform-independent, and works with any existing or future scalar type
+   that internally supports numeric comparisons.
+
+   For ``NaN`` inputs, the function returns a float ``NaN``. For other arguments
+   and any scalar numeric type, the result is always an :class:`int`. For non-numeric
+   or non-scalar types, the function raises a :exc:`TypeError`.
+
+   .. versionadded:: 3.15
 
 .. function:: trunc(x)
 

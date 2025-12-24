@@ -1082,6 +1082,110 @@ math_floor(PyObject *module, PyObject *number)
 }
 
 /*[clinic input]
+math.sign
+
+    x: object
+    /
+
+Return the sign of x: -1 if x < 0, 0 if x == 0, 1 if x > 0.
+
+For NaN inputs, return a float NaN.
+[clinic start generated code]*/
+
+static PyObject *
+math_sign(PyObject *module, PyObject *x)
+/*[clinic end generated code: output=83b2f9bfbf48c222 input=b07f2b4af6d01e62]*/
+{
+    /* Check for numeric NaN */
+    double d = PyFloat_AsDouble(x);
+    if (Py_IS_NAN(d)) return PyFloat_FromDouble(Py_NAN);
+    /* If it is something special, we will try comparisons */
+    if (PyErr_Occurred()) PyErr_Clear();
+
+    PyObject* zero = _PyLong_GetZero();
+
+    int gt = PyObject_RichCompareBool(x, zero, Py_GT) + 1; /* 2: True; 1: False; 0: Error */
+    int lt = PyObject_RichCompareBool(x, zero, Py_LT) + 1;
+    int res = gt - lt; /* Result, if nothing special */
+    int eq = PyObject_RichCompareBool(x, zero, Py_EQ) + 1;
+
+    /* gt, lt, eq can be 0, 1, 2; let them be digits in the ternary number system */
+    /* code = 9*gt+3*lt+eq is the value of the number written in the ternary system
+       with these digits */
+    /* We also use 9 = 8+1, 3 = 4-1, and replace multiplication by 8 and 4 with shift */
+    int code = (gt << 3) + (lt << 2) + eq + res;
+    /* (gt<<3) = 8*gt; (lt<<2) = 4*gt; code = 8*gt + 4*lt + eq + (gt-lt) = 9*gt+3*lt+eq */
+
+    switch (code) {
+    case 13: { /* 111₃ ->  8+4+1+0: possible NaN     (False, False, False) */
+        int self_eq = PyObject_RichCompareBool(x, x, Py_EQ);
+        if (self_eq == 0) return PyFloat_FromDouble(Py_NAN); /* NaN: not equal to itself */
+        if (self_eq == -1) return NULL; /* Error in __eq__, we keep Python error */
+        goto error; /* Not a NaN, but not comparable to 0: go to TypeError */
+        }
+    case 14:   /* 112₃ ->  8+4+2+0: x == 0 (res= 0)  (False, False, True ) */
+    case 16:   /* 121₃ ->  8+8+1-1: x <  0 (res=-1)  (False, True,  False) */
+    case 22:   /* 211₃ -> 16+4+1+1: x >  0 (res= 1)  (True,  False, False) */
+        return PyLong_FromLong((long)res);
+    default: /* No more valid cases */
+        goto error;
+    }
+
+error:
+    if (PyErr_Occurred()) {
+        PyObject *type, *value, *traceback;
+        /* Extarct the current error (the error flow became empty) */
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+
+        /* Prepare the argument details */
+        PyObject *repr = PyObject_Repr(x);
+        const char *type_name = Py_TYPE(x)->tp_name;
+
+        /* Prepare the old error as string */
+        PyObject *old_msg = PyObject_Str(value);
+        const char *old_msg_str = old_msg ? PyUnicode_AsUTF8(old_msg) : "unknown error";
+
+        /* Form the new message 
+           PyErr_Format will clean footprints of errors from PyObject_Str if any */
+        PyErr_Format(PyExc_TypeError,
+            "math.sign: invalid argument `%.160s` (type '%.80s'). "
+            "Inner error: %.320s",
+            repr ? PyUnicode_AsUTF8(repr) : "???",
+            type_name,
+            old_msg_str);
+
+        /* Clean memory */
+        Py_XDECREF(repr);
+        Py_XDECREF(old_msg);
+        Py_XDECREF(type);
+        Py_XDECREF(value);
+        Py_XDECREF(traceback);
+    }
+    else {
+        PyObject *repr = PyObject_Repr(x);
+        const char *type_name = Py_TYPE(x)->tp_name;
+
+        if (repr) {
+            PyErr_Format(PyExc_TypeError,
+                "math.sign: invalid argument `%.160s`. "
+                "Type '%.80s' does not support order comparisons (>, <, ==) "
+                "or NaN detection.",
+                PyUnicode_AsUTF8(repr),
+                type_name);
+            Py_DECREF(repr);
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                "math.sign: invalid argument of type '%.80s', "
+                "which does not support order comparisons (>, <, ==) and printing.",
+                type_name);
+        }
+    }
+    return NULL;
+}
+
+/*[clinic input]
 math.fmax -> double
 
     x: double
@@ -3088,6 +3192,7 @@ static PyMethodDef math_methods[] = {
     MATH_POW_METHODDEF
     MATH_RADIANS_METHODDEF
     {"remainder",       _PyCFunction_CAST(math_remainder), METH_FASTCALL,  math_remainder_doc},
+    MATH_SIGN_METHODDEF
     MATH_SIGNBIT_METHODDEF
     {"sin",             math_sin,       METH_O,         math_sin_doc},
     {"sinh",            math_sinh,      METH_O,         math_sinh_doc},
