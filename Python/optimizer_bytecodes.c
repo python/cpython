@@ -335,7 +335,7 @@ dummy_func(void) {
         i = sub_st;
     }
 
-    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
         assert(sym_matches_type(tuple_st, &PyTuple_Type));
         if (sym_is_const(ctx, sub_st)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
@@ -354,6 +354,8 @@ dummy_func(void) {
         else {
             res = sym_new_not_null(ctx);
         }
+        ts = tuple_st;
+        ss = sub_st;
     }
 
     op(_TO_BOOL, (value -- res)) {
@@ -531,6 +533,11 @@ dummy_func(void) {
 
     op(_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, unused, unused -- value)) {
         value = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+    }
+
+    op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, unused, unused, arg -- res, a)) {
+        res = PyJitRef_Borrow(sym_new_const(ctx, ptr));
+        a = arg;
     }
 
     op(_POP_TOP, (value -- )) {
@@ -981,16 +988,17 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
-    op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
+    op(_CALL_TYPE_1, (unused, unused, arg -- res, a)) {
         PyObject* type = (PyObject *)sym_get_type(arg);
         if (type) {
             res = sym_new_const(ctx, type);
-            REPLACE_OP(this_instr, _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW, 0,
+            REPLACE_OP(this_instr, _SHUFFLE_2_LOAD_CONST_INLINE_BORROW, 0,
                        (uintptr_t)type);
         }
         else {
             res = sym_new_not_null(ctx);
         }
+        a = arg;
     }
 
     op(_CALL_STR_1, (unused, unused, arg -- res, a)) {

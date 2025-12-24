@@ -975,9 +975,9 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_TUPLE_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_TUPLE + unused/5 + _BINARY_OP_SUBSCR_TUPLE_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_TUPLE + unused/5 + _BINARY_OP_SUBSCR_TUPLE_INT + _POP_TOP_INT + POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
 
@@ -991,9 +991,10 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
-            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
             res = PyStackRef_FromPyObjectNew(res_o);
-            DECREF_INPUTS();
+            ts = tuple_st;
+            ss = sub_st;
+            INPUTS_DEAD();
         }
 
         op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
@@ -3986,17 +3987,14 @@ dummy_func(
             DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
         }
 
-        op(_CALL_TYPE_1, (callable, null, arg -- res)) {
+        op(_CALL_TYPE_1, (callable, null, arg -- res, a)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEAD(null);
-            DEAD(callable);
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
             STAT_INC(CALL, hit);
+            a = arg;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
-            PyStackRef_CLOSE(arg);
         }
 
         macro(CALL_TYPE_1) =
@@ -4004,7 +4002,8 @@ dummy_func(
             unused/2 +
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TYPE_1 +
-            _CALL_TYPE_1;
+            _CALL_TYPE_1 +
+            POP_TOP;
 
         op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -5258,6 +5257,12 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
+        tier2 op(_SHUFFLE_2_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a)) {
+            res = PyStackRef_FromPyObjectBorrow(ptr);
+            a = arg;
+            INPUTS_DEAD();
+        }
+
         tier2 op(_SHUFFLE_3_LOAD_CONST_INLINE_BORROW, (ptr/4, callable, null, arg -- res, a, c)) {
             res = PyStackRef_FromPyObjectBorrow(ptr);
             a = arg;
@@ -5291,7 +5296,7 @@ dummy_func(
             assert(current_executor == (_PyExecutorObject*)executor);
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
-            tstate->current_executor = (PyObject *)executor;
+            tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {
                 assert(tstate->jit_exit->executor == current_executor);
                 assert(tstate->current_executor == executor);

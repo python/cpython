@@ -73,8 +73,8 @@ def _validate_arguments(args: List[str]) -> tuple[int, str, List[str]]:
 
 # Constants for socket communication
 _MAX_RETRIES = 3
-_INITIAL_RETRY_DELAY = 0.1
-_SOCKET_TIMEOUT = 2.0
+_INITIAL_RETRY_DELAY_SEC = 0.1
+_SOCKET_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 
 
@@ -93,14 +93,14 @@ def _signal_readiness(sync_port: int) -> None:
     for attempt in range(_MAX_RETRIES):
         try:
             # Use context manager for automatic cleanup
-            with socket.create_connection(("127.0.0.1", sync_port), timeout=_SOCKET_TIMEOUT) as sock:
+            with socket.create_connection(("127.0.0.1", sync_port), timeout=_SOCKET_TIMEOUT_SEC) as sock:
                 sock.send(_READY_MESSAGE)
                 return
         except (socket.error, OSError) as e:
             last_error = e
             if attempt < _MAX_RETRIES - 1:
                 # Exponential backoff before retry
-                time.sleep(_INITIAL_RETRY_DELAY * (2 ** attempt))
+                time.sleep(_INITIAL_RETRY_DELAY_SEC * (2 ** attempt))
 
     # If we get here, all retries failed
     raise SyncError(f"Failed to signal readiness after {_MAX_RETRIES} attempts: {last_error}") from last_error

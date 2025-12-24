@@ -4,6 +4,7 @@ import argparse
 import importlib.util
 import locale
 import os
+import re
 import selectors
 import socket
 import subprocess
@@ -20,6 +21,7 @@ from .gecko_collector import GeckoCollector
 from .binary_collector import BinaryCollector
 from .binary_reader import BinaryReader
 from .constants import (
+    MICROSECONDS_PER_SECOND,
     PROFILING_MODE_ALL,
     PROFILING_MODE_WALL,
     PROFILING_MODE_CPU,
@@ -66,8 +68,8 @@ Use `python -m profiling.sampling <command> --help` for command-specific help.""
 
 
 # Constants for socket synchronization
-_SYNC_TIMEOUT = 5.0
-_PROCESS_KILL_TIMEOUT = 2.0
+_SYNC_TIMEOUT_SEC = 5.0
+_PROCESS_KILL_TIMEOUT_SEC = 2.0
 _READY_MESSAGE = b"ready"
 _RECV_BUFFER_SIZE = 1024
 
@@ -116,7 +118,8 @@ def _build_child_profiler_args(args):
     child_args = []
 
     # Sampling options
-    child_args.extend(["-i", str(args.interval)])
+    hz = MICROSECONDS_PER_SECOND // args.sample_interval_usec
+    child_args.extend(["-r", str(hz)])
     child_args.extend(["-d", str(args.duration)])
 
     if args.all_threads:
@@ -239,7 +242,7 @@ def _run_with_sync(original_cmd, suppress_output=False):
         sync_sock.bind(("127.0.0.1", 0))  # Let OS choose a free port
         sync_port = sync_sock.getsockname()[1]
         sync_sock.listen(1)
-        sync_sock.settimeout(_SYNC_TIMEOUT)
+        sync_sock.settimeout(_SYNC_TIMEOUT_SEC)
 
         # Get current working directory to preserve it
         cwd = os.getcwd()
@@ -268,13 +271,13 @@ def _run_with_sync(original_cmd, suppress_output=False):
         process = subprocess.Popen(cmd, **popen_kwargs)
 
         try:
-            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT)
+            _wait_for_ready_signal(sync_sock, process, _SYNC_TIMEOUT_SEC)
         except socket.timeout:
             # If we timeout, kill the process and raise an error
             if process.poll() is None:
                 process.terminate()
                 try:
-                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
@@ -285,16 +288,64 @@ def _run_with_sync(original_cmd, suppress_output=False):
         return process
 
 
+_RATE_PATTERN = re.compile(r'''
+      ^                   # Start of string
+      (                   # Group 1: The numeric value
+          \d+             #   One or more digits (integer part)
+          (?:\.\d+)?      #   Optional: decimal point followed by digits
+      )                   #   Examples: "10", "0.5", "100.25"
+      (                   # Group 2: Optional unit suffix
+          hz              #   "hz" - hertz
+          | khz           #   "khz" - kilohertz
+          | k             #   "k" - shorthand for kilohertz
+      )?                  #   Suffix is optional (bare number = Hz)
+      $                   # End of string
+  ''', re.VERBOSE | re.IGNORECASE)
+
+
+def _parse_sampling_rate(rate_str: str) -> int:
+    """Parse sampling rate string to microseconds."""
+    rate_str = rate_str.strip().lower()
+
+    match = _RATE_PATTERN.match(rate_str)
+    if not match:
+        raise argparse.ArgumentTypeError(
+            f"Invalid sampling rate format: {rate_str}. "
+            "Expected: number followed by optional suffix (hz, khz, k) with no spaces (e.g., 10khz)"
+        )
+
+    number_part = match.group(1)
+    suffix = match.group(2) or ''
+
+    # Determine multiplier based on suffix
+    suffix_map = {
+        'hz': 1,
+        'khz': 1000,
+        'k': 1000,
+    }
+    multiplier = suffix_map.get(suffix, 1)
+    hz = float(number_part) * multiplier
+    if hz <= 0:
+        raise argparse.ArgumentTypeError(f"Sampling rate must be positive: {rate_str}")
+
+    interval_usec = int(MICROSECONDS_PER_SECOND / hz)
+    if interval_usec < 1:
+        raise argparse.ArgumentTypeError(f"Sampling rate too high: {rate_str}")
+
+    return interval_usec
+
+
 def _add_sampling_options(parser):
     """Add sampling configuration options to a parser."""
     sampling_group = parser.add_argument_group("Sampling configuration")
     sampling_group.add_argument(
-        "-i",
-        "--interval",
-        type=int,
-        default=100,
-        metavar="MICROSECONDS",
-        help="sampling interval",
+        "-r",
+        "--sampling-rate",
+        type=_parse_sampling_rate,
+        default="1khz",
+        metavar="RATE",
+        dest="sample_interval_usec",
+        help="sampling rate (e.g., 10000, 10khz, 10k)",
     )
     sampling_group.add_argument(
         "-d",
@@ -482,14 +533,13 @@ def _sort_to_mode(sort_choice):
     }
     return sort_map.get(sort_choice, SORT_MODE_NSAMPLES)
 
-
-def _create_collector(format_type, interval, skip_idle, opcodes=False,
+def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=False,
                       output_file=None, compression='auto'):
     """Create the appropriate collector based on format type.
 
     Args:
         format_type: The output format ('pstats', 'collapsed', 'flamegraph', 'gecko', 'heatmap', 'binary')
-        interval: Sampling interval in microseconds
+        sample_interval_usec: Sampling interval in microseconds
         skip_idle: Whether to skip idle samples
         opcodes: Whether to collect opcode information (only used by gecko format
                  for creating interval markers in Firefox Profiler)
@@ -514,9 +564,9 @@ def _create_collector(format_type, interval, skip_idle, opcodes=False,
     # and is the only format that uses opcodes for interval markers
     if format_type == "gecko":
         skip_idle = False
-        return collector_class(interval, skip_idle=skip_idle, opcodes=opcodes)
+        return collector_class(sample_interval_usec, skip_idle=skip_idle, opcodes=opcodes)
 
-    return collector_class(interval, skip_idle=skip_idle)
+    return collector_class(sample_interval_usec, skip_idle=skip_idle)
 
 
 def _generate_output_filename(format_type, pid):
@@ -720,8 +770,8 @@ Examples:
   # Generate flamegraph from a script
   `python -m profiling.sampling run --flamegraph -o output.html script.py`
 
-  # Profile with custom interval and duration
-  `python -m profiling.sampling run -i 50 -d 30 script.py`
+  # Profile with custom rate and duration
+  `python -m profiling.sampling run -r 5khz -d 30 script.py`
 
   # Save collapsed stacks to file
   `python -m profiling.sampling run --collapsed -o stacks.txt script.py`
@@ -855,7 +905,7 @@ def _handle_attach(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.interval, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto')
     )
@@ -933,7 +983,7 @@ def _handle_run(args):
 
     # Create the appropriate collector
     collector = _create_collector(
-        args.format, args.interval, skip_idle, args.opcodes,
+        args.format, args.sample_interval_usec, skip_idle, args.opcodes,
         output_file=output_file,
         compression=getattr(args, 'compression', 'auto')
     )
@@ -960,7 +1010,7 @@ def _handle_run(args):
             if process.poll() is None:
                 process.terminate()
                 try:
-                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
@@ -975,7 +1025,7 @@ def _handle_live_attach(args, pid):
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
-        args.interval,
+        args.sample_interval_usec,
         skip_idle=skip_idle,
         sort_by="tottime",  # Default initial sort
         limit=20,  # Default limit
@@ -1022,7 +1072,7 @@ def _handle_live_run(args):
 
     # Create live collector with default settings
     collector = LiveStatsCollector(
-        args.interval,
+        args.sample_interval_usec,
         skip_idle=skip_idle,
         sort_by="tottime",  # Default initial sort
         limit=20,  # Default limit
