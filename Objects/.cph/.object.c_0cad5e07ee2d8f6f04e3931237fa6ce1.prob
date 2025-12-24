@@ -1,0 +1,1 @@
+{"name":"Local: object","url":"/Users/nickvandermerwe/repos/cpython/Objects/object.c","tests":[{"id":1766539391971,"input":"","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/nickvandermerwe/repos/cpython/Objects/object.c","group":"local","local":true}
