@@ -1024,6 +1024,8 @@
             _PyStackRef tuple_st;
             _PyStackRef sub_st;
             _PyStackRef res;
+            _PyStackRef ts;
+            _PyStackRef ss;
             // _GUARD_TOS_INT
             {
                 value = stack_pointer[-1];
@@ -1067,15 +1069,24 @@
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
                 assert(res_o != NULL);
-                PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
                 res = PyStackRef_FromPyObjectNew(res_o);
+                ts = tuple_st;
+                ss = sub_st;
+            }
+            // _POP_TOP_INT
+            {
+                value = ss;
+                assert(PyLong_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyLong_ExactDealloc);
+            }
+            // _POP_TOP
+            {
+                value = ts;
+                stack_pointer[-2] = res;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = tuple_st;
-                tuple_st = res;
-                stack_pointer[-1] = tuple_st;
-                PyStackRef_CLOSE(tmp);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -4144,6 +4155,8 @@
             _PyStackRef callable;
             _PyStackRef arg;
             _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _GUARD_NOS_NULL
@@ -4170,15 +4183,18 @@
                 arg = stack_pointer[-1];
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
                 assert(oparg == 1);
-                (void)callable;
-                (void)null;
                 STAT_INC(CALL, hit);
+                a = arg;
                 res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
+            }
+            // _POP_TOP
+            {
+                value = a;
                 stack_pointer[-3] = res;
                 stack_pointer += -2;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(arg);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             DISPATCH();
@@ -8280,6 +8296,8 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
+            _PyStackRef o;
+            _PyStackRef value;
             _PyStackRef *null;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
@@ -8359,9 +8377,14 @@
                 #else
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
+                o = owner;
+            }
+            // _POP_TOP
+            {
+                value = o;
                 stack_pointer[-1] = attr;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(owner);
+                PyStackRef_XCLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
@@ -11380,9 +11403,14 @@
             next_instr = this_instr;
             frame->instr_ptr = prev_instr;
             opcode = next_instr->op.code;
-            bool stop_tracing = (opcode == WITH_EXCEPT_START ||
-                                 opcode == RERAISE || opcode == CLEANUP_THROW ||
-                                 opcode == PUSH_EXC_INFO || opcode == INTERPRETER_EXIT);
+            bool stop_tracing = (
+                                 opcode == WITH_EXCEPT_START ||
+                                 opcode == RERAISE ||
+                                 opcode == CLEANUP_THROW ||
+                                 opcode == PUSH_EXC_INFO ||
+                                 opcode == INTERPRETER_EXIT ||
+                                 (opcode >= MIN_INSTRUMENTED_OPCODE && opcode != ENTER_EXECUTOR)
+            );
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int full = !_PyJit_translate_single_bytecode_to_trace(tstate, frame, next_instr, stop_tracing ? _DEOPT : 0);
             stack_pointer = _PyFrame_GetStackPointer(frame);
