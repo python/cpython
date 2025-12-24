@@ -1,0 +1,1 @@
+Fix :envvar:`PYTHONINSPECT` to correctly treat ``0`` as false.
