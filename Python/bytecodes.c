@@ -5296,7 +5296,7 @@ dummy_func(
             assert(current_executor == (_PyExecutorObject*)executor);
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
-            tstate->current_executor = (PyObject *)executor;
+            tstate->current_executor = (PyObject *)current_executor;
             if (!current_executor->vm_data.valid) {
                 assert(tstate->jit_exit->executor == current_executor);
                 assert(tstate->current_executor == executor);
