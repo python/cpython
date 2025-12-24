@@ -11,6 +11,7 @@
 
 #include "binary_io.h"
 #include "_remote_debugging.h"
+#include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include <string.h>
 
 #ifdef HAVE_ZSTD
@@ -410,12 +411,13 @@ writer_intern_string(BinaryWriter *writer, PyObject *string, uint32_t *index)
 }
 
 static inline int
-writer_intern_frame(BinaryWriter *writer, uint32_t filename_idx, uint32_t funcname_idx,
-                    int32_t lineno, int32_t end_lineno, int32_t column, int32_t end_column,
-                    uint8_t opcode, uint32_t *index)
+writer_intern_frame(BinaryWriter *writer, const FrameEntry *entry, uint32_t *index)
 {
     FrameKey lookup_key = {
-        filename_idx, funcname_idx, lineno, end_lineno, column, end_column, opcode
+        entry->filename_idx, entry->funcname_idx,
+        entry->lineno, entry->end_lineno,
+        entry->column, entry->end_column,
+        entry->opcode
     };
 
     void *existing = _Py_hashtable_get(writer->frame_hash, &lookup_key);
@@ -437,14 +439,7 @@ writer_intern_frame(BinaryWriter *writer, uint32_t filename_idx, uint32_t funcna
     *key = lookup_key;
 
     *index = (uint32_t)writer->frame_count;
-    FrameEntry *fe = &writer->frame_entries[writer->frame_count];
-    fe->filename_idx = filename_idx;
-    fe->funcname_idx = funcname_idx;
-    fe->lineno = lineno;
-    fe->end_lineno = end_lineno;
-    fe->column = column;
-    fe->end_column = end_column;
-    fe->opcode = opcode;
+    writer->frame_entries[writer->frame_count] = *entry;
 
     if (_Py_hashtable_set(writer->frame_hash, key, (void *)(uintptr_t)(*index + 1)) < 0) {
         PyMem_Free(key);
@@ -853,7 +848,7 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
 
         if (location != Py_None) {
             /* LocationInfo is a struct sequence or tuple with:
-             * (lineno, end_lineno, col_offset, end_col_offset) */
+             * (lineno, end_lineno, column, end_column) */
             PyObject *lineno_obj = PyTuple_Check(location) ?
                 PyTuple_GET_ITEM(location, 0) :
                 PyStructSequence_GET_ITEM(location, 0);
@@ -880,7 +875,7 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
             if (UNLIKELY(PyErr_Occurred() != NULL)) {
                 PyErr_Clear();
                 opcode = OPCODE_NONE;
-            } else if (opcode_long >= 0 && opcode_long <= 254) {
+            } else if (opcode_long >= 0 && opcode_long <= MAX_REAL_OPCODE) {
                 opcode = (uint8_t)opcode_long;
             }
         }
@@ -898,10 +893,17 @@ build_frame_stack(BinaryWriter *writer, PyObject *frame_list,
         }
 
         /* Intern frame with full location info */
+        FrameEntry frame_entry = {
+            .filename_idx = filename_idx,
+            .funcname_idx = funcname_idx,
+            .lineno = lineno,
+            .end_lineno = end_lineno,
+            .column = column,
+            .end_column = end_column,
+            .opcode = opcode
+        };
         uint32_t frame_idx;
-        if (writer_intern_frame(writer, filename_idx, funcname_idx,
-                                lineno, end_lineno, column, end_column,
-                                opcode, &frame_idx) < 0) {
+        if (writer_intern_frame(writer, &frame_entry, &frame_idx) < 0) {
             return -1;
         }
 
