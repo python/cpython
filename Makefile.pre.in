@@ -438,6 +438,7 @@ OBJECT_OBJS=	\
 		Objects/sliceobject.o \
 		Objects/structseq.o \
 		Objects/tupleobject.o \
+		Objects/recordobject.o \
 		Objects/typeobject.o \
 		Objects/unicodeobject.o \
 		Objects/unicodectype.o \
@@ -1100,6 +1101,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
+		$(srcdir)/Include/recordobject.h \
 		$(srcdir)/Include/unicodeobject.h \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
@@ -1138,6 +1140,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \
+		$(srcdir)/Include/cpython/recordobject.h \
 		$(srcdir)/Include/cpython/unicodeobject.h \
 		\
 		$(srcdir)/Include/internal/pycore_abstract.h \

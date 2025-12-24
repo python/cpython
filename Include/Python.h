@@ -89,6 +89,7 @@
 #include "rangeobject.h"
 #include "memoryobject.h"
 #include "tupleobject.h"
+#include "recordobject.h"
 #include "listobject.h"
 #include "dictobject.h"
 #include "cpython/odictobject.h"

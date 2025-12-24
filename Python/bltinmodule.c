@@ -3036,6 +3036,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("str",                   &PyUnicode_Type);
     SETBUILTIN("super",                 &PySuper_Type);
     SETBUILTIN("tuple",                 &PyTuple_Type);
+    SETBUILTIN("record",                &PyRecord_Type);
     SETBUILTIN("type",                  &PyType_Type);
     SETBUILTIN("zip",                   &PyZip_Type);
     debug = PyBool_FromLong(config->optimization_level == 0);
