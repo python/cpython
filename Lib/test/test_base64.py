@@ -665,6 +665,7 @@ class BaseXYTestCase(unittest.TestCase):
 
         tests = {
             b'': b'',
+            b'\x86\x4F\xD2\x6F\xB5\x59\xF7\x5B': b'HelloWorld',
             b'www.python.org': b'CxXl-AcVLsz/dgCA+t',
             bytes(range(255)): b"""009c61o!#m2NH?C3>iWS5d]J*6CRx17-skh9337x"""
                 b"""ar.{NbQB=+c[cR@eg&FcfFLssg=mfIi5%2YjuU>)kTv.7l}6Nnnj=AD"""
@@ -839,6 +840,21 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b85decode(b'czAdK'), b"xxx\x00")
         eq(base64.b85decode(b'czAet'), b"xxxx")
         eq(base64.b85decode(b'czAetcmMzZ'), b"xxxxx\x00\x00\x00")
+
+    def test_z85_padding(self):
+        eq = self.assertEqual
+
+        eq(base64.z85encode(b"x", pad=True), b'CMmZz')
+        eq(base64.z85encode(b"xx", pad=True), b'CZ6h*')
+        eq(base64.z85encode(b"xxx", pad=True), b'CZaDk')
+        eq(base64.z85encode(b"xxxx", pad=True), b'CZaET')
+        eq(base64.z85encode(b"xxxxx", pad=True), b'CZaETCMmZz')
+
+        eq(base64.z85decode(b'CMmZz'), b"x\x00\x00\x00")
+        eq(base64.z85decode(b'CZ6h*'), b"xx\x00\x00")
+        eq(base64.z85decode(b'CZaDk'), b"xxx\x00")
+        eq(base64.z85decode(b'CZaET'), b"xxxx")
+        eq(base64.z85decode(b'CZaETCMmZz'), b"xxxxx\x00\x00\x00")
 
     def test_a85decode_errors(self):
         illegal = (set(range(32)) | set(range(118, 256))) - set(b' \t\n\r\v')
