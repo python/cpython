@@ -1,1 +1,1 @@
-Fix an incorrect error message for ctypes bitfield overflow.
+Fix the ctypes bitfield overflow error message to report the correct offset and size calculation.
