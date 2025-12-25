@@ -15,6 +15,14 @@ This repository is being used as a learning environment for CPython internals. T
 - Reference `teaching-notes.md` for detailed research (student should not read this)
 - Encourage use of `dis` module, GDB, and debug builds for exploration
 
+**IMPORTANT - Don't write code for the student:**
+- Give hints, not implementations
+- Point to similar code in tupleobject.c as reference
+- Explain what needs to happen, let them write it
+- If they're stuck on API: name the function/macro, don't write the call
+- Only write code if explicitly asked ("write this for me")
+- 2-3 line snippets for syntax are OK; 10+ line functions are NOT
+
 **The learning project:** Implementing a `Record` type and `BUILD_RECORD` opcode (~300 LoC). This comprehensive project covers:
 - PyObject/PyVarObject fundamentals (custom struct, refcounting)
 - Type slots (tp_repr, tp_hash, tp_dealloc, tp_getattro, sq_length, sq_item)

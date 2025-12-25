@@ -171,11 +171,50 @@ static PySequenceMethods record_as_sequence = {
     0,                                           /* sq_contains */
 };
 
+#if SIZEOF_PY_UHASH_T > 4
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
+#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))  /* Rotate left 31 bits */
+#else
+#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
+#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
+#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
+#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
+#endif
+
 static Py_hash_t
 record_hash(PyRecordObject *v)
 {
-    // TODO
-    return -1;
+    Py_ssize_t i, len = Py_SIZE(v);
+    PyObject **item = v->ob_item;
+    PyObject *names = v->names;
+
+    Py_uhash_t acc = _PyHASH_XXPRIME_5;
+    for (i = 0; i < len; i++) {
+        Py_uhash_t lane = PyObject_Hash(item[i]);
+        if (lane == (Py_uhash_t)-1) {
+            return -1;
+        }
+        acc += lane * _PyHASH_XXPRIME_2;
+        acc = _PyHASH_XXROTATE(acc);
+        acc *= _PyHASH_XXPRIME_1;
+    }
+    Py_uhash_t lane = PyObject_Hash(names);
+    if (lane == (Py_uhash_t)-1) {
+        return -1;
+    }
+    acc += lane * _PyHASH_XXPRIME_2;
+    acc = _PyHASH_XXROTATE(acc);
+    acc *= _PyHASH_XXPRIME_1;
+
+    /* Add input length, mangled to keep the historical value of hash(()). */
+    acc += len ^ (_PyHASH_XXPRIME_5 ^ 3527539UL);
+
+    if (acc == (Py_uhash_t)-1) {
+        return 1546275796;
+    }
+    return acc;
 }
 
 PyObject *
@@ -212,8 +251,62 @@ record_getattro(PyObject *obj, PyObject *name)
 static PyObject *
 record_rich_compare(PyObject *v, PyObject *w, int op)
 {
-    // TODO
-    return NULL;
+    PyRecordObject *vr, *wr;
+    Py_ssize_t i;
+    Py_ssize_t vlen, wlen;
+
+    if (!PyRecord_Check(v) || !PyRecord_Check(w))
+        Py_RETURN_NOTIMPLEMENTED;
+
+    vr = (PyRecordObject *)v;
+    wr = (PyRecordObject *)w;
+
+    vlen = Py_SIZE(vr);
+    wlen = Py_SIZE(wr);
+
+    /* Note:  the corresponding code for lists has an "early out" test
+     * here when op is EQ or NE and the lengths differ.  That pays there,
+     * but Tim was unable to find any real code where EQ/NE tuple
+     * compares don't have the same length, so testing for it here would
+     * have cost without benefit.
+     */
+
+    /* Search for the first index where items are different.
+     * Note that because tuples are immutable, it's safe to reuse
+     * vlen and wlen across the comparison calls.
+     */
+    int k = PyObject_RichCompareBool(vr->names, wr->names, Py_EQ);
+    if (k < 0)
+        return NULL;
+    if (!k) {
+        if (op == Py_EQ) Py_RETURN_FALSE;
+        if (op == Py_NE) Py_RETURN_TRUE;
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+    for (i = 0; i < vlen && i < wlen; i++) {
+        int k = PyObject_RichCompareBool(vr->ob_item[i],
+                                         wr->ob_item[i], Py_EQ);
+        if (k < 0)
+            return NULL;
+        if (!k)
+            break;
+    }
+
+    if (i >= vlen || i >= wlen) {
+        /* No more items to compare -- compare sizes */
+        Py_RETURN_RICHCOMPARE(vlen, wlen, op);
+    }
+
+    /* We have an item that differs -- shortcuts for EQ/NE */
+    if (op == Py_EQ) {
+        Py_RETURN_FALSE;
+    }
+    if (op == Py_NE) {
+        Py_RETURN_TRUE;
+    }
+
+    /* Compare the final item again using the proper operator */
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 static PyObject *
