@@ -643,11 +643,11 @@ def _validate_args(args, parser):
         return
 
     # Warn about blocking mode with aggressive sampling intervals
-    if args.blocking and args.interval < 100:
+    if args.blocking and args.sample_interval_usec < 100:
         print(
-            f"Warning: --blocking with a {args.interval} µs interval will stop all threads "
-            f"{1_000_000 // args.interval} times per second. "
-            "Consider using --interval 1000 or higher to reduce overhead.",
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 10khz or lower to reduce overhead.",
             file=sys.stderr
         )
 
