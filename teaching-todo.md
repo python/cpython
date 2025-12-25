@@ -148,7 +148,7 @@ r == r2    # comparable
 - [x] Find `PySequenceMethods` in headers
 - [x] Study `sq_length` - returns `Py_ssize_t`
 - [x] Study `sq_item` - takes index, returns item (with INCREF!)
-- [~] **For Record:** Implement these so `r[0]` and `len(r)` work *(design understood, implementation pending)*
+- [x] **For Record:** Implement these so `r[0]` and `len(r)` work
 
 **Notes from session:**
 - `PySequenceMethods` contains: `sq_length`, `sq_concat`, `sq_repeat`, `sq_item`, `sq_ass_item`, `sq_contains`, etc.
@@ -243,38 +243,132 @@ r == r2    # comparable
 ## Phase 5: Implementation
 
 ### 5.1 Create the Header File
-- [ ] Create `Include/recordobject.h`
-- [ ] Define `RecordObject` struct
-- [ ] Declare `PyRecord_Type`
-- [ ] Declare `PyRecord_New()` constructor function
+- [x] Create `Include/recordobject.h`
+- [x] Define `RecordObject` struct
+- [x] Declare `PyRecord_Type`
+- [x] Declare `PyRecord_New()` constructor function
+
+**Notes from session:**
+- Two-level header structure: `Include/recordobject.h` (public) includes `Include/cpython/recordobject.h` (internal)
+- Must add `#include "recordobject.h"` to `Include/Python.h` for it to be visible
+- `PyRecord_Check` macro simplified to `Py_IS_TYPE(op, &PyRecord_Type)` (no subclass flag)
 
 ### 5.2 Implement the Type
-- [ ] Create `Objects/recordobject.c`
-- [ ] Implement `record_dealloc`
-- [ ] Implement `record_repr`
-- [ ] Implement `record_hash`
-- [ ] Implement `record_richcompare`
-- [ ] Implement `record_length` (sq_length)
-- [ ] Implement `record_item` (sq_item)
-- [ ] Implement `record_getattro` (attribute access by name)
-- [ ] Define `PyRecord_Type` with all slots filled
-- [ ] Implement `PyRecord_New()` - the C API constructor
+- [x] Create `Objects/recordobject.c`
+- [x] Implement `record_dealloc`
+- [x] Implement `record_repr`
+- [x] Implement `record_hash`
+- [x] Implement `record_richcompare`
+- [x] Implement `record_length` (sq_length)
+- [x] Implement `record_item` (sq_item)
+- [x] Implement `record_getattro` (attribute access by name)
+- [x] Define `PyRecord_Type` with all slots filled
+- [x] Implement `PyRecord_New()` - the C API constructor
+
+**Notes from session:**
+- Started by copying tupleobject.c, then stripped out complexity (clinic, free lists, etc.)
+- **GC gotcha:** Originally had GC alloc/track/untrack but no `Py_TPFLAGS_HAVE_GC` or `tp_traverse` - caused segfault. Fixed by removing GC entirely (simpler for learning)
+- **record_dealloc:** `Py_XDECREF(names)` + XDECREF each value, use XDECREF (handles NULL safely)
+- **record_repr:** Use `_PyUnicodeWriter`, format as `record(x=1, y=2)`, don't repr the field names (just write them directly)
+- **record_hash:** Copied xxHash pattern from tuple, hash names tuple + all values, `-1` → `-2` for actual -1 hash
+- **record_getattro:** Loop through names with `PyUnicode_Compare`, return value with INCREF, fallback to `PyObject_GenericGetAttr`
+- **record_richcompare:** Compare names first (if different, not equal), then values; return `Py_NotImplemented` for ordering
+- **record_new (tp_new):** Parse kwargs with `PyDict_Keys`/`PyDict_Values`, convert keys to tuple for names
 
 ### 5.3 Add the Opcode
-- [ ] Add `BUILD_RECORD` to `Lib/opcode.py` (pick unused number, needs argument)
-- [ ] Run `make regen-opcode` and `make regen-opcode-targets`
-- [ ] Implement `BUILD_RECORD` handler in `Python/ceval.c`
+- [x] Add `BUILD_RECORD` to `Lib/opcode.py` (pick unused number, needs argument)
+- [x] Run `make regen-opcode` and `make regen-opcode-targets`
+- [x] Implement `BUILD_RECORD` handler in `Python/ceval.c`
+
+**Notes from session:**
+- Used opcode 166 (was available)
+- Stack layout: `[names_tuple, val0, val1, ...]` - pop values in reverse, then pop names
+- Must add stack effect to compile.c: `case BUILD_RECORD: return -oparg;`
+- Regenerate with `./python.exe ./Tools/scripts/generate_opcode_h.py` and `./python.exe ./Python/makeopcodetargets.py`
 
 ### 5.4 Build System Integration
-- [ ] Add `recordobject.c` to the build (Makefile.pre.in or setup.py)
-- [ ] Add header to appropriate include lists
-- [ ] Register type in Python initialization
+- [x] Add `recordobject.c` to the build (Makefile.pre.in or setup.py)
+- [x] Add header to appropriate include lists
+- [x] Register type in Python initialization
+
+**Notes from session:**
+- Add `Objects/recordobject.o` to `OBJECT_OBJS` in Makefile.pre.in
+- Add both headers to `PYTHON_HEADERS` section
+- Register with `SETBUILTIN("record", &PyRecord_Type)` in `Python/bltinmodule.c`
 
 ### 5.5 Build and Test
-- [ ] Run `make` - fix any compilation errors
-- [ ] Test basic creation via C API
-- [ ] Test via manual bytecode or compiler modification
-- [ ] Verify all operations: indexing, len, hash, repr, equality, attribute access
+- [x] Run `make` - fix any compilation errors
+- [x] Test basic creation via C API
+- [x] Test via manual bytecode or compiler modification
+- [x] Verify all operations: indexing, len, hash, repr, equality, attribute access
+
+**Notes from session:**
+- All tests pass:
+  ```python
+  r = record(x=1, y=2)
+  print(r)       # record(x=1, y=2)
+  print(r.x)     # 1
+  print(r[0])    # 1
+  print(len(r))  # 2
+  print(hash(r)) # works
+  r2 = record(x=1, y=2)
+  print(r == r2) # True
+  ```
+
+---
+
+## Phase 6: Literal Syntax (Bonus)
+
+### 6.1 Grammar Extension
+- [x] Add `record` rule to `Grammar/python.gram`
+- [x] Choose syntax: `{| x=1, y=2 |}`
+- [x] Add to `atom` rule with lookahead `&'{'`
+
+**Notes from session:**
+- Reused `kwargs` from function call parsing for `x=1, y=2` syntax
+- Had to use separate tokens `'{' '|'` not `'{|'` (multi-char tokens don't exist)
+- Grammar rule: `| '{' '|' a=[kwargs] '|' '}' { _PyAST_Record(...) }`
+
+### 6.2 AST Node
+- [x] Add `Record(expr* keys, expr* values)` to `Parser/Python.asdl`
+- [x] Run `make regen-ast` to generate `_PyAST_Record`
+
+**Notes from session:**
+- Modeled after `Dict(expr* keys, expr* values)`
+- Regeneration creates `_PyAST_Record` function and `Record_kind` enum
+
+### 6.3 Parser Helpers
+- [x] Create `_PyPegen_get_record_keys` in `Parser/pegen.c`
+- [x] Create `_PyPegen_get_record_values` in `Parser/pegen.c`
+
+**Notes from session:**
+- `kwargs` returns `KeywordOrStarred*` items, not `KeyValuePair*` like dict
+- Had to unwrap each to get `keyword_ty`, then extract `.arg` (identifier) and `.value` (expression)
+- For keys, create `Name` expression from the identifier
+
+### 6.4 Compiler Integration
+- [x] Add `compiler_record` function in `Python/compile.c`
+- [x] Add `case Record_kind:` to `compiler_visit_expr`
+- [x] Add `case Record_kind:` to ALL switches that handle `Dict_kind`:
+  - `Python/ast.c` (2 switches!)
+  - `Python/ast_opt.c`
+  - `Python/ast_unparse.c`
+  - `Python/symtable.c`
+  - `Python/compile.c` (3 switches!)
+
+**Notes from session:**
+- **Key lesson:** Every switch on expression kinds needs the new case - easy to miss some!
+- `compiler_record`: Build names tuple as constant, VISIT each value, emit BUILD_RECORD
+- Extracting keys: `e->v.Record.keys` contains `expr_ty` Name nodes, access with `key_expr->v.Name.id`
+
+### 6.5 Final Result
+- [x] Literal syntax `{| x=1, y=2 |}` works
+- [x] Emits BUILD_RECORD opcode
+- [x] All features work with literal syntax
+
+**Notes from session:**
+- Full pipeline working: Grammar → Parser → AST → Compiler → Bytecode → Execution
+- Test: `r = {|x=1, y=2|}; print(r.x)` → `1`
 
 ---
 
@@ -313,16 +407,26 @@ assert r == r2
 
 ---
 
-## Files We'll Create/Modify
+## Files Created/Modified
 
-| File | Action | ~Lines |
-|------|--------|--------|
-| `Include/recordobject.h` | Create | 25 |
-| `Objects/recordobject.c` | Create | 200 |
-| `Lib/opcode.py` | Modify | 2 |
-| `Python/ceval.c` | Modify | 30 |
-| `Makefile.pre.in` | Modify | 5 |
-| `Python/bltinmodule.c` | Modify | 10 |
+| File | Action | Notes |
+|------|--------|-------|
+| `Include/recordobject.h` | Create | Public API header |
+| `Include/cpython/recordobject.h` | Create | Internal struct definition |
+| `Include/Python.h` | Modify | Add include for recordobject.h |
+| `Objects/recordobject.c` | Create | ~300 lines - type implementation |
+| `Lib/opcode.py` | Modify | Add BUILD_RECORD = 166 |
+| `Python/ceval.c` | Modify | BUILD_RECORD handler |
+| `Python/compile.c` | Modify | compiler_record, stack effect, expr switches |
+| `Makefile.pre.in` | Modify | Add recordobject.o and headers |
+| `Python/bltinmodule.c` | Modify | SETBUILTIN for record |
+| `Grammar/python.gram` | Modify | record rule, atom lookahead |
+| `Parser/Python.asdl` | Modify | Record AST node |
+| `Parser/pegen.c` | Modify | Helper functions for record keys/values |
+| `Python/ast.c` | Modify | Record_kind in validation switches |
+| `Python/ast_opt.c` | Modify | Record_kind case |
+| `Python/ast_unparse.c` | Modify | append_ast_record |
+| `Python/symtable.c` | Modify | Record_kind case |
 
 ---
 
