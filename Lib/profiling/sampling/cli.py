@@ -1104,7 +1104,7 @@ def _handle_live_run(args):
             # Process still running - terminate it
             process.terminate()
             try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
             except subprocess.TimeoutExpired:
                 process.kill()
         # Ensure process is fully terminated

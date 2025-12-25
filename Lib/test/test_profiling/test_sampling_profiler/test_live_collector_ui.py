@@ -11,7 +11,7 @@ import tempfile
 import time
 import unittest
 from unittest import mock
-from test.support import requires, is_emscripten
+from test.support import requires, requires_remote_subprocess_debugging
 from test.support.import_helper import import_module
 
 # Only run these tests if curses is available
@@ -821,6 +821,7 @@ class TestLiveCollectorWithMockDisplayHelpers(unittest.TestCase):
         self.assertTrue(any("PID" in line for line in lines))
 
 
+@requires_remote_subprocess_debugging()
 class TestLiveModeErrors(unittest.TestCase):
     """Tests running error commands in the live mode fails gracefully."""
 
@@ -837,7 +838,6 @@ class TestLiveModeErrors(unittest.TestCase):
         if n_times >= 500:
             mock_self.display.simulate_input(ord('q'))
 
-    @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_failed_module_live(self):
         """Test that running a existing module that fails exists with clean error."""
 
@@ -862,7 +862,6 @@ class TestLiveModeErrors(unittest.TestCase):
                 '\x1b[31mtest test_asdasd crashed -- Traceback (most recent call last):'
             )
 
-    @unittest.skipIf(is_emscripten, "subprocess not available")
     def test_run_failed_script_live(self):
         """Test that running a failing script exits with clean error."""
         script = tempfile.NamedTemporaryFile(suffix=".py")
