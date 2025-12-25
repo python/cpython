@@ -562,7 +562,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "binary":
         if output_file is None:
             raise ValueError("Binary format requires an output file")
-        return collector_class(output_file, interval, skip_idle=skip_idle,
+        return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
                               compression=compression)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
