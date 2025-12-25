@@ -245,7 +245,7 @@ A :class:`POP3` instance has the following methods:
    .. versionadded:: 3.4
 
 
-.. method:: POP3.auth(mechanism, authobject=None, initial_response=None)
+.. method:: POP3.auth(self, mechanism, authobject, *, initial_response_ok=True)
 
    Authenticate using the POP3 ``AUTH`` command as specified in :rfc:`5034`.
 

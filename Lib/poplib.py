@@ -451,7 +451,7 @@ class POP3:
             if len(cmd.encode('ascii')) + 2 <= 255:
                 self._putcmd(cmd)
             else:
-                self._putcmd(f'AUTH {mech}') 
+                self._putcmd(f'AUTH {mech}')
         else:
             self._putcmd(f'AUTH {mech}')
 
@@ -543,7 +543,7 @@ if HAVE_SSL:
             SSL/TLS session.
             """
             raise error_proto('-ERR TLS session already established')
-        
+
 
     __all__.append("POP3_SSL")
 
