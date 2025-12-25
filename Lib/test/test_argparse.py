@@ -5409,6 +5409,73 @@ class TestHelpRawDescription(HelpTestCase):
     version = ''
 
 
+class TestHelpParagraph(HelpTestCase):
+    """Test the ParagraphHelpFormatter"""
+
+    parser_signature = Sig(
+        prog='PROG', formatter_class=argparse.ParagraphHelpFormatter,
+        description='This text should be wrapped as appropriate to keep\n'
+                    'things nice and very, very tidy.\n'
+                    '\n'
+                    'Paragraphs should be preserved.\n'
+                    '    * bullet list items\n'
+                    '      should wrap to an appropriate place,\n'
+                    '      should such wrapping be required.\n'
+                    '    * short bullet\n'
+    )
+
+    argument_signatures = [
+        Sig('--foo', help='    foo help should also\n'
+                          'appear as given here\n'
+                          '\n'
+                          'along with a second paragraph, if called for\n'
+                          '  * bullet'),
+        Sig('spam', help='spam help'),
+    ]
+    argument_group_signatures = [
+        (Sig('title', description='short help text\n'
+                                  '\n'
+                                  'Longer help text, containing useful\n'
+                                  'contextual information for the var in\n'
+                                  'question\n'
+                                  '* and a bullet\n'),
+            [Sig('--bar', help='bar help')]),
+    ]
+    usage = '''\
+        usage: PROG [-h] [--foo FOO] [--bar BAR] spam
+        '''
+    help = usage + '''\
+
+        This text should be wrapped as appropriate to keep things nice and very, very
+        tidy.
+
+        Paragraphs should be preserved.
+            * bullet list items should wrap to an appropriate place, should such
+              wrapping be required.
+            * short bullet
+
+        positional arguments:
+          spam        spam help
+
+        options:
+          -h, --help  show this help message and exit
+          --foo FOO   foo help should also appear as given here
+
+                      along with a second paragraph, if called for
+                        * bullet
+
+        title:
+          short help text
+
+          Longer help text, containing useful contextual information for the var in
+          question
+          * and a bullet
+
+          --bar BAR   bar help
+        '''
+    version = ''
+
+
 class TestHelpArgumentDefaults(HelpTestCase):
     """Test the ArgumentDefaultsHelpFormatter"""
 
