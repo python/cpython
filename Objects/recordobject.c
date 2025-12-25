@@ -29,7 +29,7 @@ record_alloc(Py_ssize_t size)
                     sizeof(PyObject *))) / sizeof(PyObject *)) {
             return (PyRecordObject *)PyErr_NoMemory();
         }
-        op = PyObject_GC_NewVar(PyRecordObject, &PyRecord_Type, size);
+        op = PyObject_NewVar(PyRecordObject, &PyRecord_Type, size);
         if (op == NULL)
             return NULL;
     }
@@ -47,7 +47,6 @@ PyAPI_FUNC(PyObject *) PyRecord_New(Py_ssize_t size)
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
-    record_gc_track(op);
     return (PyObject *) op;
 }
 
@@ -55,7 +54,6 @@ static void
 record_dealloc(PyRecordObject *op)
 {
     Py_ssize_t len =  Py_SIZE(op);
-    PyObject_GC_UnTrack(op);
     Py_TRASHCAN_BEGIN(op, record_dealloc)
     Py_XDECREF(op->names);
     if (len > 0) {
@@ -176,6 +174,7 @@ static PySequenceMethods record_as_sequence = {
 static Py_hash_t
 record_hash(PyRecordObject *v)
 {
+    // TODO
     return -1;
 }
 
@@ -189,13 +188,46 @@ record_getattro(PyObject *obj, PyObject *name)
 static PyObject *
 record_rich_compare(PyObject *v, PyObject *w, int op)
 {
+    // TODO
     return NULL;
 }
 
 static PyObject *
 record_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    return NULL;
+    PyObject *return_value = NULL;
+    PyObject *keys_list, *values_list;
+    Py_ssize_t n, i;
+
+    if (PyTuple_GET_SIZE(args) != 0) {
+        PyErr_SetString(PyExc_TypeError, "record() takes no positional arguments");
+        return NULL;
+    }
+
+    if (kwargs == NULL || PyDict_GET_SIZE(kwargs) == 0) {
+        PyRecordObject *rec = (PyRecordObject*) PyRecord_New(0);
+        if (rec == NULL) return NULL;
+        rec->names = PyTuple_New(0);
+        return (PyObject*)rec;
+    }
+
+    n = PyDict_GET_SIZE(kwargs);
+    PyRecordObject *rec = (PyRecordObject*) PyRecord_New(n);
+    if (rec == NULL) return NULL;
+
+    keys_list = PyDict_Keys(kwargs);
+    rec->names = PyList_AsTuple(keys_list);
+    Py_DECREF(keys_list);
+
+    values_list = PyDict_Values(kwargs);
+    for (i = 0; i < n; i++) {
+        PyObject *val = PyList_GET_ITEM(values_list, i);
+        Py_INCREF(val);
+        rec->ob_item[i] = val;
+    }
+    Py_DECREF(values_list);
+
+    return (PyObject*) rec;
 }
 
 PyTypeObject PyRecord_Type = {
@@ -237,6 +269,6 @@ PyTypeObject PyRecord_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     record_new,                                 /* tp_new */
-    PyObject_GC_Del,                            /* tp_free */
+    PyObject_Free,                            /* tp_free */
     0,
 };
