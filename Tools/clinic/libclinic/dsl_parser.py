@@ -862,6 +862,9 @@ class DSLParser:
             line = match[1]
             version = self.parse_version(match[2])
 
+        if not self.expecting_parameters:
+            fail(f'parameters cannot follow var-keyword parameter: {line!r}')
+
         func = self.function
         match line:
             case '*':
@@ -877,10 +880,6 @@ class DSLParser:
 
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
-
-        if not self.expecting_parameters:
-            fail('Encountered parameter line when not expecting '
-                 f'parameters: {line}')
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -932,8 +931,9 @@ class DSLParser:
                 for p in self.function.parameters.values()
             )
             if has_non_positional_param:
-                fail(f"Function {self.function.name!r} has an "
-                     f"invalid parameter declaration (**kwargs?): {line!r}")
+                fail(f'Function {self.function.name!r} uses a var-keyword parameter '
+                     f'and other non-positional parameters, which Argument Clinic '
+                     f'does not currently support: {line!r}')
             is_var_keyword = True
             parameter = function_args.kwarg
         else:
@@ -1182,9 +1182,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '*' when not expecting parameters")
-
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1240,9 +1237,6 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
-        if not self.expecting_parameters:
-            fail("Encountered '/' when not expecting parameters")
-
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
