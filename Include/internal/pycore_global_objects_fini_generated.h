@@ -13,7 +13,7 @@ static inline void
 _PyStaticObject_CheckRefcnt(PyObject *obj) {
     if (!_Py_IsImmortal(obj)) {
         fprintf(stderr, "Immortal Object has less refcnt than expected.\n");
-        PyUnstable_Object_Dump(obj);
+        PyObject_Dump(obj);
     }
 }
 #endif
