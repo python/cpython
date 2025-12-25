@@ -476,8 +476,10 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
-    op(_IS_OP, (left, right -- b)) {
+    op(_IS_OP, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_CONTAINS_OP, (left, right -- b)) {
