@@ -76,18 +76,18 @@ class SampleProfiler:
             )
         return unwinder
 
-    def sample(self, collector, duration_sec=10, *, async_aware=False):
+    def sample(self, collector, duration_sec=None, *, async_aware=False):
         sample_interval_sec = self.sample_interval_usec / 1_000_000
-        running_time = 0
         num_samples = 0
         errors = 0
         interrupted = False
+        running_time_sec = 0
         start_time = next_time = time.perf_counter()
         last_sample_time = start_time
         realtime_update_interval = 1.0  # Update every second
         last_realtime_update = start_time
         try:
-            while running_time < duration_sec:
+            while duration_sec is None or running_time_sec < duration_sec:
                 # Check if live collector wants to stop
                 if hasattr(collector, 'running') and not collector.running:
                     break
@@ -104,7 +104,7 @@ class SampleProfiler:
                                 stack_frames = self.unwinder.get_stack_trace()
                             collector.collect(stack_frames)
                     except ProcessLookupError as e:
-                        duration_sec = current_time - start_time
+                        running_time_sec = current_time - start_time
                         break
                     except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
                         collector.collect_failed_sample()
@@ -135,25 +135,25 @@ class SampleProfiler:
                     num_samples += 1
                     next_time += sample_interval_sec
 
-                running_time = time.perf_counter() - start_time
+                running_time_sec = time.perf_counter() - start_time
         except KeyboardInterrupt:
             interrupted = True
-            running_time = time.perf_counter() - start_time
+            running_time_sec = time.perf_counter() - start_time
             print("Interrupted by user.")
 
         # Clear real-time stats line if it was being displayed
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
-        sample_rate = num_samples / running_time if running_time > 0 else 0
+        sample_rate = num_samples / running_time_sec if running_time_sec > 0 else 0
         error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
-        expected_samples = int(duration_sec / sample_interval_sec)
+        expected_samples = int(running_time_sec / sample_interval_sec)
         missed_samples = (expected_samples - num_samples) / expected_samples * 100 if expected_samples > 0 else 0
 
         # Don't print stats for live mode (curses is handling display)
         is_live_mode = LiveStatsCollector is not None and isinstance(collector, LiveStatsCollector)
         if not is_live_mode:
-            print(f"Captured {num_samples:n} samples in {fmt(running_time, 2)} seconds")
+            print(f"Captured {num_samples:n} samples in {fmt(running_time_sec, 2)} seconds")
             print(f"Sample rate: {fmt(sample_rate, 2)} samples/sec")
             print(f"Error rate: {fmt(error_rate, 2)}")
 
@@ -166,7 +166,7 @@ class SampleProfiler:
 
         # Pass stats to flamegraph collector if it's the right type
         if hasattr(collector, 'set_stats'):
-            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate, missed_samples, mode=self.mode)
+            collector.set_stats(self.sample_interval_usec, running_time_sec, sample_rate, error_rate, missed_samples, mode=self.mode)
 
         if num_samples < expected_samples and not is_live_mode and not interrupted:
             print(
@@ -363,7 +363,7 @@ def sample(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -378,7 +378,8 @@ def sample(
     Args:
         pid: Process ID to sample
         collector: Collector instance to use for gathering samples
-        duration_sec: How long to sample for (seconds)
+        duration_sec: How long to sample for (seconds), or None to run until
+            the process exits or interrupted
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
@@ -427,7 +428,7 @@ def sample_live(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,

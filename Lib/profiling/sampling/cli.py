@@ -120,8 +120,8 @@ def _build_child_profiler_args(args):
     # Sampling options
     hz = MICROSECONDS_PER_SECOND // args.sample_interval_usec
     child_args.extend(["-r", str(hz)])
-    child_args.extend(["-d", str(args.duration)])
-
+    if args.duration is not None:
+        child_args.extend(["-d", str(args.duration)])
     if args.all_threads:
         child_args.append("-a")
     if args.realtime_stats:
@@ -356,9 +356,9 @@ def _add_sampling_options(parser):
         "-d",
         "--duration",
         type=int,
-        default=10,
+        default=None,
         metavar="SECONDS",
-        help="Sampling duration",
+        help="Sampling duration (default: run to completion)",
     )
     sampling_group.add_argument(
         "-a",
@@ -562,7 +562,7 @@ def _create_collector(format_type, sample_interval_usec, skip_idle, opcodes=Fals
     if format_type == "binary":
         if output_file is None:
             raise ValueError("Binary format requires an output file")
-        return collector_class(output_file, interval, skip_idle=skip_idle,
+        return collector_class(output_file, sample_interval_usec, skip_idle=skip_idle,
                               compression=compression)
 
     # Gecko format never skips idle (it needs both GIL and CPU data)
@@ -643,11 +643,11 @@ def _validate_args(args, parser):
         return
 
     # Warn about blocking mode with aggressive sampling intervals
-    if args.blocking and args.interval < 100:
+    if args.blocking and args.sample_interval_usec < 100:
         print(
-            f"Warning: --blocking with a {args.interval} µs interval will stop all threads "
-            f"{1_000_000 // args.interval} times per second. "
-            "Consider using --interval 1000 or higher to reduce overhead.",
+            f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
+            f"{1_000_000 // args.sample_interval_usec} times per second. "
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
             file=sys.stderr
         )
 
@@ -1107,7 +1107,7 @@ def _handle_live_run(args):
         if process.poll() is None:
             process.terminate()
             try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()

@@ -241,8 +241,8 @@ is unaware it is being profiled.
 When profiling production systems, keep these guidelines in mind:
 
 Start with shorter durations (10-30 seconds) to get quick results, then extend
-if you need more statistical accuracy. The default 10-second duration is usually
-sufficient to identify major hotspots.
+if you need more statistical accuracy. By default, profiling runs until the
+target process completes, which is usually sufficient to identify major hotspots.
 
 If possible, profile during representative load rather than peak traffic.
 Profiles collected during normal operation are easier to interpret than those
@@ -329,7 +329,7 @@ The default configuration works well for most use cases:
    * - Default for ``--sampling-rate`` / ``-r``
      - 1 kHz
    * - Default for ``--duration`` / ``-d``
-     - 10 seconds
+     - Run to completion
    * - Default for ``--all-threads`` / ``-a``
      - Main thread only
    * - Default for ``--native``
@@ -363,15 +363,14 @@ cost of slightly higher profiler CPU usage. Lower rates reduce profiler
 overhead but may miss short-lived functions. For most applications, the
 default rate provides a good balance between accuracy and overhead.
 
-The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. The
-default is 10 seconds::
+The :option:`--duration` option (:option:`-d`) sets how long to profile in seconds. By
+default, profiling continues until the target process exits or is interrupted::
 
    python -m profiling.sampling run -d 60 script.py
 
-Longer durations collect more samples and produce more statistically reliable
-results, especially for code paths that execute infrequently. When profiling
-a program that runs for a fixed time, you may want to set the duration to
-match or exceed the expected runtime.
+Specifying a duration is useful when attaching to long-running processes or when
+you want to limit profiling to a specific time window. When profiling a script,
+the default behavior of running to completion is usually what you want.
 
 
 Thread selection
@@ -1394,7 +1393,7 @@ Sampling options
 
 .. option:: -d <seconds>, --duration <seconds>
 
-   Profiling duration in seconds. Default: 10.
+   Profiling duration in seconds. Default: run to completion.
 
 .. option:: -a, --all-threads
 
