@@ -120,8 +120,8 @@ def _build_child_profiler_args(args):
     # Sampling options
     hz = MICROSECONDS_PER_SECOND // args.sample_interval_usec
     child_args.extend(["-r", str(hz)])
-    child_args.extend(["-d", str(args.duration)])
-
+    if args.duration is not None:
+        child_args.extend(["-d", str(args.duration)])
     if args.all_threads:
         child_args.append("-a")
     if args.realtime_stats:
@@ -356,9 +356,9 @@ def _add_sampling_options(parser):
         "-d",
         "--duration",
         type=int,
-        default=10,
+        default=None,
         metavar="SECONDS",
-        help="Sampling duration",
+        help="Sampling duration (default: run to completion)",
     )
     sampling_group.add_argument(
         "-a",
