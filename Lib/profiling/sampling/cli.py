@@ -647,7 +647,7 @@ def _validate_args(args, parser):
         print(
             f"Warning: --blocking with a {args.sample_interval_usec} µs interval will stop all threads "
             f"{1_000_000 // args.sample_interval_usec} times per second. "
-            "Consider using --sampling-rate 10khz or lower to reduce overhead.",
+            "Consider using --sampling-rate 1khz or lower to reduce overhead.",
             file=sys.stderr
         )
 
