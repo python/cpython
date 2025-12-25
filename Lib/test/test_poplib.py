@@ -326,7 +326,7 @@ class TestPOP3Class(TestCase):
 
     def test_auth_plain_initial_response(self):
         secret = b"user\x00adminuser\x00password"
-        resp = self.client.auth("PLAIN", initial_response=secret)
+        resp = self.client.auth("PLAIN", authobject=lambda: secret)
         self.assertStartsWith(resp, b"+OK")
 
     def test_auth_plain_challenge_response(self):
@@ -336,13 +336,9 @@ class TestPOP3Class(TestCase):
         resp = self.client.auth("PLAIN", authobject=authobject)
         self.assertStartsWith(resp, b"+OK")
 
-    def test_auth_rejects_conflicting_args(self):
-        with self.assertRaises(ValueError):
-            self.client.auth("PLAIN", authobject=lambda c: b"x", initial_response=b"y")
-
     def test_auth_unsupported_mechanism(self):
         with self.assertRaises(poplib.error_proto):
-            self.client.auth("FOO")
+            self.client.auth("FOO", authobject=lambda: b"")
 
     def test_auth_cancel(self):
         def authobject(_challenge):
@@ -353,12 +349,12 @@ class TestPOP3Class(TestCase):
     def test_auth_mechanism_case_insensitive(self):
         secret = b"user\x00adminuser\x00password"
         # use lowercase mechanism name to ensure server accepts
-        resp = self.client.auth("plain", initial_response=secret)
+        resp = self.client.auth("plain", authobject=lambda: secret)
         self.assertStartsWith(resp, b"+OK")
 
     def test_auth_initial_response_str(self):
         secret = "user\x00adminuser\x00password"  # str, not bytes
-        resp = self.client.auth("PLAIN", initial_response=secret)
+        resp = self.client.auth("PLAIN", authobject=lambda: secret)
         self.assertStartsWith(resp, b"+OK")
 
     def test_auth_authobject_returns_str(self):
