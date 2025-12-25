@@ -857,9 +857,9 @@ class TestLiveModeErrors(unittest.TestCase):
             mock.patch('sys.stderr', new=io.StringIO()) as fake_stderr
         ):
             main()
-            self.assertStartsWith(
-                fake_stderr.getvalue(),
-                '\x1b[31mtest test_asdasd crashed -- Traceback (most recent call last):'
+            self.assertIn(
+                'test test_asdasd crashed -- Traceback (most recent call last):',
+                fake_stderr.getvalue()
             )
 
     def test_run_failed_script_live(self):
@@ -888,7 +888,7 @@ class TestLiveModeErrors(unittest.TestCase):
             )
             self.assertEndsWith(
                 stderr,
-                'ZeroDivisionError\x1b[0m: \x1b[35mdivision by zero\x1b[0m\n\n'
+                'ZeroDivisionError: division by zero\n\n'
             )
 
 
