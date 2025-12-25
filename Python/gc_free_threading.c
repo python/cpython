@@ -907,9 +907,9 @@ static void
 queue_untracked_obj_decref(PyObject *op, struct collection_state *state)
 {
     assert(Py_REFCNT(op) == 0);
-    // We have to treat frozen objects as untracked in this function or else
-    // they might be picked up in a future collection, which breaks the assumption
-    // that all incoming objects have a non-zero reference count.
+    // gh-142975: We have to treat frozen objects as untracked in this function
+    // or else they might be picked up in a future collection, which breaks the
+    // assumption that all incoming objects have a non-zero reference count.
     if (!_PyObject_GC_IS_TRACKED(op) || gc_is_frozen(op)) {
         // GC objects with zero refcount are handled subsequently by the
         // GC as if they were cyclic trash, but we have to handle dead
