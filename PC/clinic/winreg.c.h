@@ -1199,9 +1199,9 @@ PyDoc_STRVAR(winreg_QueryValue__doc__,
 "\n"
 "Values in the registry have name, type, and data components. This method\n"
 "retrieves the data for a key\'s first value that has a NULL name.\n"
-"But since the underlying API call doesn\'t return the type, you\'ll\n"
-"probably be happier using QueryValueEx; this function is just here for\n"
-"completeness.");
+"But since the underlying API call doesn\'t return the type and only\n"
+"supports REG_SZ, you\'ll probably be happier using QueryValueEx; this\n"
+"function is just here for completeness.");
 
 #define WINREG_QUERYVALUE_METHODDEF    \
     {"QueryValue", _PyCFunction_CAST(winreg_QueryValue), METH_FASTCALL, winreg_QueryValue__doc__},
@@ -1262,7 +1262,8 @@ PyDoc_STRVAR(winreg_QueryValueEx__doc__,
 "Behaves mostly like QueryValue(), but also returns the type of the\n"
 "specified value name associated with the given open registry key.\n"
 "\n"
-"The return value is a tuple of the value and the type_id.");
+"The return value is a tuple of (value, type), where type is an integer\n"
+"identifying the registry type (e.g., winreg.REG_SZ, winreg.REG_DWORD).");
 
 #define WINREG_QUERYVALUEEX_METHODDEF    \
     {"QueryValueEx", _PyCFunction_CAST(winreg_QueryValueEx), METH_FASTCALL, winreg_QueryValueEx__doc__},
@@ -1837,4 +1838,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=4f78646e9b48780e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7acf1902c8754e9b input=a9049054013a1b77]*/

@@ -378,7 +378,8 @@ This module offers the following functions:
 
 .. function:: QueryValue(key, sub_key)
 
-   Retrieves the unnamed value for a key, as a string.
+   Retrieves the unnamed value for a key. This function only works with
+   :const:`REG_SZ` type values and always returns a :class:`str`.
 
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
@@ -389,8 +390,8 @@ This module offers the following functions:
 
    Values in the registry have name, type, and data components. This method
    retrieves the data for a key's first value that has a ``NULL`` name. But the
-   underlying API call doesn't return the type, so always use
-   :func:`QueryValueEx` if possible.
+   underlying API call doesn't return the type and only supports :const:`REG_SZ`,
+   so always use :func:`QueryValueEx` if possible.
 
    .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValue
 
@@ -410,11 +411,13 @@ This module offers the following functions:
    +-------+-----------------------------------------+
    | Index | Meaning                                 |
    +=======+=========================================+
-   | ``0`` | The value of the registry item.         |
+   | ``0`` | The value of the registry item. The     |
+   |       | type depends on the registry type (see  |
+   |       | :ref:`Value Types <value-types>`).      |
    +-------+-----------------------------------------+
    | ``1`` | An integer giving the registry type for |
-   |       | this value (see table in docs for       |
-   |       | :meth:`SetValueEx`)                     |
+   |       | this value (see :ref:`Value Types       |
+   |       | <value-types>`).                        |
    +-------+-----------------------------------------+
 
    .. audit-event:: winreg.QueryValue key,sub_key,value_name winreg.QueryValueEx

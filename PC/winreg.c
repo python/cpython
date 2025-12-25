@@ -1488,14 +1488,14 @@ Retrieves the unnamed value for a key.
 
 Values in the registry have name, type, and data components. This method
 retrieves the data for a key's first value that has a NULL name.
-But since the underlying API call doesn't return the type, you'll
-probably be happier using QueryValueEx; this function is just here for
-completeness.
+But since the underlying API call doesn't return the type and only
+supports REG_SZ, you'll probably be happier using QueryValueEx; this
+function is just here for completeness.
 [clinic start generated code]*/
 
 static PyObject *
 winreg_QueryValue_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
-/*[clinic end generated code: output=b665ce9ae391fda9 input=41cafbbf423b21d6]*/
+/*[clinic end generated code: output=b665ce9ae391fda9 input=5399c0495cade4b0]*/
 {
     LONG rc;
     HKEY childKey = key;
@@ -1587,12 +1587,13 @@ Retrieves the type and value of a specified sub-key.
 Behaves mostly like QueryValue(), but also returns the type of the
 specified value name associated with the given open registry key.
 
-The return value is a tuple of the value and the type_id.
+The return value is a tuple of (value, type), where type is an integer
+identifying the registry type (e.g., winreg.REG_SZ, winreg.REG_DWORD).
 [clinic start generated code]*/
 
 static PyObject *
 winreg_QueryValueEx_impl(PyObject *module, HKEY key, const wchar_t *name)
-/*[clinic end generated code: output=2cdecaa44c8c333e input=cf366cada4836891]*/
+/*[clinic end generated code: output=2cdecaa44c8c333e input=131cf296d605685e]*/
 {
     long rc;
     BYTE *retBuf, *tmp;
