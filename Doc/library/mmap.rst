@@ -212,7 +212,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
          Writable :term:`bytes-like object` is now accepted.
 
 
-   .. method:: flush([offset[, size]], flags=MS_SYNC)
+   .. method:: flush([offset[, size]], *, flags=MS_SYNC)
 
       Flushes changes made to the in-memory copy of a file back to disk. Without
       use of this call there is no guarantee that changes are written back before
