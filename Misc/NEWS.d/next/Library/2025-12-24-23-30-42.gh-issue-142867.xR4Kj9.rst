@@ -1,0 +1,2 @@
+Fix :mod:`trace` module incorrectly marking deferred annotations (PEP 649)
+as not covered in ``--count --missing`` mode.
