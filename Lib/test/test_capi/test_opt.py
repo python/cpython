@@ -1925,9 +1925,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         # When the result of type(...) is known, _CALL_TYPE_1 is replaced with
-        # _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW which is optimized away in
+        # _SHUFFLE_2_LOAD_CONST_INLINE_BORROW which is optimized away in
         # remove_unneeded_uops.
         self.assertNotIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_SHUFFLE_2_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_CALL_LOAD_CONST_INLINE_BORROW", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
@@ -1946,6 +1947,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
+
+    def test_call_type_1_pop_top(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                foo = eval('42')
+                x += type(foo) is int
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_tuple_1_pop_top(self):
         def testfunc(n):
@@ -2509,6 +2525,27 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
 
         self.assertIn("_LOAD_ATTR_INSTANCE_VALUE", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_load_attr_with_hint(self):
+        def testfunc(n):
+            class C:
+                pass
+            c = C()
+            c.x = 42
+            for i in range(_testinternalcapi.SHARED_KEYS_MAX_SIZE - 1):
+                setattr(c, f"_{i}", None)
+            x = 0
+            for i in range(n):
+                x += c.x
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_WITH_HINT", uops)
         self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
@@ -3076,6 +3113,86 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP", uops)
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_binary_subscr_tuple_int(self):
+        def testfunc(n):
+            t = (1,)
+            x = 0
+            for _ in range(n):
+                y = t[0]
+                x += y
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
+    def test_143026(self):
+        # https://github.com/python/cpython/issues/143026
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
+        import gc
+        thresholds = gc.get_threshold()
+        try:
+            gc.set_threshold(1)
+
+            def f1():
+                for i in range(5000):
+                    globals()[''] = i
+
+            f1()
+        finally:
+            gc.set_threshold(*thresholds)
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_143092(self):
+        def f1():
+            a = "a"
+            for i in range(50):
+                x = a[i % len(a)]
+
+            s = ""
+            for _ in range(10):
+                s += ""
+
+            class A: ...
+            class B: ...
+
+            match s:
+                case int(): ...
+                case str(): ...
+                case dict(): ...
+
+            (
+                u0,
+                *u1,
+                u2,
+                u4,
+                u5,
+                u6,
+                u7,
+                u8,
+                u9, u10, u11,
+                u12, u13, u14, u15, u16, u17, u18, u19, u20, u21, u22, u23, u24, u25, u26, u27, u28, u29,
+            ) = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                 None, None, None, None, None, None, None, None,]
+
+            s = ""
+            for _ in range(10):
+                s += ""
+                s += ""
+
+        for i in range(TIER2_THRESHOLD * 10):
+            f1()
 
 def global_identity(x):
     return x
