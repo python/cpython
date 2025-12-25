@@ -130,7 +130,7 @@ class FieldsTestBase(StructCheckMixin):
             self.check_struct(S)
             self.assertEqual(S.largeField.bit_size, size * 8)
 
-    def test_bitfield_overflow_error_message_gh143164(self):
+    def test_bitfield_overflow_error_message(self):
         with self.assertRaisesRegex(
             ValueError,
             r"bit field 'x' overflows its type \(0 \+ 9 > 8\)",
