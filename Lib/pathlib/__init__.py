@@ -1215,8 +1215,18 @@ class Path(PurePath):
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS
-            if not exist_ok or not self.is_dir():
+            if not exist_ok:
                 raise
+
+            if not self.is_dir():
+                if not self.exists():
+                    try:
+                        os.mkdir(self, mode)
+                    except FileExistsError:
+                        if not self.is_dir():
+                            raise
+                else:
+                    raise
 
     def chmod(self, mode, *, follow_symlinks=True):
         """

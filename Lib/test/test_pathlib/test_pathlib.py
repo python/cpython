@@ -2495,6 +2495,59 @@ class PathTest(PurePathTest):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
+    def test_mkdir_exist_ok_concurrent_delete(self):
+        # Test for TOCTOU race condition with real threading.
+        # One thread repeatedly creates a directory with exist_ok=True,
+        # another thread repeatedly deletes it. This should never raise
+        # FileExistsError once the directory has been deleted.
+        import threading
+        import time
+
+        p = self.cls(self.base, 'dirTOCTOU')
+        self.assertFalse(p.exists())
+
+        p.mkdir()
+        self.assertTrue(p.exists())
+
+        errors = []
+        stop_flag = [False]
+
+        def mkdir_thread():
+            while not stop_flag[0]:
+                try:
+                    p.mkdir(exist_ok=True)
+                except FileExistsError as e:
+                    errors.append(e)
+                    stop_flag[0] = True
+                    break
+
+        def rmdir_thread():
+            while not stop_flag[0]:
+                try:
+                    if p.exists():
+                        p.rmdir()
+                except OSError:
+                    pass
+
+        t1 = threading.Thread(target=mkdir_thread)
+        t2 = threading.Thread(target=rmdir_thread)
+
+        try:
+            t1.start()
+            t2.start()
+
+            time.sleep(0.5)
+
+            stop_flag[0] = True
+            t1.join(timeout=2.0)
+            t2.join(timeout=2.0)
+
+            self.assertEqual(errors, [])
+        finally:
+            stop_flag[0] = True
+            if p.exists():
+                p.rmdir()
+
     @needs_symlinks
     def test_symlink_to(self):
         P = self.cls(self.base)
