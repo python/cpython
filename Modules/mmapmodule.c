@@ -907,9 +907,12 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
             };
             self->data = NULL;
             /* resize the file */
-            if (!SetFilePointerEx(self->file_handle, max_size, NULL,
-                FILE_BEGIN) ||
-                !SetEndOfFile(self->file_handle)) {
+            FILE_END_OF_FILE_INFO info;
+            info.EndOfFile = max_size;
+            if (!SetFileInformationByHandle(self->file_handle,
+                                            FileEndOfFileInfo,
+                                            &info,
+                                            sizeof(info))) {
                 /* resizing failed. try to remap the file */
                 file_resize_error = GetLastError();
                 max_size.QuadPart = self->size;
