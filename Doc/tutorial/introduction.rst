@@ -499,6 +499,7 @@ together.  For instance, we can write an initial sub-sequence of the
 `Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_sequence>`_
 as follows::
 
+   >>> # Fibonacci is used as an example to best demonstrates loops, multiple assignment, and indentation all at once
    >>> # Fibonacci series:
    >>> # the sum of two elements defines the next
    >>> a, b = 0, 1
