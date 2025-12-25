@@ -2136,8 +2136,6 @@ class TestCounter(unittest.TestCase):
         self.assertEqual(c['e'], 5)
 
     def test_update_reentrant_add_clears_counter(self):
-        # Thanks for the clarification. You’re right that Python guarantees subclass identity for Evil(),
-        # so the explicit __new__ was unnecessary. I’ve simplified the test accordingly.
         c = Counter()
         key = object()
 
