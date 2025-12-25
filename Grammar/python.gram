@@ -696,7 +696,7 @@ atom[expr_ty]:
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
-    | &'{' (dict | set | dictcomp | setcomp)
+    | &'{' (dict | set | dictcomp | setcomp | record)
     | '...' { _PyAST_Constant(Py_Ellipsis, NULL, EXTRA) }
 
 strings[expr_ty] (memo): a=STRING+ { _PyPegen_concatenate_strings(p, a) }
@@ -725,6 +725,13 @@ dict[expr_ty]:
             CHECK(asdl_expr_seq*, _PyPegen_get_values(p, a)),
             EXTRA) }
     | '{' invalid_double_starred_kvpairs '}'
+record[expr_ty]:
+    | '{' '|' a=[kwargs] '|' '}' {
+        _PyAST_Record(
+            CHECK(asdl_expr_seq*, _PyPegen_get_record_keys(p, a)),
+            CHECK(asdl_expr_seq*, _PyPegen_get_record_values(p, a)),
+            EXTRA) }
+    | '{' '|' invalid_kwarg '|' '}'
 
 dictcomp[expr_ty]:
     | '{' a=kvpair b=for_if_clauses '}' { _PyAST_DictComp(a->key, a->value, b, EXTRA) }

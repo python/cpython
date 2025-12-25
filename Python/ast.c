@@ -351,6 +351,10 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
     case Tuple_kind:
         ret = validate_exprs(state, exp->v.Tuple.elts, ctx, 0);
         break;
+    case Record_kind:
+        ret = validate_exprs(state, exp->v.Record.keys, Load, 0);
+        ret = ret && validate_exprs(state, exp->v.Record.values, Load, 0);
+        break;
     case NamedExpr_kind:
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
         break;

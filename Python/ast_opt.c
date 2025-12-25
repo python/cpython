@@ -520,6 +520,10 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.keys);
         CALL_SEQ(astfold_expr, expr, node_->v.Dict.values);
         break;
+    case Record_kind:
+        CALL_SEQ(astfold_expr, expr, node_->v.Record.keys);
+        CALL_SEQ(astfold_expr, expr, node_->v.Record.values);
+        break;
     case Set_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Set.elts);
         break;

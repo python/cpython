@@ -3164,6 +3164,24 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(BUILD_RECORD): {
+            PyRecordObject *rec = (PyRecordObject*) PyRecord_New(oparg);
+            if (rec == NULL)
+                goto error;
+
+            PyObject *item = NULL;
+            while (--oparg >= 0) {
+                item = POP();
+                rec->ob_item[oparg] = item;
+            }
+
+            item = POP();
+            rec->names = item;
+
+            PUSH(rec);
+            DISPATCH();
+        }
+
         case TARGET(BUILD_LIST): {
             PyObject *list =  PyList_New(oparg);
             if (list == NULL)

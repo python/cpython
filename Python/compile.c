@@ -1082,6 +1082,8 @@ stack_effect(int opcode, int oparg, int jump)
         case BUILD_SET:
         case BUILD_STRING:
             return 1-oparg;
+        case BUILD_RECORD:
+            return -oparg;
         case BUILD_MAP:
             return 1 - 2*oparg;
         case BUILD_CONST_KEY_MAP:
@@ -4081,6 +4083,34 @@ compiler_dict(struct compiler *c, expr_ty e)
 }
 
 static int
+compiler_record(struct compiler *c, expr_ty e)
+{
+    Py_ssize_t i, n;
+    PyTupleObject* keys;
+    PyObject* key;
+
+    n = asdl_seq_LEN(e->v.Record.values);
+    keys = PyTuple_New(n);
+    if (keys == NULL) {
+        return 0;
+    }
+    for (i = 0; i < n; i++) {
+        expr_ty key_expr = ((expr_ty) asdl_seq_GET(e->v.Record.keys, i));
+        key = key_expr->v.Name.id;
+        Py_INCREF(key);
+        PyTuple_SET_ITEM(keys, i, key);
+    }
+    ADDOP_LOAD_CONST_NEW(c, keys);
+
+    for (i = 0; i < n; i++) {
+        VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Record.values, i));
+    }
+
+    ADDOP_I(c, BUILD_RECORD, n);
+    return 1;
+}
+
+static int
 compiler_compare(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n;
@@ -4131,6 +4161,8 @@ infer_type(expr_ty e)
     case List_kind:
     case ListComp_kind:
         return &PyList_Type;
+    case Record_kind:
+        return &PyRecord_Type;
     case Dict_kind:
     case DictComp_kind:
         return &PyDict_Type;
@@ -4160,6 +4192,7 @@ check_caller(struct compiler *c, expr_ty e)
     case List_kind:
     case ListComp_kind:
     case Dict_kind:
+    case Record_kind:
     case DictComp_kind:
     case Set_kind:
     case SetComp_kind:
@@ -5207,6 +5240,8 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         return compiler_ifexp(c, e);
     case Dict_kind:
         return compiler_dict(c, e);
+    case Record_kind:
+        return compiler_record(c, e);
     case Set_kind:
         return compiler_set(c, e);
     case GeneratorExp_kind:

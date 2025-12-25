@@ -215,6 +215,8 @@ _PyPegen_get_expr_name(expr_ty e)
             return "dict comprehension";
         case Dict_kind:
             return "dict literal";
+        case Record_kind:
+            return "record literal";
         case Set_kind:
             return "set display";
         case JoinedStr_kind:
@@ -1922,6 +1924,40 @@ _PyPegen_get_keys(Parser *p, asdl_seq *seq)
         asdl_seq_SET(new_seq, i, pair->key);
     }
     return new_seq;
+}
+
+asdl_expr_seq *
+_PyPegen_get_record_keys(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_expr_seq *keys = _Py_asdl_expr_seq_new(len, p->arena);
+    if (!keys) return NULL;
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeywordOrStarred *item = asdl_seq_GET_UNTYPED(seq, i);
+        keyword_ty kw = item->element;
+        // Create a Name expression from the identifier
+        expr_ty name = _PyAST_Name(kw->arg, Load,
+            kw->lineno, kw->col_offset,
+            kw->end_lineno, kw->end_col_offset, p->arena);
+        asdl_seq_SET(keys, i, name);
+    }
+    return keys;
+}
+
+asdl_expr_seq *
+_PyPegen_get_record_values(Parser *p, asdl_seq *seq)
+{
+    Py_ssize_t len = asdl_seq_LEN(seq);
+    asdl_expr_seq *values = _Py_asdl_expr_seq_new(len, p->arena);
+    if (!values) return NULL;
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        KeywordOrStarred *item = asdl_seq_GET_UNTYPED(seq, i);
+        keyword_ty kw = item->element;
+        asdl_seq_SET(values, i, kw->value);
+    }
+    return values;
 }
 
 /* Extracts all values from an asdl_seq* of KeyValuePair*'s */

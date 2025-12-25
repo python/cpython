@@ -1629,6 +1629,10 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ_WITH_NULL(st, expr, e->v.Dict.keys);
         VISIT_SEQ(st, expr, e->v.Dict.values);
         break;
+    case Record_kind:
+        VISIT_SEQ_WITH_NULL(st, expr, e->v.Record.keys);
+        VISIT_SEQ(st, expr, e->v.Record.values);
+        break;
     case Set_kind:
         VISIT_SEQ(st, expr, e->v.Set.elts);
         break;

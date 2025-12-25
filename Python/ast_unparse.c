@@ -332,6 +332,28 @@ append_ast_dict(_PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_record(_PyUnicodeWriter *writer, expr_ty e)
+{
+    Py_ssize_t i, value_count;
+    expr_ty key_node;
+
+    APPEND_STR("{|");
+    value_count = asdl_seq_LEN(e->v.Record.values);
+
+    for (i = 0; i < value_count; i++) {
+        APPEND_STR_IF(i > 0, ", ");
+        key_node = (expr_ty)asdl_seq_GET(e->v.Record.keys, i);
+        if (key_node != NULL) {
+            APPEND_EXPR(key_node, PR_TEST);
+            APPEND_STR("=");
+            APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Record.values, i), PR_TEST);
+        }
+    }
+
+    APPEND_STR_FINISH("|}");
+}
+
+static int
 append_ast_set(_PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
@@ -867,6 +889,8 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_ifexp(writer, e, level);
     case Dict_kind:
         return append_ast_dict(writer, e);
+    case Record_kind:
+        return append_ast_record(writer, e);
     case Set_kind:
         return append_ast_set(writer, e);
     case GeneratorExp_kind:
