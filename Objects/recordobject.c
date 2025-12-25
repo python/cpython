@@ -181,8 +181,32 @@ record_hash(PyRecordObject *v)
 PyObject *
 record_getattro(PyObject *obj, PyObject *name)
 {
-    // TODO
-    return NULL;
+    if (name == NULL || PyUnicode_GetLength(name) == 0) {
+        PyErr_SetString(PyExc_TypeError, "record name cannot be zero length");
+        return NULL;
+    }
+
+    PyRecordObject* tmp = (PyRecordObject*) obj;
+    PyObject *ret, *val; 
+    Py_ssize_t n, i;
+
+    n = PyTuple_GET_SIZE(tmp->names);
+    i = 0;
+    for (i = 0; i < n; i++) {
+        val = PyTuple_GET_ITEM(tmp->names, i);
+        if (val == NULL) {
+            PyErr_SetString(PyExc_TypeError, "invalid name inside of record object");
+            return NULL;
+        }
+
+        if (PyUnicode_Compare(name, val) == 0) {
+            ret = tmp->ob_item[i];
+            Py_INCREF(ret);
+            return ret;
+        }
+    }
+
+    return PyObject_GenericGetAttr(obj, name);
 }
 
 static PyObject *
