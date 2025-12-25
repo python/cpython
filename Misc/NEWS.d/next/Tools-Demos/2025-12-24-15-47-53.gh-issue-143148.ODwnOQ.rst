@@ -1,1 +1,0 @@
-Replace pre-commit with prek for faster pre-commit runs.
