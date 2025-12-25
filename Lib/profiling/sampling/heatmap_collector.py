@@ -1165,7 +1165,6 @@ class HeatmapCollector(StackTraceCollector):
         """
         line_key = (filename, line_num)
 
-        # Find which function this line belongs to
         funcname = self.line_to_function.get(line_key)
 
         # Get callers: look up by function definition line, not current line
