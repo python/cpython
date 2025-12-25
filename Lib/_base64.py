@@ -63,10 +63,10 @@ def b85decode(b):
         raise ValueError(e) from None
 
 
-def z85encode(s):
+def z85encode(s, pad=False):
     s = _bytes_from_encode_data(s)
     try:
-        return b2a_base85(s, newline=False, z85=True)
+        return b2a_base85(s, pad=pad, newline=False, z85=True)
     except Error as e:
         raise ValueError(e) from None
 
