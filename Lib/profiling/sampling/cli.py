@@ -1107,7 +1107,7 @@ def _handle_live_run(args):
         if process.poll() is None:
             process.terminate()
             try:
-                process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                process.wait(timeout=_PROCESS_KILL_TIMEOUT_SEC)
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()

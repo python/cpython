@@ -363,7 +363,7 @@ def sample(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
@@ -378,7 +378,8 @@ def sample(
     Args:
         pid: Process ID to sample
         collector: Collector instance to use for gathering samples
-        duration_sec: How long to sample for (seconds)
+        duration_sec: How long to sample for (seconds), or None to run until
+            the process exits or interrupted
         all_threads: Whether to sample all threads
         realtime_stats: Whether to print real-time sampling statistics
         mode: Profiling mode - WALL (all samples), CPU (only when on CPU),
@@ -427,7 +428,7 @@ def sample_live(
     pid,
     collector,
     *,
-    duration_sec=10,
+    duration_sec=None,
     all_threads=False,
     realtime_stats=False,
     mode=PROFILING_MODE_WALL,
