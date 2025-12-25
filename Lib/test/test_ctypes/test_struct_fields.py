@@ -133,7 +133,7 @@ class FieldsTestBase(StructCheckMixin):
     def test_bitfield_overflow_error_message(self):
         with self.assertRaisesRegex(
             ValueError,
-            r"bit field 'x' overflows its type \(0 \+ 9 > 8\)",
+            r"bit field 'x' overflows its type \(2 \+ 7 > 8\)",
         ):
             CField(
                 name="x",
