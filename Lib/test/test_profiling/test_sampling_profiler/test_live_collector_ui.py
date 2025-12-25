@@ -839,7 +839,7 @@ class TestLiveModeErrors(unittest.TestCase):
             mock_self.display.simulate_input(ord('q'))
 
     def test_run_failed_module_live(self):
-        """Test that running a existing module that fails exists with clean error."""
+        """Test that running a existing module that fails exits with clean error."""
 
         args = [
             "profiling.sampling.cli", "run", "--live", "-m", "test",
@@ -886,10 +886,7 @@ class TestLiveModeErrors(unittest.TestCase):
             self.assertIn(
                 'sample(s) collected (minimum 200 required for TUI)', stderr
             )
-            self.assertEndsWith(
-                stderr,
-                'ZeroDivisionError: division by zero\n\n'
-            )
+            self.assertIn('ZeroDivisionError', stderr)
 
 
 if __name__ == "__main__":

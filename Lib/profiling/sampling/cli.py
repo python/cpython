@@ -1111,13 +1111,14 @@ def _handle_live_run(args):
         process.wait()
         # Read any stderr output (tracebacks, errors, etc.)
         if process.stderr:
-            try:
-                stderr = process.stderr.read()
-                if stderr:
-                    print(stderr.decode(), file=sys.stderr)
-            except (OSError, ValueError):
-                # Ignore errors if pipe is already closed
-                pass
+            with process.stderr:
+                try:
+                    stderr = process.stderr.read()
+                    if stderr:
+                        print(stderr.decode(), file=sys.stderr)
+                except (OSError, ValueError):
+                    # Ignore errors if pipe is already closed
+                    pass
 
 
 def _handle_replay(args):
