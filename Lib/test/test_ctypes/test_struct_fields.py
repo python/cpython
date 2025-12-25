@@ -142,8 +142,8 @@ class FieldsTestBase(StructCheckMixin):
                 byte_offset=0,
                 index=0,
                 _internal_use=True,
-                bit_size=9,
-                bit_offset=0,
+                bit_size=7,
+                bit_offset=2,
             )
 
     # __set__ and __get__ should raise a TypeError in case their self
