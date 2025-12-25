@@ -5,7 +5,9 @@ from contextlib import ExitStack
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
+from importlib import import_module
 from random import choices, randint, sample
+from test.support.import_helper import CleanImport
 from test.test_email import (
     charname,
     check_all_warnings,
@@ -15,11 +17,13 @@ from test.test_email import (
     )
 from test.test_email.params import (
     add_label,
+    as_value,
     C,
     include_unless,
     params,
     Params,
     params_map,
+    with_names,
     )
 
 # https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
@@ -181,6 +185,171 @@ misplaced_backslash_defect = (
     )
 
 # ---> End Defect Expectations
+
+
+# XXX POSTDEP: Delete this test case, from here...
+
+class TestDeprecations(TestEmailBase):
+
+    def test___getattr___attribute_error(self):
+        nonsense = 'this_does_not_exist'
+        with self.assertRaisesRegex(AttributeError, nonsense):
+            getattr(parser, nonsense)
+
+    def test___getattr___deprecation(self):
+        with CleanImport(parser.__name__):
+            foo = import_module(parser.__name__)
+            foo._deprecated_foo = lambda: 42
+            foo._deprecated_bar = 1
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.bar, 1)
+            self.assertEqual(foo.foo(), 42)
+
+    def test___getattr___replacement(self):
+        with CleanImport(parser.__name__):
+            foo = import_module(parser.__name__)
+            a_func = lambda: 42
+            foo._deprecated_foo = a_func
+            foo._REPLACED_NAMES['foo'] = 'bird'
+            foo._deprecated_bar = 2
+            foo._REPLACED_NAMES['bar'] = 'brain'
+            with check_all_warnings((
+                    r"(?=.*'foo')(?=.*is deprecated)(?=.*'bird')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.foo, a_func)
+            self.assertEqual(foo.foo(), 42)
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)(?=.*'brain')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(foo.bar, 2)
+
+    def test__replaced_with(self):
+        with CleanImport(parser.__name__):
+            p = import_module(parser.__name__)
+            @p._replaced_with('foo')
+            def _deprecated_bar(a):
+                return a
+            p._deprecated_bar = _deprecated_bar
+            with check_all_warnings((
+                    r"(?=.*'bar')(?=.*is deprecated)(?=.*'foo')",
+                    DeprecationWarning,
+                    )):
+                self.assertEqual(p.bar(2), 2)
+
+    @params(as_value(
+        # XXX XXX make sure this is completely filled in with all the
+        # names we expect to be deprecated.
+        ))
+    def test_deprecated_names(self, name):
+        with check_all_warnings((
+                rf'(?=.*{name})(?=.*is.*deprecated)',
+                DeprecationWarning,
+            )):
+            getattr(parser, name)
+
+    @params(with_names(
+        # XXX XXX make sure this is completely filled in with all the names
+        # we've replaced.
+        ))
+    def test_replaced_names(self, oldname, newname):
+        with check_all_warnings((
+                rf'(?=.*{oldname!r}.*is deprecated)(?=.*{newname})',
+                DeprecationWarning,
+            )):
+            getattr(parser, oldname)
+
+    @params(
+        old_simple = C('foo x', '', res=('f', 'oo x', 9), warn=True),
+        old_with_arg = C('foo x', ' ', res=('fo', 'o x', 9), warn=True),
+        old_with_kw = C('foo x', '', b=2, res=('foo', ' x', 9), warn=True),
+        new_with_zero = C('foo x', 0, '', res=('f', 1, 9)),
+        new_with_nonzero = C('foo x', 3, '', res=(' ', 4, 9)),
+        new_with_arg = C('foo x', 1, ' ', res=('oo', 3, 9)),
+        new_with_kw = C('foo x', 2, '', b=2, res=('o x', 5, 9)),
+        )
+    def test__deprecate_old_api(self, value, *args, b=0, warn=False, res):
+        @parser._deprecate_old_api
+        def t(value, start, a, b=0):
+            end = start + 1 + len(a) + b
+            return value[start:end], end, 9
+        warnings = []
+        if warn:
+            warnings += [(
+                r"(?=.*'t')(?=.*API)(?=.*has changed)",
+                DeprecationWarning,
+                )]
+        with check_all_warnings(*warnings):
+            self.assertEqual(t(value, *args, b=b), res)
+
+    @params(
+        old_api_no_error = C(C('abc')),
+        new_api_no_error = C(C('abc', 0)),
+        old_api_error = C(C(''), warning=True),
+        new_api_error = C(C('', 0), exception=True),
+        new_api_no_error_with_non_zero_start = C(C('abc', 2)),
+        new_api_error_with_non_zero_start = C(C('abc', 3), exception=True),
+        )
+    def test__deprecate_old_api_and_lack_of_raise_on_invalid_input(
+            self,
+            callspec,
+            exception=False,
+            warning=False,
+        ):
+        @parser._deprecate_old_api_and_lack_of_raise_on_invalid_input
+        def foo(value, start):
+            if not value[start:]:
+                return parser.TokenList(['']), start, Exception('bar'), 'bird'
+            return parser.TokenList([value]), start + len(value)
+        value, *start = callspec.args
+        warnings = []
+        if start == []:
+            warnings += [
+                (r"(?=.*'foo')(?=.*API)(?=.*has changed)", DeprecationWarning)
+                ]
+        if warning:
+            warnings += [('bird', DeprecationWarning)]
+        if exception:
+            exceptioncheck = self.assertRaisesRegex(Exception, 'bar')
+        else:
+            exceptioncheck = ExitStack()
+        with exceptioncheck:
+            with check_all_warnings(*warnings):
+                tl, rest = callspec(foo)
+        if exception:
+            return
+        start = start[0] if start else 0
+        self.assertEqual(tl, parser.TokenList([value]))
+        rest = (len(value) - len(rest)) if hasattr(rest, 'encode') else rest
+        self.assertEqual(rest, start + len(tl[0]))
+
+    # XXX XXX _deprecate will go away by the end of refactoring.
+
+    def test__deprecate_no_arg(self):
+        @parser._deprecate
+        def t(a, b):
+            return a, b
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"(?=.*'t'.*is deprecated)",
+            ):
+            self.assertEqual(t(1, 2), (1, 2))
+
+    def test__deprecate_with_arg(self):
+        @parser._deprecate('t2')
+        def t(a, b):
+            return a, b
+        with self.assertWarnsRegex(
+                DeprecationWarning,
+                r"(?=.*'t'.*is deprecated)(?=.*t2)",
+            ):
+            self.assertEqual(t(1, 2), (1, 2))
+
+# XXX POSTDEP: ...to here
 
 
 class TestTokenList(TestEmailBase):

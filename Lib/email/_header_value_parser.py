@@ -75,6 +75,7 @@ from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
+from functools import wraps
 
 #
 # Useful constants and functions
@@ -985,26 +986,132 @@ ListSeparator.as_ew_allowed = False
 ListSeparator.syntactic_break = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
+
+# XXX POSTDEP: Remove from here...
+#
+# Temporary backward compatibility and deprecation support.  Although this is
+# an internal module and not a public API, and therefore we *will* eventually
+# remove the backward compatibility support, we're still doing backward
+# compatibility to minimize disruption for anyone who made use of these
+# internal APIs.
+#
+
+OLDAPIREMVER = (3, 18)
+
+_REPLACED_NAMES = dict(
+    )
+
+def __getattr__(name):
+    from warnings import _deprecated, _DEPRECATED_MSG
+    if f'_deprecated_{name}' not in globals():
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name in _REPLACED_NAMES:
+        _deprecated(
+            name,
+            _DEPRECATED_MSG + f", try {_REPLACED_NAMES[name]!r} instead",
+            remove=OLDAPIREMVER,
+            )
+    else:
+        _deprecated(name, remove=OLDAPIREMVER)
+    return globals()[f'_deprecated_{name}']
+
+def _replaced_with(name):
+    def _(func):
+        _REPLACED_NAMES[func.__name__.removeprefix('_deprecated_')] = name
+        return func
+    return _
+
+_API_CHANGE_MSG = (
+    "The API of the internal function {name!r} has changed; the backward"
+    " compatibility wrapper will be removed in {remove}"
+    )
+
+def _deprecate_old_api(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            return func(value, *args, **kw)
+        # The runtime error is going to say the function should be removed, but
+        # it's only the decorator that needs to be removed.
+        from warnings import _deprecated
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        result, start, *other = func(value, 0, *args, **kw)
+        return result, value[start:], *other
+    return dispatch
+
+# A specialized deprecation for some functions that should be raising
+# errors when handed input that is empty or doesn't contain the expected
+# value, but current return an empty object instead.  The return signature
+# of the wrapped function must be either (result, start) or (result, start,
+# exception, warning).  If present, 'exception' will be raised from the new
+# api, and 'warning' will be passed to 'warn' as a DeprecationWarning for
+# the old api.
+def _deprecate_old_api_and_lack_of_raise_on_invalid_input(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            result, start, *error = func(value, *args, **kw)
+            if error:
+                raise error[0]
+            return result, start
+        from warnings import _deprecated, warn
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        result, start, *error = func(value, 0, *args, **kw)
+        if error:
+            warn(error[1], DeprecationWarning, stacklevel=2)
+        return result, value[start:]
+    return dispatch
+
+# XXX XXX By the end of the refactoring, calls to _deprecate will be replaced by
+# renaming the functions with _deprecated_ in front and adding any new names to
+# _REPLACED_NAMES.  The deprecation testing will need to be adjusted.  This
+# decorator should not exist in the final version of the branch.
+
+from functools import singledispatch
+from collections.abc import Callable
+
+def __deprecate(msg, new_name=None):
+    def _(func):
+        @wraps(func)
+        def deprecate(*args, **kw):
+            from warnings import _deprecated
+            _deprecated(func.__name__, msg, remove=OLDAPIREMVER)
+            return func(*args, **kw)
+        return deprecate
+    return _
+
+@singledispatch
+def _deprecate(new_name):
+    from warnings import _DEPRECATED_MSG
+    return __deprecate(_DEPRECATED_MSG + f", try {new_name} instead")
+
+@_deprecate.register(Callable)
+def _(func):
+    from warnings import _DEPRECATED_MSG
+    return __deprecate(_DEPRECATED_MSG)(func)
+
+# XXX POSTDEP: ...to here.
+
+
 #
 # Parser
 #
 
 # Parse strings according to RFC822/2047/2822/5322 rules.
 #
-# This is a stateless parser.  Each get_XXX function accepts a string and
-# returns either a Terminal or a TokenList representing the RFC object named
-# by the method and a string containing the remaining unparsed characters
-# from the input.  Thus a parser method consumes the next syntactic construct
-# of a given type and returns a token representing the construct plus the
-# unparsed remainder of the input string.
+# This is a stateless parser.  Each get_XXX function accepts a string and a
+# starting position and returns either a Terminal or a TokenList representing
+# the RFC (or local concept) object named by the method and a pointer to
+# remaining unparsed characters in the string.  Thus a parser method consumes
+# the next syntactic construct of a given type and returns a token representing
+# the construct plus a pointer to the unparsed remainder of the input string.
 #
 # For example, if the first element of a structured header is a 'phrase',
 # then:
 #
-#     phrase, value = get_phrase(value)
+#     phrase, rest = get_phrase(value, start)
 #
-# returns the complete phrase from the start of the string value, plus any
-# characters left in the string after the phrase is removed.
+# returns a complete 'phrase' from 'start' to 'rest' in the value.
 
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
