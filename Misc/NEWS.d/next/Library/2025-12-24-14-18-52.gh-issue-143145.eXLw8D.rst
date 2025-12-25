@@ -1,1 +1,1 @@
-Fixed a reference leak in ctypes when building results with multiple out parameters.
+Fixed a possible reference leak in ctypes when constructing results with multiple output parameters on error.
