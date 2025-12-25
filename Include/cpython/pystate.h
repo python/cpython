@@ -238,6 +238,16 @@ struct _ts {
     // structure and all share the same per-interpreter structure).
     PyStats *pystats;
 #endif
+    struct {
+        /* Number of nested PyThreadState_Ensure() calls on this thread state */
+        Py_ssize_t counter;
+
+        /* Should this thread state be deleted upon calling
+           PyThreadState_Release() (with the counter at 1)?
+
+           This is only true for thread states created by PyThreadState_Ensure() */
+        int delete_on_release;
+    } ensure;
 };
 
 /* other API */
@@ -318,3 +328,50 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+/* Interpreter guards */
+
+typedef uintptr_t PyInterpreterGuard;
+typedef uintptr_t PyInterpreterView;
+
+
+PyAPI_FUNC(PyInterpreterGuard) PyInterpreterGuard_FromCurrent(void);
+PyAPI_FUNC(PyInterpreterGuard) PyInterpreterGuard_Copy(PyInterpreterGuard guard);
+PyAPI_FUNC(void) PyInterpreterGuard_Release(PyInterpreterGuard guard);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterGuard_GetInterpreter(PyInterpreterGuard guard);
+PyAPI_FUNC(PyInterpreterGuard) PyInterpreterGuard_FromView(PyInterpreterView view);
+
+#ifdef Py_DEBUG
+#define PyInterpreterGuard_Release(guard) do {    \
+    PyInterpreterGuard_Release(guard);            \
+    guard = 0;                                    \
+} while (0)
+#endif
+
+/* Interpreter views */
+
+typedef struct _PyInterpreterView {
+    int64_t id;
+    Py_ssize_t refcount;
+} _PyInterpreterView;
+
+PyAPI_FUNC(PyInterpreterView) PyInterpreterView_FromCurrent(void);
+PyAPI_FUNC(PyInterpreterView) PyInterpreterView_Copy(PyInterpreterView view);
+PyAPI_FUNC(void) PyInterpreterView_Close(PyInterpreterView view);
+PyAPI_FUNC(PyInterpreterView) PyUnstable_InterpreterView_FromDefault(void);
+
+
+#ifdef Py_DEBUG
+#define PyInterpreterView_Close(view) do {    \
+    PyInterpreterView_Close(view);            \
+    view = 0;                                 \
+} while (0)
+#endif
+
+/* Thread views */
+
+typedef uintptr_t PyThreadView;
+
+PyAPI_FUNC(PyThreadView) PyThreadState_Ensure(PyInterpreterGuard guard);
+
+PyAPI_FUNC(void) PyThreadState_Release(PyThreadView thread_ref);
