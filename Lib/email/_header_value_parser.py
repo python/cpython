@@ -1052,6 +1052,7 @@ def _get_ptext_to_endchars(value, endchars):
                 continue
         if escape:
             escape = False
+            had_qp = True
         elif fragment[pos] in endchars:
             break
         vchars.append(fragment[pos])

@@ -5,8 +5,9 @@ from contextlib import ExitStack
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
-from random import choices, randint
+from random import choices, randint, sample
 from test.test_email import (
+    charname,
     check_all_warnings,
     for_each_character,
     TestEmailBase,
@@ -18,6 +19,12 @@ from test.test_email.params import (
     Params,
     params_map,
     )
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_PRINTABLES = bytes(range(33, 127)).decode('ascii')
+
+# https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
+RFC_WSP = chr(32) + chr(9)
 
 # https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 RFC_NONPRINTABLES = bytes([*range(0, 33), 127]).decode('ascii')
@@ -435,6 +442,133 @@ class TestParser(TestParserMixin, TestEmailBase):
             non_printable = C(
                 'f{char}o',
                 defects=[(nonprintable_defect, '{char}')],
+                ),
+            ),
+
+        )
+
+
+    # _get_ptext_to_endchars
+
+    # As an internal method these tests are not API requirements; however, the
+    # behavior they check must be verified one way or another, so if the
+    # implementation changes there need to be equivalent tests.
+
+    @params
+    def test__get_ptext_to_endchars(self, s, endchars, has_qp=False, **kw):
+        ptext, had_qp = self._test_parse(
+            parser._get_ptext_to_endchars,
+            C(s, endchars),
+            test_start=False,
+            **kw,
+            )
+        self.assertEqual(had_qp, has_qp)
+
+    @params_map
+    def for_each_endchar_set(*args, **kw):
+        # The function is general, but these are the ones we actually use.
+        endchar_sets = dict(
+            quoted_string='"',
+            comment='()',
+            domain_literal='[]',
+            )
+        for name, endchars in endchar_sets.items():
+            yield name, C(*args, endchars=endchars, **kw)
+
+    @params_map
+    def for_each_endchar(*args, **kw):
+        return for_each_character(kw['endchars'])(C(*args, **kw)).items()
+
+    # This params_map is used on exactly one expression, which has to contain a
+    # list of characters with no repeats.
+    @params_map
+    def stops_at_first_endchar_found(s):
+        for i in range(len(s)):
+            endchars = ''.join(sample((r := s[i:]), len(r)))
+            ec = charname(s[i])
+            yield f'stops_at_first_endchar_found__string__{ec}', C(
+                s,
+                endchars=endchars,
+                remainder=r,
+                )
+            yield f'stops_at_first_endchar_found__set__{ec}', C(
+                s,
+                endchars=set(endchars),
+                remainder=r,
+                )
+
+    params_test__get_ptext_to_endchars = Params(
+
+        **for_each_endchar(
+            wsp_can_be_legal_endchars = C(
+                'foo{char}bar"',
+                endchars='()' + RFC_WSP,
+                remainder='{char}bar"',
+                ),
+            ),
+
+        **stops_at_first_endchar_found('(random?{})'),
+
+        **for_each_endchar_set(
+
+            one_word_no_wsp = C(
+                'foo',
+                ),
+
+            escaped_letter = C(
+                r'bar\s',
+                stringified='bars',
+                has_qp=True,
+                ),
+
+            escaped_escape_char = C(
+                r'foo\\bar',
+                stringified=r'foo\bar',
+                has_qp=True,
+                ),
+
+            any_printable_may_be_quoted = C(
+                ''.join(rf'\{c}' for c in RFC_PRINTABLES),
+                stringified=RFC_PRINTABLES,
+                has_qp=True,
+                ),
+
+            ),
+
+        **for_each_endchar(
+            for_each_endchar_set(
+
+                stops_at_endchar = C(
+                    'foo{char}bar"',
+                    remainder='{char}bar"',
+                    ),
+
+                quoted_endchar_no_actual_endchar = C(
+                    r'foo\{char}bar',
+                    stringified=r'foo{char}bar',
+                    has_qp=True,
+                    ),
+
+                quoted_endchar_before_actual_endchar = C(
+                    r'foo\{char}bar{char}',
+                    stringified='foo{char}bar',
+                    remainder='{char}',
+                    has_qp=True,
+                    ),
+
+                multiple_qp = C(
+                    r'\{char}\foo\\\{char}\a{char}',
+                    stringified=r'{char}foo\{char}a',
+                    remainder=r'{char}',
+                    has_qp=True,
+                    ),
+
+                no_qp_before_endchar_but_some_after = C(
+                    r'foo{char}a\b\a\r',
+                    remainder=r'{char}a\b\a\r',
+                    has_qp=False,
+                    ),
+
                 ),
             ),
 
