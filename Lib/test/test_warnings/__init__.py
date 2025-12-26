@@ -1094,6 +1094,31 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.module._showwarnmsg = show
         self.assertIn(text, result)
 
+    def test_showwarning_fallback_truncates_source_line(self):
+        # gh-143201: C implementation's show_warning fallback should truncate leading whitespace
+        text = 'test fallback truncates source line'
+        with self.module.catch_warnings():
+            self.module.filterwarnings("always", category=UserWarning)
+
+            show = self.module._showwarnmsg
+            show_orig = getattr(self.module, 'showwarning', None)
+            try:
+                del self.module._showwarnmsg
+                if hasattr(self.module, 'showwarning'):
+                    del self.module.showwarning
+                with support.captured_output('stderr') as stream:
+                    def my_warn():
+                        self.module.warn(text)
+                    my_warn()
+                    result = stream.getvalue()
+            finally:
+                self.module._showwarnmsg = show
+                if show_orig is not None:
+                    self.module.showwarning = show_orig
+
+        self.assertIn('self.module.warn(text)', result)
+        self.assertNotIn('                        self.module.warn(text)', result)
+
     def test_showwarning_not_callable(self):
         orig = self.module.showwarning
         try:

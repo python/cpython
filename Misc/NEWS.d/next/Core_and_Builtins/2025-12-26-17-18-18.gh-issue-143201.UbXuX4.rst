@@ -1,0 +1,1 @@
+Fix an issue where the :mod:`warnings` module printed the full source line instead of the truncated one.
