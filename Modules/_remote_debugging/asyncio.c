@@ -828,21 +828,15 @@ append_awaited_by_for_thread(
             return -1;
         }
 
-        // Validate next_node to prevent underflow when computing task_addr
-        uintptr_t task_node_offset = (uintptr_t)unwinder->async_debug_offsets.asyncio_task_object.task_node;
-        if (next_node < task_node_offset) {
-            set_exception_cause(unwinder, PyExc_RuntimeError,
-                "Invalid task node pointer (corrupted remote memory)");
-            return -1;
-        }
-        uintptr_t task_addr = next_node - task_node_offset;
+        uintptr_t task_addr = next_node
+            - (uintptr_t)unwinder->async_debug_offsets.asyncio_task_object.task_node;
 
         if (process_single_task_node(unwinder, task_addr, NULL, result) < 0) {
             set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process task node in awaited_by");
             return -1;
         }
 
-        // Read next node (use already-validated next_node)
+        // Read next node
         if (_Py_RemoteDebug_PagedReadRemoteMemory(
                 &unwinder->handle,
                 next_node,
