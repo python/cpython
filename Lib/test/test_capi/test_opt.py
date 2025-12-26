@@ -3165,6 +3165,71 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP_INT", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_is_op(self):
+        def test_is_false(n):
+            a = object()
+            b = object()
+            for _ in range(n):
+                res = a is b
+            return res
+
+        res, ex = self._run_with_optimizer(test_is_false, TIER2_THRESHOLD)
+        self.assertEqual(res, False)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_IS_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+
+        def test_is_true(n):
+            a = object()
+            for _ in range(n):
+                res = a is a
+            return res
+
+        res, ex = self._run_with_optimizer(test_is_true, TIER2_THRESHOLD)
+        self.assertEqual(res, True)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_IS_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+
+        def test_is_not(n):
+            a = object()
+            b = object()
+            for _ in range(n):
+                res = a is not b
+            return res
+
+        res, ex = self._run_with_optimizer(test_is_not, TIER2_THRESHOLD)
+        self.assertEqual(res, True)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_IS_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+
+        def test_is_none(n):
+            a = None
+            for _ in range(n):
+                res = a is None
+            return res
+
+        res, ex = self._run_with_optimizer(test_is_none, TIER2_THRESHOLD)
+        self.assertEqual(res, True)
+        self.assertIsNotNone(ex)
+
+        self.assertIn("_IS_OP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
     def test_143026(self):
         # https://github.com/python/cpython/issues/143026
 
