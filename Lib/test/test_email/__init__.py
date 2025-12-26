@@ -1,7 +1,8 @@
-import os
-import unittest
 import collections
 import email
+import os
+import re
+import unittest
 from email.message import Message
 from email._policybase import compat32
 from test.support import load_package_tests
@@ -71,11 +72,77 @@ class TestEmailBase(ParamsMixin, unittest.TestCase):
         """Our byte strings are really encoded strings; improve diff output"""
         self.assertEqual(self._bytes_repr(first), self._bytes_repr(second))
 
-    def assertDefectsEqual(self, actual, expected):
-        self.assertEqual(len(actual), len(expected), actual)
-        for i in range(len(actual)):
-            self.assertIsInstance(actual[i], expected[i],
-                                    'item {}'.format(i))
+    def assertDefectsMatch(self, actual, expected):
+        """Assert list of defects matches a list of expected defect patterns
+
+        actual should be a list of actual defect instances.  expected should
+        a list of patterns.  Match the patterns against the actual list,
+        and report any defects that do not match a pattern or any patterns
+        that do not match a defect.  Matching must be one to one: if there
+        are two identical defects in the actual list, it should be an error
+        if there are not two patterns that match those defects in the
+        expected list.
+
+        A pattern can be one of three things:
+            1) a defect class (eg: InvalidHeaderDefect)
+            2) a tuple of (defect_class, regex), where the regex must
+                match the message produced by calling str on the actual defect
+            3) a tuple of (callable, *args) where calling the callable
+                with the args must produce a tuple as in (2).
+
+        """
+        aleft = list(actual)
+        eleft = []
+        for x in expected:
+            p = None
+            while not p:
+                if type(x) is type:
+                    p = (x, '.*')
+                elif not hasattr(x, '__getitem__'):
+                    raise ValueError(f'invalid defect pattern: {x!r}')
+                elif type(x[0]) is type:
+                    p = x
+                elif callable(x[0]):
+                    x = x[0](*x[1:])
+                else:
+                    raise ValueError(f'invalid defect pattern: {x!r}')
+            eleft.append(p)
+        for t, s in list(eleft):
+            for a in aleft:
+                if type(a) == t and re.search(s, str(a), flags=re.I):
+                    eleft.remove((t, s))
+                    aleft.remove(a)
+                    break
+        if eleft or aleft:
+            areprs = [repr((type(a), str(a))) for a in aleft]
+            ereprs = [repr(e) for e in eleft]
+            matched = f"{len(actual) - len(aleft)} defects matched"
+            if len(eleft) == len(aleft):
+                raise self.failureException(
+                    f"{matched}, {len(aleft)} defects did not match:"
+                    f"\n  unmatched expected:\n    {'\n    '.join(ereprs)}"
+                    f"\n  unmatched actual:\n    {'\n    '.join(areprs)}"
+                    )
+            if len(eleft) == 0:
+                raise self.failureException(
+                    f"{matched}, {len(aleft)} extra defects:"
+                    f"\n  {'\n  '.join(areprs)}"
+                    )
+            if len(aleft) == 0:
+                raise self.failureException(
+                    f"{matched}, {len(eleft)} missing defects:"
+                    f"\n  {'\n  '.join(ereprs)}"
+                    )
+            else:
+                raise self.failureException(
+                    f"Expected {len(expected)} defects but got {len(actual)};"
+                    f" {matched}, {len(eleft)} missing, {len(aleft)} extra:"
+                    f"\n  unmatched actual:\n    {'\n    '.join(areprs)}"
+                    f"\n  unmatched expected:\n    {'\n    '.join(ereprs)}"
+                    )
+
+    # XXX assertDefectsEqual can go away when it is no longer used.
+    assertDefectsEqual = assertDefectsMatch
 
 
 # XXX Don't use this for new tests, use params instead.  @parameterized will be
