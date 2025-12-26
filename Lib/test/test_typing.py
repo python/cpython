@@ -592,7 +592,7 @@ class TypeVarTests(BaseTestCase):
         self.assertIs(T.__contravariant__, False)
         self.assertIs(T.__infer_variance__, False)
 
-        T = TypeVar(name="T", default=[])
+        T = TypeVar(name="T", default=())
         self.assertEqual(T.__name__, "T")
         self.assertEqual(T.__constraints__, ())
         self.assertIs(T.__bound__, None)
