@@ -173,7 +173,7 @@ And::
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
 
-   *ctxkwargs* is an is a mapping of additional keyword arguments passed to
+   *ctxkwargs* is a mapping of additional keyword arguments passed to
    :meth:`prepare_context`, allowing customization of the worker execution
    context.
 
