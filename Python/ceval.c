@@ -1542,6 +1542,9 @@ _PyEval_SyncLocalsToFast(_PyInterpreterFrame *frame)
         if (value != NULL) {
             frame->localsplus[i] = PyStackRef_FromPyObjectSteal(value);
         }
+        else if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Clear();
+        }
         else {
             return -1;
         }
