@@ -122,13 +122,7 @@ _controlCharPat = re.compile(
     r"\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
 def _encode_base64(s, maxlinelength=76):
-    # copied from base64.encodebytes(), with added maxlinelength argument
-    maxbinsize = (maxlinelength//4)*3
-    pieces = []
-    for i in range(0, len(s), maxbinsize):
-        chunk = s[i : i + maxbinsize]
-        pieces.append(binascii.b2a_base64(chunk))
-    return b''.join(pieces)
+    return binascii.b2a_base64(s, wrapcol=maxlinelength, newline=False)
 
 def _decode_base64(s):
     if isinstance(s, str):
@@ -385,6 +379,7 @@ class _PlistWriter(_DumbXMLWriter):
         maxlinelength = max(
             16,
             76 - len(self.indent.replace(b"\t", b" " * 8) * self._indent_level))
+        maxlinelength = maxlinelength // 4 * 4
 
         for line in _encode_base64(data, maxlinelength).split(b"\n"):
             if line:
