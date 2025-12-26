@@ -1664,6 +1664,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
     def test_compare_op_str_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
@@ -1681,6 +1682,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_STR", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
     def test_compare_op_float_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
