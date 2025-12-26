@@ -1813,17 +1813,17 @@ Subcommands
 
       The help argument provides a short description for this subcommand.
       If provided, it will be listed next to the command in the main
-      parser’s help message (e.g., `PROG --help`).
+      parser’s help message (e.g., ``PROG --help``).
 
       The aliases argument allows you to provide a sequence of strings
       that can be used as alternative names for this subcommand
-      (e.g., `aliases=['co']` for a `'checkout'` command).
+      (e.g., ``aliases=['co']`` for a ``'checkout'`` command).
 
       The deprecated argument allows you to mark the subcommand as
-      deprecated. When a deprecated subcommand is used, :mod:argparse
+      deprecated. When a deprecated subcommand is used, :mod:`argparse`
       will emit a warning.
 
-      This returned :class:!ArgumentParser object can be modified as usual.
+      This returned :class:`!ArgumentParser`` object can be modified as usual.
 
       *Examples*
 
@@ -1844,6 +1844,7 @@ Subcommands
          >>> parser.parse_args(['fly'])  # doctest: +SKIP
          chicken.py: warning: command 'fly' is deprecated
          Namespace()
+
    One particularly effective way of handling subcommands is to combine the use
    of the :meth:`~ArgumentParser.add_subparsers` method with calls to :meth:`~ArgumentParser.set_defaults` so
    that each subparser knows which Python function it should execute.  For
