@@ -67,8 +67,8 @@ Directory and files operations
 
    The destination location must be writable; otherwise, an :exc:`OSError`
    exception will be raised. If *dst* already exists, it will be replaced.
-   Special files such as character or block devices and pipes cannot be
-   copied with this function.
+   Special files such as character or block devices, pipes, and sockets cannot
+   be copied with this function.
 
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
@@ -90,10 +90,13 @@ Directory and files operations
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
+   .. versionchanged:: 3.15
+      :exc:`SpecialFileError` is now also raised for sockets and device files.
+
 .. exception:: SpecialFileError
 
    This exception is raised when :func:`copyfile` or :func:`copytree` attempt
-   to copy a named pipe.
+   to copy a named pipe, socket, or device file.
 
    .. versionadded:: 2.7
 
