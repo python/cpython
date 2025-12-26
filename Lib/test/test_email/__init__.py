@@ -196,6 +196,15 @@ class TestEmailBase(ParamsMixin, unittest.TestCase):
     assertDefectsEqual = assertDefectsMatch
 
 
+# A more stringent version of the test.support check_warnings helper.
+from contextlib import contextmanager
+from test.support.warnings_helper import _filterwarnings
+@contextmanager
+def check_all_warnings(*filters):
+    """Raise an error if the generated warnings to not exactly match filters."""
+    return _filterwarnings(filters)
+
+
 # XXX Don't use this for new tests, use params instead.  @parameterized will be
 # deprecated and removed eventually.
 def parameterize(cls):

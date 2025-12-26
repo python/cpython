@@ -1,14 +1,28 @@
 import re
 import string
 import unittest
+from contextlib import ExitStack
 from email import _header_value_parser as parser
 from email import errors
 from email import policy
-from test.test_email import for_each_character, TestEmailBase, parameterize
-from test.test_email.params import C, params, Params
+from random import choices, randint
+from test.test_email import (
+    check_all_warnings,
+    for_each_character,
+    TestEmailBase,
+    parameterize,
+    )
+from test.test_email.params import (
+    C,
+    params,
+    Params,
+    params_map,
+    )
 
 # https://datatracker.ietf.org/doc/html/rfc5322#section-2.2
 RFC_NONPRINTABLES = bytes([*range(0, 33), 127]).decode('ascii')
+
+ALL_ASCII = bytes(range(0, 128)).decode('ascii')
 
 
 # ---> Defect Expectations
@@ -201,6 +215,161 @@ class TestParserMixin:
         tl = method(input)
         self._assert_results(tl, '', string, value, defects, '', comments)
         return tl
+
+    def _test_parse(
+            self,
+            method,
+            callspec,
+            stringified=None,
+            value=None,
+            defects=None,
+            remainder='',
+            comments=None,
+            *,
+            exception=None,
+            warnings=None,
+            test_start=True,
+            no_end=False,
+            pprint=False,
+            ):
+        """Call method with callspec, make asserts, and return results of call.
+
+        Expect method to be a parsing method that takes a string as its first
+        argument and returns a Terminal or TokenList as its return value,
+        possibly followed by an "unparsed remainder" index, and possibly
+        additional return values.
+
+        If test_start is true (the default), modify the callspec to add a
+        random prefix to its first (string) argument, and add a new parameter
+        after it consisting of the length of the added prefix.  If the callspec
+        contains a value for 'end', modify that value by adding the prefix
+        length.
+
+        If exception has a value, assert that using callspec to call method
+        raises the exception that must be the first element of value tuple with
+        a string value that matches the regex that must be the second element
+        of the value tuple.
+
+        Otherwise use the (possibly modified) callspec to call the method,
+        capturing its return value, which should either be a single Terminal or
+        TokenList, or a tuple whose first element is a Terminal or TokenList.
+
+        If no_end is True, assert that the return value was not a tuple or its
+        second value was not an integer.
+
+        If warnings has a value, use it as the argument value to a
+        check_all_warnings assert around the callspec call.
+
+        If pprint is true, call the pprint method of returned object.
+
+        If the return value is not a singleton and the second element of
+        the return value is an integer, use it, modified by the length of
+        the prefix if test_start s true, to assert that the unparsed
+        remainder matches the value of 'remainder'.
+
+        Assert that str called on the returned object matches the value
+        of stringified, or the characters from start to end or the end
+        of the string if stringified is None.
+
+        Assert that the value attribute of the returned object matches
+        value, or stringified is value is None.
+
+        Assert that the comments attribute of the returned object matches
+        comments.
+
+        Assert that the defects attribute of the returned object matches
+        defects.
+
+        Return whatever the called method returned.
+
+        """
+        s, *args = callspec.args
+        base = s[:-len(remainder)] if remainder else s
+        if test_start:
+            # XXX I'm not at sure the overhead of this randomization is worth
+            # it.  We do at least need to test having a prefix though...
+            prefix_len = randint(1, 20)
+            prefix = ''.join(choices(ALL_ASCII, k=prefix_len))
+            kw = dict(callspec.kw)
+            callspec = C(prefix + s, prefix_len, *args, **kw)
+        # XXX POSTDEP: Change this if to do only what's in the else clause.
+        if warnings is ...:
+            warningscheck = ExitStack()
+        else:
+            warnings = [(x[1], x[0]) for x in warnings] if warnings else []
+            warningscheck = check_all_warnings(*warnings)
+        if exception:
+            with warningscheck:
+                with self.assertRaisesRegex(exception[0], exception[1]):
+                    callspec(method)
+            return
+        stringified = base if stringified is None else stringified
+        value = stringified if value is None else value
+        comments = [] if comments is None else comments
+        defects = [] if defects is None else defects
+        with warningscheck:
+            result = callspec(method)
+        if isinstance(result, (parser.TokenList, parser.Terminal)):
+            other = []
+        else:
+            result, *other = result
+        if pprint:
+            print(f'\n{result.ppstr()}')
+        # XXX POSTDEP: remove str from this 'if'
+        if other and isinstance(other[0], (int, str)):
+            if no_end:
+                self.fail(
+                    "It looks like the function incorrectly returned an"
+                    " end of parsing pointer"
+                    )
+            # a get_x method that returns a remainder or pointer.
+            actual_remainder, *other = other
+            if isinstance(actual_remainder, int):
+                if test_start:
+                    actual_remainder -= prefix_len
+                actual_remainder = s[actual_remainder:]
+            self.assertEqual(actual_remainder, remainder)
+        self.assertEqual(str(result), stringified)
+        if isinstance(result, parser.TokenList):
+            self.assertEqual(result.value, value)
+            self.assertDefectsMatch(result.all_defects, defects)
+            self.assertEqual(result.comments, comments)
+        return (result, *other) if other else result
+
+    def verify_terminal_types(self, tl, *text_types):
+        """Raise error if token_type of any Terminal is not in text_types."""
+        self.assertIsInstance(tl, (parser.Terminal, parser.TokenList))
+        if isinstance(tl, parser.Terminal):
+            self.assertIn(tl.token_type, text_types, repr(tl))
+        elif isinstance(tl, parser.TokenList):
+            for t in tl:
+                # Some functions return a TokenList, but there should never be
+                # a plain TokenList anywhere deeper.  This will catch failures
+                # to use 'extend' when consuming returned a TokenList.
+                self.assertIsNotNone(t.token_type, t)
+                self.verify_terminal_types(t, *text_types)
+
+# XXX XXX temporary step-wise refactoring tool, goes away at end of refactor.
+@params_map(with_namelist=True)
+def old_api_only(nl, *args, **kw):
+    if 'newapi' in nl:
+        return
+    kw['warnings'] = ...  # Ignore pre-refactoring warnings.
+    kw.setdefault('test_start', False)
+    yield '' if 'oldapi' in nl else 'oldapionly', C(*args, **kw)
+
+# XXX POSTDEP: Delete this params_map and replace calls to it with params_set.
+@params_map(with_namelist=True)
+def for_each_api(nl, *args, **kw):
+    if nl.has_any('oldapi', 'newapi'):
+        # Reused tests; they've been through here before.
+        yield '', C(*args, **kw)
+        return
+    yield 'newapi', C(*args, **kw)
+    kw['warnings'] = kw.get('warnings', []) + [
+        (DeprecationWarning, r'.*API.*has changed')
+        ]
+    yield 'oldapi', C(*args, **kw, test_start=False)
 
 
 class TestParser(TestParserMixin, TestEmailBase):
