@@ -1773,9 +1773,9 @@ grapheme_break(int prev_gcb, int curr_gcb, enum ExtPictState ep_state,
     /* GB6 */
     if (prev_gcb == GCB_L &&
         (curr_gcb == GCB_L ||
-        curr_gcb == GCB_V ||
-        curr_gcb == GCB_LV ||
-        curr_gcb == GCB_LVT))
+         curr_gcb == GCB_V ||
+         curr_gcb == GCB_LV ||
+         curr_gcb == GCB_LVT))
     {
         return false;
     }
@@ -1819,6 +1819,7 @@ grapheme_break(int prev_gcb, int curr_gcb, enum ExtPictState ep_state,
         return false;
     }
 
+    /* GB12 and GB13 */
     if (prev_gcb == GCB_Regional_Indicator && curr_gcb == prev_gcb) {
         return ri_flag;
     }

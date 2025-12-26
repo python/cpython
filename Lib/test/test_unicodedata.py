@@ -822,9 +822,14 @@ class UnicodeFunctionsTest(unittest.TestCase):
                 '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'),
                 ['\U0001F9D1\U0001F3FE\u200D\u2764\uFE0F'
                 '\u200D\U0001F48B\u200D\U0001F9D1\U0001F3FC'])
-        # GB11
-        self.assertEqual(graphemes('\U0001F1FA\U0001F1E6'),
-                         ['\U0001F1FA\U0001F1E6'])
+        # GB12
+        self.assertEqual(graphemes(
+            '\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
+        # GB13
+        self.assertEqual(graphemes(
+            'a\U0001F1FA\U0001F1E6\U0001F1FA\U0001F1F3'),
+            ['a', '\U0001F1FA\U0001F1E6', '\U0001F1FA\U0001F1F3'])
 
 
 class Unicode_3_2_0_FunctionsTest(UnicodeFunctionsTest):
@@ -1085,9 +1090,9 @@ class GraphemeBreakTest(unittest.TestCase):
             self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
-            self.run_grapheme_break_tests(testdata, unicodedata)
+            self.run_grapheme_break_tests(testdata)
 
-    def run_grapheme_break_tests(self, testdata, ucd):
+    def run_grapheme_break_tests(self, testdata):
         for line in testdata:
             line, _, comment = line.partition('#')
             line = line.strip()
