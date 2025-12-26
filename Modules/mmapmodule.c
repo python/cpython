@@ -963,7 +963,6 @@ mmap_mmap_resize_impl(mmap_object *self, Py_ssize_t new_size)
 
         if (error) {
             return PyErr_SetFromWindowsErr(error);
-            return NULL;
         }
         /* It's possible for a resize to fail, typically because another mapping
         is still held against the same underlying file. Even if nothing has

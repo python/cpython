@@ -279,11 +279,11 @@ class TestChildProcessMonitor(unittest.TestCase):
 
         monitor = ChildProcessMonitor(
             pid=os.getpid(),
-            cli_args=["-i", "100", "-d", "5"],
+            cli_args=["-r", "10khz", "-d", "5"],
             output_pattern="test_{pid}.pstats",
         )
         self.assertEqual(monitor.parent_pid, os.getpid())
-        self.assertEqual(monitor.cli_args, ["-i", "100", "-d", "5"])
+        self.assertEqual(monitor.cli_args, ["-r", "10khz", "-d", "5"])
         self.assertEqual(monitor.output_pattern, "test_{pid}.pstats")
 
     def test_monitor_lifecycle(self):
@@ -372,6 +372,8 @@ class TestCLIChildrenFlag(unittest.TestCase):
             limit=None,
             no_summary=False,
             opcodes=False,
+            blocking=False,
+            interval=1000,
         )
 
         parser = argparse.ArgumentParser()
@@ -384,7 +386,7 @@ class TestCLIChildrenFlag(unittest.TestCase):
         from profiling.sampling.cli import _build_child_profiler_args
 
         args = argparse.Namespace(
-            interval=200,
+            sample_interval_usec=200,
             duration=15,
             all_threads=True,
             realtime_stats=False,
@@ -418,7 +420,7 @@ class TestCLIChildrenFlag(unittest.TestCase):
                 f"'{child_args[flag_index + 1]}' in args: {child_args}",
             )
 
-        assert_flag_value_pair("-i", 200)
+        assert_flag_value_pair("-r", 5000)
         assert_flag_value_pair("-d", 15)
         assert_flag_value_pair("--mode", "cpu")
 
@@ -442,7 +444,7 @@ class TestCLIChildrenFlag(unittest.TestCase):
         from profiling.sampling.cli import _build_child_profiler_args
 
         args = argparse.Namespace(
-            interval=100,
+            sample_interval_usec=100,
             duration=5,
             all_threads=False,
             realtime_stats=False,
@@ -508,7 +510,7 @@ class TestChildrenIntegration(unittest.TestCase):
         from profiling.sampling.cli import _setup_child_monitor
 
         args = argparse.Namespace(
-            interval=100,
+            sample_interval_usec=100,
             duration=5,
             all_threads=False,
             realtime_stats=False,
@@ -688,7 +690,7 @@ class TestMaxChildProfilersLimit(unittest.TestCase):
         # Create a monitor
         monitor = ChildProcessMonitor(
             pid=os.getpid(),
-            cli_args=["-i", "100", "-d", "5"],
+            cli_args=["-r", "10khz", "-d", "5"],
             output_pattern="test_{pid}.pstats",
         )
 
@@ -925,8 +927,8 @@ child.wait()
                     "--subprocesses",
                     "-d",
                     "3",
-                    "-i",
-                    "10000",
+                    "-r",
+                    "100",
                     "-o",
                     output_file,
                     script_file,
@@ -987,8 +989,8 @@ child.wait()
                     "--subprocesses",
                     "-d",
                     "2",
-                    "-i",
-                    "10000",
+                    "-r",
+                    "100",
                     "--flamegraph",
                     "-o",
                     output_file,
@@ -1041,8 +1043,8 @@ time.sleep(1)
                     "--subprocesses",
                     "-d",
                     "2",
-                    "-i",
-                    "10000",
+                    "-r",
+                    "100",
                     "-o",
                     output_file,
                     script_file,

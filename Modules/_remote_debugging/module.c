@@ -6,6 +6,20 @@
  ******************************************************************************/
 
 #include "_remote_debugging.h"
+#include "binary_io.h"
+
+/* Forward declarations for clinic-generated code */
+typedef struct {
+    PyObject_HEAD
+    BinaryWriter *writer;
+    uint32_t cached_total_samples;  /* Preserved after finalize */
+} BinaryWriterObject;
+
+typedef struct {
+    PyObject_HEAD
+    BinaryReader *reader;
+} BinaryReaderObject;
+
 #include "clinic/module.c.h"
 
 /* ============================================================================
@@ -328,6 +342,9 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->skip_non_matching_threads = skip_non_matching_threads;
     self->cached_state = NULL;
     self->frame_cache = NULL;
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    self->threads_stopped = 0;
+#endif
     // Initialize stats to zero
     memset(&self->stats, 0, sizeof(self->stats));
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
@@ -408,6 +425,10 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 #ifdef MS_WINDOWS
     self->win_process_buffer = NULL;
     self->win_process_buffer_size = 0;
+#endif
+#ifdef __linux__
+    self->thread_tids = NULL;
+    self->thread_tids_capacity = 0;
 #endif
 
     if (cache_frames && frame_cache_init(self) < 0) {
@@ -563,6 +584,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         }
 
         while (current_tstate != 0) {
+            uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame);
@@ -570,6 +592,14 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
                      self->mode == PROFILING_MODE_EXCEPTION) && !PyErr_Occurred()) {
+                    // Detect cycle: if current_tstate didn't advance, we have corrupted data
+                    if (current_tstate == prev_tstate) {
+                        Py_DECREF(interpreter_threads);
+                        set_exception_cause(self, PyExc_RuntimeError,
+                            "Thread list cycle detected (corrupted remote memory)");
+                        Py_CLEAR(result);
+                        goto exit;
+                    }
                     // Thread was skipped due to mode filtering, continue to next thread
                     continue;
                 }
@@ -916,11 +946,81 @@ _remote_debugging_RemoteUnwinder_get_stats_impl(RemoteUnwinderObject *self)
     return result;
 }
 
+/*[clinic input]
+@critical_section
+_remote_debugging.RemoteUnwinder.pause_threads
+
+Pause all threads in the target process.
+
+This stops all threads in the target process to allow for consistent
+memory reads during sampling. Must be paired with a call to resume_threads().
+
+Returns True if threads were successfully paused, False if they were already paused.
+
+Raises:
+    RuntimeError: If there is an error stopping the threads
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_pause_threads_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=aaf2bdc0a725750c input=78601c60dbc245fe]*/
+{
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (self->threads_stopped) {
+        Py_RETURN_FALSE;
+    }
+
+    _Py_RemoteDebug_InitThreadsState(self, &self->threads_state);
+    if (_Py_RemoteDebug_StopAllThreads(self, &self->threads_state) < 0) {
+        return NULL;
+    }
+
+    self->threads_stopped = 1;
+    Py_RETURN_TRUE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "pause_threads is not supported on this platform");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_remote_debugging.RemoteUnwinder.resume_threads
+
+Resume all threads in the target process.
+
+This resumes threads that were previously paused with pause_threads().
+
+Returns True if threads were successfully resumed, False if they were not paused.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_RemoteUnwinder_resume_threads_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=8d6781ea37095536 input=67ca813bd804289e]*/
+{
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (!self->threads_stopped) {
+        Py_RETURN_FALSE;
+    }
+
+    _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
+    self->threads_stopped = 0;
+    Py_RETURN_TRUE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "resume_threads is not supported on this platform");
+    return NULL;
+#endif
+}
+
 static PyMethodDef RemoteUnwinder_methods[] = {
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ALL_AWAITED_BY_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF
     _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_STATS_METHODDEF
+    _REMOTE_DEBUGGING_REMOTEUNWINDER_PAUSE_THREADS_METHODDEF
+    _REMOTE_DEBUGGING_REMOTEUNWINDER_RESUME_THREADS_METHODDEF
     {NULL, NULL}
 };
 
@@ -929,6 +1029,20 @@ RemoteUnwinder_dealloc(PyObject *op)
 {
     RemoteUnwinderObject *self = RemoteUnwinder_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
+
+#ifdef Py_REMOTE_DEBUG_SUPPORTS_BLOCKING
+    if (self->threads_stopped) {
+        _Py_RemoteDebug_ResumeAllThreads(self, &self->threads_state);
+        self->threads_stopped = 0;
+    }
+#endif
+#ifdef __linux__
+    if (self->thread_tids != NULL) {
+        PyMem_RawFree(self->thread_tids);
+        self->thread_tids = NULL;
+    }
+#endif
+
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
     }
@@ -969,6 +1083,10 @@ static PyType_Spec RemoteUnwinder_spec = {
     ),
     .slots = RemoteUnwinder_slots,
 };
+
+/* Forward declarations for type specs defined later */
+static PyType_Spec BinaryWriter_spec;
+static PyType_Spec BinaryReader_spec;
 
 /* ============================================================================
  * MODULE INITIALIZATION
@@ -1048,6 +1166,18 @@ _remote_debugging_exec(PyObject *m)
     if (PyModule_AddType(m, st->AwaitedInfo_Type) < 0) {
         return -1;
     }
+
+    // Create BinaryWriter and BinaryReader types
+    CREATE_TYPE(m, st->BinaryWriter_Type, &BinaryWriter_spec);
+    if (PyModule_AddType(m, st->BinaryWriter_Type) < 0) {
+        return -1;
+    }
+
+    CREATE_TYPE(m, st->BinaryReader_Type, &BinaryReader_spec);
+    if (PyModule_AddType(m, st->BinaryReader_Type) < 0) {
+        return -1;
+    }
+
 #ifdef Py_GIL_DISABLED
     PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
 #endif
@@ -1091,6 +1221,8 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->ThreadInfo_Type);
     Py_VISIT(state->InterpreterInfo_Type);
     Py_VISIT(state->AwaitedInfo_Type);
+    Py_VISIT(state->BinaryWriter_Type);
+    Py_VISIT(state->BinaryReader_Type);
     return 0;
 }
 
@@ -1106,6 +1238,8 @@ remote_debugging_clear(PyObject *mod)
     Py_CLEAR(state->ThreadInfo_Type);
     Py_CLEAR(state->InterpreterInfo_Type);
     Py_CLEAR(state->AwaitedInfo_Type);
+    Py_CLEAR(state->BinaryWriter_Type);
+    Py_CLEAR(state->BinaryReader_Type);
     return 0;
 }
 
@@ -1115,12 +1249,505 @@ remote_debugging_free(void *mod)
     (void)remote_debugging_clear((PyObject *)mod);
 }
 
-static PyModuleDef_Slot remote_debugging_slots[] = {
-    {Py_mod_exec, _remote_debugging_exec},
-    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
-    {0, NULL},
+/* ============================================================================
+ * BINARY WRITER CLASS
+ * ============================================================================ */
+
+#define BinaryWriter_CAST(op) ((BinaryWriterObject *)(op))
+
+/*[clinic input]
+class _remote_debugging.BinaryWriter "BinaryWriterObject *" "&PyBinaryWriter_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e948838b90a2003c]*/
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.__init__
+    filename: str
+    sample_interval_us: unsigned_long_long
+    start_time_us: unsigned_long_long
+    *
+    compression: int = 0
+
+High-performance binary writer for profiling data.
+
+Arguments:
+    filename: Path to output file
+    sample_interval_us: Sampling interval in microseconds
+    start_time_us: Start timestamp in microseconds (from time.monotonic() * 1e6)
+    compression: 0=none, 1=zstd (default: 0)
+
+Use as a context manager or call finalize() when done.
+[clinic start generated code]*/
+
+static int
+_remote_debugging_BinaryWriter___init___impl(BinaryWriterObject *self,
+                                             const char *filename,
+                                             unsigned long long sample_interval_us,
+                                             unsigned long long start_time_us,
+                                             int compression)
+/*[clinic end generated code: output=014c0306f1bacf4b input=57497fe3cb9214a6]*/
+{
+    if (self->writer) {
+        binary_writer_destroy(self->writer);
+    }
+
+    self->writer = binary_writer_create(filename, sample_interval_us, compression, start_time_us);
+    if (!self->writer) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.write_sample
+    stack_frames: object
+    timestamp_us: unsigned_long_long
+
+Write a sample to the binary file.
+
+Arguments:
+    stack_frames: List of InterpreterInfo objects
+    timestamp_us: Current timestamp in microseconds (from time.monotonic() * 1e6)
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_write_sample_impl(BinaryWriterObject *self,
+                                                 PyObject *stack_frames,
+                                                 unsigned long long timestamp_us)
+/*[clinic end generated code: output=24d5b86679b4128f input=dce3148417482624]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+
+    if (binary_writer_write_sample(self->writer, stack_frames, timestamp_us) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.finalize
+
+Finalize and close the binary file.
+
+Writes string/frame tables, footer, and updates header.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_finalize_impl(BinaryWriterObject *self)
+/*[clinic end generated code: output=3534b88c6628de88 input=c02191750682f6a2]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is already closed");
+        return NULL;
+    }
+
+    /* Save total_samples before finalizing */
+    self->cached_total_samples = self->writer->total_samples;
+
+    if (binary_writer_finalize(self->writer) < 0) {
+        return NULL;
+    }
+
+    binary_writer_destroy(self->writer);
+    self->writer = NULL;
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.close
+
+Close the writer without finalizing (discards data).
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_close_impl(BinaryWriterObject *self)
+/*[clinic end generated code: output=9571bb2256fd1fd2 input=6e0da206e60daf16]*/
+{
+    if (self->writer) {
+        binary_writer_destroy(self->writer);
+        self->writer = NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.__enter__
+
+Enter context manager.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter___enter___impl(BinaryWriterObject *self)
+/*[clinic end generated code: output=8eb95f61daf2d120 input=8ef14ee18da561d2]*/
+{
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.__exit__
+    exc_type: object = None
+    exc_val: object = None
+    exc_tb: object = None
+
+Exit context manager, finalizing the file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter___exit___impl(BinaryWriterObject *self,
+                                             PyObject *exc_type,
+                                             PyObject *exc_val,
+                                             PyObject *exc_tb)
+/*[clinic end generated code: output=61831f47c72a53c6 input=12334ce1009af37f]*/
+{
+    if (self->writer) {
+        /* Only finalize on normal exit (no exception) */
+        if (exc_type == Py_None) {
+            if (binary_writer_finalize(self->writer) < 0) {
+                binary_writer_destroy(self->writer);
+                self->writer = NULL;
+                return NULL;
+            }
+        }
+        binary_writer_destroy(self->writer);
+        self->writer = NULL;
+    }
+    Py_RETURN_FALSE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryWriter.get_stats
+
+Get encoding statistics for the writer.
+
+Returns a dict with encoding statistics including repeat/full/suffix/pop-push
+record counts, frames written/saved, and compression ratio.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryWriter_get_stats_impl(BinaryWriterObject *self)
+/*[clinic end generated code: output=06522cd52544df89 input=82968491b53ad277]*/
+{
+    if (!self->writer) {
+        PyErr_SetString(PyExc_ValueError, "Writer is closed");
+        return NULL;
+    }
+    return binary_writer_get_stats(self->writer);
+}
+
+static PyObject *
+BinaryWriter_get_total_samples(BinaryWriterObject *self, void *closure)
+{
+    if (!self->writer) {
+        /* Use cached value after finalize/close */
+        return PyLong_FromUnsignedLong(self->cached_total_samples);
+    }
+    return PyLong_FromUnsignedLong(self->writer->total_samples);
+}
+
+static PyGetSetDef BinaryWriter_getset[] = {
+    {"total_samples", (getter)BinaryWriter_get_total_samples, NULL, "Total samples written", NULL},
+    {NULL}
 };
+
+static PyMethodDef BinaryWriter_methods[] = {
+    _REMOTE_DEBUGGING_BINARYWRITER_WRITE_SAMPLE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_FINALIZE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_CLOSE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER___ENTER___METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER___EXIT___METHODDEF
+    _REMOTE_DEBUGGING_BINARYWRITER_GET_STATS_METHODDEF
+    {NULL, NULL, 0, NULL}
+};
+
+static void
+BinaryWriter_dealloc(PyObject *op)
+{
+    BinaryWriterObject *self = BinaryWriter_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->writer) {
+        binary_writer_destroy(self->writer);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot BinaryWriter_slots[] = {
+    {Py_tp_getset, BinaryWriter_getset},
+    {Py_tp_methods, BinaryWriter_methods},
+    {Py_tp_init, _remote_debugging_BinaryWriter___init__},
+    {Py_tp_dealloc, BinaryWriter_dealloc},
+    {0, NULL}
+};
+
+static PyType_Spec BinaryWriter_spec = {
+    .name = "_remote_debugging.BinaryWriter",
+    .basicsize = sizeof(BinaryWriterObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = BinaryWriter_slots,
+};
+
+/* ============================================================================
+ * BINARY READER CLASS
+ * ============================================================================ */
+
+#define BinaryReader_CAST(op) ((BinaryReaderObject *)(op))
+
+/*[clinic input]
+class _remote_debugging.BinaryReader "BinaryReaderObject *" "&PyBinaryReader_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=36400aaf6f53216d]*/
+
+/*[clinic input]
+_remote_debugging.BinaryReader.__init__
+    filename: str
+
+High-performance binary reader for profiling data.
+
+Arguments:
+    filename: Path to input file
+
+Use as a context manager or call close() when done.
+[clinic start generated code]*/
+
+static int
+_remote_debugging_BinaryReader___init___impl(BinaryReaderObject *self,
+                                             const char *filename)
+/*[clinic end generated code: output=9699226f7ae052bb input=4201f9cc500ef2f6]*/
+{
+    if (self->reader) {
+        binary_reader_close(self->reader);
+    }
+
+    self->reader = binary_reader_open(filename);
+    if (!self->reader) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.replay
+    collector: object
+    progress_callback: object = None
+
+Replay samples through a collector.
+
+Arguments:
+    collector: Collector object with collect() method
+    progress_callback: Optional callable(current, total)
+
+Returns:
+    Number of samples replayed
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader_replay_impl(BinaryReaderObject *self,
+                                           PyObject *collector,
+                                           PyObject *progress_callback)
+/*[clinic end generated code: output=442345562574b61c input=ebb687aed3e0f4f1]*/
+{
+    if (!self->reader) {
+        PyErr_SetString(PyExc_ValueError, "Reader is closed");
+        return NULL;
+    }
+
+    Py_ssize_t replayed = binary_reader_replay(self->reader, collector, progress_callback);
+    if (replayed < 0) {
+        return NULL;
+    }
+
+    return PyLong_FromSsize_t(replayed);
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.get_info
+
+Get metadata about the binary file.
+
+Returns:
+    Dict with file metadata
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader_get_info_impl(BinaryReaderObject *self)
+/*[clinic end generated code: output=7f641fbd39147391 input=02e75e39c8a6cd1f]*/
+{
+    if (!self->reader) {
+        PyErr_SetString(PyExc_ValueError, "Reader is closed");
+        return NULL;
+    }
+
+    return binary_reader_get_info(self->reader);
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.get_stats
+
+Get reconstruction statistics from replay.
+
+Returns a dict with statistics about record types decoded and samples
+reconstructed during replay.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader_get_stats_impl(BinaryReaderObject *self)
+/*[clinic end generated code: output=628b9ab5e4c4fd36 input=d8dd6654abd6c3c0]*/
+{
+    if (!self->reader) {
+        PyErr_SetString(PyExc_ValueError, "Reader is closed");
+        return NULL;
+    }
+    return binary_reader_get_stats(self->reader);
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.close
+
+Close the reader and free resources.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader_close_impl(BinaryReaderObject *self)
+/*[clinic end generated code: output=ad0238cf5240b4f8 input=b919a66c737712d5]*/
+{
+    if (self->reader) {
+        binary_reader_close(self->reader);
+        self->reader = NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.__enter__
+
+Enter context manager.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader___enter___impl(BinaryReaderObject *self)
+/*[clinic end generated code: output=fade133538e93817 input=4794844c9efdc4f6]*/
+{
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+/*[clinic input]
+_remote_debugging.BinaryReader.__exit__
+    exc_type: object = None
+    exc_val: object = None
+    exc_tb: object = None
+
+Exit context manager, closing the file.
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_BinaryReader___exit___impl(BinaryReaderObject *self,
+                                             PyObject *exc_type,
+                                             PyObject *exc_val,
+                                             PyObject *exc_tb)
+/*[clinic end generated code: output=2acdd36cfdc14e4a input=87284243d7935835]*/
+{
+    if (self->reader) {
+        binary_reader_close(self->reader);
+        self->reader = NULL;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+BinaryReader_get_sample_count(BinaryReaderObject *self, void *closure)
+{
+    if (!self->reader) {
+        return PyLong_FromLong(0);
+    }
+    return PyLong_FromUnsignedLong(self->reader->sample_count);
+}
+
+static PyObject *
+BinaryReader_get_sample_interval_us(BinaryReaderObject *self, void *closure)
+{
+    if (!self->reader) {
+        return PyLong_FromLong(0);
+    }
+    return PyLong_FromUnsignedLongLong(self->reader->sample_interval_us);
+}
+
+static PyGetSetDef BinaryReader_getset[] = {
+    {"sample_count", (getter)BinaryReader_get_sample_count, NULL, "Number of samples in file", NULL},
+    {"sample_interval_us", (getter)BinaryReader_get_sample_interval_us, NULL, "Sample interval in microseconds", NULL},
+    {NULL}
+};
+
+static PyMethodDef BinaryReader_methods[] = {
+    _REMOTE_DEBUGGING_BINARYREADER_REPLAY_METHODDEF
+    _REMOTE_DEBUGGING_BINARYREADER_GET_INFO_METHODDEF
+    _REMOTE_DEBUGGING_BINARYREADER_GET_STATS_METHODDEF
+    _REMOTE_DEBUGGING_BINARYREADER_CLOSE_METHODDEF
+    _REMOTE_DEBUGGING_BINARYREADER___ENTER___METHODDEF
+    _REMOTE_DEBUGGING_BINARYREADER___EXIT___METHODDEF
+    {NULL, NULL, 0, NULL}
+};
+
+static void
+BinaryReader_dealloc(PyObject *op)
+{
+    BinaryReaderObject *self = BinaryReader_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->reader) {
+        binary_reader_close(self->reader);
+    }
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot BinaryReader_slots[] = {
+    {Py_tp_getset, BinaryReader_getset},
+    {Py_tp_methods, BinaryReader_methods},
+    {Py_tp_init, _remote_debugging_BinaryReader___init__},
+    {Py_tp_dealloc, BinaryReader_dealloc},
+    {0, NULL}
+};
+
+static PyType_Spec BinaryReader_spec = {
+    .name = "_remote_debugging.BinaryReader",
+    .basicsize = sizeof(BinaryReaderObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = BinaryReader_slots,
+};
+
+/* ============================================================================
+ * MODULE METHODS
+ * ============================================================================ */
+
+/*[clinic input]
+_remote_debugging.zstd_available
+
+Check if zstd compression is available.
+
+Returns:
+    True if zstd available, False otherwise
+[clinic start generated code]*/
+
+static PyObject *
+_remote_debugging_zstd_available_impl(PyObject *module)
+/*[clinic end generated code: output=55e35a70ef280cdd input=a1b4d41bc09c7cf9]*/
+{
+    return PyBool_FromLong(binary_io_zstd_available());
+}
 
 /* ============================================================================
  * MODULE-LEVEL FUNCTIONS
@@ -1188,9 +1815,17 @@ _remote_debugging_is_python_process_impl(PyObject *module, int pid)
 }
 
 static PyMethodDef remote_debugging_methods[] = {
+    _REMOTE_DEBUGGING_ZSTD_AVAILABLE_METHODDEF
     _REMOTE_DEBUGGING_GET_CHILD_PIDS_METHODDEF
     _REMOTE_DEBUGGING_IS_PYTHON_PROCESS_METHODDEF
     {NULL, NULL, 0, NULL},
+};
+
+static PyModuleDef_Slot remote_debugging_slots[] = {
+    {Py_mod_exec, _remote_debugging_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
 };
 
 static struct PyModuleDef remote_debugging_module = {
