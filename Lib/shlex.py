@@ -49,14 +49,14 @@ class shlex:
         self.token = ''
         self.filestack = deque()
         self.source = None
+        # _pushback_chars is a push back queue used by lookahead logic
+        self._pushback_chars = deque()
         if not punctuation_chars:
             punctuation_chars = ''
         elif punctuation_chars is True:
             punctuation_chars = '();<>|&'
         self._punctuation_chars = punctuation_chars
         if punctuation_chars:
-            # _pushback_chars is a push back queue used by lookahead logic
-            self._pushback_chars = deque()
             # these chars added because allowed in file names, args, wildcards
             self.wordchars += '~-./*?='
             #remove any punctuation chars from wordchars
@@ -132,7 +132,7 @@ class shlex:
         quoted = False
         escapedstate = ' '
         while True:
-            if self.punctuation_chars and self._pushback_chars:
+            if self._pushback_chars:
                 nextchar = self._pushback_chars.pop()
             else:
                 nextchar = self.instream.read(1)
@@ -156,8 +156,18 @@ class shlex:
                     else:
                         continue
                 elif nextchar in self.commenters:
-                    self.instream.readline()
-                    self.lineno += 1
+                    if self.posix:
+                        # Consume comment until newline or end of file
+                        while True:
+                            nextchar = self.instream.read(1)
+                            if not nextchar:
+                                break
+                            if nextchar == '\n':
+                                self._pushback_chars.append(nextchar)
+                                break
+                    else:
+                        self.instream.readline()
+                        self.lineno += 1
                 elif self.posix and nextchar in self.escape:
                     escapedstate = 'a'
                     self.state = nextchar
@@ -226,14 +236,23 @@ class shlex:
                     else:
                         continue
                 elif nextchar in self.commenters:
-                    self.instream.readline()
-                    self.lineno += 1
                     if self.posix:
+                        # Consume comment until newline or end of file
+                        while True:
+                            nextchar = self.instream.read(1)
+                            if not nextchar:
+                                break
+                            if nextchar == '\n':
+                                self._pushback_chars.append(nextchar)
+                                break
                         self.state = ' '
                         if self.token or (self.posix and quoted):
                             break   # emit current token
                         else:
                             continue
+                    else:
+                        self.instream.readline()
+                        self.lineno += 1
                 elif self.state == 'c':
                     if nextchar in self.punctuation_chars:
                         self.token += nextchar

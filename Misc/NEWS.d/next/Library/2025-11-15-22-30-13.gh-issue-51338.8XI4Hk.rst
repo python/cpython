@@ -1,0 +1,1 @@
+Fix :mod:`shlex` to preserve newlines after comments in POSIX mode.
