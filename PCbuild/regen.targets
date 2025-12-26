@@ -125,8 +125,7 @@
       <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
       <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
     </PropertyGroup>
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)'
-          WorkingDirectory="$(GeneratedJitStencilsDir)"/>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs) --output-dir "$(GeneratedJitStencilsDir)" --pyconfig-dir "$(PySourcePath)PC"'/>
   </Target>
   <Target Name="_CleanJIT" AfterTargets="Clean">
     <Delete Files="@(_JITOutputs)"/>

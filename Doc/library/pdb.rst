@@ -75,12 +75,17 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    arguments of the ``p`` command.
 
 
+.. _pdb-cli:
+
+Command-line interface
+----------------------
+
 .. program:: pdb
 
 You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
 example::
 
-   python -m pdb [-c command] (-m module | pyfile) [args ...]
+   python -m pdb [-c command] (-m module | -p pid | pyfile) [args ...]
 
 When invoked as a module, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -103,6 +108,24 @@ useful than quitting the debugger upon program's exit.
 
    .. versionchanged:: 3.7
       Added the ``-m`` option.
+
+.. option:: -p, --pid <pid>
+
+   Attach to the process with the specified PID.
+
+   .. versionadded:: 3.14
+
+
+To attach to a running Python process for remote debugging, use the ``-p`` or
+``--pid`` option with the target process's PID::
+
+   python -m pdb -p 1234
+
+.. note::
+
+   Attaching to a process that is blocked in a system call or waiting for I/O
+   will only work once the next bytecode instruction is executed or when the
+   process receives a signal.
 
 Typical usage to execute a statement under control of the debugger is::
 
@@ -315,7 +338,7 @@ access further features, you have to do this yourself:
 
 .. _debugger-commands:
 
-Debugger Commands
+Debugger commands
 -----------------
 
 The commands recognized by the debugger are listed below.  Most commands can be
@@ -497,7 +520,8 @@ can be overridden by the local file.
    To remove all commands from a breakpoint, type ``commands`` and follow it
    immediately with ``end``; that is, give no commands.
 
-   With no *bpnumber* argument, ``commands`` refers to the last breakpoint set.
+   With no *bpnumber* argument, ``commands`` refers to the most recently set
+   breakpoint that still exists.
 
    You can use breakpoint commands to start your program up again.  Simply use
    the :pdbcmd:`continue` command, or :pdbcmd:`step`,

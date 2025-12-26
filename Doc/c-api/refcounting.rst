@@ -210,7 +210,7 @@ of Python objects.
 
         Py_SETREF(dst, src);
 
-   That arranges to set *dst* to *src* _before_ releasing the reference
+   That arranges to set *dst* to *src* *before* releasing the reference
    to the old value of *dst*, so that any code triggered as a side-effect
    of *dst* getting torn down no longer believes *dst* points
    to a valid object.

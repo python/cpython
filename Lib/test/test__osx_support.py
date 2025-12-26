@@ -66,8 +66,8 @@ class Test_OSXSupport(unittest.TestCase):
                             'cc not found - check xcode-select')
 
     def test__get_system_version(self):
-        self.assertTrue(platform.mac_ver()[0].startswith(
-                                    _osx_support._get_system_version()))
+        self.assertStartsWith(platform.mac_ver()[0],
+                              _osx_support._get_system_version())
 
     def test__remove_original_values(self):
         config_vars = {

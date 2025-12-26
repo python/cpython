@@ -17,6 +17,7 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "clinic/codeobject.c.h"
 #include <stdbool.h>
@@ -549,16 +550,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */
@@ -688,7 +685,7 @@ intern_code_constants(struct _PyCodeConstructor *con)
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _py_code_state *state = &interp->code_state;
-    PyMutex_Lock(&state->mutex);
+    FT_MUTEX_LOCK(&state->mutex);
 #endif
     if (intern_strings(con->names) < 0) {
         goto error;
@@ -699,15 +696,11 @@ intern_code_constants(struct _PyCodeConstructor *con)
     if (intern_strings(con->localsplusnames) < 0) {
         goto error;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return 0;
 
 error:
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return -1;
 }
 
@@ -1012,8 +1005,8 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
+static int
+_PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1025,6 +1018,33 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+_PyCode_SafeAddr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+    }
+    if (!(addrq >= 0 && addrq < _PyCode_NBYTES(co))) {
+        return -1;
+    }
+    PyCodeAddressRange bounds;
+    _PyCode_InitAddressRange(co, &bounds);
+    return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
+{
+    int lineno;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    lineno = _PyCode_Addr2Line(co, addrq);
+    Py_END_CRITICAL_SECTION();
+    return lineno;
 }
 
 void
@@ -1714,7 +1734,7 @@ static int
 identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalnames, PyObject *attrnames,
                        PyObject *globalsns, PyObject *builtinsns,
-                       struct co_unbound_counts *counts)
+                       struct co_unbound_counts *counts, int *p_numdupes)
 {
     // This function is inspired by inspect.getclosurevars().
     // It would be nicer if we had something similar to co_localspluskinds,
@@ -1729,6 +1749,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
+    int numdupes = 0;
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i += _PyInstruction_GetLength(co, i)) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
@@ -1746,6 +1767,12 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             unbound.numattrs += 1;
             if (PySet_Add(attrnames, name) < 0) {
                 return -1;
+            }
+            if (PySet_Contains(globalnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                numdupes += 1;
             }
         }
         else if (inst.op.code == LOAD_GLOBAL) {
@@ -1778,10 +1805,19 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             if (PySet_Add(globalnames, name) < 0) {
                 return -1;
             }
+            if (PySet_Contains(attrnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
+                }
+                numdupes += 1;
+            }
         }
     }
     if (counts != NULL) {
         *counts = unbound;
+    }
+    if (p_numdupes != NULL) {
+        *p_numdupes = numdupes;
     }
     return 0;
 }
@@ -1932,20 +1968,24 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
 
     // Fill in unbound.globals and unbound.numattrs.
     struct co_unbound_counts unbound = {0};
+    int numdupes = 0;
     Py_BEGIN_CRITICAL_SECTION(co);
     res = identify_unbound_names(
             tstate, co, globalnames, attrnames, globalsns, builtinsns,
-            &unbound);
+            &unbound, &numdupes);
     Py_END_CRITICAL_SECTION();
     if (res < 0) {
         goto finally;
     }
     assert(unbound.numunknown == 0);
-    assert(unbound.total <= counts->unbound.total);
+    assert(unbound.total - numdupes <= counts->unbound.total);
     assert(counts->unbound.numunknown == counts->unbound.total);
-    unbound.numunknown = counts->unbound.total - unbound.total;
-    unbound.total = counts->unbound.total;
+    // There may be a name that is both a global and an attr.
+    int totalunbound = counts->unbound.total + numdupes;
+    unbound.numunknown = totalunbound - unbound.total;
+    unbound.total = totalunbound;
     counts->unbound = unbound;
+    counts->total += numdupes;
     res = 0;
 
 finally:
@@ -1979,7 +2019,6 @@ _PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
                              const char **p_errmsg)
 {
     const char *errmsg = NULL;
-    assert(counts->locals.hidden.total == 0);
     if (counts->numfree > 0) {  // It's a closure.
         errmsg = "closures not supported";
     }
@@ -2364,6 +2403,8 @@ free_monitoring_data(_PyCoMonitoringData *data)
 static void
 code_dealloc(PyObject *self)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+    _Py_atomic_add_uint64(&tstate->interp->_code_object_generation, 1);
     PyCodeObject *co = _PyCodeObject_CAST(self);
     _PyObject_ResurrectStart(self);
     notify_code_watchers(PY_CODE_EVENT_DESTROY, co);
@@ -2391,6 +2432,7 @@ code_dealloc(PyObject *self)
         PyMem_Free(co_extra);
     }
 #ifdef _Py_TIER2
+    _PyJit_Tracer_InvalidateDependency(tstate, self);
     if (co->co_executors != NULL) {
         clear_executors(co);
     }
@@ -2415,9 +2457,7 @@ code_dealloc(PyObject *self)
         Py_XDECREF(co->_co_cached->_co_varnames);
         PyMem_Free(co->_co_cached);
     }
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, co->co_weakreflist);
     free_monitoring_data(co->_co_monitoring);
 #ifdef Py_GIL_DISABLED
     // The first element always points to the mutable bytecode at the end of
@@ -2703,6 +2743,7 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, /, **changes)"
 code.replace
 
@@ -2739,7 +2780,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=e944fdac8b456114]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -3310,12 +3351,29 @@ _PyCodeArray_New(Py_ssize_t size)
     return arr;
 }
 
+// Get the underlying code unit, leaving instrumentation
+static _Py_CODEUNIT
+deopt_code_unit(PyCodeObject *code, int i)
+{
+    _Py_CODEUNIT *src_instr = _PyCode_CODE(code) + i;
+    _Py_CODEUNIT inst = {
+        .cache = FT_ATOMIC_LOAD_UINT16_RELAXED(*(uint16_t *)src_instr)};
+    int opcode = inst.op.code;
+    if (opcode < MIN_INSTRUMENTED_OPCODE) {
+        inst.op.code = _PyOpcode_Deopt[opcode];
+        assert(inst.op.code < MIN_SPECIALIZED_OPCODE);
+    }
+    // JIT should not be enabled with free-threading
+    assert(inst.op.code != ENTER_EXECUTOR);
+    return inst;
+}
+
 static void
 copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
 {
     int code_len = (int) Py_SIZE(co);
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
-        dst[i] = _Py_GetBaseCodeUnit(co, i);
+        dst[i] = deopt_code_unit(co, i);
     }
     _PyCode_Quicken(dst, code_len, 1);
 }
@@ -3348,7 +3406,7 @@ create_tlbc_lock_held(PyCodeObject *co, Py_ssize_t idx)
         }
         memcpy(new_tlbc->entries, tlbc->entries, tlbc->size * sizeof(void *));
         _Py_atomic_store_ptr_release(&co->co_tlbc, new_tlbc);
-        _PyMem_FreeDelayed(tlbc);
+        _PyMem_FreeDelayed(tlbc, tlbc->size * sizeof(void *));
         tlbc = new_tlbc;
     }
     char *bc = PyMem_Calloc(1, _PyCode_NBYTES(co));

@@ -91,6 +91,64 @@ class TestList(TestCase):
         with threading_helper.start_threads(threads):
             pass
 
+    def test_reverse(self):
+        def reverse_list(b, l):
+            b.wait()
+            for _ in range(100):
+                l.reverse()
+
+        def reader_list(b, l):
+            b.wait()
+            for _ in range(100):
+                for i in range(10):
+                    self.assertTrue(0 <= l[i] < 10)
+
+        l = list(range(10))
+        barrier = Barrier(2)
+        threads = [Thread(target=reverse_list, args=(barrier, l)),
+                   Thread(target=reader_list, args=(barrier, l))]
+        with threading_helper.start_threads(threads):
+            pass
+
+    def test_slice_assignment1(self):
+        def assign_slice(b, l):
+            b.wait()
+            for _ in range(100):
+                l[2:5] = [7, 8, 9]
+
+        def reader_list(b, l):
+            b.wait()
+            for _ in range(100):
+                self.assertIn(l[2], (2, 7))
+                self.assertIn(l[3], (3, 8))
+                self.assertIn(l[4], (4, 9))
+
+        l = list(range(10))
+        barrier = Barrier(2)
+        threads = [Thread(target=assign_slice, args=(barrier, l)),
+                   Thread(target=reader_list, args=(barrier, l))]
+        with threading_helper.start_threads(threads):
+            pass
+
+    def test_slice_assignment2(self):
+        def assign_slice(b, l):
+            b.wait()
+            for _ in range(100):
+                l[::2] = [10, 11, 12, 13, 14]
+
+        def reader_list(b, l):
+            b.wait()
+            for _ in range(100):
+                for i in range(0, 10, 2):
+                    self.assertIn(l[i], (i, 10 + i // 2))
+
+        l = list(range(10))
+        barrier = Barrier(2)
+        threads = [Thread(target=assign_slice, args=(barrier, l)),
+                   Thread(target=reader_list, args=(barrier, l))]
+        with threading_helper.start_threads(threads):
+            pass
+
 
 if __name__ == "__main__":
     unittest.main()

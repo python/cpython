@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_zstd_ZstdDecompressor_new__doc__,
@@ -114,13 +113,7 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self);
 static PyObject *
 _zstd_ZstdDecompressor_unused_data_get(PyObject *self, void *Py_UNUSED(context))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _zstd_ZstdDecompressor_unused_data_get_impl((ZstdDecompressor *)self);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _zstd_ZstdDecompressor_unused_data_get_impl((ZstdDecompressor *)self);
 }
 
 PyDoc_STRVAR(_zstd_ZstdDecompressor_decompress__doc__,
@@ -227,4 +220,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=7a4d278f9244e684 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=30c12ef047027ede input=a9049054013a1b77]*/

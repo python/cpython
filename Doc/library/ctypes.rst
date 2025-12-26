@@ -14,6 +14,8 @@
 data types, and allows calling functions in DLLs or shared libraries.  It can be
 used to wrap these libraries in pure Python.
 
+.. include:: ../includes/optional-module.rst
+
 
 .. _ctypes-ctypes-tutorial:
 
@@ -232,7 +234,23 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -684,14 +702,10 @@ compiler does it.  It is possible to override this behavior entirely by specifyi
 :attr:`~Structure._layout_` class attribute in the subclass definition; see
 the attribute documentation for details.
 
-It is possible to specify the maximum alignment for the fields by setting
-the :attr:`~Structure._pack_` class attribute to a positive integer.
-This matches what ``#pragma pack(n)`` does in MSVC.
-
-It is also possible to set a minimum alignment for how the subclass itself is packed in the
-same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a :attr:`~Structure._align_` class attribute
-in the subclass definition.
+It is possible to specify the maximum alignment for the fields and/or for the
+structure itself by setting the class attributes :attr:`~Structure._pack_`
+and/or :attr:`~Structure._align_`, respectively.
+See the attribute documentation for details.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -714,10 +728,16 @@ item in the :attr:`~Structure._fields_` tuples::
    ...                 ("second_16", c_int, 16)]
    ...
    >>> print(Int.first_16)
-   <Field type=c_long, ofs=0:0, bits=16>
+   <ctypes.CField 'first_16' type=c_int, ofs=0, bit_size=16, bit_offset=0>
    >>> print(Int.second_16)
-   <Field type=c_long, ofs=0:16, bits=16>
-   >>>
+   <ctypes.CField 'second_16' type=c_int, ofs=0, bit_size=16, bit_offset=16>
+
+It is important to note that bit field allocation and layout in memory are not
+defined as a C standard; their implementation is compiler-specific.
+By default, Python will attempt to match the behavior of a "native" compiler
+for the current platform.
+See the :attr:`~Structure._layout_` attribute for details on the default
+behavior and how to change it.
 
 
 .. _ctypes-arrays:
@@ -876,7 +896,7 @@ invalid non-\ ``NULL`` pointers would crash Python)::
 Thread safety without the GIL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In Python 3.13, the :term:`GIL` may be disabled on :term:`experimental free threaded <free threading>` builds.
+From Python 3.13 onward, the :term:`GIL` can be disabled on :term:`free threaded <free threading>` builds.
 In ctypes, reads and writes to a single object concurrently is safe, but not across multiple objects:
 
    .. code-block:: pycon
@@ -1367,6 +1387,9 @@ The exact functionality is system dependent.
 On Linux, :func:`~ctypes.util.find_library` tries to run external programs
 (``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
 It returns the filename of the library file.
+
+Note that if the output of these programs does not correspond to the dynamic
+linker used by Python, the result of this function may be misleading.
 
 .. versionchanged:: 3.6
    On Linux, the value of the environment variable ``LD_LIBRARY_PATH`` is used
@@ -2031,35 +2054,55 @@ Utility functions
    pointer.
 
 
-.. function:: create_string_buffer(init_or_size, size=None)
+.. function:: create_string_buffer(init, size=None)
+              create_string_buffer(size)
 
    This function creates a mutable character buffer. The returned object is a
    ctypes array of :class:`c_char`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   bytes object which will be used to initialize the array items.
+   If *size* is given (and not ``None``), it must be an :class:`int`.
+   It specifies the size of the returned array.
 
-   If a bytes object is specified as first argument, the buffer is made one item
-   larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   If the *init* argument is given, it must be :class:`bytes`. It is used
+   to initialize the array items. Bytes not initialized this way are
+   set to zero (NUL).
+
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
+
+   If both arguments are given, *size* must not be less than ``len(init)``.
+
+   .. warning::
+
+      If *size* is equal to ``len(init)``, a NUL terminator is
+      not added. Do not treat such a buffer as a C string.
+
+   For example::
+
+      >>> bytes(create_string_buffer(2))
+      b'\x00\x00'
+      >>> bytes(create_string_buffer(b'ab'))
+      b'ab\x00'
+      >>> bytes(create_string_buffer(b'ab', 2))
+      b'ab'
+      >>> bytes(create_string_buffer(b'ab', 4))
+      b'ab\x00\x00'
+      >>> bytes(create_string_buffer(b'abcdef', 2))
+      Traceback (most recent call last):
+         ...
+      ValueError: byte string too long
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
-.. function:: create_unicode_buffer(init_or_size, size=None)
+.. function:: create_unicode_buffer(init, size=None)
+              create_unicode_buffer(size)
 
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   string which will be used to initialize the array items.
-
-   If a string is specified as first argument, the buffer is made one item
-   larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
@@ -2091,6 +2134,8 @@ Utility functions
    no library can be found, returns ``None``.
 
    The exact functionality is system dependent.
+
+   See :ref:`ctypes-finding-shared-libraries` for complete documentation.
 
 
 .. function:: find_msvcrt()
@@ -2498,7 +2543,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  It is an alias for
    :class:`c_byte`.
 
 
@@ -2573,7 +2618,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  It is an alias for
    :class:`c_ubyte`.
 
 
@@ -2750,11 +2795,18 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: _pack_
 
       An optional small integer that allows overriding the alignment of
-      structure fields in the instance.  :attr:`_pack_` must already be defined
-      when :attr:`_fields_` is assigned, otherwise it will have no effect.
-      Setting this attribute to 0 is the same as not setting it at all.
+      structure fields in the instance.
 
-      This is only implemented for the MSVC-compatible memory layout.
+      This is only implemented for the MSVC-compatible memory layout
+      (see :attr:`_layout_`).
+
+      Setting :attr:`!_pack_` to 0 is the same as not setting it at all.
+      Otherwise, the value must be a positive power of two.
+      The effect is equivalent to ``#pragma pack(N)`` in C, except
+      :mod:`ctypes` may allow larger *n* than what the compiler accepts.
+
+      :attr:`!_pack_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
       .. deprecated-removed:: 3.14 3.19
 
@@ -2767,9 +2819,22 @@ fields, or any other data types containing pointer type fields.
 
    .. attribute:: _align_
 
-      An optional small integer that allows overriding the alignment of
+      An optional small integer that allows increasing the alignment of
       the structure when being packed or unpacked to/from memory.
-      Setting this attribute to 0 is the same as not setting it at all.
+
+      The value must not be negative.
+      The effect is equivalent to ``__attribute__((aligned(N)))`` on GCC
+      or ``#pragma align(N)`` on MSVC, except :mod:`ctypes` may allow
+      values that the compiler would reject.
+
+      :attr:`!_align_` can only *increase* a structure's alignment
+      requirements. Setting it to 0 or 1 has no effect.
+
+      Using values that are not powers of two is discouraged and may lead to
+      surprising behavior.
+
+      :attr:`!_align_` must already be defined
+      when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
       .. versionadded:: 3.13
 
@@ -2939,7 +3004,7 @@ fields, or any other data types containing pointer type fields.
    .. attribute:: is_anonymous
 
       True if this field is anonymous, that is, it contains nested sub-fields
-      that should be be merged into a containing structure or union.
+      that should be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

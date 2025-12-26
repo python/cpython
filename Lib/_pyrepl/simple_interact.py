@@ -153,9 +153,11 @@ def run_multiline_interactive_console(
                 append_history_file()
             except (FileNotFoundError, PermissionError, OSError) as e:
                 warnings.warn(f"failed to open the history file for writing: {e}")
+
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
+            r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())

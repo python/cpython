@@ -1,6 +1,5 @@
 import ctypes
 import unittest
-import warnings
 from ctypes import Structure, POINTER, pointer, c_char_p
 
 # String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
@@ -21,9 +20,7 @@ class TestSetPointerType(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            ctypes.SetPointerType(lpcell, cell)
+        lpcell.set_type(cell)
 
         self.assertIs(POINTER(cell), lpcell)
 
@@ -50,10 +47,9 @@ class TestSetPointerType(unittest.TestCase):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
 
-        with self.assertWarns(DeprecationWarning):
-            ctypes.SetPointerType(lpcell, cell)
-
+        lpcell.set_type(cell)
         self.assertIs(POINTER(cell), lpcell)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -730,6 +730,7 @@ class HandlerTest(BaseTest):
     # based on os.fork existing because that is what users and this test use.
     # This helps ensure that when fork exists (the important concept) that the
     # register_at_fork mechanism is also present and used.
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
@@ -1036,7 +1037,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -4045,6 +4046,7 @@ class ConfigDictTest(BaseTest):
                 self._apply_simple_queue_listener_configuration(qspec)
                 manager.assert_not_called()
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4067,6 +4069,7 @@ class ConfigDictTest(BaseTest):
                 with self.assertRaises(ValueError):
                     self._apply_simple_queue_listener_configuration(qspec)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
@@ -4107,6 +4110,7 @@ class ConfigDictTest(BaseTest):
         # log a message (this creates a record put in the queue)
         logging.getLogger().info(message_to_log)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     @support.requires_subprocess()
     def test_multiprocessing_queues(self):
@@ -4214,89 +4218,6 @@ class ConfigDictTest(BaseTest):
         handler = logging.getHandlerByName('custom')
         self.assertEqual(handler.custom_kwargs, custom_kwargs)
 
-    # See gh-91555 and gh-90321
-    @support.requires_subprocess()
-    def test_deadlock_in_queue(self):
-        queue = multiprocessing.Queue()
-        handler = logging.handlers.QueueHandler(queue)
-        logger = multiprocessing.get_logger()
-        level = logger.level
-        try:
-            logger.setLevel(logging.DEBUG)
-            logger.addHandler(handler)
-            logger.debug("deadlock")
-        finally:
-            logger.setLevel(level)
-            logger.removeHandler(handler)
-
-    def test_recursion_in_custom_handler(self):
-        class BadHandler(logging.Handler):
-            def __init__(self):
-                super().__init__()
-            def emit(self, record):
-                logger.debug("recurse")
-        logger = logging.getLogger("test_recursion_in_custom_handler")
-        logger.addHandler(BadHandler())
-        logger.setLevel(logging.DEBUG)
-        logger.debug("boom")
-
-    @threading_helper.requires_working_threading()
-    def test_thread_supression_noninterference(self):
-        lock = threading.Lock()
-        logger = logging.getLogger("test_thread_supression_noninterference")
-
-        # Block on the first call, allow others through
-        #
-        # NOTE: We need to bypass the base class's lock, otherwise that will
-        #       block multiple calls to the same handler itself.
-        class BlockOnceHandler(TestHandler):
-            def __init__(self, barrier):
-                super().__init__(support.Matcher())
-                self.barrier = barrier
-
-            def createLock(self):
-                self.lock = None
-
-            def handle(self, record):
-                self.emit(record)
-
-            def emit(self, record):
-                if self.barrier:
-                    barrier = self.barrier
-                    self.barrier = None
-                    barrier.wait()
-                    with lock:
-                        pass
-                super().emit(record)
-                logger.info("blow up if not supressed")
-
-        barrier = threading.Barrier(2)
-        handler = BlockOnceHandler(barrier)
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
-
-        t1 = threading.Thread(target=logger.debug, args=("1",))
-        with lock:
-
-            # Ensure first thread is blocked in the handler, hence supressing logging...
-            t1.start()
-            barrier.wait()
-
-            # ...but the second thread should still be able to log...
-            t2 = threading.Thread(target=logger.debug, args=("2",))
-            t2.start()
-            t2.join(timeout=3)
-
-            self.assertEqual(len(handler.buffer), 1)
-            self.assertTrue(handler.matches(levelno=logging.DEBUG, message='2'))
-
-            # The first thread should still be blocked here
-            self.assertTrue(t1.is_alive())
-
-        # Now the lock has been released the first thread should complete
-        t1.join()
-        self.assertEqual(len(handler.buffer), 2)
-        self.assertTrue(handler.matches(levelno=logging.DEBUG, message='1'))
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
@@ -5420,6 +5341,7 @@ class LogRecordTest(BaseTest):
         else:
             return results
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @skip_if_tsan_fork
     def test_multiprocessing(self):
         support.skip_if_broken_multiprocessing_synchronize()
@@ -5504,7 +5426,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
     @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
@@ -5516,7 +5438,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
 
 class BasicConfigTest(unittest.TestCase):
@@ -5841,7 +5763,7 @@ class BasicConfigTest(unittest.TestCase):
                 data = f.read().strip()
             self.assertRegex(data, r'Task-\d+ - hello world')
         finally:
-            asyncio._set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
             if handler:
                 handler.close()
 
@@ -5904,7 +5826,7 @@ class LoggerAdapterTest(unittest.TestCase):
 
         self.addCleanup(cleanup)
         self.addCleanup(logging.shutdown)
-        self.adapter = logging.LoggerAdapter(logger=self.logger, extra=None)
+        self.adapter = logging.LoggerAdapter(logger=self.logger)
 
     def test_exception(self):
         msg = 'testing exception: %r'
@@ -6075,6 +5997,18 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.foo, '1')
         self.assertEqual(record.bar, '2')
 
+        self.adapter.critical('no extra')  # should not fail
+        self.assertEqual(len(self.recording.records), 2)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+        self.assertNotHasAttr(record, 'bar')
+
+        self.adapter.critical('none extra', extra=None)  # should not fail
+        self.assertEqual(len(self.recording.records), 3)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+        self.assertNotHasAttr(record, 'bar')
+
     def test_extra_merged_log_call_has_precedence(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
                                              extra={'foo': '1'},
@@ -6085,6 +6019,25 @@ class LoggerAdapterTest(unittest.TestCase):
         record = self.recording.records[0]
         self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '2')
+
+    def test_extra_merged_without_extra(self):
+        self.adapter = logging.LoggerAdapter(logger=self.logger,
+                                             merge_extra=True)
+
+        self.adapter.critical('foo should be here', extra={'foo': '1'})
+        self.assertEqual(len(self.recording.records), 1)
+        record = self.recording.records[-1]
+        self.assertEqual(record.foo, '1')
+
+        self.adapter.critical('no extra')  # should not fail
+        self.assertEqual(len(self.recording.records), 2)
+        record = self.recording.records[-1]
+        self.assertNotHasAttr(record, 'foo')
+
+        self.adapter.critical('none extra', extra=None)  # should not fail
+        self.assertEqual(len(self.recording.records), 3)
+        record = self.recording.records[-1]
+        self.assertNotHasAttr(record, 'foo')
 
 
 class PrefixAdapter(logging.LoggerAdapter):
@@ -7312,6 +7265,16 @@ class MiscTestCase(unittest.TestCase):
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
             'threading', 'logAsyncioTasks'}
         support.check__all__(self, logging, not_exported=not_exported)
+
+
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__and__date__(self):
+        msg = "is deprecated and slated for removal in Python 3.20"
+        for attr in ("__version__", "__date__"):
+            with self.subTest(attr=attr):
+                with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
+                    getattr(logging, attr)
+                self.assertEqual(cm.filename, __file__)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

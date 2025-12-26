@@ -39,7 +39,8 @@ class CmdLineTest(unittest.TestCase):
 
     def verify_valid_flag(self, cmd_line):
         rc, out, err = assert_python_ok(cmd_line)
-        self.assertTrue(out == b'' or out.endswith(b'\n'))
+        if out != b'':
+            self.assertEndsWith(out, b'\n')
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
         return out
@@ -89,8 +90,8 @@ class CmdLineTest(unittest.TestCase):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
-            self.assertFalse(err.startswith(version))
-            self.assertTrue(out.startswith(version))
+            self.assertNotStartsWith(err, version)
+            self.assertStartsWith(out, version)
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
@@ -299,6 +300,10 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
             return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
 
+        def run_no_utf8_mode(arg):
+            cmd = [sys.executable, '-X', 'utf8=0', '-c', code, arg]
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+
         valid_utf8 = 'e:\xe9, euro:\u20ac, non-bmp:\U0010ffff'.encode('utf-8')
         # invalid UTF-8 byte sequences with a valid UTF-8 sequence
         # in the middle.
@@ -311,7 +316,8 @@ class CmdLineTest(unittest.TestCase):
         )
         test_args = [valid_utf8, invalid_utf8]
 
-        for run_cmd in (run_default, run_c_locale, run_utf8_mode):
+        for run_cmd in (run_default, run_c_locale, run_utf8_mode,
+                        run_no_utf8_mode):
             with self.subTest(run_cmd=run_cmd):
                 for arg in test_args:
                     proc = run_cmd(arg)
@@ -380,7 +386,7 @@ class CmdLineTest(unittest.TestCase):
         p.stdin.flush()
         data, rc = _kill_python_and_exit_code(p)
         self.assertEqual(rc, 0)
-        self.assertTrue(data.startswith(b'x'), data)
+        self.assertStartsWith(data, b'x')
 
     def test_large_PYTHONPATH(self):
         path1 = "ABCDE" * 100
@@ -483,6 +489,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertRegex(err.decode('ascii', 'ignore'), 'SyntaxError')
         self.assertEqual(b'', out)
 
+    @force_not_colorized
     def test_stdout_flush_at_shutdown(self):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
@@ -1039,7 +1046,7 @@ class CmdLineTest(unittest.TestCase):
                               stderr=subprocess.PIPE,
                               text=True)
         err_msg = "Unknown option: --unknown-option\nusage: "
-        self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
+        self.assertStartsWith(proc.stderr, err_msg)
         self.assertNotEqual(proc.returncode, 0)
 
     def test_int_max_str_digits(self):

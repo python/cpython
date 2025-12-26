@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import importlib
+import os
 import pkgutil
 import sys
 import token
 import tokenize
+from importlib.machinery import FileFinder
 from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -16,9 +19,18 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, Iterator, Mapping
 
 
+HARDCODED_SUBMODULES = {
+    # Standard library submodules that are not detected by pkgutil.iter_modules
+    # but can be imported, so should be proposed in completion
+    "collections": ["abc"],
+    "os": ["path"],
+    "xml.parsers.expat": ["errors", "model"],
+}
+
+
 def make_default_module_completer() -> ModuleCompleter:
-    # Inside pyrepl, __package__ is set to '_pyrepl'
-    return ModuleCompleter(namespace={'__package__': '_pyrepl'})
+    # Inside pyrepl, __package__ is set to None by default
+    return ModuleCompleter(namespace={'__package__': None})
 
 
 class ModuleCompleter:
@@ -41,12 +53,13 @@ class ModuleCompleter:
         self.namespace = namespace or {}
         self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
+        self._stdlib_path = os.path.dirname(importlib.__path__[0])
 
-    def get_completions(self, line: str) -> list[str]:
+    def get_completions(self, line: str) -> list[str] | None:
         """Return the next possible import completions for 'line'."""
         result = ImportParser(line).parse()
         if not result:
-            return []
+            return None
         try:
             return self.complete(*result)
         except Exception:
@@ -81,8 +94,10 @@ class ModuleCompleter:
     def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
-            builtin_modules = [name for name in sys.builtin_module_names if name.startswith(prefix)]
-            third_party_modules = [name for _, name, _ in self.global_cache if name.startswith(prefix)]
+            builtin_modules = [name for name in sys.builtin_module_names
+                               if self.is_suggestion_match(name, prefix)]
+            third_party_modules = [module.name for module in self.global_cache
+                                   if self.is_suggestion_match(module.name, prefix)]
             return sorted(builtin_modules + third_party_modules)
 
         if path.startswith('.'):
@@ -93,12 +108,33 @@ class ModuleCompleter:
                 return []
 
         modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
+        is_stdlib_import: bool | None = None
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
+            if is_stdlib_import is None:
+                # Top-level import decide if we import from stdlib or not
+                is_stdlib_import = all(
+                    self._is_stdlib_module(mod_info) for mod_info in modules
+                )
             modules = self.iter_submodules(modules)
-        return [module.name for module in modules
-                if module.name.startswith(prefix)]
+
+        module_names = [module.name for module in modules]
+        if is_stdlib_import:
+            module_names.extend(HARDCODED_SUBMODULES.get(path, ()))
+        return [module_name for module_name in module_names
+                if self.is_suggestion_match(module_name, prefix)]
+
+    def _is_stdlib_module(self, module_info: pkgutil.ModuleInfo) -> bool:
+        return (isinstance(module_info.module_finder, FileFinder)
+                and module_info.module_finder.path == self._stdlib_path)
+
+    def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
+        if prefix:
+            return module_name.startswith(prefix)
+        # For consistency with attribute completion, which
+        # does not suggest private attributes unless requested.
+        return not module_name.startswith("_")
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""

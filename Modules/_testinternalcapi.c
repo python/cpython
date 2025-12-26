@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -33,6 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime_structs.h" // _PY_NSMALLPOSINTS
 #include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -120,10 +122,22 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
+static PyObject*
+get_stack_pointer(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    return PyLong_FromSize_t(here_addr);
+}
+
+static PyObject*
+get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
 
 static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
@@ -1022,7 +1036,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1045,6 +1059,9 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 #define SET_COUNT(DICT, STRUCT, NAME) \
     do { \
         PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
         int res = PyDict_SetItemString(DICT, #NAME, count); \
         Py_DECREF(count); \
         if (res < 0) { \
@@ -1187,7 +1204,7 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1785,9 +1802,9 @@ finally:
 
 /* To run some code in a sub-interpreter.
 
-Generally you can use test.support.interpreters,
+Generally you can use the interpreters module,
 but we keep this helper as a distinct implementation.
-That's especially important for testing test.support.interpreters.
+That's especially important for testing the interpreters module.
 */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1991,7 +2008,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     if (strcmp(mode, "xidata") == 0) {
-        if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+        if (_PyObject_GetXIDataNoFallback(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIData(tstate, obj, fallback, xidata) != 0)
+        {
             goto error;
         }
     }
@@ -2196,8 +2220,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
@@ -2227,6 +2250,13 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
     }
     return PyLong_FromVoidPtr(bc);
 }
+
+static PyObject *
+get_long_lived_total(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromInt64(PyInterpreterState_Get()->gc.long_lived_total);
+}
+
 #endif
 
 static PyObject *
@@ -2335,10 +2365,152 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (_PyEval_AddPendingCall(_PyInterpreterState_GET(), _pending_callback, Py_NewRef(callable), 0) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+vectorcall_nop(PyObject *callable, PyObject *const *args,
+               size_t nargsf, PyObject *kwnames)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+set_vectorcall_nop(PyObject *self, PyObject *func)
+{
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError, "expected function");
+        return NULL;
+    }
+
+    ((PyFunctionObject*)func)->vectorcall = vectorcall_nop;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+module_get_gc_hooks(PyObject *self, PyObject *arg)
+{
+    PyModuleObject *mod = (PyModuleObject *)arg;
+    PyObject *traverse = NULL;
+    PyObject *clear = NULL;
+    PyObject *free = NULL;
+    PyObject *result = NULL;
+    traverse = PyLong_FromVoidPtr(mod->md_state_traverse);
+    if (!traverse) {
+        goto finally;
+    }
+    clear = PyLong_FromVoidPtr(mod->md_state_clear);
+    if (!clear) {
+        goto finally;
+    }
+    free = PyLong_FromVoidPtr(mod->md_state_free);
+    if (!free) {
+        goto finally;
+    }
+    result = PyTuple_FromArray((PyObject*[]){ traverse, clear, free }, 3);
+finally:
+    Py_XDECREF(traverse);
+    Py_XDECREF(clear);
+    Py_XDECREF(free);
+    return result;
+}
+
+
+static void
+check_threadstate_set_stack_protection(PyThreadState *tstate,
+                                       void *start, size_t size)
+{
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == 0);
+    assert(!PyErr_Occurred());
+
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(ts->c_stack_top == (uintptr_t)start + size);
+    assert(ts->c_stack_hard_limit <= ts->c_stack_soft_limit);
+    assert(ts->c_stack_soft_limit < ts->c_stack_top);
+}
+
+
+static PyObject *
+test_threadstate_set_stack_protection(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)tstate;
+    assert(!PyErr_Occurred());
+
+    uintptr_t init_base = ts->c_stack_init_base;
+    size_t init_top = ts->c_stack_init_top;
+
+    // Test the minimum stack size
+    size_t size = _PyOS_MIN_STACK_SIZE;
+    void *start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test a larger size
+    size = 7654321;
+    assert(size > _PyOS_MIN_STACK_SIZE);
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    check_threadstate_set_stack_protection(tstate, start, size);
+
+    // Test invalid size (too small)
+    size = 5;
+    start = (void*)(_Py_get_machine_stack_pointer() - size);
+    assert(PyUnstable_ThreadState_SetStackProtection(tstate, start, size) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_ValueError));
+    PyErr_Clear();
+
+    // Test PyUnstable_ThreadState_ResetStackProtection()
+    PyUnstable_ThreadState_ResetStackProtection(tstate);
+    assert(ts->c_stack_init_base == init_base);
+    assert(ts->c_stack_init_top == init_top);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
+    {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
+    {"get_stack_margin", get_stack_margin, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -2425,6 +2597,7 @@ static PyMethodDef module_functions[] = {
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
     {"get_tlbc", get_tlbc, METH_O, NULL},
     {"get_tlbc_id", get_tlbc_id, METH_O, NULL},
+    {"get_long_lived_total", get_long_lived_total, METH_NOARGS},
 #endif
 #ifdef _Py_TIER2
     {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
@@ -2437,6 +2610,14 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
+    {"simple_pending_call", simple_pending_call, METH_O},
+    {"set_vectorcall_nop", set_vectorcall_nop, METH_O},
+    {"module_get_gc_hooks", module_get_gc_hooks, METH_O},
+    {"test_threadstate_set_stack_protection",
+     test_threadstate_set_stack_protection, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2488,7 +2669,8 @@ module_exec(PyObject *module)
     }
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
-                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        // + 1 more due to one loop spent on tracing.
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 2)) < 0) {
         return 1;
     }
 
@@ -2507,10 +2689,17 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    if (PyModule_AddIntMacro(module, _PY_NSMALLPOSINTS) < 0) {
+        return 1;
+    }
+
     return 0;
 }
 
+PyABIInfo_VAR(abi_info);
+
 static struct PyModuleDef_Slot module_slots[] = {
+    {Py_mod_abi, &abi_info},
     {Py_mod_exec, module_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
