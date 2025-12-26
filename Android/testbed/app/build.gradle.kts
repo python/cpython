@@ -229,6 +229,12 @@ androidComponents.onVariants { variant ->
                     from(cwd)
                 }
             }
+
+            // A filename ending with .gz will be automatically decompressed
+            // while building the APK. Avoid this by adding a dash to the end,
+            // and add an extra dash to any filenames that already end with one.
+            // This will be undone in MainActivity.kt.
+            rename(""".*(\.gz|-)""", "$0-")
         }
     }
 
