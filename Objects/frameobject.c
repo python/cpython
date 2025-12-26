@@ -17,7 +17,6 @@
 
 #include "frameobject.h"          // PyFrameLocalsProxyObject
 #include "opcode.h"               // EXTENDED_ARG
-#include "pycore_optimizer.h"
 
 #include "clinic/frameobject.c.h"
 
