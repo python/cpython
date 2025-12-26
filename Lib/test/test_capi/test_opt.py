@@ -3194,6 +3194,48 @@ class TestUopsOptimization(unittest.TestCase):
         for i in range(TIER2_THRESHOLD * 10):
             f1()
 
+    def test_143183(self):
+        # https://github.com/python/cpython/issues/143183
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        def f1():
+            class AsyncIter:
+                def __init__(self):
+                    self.limit = 0
+                    self.count = 0
+        
+                def __aiter__(self):
+                    return self
+        
+                async def __anext__(self):
+                    if self.count >= self.limit:
+                        ...
+                    self.count += 1j
+        
+            class AsyncCtx:
+                async def async_for_driver():
+                    try:
+                        for _ in range({TIER2_THRESHOLD}):
+                            try:
+                                async for _ in AsyncIter():
+                                    ...
+                            except TypeError:
+                                ...
+                    except Exception:
+                        ...
+        
+                c = async_for_driver()
+                while True:
+                    try:
+                        c.send(None)
+                    except StopIteration:
+                        break
+
+        for _ in range({TIER2_THRESHOLD // 40}):
+            f1()
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
 def global_identity(x):
     return x
 

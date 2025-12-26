@@ -625,6 +625,7 @@ _PyJit_translate_single_bytecode_to_trace(
     int trace_length = _tstate->jit_tracer_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_tracer_state.code_buffer;
     int max_length = _tstate->jit_tracer_state.prev_state.code_max_size;
+    int exit_op = stop_tracing_opcode == 0 ? _EXIT_TRACE : stop_tracing_opcode;
 
     _Py_CODEUNIT *this_instr =  _tstate->jit_tracer_state.prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
@@ -691,8 +692,10 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (stop_tracing_opcode != 0) {
-        ADD_TO_TRACE(stop_tracing_opcode, 0, 0, target);
-        goto done;
+        // gh-143183: It's important we rewind to the last known proper target.
+        // The current target mgiht be garbage as stop tracing usually indicates
+        // we are in something that we can't trace.
+        goto unsupported;
     }
 
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
@@ -738,7 +741,7 @@ _PyJit_translate_single_bytecode_to_trace(
                 int32_t old_target = (int32_t)uop_get_target(curr);
                 curr++;
                 trace_length++;
-                curr->opcode = _EXIT_TRACE;
+                curr->opcode = exit_op;
                 curr->format = UOP_FORMAT_TARGET;
                 curr->target = old_target;
             }
