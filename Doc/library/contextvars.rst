@@ -275,16 +275,16 @@ Manual Context Management
 
    .. method:: keys()
 
-      Return a list of all variables in the context object.
+      Return an iterator of all variables in the context object.
 
    .. method:: values()
 
-      Return a list of all variables' values in the context object.
+      Return an iterator of all variables' values in the context object.
 
 
    .. method:: items()
 
-      Return a list of 2-tuples containing all variables and their
+      Return an iterator of 2-tuples containing all variables and their
       values in the context object.
 
 
