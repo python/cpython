@@ -4449,6 +4449,8 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
             // _GUARD_TOS_FLOAT
             {
                 value = stack_pointer[-1];
@@ -4479,9 +4481,21 @@
                 double dleft = PyFloat_AS_DOUBLE(left_o);
                 double dright = PyFloat_AS_DOUBLE(right_o);
                 int sign_ish = COMPARISON_BIT(dleft, dright);
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                l = left;
+                r = right;
                 res = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = r;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
+            }
+            // _POP_TOP_FLOAT
+            {
+                value = l;
+                assert(PyFloat_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyFloat_ExactDealloc);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -4578,6 +4592,8 @@
             _PyStackRef left;
             _PyStackRef right;
             _PyStackRef res;
+            _PyStackRef l;
+            _PyStackRef r;
             // _GUARD_TOS_UNICODE
             {
                 value = stack_pointer[-1];
@@ -4608,12 +4624,24 @@
                 STAT_INC(COMPARE_OP, hit);
                 int eq = _PyUnicode_Equal(left_o, right_o);
                 assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
-                PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-                PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                l = left;
+                r = right;
                 assert(eq == 0 || eq == 1);
                 assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
                 assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
                 res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True : PyStackRef_False;
+            }
+            // _POP_TOP_UNICODE
+            {
+                value = r;
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
+            }
+            // _POP_TOP_UNICODE
+            {
+                value = l;
+                assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(value)));
+                PyStackRef_CLOSE_SPECIALIZED(value, _PyUnicode_ExactDealloc);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;

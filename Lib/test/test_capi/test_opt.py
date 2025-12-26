@@ -1664,6 +1664,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
     def test_compare_op_str_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
@@ -1681,6 +1682,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_STR", uops)
         self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    @unittest.skip("TODO (gh-142764): Re-enable after we get back automatic constant propagation.")
     def test_compare_op_float_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
@@ -2606,6 +2608,36 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_COMPARE_OP_INT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+    def test_float_cmp_op_refcount_elimination(self):
+        def testfunc(n):
+            c = 1.0
+            res = False
+            for _ in range(n):
+                res = c == c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+    def test_str_cmp_op_refcount_elimination(self):
+        def testfunc(n):
+            c = "a"
+            res = False
+            for _ in range(n):
+                res = c == c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_COMPARE_OP_STR", uops)
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertNotIn("_POP_TOP", uops)
 
