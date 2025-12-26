@@ -1,2 +1,2 @@
 Fix several crashes due to reading invalid memory in the new Tachyon
-sampling profiler. Patch by Pablo Galindo
+sampling profiler. Patch by Pablo Galindo.
