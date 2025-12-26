@@ -267,6 +267,28 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
+static Py_ssize_t
+wraplines(unsigned char *data, Py_ssize_t size, size_t width)
+{
+    if ((size_t)size <= width) {
+        return size;
+    }
+    unsigned char *src = data + size;
+    Py_ssize_t newlines = (size - 1) / width;
+    Py_ssize_t line_len = size - newlines * width;
+    size += newlines;
+    unsigned char *dst = data + size;
+
+    while ((src -= line_len) != data) {
+        dst -= line_len;
+        memmove(dst, src, line_len);
+        *--dst = '\n';
+        line_len = width;
+    }
+    assert(dst == data + width);
+    return size;
+}
+
 #include "clinic/binascii.c.h"
 
 /*[clinic input]
@@ -839,15 +861,8 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
                           int wrap, unsigned int width, int pad)
 /*[clinic end generated code: output=78426392ad3fc75b input=d5122dbab4dbb9f2]*/
 {
-    const unsigned char *bin_data;
-    int chunk_pos = 0;
-    unsigned char this_group[5];
-    uint32_t leftchar = 0;
-    unsigned int line_len = 0;
-    Py_ssize_t bin_len, group_len, out_len;
-
-    bin_data = data->buf;
-    bin_len = data->len;
+    const unsigned char *bin_data = data->buf;
+    Py_ssize_t bin_len = data->len;
 
     assert(bin_len >= 0);
 
@@ -858,7 +873,7 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     /* Allocate output buffer.
        XXX: Do a pre-pass above some threshold estimate (cf. 'yz')?
     */
-    out_len = 5 * ((bin_len + 3) / 4);
+    Py_ssize_t out_len = 5 * ((bin_len + 3) / 4);
     if (wrap)                   out_len += 4;
     if (!pad && (bin_len % 4))  out_len -= 4 - (bin_len % 4);
     if (width && out_len)       out_len += (out_len - 1) / width;
@@ -872,54 +887,71 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     if (wrap) {
         *ascii_data++ = BASE85_A85_PREFIX;
         *ascii_data++ = BASE85_A85_AFFIX;
-        line_len = 2;
     }
 
-    for (; bin_len > 0 || chunk_pos != 0; bin_len--, bin_data++) {
-        /* Shift data or padding into our buffer. */
-        leftchar <<= 8;         /* Pad with zero when encoding. */
-        if (bin_len > 0) {
-            leftchar |= *bin_data;
+    /* Encode all full-length chunks. */
+    for (; bin_len >= 4; bin_len -= 4, bin_data += 4) {
+        uint32_t leftchar = (bin_data[0] << 24) | (bin_data[1] << 16) |
+                            (bin_data[2] << 8)  |  bin_data[3];
+        if (leftchar == BASE85_A85_Z) {
+            *ascii_data++ = 'z';
         }
-
-        /* Wait until buffer is full. */
-        if (++chunk_pos != 4) {
-            continue;
+        else if (fold_spaces && leftchar == BASE85_A85_Y) {
+            *ascii_data++ = 'y';
         }
+        else {
+            ascii_data[4] = table_b2a_base85_a85[leftchar % 85];
+            leftchar /= 85;
+            ascii_data[3] = table_b2a_base85_a85[leftchar % 85];
+            leftchar /= 85;
+            ascii_data[2] = table_b2a_base85_a85[leftchar % 85];
+            leftchar /= 85;
+            ascii_data[1] = table_b2a_base85_a85[leftchar % 85];
+            leftchar /= 85;
+            ascii_data[0] = table_b2a_base85_a85[leftchar];
 
-        /* Encode current chunk. */
-        if (((bin_len > 0 || pad) && leftchar == BASE85_A85_Z) ||
-            (fold_spaces && leftchar == BASE85_A85_Y)) {
-            this_group[0] = leftchar == BASE85_A85_Y ? 'y' : 'z';
-            group_len = 1;
-            leftchar = 0;
-        } else {
-            group_len = bin_len > 0 || pad ? 5 : 4 + bin_len;
+            ascii_data += 5;
+        }
+    }
+
+    /* Encode partial-length final chunk. */
+    if (bin_len > 0) {
+        uint32_t leftchar = 0;
+        for (Py_ssize_t i = 0; i < 4; i++) {
+            leftchar <<= 8;     /* Pad with zero when encoding. */
+            if (i < bin_len) {
+                leftchar |= *bin_data++;
+            }
+        }
+        if (pad && leftchar == BASE85_A85_Z) {
+            *ascii_data++ = 'z';
+        }
+        else {
+            Py_ssize_t group_len = pad ? 5 : bin_len + 1;
             for (Py_ssize_t i = 4; i >= 0; i--) {
-                this_group[i] = table_b2a_base85_a85[leftchar % 85];
+                if (i < group_len) {
+                    ascii_data[i] = table_b2a_base85_a85[leftchar % 85];
+                }
                 leftchar /= 85;
             }
+            ascii_data += group_len;
         }
-
-        /* Write current group. */
-        for (Py_ssize_t i = 0; i < group_len; i++) {
-            if (width && line_len == width) {
-                *ascii_data++ = '\n';
-                line_len = 0;
-            }
-            *ascii_data++ = this_group[i];
-            line_len++;
-        }
-
-        chunk_pos = 0;
     }
 
     if (wrap) {
-        if (width && line_len + 2 > width) {
-            *ascii_data++ = '\n';
-        }
         *ascii_data++ = BASE85_A85_AFFIX;
         *ascii_data++ = BASE85_A85_SUFFIX;
+    }
+
+    if (width && out_len) {
+        unsigned char *start = PyBytesWriter_GetData(writer);
+        ascii_data = start + wraplines(start, ascii_data - start, width);
+        if (wrap && ascii_data[-2] == '\n') {
+            assert(ascii_data[-1] == BASE85_A85_SUFFIX);
+            assert(ascii_data[-3] == BASE85_A85_AFFIX);
+            ascii_data[-3] = '\n';
+            ascii_data[-2] = BASE85_A85_AFFIX;
+        }
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);

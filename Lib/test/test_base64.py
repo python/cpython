@@ -874,6 +874,12 @@ class BaseXYTestCase:
         eq(base64.a85decode(b'G^+IX'), b"xxxx")
         eq(base64.a85decode(b'G^+IXGQ7^D'), b"xxxxx\x00\x00\x00")
 
+        eq(base64.a85encode(b"\x00", pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*2, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*3, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*4, pad=True), b'z')
+        eq(base64.a85encode(b"\x00"*5, pad=True), b'zz')
+
     def test_b85_padding(self):
         base64 = self.module
         eq = self.assertEqual
