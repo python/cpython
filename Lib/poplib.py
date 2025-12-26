@@ -13,12 +13,12 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 # Imports
 
+import base64
 import binascii
 import errno
 import re
 import socket
 import sys
-import base64
 
 try:
     import ssl
@@ -220,6 +220,7 @@ class POP3:
         NB: mailbox is locked by server from here to 'quit()'
         """
         return self._shortcmd('PASS %s' % pswd)
+
 
     def stat(self):
         """Get mailbox status.
@@ -428,18 +429,12 @@ class POP3:
         return resp
 
     def auth(self, mechanism, authobject, *, initial_response_ok=True):
-        """Authenticate to the POP3 server using AUTH (RFC 5034).
-
-        Result is 'response'.
-        """
+        """Authenticate to the POP3 server using AUTH (RFC 5034)."""
         mech = mechanism.upper()
 
         initial = None
-        if initial_response_ok:
-            try:
-                initial = authobject()
-            except TypeError:
-                initial = None
+        if initial_response_ok and callable(authobject):
+            initial = authobject()
         if isinstance(initial, str):
             initial = initial.encode('ascii', 'strict')
         if initial is not None and not isinstance(initial, (bytes, bytearray)):
@@ -448,7 +443,7 @@ class POP3:
         if initial is not None:
             b64 = base64.b64encode(initial).decode('ascii')
             cmd = f'AUTH {mech} {b64}'
-            if len(cmd.encode('ascii')) + 2 <= 255:
+            if len(cmd.encode('ascii')) <= 253:
                 self._putcmd(cmd)
             else:
                 self._putcmd(f'AUTH {mech}')
@@ -465,12 +460,12 @@ class POP3:
             if line.startswith(b'-ERR'):
                 raise error_proto(line.decode('ascii', 'replace'))
             # Challenge line: "+ <b64>" or just "+" (empty challenge)
-            if not (line == b'+' or line.startswith(b'+ ')):
+            if line != b'+' and not line.startswith(b'+ '):
                 raise error_proto(f'malformed AUTH challenge line: {line!r}')
 
             auth_challenge_count += 1
             if auth_challenge_count > _MAXCHALLENGE:
-                raise error_proto('Server AUTH mechanism infinite loop')
+                raise error_proto('Server AUTH mechanism infinite loop. Last response: ', repr(line))
 
             chal = line[1:]
             if chal.startswith(b' '):
@@ -500,10 +495,7 @@ class POP3:
                 self._putcmd(base64.b64encode(resp).decode('ascii'))
 
     def auth_plain(self, user, password, authzid=''):
-        """Return an authobject suitable for SASL PLAIN.
-
-        Result is 'str'.
-        """
+        """Return an authobject suitable for SASL PLAIN."""
         def _auth_plain(challenge=None):
             # Per RFC 4616, the response is: authzid UTF8 NUL authcid UTF8 NUL passwd UTF8
             return f"{authzid}\0{user}\0{password}"

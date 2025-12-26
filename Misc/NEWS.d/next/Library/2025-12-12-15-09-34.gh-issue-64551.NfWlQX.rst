@@ -1,1 +1,1 @@
-Add RFC 5034 AUTH support to poplib
+:mod:`poplib`: add :rfc:`5034` ``AUTH`` support.

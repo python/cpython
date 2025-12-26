@@ -249,12 +249,17 @@ A :class:`POP3` instance has the following methods:
 
    Authenticate using the POP3 ``AUTH`` command as specified in :rfc:`5034`.
 
-   If *initial_response* is provided (``bytes`` or ``str``), it is
-   base64-encoded and appended to the command after a single space.
+   If *initial_response_ok* is true, ``authobject()`` is called first with no
+   arguments to obtain an optional initial response. It may return :class:`bytes`
+   or :class:`str`; if it returns :const:`None`, no initial response is sent.
+   The returned value is base64-encoded before being sent.
 
-   If *authobject* is provided, it is called with the server’s ``bytes``
-   challenge (already base64-decoded) and must return the client response
-   (``bytes`` or ``str``).  Return ``b'*'`` to abort the exchange.
+   For each server challenge, ``authobject(challenge)`` is called with the
+   base64-decoded ``bytes`` challenge and must return the client response as
+   :class:`bytes` or :class:`str`. If it returns :const:`None`, an empty response
+   is sent. To abort the exchange, return ``b'*'`` (the client sends ``'*'``).
+
+   .. versionadded:: next
 
 
 Instances of :class:`POP3_SSL` have no additional methods. The interface of this

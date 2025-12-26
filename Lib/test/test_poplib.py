@@ -2,6 +2,7 @@
 
 # Modified by Giampaolo Rodola' to give poplib.POP3 and poplib.POP3_SSL
 # a real test suite
+
 import base64
 import poplib
 import socket
