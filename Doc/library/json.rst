@@ -288,7 +288,7 @@ Basic Usage
       If set, a function that is called with the result of
       any JSON object literal decoded (a :class:`dict`).
       The return value of this function will be used
-      instead of the :class:`dict`.
+      instead of the given object :class:`dict`.
       This feature can be used to implement custom decoders,
       for example `JSON-RPC <https://www.jsonrpc.org>`_ class hinting.
       Default ``None``.
@@ -370,11 +370,14 @@ Basic Usage
 Encoders and Decoders
 ---------------------
 
-.. class:: JSONDecoder(*, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None)
+.. class:: JSONDecoder(*, object_hook=None, parse_float=None, parse_int=None, \
+                       parse_constant=None, strict=True, object_pairs_hook=None)
 
-   Simple JSON decoder.
+   A simple JSON decoder that also understands
+   ``NaN``, ``Infinity``, and ``-Infinity`` as their
+   corresponding :class:`float` values, which is outside the JSON spec.
 
-   Performs the following translations in decoding by default:
+   :class:`!JSONDecoder` performs the following translations by default:
 
    .. _json-to-py-table:
 
@@ -398,44 +401,63 @@ Encoders and Decoders
    | null          | None              |
    +---------------+-------------------+
 
-   It also understands ``NaN``, ``Infinity``, and ``-Infinity`` as their
-   corresponding ``float`` values, which is outside the JSON spec.
+   :param object_hook:
+      If set, a function that is called with the result of
+      any object literal decoded (a :class:`dict`).
+      The return value of this function will be used
+      instead of the given object :class:`dict`.
+      This feature can be used to implement custom decoders,
+      for example `JSON-RPC <https://www.jsonrpc.org>`_ class hinting.
+      Default ``None``.
+   :type object_hook: :term:`callable` | None
 
-   *object_hook* is an optional function that will be called with the result of
-   every JSON object decoded and its return value will be used in place of the
-   given :class:`dict`.  This can be used to provide custom deserializations
-   (e.g. to support `JSON-RPC <https://www.jsonrpc.org>`_ class hinting).
+   :param object_pairs_hook:
+      If set, a function that is called with the result of
+      any object literal decoded with an ordered list of pairs.
+      The return value of this function will be used
+      instead of the :class:`dict`.
+      This feature can be used to implement custom decoders.
+      If *object_hook* is also set, *object_pairs_hook* takes priority.
+      Default ``None``.
+   :type object_pairs_hook:
 
-   *object_pairs_hook* is an optional function that will be called with the
-   result of every JSON object decoded with an ordered list of pairs.  The
-   return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders.  If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :param parse_float:
+      If set, a function that is called with
+      the string of every JSON float to be decoded.
+      If ``None`` (the default), it is equivalent to ``float(num_str)``.
+      This can be used to parse JSON floats into custom datatypes,
+      for example :class:`decimal.Decimal`.
+   :type parse_float:
+
+   :param parse_int:
+      If set, a function that is called with
+      the string of every JSON int to be decoded.
+      If ``None`` (the default), it is equivalent to ``int(num_str)``.
+      This can be used to parse JSON integers into custom datatypes,
+      for example :class:`float`.
+   :type parse_int:
+
+   :param parse_constant:
+      If set, a function that is called with one of the following strings:
+      ``'-Infinity'``, ``'Infinity'``, or ``'NaN'``.
+      This can be used to raise an exception
+      if invalid JSON numbers are encountered.
+      Default ``None``.
+   :type parse_constant:
+
+   :param bool strict:
+      If ``True`` (the default), control characters
+      are disallowed inside strings.
+      If ``False``, control characters are allowed inside strings.
+      Control characters in this context are
+      those with character codes in the 0--31 range,
+      including ``'\t'`` (tab), ``'\n'``, ``'\r'`` and ``'\0'``.
+
+   :raises JSONDecodeError:
+      When the data being deserialized is not a valid JSON document.
 
    .. versionchanged:: 3.1
-      Added support for *object_pairs_hook*.
-
-   *parse_float* is an optional function that will be called with the string of
-   every JSON float to be decoded.  By default, this is equivalent to
-   ``float(num_str)``.  This can be used to use another datatype or parser for
-   JSON floats (e.g. :class:`decimal.Decimal`).
-
-   *parse_int* is an optional function that will be called with the string of
-   every JSON int to be decoded.  By default, this is equivalent to
-   ``int(num_str)``.  This can be used to use another datatype or parser for
-   JSON integers (e.g. :class:`float`).
-
-   *parse_constant* is an optional function that will be called with one of the
-   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
-   used to raise an exception if invalid JSON numbers are encountered.
-
-   If *strict* is false (``True`` is the default), then control characters
-   will be allowed inside strings.  Control characters in this context are
-   those with character codes in the 0--31 range, including ``'\t'`` (tab),
-   ``'\n'``, ``'\r'`` and ``'\0'``.
-
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
+      Add the optional *object_pairs_hook* parameter.
 
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
