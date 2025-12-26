@@ -466,14 +466,16 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_COMPARE_OP_FLOAT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
-    op(_COMPARE_OP_STR, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_COMPARE_OP_STR, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_IS_OP, (left, right -- b)) {

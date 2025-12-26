@@ -2609,6 +2609,36 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_POP_TOP_NOP", uops)
         self.assertNotIn("_POP_TOP", uops)
 
+    def test_float_cmp_op_refcount_elimination(self):
+        def testfunc(n):
+            c = 1.0
+            res = False
+            for _ in range(n):
+                res = c == c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_COMPARE_OP_FLOAT", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
+    def test_str_cmp_op_refcount_elimination(self):
+        def testfunc(n):
+            c = "a"
+            res = False
+            for _ in range(n):
+                res = c == c
+            return res
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_COMPARE_OP_STR", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
+
     def test_unicode_add_op_refcount_elimination(self):
         def testfunc(n):
             c = "a"
