@@ -1,0 +1,1 @@
+Changed the encoding and error handler used by :class:`http.cookiejar.FileCookieJar` and its subclasses when reading and writing Cookie files to "ASCII" and "surrogateescape".
