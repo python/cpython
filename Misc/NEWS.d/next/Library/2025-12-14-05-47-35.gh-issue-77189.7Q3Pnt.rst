@@ -1,0 +1,1 @@
+Fix ``urllib.request.parse_http_list`` to preserve backslashes in quoted strings.

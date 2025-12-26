@@ -75,7 +75,7 @@ class TrivialTests(unittest.TestCase):
             ('a, b, "c", "d", "e,f", g, h',
              ['a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
             ('a="b\\"c", d="e\\,f", g="h\\\\i"',
-             ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
+             ['a="b\\"c"', 'd="e\\,f"', 'g="h\\\\i"'])]
         for string, list in tests:
             self.assertEqual(urllib.request.parse_http_list(string), list)
 
