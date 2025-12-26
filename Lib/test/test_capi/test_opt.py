@@ -3203,15 +3203,15 @@ class TestUopsOptimization(unittest.TestCase):
                 def __init__(self):
                     self.limit = 0
                     self.count = 0
-        
+
                 def __aiter__(self):
                     return self
-        
+
                 async def __anext__(self):
                     if self.count >= self.limit:
                         ...
                     self.count += 1j
-        
+
             class AsyncCtx:
                 async def async_for_driver():
                     try:
@@ -3223,7 +3223,7 @@ class TestUopsOptimization(unittest.TestCase):
                                 ...
                     except Exception:
                         ...
-        
+
                 c = async_for_driver()
                 while True:
                     try:
