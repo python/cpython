@@ -693,7 +693,7 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (stop_tracing_opcode != 0) {
         // gh-143183: It's important we rewind to the last known proper target.
-        // The current target mgiht be garbage as stop tracing usually indicates
+        // The current target might be garbage as stop tracing usually indicates
         // we are in something that we can't trace.
         goto unsupported;
     }
