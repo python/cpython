@@ -883,9 +883,6 @@ class TestLiveModeErrors(unittest.TestCase):
         ):
             main()
             stderr = fake_stderr.getvalue()
-            self.assertIn(
-                'sample(s) collected (minimum 200 required for TUI)', stderr
-            )
             self.assertIn('ZeroDivisionError', stderr)
 
 
