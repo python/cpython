@@ -587,14 +587,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     params_test_get_fws = old_api_only(
 
-        test_get_fws_only = C(
-                                               ' \t  ', ' \t  ', ' ', [], ''),
+        ws_only = C(' \t  ', ' \t  ', ' ', [], ''),
 
-        test_get_fws_space = C(
-                                         ' foo', ' ', ' ', [], 'foo'),
+        space = C(' foo', ' ', ' ', [], 'foo'),
 
-        test_get_fws_ws_run = C(
-                                         ' \t foo ', ' \t ', ' ', [], 'foo '),
+        ws_run = C(' \t foo ', ' \t ', ' ', [], 'foo '),
 
         )
 
