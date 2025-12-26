@@ -1,1 +1,1 @@
-Fix the :mod:`pathlib` :func:`mkdir` with argument (exist_ok=True) causing spurious FileExistsError with concurrent create/delete.
+Fix the :mod:`pathlib` :meth:`mkdir` with argument (exist_ok=True) causing spurious FileExistsError with concurrent create/delete.
