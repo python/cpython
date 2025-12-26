@@ -1135,7 +1135,8 @@ class _AppendAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+        if items is self.default:
+            items = _copy_items(items)
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -1164,7 +1165,8 @@ class _AppendConstAction(Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+        if items is self.default:
+            items = _copy_items(items)
         items.append(self.const)
         setattr(namespace, self.dest, items)
 
@@ -1365,7 +1367,8 @@ class _SubParsersAction(Action):
 class _ExtendAction(_AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
-        items = _copy_items(items)
+        if items is self.default:
+            items = _copy_items(items)
         items.extend(values)
         setattr(namespace, self.dest, items)
 
