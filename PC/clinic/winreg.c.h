@@ -1691,6 +1691,98 @@ exit:
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
+PyDoc_STRVAR(winreg_GetValue__doc__,
+"GetValue($module, key, sub_key, name, flags=winreg.RRF_RT_ANY, /)\n"
+"--\n"
+"\n"
+"Retrieves the type and data for the specified registry value.\n"
+"\n"
+"  key\n"
+"    An already open key, or any one of the predefined HKEY_* constants.\n"
+"  sub_key\n"
+"    A string that names the subkey with which the value is associated.\n"
+"    If this parameter is None or empty, the value will be read from key.\n"
+"  name\n"
+"    A string indicating the value to query.\n"
+"  flags\n"
+"    Restrict the data type of value to be queried.\n"
+"\n"
+"Behaves mostly like QueryValueEx(), but you needn\'t OpenKey() and CloseKey()\n"
+"if the key is any one of the predefined HKEY_* constants.\n"
+"\n"
+"The return value is a tuple of the value and the type_id.");
+
+#define WINREG_GETVALUE_METHODDEF    \
+    {"GetValue", _PyCFunction_CAST(winreg_GetValue), METH_FASTCALL, winreg_GetValue__doc__},
+
+static PyObject *
+winreg_GetValue_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
+                     const wchar_t *name, int flags);
+
+static PyObject *
+winreg_GetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HKEY key;
+    const wchar_t *sub_key = NULL;
+    const wchar_t *name = NULL;
+    int flags = RRF_RT_ANY;
+
+    if (!_PyArg_CheckPositional("GetValue", nargs, 3, 4)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
+        goto exit;
+    }
+    if (args[1] == Py_None) {
+        sub_key = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        sub_key = PyUnicode_AsWideCharString(args[1], NULL);
+        if (sub_key == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("GetValue", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+    if (args[2] == Py_None) {
+        name = NULL;
+    }
+    else if (PyUnicode_Check(args[2])) {
+        name = PyUnicode_AsWideCharString(args[2], NULL);
+        if (name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("GetValue", "argument 3", "str or None", args[2]);
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[3]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = winreg_GetValue_impl(module, key, sub_key, name, flags);
+
+exit:
+    /* Cleanup for sub_key */
+    PyMem_Free((void *)sub_key);
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
+    return return_value;
+}
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "QueryReflectionKey($module, key, /)\n"
 "--\n"
@@ -1833,7 +1925,11 @@ exit:
     #define WINREG_DELETETREE_METHODDEF
 #endif /* !defined(WINREG_DELETETREE_METHODDEF) */
 
+#ifndef WINREG_GETVALUE_METHODDEF
+    #define WINREG_GETVALUE_METHODDEF
+#endif /* !defined(WINREG_GETVALUE_METHODDEF) */
+
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=97295995db2c24e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6737003226b9007 input=a9049054013a1b77]*/

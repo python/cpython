@@ -591,6 +591,41 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(OSError):
             OpenKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_getvalue(self):
+        test_subkey = test_key_name + "\\GetValueTest"
+        key = CreateKey(HKEY_CURRENT_USER, test_subkey)
+        self.addCleanup(CloseKey, key)
+        self.addCleanup(DeleteTree, HKEY_CURRENT_USER, test_key_name)
+
+        SetValueEx(key, "test_string", 0, REG_SZ, "Hello World")
+        SetValueEx(key, "test_dword", 0, REG_DWORD, 12345)
+        SetValueEx(key, "test_binary", 0, REG_BINARY, b"binary_data")
+        SetValueEx(key, None, 0, REG_SZ, "Default Value")
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, "test_string")
+        self.assertEqual(result, "Hello World")
+        self.assertEqual(typ, REG_SZ)
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, "test_dword")
+        self.assertEqual(result, 12345)
+        self.assertEqual(typ, REG_DWORD)
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, "test_binary")
+        self.assertEqual(result, b"binary_data")
+        self.assertEqual(typ, REG_BINARY)
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, None)
+        self.assertEqual(result, "Default Value")
+        self.assertEqual(typ, REG_SZ)
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, "")
+        self.assertEqual(result, "Default Value")
+        self.assertEqual(typ, REG_SZ)
+
+        result, typ = GetValue(HKEY_CURRENT_USER, test_subkey, "test_string", RRF_RT_REG_SZ)
+        self.assertEqual(result, "Hello World")
+        self.assertEqual(typ, REG_SZ)
+
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
