@@ -97,7 +97,7 @@ _getrecord_ex(Py_UCS4 code)
 }
 
 typedef struct {
-    PyObject *GraphemeType;
+    PyObject *SegmentType;
     PyObject *GraphemeBreakIteratorType;
 } unicodedatastate;
 
@@ -1873,72 +1873,79 @@ _Py_NextGraphemeBreak(_PyGraphemeBreak *iter)
 }
 
 
-/* Grapheme Cluster object */
+/* Text Segment object */
 
 typedef struct {
     PyObject_HEAD
     PyObject *string;
     Py_ssize_t start;
     Py_ssize_t end;
-} GraphemeObject;
+} SegmentObject;
 
 static void
-Grapheme_dealloc(PyObject *self)
+Segment_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
-    Py_DECREF(((GraphemeObject *)self)->string);
+    Py_DECREF(((SegmentObject *)self)->string);
     PyObject_GC_Del(self);
 }
 
 static int
-Grapheme_traverse(PyObject *self, visitproc visit, void *arg)
+Segment_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(((GraphemeObject *)self)->string);
+    Py_VISIT(((SegmentObject *)self)->string);
     return 0;
 }
 
 static int
-Grapheme_clear(PyObject *self)
+Segment_clear(PyObject *self)
 {
-    Py_CLEAR(((GraphemeObject *)self)->string);
+    Py_CLEAR(((SegmentObject *)self)->string);
     return 0;
 }
 
 static PyObject *
-Grapheme_str(PyObject *self)
+Segment_str(PyObject *self)
 {
-    GraphemeObject *g = (GraphemeObject *)self;
-    return PyUnicode_Substring(g->string, g->start, g->end);
+    SegmentObject *s = (SegmentObject *)self;
+    return PyUnicode_Substring(s->string, s->start, s->end);
 }
 
-static PyMemberDef Grapheme_members[] = {
-    {"start", Py_T_PYSSIZET, offsetof(GraphemeObject, start), 0,
+static PyObject *
+Segment_repr(PyObject *self)
+{
+    SegmentObject *s = (SegmentObject *)self;
+    return PyUnicode_FromFormat("<Segment %zd:%zd>", s->start, s->end);
+}
+
+static PyMemberDef Segment_members[] = {
+    {"start", Py_T_PYSSIZET, offsetof(SegmentObject, start), 0,
         PyDoc_STR("grapheme start")},
-    {"end", Py_T_PYSSIZET, offsetof(GraphemeObject, end), 0,
+    {"end", Py_T_PYSSIZET, offsetof(SegmentObject, end), 0,
         PyDoc_STR("grapheme end")},
     {NULL}  /* Sentinel */
 };
 
-static PyType_Slot Grapheme_slots[] = {
-    {Py_tp_dealloc, Grapheme_dealloc},
-    {Py_tp_iter, PyObject_SelfIter},
-    {Py_tp_traverse, Grapheme_traverse},
-    {Py_tp_clear, Grapheme_clear},
-    {Py_tp_str, Grapheme_str},
-    {Py_tp_members, Grapheme_members},
+static PyType_Slot Segment_slots[] = {
+    {Py_tp_dealloc, Segment_dealloc},
+    {Py_tp_traverse, Segment_traverse},
+    {Py_tp_clear, Segment_clear},
+    {Py_tp_str, Segment_str},
+    {Py_tp_repr, Segment_repr},
+    {Py_tp_members, Segment_members},
     {0, 0},
 };
 
-static PyType_Spec Grapheme_spec = {
-    .name = "unicodedata.Grapheme",
-    .basicsize = sizeof(GraphemeObject),
+static PyType_Spec Segment_spec = {
+    .name = "unicodedata.Segment",
+    .basicsize = sizeof(SegmentObject),
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_HAVE_GC
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
     ),
-    .slots = Grapheme_slots
+    .slots = Segment_slots
 };
 
 
@@ -1982,18 +1989,17 @@ GBI_iternext(PyObject *self)
         return NULL;
     }
     PyObject *module = PyType_GetModule(Py_TYPE(it));
-    PyObject *GraphemeType = get_unicodedata_state(module)->GraphemeType;
-    GraphemeObject *g = PyObject_GC_New(GraphemeObject,
-                                        (PyTypeObject *)GraphemeType);
-    if (!g) {
+    PyObject *SegmentType = get_unicodedata_state(module)->SegmentType;
+    SegmentObject *s = PyObject_GC_New(SegmentObject,
+                                       (PyTypeObject *)SegmentType);
+    if (!s) {
         return NULL;
     }
-    g->string = Py_NewRef(it->iter.str);
-    g->start = start;
-    g->end = pos;
-    PyObject_GC_Track(g);
-    return (PyObject *)g;
-    // return PyUnicode_Substring(it->iter.str, start, pos);
+    s->string = Py_NewRef(it->iter.str);
+    s->start = start;
+    s->end = pos;
+    PyObject_GC_Track(s);
+    return (PyObject *)s;
 }
 
 
@@ -2180,7 +2186,7 @@ static int
 unicodedata_traverse(PyObject *module, visitproc visit, void *arg)
 {
     unicodedatastate *state = get_unicodedata_state(module);
-    Py_VISIT(state->GraphemeType);
+    Py_VISIT(state->SegmentType);
     Py_VISIT(state->GraphemeBreakIteratorType);
     return 0;
 }
@@ -2189,7 +2195,7 @@ static int
 unicodedata_clear(PyObject *module)
 {
     unicodedatastate *state = get_unicodedata_state(module);
-    Py_CLEAR(state->GraphemeType);
+    Py_CLEAR(state->SegmentType);
     Py_CLEAR(state->GraphemeBreakIteratorType);
     return 0;
 }
@@ -2205,11 +2211,11 @@ unicodedata_exec(PyObject *module)
 {
     unicodedatastate *state = get_unicodedata_state(module);
 
-    PyObject *GraphemeType = PyType_FromModuleAndSpec(module, &Grapheme_spec, NULL);
-    if (GraphemeType == NULL) {
+    PyObject *SegmentType = PyType_FromModuleAndSpec(module, &Segment_spec, NULL);
+    if (SegmentType == NULL) {
         return -1;
     }
-    state->GraphemeType = GraphemeType;
+    state->SegmentType = SegmentType;
 
     PyObject *GraphemeBreakIteratorType = PyType_FromModuleAndSpec(module, &GraphemeBreakIterator_spec, NULL);
     if (GraphemeBreakIteratorType == NULL) {

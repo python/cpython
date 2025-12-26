@@ -946,6 +946,17 @@ class UnicodeMiscTest(unittest.TestCase):
                 self.assertEqual(len(lines), 1,
                                  r"%a should not be a linebreak" % c)
 
+    def test_segment_object(self):
+        segments = list(unicodedata.iter_graphemes('spa\u0300m'))
+        self.assertEqual(len(segments), 4, segments)
+        segment = segments[2]
+        self.assertEqual(segment.start, 2)
+        self.assertEqual(segment.end, 4)
+        self.assertEqual(str(segment), 'a\u0300')
+        self.assertEqual(repr(segment), '<Segment 2:4>')
+        self.assertRaises(TypeError, iter, segment)
+        self.assertRaises(TypeError, len, segment)
+
 
 class NormalizationTest(unittest.TestCase):
     @staticmethod
