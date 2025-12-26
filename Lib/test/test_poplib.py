@@ -332,7 +332,7 @@ class TestPOP3Class(TestCase):
 
     def test_auth_plain_challenge_response(self):
         secret = b"user\x00adminuser\x00password"
-        def authobject(challenge):
+        def authobject():
             return secret
         resp = self.client.auth("PLAIN", authobject=authobject)
         self.assertStartsWith(resp, b"+OK")
@@ -342,10 +342,8 @@ class TestPOP3Class(TestCase):
             self.client.auth("FOO", authobject=lambda: b"")
 
     def test_auth_cancel(self):
-        def authobject(_challenge):
-            return b"*"
         with self.assertRaises(poplib.error_proto):
-            self.client.auth("PLAIN", authobject=authobject)
+            self.client.auth("PLAIN", authobject=lambda chal: b"*", initial_response_ok=False)
 
     def test_auth_mechanism_case_insensitive(self):
         secret = b"user\x00adminuser\x00password"
@@ -359,7 +357,7 @@ class TestPOP3Class(TestCase):
         self.assertStartsWith(resp, b"+OK")
 
     def test_auth_authobject_returns_str(self):
-        def authobject(challenge):
+        def authobject():
             return "user\x00adminuser\x00password"
         resp = self.client.auth("PLAIN", authobject=authobject)
         self.assertStartsWith(resp, b"+OK")
