@@ -250,12 +250,12 @@ following functions:
 .. function:: iter_graphemes(unistr, start=0, end=sys.maxsize, /)
 
    Returns an iterator to iterate over grapheme clusters.
-   With optional *start*, iteration beginning at that position.
+   With optional *start*, iteration begins at that position.
    With optional *end*, iteration stops at that position.
 
-   Converting an emitted item to string  returns a substring corresponding to
+   Converting an emitted item to string returns a substring corresponding to
    the grapheme cluster.
-   Its ``start`` and ``end`` attributes denote the start and the end of
+   Its ``start`` and ``end`` attributes denote the start and end of
    the grapheme cluster.
 
    It uses extended grapheme cluster rules defined by Unicode
