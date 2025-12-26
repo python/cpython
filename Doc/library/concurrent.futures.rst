@@ -173,6 +173,18 @@ And::
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
    as well as any attempt to submit more jobs to the pool.
 
+   *ctxkwargs* is an is a mapping of additional keyword arguments passed to
+   :meth:`prepare_context`, allowing customization of the worker execution
+   context.
+
+   .. classmethod:: prepare_context(initializer, initargs)
+
+      Setting up the necessary context for creating worker instances in a
+      pool-based executor (for example, in a concurrent environment like
+      threads or interpreters).
+
+      .. versionadded:: 3.14
+
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
       not given, it will default to the number of processors on the machine,
@@ -205,11 +217,6 @@ And::
    .. versionchanged:: 3.14
       Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
       class method.
-
-   .. classmethod:: prepare_context(initializer, initargs)
-      Setting up the necessary context for creating worker instances in a pool-based executor (e.g., in a concurrent environment like threads or interpreters).
-
-      .. versionadded:: 3.14
 
 
 .. _threadpoolexecutor-example:
