@@ -1806,7 +1806,7 @@ Subcommands
 
    .. method:: _SubParsersAction.add_parser(name, *, help=None, aliases=None, deprecated=False, **kwargs)
 
-      Creates and returns a new :class:!ArgumentParser object for the
+      Creates and returns a new :class:`!ArgumentParser` object for the
       subcommand name.
 
       The name argument is the name of the subcommand.
@@ -1823,7 +1823,8 @@ Subcommands
       deprecated. When a deprecated subcommand is used, :mod:`argparse`
       will emit a warning.
 
-      This returned :class:`!ArgumentParser`` object can be modified as usual.
+      This returned :class:`!ArgumentParser`
+      object can be modified as usual.
 
       *Examples*
 
