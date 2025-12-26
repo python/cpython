@@ -215,7 +215,7 @@ And::
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
 
    .. versionchanged:: 3.14
-      Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
+      Added *ctxkwargs* to pass additional arguments to :meth:`prepare_context`
       class method.
 
 
