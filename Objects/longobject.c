@@ -52,6 +52,7 @@ static inline int
 /// Return 1 if the object is one of the immortal small ints
 _long_is_small_int(PyObject *op)
 {
+    assert(PyLong_Check(op));
     PyLongObject *long_object = (PyLongObject *)op;
     int is_small_int = (long_object->long_value.lv_tag & IMMORTALITY_BIT_MASK) != 0;
     assert((!is_small_int) || PyLong_CheckExact(op));
