@@ -589,10 +589,24 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         wsp_run = C(' \t  '),
 
-        ends_at_non_wsp_after_wsp = C(' foo', remainder='foo'),
+        **for_each_character(RFC_WSP)(
+            ends_at_non_wsp_after_wsp = C('{char}foo', remainder='foo'),
+            ),
 
-        ends_at_non_wsp_after_wsp_run = C(' \t foo ', remainder='foo '),
+        **for_each_character(RFC_PRINTABLES)(
+            ends_at_non_wsp_after_wsp_run = C(' \t{char} ', remainder='{char} '),
+            ),
 
+        )
+
+    # XXX XXX: these ought to error, but get_fws should never be called this way
+    # We'll deprecate the lack of raise during the refactor.
+    params_test_get_fws.update(
+        old_api_only(
+            empty = C(''),
+            no_wsp = C('foo', remainder='foo'),
+            no_leading_wsp = C('foo bar', remainder='foo bar'),
+            ),
         )
 
 
