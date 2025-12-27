@@ -323,7 +323,7 @@ class POParserTest(unittest.TestCase):
                     msgid_plural "foos"
                     msgstr1] "baz"
                 '''),
-                'indexed msgstr required for plural on  messages.po:3'
+                'indexed msgstr required for plural on messages.po:3'
             ),
             # invalid plural index
             (
@@ -450,7 +450,7 @@ class POParserTest(unittest.TestCase):
                     msgid_plural "foos"
                     msgstr "bar"
                 '''),
-                'indexed msgstr required for plural on  messages.po:3'
+                'indexed msgstr required for plural on messages.po:3'
             ),
         )
         with temp_cwd():
