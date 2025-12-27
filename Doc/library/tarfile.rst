@@ -21,6 +21,14 @@ Some facts and figures:
 * reads and writes :mod:`gzip`, :mod:`bz2`, :mod:`compression.zstd`, and
   :mod:`lzma` compressed archives if the respective modules are available.
 
+  ..
+     The following paragraph should be similar to ../includes/optional-module.rst
+
+  If any of these :term:`optional modules <optional module>` are missing from
+  your copy of CPython, look for documentation from your distributor (that is,
+  whoever provided Python to you).
+  If you are the distributor, see :ref:`optional-module-requirements`.
+
 * read/write support for the POSIX.1-1988 (ustar) format.
 
 * read/write support for the GNU tar format including *longname* and *longlink*
@@ -123,7 +131,7 @@ Some facts and figures:
 
    For modes ``'w:gz'``, ``'x:gz'``, ``'w|gz'``, ``'w:bz2'``, ``'x:bz2'``,
    ``'w|bz2'``, :func:`tarfile.open` accepts the keyword argument
-   *compresslevel* (default ``9``) to specify the compression level of the file.
+   *compresslevel* (default ``6``) to specify the compression level of the file.
 
    For modes ``'w:xz'``, ``'x:xz'`` and ``'w|xz'``, :func:`tarfile.open` accepts the
    keyword argument *preset* to specify the compression level of the file.
@@ -198,6 +206,10 @@ Some facts and figures:
    .. versionchanged:: 3.14
       The *preset* keyword argument also works for streams.
 
+   .. versionchanged:: 3.15
+      The default compression level was reduced to 6 (down from 9).
+      It is the default level used by most compression tools and a better
+      tradeoff between speed and performance.
 
 .. class:: TarFile
    :noindex:
@@ -290,7 +302,7 @@ The :mod:`tarfile` module defines the following exceptions:
    The exception that was raised to reject the replacement member is available
    as :attr:`!BaseException.__context__`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.15
 
 
 The following constants are available at the module level:
@@ -1142,7 +1154,7 @@ reused in custom filters:
   Note that this filter does not block *all* dangerous archive features.
   See :ref:`tarfile-further-verification`  for details.
 
-  .. versionchanged:: next
+  .. versionchanged:: 3.15
 
      Link targets are now normalized.
 
@@ -1353,6 +1365,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1375,6 +1390,23 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
+How to read a gzip compressed tar archive and display some member information::
+
+   import tarfile
+   tar = tarfile.open("sample.tar.gz", "r:gz")
+   for tarinfo in tar:
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+       if tarinfo.isreg():
+           print("a regular file.")
+       elif tarinfo.isdir():
+           print("a directory.")
+       else:
+           print("something else.")
+   tar.close()
+
+Writing examples
+~~~~~~~~~~~~~~~~
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -1390,19 +1422,15 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
-How to read a gzip compressed tar archive and display some member information::
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
 
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::
