@@ -1684,23 +1684,9 @@ class LargeArrayTest(unittest.TestCase):
     # Tests for NULL pointer dereference in array.__setitem__
     # when the index conversion mutates the array.
     # See: gh-142555.
-    @subTests(
-        ("dtype", "items"),
-        [
-            ("b", list(range(64))),
-            ("B", list(range(64))),
-            ("h", list(range(64))),
-            ("H", list(range(64))),
-            ("i", list(range(64))),
-            ("l", list(range(64))),
-            ("q", list(range(64))),
-            ("I", list(range(64))),
-            ("L", list(range(64))),
-            ("Q", list(range(64))),
-        ],
-    )
-    def test_setitem_use_after_clear_with_int_data(self, dtype, items):
-        victim = array.array(dtype, items)
+    @subTests("dtype", ["b", "B", "h", "H", "i", "l", "q", "I", "L", "Q"])
+    def test_setitem_use_after_clear_with_int_data(self, dtype):
+        victim = array.array(dtype, list(range(64)))
 
         class Index:
             def __index__(self):
