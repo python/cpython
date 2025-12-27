@@ -479,6 +479,30 @@ class BinASCIITest(unittest.TestCase):
                          b'aGVsbG8=\n')
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
+        b = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(b), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=True), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=False), b'')
+
+    def test_b2a_base64_wrapcol(self):
+        b = self.type2test(b'www.python.org')
+        self.assertEqual(binascii.b2a_base64(b),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=0),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=76),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=1),
+            b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=\n')
+        b = self.type2test(b'')
+        self.assertEqual(binascii.b2a_base64(b), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=0), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8), b'\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False), b'')
 
     @hypothesis.given(
         binary=hypothesis.strategies.binary(),
