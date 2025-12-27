@@ -543,6 +543,24 @@ pytype_getmodulebytoken(PyObject *self, PyObject *args)
     return PyType_GetModuleByToken((PyTypeObject *)type, token);
 }
 
+static PyType_Slot HeapCTypeWithBasesSlotInvalid_slots[] = {
+    {Py_tp_bases, Py_None},  /* Not a tuple - should raise SystemError */
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithBasesSlotInvalid_spec = {
+    .name = "_testcapi.HeapCTypeWithBasesSlotInvalid",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT,
+    .slots = HeapCTypeWithBasesSlotInvalid_slots
+};
+
+static PyObject *
+create_heapctype_with_invalid_bases_slot(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyType_FromSpec(&HeapCTypeWithBasesSlotInvalid_spec);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
@@ -562,6 +580,8 @@ static PyMethodDef TestMethods[] = {
     {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
     {"pytype_getmodulebydef", pytype_getmodulebydef, METH_O},
     {"pytype_getmodulebytoken", pytype_getmodulebytoken, METH_VARARGS},
+    {"create_heapctype_with_invalid_bases_slot",
+        create_heapctype_with_invalid_bases_slot, METH_NOARGS},
     {NULL},
 };
 
@@ -890,6 +910,18 @@ static PyType_Spec HeapCTypeMetaclassNullNew_spec = {
     .name = "_testcapi.HeapCTypeMetaclassNullNew",
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = empty_type_slots
+};
+
+static PyType_Slot HeapCTypeWithBasesSlot_slots[] = {
+    {Py_tp_bases, NULL},  /* filled out in module init function */
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithBasesSlot_spec = {
+    .name = "_testcapi.HeapCTypeWithBasesSlot",
+    .basicsize = sizeof(PyLongObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .slots = HeapCTypeWithBasesSlot_slots
 };
 
 
@@ -1431,6 +1463,15 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
         &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
     ADD("HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
+
+    PyObject *bases = PyTuple_Pack(1, &PyLong_Type);
+    if (bases == NULL) {
+        return -1;
+    }
+    HeapCTypeWithBasesSlot_slots[0].pfunc = bases;
+    PyObject *HeapCTypeWithBasesSlot = PyType_FromSpec(&HeapCTypeWithBasesSlot_spec);
+    Py_DECREF(bases);
+    ADD("HeapCTypeWithBasesSlot", HeapCTypeWithBasesSlot);
 
     ADD("Py_TP_USE_SPEC", PyLong_FromVoidPtr(Py_TP_USE_SPEC));
 
