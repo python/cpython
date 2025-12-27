@@ -216,6 +216,9 @@ class LiveStatsCollector(Collector):
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
         if self.finished and self.finish_timestamp is not None:
+            # Handle case where process exited before any samples were collected
+            if self.start_time is None:
+                return 0
             return self.finish_timestamp - self.start_time
         return time.perf_counter() - self.start_time if self.start_time else 0
 

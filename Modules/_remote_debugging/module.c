@@ -584,6 +584,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         }
 
         while (current_tstate != 0) {
+            uintptr_t prev_tstate = current_tstate;
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate,
                                                            gil_holder_tstate,
                                                            gc_frame);
@@ -591,6 +592,14 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                 // Check if this was an intentional skip due to mode-based filtering
                 if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL ||
                      self->mode == PROFILING_MODE_EXCEPTION) && !PyErr_Occurred()) {
+                    // Detect cycle: if current_tstate didn't advance, we have corrupted data
+                    if (current_tstate == prev_tstate) {
+                        Py_DECREF(interpreter_threads);
+                        set_exception_cause(self, PyExc_RuntimeError,
+                            "Thread list cycle detected (corrupted remote memory)");
+                        Py_CLEAR(result);
+                        goto exit;
+                    }
                     // Thread was skipped due to mode filtering, continue to next thread
                     continue;
                 }

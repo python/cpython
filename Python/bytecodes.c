@@ -2713,15 +2713,15 @@ dummy_func(
         macro(COMPARE_OP) = _SPECIALIZE_COMPARE_OP + _COMPARE_OP;
 
         macro(COMPARE_OP_FLOAT) =
-            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/1 + _COMPARE_OP_FLOAT;
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/1 + _COMPARE_OP_FLOAT + _POP_TOP_FLOAT + _POP_TOP_FLOAT;
 
         macro(COMPARE_OP_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/1 + _COMPARE_OP_INT + _POP_TOP_INT + _POP_TOP_INT;
 
         macro(COMPARE_OP_STR) =
-            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/1 + _COMPARE_OP_STR;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/1 + _COMPARE_OP_STR + _POP_TOP_UNICODE + _POP_TOP_UNICODE;
 
-        op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
@@ -2730,9 +2730,9 @@ dummy_func(
             double dright = PyFloat_AS_DOUBLE(right_o);
             // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
             int sign_ish = COMPARISON_BIT(dleft, dright);
-            PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            l = left;
+            r = right;
             DEAD(left);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
             DEAD(right);
             res = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
             // It's always a bool, so we don't care about oparg & 16.
@@ -2761,16 +2761,16 @@ dummy_func(
         }
 
         // Similar to COMPARE_OP_FLOAT, but for ==, != only
-        op(_COMPARE_OP_STR, (left, right -- res)) {
+        op(_COMPARE_OP_STR, (left, right -- res, l, r)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left_o, right_o);
             assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
-            PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+            l = left;
+            r = right;
             DEAD(left);
-            PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             DEAD(right);
             assert(eq == 0 || eq == 1);
             assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
@@ -2779,10 +2779,14 @@ dummy_func(
             // It's always a bool, so we don't care about oparg & 16.
         }
 
-        inst(IS_OP, (left, right -- b)) {
+        macro(IS_OP) = _IS_OP + POP_TOP + POP_TOP;
+
+        op(_IS_OP, (left, right -- b, l, r)) {
             int res = Py_Is(PyStackRef_AsPyObjectBorrow(left), PyStackRef_AsPyObjectBorrow(right)) ^ oparg;
-            DECREF_INPUTS();
             b = res ? PyStackRef_True : PyStackRef_False;
+            l = left;
+            r = right;
+            INPUTS_DEAD();
         }
 
         family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
