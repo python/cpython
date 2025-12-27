@@ -624,96 +624,87 @@ class TestParser(TestParserMixin, TestEmailBase):
 
         missing_start_raises = C(
             'abc',
-            exception=(errors.HeaderParseError, '.*'),
+            # "expected encoded word but found abc"
+            exception=(errors.HeaderParseError, r'abc'),
             ),
 
         missing_end_raises = C(
             '=?abc',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(errors.HeaderParseError, r'=?abc'),
             ),
 
         missing_middle_raises = C(
             '=?abc?=',
-            exception=(errors.HeaderParseError, '.*'),
+            # "encoded word format invalid: '=?abc?='"
+            exception=(
+                errors.HeaderParseError,
+                rf'(?=.*invalid)(?=.*{re.escape("=?abc?=")})',
+                ),
             ),
 
-        invalid_cte = C(
+        invalid_cte_raises = C(
             '=?utf-8?X?abc?=',
-            exception=(errors.HeaderParseError, '.*'),
+            exception=(
+                errors.HeaderParseError,
+                rf'(?=.*invalid)(?=.*{re.escape("=?utf-8?X?abc?=")})',
+                ),
             ),
 
         valid_ew = C(
             '=?us-ascii?q?this_is_a_test?=  bird',
-            'this is a test',
-            'this is a test',
-            [],
-            '  bird',
+            stringified='this is a test',
+            remainder='  bird',
             ),
 
         internal_spaces = C(
             '=?us-ascii?q?this is a test?=  bird',
-            'this is a test',
-            'this is a test',
-            [errors.InvalidHeaderDefect],
-            '  bird',
+            stringified='this is a test',
+            # 'whitespace inside encoded word'
+            defects=[whitespace_inside_ew_defect],
+            remainder='  bird',
             ),
 
-        gets_first = C(
+        only_gets_first_ew = C(
             '=?us-ascii?q?first?=  =?utf-8?q?second?=',
-            'first',
-            'first',
-            [],
-            '  =?utf-8?q?second?=',
+            stringified='first',
+            remainder='  =?utf-8?q?second?=',
             ),
 
-        gets_first_even_if_no_space = C(
+        only_gets_first_ew_even_if_no_space = C(
             '=?us-ascii?q?first?==?utf-8?q?second?=',
-            'first',
-            'first',
-            [errors.InvalidHeaderDefect],
-            '=?utf-8?q?second?=',
+            stringified='first',
+            # 'missing trailing whitespace after encoded-word'
+            defects=[missing_whitespace_after_ew_defect],
+            remainder='=?utf-8?q?second?=',
             ),
 
-        sets_extra_attributes = C(
+        lang_set = C(
             '=?us-ascii*jive?q?first_second?=',
-            'first second',
-            'first second',
-            [],
-            '',
+            stringified='first second',
             lang='jive',
             ),
 
-        lang_default_is_blank = C(
-            '=?us-ascii?q?first_second?=',
-            'first second',
-            'first second',
-            [],
-            '',
+        utf8_charset = C(
+            '=?utf-8?q?first_second?=',
+            stringified='first second',
+            charset='utf-8',
             ),
 
         non_printable_defect = C(
             '=?us-ascii?q?first\x02second?=',
-            'first\x02second',
-            'first\x02second',
-            [errors.NonPrintableDefect],
-            '',
+            stringified='first\x02second',
+            defects=[(nonprintable_defect, '\x02')],
             ),
 
         leading_internal_space = C(
             '=?us-ascii?q?=20foo?=',
-            ' foo',
-            ' foo',
-            [],
-            '',
+            stringified=' foo',
             ),
 
-        quopri_utf_escape_follows_cte = C(
         # Issue 18044
+        quopri_utf_escape_follows_cte = C(
             '=?utf-8?q?=C3=89ric?=',
-            'Éric',
-            'Éric',
-            [],
-            '',
+            stringified='Éric',
             charset='utf-8',
             ),
 
