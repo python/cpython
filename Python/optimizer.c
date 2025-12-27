@@ -1019,7 +1019,11 @@ _PyJit_TryInitializeTracing(
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     // A recursive trace.
     // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
-    if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_EMPTY) {
+    if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_EMPTY ||
+        _tstate->jit_tracer_state.initial_state.func != NULL) {
+        // gh-143123: It is possible for another function to finalize the current
+        // tracer's state while tracing. This might happen in a
+        // Python -> C -> Python call.
         return 0;
     }
     if (oparg > 0xFFFF) {
@@ -1082,7 +1086,7 @@ _PyJit_TryInitializeTracing(
 }
 
 Py_NO_INLINE void
-_PyJit_FinalizeTracing(PyThreadState *tstate)
+_PyJit_ResetTracing(PyThreadState *tstate)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     Py_CLEAR(_tstate->jit_tracer_state.initial_state.code);

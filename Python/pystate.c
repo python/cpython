@@ -1526,6 +1526,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
 #ifdef _Py_TIER2
     _tstate->jit_tracer_state.code_buffer = NULL;
+    _PyJit_ResetTracing(tstate);
 #endif
     tstate->delete_later = NULL;
 
