@@ -870,6 +870,12 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
     }
 
+    // PyObject_GetIter() may have a side-effect on the connection's state.
+    // See: https://github.com/python/cpython/issues/143198.
+    if (!pysqlite_check_connection(self->connection)) {
+        goto error;
+    }
+
     /* reset description */
     Py_INCREF(Py_None);
     Py_SETREF(self->description, Py_None);
@@ -924,6 +930,11 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         parameters = PyIter_Next(parameters_iter);
         if (!parameters) {
             break;
+        }
+        // PyIter_Next() may have a side-effect on the connection's state.
+        // See: https://github.com/python/cpython/issues/143198.
+        if (!pysqlite_check_connection(self->connection)) {
+            goto error;
         }
 
         bind_parameters(state, self->statement, parameters);

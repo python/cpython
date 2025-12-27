@@ -32,7 +32,7 @@ import urllib.parse
 import warnings
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess, subTests
 )
 from test.support import gc_collect
 from test.support import threading_helper, import_helper
@@ -728,6 +728,33 @@ class OpenTests(unittest.TestCase):
             self.assertEqual(type(cx), sqlite.Connection)
 
 
+class CxWrapper:
+    def __init__(self, cx):
+        self.cx = cx
+
+    def side_effect(self):
+        self.cx.close()
+
+
+class ParamsCxCloseInIterMany(CxWrapper):
+    def __iter__(self):
+        self.side_effect()
+        return iter([(1,), (2,), (3,)])
+
+
+class ParamsCxCloseInNext(CxWrapper):
+    def __init__(self, cx):
+        super().__init__(cx)
+        self.r = iter(range(10))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.side_effect()
+        return (next(self.r),)
+
+
 class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
@@ -1029,6 +1056,18 @@ class CursorTests(unittest.TestCase):
     def test_execute_many_not_iterable(self):
         with self.assertRaises(TypeError):
             self.cu.executemany("insert into test(income) values (?)", 42)
+
+    @subTests("params_class", (ParamsCxCloseInIterMany, ParamsCxCloseInNext))
+    def test_executemany_use_after_close(self, params_class):
+        # Prevent SIGSEGV with iterable of parameters closing the connection.
+        # Regression test for https://github.com/python/cpython/issues/143198.
+        cx = sqlite.connect(":memory:")
+        cx.execute("create table tmp(a number)")
+        self.addCleanup(cx.close)
+        cu = cx.cursor()
+        msg = r"Cannot operate on a closed database\."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            cu.executemany("insert into tmp(a) values (?)", params_class(cx))
 
     def test_fetch_iter(self):
         # Optional DB-API extension.
@@ -1718,6 +1757,17 @@ class ExtensionTests(unittest.TestCase):
         result = con.execute("select foo from test order by foo").fetchall()
         self.assertEqual(result[0][0], 3, "Basic test of Connection.executemany")
         self.assertEqual(result[1][0], 4, "Basic test of Connection.executemany")
+
+    @subTests("params_class", (ParamsCxCloseInIterMany, ParamsCxCloseInNext))
+    def test_connection_executemany_use_after_close(self, params_class):
+        # Prevent SIGSEGV with iterable of parameters closing the connection.
+        # Regression test for https://github.com/python/cpython/issues/143198.
+        cx = sqlite.connect(":memory:")
+        cx.execute("create table tmp(a number)")
+        self.addCleanup(cx.close)
+        msg = r"Cannot operate on a closed database\."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            cx.executemany("insert into tmp(a) values (?)", params_class(cx))
 
     def test_connection_executescript(self):
         con = self.con
