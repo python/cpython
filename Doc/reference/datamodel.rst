@@ -304,21 +304,31 @@ Sequences
 These represent finite ordered sets indexed by non-negative numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Some sequences,
+..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Most sequences,
 including built-in sequences, interpret negative subscripts by adding the
-sequence length. For example, ``a[-2]`` equals ``a[n-2]``, the second to last
-item of sequence a with length ``n``.
+sequence length (once). For example, ``a[-1]`` is the last item (``a[n-1]``),
+but ``a[-n-1]`` doesn't exit.
 
 .. index:: single: slicing
 
-Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
-that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
-sequence of the same type. The comment above about negative indexes also applies
+Sequences also support slicing: ``a[start:stop]`` selects all items with index
+*i* such that ``start <= i < stop``. When used as an expression, a slice should be
+a sequence of the same type, but must be a sequence behaving as one.
+The comment above about negative indexes also applies
 to negative slice positions.
 
-Some sequences also support "extended slicing" with a third "step" parameter:
-``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
-``>=`` ``0`` and *i* ``<=`` *x* ``<`` *j*.
+Some sequences also support "extended slicing" with a third *step* parameter:
+``a[start:stop:step]`` selects all items of *a* with index *i*, where
+``i = start + n*step`` and ``0 <= n``, such that ``start <= i < stop`` for
+``0 <= step``, and ``stop < i <= start`` for ``step < 0``.
+
+Slicing parameters can be omitted:
+
+* When *step* is omitted, it defaults to 1.
+* When *start* is omitted, the selection starts from the 1st index depending on
+  the *step* direction (index 0 for ``0 <= step``, subscript -1 for
+  ``step < 0``).
+* When *end* is omitted, the selection ends when there isn't any element left.
 
 Sequences are distinguished according to their mutability:
 
