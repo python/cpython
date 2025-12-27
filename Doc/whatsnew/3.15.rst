@@ -432,7 +432,7 @@ base64
 ------
 
 * Added the *pad* parameter in :func:`~base64.z85encode`.
-  (Contributed by Hauke D in :gh:`143103`.)
+  (Contributed by Hauke Dämpfling in :gh:`143103`.)
 
 * Added the *wrapcol* parameter in :func:`~base64.b64encode`.
   (Contributed by Serhiy Storchaka in :gh:`143214`.)
