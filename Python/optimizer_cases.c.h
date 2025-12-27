@@ -2886,6 +2886,7 @@
                     }
                 }
             }
+            CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = res;
             stack_pointer += -3;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
