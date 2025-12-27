@@ -97,16 +97,21 @@ a callable, it's passed the Match object and must return
 a replacement string to be used.''')
         tiptest(p.sub, '''\
 (repl, string, count=0)
-Return the string obtained by replacing the leftmost non-overlapping \
-occurrences of pattern in string by the replacement repl.''')
+Return the string obtained by replacing the leftmost \
+non-overlapping occurrences of pattern in string by the replacement repl.''')
 
-    def test_signature(self):
+    def test_signature_wrap(self):
         if textwrap.TextWrapper.__doc__ is not None:
-            self.assertEqual(get_spec(textwrap.TextWrapper).split('\n')[0], '''\
+            self.assertEqual(get_spec(textwrap.TextWrapper).split('\n\n')[0], '''\
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True, \
 replace_whitespace=True, fix_sentence_endings=False, break_long_words=True, \
 drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None, \
-placeholder=' [...]')''')
+placeholder=' [...]')
+Object for wrapping/filling text.  The public interface consists of
+the wrap() and fill() methods; the other methods are just there for
+subclasses to override in order to tweak the default behaviour.
+If you want to completely replace the main wrapping algorithm,
+you\'ll probably have to override _wrap_chunks().''')
 
     def test_properly_formatted(self):
 
@@ -119,8 +124,6 @@ placeholder=' [...]')''')
 
         def baz(s='a'*100, z='b'*100):
             pass
-
-        indent = calltip._INDENT
 
         sfoo = "(s='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"\
                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')"
@@ -139,7 +142,41 @@ placeholder=' [...]')''')
     def test_docline_truncation(self):
         def f(): pass
         f.__doc__ = 'a'*300
-        self.assertEqual(get_spec(f), "()\n%s" % ('a'*300))
+        self.assertEqual(get_spec(f), f"()\n{f.__doc__}")
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_multiline_docstring(self):
+        # Test fewer lines than max.
+        self.assertEqual(get_spec(range), '''\
+range(stop) -> range object
+range(start, stop[, step]) -> range object
+
+Return an object that produces a sequence of integers from start (inclusive)
+to stop (exclusive) by step.  range(i, j) produces i, i+1, i+2, ..., j-1.
+start defaults to 0, and stop is omitted!  range(4) produces 0, 1, 2, 3.
+These are exactly the valid indices for a list of 4 elements.
+When step is given, it specifies the increment (or decrement).''')
+
+        # Test max lines
+        self.assertEqual(get_spec(bytes), '''\
+bytes(iterable_of_ints) -> bytes
+bytes(string, encoding[, errors]) -> bytes
+bytes(bytes_or_buffer) -> immutable copy of bytes_or_buffer
+bytes(int) -> bytes object of size given by the parameter initialized with null bytes
+bytes() -> empty bytes object
+
+Construct an immutable array of bytes from:
+- an iterable yielding integers in range(256)
+- a text string encoded using the specified encoding
+- any object implementing the buffer API.
+- an integer''')
+
+    def test_multiline_docstring_2(self):
+        # Test more than max lines
+        def f(): pass
+        f.__doc__ = 'a\n' * 15
+        self.assertEqual(get_spec(f), '()\n' + f.__doc__[:-1])
 
     def test_functions(self):
         def t1(): 'doc'
