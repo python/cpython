@@ -2644,6 +2644,10 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
     posobj = PyLong_FromOff_t(cookie.start_pos);
     if (posobj == NULL)
         goto fail;
+
+    // gh-143007 PyNumber_Long can call arbitrary code through __int__ which may detach the underlying buffer.
+    // So we need to re-check that the TextIOWrapper is still attached.
+    CHECK_ATTACHED(self);
     res = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(seek), posobj);
     Py_DECREF(posobj);
     if (res == NULL)
