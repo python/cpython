@@ -1,0 +1,2 @@
+Add the *wrapcol* parameter in :func:`binascii.b2a_base64` and
+:func:`base64.b64encode`.
