@@ -1,5 +1,3 @@
-:mod:`sqlite3`: fix crashes in :meth:`Connection.execute <sqlite3.Connection.execute>`
-and :meth:`Connection.executemany <sqlite3.Connection.executemany>` when iterating over
-the query's parameters closes the current connection. A similar issue has been fixed
-for the corresponding methods on :class:`~sqlite3.Cursor` objects.
-Patch by Bénédikt Tran.
+:mod:`sqlite3`: fix crashes in :meth:`Connection.executemany <sqlite3.Connection.executemany>`
+and :meth:`Cursor.executemany <sqlite3.Cursor.executemany>` when iterating over
+the query's parameters closes the current connection. Patch by Bénédikt Tran.

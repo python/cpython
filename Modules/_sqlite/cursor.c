@@ -931,6 +931,11 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         if (!parameters) {
             break;
         }
+        // PyIter_Next() may have a side-effect on the connection's state.
+        // See: https://github.com/python/cpython/issues/143198.
+        if (!pysqlite_check_connection(self->connection)) {
+            goto error;
+        }
 
         bind_parameters(state, self->statement, parameters);
         if (PyErr_Occurred()) {
