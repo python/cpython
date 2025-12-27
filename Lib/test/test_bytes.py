@@ -2092,6 +2092,19 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         with self.assertRaises(BufferError):
             ba.rsplit(evil)
 
+    def test_hex_use_after_free(self):
+        # Prevent UAF in bytearray.hex(sep) with re-entrant sep.__len__.
+        # Regression test for https://github.com/python/cpython/issues/143195.
+        ba = bytearray(b'\xAA')
+
+        class S(bytes):
+            def __len__(self):
+                ba.clear()
+                return 1
+
+        self.assertRaises(BufferError, ba.hex, S(b':'))
+
+
 class AssortedBytesTest(unittest.TestCase):
     #
     # Test various combinations of bytes and bytearray
