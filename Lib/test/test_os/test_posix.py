@@ -304,6 +304,20 @@ class PosixTester(unittest.TestCase):
         finally:
             os.close(fd)
 
+    @unittest.skipUnless(hasattr(posix, 'pread'), "test needs posix.pread()")
+    def test_large_pread_from_small_file(self):
+        fd = os.open(os_helper.TESTFN, os.O_WRONLY | os.O_CREAT)
+        try:
+            os.write(fd, b'test')
+        finally:
+            os.close(fd)
+        fd = os.open(os_helper.TESTFN, os.O_RDONLY)
+        try:
+            for size in support.itersize(1 << 20, sys.maxsize):
+                self.assertEqual(posix.pread(fd, size, 1), b'est')
+        finally:
+            os.close(fd)
+
     @unittest.skipUnless(hasattr(posix, 'preadv'), "test needs posix.preadv()")
     def test_preadv(self):
         fd = os.open(os_helper.TESTFN, os.O_RDWR | os.O_CREAT)
