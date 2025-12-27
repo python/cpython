@@ -31,7 +31,7 @@ The :mod:`linecache` module defines the following functions:
    .. index:: triple: module; search; path
 
    If *filename* indicates a frozen module (starting with ``'<frozen '``), the function
-   will attepmt to get the real file name from ``module_globals['__file__']`` if
+   will attempt to get the real file name from ``module_globals['__file__']`` if
    *module_globals* is not ``None``.
 
    If a file named *filename* is not found, the function first checks
