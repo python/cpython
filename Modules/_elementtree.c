@@ -1918,8 +1918,6 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
              * Note that in the ith iteration, shifting is done i+i places down
              * because i children were already removed.
             */
-            assert(self->extra != NULL);
-            assert(self->extra->children != NULL);
             for (cur = start, i = 0; cur < (size_t)stop; cur += step, ++i) {
                 /* Compute how many children have to be moved, clipping at the
                  * list end.
@@ -1986,9 +1984,6 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
                 return -1;
             }
         }
-
-        assert(recycle == NULL);
-        assert(self->extra != NULL);
 
         PyTypeObject *tp = Py_TYPE(self);
         elementtreestate *st = get_elementtree_state_by_type(tp);
