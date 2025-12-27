@@ -2664,7 +2664,13 @@ bytearray_hex_impl(PyByteArrayObject *self, PyObject *sep, int bytes_per_sep)
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
-    return _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
+    // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+    // in _Py_strhex_with_sep().
+    // See: https://github.com/python/cpython/issues/143195.
+    self->ob_exports++;
+    PyObject *res = _Py_strhex_with_sep(argbuf, arglen, sep, bytes_per_sep);
+    self->ob_exports--;
+    return res;
 }
 
 static PyObject *

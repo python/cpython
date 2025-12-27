@@ -1,0 +1,3 @@
+Fix use-after-free crashes in :meth:`bytearray.hex` and :meth:`memoryview.hex`
+when the separator's :meth:`~object.__len__` mutates the original object.
+Patch by Bénédikt Tran.
