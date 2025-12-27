@@ -456,6 +456,20 @@ class AbstractMemoryTests:
         self.assertEqual(c.format, "H")
         self.assertEqual(d.format, "H")
 
+    def test_hex_use_after_free(self):
+        # Prevent UAF in memoryview.hex(sep) with re-entrant sep.__len__.
+        # Regression test for https://github.com/python/cpython/issues/143195.
+        ba = bytearray(b'A' * 1024)
+        mv = memoryview(ba)
+
+        class S(bytes):
+            def __len__(self):
+                mv.release()
+                ba.clear()
+                return 1
+
+        self.assertRaises(BufferError, mv.hex, S(b':'))
+
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
 # with itemsize > 1.
