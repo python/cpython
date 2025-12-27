@@ -621,100 +621,104 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(res.lang, lang)
 
     params_test_get_encoded_word = old_api_only(
-        )
 
-    def test_get_encoded_word_missing_start_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('abc')
+        test_get_encoded_word_missing_start_raises = C(
+                                    'abc',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_encoded_word_missing_end_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?abc')
+        test_get_encoded_word_missing_end_raises = C(
+                                    '=?abc',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_encoded_word_missing_middle_raises(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?abc?=')
+        test_get_encoded_word_missing_middle_raises = C(
+                                    '=?abc?=',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_encoded_word_invalid_cte(self):
-        with self.assertRaises(errors.HeaderParseError):
-            parser.get_encoded_word('=?utf-8?X?somevalue?=')
+        test_get_encoded_word_invalid_cte = C(
+                                    '=?utf-8?X?abc?=',
+                    exception=(errors.HeaderParseError, '.*'),
+            ),
 
-    def test_get_encoded_word_valid_ew(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_valid_ew = C(
                          '=?us-ascii?q?this_is_a_test?=  bird',
                          'this is a test',
                          'this is a test',
                          [],
                          '  bird')
+                         ,
 
-    def test_get_encoded_word_internal_spaces(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_internal_spaces = C(
                          '=?us-ascii?q?this is a test?=  bird',
                          'this is a test',
                          'this is a test',
                          [errors.InvalidHeaderDefect],
                          '  bird')
+                         ,
 
-    def test_get_encoded_word_gets_first(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_gets_first = C(
                          '=?us-ascii?q?first?=  =?utf-8?q?second?=',
                          'first',
                          'first',
                          [],
                          '  =?utf-8?q?second?=')
+                         ,
 
-    def test_get_encoded_word_gets_first_even_if_no_space(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_gets_first_even_if_no_space = C(
                          '=?us-ascii?q?first?==?utf-8?q?second?=',
                          'first',
                          'first',
                          [errors.InvalidHeaderDefect],
                          '=?utf-8?q?second?=')
+                         ,
 
-    def test_get_encoded_word_sets_extra_attributes(self):
-        ew = self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_sets_extra_attributes = C(
                          '=?us-ascii*jive?q?first_second?=',
                          'first second',
                          'first second',
                          [],
-                         '')
-        self.assertEqual(ew.charset, 'us-ascii')
-        self.assertEqual(ew.lang, 'jive')
+                         '',
+                         lang='jive',
+                         ),
 
-    def test_get_encoded_word_lang_default_is_blank(self):
-        ew = self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_lang_default_is_blank = C(
                          '=?us-ascii?q?first_second?=',
                          'first second',
                          'first second',
                          [],
                          '')
-        self.assertEqual(ew.charset, 'us-ascii')
-        self.assertEqual(ew.lang, '')
+                         ,
 
-    def test_get_encoded_word_non_printable_defect(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_non_printable_defect = C(
                          '=?us-ascii?q?first\x02second?=',
                          'first\x02second',
                          'first\x02second',
                          [errors.NonPrintableDefect],
                          '')
+                         ,
 
-    def test_get_encoded_word_leading_internal_space(self):
-        self._test_get_x(parser.get_encoded_word,
+        test_get_encoded_word_leading_internal_space = C(
                         '=?us-ascii?q?=20foo?=',
                         ' foo',
                         ' foo',
                         [],
                         '')
+                        ,
 
-    def test_get_encoded_word_quopri_utf_escape_follows_cte(self):
+        test_get_encoded_word_quopri_utf_escape_follows_cte = C(
         # Issue 18044
-        self._test_get_x(parser.get_encoded_word,
                         '=?utf-8?q?=C3=89ric?=',
                         'Éric',
                         'Éric',
                         [],
-                        '')
+                        '',
+                        charset='utf-8',
+                        ),
+
+        )
+
 
     # get_unstructured
 
