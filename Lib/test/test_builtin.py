@@ -1111,6 +1111,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertEqual(wm.filename, '<string>')
             self.assertIs(wm.category, SyntaxWarning)
 
+    def test_eval_exec_sync_fast_locals(self):
+        def func_assign():
+            a = 1
+
+        def func_read():
+            b = a + 1
+            a = 3
+
+        for executor in eval, exec:
+            with self.subTest(executor=executor.__name__):
+                ns = {}
+                executor(func_assign.__code__, {}, ns, sync_fast_locals=True)
+                self.assertEqual(ns, {'a': 1})
+                ns = {'a': 1}
+                executor(func_read.__code__, {}, ns, sync_fast_locals=True)
+                self.assertEqual(ns, {'a': 3, 'b': 2})
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))

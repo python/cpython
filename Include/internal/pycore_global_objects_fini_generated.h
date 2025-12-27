@@ -2080,6 +2080,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub_key));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(subcalls));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sync_fast_locals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tabsize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(take_bytes));

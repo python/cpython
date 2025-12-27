@@ -412,7 +412,8 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_eval__doc__,
-"eval($module, source, /, globals=None, locals=None)\n"
+"eval($module, source, /, globals=None, locals=None, *,\n"
+"     sync_fast_locals=False)\n"
 "--\n"
 "\n"
 "Evaluate the given source in the context of globals and locals.\n"
@@ -428,91 +429,10 @@ PyDoc_STRVAR(builtin_eval__doc__,
 
 static PyObject *
 builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals);
+                  PyObject *locals, int sync_fast_locals);
 
 static PyObject *
 builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"", "globals", "locals", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "eval",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *source;
-    PyObject *globals = Py_None;
-    PyObject *locals = Py_None;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    source = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        globals = args[1];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    locals = args[2];
-skip_optional_pos:
-    return_value = builtin_eval_impl(module, source, globals, locals);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(builtin_exec__doc__,
-"exec($module, source, /, globals=None, locals=None, *, closure=None)\n"
-"--\n"
-"\n"
-"Execute the given source in the context of globals and locals.\n"
-"\n"
-"The source may be a string representing one or more Python statements\n"
-"or a code object as returned by compile().\n"
-"The globals must be a dictionary and locals can be any mapping,\n"
-"defaulting to the current globals and locals.\n"
-"If only globals is given, locals defaults to it.\n"
-"The closure must be a tuple of cellvars, and can only be used\n"
-"when source is a code object requiring exactly that many cellvars.");
-
-#define BUILTIN_EXEC_METHODDEF    \
-    {"exec", _PyCFunction_CAST(builtin_exec), METH_FASTCALL|METH_KEYWORDS, builtin_exec__doc__},
-
-static PyObject *
-builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
-                  PyObject *locals, PyObject *closure);
-
-static PyObject *
-builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -526,7 +446,7 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(closure), },
+        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(sync_fast_locals), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -535,10 +455,10 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"", "globals", "locals", "closure", NULL};
+    static const char * const _keywords[] = {"", "globals", "locals", "sync_fast_locals", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "exec",
+        .fname = "eval",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -547,7 +467,7 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *source;
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
-    PyObject *closure = NULL;
+    int sync_fast_locals = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -574,9 +494,115 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    closure = args[3];
+    sync_fast_locals = PyObject_IsTrue(args[3]);
+    if (sync_fast_locals < 0) {
+        goto exit;
+    }
 skip_optional_kwonly:
-    return_value = builtin_exec_impl(module, source, globals, locals, closure);
+    return_value = builtin_eval_impl(module, source, globals, locals, sync_fast_locals);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(builtin_exec__doc__,
+"exec($module, source, /, globals=None, locals=None, *, closure=None,\n"
+"     sync_fast_locals=False)\n"
+"--\n"
+"\n"
+"Execute the given source in the context of globals and locals.\n"
+"\n"
+"The source may be a string representing one or more Python statements\n"
+"or a code object as returned by compile().\n"
+"The globals must be a dictionary and locals can be any mapping,\n"
+"defaulting to the current globals and locals.\n"
+"If only globals is given, locals defaults to it.\n"
+"The closure must be a tuple of cellvars, and can only be used\n"
+"when source is a code object requiring exactly that many cellvars.");
+
+#define BUILTIN_EXEC_METHODDEF    \
+    {"exec", _PyCFunction_CAST(builtin_exec), METH_FASTCALL|METH_KEYWORDS, builtin_exec__doc__},
+
+static PyObject *
+builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
+                  PyObject *locals, PyObject *closure, int sync_fast_locals);
+
+static PyObject *
+builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(closure), &_Py_ID(sync_fast_locals), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "globals", "locals", "closure", "sync_fast_locals", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "exec",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *source;
+    PyObject *globals = Py_None;
+    PyObject *locals = Py_None;
+    PyObject *closure = NULL;
+    int sync_fast_locals = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    source = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        globals = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[2]) {
+        locals = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[3]) {
+        closure = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    sync_fast_locals = PyObject_IsTrue(args[4]);
+    if (sync_fast_locals < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = builtin_exec_impl(module, source, globals, locals, closure, sync_fast_locals);
 
 exit:
     return return_value;
@@ -1285,4 +1311,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06500bcc9a341e68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3870be11257135c3 input=a9049054013a1b77]*/
