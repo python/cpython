@@ -227,12 +227,24 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
         if tail == '.py':
             if not force:
                 try:
-                    mtime = int(os.stat(fullname).st_mtime)
-                    expect = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
-                                         0, mtime & 0xFFFF_FFFF)
                     for cfile in opt_cfiles.values():
                         with open(cfile, 'rb') as chandle:
-                            actual = chandle.read(12)
+                            header = chandle.read(16)
+
+                        if header[4]:
+                            # hash-based invalidation
+                            with open(fullname, 'rb') as chandle:
+                                source_bytes = chandle.read()
+                            source_hash = importlib.util.source_hash(source_bytes)
+                            actual = header
+                            expect = struct.pack('<4sL8s', importlib.util.MAGIC_NUMBER,
+                                                 header[4], source_hash)
+                        else:
+                            # timestamp-based invalidation
+                            mtime = int(os.stat(fullname).st_mtime)
+                            actual = header[:12]
+                            expect = struct.pack('<4sLL', importlib.util.MAGIC_NUMBER,
+                                                 0, mtime & 0xFFFF_FFFF)
                         if expect != actual:
                             break
                     else:
