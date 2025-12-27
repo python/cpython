@@ -297,6 +297,7 @@ typedef struct {
     RemoteDebuggingState *cached_state;
     FrameCacheEntry *frame_cache;  // preallocated array of FRAME_CACHE_MAX_THREADS entries
     UnwinderStats stats;  // statistics for performance analysis
+    uintptr_t frame_executable_types[PyUnstable_EXECUTABLE_KINDS];
 #ifdef Py_GIL_DISABLED
     uint32_t tlbc_generation;
     _Py_hashtable_t *tlbc_cache;
@@ -430,7 +431,7 @@ extern long read_py_long(RemoteUnwinderObject *unwinder, uintptr_t address);
  * CODE OBJECT FUNCTION DECLARATIONS
  * ============================================================================ */
 
-extern int parse_code_object(
+extern int parse_executable_object(
     RemoteUnwinderObject *unwinder,
     PyObject **result,
     const CodeObjectContext *ctx
@@ -558,6 +559,8 @@ extern int populate_initial_state_data(
     uintptr_t *interpreter_state,
     uintptr_t *tstate
 );
+
+extern int populate_frame_executable_types(RemoteUnwinderObject *unwinder);
 
 extern int find_running_frame(
     RemoteUnwinderObject *unwinder,

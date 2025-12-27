@@ -28,6 +28,7 @@
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
 #include "pycore_interpframe.h"   // _PyFrame_GetFunction()
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -691,6 +692,113 @@ set_eval_frame_record(PyObject *self, PyObject *list)
     Py_XSETREF(state->record_list, Py_NewRef(list));
     _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
     Py_RETURN_NONE;
+}
+
+typedef struct {
+    bool initialized;
+    _PyInterpreterFrame frame;
+} JitFrame;
+
+int
+reifier(_PyInterpreterFrame *frame, PyObject *executable)
+{
+    JitFrame *jitframe = (JitFrame*)((char *)frame - offsetof(JitFrame, frame));
+    PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+    if (!jitframe->initialized) {
+        frame->f_locals = NULL;
+        frame->f_globals = func->func_globals; // borrowed
+        frame->f_builtins = func->func_builtins; // borrowed
+        frame->frame_obj = NULL;
+        jitframe->initialized = true;
+    }
+    PyUnstable_PyJitExecutable *jit_exec = (PyUnstable_PyJitExecutable*)executable;
+    if (jit_exec->je_state == NULL) {
+        return 0;
+    }
+
+    PyObject *res = PyObject_CallNoArgs(jit_exec->je_state);
+    if (res == NULL) {
+        return -1;
+    }
+
+    // let the test-state function fill in details on the frame
+    if (PyDict_Check(res)) {
+        PyObject *globals = PyDict_GetItemString(res, "globals");
+        if (globals != NULL) {
+            frame->f_globals = globals;
+        }
+        PyObject *builtins = PyDict_GetItemString(res, "builtins");
+        if (builtins != NULL) {
+            frame->f_builtins = builtins;
+        }
+        PyObject *instr_ptr = PyDict_GetItemString(res, "instr_ptr");
+        if (instr_ptr != NULL) {
+            frame->instr_ptr = _PyCode_CODE((PyCodeObject *)func->func_code) +
+                                PyLong_AsLong(instr_ptr);
+        }
+    }
+    Py_DECREF(res);
+    return 0;
+}
+
+static PyObject *
+call_with_jit_frame(PyObject *self, PyObject *args)
+{
+    PyObject *fakefunc; // used for f_funcobj as-if we were that JITed function
+    PyObject *call;     // the thing to call for testing purposes
+    PyObject *callargs; // the arguments to provide for the test call
+    PyObject *state = NULL; // a state object provided to the reifier, for tests we
+                            // callback on it to populate fields.
+    if (!PyArg_ParseTuple(args, "OOO|O", &fakefunc, &call, &callargs, &state)) {
+        return NULL;
+    }
+    if (!PyTuple_Check(callargs)) {
+        PyErr_SetString(PyExc_TypeError, "callargs must be a tuple");
+        return NULL;
+    }
+
+    PyThreadState *tstate = PyThreadState_Get();
+    PyCodeObject *code = (PyCodeObject *)((PyFunctionObject *)fakefunc)->func_code;
+    PyObject *executable = PyUnstable_MakeJITExecutable(reifier, code, state);
+    if (executable == NULL) {
+        return NULL;
+    }
+
+    // Create JIT frame and push onto the _PyInterprerFrame stack.
+    JitFrame frame;
+    frame.initialized = false;
+    // Initialize minimal set of fields
+    frame.frame.previous = tstate->current_frame;
+    frame.frame.f_executable = PyStackRef_FromPyObjectSteal(executable);
+    frame.frame.f_funcobj = PyStackRef_FromPyObjectNew(fakefunc);
+    frame.frame.instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    frame.frame.stackpointer = &frame.frame.localsplus[0];
+    frame.frame.owner = FRAME_OWNED_BY_THREAD;
+#ifdef Py_GIL_DISABLED
+    frame.frame.tlbc_index = 0;
+#endif
+    tstate->current_frame = &frame.frame;
+
+    // call the test function
+    PyObject *res = PyObject_Call(call, callargs, NULL);
+
+    tstate->current_frame = frame.frame.previous;
+    // the test function may have caused the frame to get reified.
+    if (frame.initialized && frame.frame.frame_obj != NULL) {
+        // remove our reifier
+        PyStackRef_CLOSE(frame.frame.f_executable);
+        frame.frame.f_executable = PyStackRef_FromPyObjectNew(code);
+
+        // Transfer ownership to the reified frame object
+        _PyFrame_ClearExceptCode(&frame.frame);
+        PyStackRef_CLOSE(frame.frame.f_executable);
+    }
+    else {
+        // Pop frame from the stack
+        PyStackRef_CLOSE(frame.frame.f_executable);
+        PyStackRef_CLOSE(frame.frame.f_funcobj);
+    }
+    return res;
 }
 
 /*[clinic input]
@@ -2524,6 +2632,7 @@ static PyMethodDef module_functions[] = {
     {"DecodeLocaleEx", decode_locale_ex, METH_VARARGS},
     {"set_eval_frame_default", set_eval_frame_default, METH_NOARGS, NULL},
     {"set_eval_frame_record", set_eval_frame_record, METH_O, NULL},
+    {"call_with_jit_frame", call_with_jit_frame, METH_VARARGS, NULL},
     _TESTINTERNALCAPI_COMPILER_CLEANDOC_METHODDEF
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF

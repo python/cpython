@@ -11,6 +11,26 @@
  * STACK CHUNK MANAGEMENT FUNCTIONS
  * ============================================================================ */
 
+int
+populate_frame_executable_types(RemoteUnwinderObject *unwinder)
+{
+    uintptr_t executable_kinds_addr =
+        (uintptr_t)unwinder->debug_offsets.interpreter_frame_metadata.executable_kinds;
+
+    int bytes_read = _Py_RemoteDebug_PagedReadRemoteMemory(
+            &unwinder->handle,
+            executable_kinds_addr,
+            sizeof(uintptr_t) * PyUnstable_EXECUTABLE_KINDS,
+            (void *)unwinder->frame_executable_types);
+
+    if (bytes_read < 0) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read frame executable types");
+        return -1;
+    }
+
+    return 0;
+}
+
 void
 cleanup_stack_chunks(StackChunkList *chunks)
 {
@@ -230,7 +250,7 @@ parse_frame_object(
         .instruction_pointer = instruction_pointer,
         .tlbc_index = tlbc_index,
     };
-    return parse_code_object(unwinder, result, &code_ctx);
+    return parse_executable_object(unwinder, result, &code_ctx);
 }
 
 int
@@ -272,7 +292,7 @@ parse_frame_from_chunks(
         .instruction_pointer = instruction_pointer,
         .tlbc_index = tlbc_index,
     };
-    return parse_code_object(unwinder, result, &code_ctx);
+    return parse_executable_object(unwinder, result, &code_ctx);
 }
 
 /* ============================================================================
