@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import time
+import webbrowser
 from contextlib import nullcontext
 
 from .errors import SamplingUnknownProcessError, SamplingModuleNotFoundError, SamplingScriptNotFoundError
@@ -146,6 +147,9 @@ def _build_child_profiler_args(args):
     # Format options (skip pstats as it's the default)
     if args.format != "pstats":
         child_args.append(f"--{args.format}")
+
+    # Always add --no-browser for child profilers to avoid opening multiple browser tabs
+    child_args.append("--no-browser")
 
     return child_args
 
@@ -487,6 +491,12 @@ def _add_format_options(parser, include_compression=True, include_binary=True):
         help="Output path (default: stdout for pstats, auto-generated for others). "
         "For heatmap: directory name (default: heatmap_PID)",
     )
+    output_group.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Disable automatic browser opening for HTML output (flamegraph, heatmap). "
+        "When using --subprocesses, only the main process opens the browser by default",
+    )
 
 
 def _add_pstats_options(parser):
@@ -586,6 +596,32 @@ def _generate_output_filename(format_type, pid):
     return f"{format_type}_{pid}.{extension}"
 
 
+def _open_in_browser(path):
+    """Open a file or directory in the default web browser.
+
+    Args:
+        path: File path or directory path to open
+
+    For directories (heatmap), opens the index.html file inside.
+    """
+    abs_path = os.path.abspath(path)
+
+    # For heatmap directories, open the index.html file
+    if os.path.isdir(abs_path):
+        index_path = os.path.join(abs_path, 'index.html')
+        if os.path.exists(index_path):
+            abs_path = index_path
+        else:
+            print(f"Warning: Could not find index.html in {path}", file=sys.stderr)
+            return
+
+    file_url = f"file://{abs_path}"
+    try:
+        webbrowser.open(file_url)
+    except Exception as e:
+        print(f"Warning: Could not open browser: {e}", file=sys.stderr)
+
+
 def _handle_output(collector, args, pid, mode):
     """Handle output for the collector based on format and arguments.
 
@@ -624,6 +660,10 @@ def _handle_output(collector, args, pid, mode):
         else:
             filename = args.outfile or _generate_output_filename(args.format, pid)
         collector.export(filename)
+
+        # Auto-open browser for HTML output unless --no-browser flag is set
+        if args.format in ('flamegraph', 'heatmap') and not getattr(args, 'no_browser', False):
+            _open_in_browser(filename)
 
 
 def _validate_args(args, parser):
@@ -1160,6 +1200,10 @@ def _handle_replay(args):
         else:
             filename = args.outfile or _generate_output_filename(args.format, os.getpid())
             collector.export(filename)
+
+            # Auto-open browser for HTML output unless --no-browser flag is set
+            if args.format in ('flamegraph', 'heatmap') and not getattr(args, 'no_browser', False):
+                _open_in_browser(filename)
 
         print(f"Replayed {count} samples")
 
