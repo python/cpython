@@ -32,7 +32,8 @@ from .support.props import *
 from .support.pymanager import *
 from .support.nuspec import *
 
-TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
+TEST_PYDS_ONLY = FileStemSet("xxlimited",  "xxlimited_3_13", "xxlimited_35",
+                             "_ctypes_test", "_test*")
 TEST_DLLS_ONLY = set()
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
