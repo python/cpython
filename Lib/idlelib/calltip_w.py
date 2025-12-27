@@ -90,7 +90,7 @@ class CalltipWindow(TooltipBase):
         """Create the call-tip widget."""
         self.label = Label(self.tipwindow, text=self.text, font=self.anchor_widget['font'])
         self.label.pack()
-        label_w, label_h = widget_size(self.label)  # get the old version of tooltip window size
+        label_w, label_h = widget_size(self.label)
         self.label.forget()
 
         self.label = ScrolledText(self.tipwindow, wrap="word",
