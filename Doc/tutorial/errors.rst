@@ -525,12 +525,12 @@ tasks may have failed in parallel, but there are also other use cases where
 it is desirable to continue execution and collect multiple errors rather than
 raise the first exception.
 
-The builtin :exc:`ExceptionGroup` wraps a list of exception instances so
+The builtin :exc:`ExceptionGroup` wraps a sequence of exception instances so
 that they can be raised together. It is an exception itself, so it can be
 caught like any other exception. ::
 
    >>> def f():
-   ...     excs = [OSError('error 1'), SystemError('error 2')]
+   ...     excs = (OSError('error 1'), SystemError('error 2'))
    ...     raise ExceptionGroup('there were problems', excs)
    ...
    >>> f()
@@ -564,17 +564,17 @@ other clauses and eventually to be reraised. ::
    >>> def f():
    ...     raise ExceptionGroup(
    ...         "group1",
-   ...         [
+   ...         (
    ...             OSError(1),
    ...             SystemError(2),
    ...             ExceptionGroup(
    ...                 "group2",
-   ...                 [
+   ...                 (
    ...                     OSError(3),
    ...                     RecursionError(4)
-   ...                 ]
+   ...                 )
    ...             )
-   ...         ]
+   ...         )
    ...     )
    ...
    >>> try:
