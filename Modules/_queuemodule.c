@@ -240,6 +240,28 @@ simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 /*[clinic input]
+@critical_section
+_queue.SimpleQueue.__sizeof__ -> Py_ssize_t
+
+Returns size in memory, in bytes.
+[clinic start generated code]*/
+
+static Py_ssize_t
+_queue_SimpleQueue___sizeof___impl(simplequeueobject *self)
+{
+    Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
+    PyObject **items = self->buf.items;
+    Py_ssize_t items_cap = self->buf.items_cap;
+
+    if (items != NULL) {
+        size += items_cap * (Py_ssize_t)sizeof(void *);
+    }
+
+    return size;
+}
+/*[clinic end generated code: output=58ce4e3bbc078fd4 input=a3a7f05c9616598f]*/
+
+/*[clinic input]
 @classmethod
 _queue.SimpleQueue.__new__ as simplequeue_new
 
@@ -534,6 +556,7 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    _QUEUE_SIMPLEQUEUE___SIZEOF___METHODDEF
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
