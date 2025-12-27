@@ -532,7 +532,9 @@ class _ExecutorManagerThread(threading.Thread):
                 # to only have futures that are currently running.
                 new_pending_work_items = {}
                 for work_id, work_item in self.pending_work_items.items():
-                    if not work_item.future.cancel():
+                    if work_item.future.cancel():
+                        work_item.future.set_running_or_notify_cancel()
+                    else:
                         new_pending_work_items[work_id] = work_item
                 self.pending_work_items = new_pending_work_items
                 # Drain work_ids_queue since we no longer need to
