@@ -11,6 +11,8 @@ try:
         raise RuntimeError("Windows 10 TH2 or later required")
     if not os.isatty(sys.stdin.fileno()):
         raise OSError(errno.ENOTTY, "tty required", "stdin")
+    if not os.isatty(sys.stdout.fileno()):
+        raise OSError(errno.ENOTTY, "tty required", "stdout")
     from .simple_interact import check
     if err := check():
         raise RuntimeError(err)
