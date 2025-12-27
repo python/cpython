@@ -209,23 +209,27 @@ in bounds; that's the responsibility of the caller.
    user-defined methods (like __index__ or __float__) that might modify
    the array during the call.
 */
-#define CHECK_ARRAY_BOUNDS(ap, i) \
-    do { \
-        if ((i) >= 0 && ((ap)->ob_item == NULL || (i) >= Py_SIZE((ap)))) { \
-            PyErr_SetString(PyExc_IndexError, "array assignment index out of range"); \
-            return -1; \
-        } \
+#define CHECK_ARRAY_BOUNDS(OP, IDX)                         \
+    do {                                                    \
+        if ((IDX) >= 0 && ((OP)->ob_item == NULL ||         \
+                  (IDX) >= Py_SIZE((OP)))) {                \
+            PyErr_SetString(PyExc_IndexError,               \
+                    "array assignment index out of range"); \
+            return -1;                                      \
+        }                                                   \
     } while (0)
 
-#define CHECK_ARRAY_BOUNDS_WITH_CLEANUP(ap, i, v, cleanup) \
-    do { \
-        if ((i) >= 0 && ((ap)->ob_item == NULL || (i) >= Py_SIZE((ap)))) { \
-            PyErr_SetString(PyExc_IndexError, "array assignment index out of range"); \
-            if (cleanup) { \
-                Py_DECREF(v); \
-            } \
-            return -1; \
-        } \
+#define CHECK_ARRAY_BOUNDS_WITH_CLEANUP(OP, IDX, VAL, CLEANUP)  \
+    do {                                                        \
+        if ((IDX) >= 0 && ((OP)->ob_item == NULL ||             \
+                  (IDX) >= Py_SIZE((OP)))) {                    \
+            PyErr_SetString(PyExc_IndexError,                   \
+                    "array assignment index out of range");     \
+            if (CLEANUP) {                                      \
+                Py_DECREF(VAL);                                 \
+            }                                                   \
+            return -1;                                          \
+        }                                                       \
     } while (0)
 
 static PyObject *
