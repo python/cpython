@@ -1,0 +1,4 @@
+:mod:`sqlite3`: fix crashes in :func:`~sqlite3.execute`, :func:`~sqlite3.executemany`,
+:meth:`Cursor.execute <sqlite3.Cursor.execute>`, and :meth:`Cursor.executemany
+<sqlite3.Cursor.executemany>` when iterating over the query's parameters closes
+the current sqlite3 connection. Patch by Bénédikt Tran.
