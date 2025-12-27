@@ -388,6 +388,8 @@ What a mess!
                         [" This is a sentence with leading whitespace."])
         self.check_wrap(text, 30,
                         [" This is a sentence with", "leading whitespace."])
+        self.check_wrap(' ABCDEFG', 1,
+                        [' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G'])
 
     def test_drop_whitespace_whitespace_line(self):
         # Check that drop_whitespace skips the whole line if a non-leading
