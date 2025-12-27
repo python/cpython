@@ -150,7 +150,7 @@ def _parsedate_tz(data):
     # mandated a 4-digit yy, and RFC 5322 (which obsoletes RFC 2822) continues
     # this requirement. For more information, see the documentation for
     # the time module.
-    if yy < 100:
+    if yy < 999:
         # The year is between 1969 and 1999 (inclusive).
         if yy > 68:
             yy += 1900
