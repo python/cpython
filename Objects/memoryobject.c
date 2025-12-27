@@ -2349,7 +2349,10 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports++;
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports--;
+        return ret;
     }
 
     PyBytesWriter *writer = PyBytesWriter_Create(src->len);

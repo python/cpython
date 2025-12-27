@@ -4,7 +4,6 @@
    are in test_buffer.
 """
 
-import contextlib
 import unittest
 import test.support
 import sys
@@ -455,9 +454,7 @@ class AbstractMemoryTests:
                 ba.clear()
                 return 1
 
-        # The following should not crash but it may not necessarily raise.
-        with contextlib.suppress(BufferError):
-            mv.hex(S(b':'))
+        self.assertRaises(BufferError, mv.hex, S(b':'))
 
 
 # Variations on source objects for the buffer: bytes-like objects, then arrays
