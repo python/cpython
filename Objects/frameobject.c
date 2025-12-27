@@ -2015,30 +2015,20 @@ frame_clear_impl(PyFrameObject *self)
 {
     if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
         PyGenObject *gen = _PyGen_GetGeneratorFromFrame(self->f_frame);
-        if (gen->gi_frame_state == FRAME_EXECUTING) {
-            goto running;
+        if (_PyGen_ClearFrame(gen) < 0) {
+            return NULL;
         }
-        if (FRAME_STATE_SUSPENDED(gen->gi_frame_state)) {
-            goto suspended;
-        }
-        _PyGen_Finalize((PyObject *)gen);
     }
     else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
-        goto running;
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot clear an executing frame");
+        return NULL;
     }
     else {
         assert(self->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
         (void)frame_tp_clear((PyObject *)self);
     }
     Py_RETURN_NONE;
-running:
-    PyErr_SetString(PyExc_RuntimeError,
-                    "cannot clear an executing frame");
-    return NULL;
-suspended:
-    PyErr_SetString(PyExc_RuntimeError,
-                    "cannot clear a suspended frame");
-    return NULL;
 }
 
 /*[clinic input]
