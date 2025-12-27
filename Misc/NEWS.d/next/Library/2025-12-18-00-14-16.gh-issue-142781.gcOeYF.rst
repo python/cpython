@@ -1,0 +1,3 @@
+Fix a type confusion in zoneinfo where a malicious override of _weak_cache
+in a zoneinfo subclass can cause memory corruption and crash the
+interpreter.

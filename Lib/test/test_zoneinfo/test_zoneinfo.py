@@ -1575,6 +1575,33 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
 
+    def test_weak_cache_get_type_confusion(self):
+        class EvilCache:
+            def get(self, key, default=None):
+                return 1337
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        EvilZoneInfo._weak_cache = EvilCache()
+
+        with self.assertRaises(TypeError):
+            EvilZoneInfo("America/Los_Angeles")
+
+    def test_weak_cache_setdefault_type_confusion(self):
+        class EvilCache:
+            def get(self, key, default=None):
+                return default
+            def setdefault(self, key, value):
+                return 1337
+
+        class EvilZoneInfo(self.klass):
+            pass
+
+        EvilZoneInfo._weak_cache = EvilCache()
+
+        with self.assertRaises(TypeError):
+            EvilZoneInfo("America/Los_Angeles")
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
     module = py_zoneinfo
