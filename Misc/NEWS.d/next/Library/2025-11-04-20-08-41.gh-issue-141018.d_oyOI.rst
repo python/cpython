@@ -1,2 +1,0 @@
-:mod:`mimetypes`: Update ``.exe``, ``.dll``, ``.rtf`` and (when
-``strict=False``) ``.jpg`` to their correct IANA mime type.

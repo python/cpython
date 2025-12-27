@@ -1,2 +1,0 @@
-Fix :func:`sys.activate_stack_trampoline` to properly support the
-``perf_jit`` backend. Patch by Pablo Galindo.

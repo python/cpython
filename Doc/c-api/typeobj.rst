@@ -1569,6 +1569,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        but the instance has no strong reference to the elements inside it, as they
        are allowed to be removed even if the instance is still alive).
 
+   .. warning::
+      The traversal function must not have any side effects.  It must not
+      modify the reference counts of any Python objects nor create or destroy
+      any Python objects.
+
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`!local_traverse` to have these specific names; don't name them just
    anything.
@@ -2273,7 +2278,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    This field should be set to ``NULL`` and treated as read-only.
    Python will fill it in when the type is :c:func:`initialized <PyType_Ready>`.
 
-   For dynamically created classes, the ``Py_tp_bases``
+   For dynamically created classes, the :c:data:`Py_tp_bases`
    :c:type:`slot <PyType_Slot>` can be used instead of the *bases* argument
    of :c:func:`PyType_FromSpecWithBases`.
    The argument form is preferred.

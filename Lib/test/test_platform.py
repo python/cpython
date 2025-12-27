@@ -569,6 +569,8 @@ class PlatformTest(unittest.TestCase):
                 (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
                 (b'libc.musl.so.1', ('musl', '1')),
                 (b'libc.musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
+                (b'ld-musl.so.1', ('musl', '1')),
+                (b'ld-musl-x86_64.so.1.2.5', ('musl', '1.2.5')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -589,6 +591,10 @@ class PlatformTest(unittest.TestCase):
                 (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
                 (
                     b'libc.musl-x86_64.so.1.4.1\0libc.musl-x86_64.so.2.1.1\0libc.musl-x86_64.so.2.0.1',
+                    ('musl', '2.1.1'),
+                ),
+                (
+                    b'ld-musl-x86_64.so.1.4.1\0ld-musl-x86_64.so.2.1.1\0ld-musl-x86_64.so.2.0.1',
                     ('musl', '2.1.1'),
                 ),
                 (b'no match here, so defaults are used', ('test', '100.1.0')),
