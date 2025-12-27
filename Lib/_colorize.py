@@ -188,6 +188,30 @@ class Difflib(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
+class FancyCompleter(ThemeSection):
+    # functions and methods
+    function: str = ANSIColors.BOLD_BLUE
+    builtin_function_or_method: str = ANSIColors.BOLD_BLUE
+    method: str = ANSIColors.BOLD_CYAN
+    method_wrapper: str = ANSIColors.BOLD_CYAN
+    wrapper_descriptor: str = ANSIColors.BOLD_CYAN
+    method_descriptor: str = ANSIColors.BOLD_CYAN
+
+    # numbers
+    int: str = ANSIColors.BOLD_YELLOW
+    float: str = ANSIColors.BOLD_YELLOW
+    complex: str = ANSIColors.BOLD_YELLOW
+    bool: str = ANSIColors.BOLD_YELLOW
+
+    # others
+    type: str = ANSIColors.BOLD_MAGENTA
+    module: str = ANSIColors.CYAN
+    NoneType: str = ANSIColors.GREY
+    bytes: str = ANSIColors.BOLD_GREEN
+    str: str = ANSIColors.BOLD_GREEN
+
+
+@dataclass(frozen=True, kw_only=True)
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
@@ -232,6 +256,7 @@ class Theme:
     """
     argparse: Argparse = field(default_factory=Argparse)
     difflib: Difflib = field(default_factory=Difflib)
+    fancycompleter: FancyCompleter = field(default_factory=FancyCompleter)
     syntax: Syntax = field(default_factory=Syntax)
     traceback: Traceback = field(default_factory=Traceback)
     unittest: Unittest = field(default_factory=Unittest)
@@ -241,6 +266,7 @@ class Theme:
         *,
         argparse: Argparse | None = None,
         difflib: Difflib | None = None,
+        fancycompleter: FancyCompleter | None = None,
         syntax: Syntax | None = None,
         traceback: Traceback | None = None,
         unittest: Unittest | None = None,
@@ -253,6 +279,7 @@ class Theme:
         return type(self)(
             argparse=argparse or self.argparse,
             difflib=difflib or self.difflib,
+            fancycompleter=fancycompleter or self.fancycompleter,
             syntax=syntax or self.syntax,
             traceback=traceback or self.traceback,
             unittest=unittest or self.unittest,
@@ -269,6 +296,7 @@ class Theme:
         return cls(
             argparse=Argparse.no_colors(),
             difflib=Difflib.no_colors(),
+            fancycompleter=FancyCompleter.no_colors(),
             syntax=Syntax.no_colors(),
             traceback=Traceback.no_colors(),
             unittest=Unittest.no_colors(),
