@@ -9,7 +9,7 @@
 
 .. testsetup::
 
-    import ast
+   import ast
 
 **Source code:** :source:`Lib/ast.py`
 
