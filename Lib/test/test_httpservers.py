@@ -503,8 +503,16 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
         self.assertEndsWith(lines[1], '"ERROR / HTTP/1.1" 404 -')
 
 
+class CustomHeaderSimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
+    extra_response_headers = None
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('extra_response_headers', self.extra_response_headers)
+        super().__init__(*args, **kwargs)
+
+
 class SimpleHTTPServerTestCase(BaseTestCase):
-    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    class request_handler(NoLogRequestHandler, CustomHeaderSimpleHTTPRequestHandler):
         pass
 
     def setUp(self):
@@ -860,6 +868,39 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
+
+    def test_extra_response_headers_list_dir(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'test1'),
+            ('X-Test2', 'test2'),
+        ]):
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("X-Test1"), 'test1')
+            self.assertEqual(response.getheader("X-Test2"), 'test2')
+
+    def test_extra_response_headers_get_file(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('Set-Cookie', 'test1=value1'),
+            ('Set-Cookie', 'test2=value2'),
+            ('X-Test1', 'value3'),
+        ]):
+            data = b"Dummy index file\r\n"
+            with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
+                f.write(data)
+            response = self.request(self.base_url + '/')
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.getheader("Set-Cookie"),
+                                                'test1=value1, test2=value2')
+            self.assertEqual(response.getheader("X-Test1"), 'value3')
+
+    def test_extra_response_headers_missing_on_404(self):
+        with mock.patch.object(self.request_handler, 'extra_response_headers', [
+            ('X-Test1', 'value'),
+        ]):
+            response = self.request(self.base_url + '/missing.html')
+            self.assertEqual(response.status, 404)
+            self.assertEqual(response.getheader("X-Test1"), None)
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
@@ -1409,6 +1450,21 @@ class CommandLineTestCase(unittest.TestCase):
                     mock_func.assert_called_once_with(**call_args)
                     mock_func.reset_mock()
 
+    @mock.patch('http.server.test')
+    def test_header_flag(self, mock_func):
+        call_args = self.args
+        self.invoke_httpd('--header', 'h1', 'v1', '-H', 'h2', 'v2')
+        mock_func.assert_called_once_with(**call_args)
+        mock_func.reset_mock()
+
+    def test_extra_header_flag_too_few_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1')
+
+    def test_extra_header_flag_too_many_args(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd('--header', 'h1', 'v1', 'h2')
+
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
     def test_tls_cert_and_key_flags(self, mock_func):
@@ -1491,6 +1547,36 @@ class CommandLineTestCase(unittest.TestCase):
             self.invoke_httpd('--unknown-flag', stdout=stdout, stderr=stderr)
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
+
+    @mock.patch('http.server._make_server', wraps=server._make_server)
+    @mock.patch.object(HTTPServer, 'serve_forever')
+    def test_extra_response_headers_arg(self, _, mock_make_server):
+        server._main(
+            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2:v3 v4', '8080']
+        )
+        # Get an instance of the server / RequestHandler by using
+        # the spied call args, then calling _make_server with them.
+        args, kwargs = mock_make_server.call_args
+        httpd = server._make_server(*args, **kwargs)
+        self.addCleanup(httpd.server_close)
+
+        # Ensure the RequestHandler class is passed the correct response
+        # headers
+        request_handler_class = httpd.RequestHandlerClass
+        with mock.patch.object(
+            request_handler_class, '__init__'
+        ) as mock_handler_init:
+            mock_handler_init.return_value = None
+            # finish_request instantiates a request handler class,
+            # ensure extra_response_headers are passed to it
+            httpd.finish_request(mock.Mock(), '127.0.0.1')
+            mock_handler_init.assert_called_once_with(
+                mock.ANY, mock.ANY, mock.ANY,
+                directory=mock.ANY,
+                extra_response_headers=[
+                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2:v3 v4']
+                ]
+            )
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):
