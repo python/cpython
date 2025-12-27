@@ -113,7 +113,7 @@ PyCode_ClearWatcher(int watcher_id)
 
 #define _PyCodeObject_CAST(op)  (assert(PyCode_Check(op)), (PyCodeObject *)(op))
 
-static int
+static inline int
 should_intern_string(PyObject *o)
 {
 #ifdef Py_GIL_DISABLED
@@ -196,6 +196,8 @@ intern_strings(PyObject *tuple)
     return 0;
 }
 
+#define _constants_tuple_modified(modified) if (modified) *modified = 1
+
 /* Intern constants. In the default build, this interns selected string
    constants. In the free-threaded build, this also interns non-string
    constants. */
@@ -206,14 +208,28 @@ intern_constants(PyObject *tuple, int *modified)
     for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
+            if (PyUnicode_CHECK_INTERNED(v) != 0) {
+                continue;
+            }
+#if !defined(Py_GIL_DISABLED)
+            PyObject *interned = _Py_hashtable_get(INTERNED_STRINGS, v);
+            if (interned == NULL) {
+                interned = PyDict_GetItemWithError(get_interned_dict(interp), v);
+                if (PyErr_Occurred()) return -1;
+            }
+            if (interned != NULL && interned != v) {
+                Py_INCREF(interned);
+                PyTuple_SET_ITEM(tuple, i, interned);
+                Py_DECREF(v);
+                _constants_tuple_modified(modified);
+            } else
+#endif
             if (should_intern_string(v)) {
                 PyObject *w = v;
                 _PyUnicode_InternMortal(interp, &v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
-                    if (modified) {
-                        *modified = 1;
-                    }
+                    _constants_tuple_modified(modified);
                 }
             }
         }
@@ -242,9 +258,7 @@ intern_constants(PyObject *tuple, int *modified)
 
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(w);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
             Py_DECREF(tmp);
         }
@@ -273,9 +287,7 @@ intern_constants(PyObject *tuple, int *modified)
                 }
                 PyTuple_SET_ITEM(tuple, i, v);
                 Py_DECREF(slice);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
             Py_DECREF(tmp);
         }
@@ -293,9 +305,7 @@ intern_constants(PyObject *tuple, int *modified)
             else if (interned != v) {
                 PyTuple_SET_ITEM(tuple, i, interned);
                 Py_SETREF(v, interned);
-                if (modified) {
-                    *modified = 1;
-                }
+                _constants_tuple_modified(modified);
             }
         }
 #endif
