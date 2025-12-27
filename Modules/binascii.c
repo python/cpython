@@ -615,7 +615,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 
-toolong:
+toolong:;
     binascii_state *state = get_binascii_state(module);
     if (state == NULL) {
         return NULL;

@@ -435,14 +435,14 @@ base64
   (Contributed by Hauke D in :gh:`143103`.)
 
 * Added the *wrapcol* parameter in :func:`~base64.b64encode`.
-  (Contributed by Serhiy Storchaka in :gh:``.)
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
 
 binascii
 --------
 
 * Added the *wrapcol* parameter in :func:`~binascii.b2a_base64`.
-  (Contributed by Serhiy Storchaka in :gh:``.)
+  (Contributed by Serhiy Storchaka in :gh:`143214`.)
 
 
 calendar
