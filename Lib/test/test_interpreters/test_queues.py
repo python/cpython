@@ -8,6 +8,7 @@ from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_interpqueues')
 from concurrent import interpreters
+from concurrent.futures import InterpreterPoolExecutor
 from concurrent.interpreters import _queues as queues, _crossinterp
 from .utils import _run_output, TestBase as _TestBase
 
@@ -92,6 +93,14 @@ class LowLevelTests(TestBase):
             qid = _queues.create(2, REPLACE, -1)
             with self.assertRaises(queues.QueueError):
                 _queues.release(qid)
+
+    def test_interpreter_pool_executor_after_reload(self):
+        # Regression test for gh-142414 (KeyError in serialize_unbound).
+        importlib.reload(queues)
+        code = "import struct"
+        with InterpreterPoolExecutor(max_workers=1) as executor:
+            results = executor.map(exec, [code] * 1)
+            self.assertEqual(list(results), [None] * 1)
 
 
 class QueueTests(TestBase):
