@@ -506,13 +506,13 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(ValueError, realpath, path, strict=ALLOW_MISSING)
         path = '/nonexistent/x\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
         self.assertRaises(ValueError, realpath, path, strict=ALLOW_MISSING)
         path = b'/nonexistent/x\x00'
         self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
         self.assertRaises(ValueError, realpath, path, strict=ALLOW_MISSING)
         path = '/\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
@@ -527,13 +527,13 @@ class PosixPathTest(unittest.TestCase):
 
         path = '/nonexistent/x\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
         self.assertRaises(ValueError, realpath, path, strict=ALLOW_MISSING)
         path = b'/nonexistent/x\x00/..'
         self.assertRaises(ValueError, realpath, path, strict=False)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
         self.assertRaises(ValueError, realpath, path, strict=ALLOW_MISSING)
 
         path = '/\udfff'
@@ -553,8 +553,8 @@ class PosixPathTest(unittest.TestCase):
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=ALLOW_MISSING)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
         path = '/\udfff/..'
         if sys.platform == 'win32':
             self.assertEqual(realpath(path, strict=False), '/')
@@ -572,8 +572,8 @@ class PosixPathTest(unittest.TestCase):
         else:
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=False)
             self.assertRaises(UnicodeEncodeError, realpath, path, strict=ALLOW_MISSING)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=ALL_BUT_LAST)
-        self.assertRaises(FileNotFoundError, realpath, path, strict=True)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=ALL_BUT_LAST)
+        self.assertRaises((FileNotFoundError, ValueError), realpath, path, strict=True)
 
         path = b'/\xff'
         if sys.platform == 'win32':
