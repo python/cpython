@@ -4,6 +4,7 @@
    are in test_buffer.
 """
 
+import array
 import unittest
 import test.support
 import sys
@@ -386,6 +387,20 @@ class AbstractMemoryTests:
         b = tp(self._source)
         m = self._view(b)
         self.assertRaises(ValueError, hash, m)
+
+    def test_hash_use_after_free(self):
+        # Prevent crash in memoryview(v).__hash__ with re-entrant v.__hash__.
+        # Regression test for https://github.com/python/cpython/issues/142664.
+        class E(array.array):
+            def __hash__(self):
+                mv.release()
+                self.clear()
+                return 123
+
+        v = E('B', b'A' * 4096)
+        mv = memoryview(v).toreadonly()   # must be read-only for hash()
+        self.assertRaises(BufferError, hash, mv)
+        self.assertRaises(BufferError, mv.__hash__)
 
     def test_weakref(self):
         # Check memoryviews are weakrefable
