@@ -1859,6 +1859,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_TUPLE", uops)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
 
+    def test_remove_guard_for_tuple_bounds_check(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                t = (1, 2, 3)
+                x += t[0]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+
     def test_binary_subcsr_str_int_narrows_to_str(self):
         def testfunc(n):
             x = []

@@ -799,6 +799,24 @@
             break;
         }
 
+        case _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS: {
+            JitOptRef sub_st;
+            JitOptRef tuple_st;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length != -1 && index < tuple_length) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+            }
+            break;
+        }
+
         case _BINARY_OP_SUBSCR_TUPLE_INT: {
             JitOptRef sub_st;
             JitOptRef tuple_st;
