@@ -1801,13 +1801,14 @@ element_subscr(PyObject *op, PyObject *item)
         if (i == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        // If PyNumber_AsSsize_t() clears 'self->extra',
-        // we want element_getitem() to raise IndexError.
         if (i < 0 && self->extra)
             i += self->extra->length;
         return element_getitem(op, i);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, i;
         size_t cur;
         PyObject* list;
@@ -1816,15 +1817,9 @@ element_subscr(PyObject *op, PyObject *item)
             return NULL;
         }
 
-        // Even if PySlice_Unpack() may clear 'self->extra',
-        // using a slice should not raise an IndexError, so
-        // we do not need to ensure 'extra' to exist.
-        //
-        // See https://github.com/python/cpython/issues/143200.
         if (self->extra == NULL) {
             return PyList_New(0);
         }
-
         slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                          step);
 
@@ -1862,13 +1857,14 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         if (i == -1 && PyErr_Occurred()) {
             return -1;
         }
-        // If PyNumber_AsSsize_t() clears 'self->extra',
-        // we want element_setitem() to raise IndexError.
         if (i < 0 && self->extra)
             i += self->extra->length;
         return element_setitem(op, i, value);
     }
     else if (PySlice_Check(item)) {
+        // Note: 'slicelen' is computed once we are sure that 'self->extra'
+        // cannot be mutated by user-defined code.
+        // See https://github.com/python/cpython/issues/143200.
         Py_ssize_t start, stop, step, slicelen, newlen, i;
         size_t cur;
 
@@ -1878,23 +1874,22 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return -1;
         }
+
         // Since PySlice_Unpack() may clear 'self->extra', we need
         // to ensure that it exists now (using a slice for assignment
         // should not raise IndexError).
         //
         // See https://github.com/python/cpython/issues/143200.
-        if (self->extra == NULL && create_extra(self, NULL) < 0) {
-            return -1;
+        if (self->extra == NULL) {
+            if (create_extra(self, NULL) < 0) {
+                return -1;
+            }
         }
-
-        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
-                                 step);
 
         if (value == NULL) {
             /* Delete slice */
-            size_t cur;
-            Py_ssize_t i;
-
+            slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                             step);
             if (slicelen <= 0)
                 return 0;
 
@@ -1965,20 +1960,16 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
         }
         newlen = PySequence_Fast_GET_SIZE(seq);
 
-        // Re-create 'self->extra' if PySequence_Fast() cleared it.
-        // See https://github.com/python/cpython/issues/143200.
         if (self->extra == NULL) {
             if (create_extra(self, NULL) < 0) {
                 Py_DECREF(seq);
                 return -1;
             }
-            // re-compute the slice length since self->extra->length changed
-            slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
-                                             step);
         }
+        slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
+                                         step);
 
-        if (step !=  1 && newlen != slicelen)
-        {
+        if (step != 1 && newlen != slicelen) {
             Py_DECREF(seq);
             PyErr_Format(PyExc_ValueError,
                 "attempt to assign sequence of size %zd "
