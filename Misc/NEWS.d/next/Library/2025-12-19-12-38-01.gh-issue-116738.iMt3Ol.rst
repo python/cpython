@@ -1,0 +1,2 @@
+Make the attributes in :mod:`lzma` thread-safe on the :term:`free threaded
+<free threading>` build.
