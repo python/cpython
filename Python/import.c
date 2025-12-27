@@ -1760,57 +1760,48 @@ update_global_state_for_extension(PyThreadState *tstate,
     PyObject *m_dict = NULL;
 
     /* Set up for _extensions_cache_set(). */
-    if (singlephase == NULL) {
-        assert(def->m_base.m_init == NULL);
+    if (singlephase->m_init != NULL) {
+        assert(singlephase->m_dict == NULL);
         assert(def->m_base.m_copy == NULL);
+        assert(def->m_size >= 0);
+        /* Remember pointer to module init function. */
+        // XXX If two modules share a def then def->m_base will
+        // reflect the last one added (here) to the global cache.
+        // We should prevent this somehow.  The simplest solution
+        // is probably to store m_copy/m_init in the cache along
+        // with the def, rather than within the def.
+        m_init = singlephase->m_init;
+    }
+    else if (singlephase->m_dict == NULL) {
+        /* It must be a core builtin module. */
+        assert(is_core_module(tstate->interp, name, path));
+        assert(def->m_size == -1);
+        assert(def->m_base.m_copy == NULL);
+        assert(def->m_base.m_init == NULL);
     }
     else {
-        if (singlephase->m_init != NULL) {
-            assert(singlephase->m_dict == NULL);
-            assert(def->m_base.m_copy == NULL);
-            assert(def->m_size >= 0);
-            /* Remember pointer to module init function. */
-            // XXX If two modules share a def then def->m_base will
-            // reflect the last one added (here) to the global cache.
-            // We should prevent this somehow.  The simplest solution
-            // is probably to store m_copy/m_init in the cache along
-            // with the def, rather than within the def.
-            m_init = singlephase->m_init;
-        }
-        else if (singlephase->m_dict == NULL) {
-            /* It must be a core builtin module. */
-            assert(is_core_module(tstate->interp, name, path));
-            assert(def->m_size == -1);
-            assert(def->m_base.m_copy == NULL);
-            assert(def->m_base.m_init == NULL);
-        }
-        else {
-            assert(PyDict_Check(singlephase->m_dict));
-            // gh-88216: Extensions and def->m_base.m_copy can be updated
-            // when the extension module doesn't support sub-interpreters.
-            assert(def->m_size == -1);
-            assert(!is_core_module(tstate->interp, name, path));
-            assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
-            assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
-            m_dict = singlephase->m_dict;
-        }
+        assert(PyDict_Check(singlephase->m_dict));
+        // gh-88216: Extensions and def->m_base.m_copy can be updated
+        // when the extension module doesn't support sub-interpreters.
+        assert(def->m_size == -1);
+        assert(!is_core_module(tstate->interp, name, path));
+        assert(PyUnicode_CompareWithASCIIString(name, "sys") != 0);
+        assert(PyUnicode_CompareWithASCIIString(name, "builtins") != 0);
+        m_dict = singlephase->m_dict;
     }
 
     /* Add the module's def to the global cache. */
-    // XXX Why special-case the main interpreter?
-    if (_Py_IsMainInterpreter(tstate->interp) || def->m_size == -1) {
 #ifndef NDEBUG
-        cached = _extensions_cache_get(path, name);
-        assert(cached == NULL || cached->def == def);
+    cached = _extensions_cache_get(path, name);
+    assert(cached == NULL || cached->def == def);
 #endif
-        cached = _extensions_cache_set(
-                path, name, def, m_init, singlephase->m_index, m_dict,
-                singlephase->origin, singlephase->md_requires_gil);
-        if (cached == NULL) {
-            // XXX Ignore this error?  Doing so would effectively
-            // mark the module as not loadable.
-            return NULL;
-        }
+    cached = _extensions_cache_set(
+            path, name, def, m_init, singlephase->m_index, m_dict,
+            singlephase->origin, singlephase->md_requires_gil);
+    if (cached == NULL) {
+        // XXX Ignore this error?  Doing so would effectively
+        // mark the module as not loadable.
+        return NULL;
     }
 
     return cached;
@@ -2082,21 +2073,22 @@ import_run_extension(PyThreadState *tstate, PyModInitFunction p0,
      * and then continue loading like normal. */
 
     bool switched = false;
-    /* We *could* leave in place a legacy interpreter here
-     * (one that shares obmalloc/GIL with main interp),
-     * but there isn't a big advantage, we anticipate
-     * such interpreters will be increasingly uncommon,
-     * and the code is a bit simpler if we always switch
-     * to the main interpreter. */
-    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
-    if (main_tstate == NULL) {
-        return NULL;
-    }
-    else if (main_tstate != tstate) {
-        switched = true;
-        /* In the switched case, we could play it safe
-         * by getting the main interpreter's import lock here.
-         * It's unlikely to matter though. */
+    PyThreadState *main_tstate = tstate;
+    /* For non-isolated, legacy interpreters they share the GIL and allocator
+     * with the main thread anyway, so there's no need to switch to the main
+     * interpreter. If we would still switch in that case in would result in
+     * calling the init function of single-phase modules that have cyclic
+     * references twice, see issue #138045. */
+    if (tstate->interp->ceval.own_gil) {
+        main_tstate = switch_to_main_interpreter(tstate);
+        if (main_tstate == NULL) {
+            return NULL;
+        } else if (main_tstate != tstate) {
+            switched = true;
+            /* In the switched case, we could play it safe
+             * by getting the main interpreter's import lock here.
+             * It's unlikely to matter though. */
+        }
     }
 
     struct _Py_ext_module_loader_result res;
@@ -2280,9 +2272,12 @@ clear_singlephase_extension(PyInterpreterState *interp,
     /* We must use the main interpreter to clean up the cache.
      * See the note in import_run_extension(). */
     PyThreadState *tstate = PyThreadState_GET();
-    PyThreadState *main_tstate = switch_to_main_interpreter(tstate);
-    if (main_tstate == NULL) {
-        return -1;
+    PyThreadState *main_tstate = tstate;
+    if (tstate->interp->ceval.own_gil) {
+        main_tstate = switch_to_main_interpreter(tstate);
+        if (main_tstate == NULL) {
+            return -1;
+        }
     }
 
     /* Clear the cached module def. */
