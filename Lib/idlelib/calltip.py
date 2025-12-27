@@ -187,8 +187,7 @@ def get_argspec(ob):
     # Augment lines from docstring, if any, and join to get argspec.
     doc = inspect.getdoc(ob)
     if doc:
-        for line in doc.split('\n'):
-            lines.append(line.strip())
+        lines.extend(map(str.strip, doc.split('\n')))
     argspec = '\n'.join(lines)
 
     return argspec or _default_callable_argspec
