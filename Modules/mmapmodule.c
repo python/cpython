@@ -1034,12 +1034,15 @@ mmap.mmap.flush
     offset: Py_ssize_t = 0
     size: Py_ssize_t = -1
     /
+    *
+    flags: int = 0
 
 [clinic start generated code]*/
 
 static PyObject *
-mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
-/*[clinic end generated code: output=956ced67466149cf input=c50b893bc69520ec]*/
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size,
+                     int flags)
+/*[clinic end generated code: output=4225f4174dc75a53 input=42ba5fb716b6c294]*/
 {
     CHECK_VALID(NULL);
     if (size == -1) {
@@ -1060,8 +1063,10 @@ mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
     }
     Py_RETURN_NONE;
 #elif defined(UNIX)
-    /* XXX flags for msync? */
-    if (-1 == msync(self->data + offset, size, MS_SYNC)) {
+    if (flags == 0) {
+        flags = MS_SYNC;
+    }
+    if (-1 == msync(self->data + offset, size, flags)) {
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
@@ -2330,6 +2335,16 @@ mmap_exec(PyObject *module)
     ADD_INT_MACRO(module, ACCESS_READ);
     ADD_INT_MACRO(module, ACCESS_WRITE);
     ADD_INT_MACRO(module, ACCESS_COPY);
+
+#ifdef MS_INVALIDATE
+    ADD_INT_MACRO(module, MS_INVALIDATE);
+#endif
+#ifdef MS_ASYNC
+    ADD_INT_MACRO(module, MS_ASYNC);
+#endif
+#ifdef MS_SYNC
+    ADD_INT_MACRO(module, MS_SYNC);
+#endif
 
 #ifdef HAVE_MADVISE
     // Conventional advice values
