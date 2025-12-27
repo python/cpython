@@ -1,0 +1,1 @@
+Fix :mod:`tarfile` type corruption when extracting files with GNU long names. Regular files were incorrectly identified as directories if the header's name field ended with '/'.
