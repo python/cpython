@@ -1,3 +1,3 @@
-Fix a use-after-free crash in :meth:`bytearray.__mod__` when the
+Fix a use-after-free crash in :ref:`bytearray.__mod__ <printf-style-bytes-formatting>` when the
 :meth:`~object.__repr__` method of one of the arguments to format mutates
 the :class:`bytearray`. Patch by Bénédikt Tran.
