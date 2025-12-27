@@ -4,7 +4,6 @@
    are in test_buffer.
 """
 
-import array
 import unittest
 import test.support
 import sys
