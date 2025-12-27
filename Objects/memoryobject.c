@@ -2330,7 +2330,13 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        // Prevent 'self' from being freed if computing len(sep) mutates 'self'
+        // in _Py_strhex_with_sep().
+        // See: https://github.com/python/cpython/issues/143195.
+        self->exports++;
+        PyObject *ret = _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
+        self->exports--;
+        return ret;
     }
 
     bytes = PyBytes_FromStringAndSize(NULL, src->len);
