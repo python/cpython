@@ -1,0 +1,4 @@
+:mod:`xml.etree.ElementTree`: fix use-after-free crashes in
+:meth:`~object.__getitem__` and :meth:`~object.__setitem__` methods of
+:class:`~xml.etree.ElementTree.Element` when the element is concurrently
+mutated. Patch by Bénédikt Tran.
