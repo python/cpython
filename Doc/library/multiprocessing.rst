@@ -1234,21 +1234,31 @@ Miscellaneous
    .. versionchanged:: 3.11
       Accepts a :term:`path-like object`.
 
-.. function:: set_forkserver_preload(module_names)
+.. function:: set_forkserver_preload(module_names, *, on_error='ignore')
 
    Set a list of module names for the forkserver main process to attempt to
    import so that their already imported state is inherited by forked
-   processes. Any :exc:`ImportError` when doing so is silently ignored.
-   This can be used as a performance enhancement to avoid repeated work
-   in every process.
+   processes. This can be used as a performance enhancement to avoid repeated
+   work in every process.
 
    For this to work, it must be called before the forkserver process has been
    launched (before creating a :class:`Pool` or starting a :class:`Process`).
+
+   The *on_error* parameter controls how :exc:`ImportError` exceptions during
+   module preloading are handled: ``"ignore"`` (default) silently ignores
+   failures, ``"warn"`` causes the forkserver subprocess to emit an
+   :exc:`ImportWarning` to stderr, and ``"fail"`` causes the forkserver
+   subprocess to exit with the exception traceback on stderr, making
+   subsequent process creation fail with :exc:`EOFError` or
+   :exc:`ConnectionError`.
 
    Only meaningful when using the ``'forkserver'`` start method.
    See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: next
+      Added the *on_error* parameter.
 
 .. function:: set_start_method(method, force=False)
 
