@@ -7,6 +7,7 @@ from analyzer import (
     analysis_error,
     Label,
     CodeSection,
+    Uop,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
@@ -56,9 +57,7 @@ def root_relative_path(filename: str) -> str:
 
 
 def type_and_null(var: StackItem) -> tuple[str, str]:
-    if var.type:
-        return var.type, "NULL"
-    elif var.is_array():
+    if var.is_array():
         return "_PyStackRef *", "NULL"
     else:
         return "_PyStackRef", "PyStackRef_NULL"
@@ -108,11 +107,15 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
+    cannot_escape: bool
+    jump_prefix: str
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, jump_prefix: str = ""):
         self._replacers = {
             "EXIT_IF": self.exit_if,
+            "AT_END_EXIT_IF": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
+            "HANDLE_PENDING_AND_DEOPT_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
@@ -126,9 +129,15 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "Py_UNREACHABLE": self.unreachable,
+            "TIER1_TO_TIER2": self.tier1_to_tier2,
+            "TIER2_TO_TIER2": self.tier2_to_tier2,
+            "GOTO_TIER_ONE": self.goto_tier_one
         }
         self.out = out
         self.labels = labels
+        self.cannot_escape = cannot_escape
+        self.jump_prefix = jump_prefix
 
     def dispatch(
         self,
@@ -140,7 +149,21 @@ class Emitter:
     ) -> bool:
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
         self.emit(tkn)
+        return False
+
+    def unreachable(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";\n")
         return False
 
     def deopt_if(
@@ -164,18 +187,51 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit(f"JUMP_TO_PREDICTED({self.jump_prefix}{family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
     exit_if = deopt_if
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+    def periodic_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("HANDLE_PENDING_AND_DEOPT_IF not support in tier 1")
+
+    def exit_if_after(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        storage.clear_inputs("in AT_END_EXIT_IF")
+        storage.flush(self.out)
+        storage.stack.clear(self.out)
+        return self.exit_if(tkn, tkn_iter, uop, storage, inst)
+
+    def goto_tier_one(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("GOTO_TIER_ONE not supported in tier 1")
+
+    def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
+            return f"{self.jump_prefix}JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_LABEL({label});"
+        return f"{self.jump_prefix}JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -191,17 +247,13 @@ class Emitter:
         unconditional = always_true(first_tkn)
         if unconditional:
             next(tkn_iter)
-            comma = next(tkn_iter)
-            if comma.kind != "COMMA":
-                raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
+            next(tkn_iter)  # RPAREN
             self.out.start_line()
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, "COMMA")
+            emit_to(self.out, tkn_iter, "RPAREN")
             self.out.emit(") {\n")
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
 
@@ -210,11 +262,29 @@ class Emitter:
             offset = int(c_offset)
         except ValueError:
             offset = -1
-        self.out.emit(self.goto_error(offset, label, storage))
+        self.out.emit(self.goto_error(offset, storage))
         self.out.emit("\n")
         if not unconditional:
             self.out.emit("}\n")
         return not unconditional
+
+    def tier1_to_tier2(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        self.emit(lparen)
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.out.emit(")")
+        return False
+
+    tier2_to_tier2 = tier1_to_tier2
 
     def error_no_pop(
         self,
@@ -227,7 +297,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at(self.goto_error(0, "error", storage), tkn)
+        self.out.emit_at(self.goto_error(0, storage), tkn)
         return False
 
     def decref_inputs(
@@ -243,7 +313,8 @@ class Emitter:
         next(tkn_iter)
         self._print_storage("DECREF_INPUTS", storage)
         try:
-            storage.close_inputs(self.out)
+            if not self.cannot_escape:
+                storage.close_inputs(self.out)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn)
         except Exception as ex:
@@ -398,7 +469,7 @@ class Emitter:
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.start_line()
-        self.out.emit("JUMP_TO_LABEL(")
+        self.out.emit(f"{self.jump_prefix}JUMP_TO_LABEL(")
         self.out.emit(label)
         self.out.emit(")")
 
@@ -447,7 +518,7 @@ class Emitter:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         if uop.instruction_size is None:
             raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
-        self.out.emit(f" {uop.instruction_size} ")
+        self.out.emit(f" {uop.instruction_size}u ")
         return True
 
     def _print_storage(self, reason:str, storage: Storage) -> None:
@@ -481,7 +552,7 @@ class Emitter:
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -492,6 +563,11 @@ class Emitter:
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
                     reachable = False
+                elif tkn.kind == "RETURN":
+                    self.emit(tkn)
+                    semicolon = emit_to(self.out, tkn_iter, "SEMI")
+                    self.emit(semicolon)
+                    reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
@@ -500,9 +576,6 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.in_local or var.in_memory():
-                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
-                                        raise analysis_error(msg, tkn)
                                     var.in_local = True
                                     var.memory_offset = None
                                     break
@@ -516,7 +589,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:
@@ -533,10 +606,10 @@ class Emitter:
         self.out.emit(stmt.condition)
         branch = stmt.else_ is not None
         reachable = True
-        if branch:
-            else_storage = storage.copy()
+        if_storage = storage
+        else_storage = storage.copy()
         for s in stmt.body:
-            r, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+            r, tkn, if_storage = self._emit_stmt(s, uop, if_storage, inst)
             if tkn is not None:
                 self.out.emit(tkn)
             if not r:
@@ -551,7 +624,10 @@ class Emitter:
                     self.out.emit(tkn)
                 if not r:
                     reachable = False
-            else_storage.merge(storage, self.out)  # type: ignore[possibly-undefined]
+            else_storage.merge(if_storage, self.out)
+            storage = if_storage
+        else:
+            if_storage.merge(else_storage, self.out)
             storage = else_storage
         self.out.emit(stmt.endif)
         return reachable, None, storage
@@ -692,7 +768,9 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
-    if p.side_exit:
+    if p.deopts_periodic:
+        flags.append("HAS_PERIODIC_FLAG")
+    if p.side_exit or p.side_exit_at_end:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
@@ -704,6 +782,12 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
+    if p.sync_sp:
+        flags.append("HAS_SYNC_SP_FLAG")
+    if p.unpredictable_jump:
+        flags.append("HAS_UNPREDICTABLE_JUMP_FLAG")
+    if p.needs_guard_ip:
+        flags.append("HAS_NEEDS_GUARD_IP_FLAG")
     if flags:
         return " | ".join(flags)
     else:

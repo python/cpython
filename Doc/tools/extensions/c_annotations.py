@@ -154,7 +154,10 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
         node.insert(0, annotation)
 
 
-def _stable_abi_annotation(record: StableABIEntry) -> nodes.emphasis:
+def _stable_abi_annotation(
+    record: StableABIEntry,
+    is_corresponding_slot: bool = False,
+) -> nodes.emphasis:
     """Create the Stable ABI annotation.
 
     These have two forms:
@@ -168,9 +171,28 @@ def _stable_abi_annotation(record: StableABIEntry) -> nodes.emphasis:
     ... all of which can have "since version X.Y" appended.
     """
     stable_added = record.added
-    message = sphinx_gettext("Part of the")
-    message = message.center(len(message) + 2)
-    emph_node = nodes.emphasis(message, message, classes=["stableabi"])
+    emph_node = nodes.emphasis('', '', classes=["stableabi"])
+    if is_corresponding_slot:
+        # See "Type slot annotations" in add_annotations
+        ref_node = addnodes.pending_xref(
+            "slot ID",
+            refdomain="c",
+            reftarget="PyType_Slot",
+            reftype="type",
+            refexplicit="True",
+        )
+        ref_node += nodes.Text(sphinx_gettext("slot ID"))
+
+        message = sphinx_gettext("The corresponding")
+        emph_node += nodes.Text(" " + message + " ")
+        emph_node += ref_node
+        emph_node += nodes.Text(" ")
+        emph_node += nodes.literal(record.name, record.name)
+        message = sphinx_gettext("is part of the")
+        emph_node += nodes.Text(" " + message + " ")
+    else:
+        message = sphinx_gettext("Part of the")
+        emph_node += nodes.Text(" " + message + " ")
     ref_node = addnodes.pending_xref(
         "Stable ABI",
         refdomain="std",
@@ -265,6 +287,51 @@ class LimitedAPIList(SphinxDirective):
         return [node]
 
 
+class CorrespondingTypeSlot(SphinxDirective):
+    """Type slot annotations
+
+    Docs for these are with the corresponding field, for example,
+    "Py_tp_repr" is documented under "PyTypeObject.tp_repr", with
+    only a stable ABI note mentioning "Py_tp_repr" (and linking to
+    docs on how this works).
+
+    If there is no corresponding field, these should be documented as normal
+    macros.
+    """
+
+    has_content = False
+
+    required_arguments = 1
+    optional_arguments = 0
+
+    def run(self) -> list[nodes.Node]:
+        name = self.arguments[0]
+        state = self.env.domaindata["c_annotations"]
+        stable_abi_data = state["stable_abi_data"]
+
+        try:
+            record = stable_abi_data[name]
+        except LookupError as err:
+            raise LookupError(
+                f"{name} is not part of stable ABI. "
+                + "Document it as `c:macro::` rather than "
+                + "`corresponding-type-slot::`."
+            ) from err
+
+        annotation = _stable_abi_annotation(record, is_corresponding_slot=True)
+
+        node = nodes.paragraph()
+        content = [
+            ".. c:namespace:: NULL",
+            "",
+            ".. c:macro:: " + name,
+            "   :no-typesetting:",
+        ]
+        self.state.nested_parse(StringList(content), 0, node)
+        node.insert(0, annotation)
+        return [node]
+
+
 def init_annotations(app: Sphinx) -> None:
     # Using domaindata is a bit hack-ish,
     # but allows storing state without a global variable or closure.
@@ -281,6 +348,7 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_config_value("refcount_file", "", "env", types={str})
     app.add_config_value("stable_abi_file", "", "env", types={str})
     app.add_directive("limited-api-list", LimitedAPIList)
+    app.add_directive("corresponding-type-slot", CorrespondingTypeSlot)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
 

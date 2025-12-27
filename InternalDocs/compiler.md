@@ -505,8 +505,8 @@ Important files
   * [Python/ast.c](../Python/ast.c):
     Used for validating the AST.
 
-  * [Python/ast_opt.c](../Python/ast_opt.c):
-    Optimizes the AST.
+  * [Python/ast_preprocess.c](../Python/ast_preprocess.c):
+    Preprocesses the AST before compiling.
 
   * [Python/ast_unparse.c](../Python/ast_unparse.c):
     Converts the AST expression node back into a string (for string annotations).
@@ -604,4 +604,4 @@ References
        pp. 213--227, 1997.
 
 [^2]: The Zephyr Abstract Syntax Description Language.:
-      https://www.cs.princeton.edu/research/techreps/TR-554-97
+      https://www.cs.princeton.edu/research/techreps/254

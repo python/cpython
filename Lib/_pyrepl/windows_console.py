@@ -22,10 +22,9 @@ from __future__ import annotations
 import io
 import os
 import sys
-import time
-import msvcrt
 
 import ctypes
+import types
 from ctypes.wintypes import (
     _COORD,
     WORD,
@@ -44,7 +43,7 @@ from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
@@ -52,11 +51,20 @@ except:
     def GetLastError() -> int:
         return 42
 
+    def get_last_error() -> int:
+        return 42
+
     class WinError(OSError):  # type: ignore[no-redef]
         def __init__(self, err: int | None, descr: str | None = None) -> None:
             self.err = err
             self.descr = descr
 
+# declare nt optional to allow None assignment on other platforms
+nt: types.ModuleType | None
+try:
+    import nt
+except ImportError:
+    nt = None
 
 TYPE_CHECKING = False
 
@@ -108,15 +116,20 @@ CLEAR = "\x1b[H\x1b[J"
 ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
 
+WAIT_TIMEOUT = 0x102
+WAIT_FAILED = 0xFFFFFFFF
+
+# from winbase.h
+INFINITE = 0xFFFFFFFF
+
 
 class _error(Exception):
     pass
 
 def _supports_vt():
     try:
-        import nt
         return nt._supports_virtual_terminal()
-    except (ImportError, AttributeError):
+    except AttributeError:
         return False
 
 class WindowsConsole(Console):
@@ -228,31 +241,17 @@ class WindowsConsole(Console):
 
     @property
     def input_hook(self):
-        try:
-            import nt
-        except ImportError:
-            return None
-        if nt._is_inputhook_installed():
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
+        if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
     def __write_changed_line(
         self, y: int, oldline: str, newline: str, px_coord: int
     ) -> None:
-        # this is frustrating; there's no reason to test (say)
-        # self.dch1 inside the loop -- but alternative ways of
-        # structuring this function are equally painful (I'm trying to
-        # avoid writing code generators these days...)
         minlen = min(wlen(oldline), wlen(newline))
         x_pos = 0
         x_coord = 0
-
-        px_pos = 0
-        j = 0
-        for c in oldline:
-            if j >= px_coord:
-                break
-            j += wlen(c)
-            px_pos += 1
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
@@ -347,7 +346,6 @@ class WindowsConsole(Console):
         self.height, self.width = self.getheightwidth()
 
         self.posxy = 0, 0
-        self.__gone_tall = 0
         self.__offset = 0
 
         if self.__vt_support:
@@ -408,14 +406,7 @@ class WindowsConsole(Console):
 
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
-    def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        if not block:
-            events = DWORD()
-            if not GetNumberOfConsoleInputEvents(InHandle, events):
-                raise WinError(GetLastError())
-            if not events.value:
-                return None
-
+    def _read_input(self) -> INPUT_RECORD | None:
         rec = INPUT_RECORD()
         read = DWORD()
         if not ReadConsoleInput(InHandle, rec, 1, read):
@@ -423,13 +414,26 @@ class WindowsConsole(Console):
 
         return rec
 
+    def _read_input_bulk(
+        self, n: int
+    ) -> tuple[ctypes.Array[INPUT_RECORD], int]:
+        rec = (n * INPUT_RECORD)()
+        read = DWORD()
+        if not ReadConsoleInput(InHandle, rec, n, read):
+            raise WinError(GetLastError())
+
+        return rec, read.value
+
     def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
 
+        if not block and not self.wait(timeout=0):
+            return None
+
         while self.event_queue.empty():
-            rec = self._read_input(block)
+            rec = self._read_input()
             if rec is None:
                 return None
 
@@ -447,7 +451,7 @@ class WindowsConsole(Console):
 
             if key == "\r":
                 # Make enter unix-like
-                return Event(evt="key", data="\n", raw=b"\n")
+                return Event(evt="key", data="\n")
             elif key_event.wVirtualKeyCode == 8:
                 # Turn backspace directly into the command
                 key = "backspace"
@@ -459,24 +463,29 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
-                    return Event(evt="key", data=key, raw=key)
+                    return Event(evt="key", data=key)
                 if block:
                     continue
 
                 return None
             elif self.__vt_support:
                 # If virtual terminal is enabled, scanning VT sequences
-                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                for char in raw_key.encode(self.event_queue.encoding, "replace"):
+                    self.event_queue.push(char)
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
-                # queue the key, return the meta command
-                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
-                return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                # Do not swallow characters that have been entered via AltGr:
+                # Windows internally converts AltGr to CTRL+ALT, see
+                # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-vkkeyscanw
+                if not key_event.dwControlKeyState & CTRL_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.insert(Event(evt="key", data=key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
-            return Event(evt="key", data=key, raw=raw_key)
+            return Event(evt="key", data=key)
         return self.event_queue.get()
 
     def push_char(self, char: int | bytes) -> None:
@@ -518,18 +527,44 @@ class WindowsConsole(Console):
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
         processed."""
-        return Event("key", "", b"")
+        e = Event("key", "", b"")
+
+        while not self.event_queue.empty():
+            e2 = self.event_queue.get()
+            if e2:
+                e.data += e2.data
+
+        recs, rec_count = self._read_input_bulk(1024)
+        for i in range(rec_count):
+            rec = recs[i]
+            # In case of a legacy console, we do not only receive a keydown
+            # event, but also a keyup event - and for uppercase letters
+            # an additional SHIFT_PRESSED event.
+            if rec and rec.EventType == KEY_EVENT:
+                key_event = rec.Event.KeyEvent
+                if not key_event.bKeyDown:
+                    continue
+                ch = key_event.uChar.UnicodeChar
+                if ch == "\x00":
+                    # ignore SHIFT_PRESSED and special keys
+                    continue
+                if ch == "\r":
+                    ch += "\n"
+                e.data += ch
+        return e
 
     def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
-        # Poor man's Windows select loop
-        start_time = time.time()
-        while True:
-            if msvcrt.kbhit(): # type: ignore[attr-defined]
-                return True
-            if timeout and time.time() - start_time > timeout / 1000:
-                return False
-            time.sleep(0.01)
+        if timeout is None:
+            timeout = INFINITE
+        else:
+            timeout = int(timeout)
+        ret = WaitForSingleObject(InHandle, timeout)
+        if ret == WAIT_FAILED:
+            raise WinError(get_last_error())
+        elif ret == WAIT_TIMEOUT:
+            return False
+        return True
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
@@ -649,13 +684,14 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
-    GetNumberOfConsoleInputEvents = _KERNEL32.GetNumberOfConsoleInputEvents
-    GetNumberOfConsoleInputEvents.argtypes = [HANDLE, POINTER(DWORD)]
-    GetNumberOfConsoleInputEvents.restype = BOOL
 
     FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
+
+    WaitForSingleObject = _KERNEL32.WaitForSingleObject
+    WaitForSingleObject.argtypes = [HANDLE, DWORD]
+    WaitForSingleObject.restype = DWORD
 
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -670,7 +706,7 @@ else:
     GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
-    GetNumberOfConsoleInputEvents = _win_only
     FlushConsoleInputBuffer = _win_only
+    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0

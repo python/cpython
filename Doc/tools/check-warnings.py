@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import TextIO
 
 # Fail if NEWS nit found before this line number
-NEWS_NIT_THRESHOLD = 1700
+NEWS_NIT_THRESHOLD = 8550
 
 # Exclude these whether they're dirty or clean,
 # because they trigger a rebuild of dirty files.
@@ -311,8 +311,11 @@ def main(argv: list[str] | None = None) -> int:
     if not Path("Doc").exists() or not Path("Doc").is_dir():
         raise RuntimeError(wrong_directory_msg)
 
-    with Path("Doc/sphinx-warnings.txt").open(encoding="UTF-8") as f:
-        warnings = f.read().splitlines()
+    warnings = (
+        Path("Doc/sphinx-warnings.txt")
+        .read_text(encoding="UTF-8")
+        .splitlines()
+    )
 
     cwd = str(Path.cwd()) + os.path.sep
     files_with_nits = {

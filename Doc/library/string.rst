@@ -4,7 +4,7 @@
 .. module:: string
    :synopsis: Common string operations.
 
-**Source code:** :source:`Lib/string.py`
+**Source code:** :source:`Lib/string/__init__.py`
 
 --------------
 
@@ -131,16 +131,18 @@ implementation as the built-in :meth:`~str.format` method.
       (which can happen if two replacement fields occur consecutively), then
       *literal_text* will be a zero-length string.  If there is no replacement
       field, then the values of *field_name*, *format_spec* and *conversion*
-      will be ``None``.
+      will be ``None``. The value of *field_name* is unmodified and
+      auto-numbering of non-numbered positional fields is done by :meth:`vformat`.
 
    .. method:: get_field(field_name, args, kwargs)
 
-      Given *field_name* as returned by :meth:`parse` (see above), convert it to
-      an object to be formatted.  Returns a tuple (obj, used_key).  The default
-      version takes strings of the form defined in :pep:`3101`, such as
-      "0[name]" or "label.title".  *args* and *kwargs* are as passed in to
-      :meth:`vformat`.  The return value *used_key* has the same meaning as the
-      *key* parameter to :meth:`get_value`.
+      Given *field_name*, convert it to an object to be formatted.
+      Auto-numbering of *field_name* returned from :meth:`parse` is done by
+      :meth:`vformat` before calling this method.  Returns a tuple (obj, used_key).
+      The default version takes strings of the form defined in :pep:`3101`,
+      such as "0[name]" or "label.title". *args* and *kwargs* are as passed in to
+      :meth:`vformat`. The return value *used_key* has the same meaning
+      as the *key* parameter to :meth:`get_value`.
 
    .. method:: get_value(key, args, kwargs)
 
@@ -196,8 +198,9 @@ Format String Syntax
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
-related to that of :ref:`formatted string literals <f-strings>`, but it is
-less sophisticated and, in particular, does not support arbitrary expressions.
+related to that of :ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`, but it is less sophisticated
+and, in particular, does not support arbitrary expressions in interpolations.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -262,6 +265,8 @@ Some simple format string examples::
    "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
+.. _formatstrings-conversion:
+
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`~object.__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
@@ -304,7 +309,7 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings` and :ref:`f-strings`).
+:ref:`formatstrings`, :ref:`f-strings`, and :ref:`t-strings`).
 They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
@@ -326,7 +331,7 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
    width_with_grouping: [`width`][`grouping`]
-   precision_with_grouping: "." [`precision`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`] | "." `grouping`
    width: `~python-grammar:digit`+
    precision: `~python-grammar:digit`+
    grouping: "," | "_"
@@ -541,6 +546,9 @@ The available presentation types for :class:`float` and
    |         | :class:`float`, and shows all coefficient digits         |
    |         | for :class:`~decimal.Decimal`.  If ``p=0``, the decimal  |
    |         | point is omitted unless the ``#`` option is used.        |
+   |         |                                                          |
+   |         | For :class:`float`, the exponent always contains at      |
+   |         | least two digits, and is zero if the value is zero.      |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Scientific notation. Same as ``'e'`` except it uses      |
    |         | an upper case 'E' as the separator character.            |
@@ -787,10 +795,22 @@ Nesting arguments and more complex examples::
 
 
 
-.. _template-strings:
+.. _template-strings-pep292:
 
-Template strings
-----------------
+Template strings ($-strings)
+----------------------------
+
+.. note::
+
+   The feature described here was introduced in Python 2.4;
+   a simple templating method based upon regular expressions.
+   It predates :meth:`str.format`, :ref:`formatted string literals <f-strings>`,
+   and :ref:`template string literals <template-strings>`.
+
+   It is unrelated to template string literals (t-strings),
+   which were introduced in Python 3.14.
+   These evaluate to  :class:`string.templatelib.Template` objects,
+   found in the :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for
@@ -856,7 +876,7 @@ these rules.  The methods of :class:`Template` are:
 
    .. method:: is_valid()
 
-      Returns false if the template has invalid placeholders that will cause
+      Returns ``False`` if the template has invalid placeholders that will cause
       :meth:`substitute` to raise :exc:`ValueError`.
 
       .. versionadded:: 3.11

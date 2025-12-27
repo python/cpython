@@ -89,7 +89,19 @@ class MimeTypes:
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
+
+        Valid extensions are empty or start with a '.'.
         """
+        if ext and not ext.startswith('.'):
+            from warnings import _deprecated
+
+            _deprecated(
+                "Undotted extensions",
+                "Using undotted extensions is deprecated and "
+                "will raise a ValueError in Python {remove}",
+                remove=(3, 16),
+            )
+
         if not type:
             return
         self.types_map[strict][ext] = type
@@ -466,6 +478,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.epub'   : 'application/epub+zip',
+        '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
@@ -473,23 +486,28 @@ def _default_mime_types():
         '.wiz'    : 'application/msword',
         '.nq'     : 'application/n-quads',
         '.nt'     : 'application/n-triples',
+        '.cjs'    : 'application/node',
         '.bin'    : 'application/octet-stream',
         '.a'      : 'application/octet-stream',
-        '.dll'    : 'application/octet-stream',
-        '.exe'    : 'application/octet-stream',
         '.o'      : 'application/octet-stream',
         '.obj'    : 'application/octet-stream',
         '.so'     : 'application/octet-stream',
         '.oda'    : 'application/oda',
         '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
+        '.ai'     : 'application/pdf',
         '.p7c'    : 'application/pkcs7-mime',
         '.ps'     : 'application/postscript',
-        '.ai'     : 'application/postscript',
         '.eps'    : 'application/postscript',
+        '.rtf'    : 'application/rtf',
+        '.texi'   : 'application/texinfo',
+        '.texinfo': 'application/texinfo',
+        '.toml'   : 'application/toml',
         '.trig'   : 'application/trig',
         '.m3u'    : 'application/vnd.apple.mpegurl',
         '.m3u8'   : 'application/vnd.apple.mpegurl',
+        '.dll'    : 'application/vnd.microsoft.portable-executable',
+        '.exe'    : 'application/vnd.microsoft.portable-executable',
         '.xls'    : 'application/vnd.ms-excel',
         '.xlb'    : 'application/vnd.ms-excel',
         '.eot'    : 'application/vnd.ms-fontobject',
@@ -505,10 +523,13 @@ def _default_mime_types():
         '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.rar'    : 'application/vnd.rar',
         '.wasm'   : 'application/wasm',
+        '.7z'     : 'application/x-7z-compressed',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
+        '.deb'    : 'application/x-debian-package',
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',
@@ -518,10 +539,12 @@ def _default_mime_types():
         '.cdf'    : 'application/x-netcdf',
         '.nc'     : 'application/x-netcdf',
         '.p12'    : 'application/x-pkcs12',
+        '.php'    : 'application/x-httpd-php',
         '.pfx'    : 'application/x-pkcs12',
         '.ram'    : 'application/x-pn-realaudio',
         '.pyc'    : 'application/x-python-code',
         '.pyo'    : 'application/x-python-code',
+        '.rpm'    : 'application/x-rpm',
         '.sh'     : 'application/x-sh',
         '.shar'   : 'application/x-shar',
         '.swf'    : 'application/x-shockwave-flash',
@@ -530,8 +553,6 @@ def _default_mime_types():
         '.tar'    : 'application/x-tar',
         '.tcl'    : 'application/x-tcl',
         '.tex'    : 'application/x-tex',
-        '.texi'   : 'application/x-texinfo',
-        '.texinfo': 'application/x-texinfo',
         '.roff'   : 'application/x-troff',
         '.t'      : 'application/x-troff',
         '.tr'     : 'application/x-troff',
@@ -544,6 +565,8 @@ def _default_mime_types():
         '.rdf'    : 'application/xml',
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
+        '.yaml'   : 'application/yaml',
+        '.yml'    : 'application/yaml',
         '.zip'    : 'application/zip',
         '.3gp'    : 'audio/3gpp',
         '.3gpp'   : 'audio/3gpp',
@@ -567,9 +590,9 @@ def _default_mime_types():
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
         '.wav'    : 'audio/vnd.wave',
+        '.weba'   : 'audio/webm',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
-        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
@@ -609,6 +632,9 @@ def _default_mime_types():
         '.mht'    : 'message/rfc822',
         '.mhtml'  : 'message/rfc822',
         '.nws'    : 'message/rfc822',
+        '.gltf'   : 'model/gltf+json',
+        '.glb'    : 'model/gltf-binary',
+        '.stl'    : 'model/stl',
         '.css'    : 'text/css',
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',
@@ -624,7 +650,6 @@ def _default_mime_types():
         '.pl'     : 'text/plain',
         '.srt'    : 'text/plain',
         '.rtx'    : 'text/richtext',
-        '.rtf'    : 'text/rtf',
         '.tsv'    : 'text/tab-separated-values',
         '.vtt'    : 'text/vtt',
         '.py'     : 'text/x-python',
@@ -647,6 +672,8 @@ def _default_mime_types():
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
         '.avi'    : 'video/vnd.avi',
+        '.m4v'    : 'video/x-m4v',
+        '.wmv'    : 'video/x-ms-wmv',
         '.movie'  : 'video/x-sgi-movie',
         }
 
@@ -655,10 +682,9 @@ def _default_mime_types():
 
     # Please sort these too
     common_types = _common_types_default = {
-        '.rtf' : 'application/rtf',
+        '.apk' : 'application/vnd.android.package-archive',
         '.midi': 'audio/midi',
         '.mid' : 'audio/midi',
-        '.jpg' : 'image/jpg',
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
@@ -672,7 +698,9 @@ _default_mime_types()
 def _parse_args(args):
     from argparse import ArgumentParser
 
-    parser = ArgumentParser(description='map filename extensions to MIME types')
+    parser = ArgumentParser(
+        description='map filename extensions to MIME types', color=True
+    )
     parser.add_argument(
         '-e', '--extension',
         action='store_true',
@@ -690,24 +718,30 @@ def _parse_args(args):
 
 def _main(args=None):
     """Run the mimetypes command-line interface and return a text to print."""
-    import sys
-
     args, help_text = _parse_args(args)
 
+    results = []
     if args.extension:
         for gtype in args.type:
             guess = guess_extension(gtype, not args.lenient)
             if guess:
-                return str(guess)
-            sys.exit(f"error: unknown type {gtype}")
+                results.append(str(guess))
+            else:
+                results.append(f"error: unknown type {gtype}")
+        return results
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
-                return f"type: {guess} encoding: {encoding}"
-            sys.exit(f"error: media type unknown for {gtype}")
-    return help_text
+                results.append(f"type: {guess} encoding: {encoding}")
+            else:
+                results.append(f"error: media type unknown for {gtype}")
+        return results
 
 
 if __name__ == '__main__':
-    print(_main())
+    import sys
+
+    results = _main()
+    print("\n".join(results))
+    sys.exit(any(result.startswith("error: ") for result in results))

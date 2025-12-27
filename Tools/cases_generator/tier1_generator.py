@@ -132,7 +132,7 @@ def uses_this(inst: Instruction) -> bool:
             continue
         for tkn in uop.body.tokens():
             if (tkn.kind == "IDENTIFIER"
-                    and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
+                    and (tkn.text in {"DEOPT_IF", "EXIT_IF", "AT_END_EXIT_IF"})):
                 return True
     return False
 
@@ -157,20 +157,20 @@ def generate_tier1(
 #define TIER_ONE 1
 """)
     outfile.write(f"""
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
-        switch (opcode)
+        switch (dispatch_code)
 #endif
         {{
-#endif /* Py_TAIL_CALL_INTERP */
+#endif /* _Py_TAIL_CALL_INTERP */
             {INSTRUCTION_START_MARKER}
 """
     )
     generate_tier1_cases(analysis, outfile, lines)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -186,7 +186,7 @@ def generate_tier1(
         /* This should never be reached. Every opcode should end with DISPATCH()
            or goto error. */
         Py_UNREACHABLE();
-#endif /* Py_TAIL_CALL_INTERP */
+#endif /* _Py_TAIL_CALL_INTERP */
         {LABEL_START_MARKER}
 """)
     out = CWriter(outfile, 2, lines)
@@ -204,7 +204,7 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        storage = Storage(Stack(), [], [], False)
+        storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
         emitter.emit_tokens(label, storage, None)
@@ -226,7 +226,7 @@ def generate_tier1_cases(
         popped = get_popped(inst, analysis)
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
-        out.emit(f"#if Py_TAIL_CALL_INTERP\n")
+        out.emit(f"#if _Py_TAIL_CALL_INTERP\n")
         out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         out.emit(f"#endif\n")

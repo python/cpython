@@ -1573,6 +1573,7 @@ static PyObject *
 _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
 /*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
 {
+#if defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
     DWORD cchBuffer;
     PyObject *result = NULL;
 
@@ -1596,6 +1597,9 @@ _winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
         PyErr_SetFromWindowsErr(0);
     }
     return result;
+#else
+    return PyUnicode_FromWideChar(path, -1);
+#endif
 }
 
 /*[clinic input]
@@ -1629,8 +1633,10 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
     if (! result)
         return PyErr_SetFromWindowsErr(GetLastError());
 
-    return PyUnicode_FromWideChar(filename, wcslen(filename));
+    return PyUnicode_FromWideChar(filename, -1);
 }
+
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 
 /*[clinic input]
 _winapi.GetShortPathName
@@ -1673,6 +1679,8 @@ _winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
     }
     return result;
 }
+
+#endif /* MS_WINDOWS_DESKTOP || MS_WINDOWS_SYSTEM */
 
 /*[clinic input]
 _winapi.GetStdHandle -> HANDLE
@@ -1912,7 +1920,6 @@ static PyObject *
 _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
 /*[clinic end generated code: output=d0c3e29e49d323dd input=c7aa53bfbce69d70]*/
 {
-    PyObject *buf = NULL;
     DWORD nread, navail, nleft;
     BOOL ret;
 
@@ -1922,20 +1929,26 @@ _winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
     }
 
     if (size) {
-        buf = PyBytes_FromStringAndSize(NULL, size);
-        if (!buf)
+        PyBytesWriter *writer = PyBytesWriter_Create(size);
+        if (writer == NULL) {
             return NULL;
+        }
+        char *buf = PyBytesWriter_GetData(writer);
+
         Py_BEGIN_ALLOW_THREADS
-        ret = PeekNamedPipe(handle, PyBytes_AS_STRING(buf), size, &nread,
+        ret = PeekNamedPipe(handle, buf, size, &nread,
                             &navail, &nleft);
         Py_END_ALLOW_THREADS
         if (!ret) {
-            Py_DECREF(buf);
+            PyBytesWriter_Discard(writer);
             return PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
         }
-        if (_PyBytes_Resize(&buf, nread))
+
+        PyObject *res = PyBytesWriter_FinishWithSize(writer, nread);
+        if (res == NULL) {
             return NULL;
-        return Py_BuildValue("NII", buf, navail, nleft);
+        }
+        return Py_BuildValue("NII", res, navail, nleft);
     }
     else {
         Py_BEGIN_ALLOW_THREADS
@@ -2740,6 +2753,19 @@ _winapi_GetACP_impl(PyObject *module)
 }
 
 /*[clinic input]
+_winapi.GetOEMCP
+
+Get the current Windows ANSI code page identifier.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module)
+/*[clinic end generated code: output=4def5b07a8be1b3b input=e8caf4353a28e28e]*/
+{
+    return PyLong_FromUnsignedLong(GetOEMCP());
+}
+
+/*[clinic input]
 _winapi.GetFileType -> DWORD
 
     handle: HANDLE
@@ -2883,6 +2909,7 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
                                             LPCWSTR exe_name)
 /*[clinic end generated code: output=a65ec879502b58fc input=972aac88a1ec2f00]*/
 {
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     BOOL result;
 
     Py_BEGIN_ALLOW_THREADS
@@ -2890,6 +2917,9 @@ _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
     Py_END_ALLOW_THREADS
 
     return result;
+#else
+    return TRUE;
+#endif
 }
 
 
@@ -2995,6 +3025,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_WAITFORSINGLEOBJECT_METHODDEF
     _WINAPI_WRITEFILE_METHODDEF
     _WINAPI_GETACP_METHODDEF
+    _WINAPI_GETOEMCP_METHODDEF
     _WINAPI_GETFILETYPE_METHODDEF
     _WINAPI__MIMETYPES_READ_WINDOWS_REGISTRY_METHODDEF
     _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF

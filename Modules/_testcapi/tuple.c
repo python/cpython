@@ -104,12 +104,40 @@ _check_tuple_item_is_NULL(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
+static PyObject *
+tuple_fromarray(PyObject* Py_UNUSED(module), PyObject *args)
+{
+    PyObject *src;
+    Py_ssize_t size = UNINITIALIZED_SIZE;
+    if (!PyArg_ParseTuple(args, "O|n", &src, &size)) {
+        return NULL;
+    }
+    if (src != Py_None && !PyTuple_Check(src)) {
+        PyErr_SetString(PyExc_TypeError, "expect a tuple");
+        return NULL;
+    }
+
+    PyObject **items;
+    if (src != Py_None) {
+        items = &PyTuple_GET_ITEM(src, 0);
+        if (size == UNINITIALIZED_SIZE) {
+            size = PyTuple_GET_SIZE(src);
+        }
+    }
+    else {
+        items = NULL;
+    }
+    return PyTuple_FromArray(items, size);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"tuple_get_size", tuple_get_size, METH_O},
     {"tuple_get_item", tuple_get_item, METH_VARARGS},
     {"tuple_set_item", tuple_set_item, METH_VARARGS},
     {"_tuple_resize", _tuple_resize, METH_VARARGS},
     {"_check_tuple_item_is_NULL", _check_tuple_item_is_NULL, METH_VARARGS},
+    {"tuple_fromarray", tuple_fromarray, METH_VARARGS},
     {NULL},
 };
 

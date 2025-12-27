@@ -160,7 +160,7 @@ Use monospace font from System Font Stack for cross-platform support in
 .. nonce: 3sBFv2
 .. section: Library
 
-Improve perfomance of :attr:`uuid.UUID.hex` and :meth:`uuid.UUID.__str__
+Improve performance of :attr:`uuid.UUID.hex` and :meth:`uuid.UUID.__str__
 <object.__str__>`.
 
 ..
@@ -535,7 +535,7 @@ the correct type, when called with optimize=False.
 
 Forbid the use of colon (":") as a fractional component separator and other
 improvements to the consistency of error raising between the C and Python
-implementaitons of :meth:`datetime.time.fromisoformat` and
+implementations of :meth:`datetime.time.fromisoformat` and
 :meth:`datetime.datetime.fromisoformat`. Patch by Semyon Moroz.
 
 ..
@@ -621,7 +621,7 @@ Andrew Svetlov.
 .. nonce: jQ0CvW
 .. section: Library
 
-Update the deprecation warning of :meth:`importlib.abc.Loader.load_module`.
+Update the deprecation warning of ``importlib.abc.Loader.load_module``.
 
 ..
 
@@ -758,7 +758,7 @@ Patch by Semyon Moroz.
 .. nonce: wDLTay
 .. section: Library
 
-Delay deprecated :meth:`zipimport.zipimporter.load_module` removal time to
+Delay deprecated :meth:`!zipimport.zipimporter.load_module` removal time to
 3.15. Use :meth:`zipimport.zipimporter.exec_module` instead.
 
 ..
@@ -1109,7 +1109,7 @@ Fix two more :class:`bytearray` functions for :term:`free threading`.
 
 Use tagged references (``_PyStackRef``) for the default build as well as for
 the free-threading build. This has a small negative performance impact
-short-term but will enable larger speedups in the future and signficantly
+short-term but will enable larger speedups in the future and significantly
 reduce maintenance costs by allowing a single implementation of tagged
 references in the future.
 
@@ -1187,7 +1187,7 @@ Improve the experimental JIT's handling of returns to unknown callers.
 .. date: 2025-02-11-20-38-37
 .. gh-issue: 129983
 .. nonce: _1Fujo
-.. section: Core and Builtins
+.. section: Library
 
 Fix data race in compile_template in :file:`sre.c`.
 
@@ -1209,7 +1209,7 @@ is called concurrently with ``set.clear()``.
 .. section: Core and Builtins
 
 The internal (evaluation) stack is now spilled to memory whenever execution
-esacpes from the interpreter or JIT compiled code. This should have no
+escapes from the interpreter or JIT compiled code. This should have no
 observable effect in either Python or builtin extensions, but will allow
 various important optimizations in the future.
 
@@ -1325,7 +1325,7 @@ variable.
 .. nonce: d75n8U
 .. section: Core and Builtins
 
-Adapt :func:`reversed` for use in the free-theading build. The
+Adapt :func:`reversed` for use in the free-threading build. The
 :func:`reversed` is still not thread-safe in the sense that concurrent
 iterations may see the same object, but they will not corrupt the
 interpreter state.
@@ -1335,7 +1335,7 @@ interpreter state.
 .. date: 2022-12-21-14-28-01
 .. gh-issue: 100388
 .. nonce: vne8ky
-.. section: Core and Builtins
+.. section: Library
 
 Fix the ``platform._sys_version()`` method when ``__DATE__`` is undefined at
 buildtime by changing default buildtime datetime string to the UNIX epoch.
