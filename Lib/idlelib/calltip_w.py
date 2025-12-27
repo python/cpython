@@ -17,7 +17,7 @@ CHECKHIDE_TIME = 100  # milliseconds
 MARK_RIGHT = "calltipwindowregion_right"
 
 
-def widget_size(widget):
+def _widget_size(widget):
     widget.update()
     width = widget.winfo_width()
     height = widget.winfo_height()
@@ -90,22 +90,23 @@ class CalltipWindow(TooltipBase):
         """Create the call-tip widget."""
         self.label = Label(self.tipwindow, text=self.text, font=self.anchor_widget['font'])
         self.label.pack()
-        label_w, label_h = widget_size(self.label)
+        old_w, old_h = _widget_size(self.label)
         self.label.forget()
 
         self.label = ScrolledText(self.tipwindow, wrap="word",
                            background="#ffffd0", foreground="black",
                            relief=SOLID, borderwidth=1,
-                           font=self.anchor_widget["font"])
+                           font=self.anchor_widget['font'])
         self.label.insert("1.0", self.text)
         self.label.config(state="disabled")
         self.label.pack()
-        max_w, max_h = widget_size(self.label)
+        new_w, new_h = _widget_size(self.label)
 
         if self.label.yview()[1] == 1:  # already shown entire text
             self.label.vbar.forget()
 
-        self.tipwindow.geometry("%dx%d" % (min(label_w, max_w), min(label_h, max_h)))
+        w, h = min(old_w, new_w), min(old_h, new_h)
+        self.tipwindow.geometry("%dx%d" % (w, h))
 
     def checkhide_event(self, event=None):
         """Handle CHECK_HIDE_EVENT: call hidetip or reschedule."""
