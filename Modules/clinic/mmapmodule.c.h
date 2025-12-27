@@ -375,7 +375,7 @@ mmap_mmap_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(mmap_mmap_flush__doc__,
-"flush($self, offset=0, size=-1, /, flags=0)\n"
+"flush($self, offset=0, size=-1, /, *, flags=0)\n"
 "--\n"
 "\n");
 
@@ -424,7 +424,7 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int flags = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -462,13 +462,13 @@ mmap_mmap_flush(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
 skip_optional_posonly:
     if (!noptargs) {
-        goto skip_optional_pos;
+        goto skip_optional_kwonly;
     }
     flags = PyLong_AsInt(args[2]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional_pos:
+skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(self);
     return_value = mmap_mmap_flush_impl((mmap_object *)self, offset, size, flags);
     Py_END_CRITICAL_SECTION();
@@ -879,4 +879,4 @@ exit:
 #ifndef MMAP_MMAP_MADVISE_METHODDEF
     #define MMAP_MMAP_MADVISE_METHODDEF
 #endif /* !defined(MMAP_MMAP_MADVISE_METHODDEF) */
-/*[clinic end generated code: output=13545cf8b75bfad6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8389e3c8e3db3a78 input=a9049054013a1b77]*/
