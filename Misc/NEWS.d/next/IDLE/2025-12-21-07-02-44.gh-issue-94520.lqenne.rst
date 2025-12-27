@@ -1,6 +1,3 @@
-Make CallTips selectable
-
-Use the "ScrolledText" widget instead of "tk.Label" to display the tooltips,
-and now the text in the "Calltip" window can be selected with mouse, or
-scrolled by mouse wheel. Docstring is no longer need to truncated, so some
-test cases have been changed. Contributed by Shixian Li.
+"Calltip" windows now support text selection, scrolling and
+avoid truncating their content (in particular, docstrings
+are shown in full). Patch by Shixian Li.
