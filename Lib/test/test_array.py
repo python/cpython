@@ -1367,6 +1367,21 @@ class NumberTest(BaseTest):
         b = array.array(self.typecode, a)
         self.assertEqual(a, b)
 
+    def test_tofile_use_after_free(self):
+        CHUNK = 64 * 1024
+        victim = array.array('B', b'\0' * (CHUNK * 2))
+
+        class Writer:
+            armed = True
+            def write(self, data):
+                if Writer.armed:
+                    Writer.armed = False
+                    victim.clear()
+                return 0
+
+        victim.tofile(Writer())
+
+
 class IntegerNumberTest(NumberTest):
     def test_type_error(self):
         a = array.array(self.typecode)
