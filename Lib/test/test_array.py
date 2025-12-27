@@ -1681,24 +1681,25 @@ class LargeArrayTest(unittest.TestCase):
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
 
+    # Tests for NULL pointer dereference in array.__setitem__
+    # when the index conversion mutates the array.
+    # See: gh-142555.
     @subTests(
         ("dtype", "items"),
         [
-            ("b", [0] * 64),
-            ("B", [1, 2, 3]),
-            ("h", [1, 2, 3]),
-            ("H", [1, 2, 3]),
-            ("i", [1, 2, 3]),
-            ("l", [1, 2, 3]),
-            ("q", [1, 2, 3]),
-            ("I", [1, 2, 3]),
-            ("L", [1, 2, 3]),
-            ("Q", [1, 2, 3]),
+            ("b", list(range(64))),
+            ("B", list(range(64))),
+            ("h", list(range(64))),
+            ("H", list(range(64))),
+            ("i", list(range(64))),
+            ("l", list(range(64))),
+            ("q", list(range(64))),
+            ("I", list(range(64))),
+            ("L", list(range(64))),
+            ("Q", list(range(64))),
         ],
     )
     def test_setitem_use_after_clear_with_int_data(self, dtype, items):
-        # gh-142555: Test for null pointer dereference in array.__setitem__
-        # via re-entrant __index__ that clears the array.
         victim = array.array(dtype, items)
 
         class Index:
@@ -1710,8 +1711,6 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(len(victim), 0)
 
     def test_setitem_use_after_shrink_with_int_data(self):
-        # gh-142555: Test for null pointer dereference in array.__setitem__
-        # via re-entrant __index__ that shrinks the array.
         victim = array.array('b', [1, 2, 3])
 
         class Index:
@@ -1724,8 +1723,6 @@ class LargeArrayTest(unittest.TestCase):
 
     @subTests("dtype", ["f", "d"])
     def test_setitem_use_after_clear_with_float_data(self, dtype):
-        # gh-142555: Test for null pointer dereference in array.__setitem__
-        # via re-entrant __float__ that clears the array.
         victim = array.array(dtype, [1.0, 2.0, 3.0])
 
         class Float:
