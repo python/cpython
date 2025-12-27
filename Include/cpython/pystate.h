@@ -311,7 +311,7 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, struct _PyInterpreterFrame *, int);
+typedef PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, PyUnstable_InterpreterFrame *, int);
 
 PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);

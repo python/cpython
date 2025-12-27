@@ -2456,3 +2456,10 @@ PyFrame_GetGenerator(PyFrameObject *frame)
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     return frame_generator_get((PyObject *)frame, NULL);
 }
+
+
+PyFrameObject*
+PyUnstable_InterpreterFrame_GetFrameObject(PyUnstable_InterpreterFrame *frame)
+{
+    return (PyFrameObject*)Py_XNewRef(_PyFrame_GetFrameObject(frame));
+}
