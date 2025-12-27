@@ -346,6 +346,9 @@ def _find_lines(code, strs):
     # and check the constants for references to other code objects
     for c in code.co_consts:
         if inspect.iscode(c):
+            # skip __annotate__ code objects (PEP 649)
+            if c.co_name == "__annotate__":
+                continue
             # find another code object, so recurse into it
             linenos.update(_find_lines(c, strs))
     return linenos
