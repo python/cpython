@@ -152,6 +152,11 @@ class TruncatedStringIO(object):
     def getvalue(self):
         return self._val
 
+
+def _PyStackRef_AsPyObjectBorrow(gdbval):
+    return gdb.Value(int(gdbval['bits']) & ~USED_TAGS)
+
+
 class PyObjectPtr(object):
     """
     Class wrapping a gdb.Value that's either a (PyObject*) within the
@@ -170,7 +175,7 @@ class PyObjectPtr(object):
         if gdbval.type.name == '_PyStackRef':
             if cast_to is None:
                 cast_to = gdb.lookup_type('PyObject').pointer()
-            self._gdbval = gdb.Value(int(gdbval['bits']) & ~USED_TAGS).cast(cast_to)
+            self._gdbval = _PyStackRef_AsPyObjectBorrow(gdbval).cast(cast_to)
         elif cast_to:
             self._gdbval = gdbval.cast(cast_to)
         else:
@@ -1040,6 +1045,23 @@ class PyFrameObjectPtr(PyObjectPtr):
             return
         return self._frame.print_traceback()
 
+def current_line(filename, lineno):
+    if lineno is None:
+        return '(failed to get frame line number)'
+
+    try:
+        with open(os.fsencode(filename), 'r', encoding="utf-8") as fp:
+            lines = fp.readlines()
+    except IOError:
+        return None
+
+    try:
+        # Convert from 1-based current_line_num to 0-based list offset
+        return lines[lineno - 1]
+    except IndexError:
+        return None
+
+
 class PyFramePtr:
 
     def __init__(self, gdbval):
@@ -1188,22 +1210,9 @@ class PyFramePtr:
         if self.is_optimized_out():
             return FRAME_INFO_OPTIMIZED_OUT
 
-        lineno = self.current_line_num()
-        if lineno is None:
-            return '(failed to get frame line number)'
-
         filename = self.filename()
-        try:
-            with open(os.fsencode(filename), 'r', encoding="utf-8") as fp:
-                lines = fp.readlines()
-        except IOError:
-            return None
-
-        try:
-            # Convert from 1-based current_line_num to 0-based list offset
-            return lines[lineno - 1]
-        except IndexError:
-            return None
+        lineno = self.current_line_num()
+        return current_line(filename, lineno)
 
     def write_repr(self, out, visited):
         if self.is_optimized_out():
@@ -2072,7 +2081,6 @@ class PyBacktrace(gdb.Command):
                               gdb.COMMAND_STACK,
                               gdb.COMPLETE_NONE)
 
-
     def invoke(self, args, from_tty):
         frame = Frame.get_selected_python_frame()
         if not frame:
@@ -2086,6 +2094,46 @@ class PyBacktrace(gdb.Command):
             frame = frame.older()
 
 PyBacktrace()
+
+class PyBacktraceTSS(gdb.Command):
+    'Similar to py-bt but read _Py_tss_gilstate or _Py_tss_tstate'
+    def __init__(self):
+        gdb.Command.__init__ (self,
+                              "py-bt-tss",
+                              gdb.COMMAND_STACK,
+                              gdb.COMPLETE_NONE)
+
+    def invoke(self, args, from_tty):
+        try:
+            iframe = gdb.parse_and_eval('_Py_tss_gilstate->current_frame')
+        except gdb.error:
+            iframe = gdb.parse_and_eval('_Py_tss_tstate->current_frame')
+        visited = set()
+
+        print('Traceback (most recent call first):')
+        while True:
+            is_complete = not _PyFrame_IsIncomplete(iframe)
+            if is_complete:
+                code = _PyFrame_GetCode(iframe)
+                code = PyCodeObjectPtr.from_pyobject_ptr(code)
+
+                filename = code.pyop_field('co_filename')
+                filename = filename.proxyval(visited)
+                lasti = iframe['instr_ptr'] - _PyFrame_GetBytecode(iframe)
+                lineno = code.addr2line(lasti)
+                name = code.pyop_field('co_name')
+                name = name.proxyval(visited)
+                print('  File "%s", line %s, in %s'
+                      % (filename, lineno, name))
+                line = current_line(filename, lineno)
+                if line is not None:
+                    sys.stdout.write('    %s\n' % line.strip())
+
+            iframe = iframe['previous']
+            if not iframe:
+                break
+
+PyBacktraceTSS()
 
 class PyPrint(gdb.Command):
     'Look up the given python variable name, and print it'
@@ -2155,5 +2203,39 @@ class PyLocals(gdb.Command):
 
 
             pyop_frame = pyop_frame.previous()
+
+
+def _PyCode_CODE(code):
+    cast_to = gdb.lookup_type('PyCodeObject').pointer()
+    code = code.cast(cast_to)
+    cast_to = gdb.lookup_type('_Py_CODEUNIT').pointer()
+    return code['co_code_adaptive'].cast(cast_to)
+
+def _PyFrame_GetCode(iframe):
+    executable = iframe['f_executable']
+    try:
+        # Python 3.14 and newer: f_executable is a _PyStackRef
+        return _PyStackRef_AsPyObjectBorrow(executable)
+    except gdb.error:
+        # Python 3.13: f_executable is a PyCodeObject*
+        return executable
+
+def _PyFrame_GetBytecode(iframe):
+    # FIXME: #ifdef Py_GIL_DISABLED
+    #     PyCodeObject *co = _PyFrame_GetCode(f);
+    #     _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
+    #     assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
+    #     return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+    return _PyCode_CODE(_PyFrame_GetCode(iframe))
+
+def _PyFrame_IsIncomplete(iframe):
+    if iframe['owner'] >= FRAME_OWNED_BY_INTERPRETER:
+        return True
+    # FIXME:
+    # return frame->owner != FRAME_OWNED_BY_GENERATOR &&
+    #        frame->instr_ptr < _PyFrame_GetBytecode(frame) +
+    #                               _PyFrame_GetCode(frame)->_co_firsttraceable;
+    return False
+
 
 PyLocals()
