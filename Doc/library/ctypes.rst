@@ -1385,8 +1385,9 @@ the library to load.
 The exact functionality is system dependent.
 
 On Linux, :func:`~ctypes.util.find_library` tries to run external programs
-(``/sbin/ldconfig``, ``gcc``, ``objdump`` and ``ld``) to find the library file.
-It returns the filename of the library file.
+(``ldconfig``,  ``gcc``, ``objdump`` and ``ld``) to find the library file.
+Note that ``ldconfig`` falls back to using ``/sbin/ldconfig`` if it is not found on ``$PATH``.
+Unlike other distributions it returns only the filename of the library file.
 
 Note that if the output of these programs does not correspond to the dynamic
 linker used by Python, the result of this function may be misleading.
