@@ -101,6 +101,8 @@ The :mod:`binascii` module defines the following functions:
 
    Invalid Ascii85 data will raise :exc:`binascii.Error`.
 
+   .. versionadded:: next
+
 
 .. function:: b2a_ascii85(data, /, *, fold_spaces=False, wrap=False, width=0, pad=False)
 
@@ -119,6 +121,8 @@ The :mod:`binascii` module defines the following functions:
 
    If *pad* is true, the input is padded to a multiple of 4 before encoding.
 
+   .. versionadded:: next
+
 
 .. function:: a2b_base85(string, /, *, strict_mode=False, z85=False)
 
@@ -136,6 +140,8 @@ The :mod:`binascii` module defines the following functions:
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive.
 
+   .. versionadded:: next
+
 
 .. function:: b2a_base85(data, /, *, pad=False, newline=True, z85=False)
 
@@ -148,6 +154,8 @@ The :mod:`binascii` module defines the following functions:
 
    If *z85* is true, the Z85 alphabet is used for conversion.
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: next
 
 
 .. function:: a2b_qp(data, header=False)
