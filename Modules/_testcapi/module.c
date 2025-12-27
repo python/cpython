@@ -178,7 +178,7 @@ module_from_slots_exec(PyObject *self, PyObject *spec)
 }
 
 static PyObject *
-create_attr_from_spec(PyObject *spec, PyObject *def)
+create_attr_from_spec(PyObject *spec, PyModuleDef *def)
 {
     assert(!def);
     return PyObject_GetAttrString(spec, "_gimme_this");
