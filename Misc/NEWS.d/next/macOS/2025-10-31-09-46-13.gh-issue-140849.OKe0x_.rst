@@ -1,0 +1,1 @@
+Update macOS installer to use XZ 5.8.1.
