@@ -1943,7 +1943,10 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
-        _PyPerfTrampoline_Fini();
+        if (_PyPerfTrampoline_Fini() < 0) {
+            PyErr_FormatUnraisable("Exception ignored on "
+                                   "_PyPerfTrampoline_Fini()");
+        }
         _PyPerfTrampoline_FreeArenas();
     }
 

@@ -2926,8 +2926,8 @@ PyGILState_Release(PyGILState_STATE oldstate)
 /* Other API */
 /*************/
 
-_PyFrameEvalFunction
-_PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+PyUnstable_FrameEvalFunction
+PyUnstable_InterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 {
     if (interp->eval_frame == NULL) {
         return _PyEval_EvalFrameDefault;
@@ -2936,15 +2936,15 @@ _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 }
 
 
-void
-_PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
-                                     _PyFrameEvalFunction eval_frame)
+int
+PyUnstable_InterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
+                                             PyUnstable_FrameEvalFunction eval_frame)
 {
     if (eval_frame == _PyEval_EvalFrameDefault) {
         eval_frame = NULL;
     }
     if (eval_frame == interp->eval_frame) {
-        return;
+        return 0;
     }
 #ifdef _Py_TIER2
     if (eval_frame != NULL) {
@@ -2955,6 +2955,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
     _PyEval_StopTheWorld(interp);
     interp->eval_frame = eval_frame;
     _PyEval_StartTheWorld(interp);
+    return 0;
 }
 
 
