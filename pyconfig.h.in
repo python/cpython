@@ -141,6 +141,9 @@
 /* Define if you have the 'chroot' function. */
 #undef HAVE_CHROOT
 
+/* Define to 1 if you have the 'clearenv' function. */
+#undef HAVE_CLEARENV
+
 /* Define to 1 if you have the 'clock' function. */
 #undef HAVE_CLOCK
 
@@ -224,6 +227,10 @@
 
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
+
+/* Define to 1 if you have the declaration of 'PR_SET_VMA_ANON_NAME', and to 0
+   if you don't. */
+#undef HAVE_DECL_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the declaration of 'RTLD_DEEPBIND', and to 0 if you
    don't. */
@@ -727,6 +734,9 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/isotp.h> header file. */
+#undef HAVE_LINUX_CAN_ISOTP_H
+
 /* Define to 1 if you have the <linux/can/j1939.h> header file. */
 #undef HAVE_LINUX_CAN_J1939_H
 
@@ -989,6 +999,9 @@
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
+
+/* Define if you have the 'PR_SET_VMA_ANON_NAME' constant. */
+#undef HAVE_PR_SET_VMA_ANON_NAME
 
 /* Define to 1 if you have the 'pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
@@ -1279,6 +1292,9 @@
 /* Define to 1 if you have the 'statvfs' function. */
 #undef HAVE_STATVFS
 
+/* Define to 1 if you have the 'statx' function. */
+#undef HAVE_STATX
+
 /* Define if you have struct stat.st_mtim.tv_nsec */
 #undef HAVE_STAT_TV_NSEC
 
@@ -1320,6 +1336,27 @@
 
 /* Define to 1 if 'pw_passwd' is a member of 'struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_PASSWD
+
+/* Define to 1 if 'stx_atomic_write_unit_max_opt' is a member of 'struct
+   statx'. */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MAX_OPT
+
+/* Define to 1 if 'stx_atomic_write_unit_min' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_ATOMIC_WRITE_UNIT_MIN
+
+/* Define to 1 if 'stx_dio_mem_align' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_DIO_MEM_ALIGN
+
+/* Define to 1 if 'stx_dio_read_offset_align' is a member of 'struct statx'.
+   */
+#undef HAVE_STRUCT_STATX_STX_DIO_READ_OFFSET_ALIGN
+
+/* Define to 1 if 'stx_mnt_id' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_MNT_ID
+
+/* Define to 1 if 'stx_subvol' is a member of 'struct statx'. */
+#undef HAVE_STRUCT_STATX_STX_SUBVOL
 
 /* Define to 1 if 'st_birthtime' is a member of 'struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
@@ -1749,9 +1786,6 @@
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
-/* Define if you want to use tail-calling interpreters in CPython. */
-#undef Py_TAIL_CALL_INTERP
-
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
@@ -2023,8 +2057,11 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
-/* Define if year with century should be normalized for strftime. */
-#undef _Py_NORMALIZE_CENTURY
+/* Define to 1 if the machine stack grows down (default); 0 if it grows up. */
+#undef _Py_STACK_GROWS_DOWN
+
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef _Py_TAIL_CALL_INTERP
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

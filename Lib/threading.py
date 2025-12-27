@@ -653,7 +653,8 @@ class Event:
         (or fractions thereof).
 
         This method returns the internal flag on exit, so it will always return
-        True except if a timeout is given and the operation times out.
+        ``True`` except if a timeout is given and the operation times out, when
+        it will return ``False``.
 
         """
         with self._cond:
@@ -1557,8 +1558,9 @@ def _shutdown():
     # normally - that won't happen until the interpreter is nearly dead. So
     # mark it done here.
     if _main_thread._os_thread_handle.is_done() and _is_main_interpreter():
-        # _shutdown() was already called
-        return
+        # _shutdown() was already called, but threads might have started
+        # in the meantime.
+        return _thread_shutdown()
 
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
