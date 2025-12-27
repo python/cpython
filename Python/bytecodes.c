@@ -990,7 +990,7 @@ dummy_func(
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple));
         }
 
-        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
 
@@ -1006,13 +1006,6 @@ dummy_func(
             ss = sub_st;
             INPUTS_DEAD();
         }
-
-        macro(BINARY_OP_SUBSCR_TUPLE_INT) =
-            _GUARD_TOS_INT +
-            _GUARD_NOS_TUPLE +
-            _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS +
-            unused/5 +
-            _BINARY_OP_SUBSCR_TUPLE_INT;
 
         op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
