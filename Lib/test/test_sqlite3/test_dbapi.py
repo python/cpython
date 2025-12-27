@@ -22,7 +22,6 @@
 
 import contextlib
 import functools
-import operator
 import os
 import sqlite3 as sqlite
 import subprocess
