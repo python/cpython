@@ -65,19 +65,25 @@ def wheel_event(event, widget=None):
     Macs use wheel down (delta = 1*n) to scroll up, so positive
     delta means to scroll up on both systems.
 
+    On both Windows and X-11, if the first bit of event.state is
+    set, it means that we should scroll horizontally not vertically.
+
     X-11 sends Control-Button-4,5 events instead.
 
     The widget parameter is needed so browser label bindings can pass
     the underlying canvas.
 
-    This function depends on widget.yview to not be overridden by
-    a subclass.
+    This function depends on widget.xview/widget.yview to not be
+    overridden by a subclass.
     """
     up = {EventType.MouseWheel: event.delta > 0,
           EventType.ButtonPress: event.num == 4}
     lines = -5 if up[event.type] else 5
     widget = event.widget if widget is None else widget
-    widget.yview(SCROLL, lines, 'units')
+    if event.state&1: # If the first bit is set, scroll horizontally
+        widget.xview(SCROLL, lines, 'units')
+    else:
+        widget.yview(SCROLL, lines, 'units')
     return 'break'
 
 
