@@ -189,6 +189,10 @@ ascii_buffer_converter(PyObject *arg, Py_buffer *buf)
     return Py_CLEANUP_SUPPORTED;
 }
 
+/* The function inserts '\n' each width characters, moving the data right.
+ * It assumes that we allocated enough space for all of the newlines in data.
+ * Returns the size of the data including the newlines.
+ */
 static Py_ssize_t
 wraplines(unsigned char *data, Py_ssize_t size, size_t width)
 {
@@ -564,12 +568,18 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
 
     assert(bin_len >= 0);
 
+    /* Each group of 3 bytes (rounded up) gets encoded as 4 characters,
+     * not counting newlines.
+     * Note that 'b' gets encoded as 'Yg==' (1 in, 4 out).
+     *
+     * Use unsigned integer arithmetic to avoid signed integer overflow.
+     */
     size_t out_len = ((size_t)bin_len + 2u) / 3u * 4u;
     if (out_len > PY_SSIZE_T_MAX) {
         goto toolong;
     }
     if (wrapcol && out_len) {
-        out_len += (out_len - 1) / wrapcol;
+        out_len += (out_len - 1u) / wrapcol;
         if (out_len > PY_SSIZE_T_MAX) {
             goto toolong;
         }

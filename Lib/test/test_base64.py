@@ -2,6 +2,7 @@ import unittest
 import base64
 import binascii
 import string
+import sys
 import os
 from array import array
 from test.support import cpython_only
@@ -178,6 +179,18 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b64encode(b"www.python.org", wrapcol=76), b'd3d3LnB5dGhvbi5vcmc=')
         eq(base64.b64encode(b"www.python.org", wrapcol=1),
            b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=')
+        eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize),
+           b'd3d3LnB5dGhvbi5vcmc=')
+        eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize*2),
+           b'd3d3LnB5dGhvbi5vcmc=')
+        with self.assertRaises(OverflowError):
+            base64.b64encode(b"www.python.org", wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            base64.b64encode(b"www.python.org", wrapcol=-8)
+        with self.assertRaises(TypeError):
+            base64.b64encode(b"www.python.org", wrapcol=8.0)
+        with self.assertRaises(TypeError):
+            base64.b64encode(b"www.python.org", wrapcol='8')
         eq(base64.b64encode(b"", wrapcol=0), b'')
         eq(base64.b64encode(b"", wrapcol=8), b'')
 

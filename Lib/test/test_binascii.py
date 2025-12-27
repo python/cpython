@@ -4,6 +4,7 @@ import unittest
 import binascii
 import array
 import re
+import sys
 from test.support import bigmemtest, _1G, _4G
 from test.support.hypothesis_helper import hypothesis
 
@@ -498,6 +499,18 @@ class BinASCIITest(unittest.TestCase):
                          b'd3d3LnB5\ndGhvbi5v\ncmc=')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=1),
             b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize*2),
+                         b'd3d3LnB5dGhvbi5vcmc=\n')
+        with self.assertRaises(OverflowError):
+            binascii.b2a_base64(b, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            binascii.b2a_base64(b, wrapcol=-8)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(b, wrapcol=8.0)
+        with self.assertRaises(TypeError):
+            binascii.b2a_base64(b, wrapcol='8')
         b = self.type2test(b'')
         self.assertEqual(binascii.b2a_base64(b), b'\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=0), b'\n')
