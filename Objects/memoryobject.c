@@ -3235,9 +3235,9 @@ memory_hash(PyObject *_self)
             // Prevent 'self' from being freed when computing the item's hash.
             // See https://github.com/python/cpython/issues/142664.
             self->exports++;
-            int rc = PyObject_Hash(view->obj);
+            Py_hash_t h = PyObject_Hash(view->obj);
             self->exports--;
-            if (rc == -1) {
+            if (h == -1) {
                 /* Keep the original error message */
                 return -1;
             }
