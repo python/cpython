@@ -51,7 +51,7 @@ The :rfc:`4648` encodings are suitable for encoding binary data so that it can b
 safely sent by email, used as parts of URLs, or included as part of an HTTP
 POST request.
 
-.. function:: b64encode(s, altchars=None)
+.. function:: b64encode(s, altchars=None, *, wrapcol=0)
 
    Encode the :term:`bytes-like object` *s* using Base64 and return the encoded
    :class:`bytes`.
