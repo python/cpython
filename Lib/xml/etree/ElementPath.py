@@ -18,6 +18,8 @@
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com
+
+from . import ElementTree
 #
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
@@ -79,11 +81,14 @@ def xpath_tokenizer(pattern, namespaces=None):
         if tag and tag[0] != "{":
             if ":" in tag:
                 prefix, uri = tag.split(":", 1)
-                try:
-                    if not namespaces:
-                        raise KeyError
+                if namespaces and prefix in namespaces:
+                    # Use the passed-in namespace map first
                     yield ttype, "{%s}%s" % (namespaces[prefix], uri)
-                except KeyError:
+                elif prefix in ElementTree._namespace_map:
+                    # Then check the global registry
+                    yield ttype, "{%s}%s" % (ElementTree._namespace_map[prefix], uri)
+                else:
+                    # No namespace found, raise error
                     raise SyntaxError("prefix %r not found in prefix map" % prefix) from None
             elif default_namespace and not parsing_attribute:
                 yield ttype, "{%s}%s" % (default_namespace, tag)

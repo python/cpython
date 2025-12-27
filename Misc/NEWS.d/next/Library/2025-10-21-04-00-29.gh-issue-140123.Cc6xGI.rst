@@ -1,0 +1,2 @@
+ElementTree.find(), ElementTree.findall(), and ElementTree.findtext() now
+use registered namespaces consistently with ElementPath.
