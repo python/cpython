@@ -59,7 +59,7 @@ def b64encode(s, altchars=None):
     return encoded
 
 
-def b64decode(s, altchars=None, validate=False):
+def b64decode(s, altchars=None, validate=True):
     """Decode the Base64 encoded bytes-like object or ASCII string s.
 
     Optional altchars must be a bytes-like object or ASCII string of length 2
@@ -78,11 +78,27 @@ def b64decode(s, altchars=None, validate=False):
     https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
+    badchar = None
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
-        assert len(altchars) == 2, repr(altchars)
-        s = s.translate(bytes.maketrans(altchars, b'+/'))
-    return binascii.a2b_base64(s, strict_mode=validate)
+        if len(altchars) != 2:
+            raise ValueError(f'invalid altchars: {altchars!r}')
+        if validate:
+            s = s.translate(bytes.maketrans(b'+/' + altchars, altchars + b'+/'))
+        else:
+            for b in b'+/':
+                if b not in altchars and b in s:
+                    badchar = b
+                    break
+            s = s.translate(bytes.maketrans(altchars, b'+/'))
+    result = binascii.a2b_base64(s, strict_mode=validate)
+    if badchar is not None:
+        import warnings
+        warnings.warn(f'invalid character {chr(badchar)!a} in base64 data '
+                      f'with altchars={altchars!r} will be discarded in '
+                      f'future Python versions',
+                      FutureWarning, stacklevel=2)
+    return result
 
 
 def standard_b64encode(s):
@@ -104,7 +120,7 @@ def standard_b64decode(s):
 
 
 _urlsafe_encode_translation = bytes.maketrans(b'+/', b'-_')
-_urlsafe_decode_translation = bytes.maketrans(b'-_', b'+/')
+_urlsafe_decode_translation = bytes.maketrans(b'+/-_', b'-_+/')
 
 def urlsafe_b64encode(s):
     """Encode bytes using the URL- and filesystem-safe Base64 alphabet.
