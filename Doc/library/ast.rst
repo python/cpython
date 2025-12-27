@@ -38,6 +38,8 @@ The abstract grammar is currently defined as follows:
    :language: asdl
 
 
+.. _ast_nodes:
+
 Node classes
 ------------
 
@@ -159,8 +161,7 @@ Node classes
    Previous versions of Python allowed the creation of AST nodes that were missing
    required fields. Similarly, AST node constructors allowed arbitrary keyword
    arguments that were set as attributes of the AST node, even if they did not
-   match any of the fields of the AST node. This behavior is deprecated and will
-   be removed in Python 3.15.
+   match any of the fields of the AST node. These cases now raise a :exc:`TypeError`.
 
 .. note::
     The descriptions of the specific node classes displayed here
