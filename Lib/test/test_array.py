@@ -8,6 +8,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
+from test.support import subTests
 import weakref
 import pickle
 import operator
@@ -1680,63 +1681,60 @@ class LargeArrayTest(unittest.TestCase):
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
 
-    def test_array_validity_after_call_user_method(self):
+    @subTests(
+        ("dtype", "items"),
+        [
+            ("b", [0] * 64),
+            ("B", [1, 2, 3]),
+            ("h", [1, 2, 3]),
+            ("H", [1, 2, 3]),
+            ("i", [1, 2, 3]),
+            ("l", [1, 2, 3]),
+            ("q", [1, 2, 3]),
+            ("I", [1, 2, 3]),
+            ("L", [1, 2, 3]),
+            ("Q", [1, 2, 3]),
+        ],
+    )
+    def test_setitem_use_after_clear_with_int_data(self, dtype, items):
         # gh-142555: Test for null pointer dereference in array.__setitem__
-        # via re-entrant __index__ or __float__.
+        # via re-entrant __index__ that clears the array.
+        victim = array.array(dtype, items)
 
-        def test_clear_array(victim):
-            class EvilIndex:
-                def __index__(self):
-                    # Re-entrant mutation: clear the array while __setitem__
-                    # still holds a pointer to the pre-clear buffer.
-                    victim.clear()
-                    return 0
+        class Index:
+            def __index__(self):
+                victim.clear()
+                return 0
 
-            with self.assertRaises(IndexError):
-                victim[1] = EvilIndex()
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
+        self.assertEqual(len(victim), 0)
 
-            self.assertEqual(len(victim), 0)
+    def test_setitem_use_after_shrink_with_int_data(self):
+        # gh-142555: Test for null pointer dereference in array.__setitem__
+        # via re-entrant __index__ that shrinks the array.
+        victim = array.array('b', [1, 2, 3])
 
-        def test_shrink_array(victim):
-            class ShrinkIndex:
-                def __index__(self):
-                    # Re-entrant mutation: change the array size while
-                    # __setitem__ still keep the original size.
-                    victim.pop()
-                    victim.pop()
-                    return 0
+        class Index:
+            def __index__(self):
+                victim.pop()
+                victim.pop()
+                return 0
 
-            with self.assertRaises(IndexError):
-                victim[1] = ShrinkIndex()
+        self.assertRaises(IndexError, victim.__setitem__, 1, Index())
 
-        test_clear_array(array.array('b', [0] * 64))
-        test_shrink_array(array.array('b', [1, 2, 3]))
-        test_clear_array(array.array('B', [1, 2, 3]))
-        test_clear_array(array.array('h', [1, 2, 3]))
-        test_clear_array(array.array('H', [1, 2, 3]))
-        test_clear_array(array.array('i', [1, 2, 3]))
-        test_clear_array(array.array('l', [1, 2, 3]))
-        test_clear_array(array.array('q', [1, 2, 3]))
-        test_clear_array(array.array('I', [1, 2, 3]))
-        test_clear_array(array.array('L', [1, 2, 3]))
-        test_clear_array(array.array('Q', [1, 2, 3]))
+    @subTests("dtype", ["f", "d"])
+    def test_setitem_use_after_clear_with_float_data(self, dtype):
+        # gh-142555: Test for null pointer dereference in array.__setitem__
+        # via re-entrant __float__ that clears the array.
+        victim = array.array(dtype, [1.0, 2.0, 3.0])
 
-        def test_clear_array_float(victim):
-            """Test array clearing scenario using __float__ method"""
-            class EvilFloat:
-                def __float__(self):
-                    # Re-entrant mutation: clear the array while __setitem__
-                    # still holds a pointer to the pre-clear buffer.
-                    victim.clear()
-                    return 0.0
+        class Float:
+            def __float__(self):
+                victim.clear()
+                return 0.0
 
-            with self.assertRaises(IndexError):
-                victim[1] = EvilFloat()
-
-            self.assertEqual(len(victim), 0)
-
-        test_clear_array_float(array.array('f', [1.0, 2.0, 3.0]))
-        test_clear_array_float(array.array('d', [1.0, 2.0, 3.0]))
+        self.assertRaises(IndexError, victim.__setitem__, 1, Float())
+        self.assertEqual(len(victim), 0)
 
 
 if __name__ == "__main__":
