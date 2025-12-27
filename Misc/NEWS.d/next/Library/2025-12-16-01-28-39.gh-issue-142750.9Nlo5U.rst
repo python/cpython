@@ -1,0 +1,1 @@
+Fix ``typing.ParamSpec(..., bound=None)`` so that ``__bound__`` is ``None`` instead of ``NoneType``.
