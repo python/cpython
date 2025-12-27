@@ -544,7 +544,7 @@ pytype_getmodulebytoken(PyObject *self, PyObject *args)
 }
 
 static PyType_Slot HeapCTypeWithBasesSlotInvalid_slots[] = {
-    {Py_tp_bases, Py_None},  /* Not a tuple - should raise SystemError */
+    {Py_tp_bases, NULL},  /* filled out with Py_None in runtime */
     {0, 0},
 };
 
@@ -558,6 +558,7 @@ static PyType_Spec HeapCTypeWithBasesSlotInvalid_spec = {
 static PyObject *
 create_heapctype_with_invalid_bases_slot(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    HeapCTypeWithBasesSlotInvalid_slots[0].pfunc = Py_None;
     return PyType_FromSpec(&HeapCTypeWithBasesSlotInvalid_spec);
 }
 
