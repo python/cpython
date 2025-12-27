@@ -552,7 +552,6 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                     message = ''
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
-            _validate_header_string(message)
             self._headers_buffer.append(("%s %d %s\r\n" %
                     (self.protocol_version, code, message)).encode(
                         'latin-1', 'strict'))

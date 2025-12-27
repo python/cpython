@@ -33,19 +33,14 @@ class Headers:
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
         self._headers = headers
-        if __debug__:
-            for k, v in headers:
-                self._validate_header_string(k)
-                self._validate_header_string(v)
 
     def _validate_header_string(self, value):
         """Validate header type and value."""
-        if type(value) is str:
-            if '\r' in value or '\n' in value:
-                raise ValueError('Invalid header name/value: contains CR or LF')
-            return value
-        raise AssertionError("Header names/values must be"
-            " of type str (got {0})".format(repr(value)))
+        if not isinstance(value, str):
+            raise AssertionError("Header names/values must be"
+                " of type str (got {0})".format(repr(value)))
+        if '\r' in value or '\n' in value:
+            raise ValueError('Invalid header name/value: contains CR or LF')
 
     def __len__(self):
         """Return the total number of headers, including duplicates."""
@@ -54,17 +49,18 @@ class Headers:
     def __setitem__(self, name, val):
         """Set the value of a header."""
         del self[name]
-        self._headers.append(
-            (self._validate_header_string(name),
-             self._validate_header_string(val)))
+        self._validate_header_string(name)
+        self._validate_header_string(val)
+        self._headers.append((name, val))
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
 
         Does *not* raise an exception if the header is missing.
         """
-        name = self._validate_header_string(name.lower())
-        self._headers[:] = [kv for kv in self._headers if kv[0].lower() != name]
+        self._headers[:] = [
+            kv for kv in self._headers if kv[0].lower() != name.lower()
+        ]
 
     def __getitem__(self,name):
         """Get the first header value for 'name'
@@ -90,15 +86,13 @@ class Headers:
         fields deleted and re-inserted are always appended to the header list.
         If no fields exist with the given name, returns an empty list.
         """
-        name = self._validate_header_string(name.lower())
-        return [kv[1] for kv in self._headers if kv[0].lower()==name]
+        return [kv[1] for kv in self._headers if kv[0].lower()==name.lower()]
 
 
     def get(self,name,default=None):
         """Get the first header value for 'name', or return 'default'"""
-        name = self._validate_header_string(name.lower())
         for k,v in self._headers:
-            if k.lower()==name:
+            if k.lower()==name.lower():
                 return v
         return default
 
@@ -151,8 +145,9 @@ class Headers:
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((self._validate_header_string(name),
-                self._validate_header_string(value)))
+            self._validate_header_string(name)
+            self._validate_header_string(value)
+            self._headers.append((name, value))
             return value
         else:
             return result
@@ -173,15 +168,16 @@ class Headers:
         *not* handle '(charset, language, value)' tuples: all values must be
         strings or None.
         """
+        self._validate_header_string(_name)
         parts = []
         if _value is not None:
-            _value = self._validate_header_string(_value)
+            self._validate_header_string(_value)
             parts.append(_value)
         for k, v in _params.items():
-            k = self._validate_header_string(k)
+            self._validate_header_string(k)
             if v is None:
                 parts.append(k.replace('_', '-'))
             else:
-                v = self._validate_header_string(v)
+                self._validate_header_string(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._validate_header_string(_name), "; ".join(parts)))
+        self._headers.append((_name, "; ".join(parts)))
