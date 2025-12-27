@@ -2857,6 +2857,24 @@ class Test_Pep523API(unittest.TestCase):
         names = ["func", "outer", "outer", "inner", "inner", "outer", "inner"]
         self.do_test(func, names)
 
+    def test_replaced_interpreter(self):
+        def inner():
+            yield 'abc'
+        def outer():
+            yield from inner()
+        def func():
+            list(outer())
+        _testinternalcapi.set_eval_frame_interp()
+        try:
+            func()
+        finally:
+            _testinternalcapi.set_eval_frame_default()
+
+        stats = _testinternalcapi.get_eval_frame_stats()
+
+        self.assertEqual(stats["resumes"], 5)
+        self.assertEqual(stats["loads"], 5)
+
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'need Py_GIL_DISABLED')
 class TestPyThreadId(unittest.TestCase):

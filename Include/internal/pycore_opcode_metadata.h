@@ -1075,7 +1075,7 @@ struct opcode_metadata {
     uint32_t flags;
 };
 
-extern const struct opcode_metadata _PyOpcode_opcode_metadata[267];
+PyAPI_DATA(const struct opcode_metadata) _PyOpcode_opcode_metadata[267];
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[267] = {
     [BINARY_OP] = { true, INSTR_FMT_IBC0000, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -1516,7 +1516,7 @@ _PyOpcode_macro_expansion[256] = {
 };
 #endif // NEED_OPCODE_METADATA
 
-extern const char *_PyOpcode_OpName[267];
+PyAPI_DATA(const char) *_PyOpcode_OpName[267];
 #ifdef NEED_OPCODE_METADATA
 const char *_PyOpcode_OpName[267] = {
     [ANNOTATIONS_PLACEHOLDER] = "ANNOTATIONS_PLACEHOLDER",
@@ -1759,7 +1759,7 @@ const char *_PyOpcode_OpName[267] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Caches[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL] = 3,
@@ -1784,7 +1784,7 @@ const uint8_t _PyOpcode_Caches[256] = {
 };
 #endif
 
-extern const uint8_t _PyOpcode_Deopt[256];
+PyAPI_DATA(const uint8_t) _PyOpcode_Deopt[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Deopt[256] = {
     [121] = 121,

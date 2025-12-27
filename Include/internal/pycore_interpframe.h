@@ -279,7 +279,7 @@ _PyThreadState_GetFrame(PyThreadState *tstate)
 
 /* For use by _PyFrame_GetFrameObject
   Do not call directly. */
-PyFrameObject *
+PyAPI_FUNC(PyFrameObject *)
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame);
 
 /* Gets the PyFrameObject for this frame, lazily
