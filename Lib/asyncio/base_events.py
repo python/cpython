@@ -1311,6 +1311,30 @@ class BaseEventLoop(events.AbstractEventLoop):
                 file.seek(offset + total_sent)
             await proto.restore()
 
+    def _transfer_buffered_data_to_ssl(self, protocol, ssl_protocol):
+        """Transfer buffered data from StreamReader to SSL incoming BIO.
+
+        When using start_tls() mid-connection (e.g., after reading a
+        PROXY protocol header), any data already buffered in the
+        StreamReader would be lost. This transfers that data to the
+        SSL layer so the handshake can proceed.
+
+        Note: This only works with StreamReaderProtocol (used by the
+        streams API). Custom Protocol implementations that buffer data
+        must handle this manually before calling start_tls().
+        """
+        if not hasattr(protocol, '_stream_reader'):
+            return
+
+        stream_reader = protocol._stream_reader
+        if stream_reader is None:
+            return
+
+        buffer = stream_reader._buffer
+        if buffer:
+            ssl_protocol._incoming.write(buffer)
+            buffer.clear()
+
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,
                         server_hostname=None,
@@ -1340,6 +1364,8 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl_handshake_timeout=ssl_handshake_timeout,
             ssl_shutdown_timeout=ssl_shutdown_timeout,
             call_connection_made=False)
+
+        self._transfer_buffered_data_to_ssl(protocol, ssl_protocol)
 
         # Pause early so that "ssl_protocol.data_received()" doesn't
         # have a chance to get called before "ssl_protocol.connection_made()".

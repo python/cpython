@@ -819,6 +819,165 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(msg1, b"hello world 1!\n")
         self.assertEqual(msg2, b"hello world 2!\n")
 
+    def _run_test_start_tls_behind_proxy(self, send_combined):
+        """Test start_tls() when TLS ClientHello arrives with PROXY header.
+
+        This simulates HAProxy with send-proxy, where the PROXY protocol
+        header and TLS handshake data may arrive in the same TCP segment.
+        Without the fix, buffered TLS data would be lost after start_tls().
+        """
+
+        def reverse_message(data):
+            return data.strip()[::-1] + b'\n'
+
+        test_message = b"hello world\n"
+        expected_response = reverse_message(test_message)
+
+        class TCPProxyServer:
+            """A simple TCP proxy server that adds a PROXY protocol header
+            before forwarding data to the target server."""
+
+            PROXY_LINE = b"PROXY TCP4 127.0.0.1 127.0.0.1 54321 443\r\n"
+
+            def __init__(self, loop, target_host, target_port):
+                self.loop = loop
+                self.target_host = target_host
+                self.target_port = target_port
+                self.server = None
+
+            async def _pipe(self, reader, writer):
+                try:
+                    while True:
+                        data = await reader.read(4096)
+                        if not data:
+                            break
+                        writer.write(data)
+                        await writer.drain()
+                finally:
+                    writer.close()
+                    await writer.wait_closed()
+
+            async def handle_client(self, client_reader, client_writer):
+                # Connecting to the target server
+                remote_reader, remote_writer = await asyncio.open_connection(
+                    self.target_host, self.target_port)
+
+                # Reading data from the client (TLS ClientHello)
+                tls_data = await client_reader.read(4096)
+
+                if send_combined:
+                    # send everything together: PROXY + TLS data
+                    remote_writer.write(self.PROXY_LINE + tls_data)
+                    await remote_writer.drain()
+                else:
+                    # send TLS data after the PROXY line
+                    remote_writer.write(self.PROXY_LINE)
+                    await remote_writer.drain()
+                    await asyncio.sleep(0.01)
+                    remote_writer.write(tls_data)
+                    await remote_writer.drain()
+
+                await asyncio.gather(
+                    self._pipe(client_reader, remote_writer),
+                    self._pipe(remote_reader, client_writer),
+                )
+
+            def start(self):
+                sock = socket.create_server(('127.0.0.1', 0))
+                self.server = self.loop.run_until_complete(
+                    asyncio.start_server(self.handle_client, sock=sock))
+                return sock.getsockname()
+
+            def stop(self):
+                if self.server:
+                    self.server.close()
+                    self.loop.run_until_complete(self.server.wait_closed())
+                    self.server = None
+
+        class ServerWithSendProxySupport:
+            """A server that supports the PROXY protocol and starts TLS
+            after receiving the PROXY header."""
+
+            def __init__(self, test_case, loop):
+                self.test = test_case
+                self.server = None
+                self.loop = loop
+
+            async def handle_client(self, client_reader, client_writer):
+                proxy_line = await client_reader.readline()
+                self.test.assertEqual(proxy_line, TCPProxyServer.PROXY_LINE)
+
+                # Now we can start TLS
+                self.test.assertIsNone(
+                    client_writer.get_extra_info('sslcontext'))
+                await client_writer.start_tls(
+                    test_utils.simple_server_sslcontext()
+                )
+                self.test.assertIsNotNone(
+                    client_writer.get_extra_info('sslcontext'))
+
+                data = await client_reader.readline()
+                client_writer.write(reverse_message(data))
+                await client_writer.drain()
+                client_writer.close()
+                await client_writer.wait_closed()
+
+            def start(self):
+                sock = socket.create_server(('127.0.0.1', 0))
+                self.server = self.loop.run_until_complete(
+                    asyncio.start_server(self.handle_client,
+                                         sock=sock))
+                return sock.getsockname()
+
+            def stop(self):
+                if self.server is not None:
+                    self.server.close()
+                    self.loop.run_until_complete(self.server.wait_closed())
+                    self.server = None
+
+        async def client(addr, test_case):
+            reader, writer = await asyncio.open_connection(*addr)
+
+            test_case.assertIsNone(writer.get_extra_info('sslcontext'))
+            await writer.start_tls(test_utils.simple_client_sslcontext())
+            test_case.assertIsNotNone(writer.get_extra_info('sslcontext'))
+
+            writer.write(test_message)
+            await writer.drain()
+            msgback = await reader.readline()
+            writer.close()
+            await writer.wait_closed()
+            return msgback
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        server = ServerWithSendProxySupport(self, self.loop)
+        server_addr = server.start()
+
+        proxy = TCPProxyServer(self.loop, *server_addr)
+        proxy_addr = proxy.start()
+
+        msg = self.loop.run_until_complete(
+            asyncio.wait_for(client(proxy_addr, self), timeout=5.0)
+        )
+
+        proxy.stop()
+        server.stop()
+
+        self.assertEqual(messages, [])
+        self.assertEqual(msg, expected_response)
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_behind_proxy_send_combined(self):
+        # Test with sending PROXY header and TLS data in one packet
+        self._run_test_start_tls_behind_proxy(send_combined=True)
+
+    @unittest.skipIf(ssl is None, 'No ssl module')
+    def test_start_tls_behind_proxy_send_separate(self):
+        # Test with sending PROXY header and TLS data in separate packets
+        self._run_test_start_tls_behind_proxy(send_combined=False)
+
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             asyncio.StreamReader()
