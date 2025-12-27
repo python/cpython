@@ -43,7 +43,7 @@ Node classes
 
 .. class:: AST
 
-   This is the base of all AST node classes.  The actual node classes are
+   This is the abstract base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
    :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
    module and re-exported in :mod:`ast`.
@@ -161,6 +161,15 @@ Node classes
    arguments that were set as attributes of the AST node, even if they did not
    match any of the fields of the AST node. This behavior is deprecated and will
    be removed in Python 3.15.
+
+.. deprecated-removed:: next 3.20
+
+    In the :ref:`grammar above <abstract-grammar>`, the AST node classes that
+    correspond to production rules with variants (aka "sums") are abstract
+    classes. Previous versions of Python allowed for the creation of direct
+    instances of these abstract node classes. This behavior is deprecated and
+    will be removed in Python 3.20.
+
 
 .. note::
     The descriptions of the specific node classes displayed here

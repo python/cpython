@@ -30,3 +30,8 @@ Pending removal in Python 3.20
   - :mod:`zlib`
 
   (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)
+
+* :mod:`ast`:
+
+  * Creating instances of abstract AST nodes (such as :class:`ast.AST`
+    or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
