@@ -1,0 +1,4 @@
+The :mod:`netrc` module now checks the :envvar:`!NETRC` environment
+variable when no file path is explicitly passed to :func:`netrc.netrc`.
+If :envvar:`!NETRC` is not set, it falls back to the :file:`.netrc` file in the
+user's home directory.
