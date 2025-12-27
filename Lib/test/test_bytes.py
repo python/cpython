@@ -1382,18 +1382,17 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             except OSError:
                 pass
 
-    def test_mod_use_after_free(self):
-        # Prevent UAF in bytearray % (a1, a2) with re-entrant a[12].__repr__.
+    def test_mod_concurrent_mutation(self):
+        # Prevent crash in __mod__ when formatting mutates the bytearray.
         # Regression test for https://github.com/python/cpython/issues/142557.
-        fmt = bytearray(b"%a %a")
+        fmt = bytearray(b"%a end")
 
         class S:
             def __repr__(self):
                 fmt.clear()
                 return "E"
 
-        args = (S(), S())
-        self.assertRaises(BufferError, fmt.__mod__, args)
+        self.assertRaises(BufferError, fmt.__mod__, S())
 
     def test_reverse(self):
         b = bytearray(b'hello')
