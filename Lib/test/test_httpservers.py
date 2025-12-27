@@ -1068,6 +1068,32 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(output.getData(), b'Foo: foo\r\nbar: bar\r\n\r\n')
         self.assertEqual(output.numWrites, 1)
 
+    def test_crlf_injection_in_header_value(self):
+        input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+
+        with self.assertRaises(ValueError) as ctx:
+            handler.send_header('X-Custom', 'value\r\nSet-Cookie: custom=true')
+        self.assertIn('Invalid header name/value: contains CR or LF',
+                      str(ctx.exception))
+
+    def test_crlf_injection_in_header_name(self):
+        input = BytesIO(b'GET / HTTP/1.1\r\n\r\n')
+        output = AuditableBytesIO()
+        handler = SocketlessRequestHandler()
+        handler.rfile = input
+        handler.wfile = output
+        handler.request_version = 'HTTP/1.1'
+
+        with self.assertRaises(ValueError) as ctx:
+            handler.send_header('X-Inj\r\nSet-Cookie', 'value')
+        self.assertIn('Invalid header name/value: contains CR or LF',
+                      str(ctx.exception))
+
     def test_header_unbuffered_when_continue(self):
 
         def _readAndReseek(f):
