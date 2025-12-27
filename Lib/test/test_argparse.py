@@ -7663,6 +7663,22 @@ class TestColorized(TestCase):
         help_text = parser.format_help()
         self.assertIn(f'{prog_extra}grep "foo.*bar" | sort{reset}', help_text)
 
+    def test_help_with_format_specifiers(self):
+        # GH-142950: format specifiers like %x should work with color=True
+        parser = argparse.ArgumentParser(prog='PROG', color=True)
+        parser.add_argument('--hex', type=int, default=255,
+                            help='hex: %(default)x')
+        parser.add_argument('--str', default='test',
+                            help='str: %(default)s')
+
+        help_text = parser.format_help()
+
+        interp = self.theme.interpolated_value
+        reset = self.theme.reset
+
+        self.assertIn(f'hex: {interp}ff{reset}', help_text)
+        self.assertIn(f'str: {interp}test{reset}', help_text)
+
     def test_print_help_uses_target_file_for_color_decision(self):
         parser = argparse.ArgumentParser(prog='PROG', color=True)
         parser.add_argument('--opt')
