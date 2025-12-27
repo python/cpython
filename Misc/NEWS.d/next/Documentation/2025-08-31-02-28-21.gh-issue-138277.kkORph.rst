@@ -1,0 +1,2 @@
+Rearranged documentation search results to emphasize built-in types and
+functions.  Patch by Adam Hartz.
