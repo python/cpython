@@ -1268,16 +1268,16 @@ OrderedDict_copy_impl(PyObject *od)
     else {
         PyODictObject *self = _PyODictObject_CAST(od);
         size_t state = self->od_state;
-        _ODictNode *cur = _odict_FIRST(od);
+        _ODictNode *cur;
 
-        while (cur != NULL) {
+        _odict_FOREACH(od, cur) {
             if (self->od_state != state) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "OrderedDict mutated during iteration");
                 goto fail;
             }
             PyObject *key = Py_NewRef(_odictnode_KEY(cur));
-            PyObject *value = PyObject_GetItem((PyObject *)od, key);
+            PyObject *value = PyObject_GetItem(od, key);
             if (value == NULL) {
                 Py_DECREF(key);
                 goto fail;
@@ -1289,15 +1289,12 @@ OrderedDict_copy_impl(PyObject *od)
                                 "OrderedDict mutated during iteration");
                 goto fail;
             }
-            if (PyObject_SetItem((PyObject *)od_copy, key, value) != 0) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                goto fail;
-            }
+            int rc = PyObject_SetItem(od_copy, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
-
-            cur = _odictnode_NEXT(cur);
+            if (rc != 0) {
+                goto fail;
+            }
         }
     }
     return od_copy;

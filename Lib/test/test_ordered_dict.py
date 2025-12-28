@@ -874,26 +874,6 @@ class CPythonOrderedDictSideEffects:
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
 
-    def test_getitem_re_entrant_clear_during_copy(self):
-        class Evil(self.OrderedDict):
-            def __getitem__(self, key):
-                super().clear()
-                return None
-
-        evil_dict = Evil([(i, i) for i in range(4)])
-        with self.assertRaises(RuntimeError):
-            result = evil_dict.copy()
-
-    def test_getitem_re_entrant_modify_during_copy(self):
-        class Modifier(self.OrderedDict):
-            def __getitem__(self, key):
-                self['new_key'] = 'new_value'
-                return super().__getitem__(key)
-
-        original = Modifier([(1, 'one'), (2, 'two')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
-
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')
 class CPythonOrderedDictTests(OrderedDictTests,
@@ -990,6 +970,77 @@ class CPythonOrderedDictTests(OrderedDictTests,
         del x, cycle, x_ref
 
         gc.collect()
+
+    def test_getitem_re_entrant_clear_during_copy(self):
+        class Evil(self.OrderedDict):
+            def __getitem__(self, key):
+                super().clear()
+                return None
+
+        evil_dict = Evil([(i, i) for i in range(4)])
+        with self.assertRaises(RuntimeError):
+            result = evil_dict.copy()
+
+    def test_getitem_re_entrant_modify_during_copy(self):
+        class Modifier(self.OrderedDict):
+            def __getitem__(self, key):
+                self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        original = Modifier([(1, 'one'), (2, 'two')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
+
+    def test_getitem_re_entrant_delete_during_copy(self):
+        class Deleter(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                Deleter.call_count += 1
+                if Deleter.call_count == 1:
+                    del self[3]
+                return super().__getitem__(key)
+
+        original = Deleter([(1, 'one'), (2, 'two'), (3, 'three')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
+
+    def test_getitem_re_entrant_add_during_copy(self):
+        class MultiAdder(self.OrderedDict):
+            def __getitem__(self, key):
+                self['new_key1'] = 'new_value1'
+                return super().__getitem__(key)
+
+        original = MultiAdder([(1, 'one'), (2, 'two'), (3, 'three')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
+
+    def test_getitem_re_entrant_pop_during_copy(self):
+        class Popper(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                Popper.call_count += 1
+                if Popper.call_count == 1:
+                    self.pop(3, None)
+                return super().__getitem__(key)
+
+        original = Popper([(1, 'one'), (2, 'two'), (3, 'three')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
+
+    def test_getitem_re_entrant_mixed_mutation_during_copy(self):
+        class MixedMutator(self.OrderedDict):
+            call_count = 0
+            def __getitem__(self, key):
+                MixedMutator.call_count += 1
+                if MixedMutator.call_count == 1:
+                    del self[3]
+                elif MixedMutator.call_count == 2:
+                    self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        original = MixedMutator([(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
