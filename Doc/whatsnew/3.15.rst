@@ -485,6 +485,14 @@ dataclasses
   type names.
 
 
+datetime
+--------
+
+* Add the :meth:`~datetime.date.strptime` method to the
+  :class:`datetime.date` and :class:`datetime.time` classes.
+  (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+
 dbm
 ---
 

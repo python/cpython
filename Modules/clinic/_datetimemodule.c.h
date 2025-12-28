@@ -892,13 +892,14 @@ exit:
 }
 
 PyDoc_STRVAR(datetime_time_isoformat__doc__,
-"isoformat($self, /, timespec=\'auto\')\n"
+"isoformat($self, /, timespec=\'auto\', basic=False)\n"
 "--\n"
 "\n"
 "Return the time formatted according to ISO.\n"
 "\n"
-"The full format is \'HH:MM:SS.mmmmmm+zz:zz\'. By default, the fractional\n"
-"part is omitted if self.microsecond == 0.\n"
+"The full format is \'HH:MM:SS.mmmmmm+zz:zz\'. If basic is true,\n"
+"separators \':\' are removed from the output (e.g., HHMMSS).\n"
+"By default, the fractional part is omitted if self.microsecond == 0.\n"
 "\n"
 "The optional argument timespec specifies the number of additional\n"
 "terms of the time to include. Valid options are \'auto\', \'hours\',\n"
@@ -908,7 +909,8 @@ PyDoc_STRVAR(datetime_time_isoformat__doc__,
     {"isoformat", _PyCFunction_CAST(datetime_time_isoformat), METH_FASTCALL|METH_KEYWORDS, datetime_time_isoformat__doc__},
 
 static PyObject *
-datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec);
+datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec,
+                             int basic);
 
 static PyObject *
 datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -916,7 +918,7 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 1
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -925,7 +927,7 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(timespec), },
+        .ob_item = { &_Py_ID(timespec), &_Py_ID(basic), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -934,40 +936,50 @@ datetime_time_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"timespec", NULL};
+    static const char * const _keywords[] = {"timespec", "basic", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "isoformat",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *timespec = NULL;
+    int basic = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[0]);
-        goto exit;
+    if (args[0]) {
+        if (!PyUnicode_Check(args[0])) {
+            _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[0]);
+            goto exit;
+        }
+        Py_ssize_t timespec_length;
+        timespec = PyUnicode_AsUTF8AndSize(args[0], &timespec_length);
+        if (timespec == NULL) {
+            goto exit;
+        }
+        if (strlen(timespec) != (size_t)timespec_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[0], &timespec_length);
-    if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
+    basic = PyObject_IsTrue(args[1]);
+    if (basic < 0) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = datetime_time_isoformat_impl((PyDateTime_Time *)self, timespec);
+    return_value = datetime_time_isoformat_impl((PyDateTime_Time *)self, timespec, basic);
 
 exit:
     return return_value;
@@ -1725,7 +1737,7 @@ exit:
 }
 
 PyDoc_STRVAR(datetime_datetime_isoformat__doc__,
-"isoformat($self, /, sep=\'T\', timespec=\'auto\')\n"
+"isoformat($self, /, sep=\'T\', timespec=\'auto\', basic=False)\n"
 "--\n"
 "\n"
 "Return the time formatted according to ISO.\n"
@@ -1737,7 +1749,8 @@ PyDoc_STRVAR(datetime_datetime_isoformat__doc__,
 "a full format of \'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM\'.\n"
 "\n"
 "Optional argument sep specifies the separator between date and\n"
-"time, default \'T\'.\n"
+"time, default \'T\'. If basic is true, separators \':\' and \'-\' are\n"
+"removed from the output (e.g., YYYYMMDDTHHMMSS).\n"
 "\n"
 "The optional argument timespec specifies the number of additional\n"
 "terms of the time to include. Valid options are \'auto\', \'hours\',\n"
@@ -1748,7 +1761,7 @@ PyDoc_STRVAR(datetime_datetime_isoformat__doc__,
 
 static PyObject *
 datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
-                                 const char *timespec);
+                                 const char *timespec, int basic);
 
 static PyObject *
 datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1756,7 +1769,7 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1765,7 +1778,7 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(sep), &_Py_ID(timespec), },
+        .ob_item = { &_Py_ID(sep), &_Py_ID(timespec), &_Py_ID(basic), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1774,20 +1787,21 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"sep", "timespec", NULL};
+    static const char * const _keywords[] = {"sep", "timespec", "basic", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "isoformat",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int sep = 'T';
     const char *timespec = NULL;
+    int basic = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1811,21 +1825,30 @@ datetime_datetime_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t na
             goto skip_optional_pos;
         }
     }
-    if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[1]);
-        goto exit;
+    if (args[1]) {
+        if (!PyUnicode_Check(args[1])) {
+            _PyArg_BadArgument("isoformat", "argument 'timespec'", "str", args[1]);
+            goto exit;
+        }
+        Py_ssize_t timespec_length;
+        timespec = PyUnicode_AsUTF8AndSize(args[1], &timespec_length);
+        if (timespec == NULL) {
+            goto exit;
+        }
+        if (strlen(timespec) != (size_t)timespec_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
     }
-    Py_ssize_t timespec_length;
-    timespec = PyUnicode_AsUTF8AndSize(args[1], &timespec_length);
-    if (timespec == NULL) {
-        goto exit;
-    }
-    if (strlen(timespec) != (size_t)timespec_length) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
+    basic = PyObject_IsTrue(args[2]);
+    if (basic < 0) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = datetime_datetime_isoformat_impl((PyDateTime_DateTime *)self, sep, timespec);
+    return_value = datetime_datetime_isoformat_impl((PyDateTime_DateTime *)self, sep, timespec, basic);
 
 exit:
     return return_value;
@@ -2090,4 +2113,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=69658acff6a43ac4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4bdd9006166008a9 input=a9049054013a1b77]*/

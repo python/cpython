@@ -1256,14 +1256,6 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133139`.)
 
 
-datetime
---------
-
-* Add the :meth:`~datetime.date.strptime` method to the
-  :class:`datetime.date` and :class:`datetime.time` classes.
-  (Contributed by Wannes Boeykens in :gh:`41431`.)
-
-
 decimal
 -------
 
