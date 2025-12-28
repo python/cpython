@@ -267,13 +267,19 @@ Refer to the documentation of the individual functions for more information.
    .. versionadded:: 3.4
 
 
-.. function:: z85encode(s)
+.. function:: z85encode(s, pad=False)
 
    Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
    and return the encoded :class:`bytes`.  See `Z85  specification
    <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
+   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   multiple of 4 bytes before encoding.
+
    .. versionadded:: 3.13
+
+   .. versionchanged:: next
+      The *pad* parameter was added.
 
 
 .. function:: z85decode(s)

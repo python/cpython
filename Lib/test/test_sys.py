@@ -730,14 +730,12 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('pymutex', None))
-        if sys.platform.startswith(("linux", "android", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd", "wasi")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
         elif sys.platform == "emscripten":
             self.assertIn(info.name, {"pthread", "pthread-stubs"})
-        elif sys.platform == "wasi":
-            self.assertEqual(info.name, "pthread-stubs")
 
     def test_abi_info(self):
         info = sys.abi_info
@@ -1583,7 +1581,7 @@ class SizeofTest(unittest.TestCase):
         samples = [b'', b'u'*100000]
         for sample in samples:
             x = bytearray(sample)
-            check(x, vsize('n2Pi') + x.__alloc__())
+            check(x, vsize('n2PiP') + x.__alloc__())
         # bytearray_iterator
         check(iter(bytearray()), size('nP'))
         # bytes
@@ -1725,9 +1723,10 @@ class SizeofTest(unittest.TestCase):
         check(int(PyLong_BASE**2), vsize('') + 3*self.longdigit)
         # module
         if support.Py_GIL_DISABLED:
-            check(unittest, size('PPPPPP'))
+            md_gil = '?'
         else:
-            check(unittest, size('PPPPP'))
+            md_gil = ''
+        check(unittest, size('PPPP?' + md_gil + 'NPPPPP'))
         # None
         check(None, size(''))
         # NotImplementedType
@@ -2252,9 +2251,10 @@ class TestSysJIT(unittest.TestCase):
 
             def frame_3_jit() -> None:
                 # JITs just before the last loop:
-                for i in range(_testinternalcapi.TIER2_THRESHOLD + 1):
+                # 1 extra iteration for tracing.
+                for i in range(_testinternalcapi.TIER2_THRESHOLD + 2):
                     # Careful, doing this in the reverse order breaks tracing:
-                    expected = {enabled} and i == _testinternalcapi.TIER2_THRESHOLD
+                    expected = {enabled} and i >= _testinternalcapi.TIER2_THRESHOLD
                     assert sys._jit.is_active() is expected
                     frame_2_jit(expected)
                     assert sys._jit.is_active() is expected

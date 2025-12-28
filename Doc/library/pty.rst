@@ -38,7 +38,7 @@ The :mod:`pty` module defines the following functions:
    .. warning:: On macOS the use of this function is unsafe when mixed with using
       higher-level system APIs, and that includes using :mod:`urllib.request`.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       The returned file descriptor is now made non-inheritable.
 
 

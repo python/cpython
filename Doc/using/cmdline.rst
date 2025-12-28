@@ -512,7 +512,7 @@ Miscellaneous options
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -989,7 +989,7 @@ conflict.
    See :ref:`warning-filter` and :ref:`describing-warning-filters` for more
    details.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.15
       Added regular expression support for *message* and *module*.
 
 
@@ -1277,9 +1277,8 @@ conflict.
 .. envvar:: PYTHON_BASIC_REPL
 
    If this variable is set to any value, the interpreter will not attempt to
-   load the Python-based :term:`REPL` that requires :mod:`curses` and
-   :mod:`readline`, and will instead use the traditional parser-based
-   :term:`REPL`.
+   load the Python-based :term:`REPL` that requires :mod:`readline`, and will
+   instead use the traditional parser-based :term:`REPL`.
 
    .. versionadded:: 3.13
 

@@ -39,16 +39,6 @@ Py_DEPRECATED(3.14) PyAPI_FUNC(PyObject *) _PyDict_GetItemStringWithError(PyObje
 PyAPI_FUNC(PyObject *) PyDict_SetDefault(
     PyObject *mp, PyObject *key, PyObject *defaultobj);
 
-// Inserts `key` with a value `default_value`, if `key` is not already present
-// in the dictionary.  If `result` is not NULL, then the value associated
-// with `key` is returned in `*result` (either the existing value, or the now
-// inserted `default_value`).
-// Returns:
-//   -1 on error
-//    0 if `key` was not present and `default_value` was inserted
-//    1 if `key` was present and `default_value` was not inserted
-PyAPI_FUNC(int) PyDict_SetDefaultRef(PyObject *mp, PyObject *key, PyObject *default_value, PyObject **result);
-
 /* Get the number of items of a dictionary. */
 static inline Py_ssize_t PyDict_GET_SIZE(PyObject *op) {
     PyDictObject *mp;
