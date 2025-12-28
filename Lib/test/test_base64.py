@@ -5,7 +5,7 @@ import string
 import sys
 import os
 from array import array
-from test.support import cpython_only
+from test.support import cpython_only, check_impl_detail
 from test.support import os_helper
 from test.support import script_helper
 from test.support.import_helper import ensure_lazy_imports
@@ -181,10 +181,11 @@ class BaseXYTestCase(unittest.TestCase):
            b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=')
         eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize),
            b'd3d3LnB5dGhvbi5vcmc=')
-        eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize*2),
-           b'd3d3LnB5dGhvbi5vcmc=')
-        with self.assertRaises(OverflowError):
-            base64.b64encode(b"www.python.org", wrapcol=2**1000)
+        if check_impl_detail():
+            eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize*2),
+               b'd3d3LnB5dGhvbi5vcmc=')
+            with self.assertRaises(OverflowError):
+                base64.b64encode(b"www.python.org", wrapcol=2**1000)
         with self.assertRaises(ValueError):
             base64.b64encode(b"www.python.org", wrapcol=-8)
         with self.assertRaises(TypeError):
