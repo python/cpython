@@ -214,9 +214,9 @@ class BaseXYTestCase(unittest.TestCase):
         b = b'www.python.org'
         eq(base64.b64encode(b, wrapcol=0), b'd3d3LnB5dGhvbi5vcmc=')
         eq(base64.b64encode(b, wrapcol=8), b'd3d3LnB5\ndGhvbi5v\ncmc=')
+        eq(base64.b64encode(b, wrapcol=11), b'd3d3LnB5\ndGhvbi5v\ncmc=')
         eq(base64.b64encode(b, wrapcol=76), b'd3d3LnB5dGhvbi5vcmc=')
-        eq(base64.b64encode(b, wrapcol=1),
-           b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=')
+        eq(base64.b64encode(b, wrapcol=1), b'd3d3\nLnB5\ndGhv\nbi5v\ncmc=')
         eq(base64.b64encode(b, wrapcol=sys.maxsize), b'd3d3LnB5dGhvbi5vcmc=')
         if check_impl_detail():
             eq(base64.b64encode(b, wrapcol=sys.maxsize*2),

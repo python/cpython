@@ -565,7 +565,6 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
 
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
-
     assert(bin_len >= 0);
 
     /* Each group of 3 bytes (rounded up) gets encoded as 4 characters,
@@ -579,6 +578,8 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, size_t wrapcol,
         goto toolong;
     }
     if (wrapcol && out_len) {
+        /* Each line should encode a whole number of bytes. */
+        wrapcol = wrapcol < 4 ? 4 : wrapcol / 4 * 4;
         out_len += (out_len - 1u) / wrapcol;
         if (out_len > PY_SSIZE_T_MAX) {
             goto toolong;

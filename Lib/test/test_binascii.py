@@ -493,12 +493,14 @@ class BinASCIITest(unittest.TestCase):
                          b'd3d3LnB5dGhvbi5vcmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=8),
                          b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
+        self.assertEqual(binascii.b2a_base64(b, wrapcol=11),
+                         b'd3d3LnB5\ndGhvbi5v\ncmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=76),
                          b'd3d3LnB5dGhvbi5vcmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=8, newline=False),
                          b'd3d3LnB5\ndGhvbi5v\ncmc=')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=1),
-            b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=\n')
+                         b'd3d3\nLnB5\ndGhv\nbi5v\ncmc=\n')
         self.assertEqual(binascii.b2a_base64(b, wrapcol=sys.maxsize),
                          b'd3d3LnB5dGhvbi5vcmc=\n')
         if check_impl_detail():
