@@ -1,1 +1,1 @@
-Updated timeout evaluation logic to be compatible with deterministic environments like Shadow where time moves exactly as requested.
+Updated timeout evaluation logic in :mod:`subprocess` to be compatible with deterministic environments like Shadow where time moves exactly as requested.
