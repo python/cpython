@@ -1367,15 +1367,15 @@ class NumberTest(BaseTest):
         b = array.array(self.typecode, a)
         self.assertEqual(a, b)
 
-    def test_tofile_use_after_free(self):
-        CHUNK = 64 * 1024
-        victim = array.array('B', b'\0' * (CHUNK * 2))
+    def test_tofile_concurrent_mutation(self):
+        BLOCKSIZE = 64 * 1024
+        victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
 
         class Writer:
-            armed = True
+            cleared = False
             def write(self, data):
-                if Writer.armed:
-                    Writer.armed = False
+                if not self.cleared:
+                    self.cleared = True
                     victim.clear()
                 return 0
 
