@@ -206,6 +206,9 @@ The ``ZoneInfo`` class has two alternate constructors:
 
     Objects created via this constructor cannot be pickled (see `pickling`_).
 
+    :exc:`ValueError` is raised if the data read from *file_obj* is not a valid
+    TZif file.
+
 .. classmethod:: ZoneInfo.no_cache(key)
 
     An alternate constructor that bypasses the constructor's cache. It is
