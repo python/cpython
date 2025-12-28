@@ -1752,7 +1752,12 @@ class TestGetStackTrace(RemoteInspectionTestBase):
                     unwinder_gil = RemoteUnwinder(
                         p.pid, only_active_thread=True
                     )
-                    gil_traces = _get_stack_trace_with_retry(unwinder_gil)
+                    # Use condition to retry until we capture a thread holding the GIL
+                    # (sampling may catch moments with no GIL holder on slow CI)
+                    gil_traces = _get_stack_trace_with_retry(
+                        unwinder_gil,
+                        condition=lambda t: sum(len(i.threads) for i in t) >= 1,
+                    )
 
                     # Count threads
                     total_threads = sum(
