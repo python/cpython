@@ -80,3 +80,60 @@ class TestEncode(CTest):
     def test_unsortable_keys(self):
         with self.assertRaises(TypeError):
             self.json.encoder.JSONEncoder(sort_keys=True).encode({'a': 1, 1: 'a'})
+
+    def test_indent_argument_to_encoder(self):
+        # gh-143196: indent must be str, int, or None
+        # int is converted to spaces
+        enc = self.json.encoder.c_make_encoder(
+            None, lambda obj: obj, lambda obj: obj,
+            4, ':', ', ', False, False, False,
+        )
+        result = enc({'a': 1}, 0)
+        self.assertIn('    ', result[0])  # 4 spaces
+
+        # Negative int should raise ValueError
+        with self.assertRaisesRegex(
+            ValueError,
+            r'make_encoder\(\) argument 4 must be a non-negative int',
+        ):
+            self.json.encoder.c_make_encoder(None, None, None, -1, ': ', ', ',
+                                             False, False, False)
+
+        # Other types should raise TypeError
+        with self.assertRaisesRegex(
+            TypeError,
+            r'make_encoder\(\) argument 4 must be str, int, or None, not list',
+        ):
+            self.json.encoder.c_make_encoder(None, None, None, [' '],
+                                             ': ', ', ', False, False, False)
+
+    def test_nonzero_indent_level_with_indent(self):
+        # gh-143196: _current_indent_level must be 0 when indent is set
+        # This prevents heap-buffer-overflow from uninitialized cache access
+        # and also prevents re-entrant __mul__ attacks since PySequence_Repeat
+        # is only called when indent_level != 0
+        enc = self.json.encoder.c_make_encoder(
+            None, lambda obj: obj, lambda obj: obj,
+            '  ', ':', ', ', False, False, False,
+        )
+        # indent_level=0 should work
+        enc([None], 0)
+        # indent_level!=0 should raise ValueError
+        with self.assertRaisesRegex(
+            ValueError,
+            r'_current_indent_level must be 0 when indent is set',
+        ):
+            enc([None], 1)
+
+        # Verify that str subclasses with custom __mul__ are safe because
+        # __mul__ is never called when indent_level=0
+        class CustomIndent(str):
+            def __mul__(self, count):
+                raise RuntimeError("__mul__ should not be called")
+
+        enc2 = self.json.encoder.c_make_encoder(
+            None, lambda obj: obj, lambda obj: obj,
+            CustomIndent('  '), ':', ', ', False, False, False,
+        )
+        # This should work - __mul__ is not called when indent_level=0
+        enc2({'a': 1}, 0)

@@ -1319,14 +1319,47 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    /* Convert indent to str if it's not None or already a string */
+    if (indent != Py_None && !PyUnicode_Check(indent)) {
+        Py_ssize_t indent_level;
+        if (!PyIndex_Check(indent)) {
+            PyErr_Format(PyExc_TypeError,
+                         "make_encoder() argument 4 must be str, int, or None, "
+                         "not %.200s", Py_TYPE(indent)->tp_name);
+            return NULL;
+        }
+        indent_level = PyNumber_AsSsize_t(indent, PyExc_ValueError);
+        if (indent_level == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (indent_level < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "make_encoder() argument 4 must be a non-negative int");
+            return NULL;
+        }
+        /* Create a string of spaces: ' ' * indent_level */
+        indent = PyUnicode_New(indent_level, ' ');
+        if (indent == NULL) {
+            return NULL;
+        }
+        if (indent_level > 0) {
+            memset(PyUnicode_1BYTE_DATA(indent), ' ', indent_level);
+        }
+    }
+    else {
+        Py_INCREF(indent);
+    }
+
     s = (PyEncoderObject *)type->tp_alloc(type, 0);
-    if (s == NULL)
+    if (s == NULL) {
+        Py_DECREF(indent);
         return NULL;
+    }
 
     s->markers = Py_NewRef(markers);
     s->defaultfn = Py_NewRef(defaultfn);
     s->encoder = Py_NewRef(encoder);
-    s->indent = Py_NewRef(indent);
+    s->indent = indent;  /* Already incref'd or newly created */
     s->key_separator = Py_NewRef(key_separator);
     s->item_separator = Py_NewRef(item_separator);
     s->sort_keys = sort_keys;
@@ -1453,6 +1486,12 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
 
     PyObject *indent_cache = NULL;
     if (self->indent != Py_None) {
+        if (indent_level != 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "_current_indent_level must be 0 when indent is set");
+            PyUnicodeWriter_Discard(writer);
+            return NULL;
+        }
         indent_cache = create_indent_cache(self, indent_level);
         if (indent_cache == NULL) {
             PyUnicodeWriter_Discard(writer);
