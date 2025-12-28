@@ -707,10 +707,6 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 #endif
 
-    if (opcode == ENTER_EXECUTOR) {
-        goto full;
-    }
-
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
         goto full;
     }
