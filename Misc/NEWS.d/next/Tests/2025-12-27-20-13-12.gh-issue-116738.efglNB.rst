@@ -1,0 +1,1 @@
+Added free-threading regression tests for the binascii module.
