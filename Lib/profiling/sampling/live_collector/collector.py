@@ -932,8 +932,6 @@ class LiveStatsCollector(Collector):
 
     def _handle_input(self):
         """Handle keyboard input (non-blocking)."""
-        from . import constants
-
         self.display.set_nodelay(True)
         ch = self.display.get_input()
 

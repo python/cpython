@@ -1,5 +1,6 @@
 import _remote_debugging
 import contextlib
+import curses
 import os
 import statistics
 import sys
@@ -459,8 +460,6 @@ def sample_live(
     Returns:
         The collector with collected samples
     """
-    import curses
-
     # Check if process is alive before doing any heavy initialization
     if not _is_process_running(pid):
         print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)

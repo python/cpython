@@ -10,11 +10,27 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import MagicMock, patch
 
 from test.support import (
     SHORT_TIMEOUT,
     reap_children,
     requires_remote_subprocess_debugging,
+)
+
+from profiling.sampling._child_monitor import (
+    get_child_pids,
+    ChildProcessMonitor,
+    is_python_process,
+    _MAX_CHILD_PROFILERS,
+    _CLEANUP_INTERVAL_CYCLES,
+)
+from profiling.sampling.cli import (
+    _add_sampling_options,
+    _validate_args,
+    _build_child_profiler_args,
+    _build_output_pattern,
+    _setup_child_monitor,
 )
 
 from .helpers import _cleanup_process
@@ -100,8 +116,6 @@ class TestGetChildPids(unittest.TestCase):
 
     def test_get_child_pids_fallback(self):
         """Test the fallback implementation for get_child_pids."""
-        from profiling.sampling._child_monitor import get_child_pids
-
         # Test with current process
         result = get_child_pids(os.getpid())
         self.assertIsInstance(result, list)
@@ -109,8 +123,6 @@ class TestGetChildPids(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Linux only")
     def test_discover_child_process_linux(self):
         """Test that we can discover child processes on Linux."""
-        from profiling.sampling._child_monitor import get_child_pids
-
         # Create a child process
         proc = subprocess.Popen(
             [sys.executable, "-c", "import time; time.sleep(10)"],
@@ -139,8 +151,6 @@ class TestGetChildPids(unittest.TestCase):
 
     def test_recursive_child_discovery(self):
         """Test that recursive=True finds grandchildren."""
-        from profiling.sampling._child_monitor import get_child_pids
-
         # Create a child that spawns a grandchild and keeps a reference to it
         # so we can clean it up via the child process
         code = """
@@ -256,8 +266,6 @@ if grandchild.poll() is None:
 
     def test_nonexistent_pid_returns_empty(self):
         """Test that nonexistent PID returns empty list."""
-        from profiling.sampling._child_monitor import get_child_pids
-
         # Use a very high PID that's unlikely to exist
         result = get_child_pids(999999999)
         self.assertEqual(result, [])
@@ -275,8 +283,6 @@ class TestChildProcessMonitor(unittest.TestCase):
 
     def test_monitor_creation(self):
         """Test that ChildProcessMonitor can be created."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(),
             cli_args=["-r", "10khz", "-d", "5"],
@@ -288,8 +294,6 @@ class TestChildProcessMonitor(unittest.TestCase):
 
     def test_monitor_lifecycle(self):
         """Test monitor lifecycle via context manager."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )
@@ -307,8 +311,6 @@ class TestChildProcessMonitor(unittest.TestCase):
 
     def test_spawned_profilers_property(self):
         """Test that spawned_profilers returns a copy of the list."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )
@@ -320,8 +322,6 @@ class TestChildProcessMonitor(unittest.TestCase):
 
     def test_context_manager(self):
         """Test that ChildProcessMonitor works as a context manager."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         with ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         ) as monitor:
@@ -344,8 +344,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_subprocesses_flag_parsed(self):
         """Test that --subprocesses flag is recognized."""
-        from profiling.sampling.cli import _add_sampling_options
-
         parser = argparse.ArgumentParser()
         _add_sampling_options(parser)
 
@@ -359,8 +357,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_subprocesses_incompatible_with_live(self):
         """Test that --subprocesses is incompatible with --live."""
-        from profiling.sampling.cli import _validate_args
-
         # Create mock args with both subprocesses and live
         args = argparse.Namespace(
             subprocesses=True,
@@ -383,8 +379,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_build_child_profiler_args(self):
         """Test building CLI args for child profilers."""
-        from profiling.sampling.cli import _build_child_profiler_args
-
         args = argparse.Namespace(
             sample_interval_usec=200,
             duration=15,
@@ -441,8 +435,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_build_child_profiler_args_no_gc(self):
         """Test building CLI args with --no-gc."""
-        from profiling.sampling.cli import _build_child_profiler_args
-
         args = argparse.Namespace(
             sample_interval_usec=100,
             duration=5,
@@ -466,8 +458,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_build_output_pattern_with_outfile(self):
         """Test output pattern generation with user-specified output."""
-        from profiling.sampling.cli import _build_output_pattern
-
         # With extension
         args = argparse.Namespace(outfile="output.html", format="flamegraph")
         pattern = _build_output_pattern(args)
@@ -480,8 +470,6 @@ class TestCLIChildrenFlag(unittest.TestCase):
 
     def test_build_output_pattern_default(self):
         """Test output pattern generation with default output."""
-        from profiling.sampling.cli import _build_output_pattern
-
         # Flamegraph format
         args = argparse.Namespace(outfile=None, format="flamegraph")
         pattern = _build_output_pattern(args)
@@ -507,8 +495,6 @@ class TestChildrenIntegration(unittest.TestCase):
 
     def test_setup_child_monitor(self):
         """Test setting up a child monitor from args."""
-        from profiling.sampling.cli import _setup_child_monitor
-
         args = argparse.Namespace(
             sample_interval_usec=100,
             duration=5,
@@ -548,8 +534,6 @@ class TestIsPythonProcess(unittest.TestCase):
 
     def test_is_python_process_current_process(self):
         """Test that current process is detected as Python."""
-        from profiling.sampling._child_monitor import is_python_process
-
         # Current process should be Python
         result = is_python_process(os.getpid())
         self.assertTrue(
@@ -559,8 +543,6 @@ class TestIsPythonProcess(unittest.TestCase):
 
     def test_is_python_process_python_subprocess(self):
         """Test that a Python subprocess is detected as Python."""
-        from profiling.sampling._child_monitor import is_python_process
-
         # Start a Python subprocess
         proc = subprocess.Popen(
             [sys.executable, "-c", "import time; time.sleep(10)"],
@@ -593,8 +575,6 @@ class TestIsPythonProcess(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "linux", "Linux only test")
     def test_is_python_process_non_python_subprocess(self):
         """Test that a non-Python subprocess is not detected as Python."""
-        from profiling.sampling._child_monitor import is_python_process
-
         # Start a non-Python subprocess (sleep command)
         proc = subprocess.Popen(
             ["sleep", "10"],
@@ -619,8 +599,6 @@ class TestIsPythonProcess(unittest.TestCase):
 
     def test_is_python_process_nonexistent_pid(self):
         """Test that nonexistent PID returns False."""
-        from profiling.sampling._child_monitor import is_python_process
-
         # Use a very high PID that's unlikely to exist
         result = is_python_process(999999999)
         self.assertFalse(
@@ -630,8 +608,6 @@ class TestIsPythonProcess(unittest.TestCase):
 
     def test_is_python_process_exited_process(self):
         """Test handling of a process that exits quickly."""
-        from profiling.sampling._child_monitor import is_python_process
-
         # Start a process that exits immediately
         proc = subprocess.Popen(
             [sys.executable, "-c", "pass"],
@@ -661,8 +637,6 @@ class TestMaxChildProfilersLimit(unittest.TestCase):
 
     def test_max_profilers_constant_exists(self):
         """Test that _MAX_CHILD_PROFILERS constant is defined."""
-        from profiling.sampling._child_monitor import _MAX_CHILD_PROFILERS
-
         self.assertEqual(
             _MAX_CHILD_PROFILERS,
             100,
@@ -671,8 +645,6 @@ class TestMaxChildProfilersLimit(unittest.TestCase):
 
     def test_cleanup_interval_constant_exists(self):
         """Test that _CLEANUP_INTERVAL_CYCLES constant is defined."""
-        from profiling.sampling._child_monitor import _CLEANUP_INTERVAL_CYCLES
-
         self.assertEqual(
             _CLEANUP_INTERVAL_CYCLES,
             10,
@@ -681,12 +653,6 @@ class TestMaxChildProfilersLimit(unittest.TestCase):
 
     def test_monitor_respects_max_limit(self):
         """Test that monitor refuses to spawn more than _MAX_CHILD_PROFILERS."""
-        from profiling.sampling._child_monitor import (
-            ChildProcessMonitor,
-            _MAX_CHILD_PROFILERS,
-        )
-        from unittest.mock import MagicMock, patch
-
         # Create a monitor
         monitor = ChildProcessMonitor(
             pid=os.getpid(),
@@ -739,8 +705,6 @@ class TestWaitForProfilers(unittest.TestCase):
 
     def test_wait_for_profilers_empty_list(self):
         """Test that wait_for_profilers returns immediately with no profilers."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )
@@ -767,8 +731,6 @@ class TestWaitForProfilers(unittest.TestCase):
 
     def test_wait_for_profilers_with_completed_process(self):
         """Test waiting for profilers that complete quickly."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )
@@ -807,8 +769,6 @@ class TestWaitForProfilers(unittest.TestCase):
 
     def test_wait_for_profilers_timeout(self):
         """Test that wait_for_profilers respects timeout."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )
@@ -847,8 +807,6 @@ class TestWaitForProfilers(unittest.TestCase):
 
     def test_wait_for_profilers_multiple(self):
         """Test waiting for multiple profilers."""
-        from profiling.sampling._child_monitor import ChildProcessMonitor
-
         monitor = ChildProcessMonitor(
             pid=os.getpid(), cli_args=[], output_pattern=None
         )

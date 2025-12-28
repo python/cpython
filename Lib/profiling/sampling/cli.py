@@ -35,6 +35,8 @@ from .constants import (
     SORT_MODE_NSAMPLES_CUMUL,
 )
 
+from ._child_monitor import ChildProcessMonitor
+
 try:
     from .live_collector import LiveStatsCollector
 except ImportError:
@@ -93,8 +95,6 @@ COLLECTOR_MAP = {
 }
 
 def _setup_child_monitor(args, parent_pid):
-    from ._child_monitor import ChildProcessMonitor
-
     # Build CLI args for child profilers (excluding --subprocesses to avoid recursion)
     child_cli_args = _build_child_profiler_args(args)
 
@@ -1123,8 +1123,6 @@ def _handle_live_run(args):
 
 def _handle_replay(args):
     """Handle the 'replay' command - convert binary profile to another format."""
-    import os
-
     if not os.path.exists(args.input_file):
         sys.exit(f"Error: Input file not found: {args.input_file}")
 
