@@ -214,9 +214,9 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(parser._wsp_splitter(s, 1), res)
 
     params_test__wsp_splitter = Params(
-        test__wsp_splitter_one_word = C('foo', ['foo']),
-        test__wsp_splitter_two_words = C('foo def', ['foo', ' ', 'def']),
-        test__wsp_splitter_ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
+        one_word = C('foo', ['foo']),
+        two_words = C('foo def', ['foo', ' ', 'def']),
+        ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
         )
 
 
