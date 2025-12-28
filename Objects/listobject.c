@@ -1774,6 +1774,27 @@ struct s_MergeState {
      Py_ssize_t mr_current, mr_e, mr_mask;
 };
 
+#define _binarysort_BISECT(L, R)    \
+    do {                            \
+        M = (L + R) >> 1;           \
+        IFLT(pivot, a[M])           \
+            R = M;                  \
+        else                        \
+            L = M + 1;              \
+    } while (L < R);                \
+    assert(L == R);
+
+#define _binarysort_INSORT(idx, tmp)        \
+    for (tmp = ok; tmp > idx; --tmp)        \
+        a[tmp] = a[tmp - 1];                \
+    a[idx] = pivot;                         \
+    if (has_values) {                       \
+        pivot = v[ok];                      \
+        for (tmp = ok; tmp > idx; --tmp)    \
+            v[tmp] = v[tmp - 1];            \
+        v[idx] = pivot;                     \
+    }
+
 /* binarysort is the best method for sorting small arrays: it does few
    compares, but can do data movement quadratic in the number of elements.
    ss->keys is viewed as an array of n kays, a[:n]. a[:ok] is already sorted.
@@ -1799,6 +1820,127 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     /* assert a[:ok] is sorted */
     if (! ok)
         ++ok;
+
+#if 1   // Adaptivity with post `count_run` optimization of 1st pivot
+    /* 1. Known: a[ok] < a[ok - 1], as called after `count_run`
+          This just insorts first element taking that into account */
+    if (ok >= n)
+        return 0;
+    Py_ssize_t aL = 0;
+    Py_ssize_t aR = ok - 1;
+    pivot = a[ok];
+
+    assert(aL < aR);
+    _binarysort_BISECT(aL, aR)
+    _binarysort_INSORT(aL, M)
+    ++ok;
+
+    Py_ssize_t m = ok < 5 ? 11 : ok + 6;
+    if (m < n) {
+        /* 2. Small non-adaptive run to acquire good `std` estimate
+              Number of iterations (m) is chosen heuristically
+                and is subject to further calibration if needed.
+              It does minimum 6 iterations and up to 10 if pre-sorted part
+                is small as estimates of small integers are less reliable. */
+        Py_ssize_t mu = aL;
+        Py_ssize_t std = ok >> 1;
+        for (; ok < m; ++ok) {
+            aL = 0;
+            aR = ok;
+            pivot = a[ok];
+
+            assert(aL < aR);
+            _binarysort_BISECT(aL, aR)
+            _binarysort_INSORT(aL, M)
+
+            std += mu < aL ? aL - mu : mu - aL;
+            std /= 2;    // EWMA with alpha=0.5
+            mu = aL;
+        }
+
+        /* 3. Adaptive routine while `std` is small enough
+              Take the last insertion point as the first midpoint
+                and do 2 subsequent step of size `std` trying to capture
+                the range into which new value falls in, potentially
+                locating insertion point faster than standard `binarysort`.
+              Continue until `std` (step size) is lower than
+                (size of sorted part) / 4.
+              If estimate from (2) is initially not small enough,
+                this does not execute a single time. */
+        Py_ssize_t std_max = ok >> 2;
+        for (; ok < n && std <= std_max; ++ok) {
+            pivot = a[ok];
+
+            IFLT(pivot, a[mu]) {
+                aL = 0;
+                aR = mu;
+                if (aL < aR) {
+                    M = aR - 1 - std;
+                    if (M < aL)
+                        M = aL;
+                    IFLT(pivot, a[M]) {
+                        aR = M;
+                        if (aL < aR) {
+                            M = aR - 1 - std;
+                            if (M < aL)
+                                M = aL;
+                            IFLT(pivot, a[M])
+                                aR = M;
+                            else
+                                aL = M + 1;
+                        }
+                    }
+                    else {
+                        aL = M + 1;
+                    }
+                }
+            }
+            else {
+                aL = mu + 1;
+                aR = ok;
+                if (aL < aR) {
+                    M = aL + std;
+                    if (M >= aR)
+                        M = aR - 1;
+                    IFLT(pivot, a[M]) {
+                        aR = M;
+                    }
+                    else {
+                        aL = M + 1;
+                        if (aL < aR) {
+                            M = aL + std;
+                            if (M >= aR)
+                                M = aR - 1;
+                            IFLT(pivot, a[M])
+                                aR = M;
+                            else
+                                aL = M + 1;
+                        }
+                    }
+                }
+            }
+            // Simple Binary Insertion Sort
+            while (aL < aR) {
+                M = (aL + aR) >> 1;
+                IFLT(pivot, a[M])
+                    aR = M;
+                else
+                    aL = M + 1;
+            }
+            assert(aL == aR);
+            _binarysort_INSORT(aL, M)
+
+            std += mu < aL ? aL - mu : mu - aL;
+            std /= 2;               // EWMA with alpha=0.5
+            mu = aL;
+            std_max += !(ok % 4);   // Keep approximately equal to: ok / 4
+        }
+    }
+
+    // 4. Finish with non-adaptive sort
+#endif  // End of adaptivity
+
+
     /* Regular insertion sort has average- and worst-case O(n**2) cost
        for both # of comparisons and number of bytes moved. But its branches
        are highly predictable, and it loves sorted input (n-1 compares and no
