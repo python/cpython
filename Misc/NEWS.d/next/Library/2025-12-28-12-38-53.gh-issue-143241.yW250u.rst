@@ -1,1 +1,0 @@
-Fix infinite loop in zoneinfo._common.load_data caused by a malformed TZif file.
