@@ -55,6 +55,7 @@ typedef struct {
     int enable_callback_tracebacks;
 
     PyTypeObject *BlobType;
+    PyTypeObject *CallbackContextType;
     PyTypeObject *ConnectionType;
     PyTypeObject *CursorType;
     PyTypeObject *PrepareProtocolType;
