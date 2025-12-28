@@ -2029,5 +2029,104 @@ class RowTests(unittest.TestCase):
         self.assertIsInstance(row, Sequence)
 
 
+class CallbackTests(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.cx = sqlite.connect(":memory:")
+        self.addCleanup(self.cx.close)
+        self.cu = self.cx.cursor()
+        self.cu.execute("create table test(a number)")
+
+        class Handler:
+            cx = self.cx
+
+        self.handler_class = Handler
+
+    def assert_not_authorized(self, func, /, *args, **kwargs):
+        with self.assertRaisesRegex(sqlite.DatabaseError, "not authorized"):
+            func(*args, **kwargs)
+
+    def assert_interrupted(self, func, /, *args, **kwargs):
+        with self.assertRaisesRegex(sqlite.OperationalError, "interrupted"):
+            func(*args, **kwargs)
+
+    def assert_invalid_trace(self, func, /, *args, **kwargs):
+        # Exception in trace callbacks are entirely suppressed.
+        pass
+
+    # When a handler has an invalid signature, the exception raised is
+    # the same that would be raised if the handler "negatively" replied.
+
+    def test_authorizer_invalid_signature(self):
+        self.cx.set_authorizer(lambda: None)
+        self.assert_not_authorized(self.cx.execute, "select * from test")
+
+    def test_progress_handler_invalid_signature(self):
+        self.cx.set_progress_handler(lambda x: None, 1)
+        self.assert_interrupted(self.cx.execute, "select * from test")
+
+    def test_trace_callback_invalid_signature_traceback(self):
+        self.cx.set_trace_callback(lambda: None)
+        self.assert_invalid_trace(self.cx.execute, "select * from test")
+
+    # Tests for checking that callback context mutations do not crash.
+    # Regression tests for https://github.com/python/cpython/issues/142830.
+
+    def test_authorizer_concurrent_mutation_in_call(self):
+        class Handler(self.handler_class):
+            def __call__(self, *a, **kw):
+                self.cx.set_authorizer(None)
+                raise ValueError
+
+        self.cx.set_authorizer(Handler())
+        self.assert_not_authorized(self.cx.execute, "select * from test")
+
+    def test_authorizer_concurrent_mutation_with_overflown_value(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        class Handler(self.handler_class):
+            def __call__(self, *a, **kw):
+                self.cx.set_authorizer(None)
+                # We expect 'int' at the C level, so this one will raise
+                # when converting via PyLong_Int().
+                return _testcapi.INT_MAX + 1
+
+        self.cx.set_authorizer(Handler())
+        self.assert_not_authorized(self.cx.execute, "select * from test")
+
+    def test_progress_handler_concurrent_mutation_in_call(self):
+        class Handler(self.handler_class):
+            def __call__(self, *a, **kw):
+                self.cx.set_authorizer(None)
+                raise ValueError
+
+        self.cx.set_progress_handler(Handler(), 1)
+        self.assert_interrupted(self.cx.execute, "select * from test")
+
+    def test_progress_handler_concurrent_mutation_in_conversion(self):
+        class Handler(self.handler_class):
+            def __bool__(self):
+                # clear the progress handler
+                self.cx.set_progress_handler(None, 1)
+                raise ValueError  # force PyObject_True() to fail
+
+        self.cx.set_progress_handler(Handler.__init__, 1)
+        self.assert_interrupted(self.cx.execute, "select * from test")
+
+    def test_trace_callback_concurrent_mutation_in_call(self):
+        class Handler:
+            def __call__(self, statement):
+                # clear the progress handler
+                self.cx.set_progress_handler(None, 1)
+                raise ValueError
+
+        self.cx.set_trace_callback(Handler())
+        self.assert_invalid_trace(self.cx.execute, "select * from test")
+
+    # TODO(picnixz): increase test coverage for other callbacks
+    # such as 'func', 'step', 'finalize', and 'collation'.
+
+
 if __name__ == "__main__":
     unittest.main()
