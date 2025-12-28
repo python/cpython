@@ -264,6 +264,182 @@ underlying :class:`Popen` interface can be used directly.
         *stdout* and *stderr* attributes added
 
 
+.. function:: run_pipeline(*commands, stdin=None, input=None, \
+                           stdout=None, stderr=None, capture_output=False, \
+                           timeout=None, check=False, encoding=None, \
+                           errors=None, text=None, env=None, \
+                           **other_popen_kwargs)
+
+   Run a pipeline of commands connected via pipes, similar to shell pipelines.
+   Wait for all commands to complete, then return a :class:`PipelineResult`
+   instance.
+
+   Each positional argument should be a command (a list of strings, or a string
+   if ``shell=True``) to execute. The standard output of each command is
+   connected to the standard input of the next command in the pipeline.
+
+   This function requires at least two commands. For a single command, use
+   :func:`run` instead.
+
+   If *capture_output* is true, the standard output of the final command and
+   the standard error of all commands will be captured. All processes in the
+   pipeline share a single stderr pipe, so their error output will be
+   interleaved. The *stdout* and *stderr* arguments may not be supplied at
+   the same time as *capture_output*.
+
+   A *timeout* may be specified in seconds. If the timeout expires, all
+   child processes will be killed and waited for, and then a
+   :exc:`TimeoutExpired` exception will be raised.
+
+   The *input* argument is passed to the first command's stdin. If used, it
+   must be a byte sequence, or a string if *encoding* or *errors* is specified
+   or *text* is true.
+
+   If *check* is true, and any process in the pipeline exits with a non-zero
+   exit code, a :exc:`PipelineError` exception will be raised. This behavior
+   is similar to the shell's ``pipefail`` option.
+
+   If *encoding* or *errors* are specified, or *text* is true, file objects
+   are opened in text mode using the specified encoding and errors.
+
+   .. note::
+
+      When using ``text=True`` with ``capture_output=True`` or ``stderr=PIPE``,
+      be aware that stderr output from multiple processes may be interleaved
+      in ways that produce incomplete multi-byte character sequences. For
+      reliable text decoding of stderr, consider capturing in binary mode
+      and decoding manually with appropriate error handling, or use
+      ``errors='replace'`` or ``errors='backslashreplace'``.
+
+   If *stdin* is specified, it is connected to the first command's standard
+   input. If *stdout* is specified, it is connected to the last command's
+   standard output. When *stdout* is :data:`PIPE`, the output is available
+   in the returned :class:`PipelineResult`'s :attr:`~PipelineResult.stdout`
+   attribute. Other keyword arguments are passed to each :class:`Popen` call.
+
+   Examples::
+
+      >>> import subprocess
+      >>> # Equivalent to: echo "hello world" | tr a-z A-Z
+      >>> result = subprocess.run_pipeline(
+      ...     ['echo', 'hello world'],
+      ...     ['tr', 'a-z', 'A-Z'],
+      ...     capture_output=True, text=True
+      ... )
+      >>> result.stdout
+      'HELLO WORLD\n'
+      >>> result.returncodes
+      [0, 0]
+
+      >>> # Pipeline with three commands
+      >>> result = subprocess.run_pipeline(
+      ...     ['echo', 'one\ntwo\nthree'],
+      ...     ['sort'],
+      ...     ['head', '-n', '2'],
+      ...     capture_output=True, text=True
+      ... )
+      >>> result.stdout
+      'one\nthree\n'
+
+      >>> # Using input parameter
+      >>> result = subprocess.run_pipeline(
+      ...     ['cat'],
+      ...     ['wc', '-l'],
+      ...     input='line1\nline2\nline3\n',
+      ...     capture_output=True, text=True
+      ... )
+      >>> result.stdout.strip()
+      '3'
+
+      >>> # Error handling with check=True
+      >>> subprocess.run_pipeline(
+      ...     ['echo', 'hello'],
+      ...     ['false'],  # exits with status 1
+      ...     check=True
+      ... )
+      Traceback (most recent call last):
+        ...
+      subprocess.PipelineError: Pipeline failed: command 1 ['false'] returned 1
+
+   .. versionadded:: next
+
+
+.. class:: PipelineResult
+
+   The return value from :func:`run_pipeline`, representing a pipeline of
+   processes that have finished.
+
+   .. attribute:: commands
+
+      The list of commands used to launch the pipeline. Each command is a list
+      of strings (or a string if ``shell=True`` was used).
+
+   .. attribute:: returncodes
+
+      List of exit status codes for each command in the pipeline. Typically,
+      an exit status of 0 indicates that the command ran successfully.
+
+      A negative value ``-N`` indicates that the command was terminated by
+      signal ``N`` (POSIX only).
+
+   .. attribute:: returncode
+
+      Exit status of the final command in the pipeline. This is a convenience
+      property equivalent to ``returncodes[-1]``.
+
+   .. attribute:: stdout
+
+      Captured stdout from the final command in the pipeline. A bytes sequence,
+      or a string if :func:`run_pipeline` was called with an encoding, errors,
+      or ``text=True``. ``None`` if stdout was not captured.
+
+   .. attribute:: stderr
+
+      Captured stderr from all commands in the pipeline, combined. A bytes
+      sequence, or a string if :func:`run_pipeline` was called with an
+      encoding, errors, or ``text=True``. ``None`` if stderr was not captured.
+
+   .. method:: check_returncodes()
+
+      If any command's :attr:`returncode` is non-zero, raise a
+      :exc:`PipelineError`.
+
+   .. versionadded:: next
+
+
+.. exception:: PipelineError
+
+   Subclass of :exc:`SubprocessError`, raised when a pipeline run by
+   :func:`run_pipeline` (with ``check=True``) contains one or more commands
+   that returned a non-zero exit status. This is similar to the shell's
+   ``pipefail`` behavior.
+
+   .. attribute:: commands
+
+      List of commands that were used in the pipeline.
+
+   .. attribute:: returncodes
+
+      List of exit status codes for each command in the pipeline.
+
+   .. attribute:: stdout
+
+      Output of the final command if it was captured. Otherwise, ``None``.
+
+   .. attribute:: stderr
+
+      Combined stderr output of all commands if it was captured.
+      Otherwise, ``None``.
+
+   .. attribute:: failed
+
+      List of ``(index, command, returncode)`` tuples for each command
+      that returned a non-zero exit status. The *index* is the position
+      of the command in the pipeline (0-based).
+
+   .. versionadded:: next
+
+
 .. _frequently-used-arguments:
 
 Frequently Used Arguments
