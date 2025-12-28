@@ -1875,19 +1875,11 @@ element_ass_subscr(PyObject *op, PyObject *item, PyObject *value)
             return -1;
         }
 
-        // Since PySlice_Unpack() may clear 'self->extra', we need
-        // to ensure that it exists now (using a slice for assignment
-        // should not raise IndexError).
-        //
-        // See https://github.com/python/cpython/issues/143200.
-        if (self->extra == NULL) {
-            if (create_extra(self, NULL) < 0) {
-                return -1;
-            }
-        }
-
         if (value == NULL) {
             /* Delete slice */
+            if (self->extra == NULL) {
+                return 0;
+            }
             slicelen = PySlice_AdjustIndices(self->extra->length, &start, &stop,
                                              step);
             if (slicelen <= 0)
