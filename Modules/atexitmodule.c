@@ -112,6 +112,7 @@ atexit_callfuncs(struct atexit_state *state)
     {
         PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
+        atexit_cleanup(state);
         return;
     }
 
@@ -217,7 +218,7 @@ Run all registered exit functions.\n\
 If a callback raises an exception, it is logged with sys.unraisablehook.");
 
 static PyObject *
-atexit_run_exitfuncs(PyObject *module, PyObject *unused)
+atexit_run_exitfuncs(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     struct atexit_state *state = get_atexit_state();
     atexit_callfuncs(state);
@@ -231,7 +232,7 @@ PyDoc_STRVAR(atexit_clear__doc__,
 Clear the list of previously registered exit functions.");
 
 static PyObject *
-atexit_clear(PyObject *module, PyObject *unused)
+atexit_clear(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     atexit_cleanup(get_atexit_state());
     Py_RETURN_NONE;
@@ -244,7 +245,7 @@ PyDoc_STRVAR(atexit_ncallbacks__doc__,
 Return the number of registered exit functions.");
 
 static PyObject *
-atexit_ncallbacks(PyObject *module, PyObject *unused)
+atexit_ncallbacks(PyObject *module, PyObject *Py_UNUSED(dummy))
 {
     struct atexit_state *state = get_atexit_state();
     assert(state->callbacks != NULL);
@@ -256,10 +257,11 @@ static int
 atexit_unregister_locked(PyObject *callbacks, PyObject *func)
 {
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(callbacks); ++i) {
-        PyObject *tuple = PyList_GET_ITEM(callbacks, i);
+        PyObject *tuple = Py_NewRef(PyList_GET_ITEM(callbacks, i));
         assert(PyTuple_CheckExact(tuple));
         PyObject *to_compare = PyTuple_GET_ITEM(tuple, 0);
         int cmp = PyObject_RichCompareBool(func, to_compare, Py_EQ);
+        Py_DECREF(tuple);
         if (cmp < 0)
         {
             return -1;
@@ -300,13 +302,11 @@ atexit_unregister(PyObject *module, PyObject *func)
 static PyMethodDef atexit_methods[] = {
     {"register", _PyCFunction_CAST(atexit_register), METH_VARARGS|METH_KEYWORDS,
         atexit_register__doc__},
-    {"_clear", (PyCFunction) atexit_clear, METH_NOARGS,
-        atexit_clear__doc__},
-    {"unregister", (PyCFunction) atexit_unregister, METH_O,
-        atexit_unregister__doc__},
-    {"_run_exitfuncs", (PyCFunction) atexit_run_exitfuncs, METH_NOARGS,
+    {"_clear", atexit_clear, METH_NOARGS, atexit_clear__doc__},
+    {"unregister", atexit_unregister, METH_O, atexit_unregister__doc__},
+    {"_run_exitfuncs", atexit_run_exitfuncs, METH_NOARGS,
         atexit_run_exitfuncs__doc__},
-    {"_ncallbacks", (PyCFunction) atexit_ncallbacks, METH_NOARGS,
+    {"_ncallbacks", atexit_ncallbacks, METH_NOARGS,
         atexit_ncallbacks__doc__},
     {NULL, NULL}        /* sentinel */
 };

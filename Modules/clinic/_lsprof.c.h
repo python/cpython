@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_lsprof_Profiler_getstats__doc__,
@@ -45,11 +46,18 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls);
 static PyObject *
 _lsprof_Profiler_getstats(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getstats() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _lsprof_Profiler_getstats_impl((ProfilerObject *)self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _lsprof_Profiler_getstats_impl((ProfilerObject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_lsprof_Profiler__pystart_callback__doc__,
@@ -76,7 +84,44 @@ _lsprof_Profiler__pystart_callback(PyObject *self, PyObject *const *args, Py_ssi
     }
     code = args[0];
     instruction_offset = args[1];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _lsprof_Profiler__pystart_callback_impl((ProfilerObject *)self, code, instruction_offset);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_lsprof_Profiler__pythrow_callback__doc__,
+"_pythrow_callback($self, code, instruction_offset, exception, /)\n"
+"--\n"
+"\n");
+
+#define _LSPROF_PROFILER__PYTHROW_CALLBACK_METHODDEF    \
+    {"_pythrow_callback", _PyCFunction_CAST(_lsprof_Profiler__pythrow_callback), METH_FASTCALL, _lsprof_Profiler__pythrow_callback__doc__},
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
+                                        PyObject *instruction_offset,
+                                        PyObject *exception);
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *code;
+    PyObject *instruction_offset;
+    PyObject *exception;
+
+    if (!_PyArg_CheckPositional("_pythrow_callback", nargs, 3, 3)) {
+        goto exit;
+    }
+    code = args[0];
+    instruction_offset = args[1];
+    exception = args[2];
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _lsprof_Profiler__pythrow_callback_impl((ProfilerObject *)self, code, instruction_offset, exception);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -110,7 +155,9 @@ _lsprof_Profiler__pyreturn_callback(PyObject *self, PyObject *const *args, Py_ss
     code = args[0];
     instruction_offset = args[1];
     retval = args[2];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _lsprof_Profiler__pyreturn_callback_impl((ProfilerObject *)self, code, instruction_offset, retval);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -145,7 +192,9 @@ _lsprof_Profiler__ccall_callback(PyObject *self, PyObject *const *args, Py_ssize
     instruction_offset = args[1];
     callable = args[2];
     self_arg = args[3];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _lsprof_Profiler__ccall_callback_impl((ProfilerObject *)self, code, instruction_offset, callable, self_arg);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -182,7 +231,9 @@ _lsprof_Profiler__creturn_callback(PyObject *self, PyObject *const *args, Py_ssi
     instruction_offset = args[1];
     callable = args[2];
     self_arg = args[3];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _lsprof_Profiler__creturn_callback_impl((ProfilerObject *)self, code, instruction_offset, callable, self_arg);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -218,9 +269,11 @@ _lsprof_Profiler_enable(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -264,7 +317,9 @@ _lsprof_Profiler_enable(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _lsprof_Profiler_enable_impl((ProfilerObject *)self, subcalls, builtins);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -285,7 +340,13 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self);
 static PyObject *
 _lsprof_Profiler_disable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_disable_impl((ProfilerObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _lsprof_Profiler_disable_impl((ProfilerObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_lsprof_Profiler_clear__doc__,
@@ -303,7 +364,13 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self);
 static PyObject *
 _lsprof_Profiler_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_clear_impl((ProfilerObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _lsprof_Profiler_clear_impl((ProfilerObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(profiler_init__doc__,
@@ -331,9 +398,11 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timer), &_Py_ID(timeunit), &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -407,4 +476,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d983dbf23fd8ac3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af26a0b0ddcc3351 input=a9049054013a1b77]*/

@@ -47,7 +47,7 @@
 @rem If py.exe finds a recent enough version, use that one
 @rem It is fine to add new versions to this list when they have released,
 @rem but we do not use prerelease builds here.
-@for %%p in (3.13 3.12 3.11 3.10) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
+@for %%p in (3.14 3.13 3.12 3.11 3.10) do @py -%%p -EV >nul 2>&1 && (set PYTHON=py -%%p) && (set _Py_Python_Source=found %%p with py.exe) && goto :found
 
 @if NOT exist "%_Py_EXTERNALS_DIR%" mkdir "%_Py_EXTERNALS_DIR%"
 @set _Py_NUGET=%NUGET%

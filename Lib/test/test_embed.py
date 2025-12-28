@@ -48,7 +48,7 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
-ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+ABI_THREAD = 't' if support.Py_GIL_DISABLED else ''
 # PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
@@ -58,6 +58,8 @@ else:
     PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
+DEFAULT_THREAD_INHERIT_CONTEXT = 1 if support.Py_GIL_DISABLED else 0
+DEFAULT_CONTEXT_AWARE_WARNINGS = 1 if support.Py_GIL_DISABLED else 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -237,6 +239,37 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         lines = "\n".join(lines) + "\n"
         self.assertEqual(out, lines)
 
+    def test_create_module_from_initfunc(self):
+        out, err = self.run_embedded_interpreter("test_create_module_from_initfunc")
+        self.assertEqual(self._nogil_filtered_err(err, "embedded_ext"), "")
+        self.assertEqual(out,
+                         "<module 'my_test_extension' (static-extension)>\n"
+                         "my_test_extension.executed='yes'\n"
+                         "my_test_extension.exec_slot_ran='yes'\n"
+                         "<module 'embedded_ext' (static-extension)>\n"
+                         "embedded_ext.executed='yes'\n"
+                         )
+
+    def test_inittab_submodule_multiphase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_multiphase")
+        self.assertEqual(err, "")
+        self.assertEqual(out,
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "<module 'mp_pkg.mp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         "mp_pkg.mp_submod.mp_submod_exec_slot_ran='yes'\n"
+                         "mp_pkg.mp_pkg_exec_slot_ran='yes'\n"
+                         )
+
+    def test_inittab_submodule_singlephase(self):
+        out, err = self.run_embedded_interpreter("test_inittab_submodule_singlephase")
+        self.assertEqual(self._nogil_filtered_err(err, "sp_pkg"), "")
+        self.assertEqual(out,
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "<module 'sp_pkg.sp_submod' (built-in)>\n"
+                         "Hello from sub-module\n"
+                         )
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
@@ -294,7 +327,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
-            expected_path = os.path.join(os.getcwd(), "spam")
+            expected_path = os.path.join(os.getcwd(), "_testembed")
         expected_output = f"sys.executable: {expected_path}\n"
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
@@ -514,6 +547,24 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '1\n2\n3\n' * INIT_LOOPS)
 
+    @staticmethod
+    def _nogil_filtered_err(err: str, mod_name: str) -> str:
+        if not support.Py_GIL_DISABLED:
+            return err
+
+        # the test imports a singlephase init extension, so it emits a warning
+        # under the free-threaded build
+        expected_runtime_warning = (
+            "RuntimeWarning: The global interpreter lock (GIL)"
+            f" has been enabled to load module '{mod_name}'"
+        )
+        filtered_err_lines = [
+            line
+            for line in err.strip().splitlines()
+            if expected_runtime_warning not in line
+        ]
+        return "\n".join(filtered_err_lines)
+
 
 def config_dev_mode(preconfig, config):
     preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
@@ -541,7 +592,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'configure_locale': True,
         'coerce_c_locale': False,
         'coerce_c_locale_warn': False,
-        'utf8_mode': False,
+        'utf8_mode': True,
     }
     if MS_WINDOWS:
         PRE_CONFIG_COMPAT.update({
@@ -558,7 +609,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         configure_locale=False,
         isolated=True,
         use_environment=False,
-        utf8_mode=False,
+        utf8_mode=True,
         dev_mode=False,
         coerce_c_locale=False,
     )
@@ -583,7 +634,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'faulthandler': False,
         'tracemalloc': 0,
         'perf_profiling': 0,
-        'import_time': False,
+        'import_time': 0,
+        'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
+        'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,
@@ -626,6 +679,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'write_bytecode': True,
         'verbose': 0,
         'quiet': False,
+        'remote_debug': True,
         'user_site_directory': True,
         'configure_c_stdio': False,
         'buffered_stdio': True,
@@ -800,12 +854,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                         'stdio_encoding', 'stdio_errors'):
                 expected[key] = self.IGNORE_CONFIG
 
-        if not expected_preconfig['configure_locale']:
-            # UTF-8 Mode depends on the locale. There is no easy way
-            # to guess if UTF-8 Mode will be enabled or not if the locale
-            # is not configured.
-            expected_preconfig['utf8_mode'] = self.IGNORE_CONFIG
-
         if expected_preconfig['utf8_mode'] == 1:
             if expected['filesystem_encoding'] is self.GET_DEFAULT_CONFIG:
                 expected['filesystem_encoding'] = 'utf-8'
@@ -964,7 +1012,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'utf8_mode': True,
         }
         config = {
-            'program_name': './globalvar',
             'site_import': False,
             'bytes_warning': True,
             'warnoptions': ['default::BytesWarning'],
@@ -975,7 +1022,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': True,
             'quiet': True,
             'buffered_stdio': False,
-
+            'remote_debug': True,
             'user_site_directory': False,
             'pathconfig_warnings': False,
         }
@@ -993,7 +1040,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'hash_seed': 123,
             'tracemalloc': 2,
             'perf_profiling': 0,
-            'import_time': True,
+            'import_time': 2,
             'code_debug_ranges': False,
             'show_ref_count': True,
             'malloc_stats': True,
@@ -1031,6 +1078,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'quiet': True,
+            'remote_debug': True,
             'configure_c_stdio': True,
             'buffered_stdio': False,
             'user_site_directory': False,
@@ -1058,7 +1106,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1094,7 +1142,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'use_hash_seed': True,
             'hash_seed': 42,
             'tracemalloc': 2,
-            'import_time': True,
+            'import_time': 1,
             'code_debug_ranges': False,
             'malloc_stats': True,
             'inspect': True,
@@ -1232,21 +1280,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_all_configs("test_init_dont_configure_locale", {}, preconfig,
                                api=API_PYTHON)
-
-    @unittest.skip('as of 3.11 this test no longer works because '
-                   'path calculations do not occur on read')
-    def test_init_read_set(self):
-        config = {
-            'program_name': './init_read_set',
-            'executable': 'my_executable',
-            'base_executable': 'my_executable',
-        }
-        def modify_path(path):
-            path.insert(1, "test_path_insert1")
-            path.append("test_path_append")
-        self.check_all_configs("test_init_read_set", config,
-                               api=API_PYTHON,
-                               modify_path_cb=modify_path)
 
     def test_init_sys_add(self):
         config = {
@@ -1908,6 +1941,10 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_get_incomplete_frame(self):
         self.run_embedded_interpreter("test_get_incomplete_frame")
+
+
+    def test_gilstate_after_finalization(self):
+        self.run_embedded_interpreter("test_gilstate_after_finalization")
 
 
 class MiscTests(EmbeddingTestsMixin, unittest.TestCase):

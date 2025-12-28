@@ -31,6 +31,7 @@ from operator import neg
 from test import support
 from test.support import cpython_only, swap_attr
 from test.support import async_yield, run_yielding_async_fn
+from test.support import warnings_helper
 from test.support.import_helper import import_module
 from test.support.os_helper import (EnvironmentVarGuard, TESTFN, unlink)
 from test.support.script_helper import assert_python_ok
@@ -225,6 +226,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
+        S = [50, 40, 60, TestFailingBool()]
+        self.assertEqual(all(x > 42 for x in S), False)
 
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
@@ -238,8 +241,58 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
+        S = [40, 60, 30, TestFailingBool()]
+        self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_all_any_tuple_optimization(self):
+        def f_all():
+            return all(x-2 for x in [1,2,3])
+
+        def f_any():
+            return any(x-1 for x in [1,2,3])
+
+        def f_tuple():
+            return tuple(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple]
+
+        for f in funcs:
+            # check that generator code object is not duplicated
+            code_objs = [c for c in f.__code__.co_consts if isinstance(c, type(f.__code__))]
+            self.assertEqual(len(code_objs), 1)
+
+
+        # check the overriding the builtins works
+
+        global all, any, tuple
+        saved = all, any, tuple
+        try:
+            all = lambda x : "all"
+            any = lambda x : "any"
+            tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+            builtins.all, builtins.any, builtins.tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -341,7 +394,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(ValueError, chr, -2**1000)
 
     def test_cmp(self):
-        self.assertTrue(not hasattr(builtins, "cmp"))
+        self.assertNotHasAttr(builtins, "cmp")
 
     def test_compile(self):
         compile('print(1)\n', '', 'exec')
@@ -384,7 +437,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -572,7 +625,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         for opt in [opt1, opt2]:
             opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, True)
+            self.assertEqual(opt_right.value, __debug__)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1009,8 +1062,24 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+        my_closure = tuple(my_closure)
+
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=int)
+
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
+        my_closure = list(my_closure)
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
@@ -1018,6 +1087,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+
+    def test_exec_filter_syntax_warnings_by_module(self):
+        filename = support.findfile('test_import/data/syntax_warnings.py')
+        with open(filename, 'rb') as f:
+            source = f.read()
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'<string>\z')
+            exec(source, {})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
+
+        with warnings.catch_warnings(record=True) as wlog:
+            warnings.simplefilter('error')
+            warnings.filterwarnings('always', module=r'package.module\z')
+            warnings.filterwarnings('error', module=r'<string>')
+            exec(source, {'__name__': 'package.module', '__file__': filename})
+        self.assertEqual(sorted(wm.lineno for wm in wlog), [4, 7, 10, 13, 14, 21])
+        for wm in wlog:
+            self.assertEqual(wm.filename, '<string>')
+            self.assertIs(wm.category, SyntaxWarning)
 
 
     def test_filter(self):
@@ -1052,6 +1144,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.check_iter_pickle(f1, list(f2), proto)
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -1113,6 +1206,16 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             def __hash__(self):
                 return self
         self.assertEqual(hash(Z(42)), hash(42))
+
+    def test_invalid_hash_typeerror(self):
+        # GH-140406: The returned object from __hash__() would leak if it
+        # wasn't an integer.
+        class A:
+            def __hash__(self):
+                return 1.0
+
+        with self.assertRaises(TypeError):
+            hash(A())
 
     def test_hex(self):
         self.assertEqual(hex(16), '0x10')
@@ -1304,6 +1407,22 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                           map(pack, (1, 2), 'abc', strict=True))
         self.assertRaises(ValueError, tuple,
                           map(pack, (1, 2), (1, 2), 'abc', strict=True))
+
+        # gh-140517: Testing refleaks with mortal objects.
+        t1 = (None, object())
+        t2 = (object(), object())
+        t3 = (object(),)
+
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, 'a', strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, t1, t2, t3, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t1, strict=True))
+        self.assertRaises(ValueError, tuple,
+                          map(pack, 'a', t2, t3, strict=True))
 
     def test_map_strict_iterators(self):
         x = iter(range(5))
@@ -1745,6 +1864,11 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         a = {}
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
+
+    def test_repr_blocked(self):
+        class C:
+            __repr__ = None
+        self.assertRaises(TypeError, repr, C())
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
@@ -2230,7 +2354,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         # tests for object.__format__ really belong elsewhere, but
         #  there's no good place to put them
         x = object().__format__('')
-        self.assertTrue(x.startswith('<object object at'))
+        self.assertStartsWith(x, '<object object at')
 
         # first argument to object.__format__ must be string
         self.assertRaises(TypeError, object().__format__, 3)
@@ -2471,6 +2595,7 @@ class PtyTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGHUP, old_sighup)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def _run_child(self, child, terminal_input):
         r, w = os.pipe()  # Pipe test results from child back to parent
         try:
@@ -2917,7 +3042,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

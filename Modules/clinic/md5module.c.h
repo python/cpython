@@ -89,7 +89,7 @@ MD5Type_update(PyObject *self, PyObject *obj)
 }
 
 PyDoc_STRVAR(_md5_md5__doc__,
-"md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"md5($module, /, data=b\'\', *, usedforsecurity=True, string=None)\n"
 "--\n"
 "\n"
 "Return a new MD5 hash object; optionally initialized with a string.");
@@ -98,7 +98,8 @@ PyDoc_STRVAR(_md5_md5__doc__,
     {"md5", _PyCFunction_CAST(_md5_md5), METH_FASTCALL|METH_KEYWORDS, _md5_md5__doc__},
 
 static PyObject *
-_md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity);
+_md5_md5_impl(PyObject *module, PyObject *data, int usedforsecurity,
+              PyObject *string_obj);
 
 static PyObject *
 _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -106,14 +107,16 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(data), &_Py_ID(usedforsecurity), &_Py_ID(string), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -122,17 +125,18 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static const char * const _keywords[] = {"data", "usedforsecurity", "string", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "md5",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *string = NULL;
+    PyObject *data = NULL;
     int usedforsecurity = 1;
+    PyObject *string_obj = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -143,7 +147,7 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         goto skip_optional_pos;
     }
     if (args[0]) {
-        string = args[0];
+        data = args[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -152,14 +156,20 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    usedforsecurity = PyObject_IsTrue(args[1]);
-    if (usedforsecurity < 0) {
-        goto exit;
+    if (args[1]) {
+        usedforsecurity = PyObject_IsTrue(args[1]);
+        if (usedforsecurity < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
     }
+    string_obj = args[2];
 skip_optional_kwonly:
-    return_value = _md5_md5_impl(module, string, usedforsecurity);
+    return_value = _md5_md5_impl(module, data, usedforsecurity, string_obj);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=10db0ff2ecf97159 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=920fe54b9ed06f92 input=a9049054013a1b77]*/

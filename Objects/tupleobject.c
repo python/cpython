@@ -45,6 +45,7 @@ tuple_alloc(Py_ssize_t size)
     if (index < PyTuple_MAXSAVESIZE) {
         PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
         if (op != NULL) {
+            _PyTuple_RESET_HASH_CACHE(op);
             return op;
         }
     }
@@ -53,7 +54,11 @@ tuple_alloc(Py_ssize_t size)
                 sizeof(PyObject *))) / sizeof(PyObject *)) {
         return (PyTupleObject *)PyErr_NoMemory();
     }
-    return PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    if (result != NULL) {
+        _PyTuple_RESET_HASH_CACHE(result);
+    }
+    return result;
 }
 
 // The empty tuple singleton is not tracked by the GC.
@@ -113,7 +118,7 @@ int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
     PyObject **p;
-    if (!PyTuple_Check(op) || Py_REFCNT(op) != 1) {
+    if (!PyTuple_Check(op) || !_PyObject_IsUniquelyReferenced(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
         return -1;
@@ -151,6 +156,18 @@ _PyTuple_MaybeUntrack(PyObject *op)
     _PyObject_GC_UNTRACK(op);
 }
 
+/* Fast, but conservative check if an object maybe tracked
+   May return true for an object that is not tracked,
+   Will always return true for an object that is tracked.
+   This is a temporary workaround until _PyObject_GC_IS_TRACKED
+   becomes fast and safe to call on non-GC objects.
+*/
+static bool
+maybe_tracked(PyObject *ob)
+{
+    return _PyType_IS_GC(Py_TYPE(ob));
+}
+
 PyObject *
 PyTuple_Pack(Py_ssize_t n, ...)
 {
@@ -158,6 +175,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     PyObject *o;
     PyObject **items;
     va_list vargs;
+    bool track = false;
 
     if (n == 0) {
         return tuple_get_empty();
@@ -172,10 +190,15 @@ PyTuple_Pack(Py_ssize_t n, ...)
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
+        if (!track && maybe_tracked(o)) {
+            track = true;
+        }
         items[i] = Py_NewRef(o);
     }
     va_end(vargs);
-    _PyObject_GC_TRACK(result);
+    if (track) {
+        _PyObject_GC_TRACK(result);
+    }
     return (PyObject *)result;
 }
 
@@ -202,7 +225,6 @@ tuple_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, tuple_dealloc)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
@@ -212,8 +234,6 @@ tuple_dealloc(PyObject *self)
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
-
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -296,50 +316,41 @@ error:
    For the xxHash specification, see
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
-   Below are the official constants from the xxHash specification. Optimizing
-   compilers should emit a single "rotate" instruction for the
-   _PyHASH_XXROTATE() expansion. If that doesn't happen for some important
-   platform, the macro could be changed to expand to a platform-specific rotate
-   spelling instead.
+   The constants for the hash function are defined in pycore_tuple.h.
 */
-#if SIZEOF_PY_UHASH_T > 4
-#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
-#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
-#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
-#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))  /* Rotate left 31 bits */
-#else
-#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
-#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
-#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
-#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
-#endif
 
-/* Tests have shown that it's not worth to cache the hash value, see
-   https://bugs.python.org/issue9685 */
 static Py_hash_t
 tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
+
+    Py_uhash_t acc = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->ob_hash);
+    if (acc != (Py_uhash_t)-1) {
+        return acc;
+    }
+
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
-
-    Py_uhash_t acc = _PyHASH_XXPRIME_5;
+    acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
             return -1;
         }
-        acc += lane * _PyHASH_XXPRIME_2;
-        acc = _PyHASH_XXROTATE(acc);
-        acc *= _PyHASH_XXPRIME_1;
+        acc += lane * _PyTuple_HASH_XXPRIME_2;
+        acc = _PyTuple_HASH_XXROTATE(acc);
+        acc *= _PyTuple_HASH_XXPRIME_1;
     }
 
     /* Add input length, mangled to keep the historical value of hash(()). */
-    acc += len ^ (_PyHASH_XXPRIME_5 ^ 3527539UL);
+    acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
 
     if (acc == (Py_uhash_t)-1) {
-        return 1546275796;
+        acc = 1546275796;
     }
+
+    FT_ATOMIC_STORE_SSIZE_RELAXED(v->ob_hash, acc);
+
     return acc;
 }
 
@@ -373,7 +384,7 @@ tuple_item(PyObject *op, Py_ssize_t i)
 }
 
 PyObject *
-_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
+PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();
@@ -384,11 +395,17 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
+    bool track = false;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
+        if (!track && maybe_tracked(item)) {
+            track = true;
+        }
         dst[i] = Py_NewRef(item);
     }
-    _PyObject_GC_TRACK(tuple);
+    if (track) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -403,10 +420,17 @@ _PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
+    bool track = false;
     for (Py_ssize_t i = 0; i < n; i++) {
-        dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
+        PyObject *item = PyStackRef_AsPyObjectSteal(src[i]);
+        if (!track && maybe_tracked(item)) {
+            track = true;
+        }
+        dst[i] = item;
     }
-    _PyObject_GC_TRACK(tuple);
+    if (track) {
+        _PyObject_GC_TRACK(tuple);
+    }
     return (PyObject *)tuple;
 }
 
@@ -445,7 +469,7 @@ tuple_slice(PyTupleObject *a, Py_ssize_t ilow,
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
         return Py_NewRef(a);
     }
-    return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
+    return PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
 
 PyObject *
@@ -764,6 +788,8 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     }
     Py_DECREF(tmp);
 
+    _PyTuple_RESET_HASH_CACHE(newobj);
+
     // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
     if (!_PyObject_GC_IS_TRACKED(newobj)) {
         _PyObject_GC_TRACK(newobj);
@@ -928,7 +954,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
     v = (PyTupleObject *) *pv;
     if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
-        (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
+        (Py_SIZE(v) != 0 && !_PyObject_IsUniquelyReferenced(*pv))) {
         *pv = 0;
         Py_XDECREF(v);
         PyErr_BadInternalCall();

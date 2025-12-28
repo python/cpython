@@ -26,6 +26,8 @@ Readline library in general.
 
 .. include:: ../includes/wasm-mobile-notavail.rst
 
+.. include:: ../includes/optional-module.rst
+
 .. note::
 
   The underlying Readline library API may be implemented by
@@ -72,6 +74,12 @@ The following functions relate to the init file and user configuration:
 
    Execute a readline initialization file. The default filename is the last filename
    used. This calls :c:func:`!rl_read_init_file` in the underlying library.
+   It raises an :ref:`auditing event <auditing>` ``open`` with the file name
+   if given, and :code:`"<readline_init_file>"` otherwise, regardless of
+   which file the library resolves.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 Line buffer
@@ -109,14 +117,24 @@ The following functions operate on a history file:
 
    Load a readline history file, and append it to the history list.
    The default filename is :file:`~/.history`.  This calls
-   :c:func:`!read_history` in the underlying library.
+   :c:func:`!read_history` in the underlying library
+   and raises an :ref:`auditing event <auditing>` ``open`` with the file
+   name if given and :code:`"~/.history"` otherwise.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: write_history_file([filename])
 
    Save the history list to a readline history file, overwriting any
    existing file.  The default filename is :file:`~/.history`.  This calls
-   :c:func:`!write_history` in the underlying library.
+   :c:func:`!write_history` in the underlying library and raises an
+   :ref:`auditing event <auditing>` ``open`` with the file name if given and
+   :code:`"~/.history"` otherwise.
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: append_history_file(nelements[, filename])
@@ -125,9 +143,13 @@ The following functions operate on a history file:
    :file:`~/.history`.  The file must already exist.  This calls
    :c:func:`!append_history` in the underlying library.  This function
    only exists if Python was compiled for a version of the library
-   that supports it.
+   that supports it. It raises an :ref:`auditing event <auditing>` ``open``
+   with the file name if given and :code:`"~/.history"` otherwise.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.14
+      The auditing event was added.
 
 
 .. function:: get_history_length()
@@ -222,6 +244,15 @@ Startup hooks
    with no arguments after the first prompt has been printed and just before
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
+
+
+.. function:: get_pre_input_hook()
+
+   Get the current pre-input hook function, or ``None`` if no pre-input hook
+   function has been set.  This function only exists if Python was compiled
+   for a version of the library that supports it.
+
+   .. versionadded:: 3.15
 
 
 .. _readline-completion:

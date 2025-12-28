@@ -199,8 +199,10 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     cfg_instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = NULL;
     i->i_loc = loc;
+    // memory is already zero initialized
+    assert(i->i_target == NULL);
+    assert(i->i_except == NULL);
 
     return SUCCESS;
 }
@@ -295,30 +297,38 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
-dump_basicblock(const basicblock *b)
+dump_basicblock(const basicblock *b, bool highlight)
 {
     const char *b_return = basicblock_returns(b) ? "return " : "";
+    if (highlight) {
+        fprintf(stderr, ">>> ");
+    }
     fprintf(stderr, "%d: [EH=%d CLD=%d WRM=%d NO_FT=%d %p] used: %d, depth: %d, preds: %d %s\n",
         b->b_label.id, b->b_except_handler, b->b_cold, b->b_warm, BB_NO_FALLTHROUGH(b), b, b->b_iused,
         b->b_startdepth, b->b_predecessors, b_return);
+    int depth = b->b_startdepth;
     if (b->b_instr) {
         int i;
         for (i = 0; i < b->b_iused; i++) {
-            fprintf(stderr, "  [%02d] ", i);
+            fprintf(stderr, "  [%02d] depth: %d ", i, depth);
             dump_instr(b->b_instr + i);
+
+            int popped = _PyOpcode_num_popped(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            int pushed = _PyOpcode_num_pushed(b->b_instr[i].i_opcode, b->b_instr[i].i_oparg);
+            depth += (pushed - popped);
         }
     }
 }
 
 void
-_PyCfgBuilder_DumpGraph(const basicblock *entryblock)
+_PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
 {
     for (const basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        dump_basicblock(b);
+        dump_basicblock(b, b == mark);
     }
 }
 
@@ -574,6 +584,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+    backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
 
@@ -1095,6 +1106,7 @@ basicblock_remove_redundant_nops(basicblock *bb) {
     assert(dest <= bb->b_iused);
     int num_removed = bb->b_iused - dest;
     bb->b_iused = dest;
+    memset(&bb->b_instr[dest], 0, sizeof(cfg_instr) * num_removed);
     return num_removed;
 }
 
@@ -1883,6 +1895,10 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
             result = PyNumber_Negative(operand);
             break;
         case UNARY_INVERT:
+            // XXX: This should be removed once the ~bool depreciation expires.
+            if (PyBool_Check(operand)) {
+                return NULL;
+            }
             result = PyNumber_Invert(operand);
             break;
         case UNARY_NOT: {
@@ -2581,6 +2597,445 @@ insert_superinstructions(cfg_builder *g)
     return res;
 }
 
+#define NOT_LOCAL -1
+#define DUMMY_INSTR -1
+
+typedef struct {
+    // Index of instruction that produced the reference or DUMMY_INSTR.
+    int instr;
+
+    // The local to which the reference refers or NOT_LOCAL.
+    int local;
+} ref;
+
+typedef struct {
+    ref *refs;
+    Py_ssize_t size;
+    Py_ssize_t capacity;
+} ref_stack;
+
+static int
+ref_stack_push(ref_stack *stack, ref r)
+{
+    if (stack->size == stack->capacity) {
+        Py_ssize_t new_cap = Py_MAX(32, stack->capacity * 2);
+        ref *refs = PyMem_Realloc(stack->refs, sizeof(*stack->refs) * new_cap);
+        if (refs == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        stack->refs = refs;
+        stack->capacity = new_cap;
+    }
+    stack->refs[stack->size] = r;
+    stack->size++;
+    return 0;
+}
+
+static ref
+ref_stack_pop(ref_stack *stack)
+{
+    assert(stack->size > 0);
+    stack->size--;
+    ref r = stack->refs[stack->size];
+    return r;
+}
+
+static void
+ref_stack_swap_top(ref_stack *stack, Py_ssize_t off)
+{
+    Py_ssize_t idx = stack->size - off;
+    assert(idx >= 0 && idx < stack->size);
+    ref tmp = stack->refs[idx];
+    stack->refs[idx] = stack->refs[stack->size - 1];
+    stack->refs[stack->size - 1] = tmp;
+}
+
+static ref
+ref_stack_at(ref_stack *stack, Py_ssize_t idx)
+{
+    assert(idx >= 0 && idx < stack->size);
+    return stack->refs[idx];
+}
+
+static void
+ref_stack_clear(ref_stack *stack)
+{
+    stack->size = 0;
+}
+
+static void
+ref_stack_fini(ref_stack *stack)
+{
+    if (stack->refs != NULL) {
+        PyMem_Free(stack->refs);
+    }
+    stack->refs = NULL;
+    stack->capacity = 0;
+    stack->size = 0;
+}
+
+typedef enum {
+    // The loaded reference is still on the stack when the local is killed
+    SUPPORT_KILLED  = 1,
+    // The loaded reference is stored into a local
+    STORED_AS_LOCAL = 2,
+    // The loaded reference is still on the stack at the end of the basic block
+    REF_UNCONSUMED  = 4,
+} LoadFastInstrFlag;
+
+static void
+kill_local(uint8_t *instr_flags, ref_stack *refs, int local)
+{
+    for (Py_ssize_t i = 0; i < refs->size; i++) {
+        ref r = ref_stack_at(refs, i);
+        if (r.local == local) {
+            assert(r.instr >= 0);
+            instr_flags[r.instr] |= SUPPORT_KILLED;
+        }
+    }
+}
+
+static void
+store_local(uint8_t *instr_flags, ref_stack *refs, int local, ref r)
+{
+    kill_local(instr_flags, refs, local);
+    if (r.instr != DUMMY_INSTR) {
+        instr_flags[r.instr] |= STORED_AS_LOCAL;
+    }
+}
+
+static void
+load_fast_push_block(basicblock ***sp, basicblock *target,
+                     Py_ssize_t start_depth)
+{
+    assert(target->b_startdepth >= 0 && target->b_startdepth == start_depth);
+    if (!target->b_visited) {
+        target->b_visited = 1;
+        *(*sp)++ = target;
+    }
+}
+
+/*
+ * Strength reduce LOAD_FAST{_LOAD_FAST} instructions into faster variants that
+ * load borrowed references onto the operand stack.
+ *
+ * This is only safe when we can prove that the reference in the frame outlives
+ * the borrowed reference produced by the instruction. We make this tractable
+ * by enforcing the following lifetimes:
+ *
+ * 1. Borrowed references loaded onto the operand stack live until the end of
+ *    the instruction that consumes them from the stack. Any borrowed
+ *    references that would escape into the heap (e.g. into frame objects or
+ *    generators) are converted into new, strong references.
+ *
+ * 2. Locals live until they are either killed by an instruction
+ *    (e.g. STORE_FAST) or the frame is unwound. Any local that is overwritten
+ *    via `f_locals` is added to a tuple owned by the frame object.
+ *
+ * To simplify the problem of detecting which supporting references in the
+ * frame are killed by instructions that overwrite locals, we only allow
+ * borrowed references to be stored as a local in the frame if they were passed
+ * as an argument. {RETURN,YIELD}_VALUE convert borrowed references into new,
+ * strong references.
+ *
+ * Using the above, we can optimize any LOAD_FAST{_LOAD_FAST} instructions
+ * that meet the following criteria:
+ *
+ * 1. The produced reference must be consumed from the stack before the
+ *    supporting reference in the frame is killed.
+ *
+ * 2. The produced reference cannot be stored as a local.
+ *
+ * We use abstract interpretation to identify instructions that meet these
+ * criteria. For each basic block, we simulate the effect the bytecode has on a
+ * stack of abstract references and note any instructions that violate the
+ * criteria above. Once we've processed all the instructions in a block, any
+ * non-violating LOAD_FAST{_LOAD_FAST} can be optimized.
+ */
+static int
+optimize_load_fast(cfg_builder *g)
+{
+    int status;
+    ref_stack refs = {0};
+    int max_instrs = 0;
+    basicblock *entryblock = g->g_entryblock;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        max_instrs = Py_MAX(max_instrs, b->b_iused);
+    }
+    size_t instr_flags_size = max_instrs * sizeof(uint8_t);
+    uint8_t *instr_flags = PyMem_Malloc(instr_flags_size);
+    if (instr_flags == NULL) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
+    basicblock **blocks = make_cfg_traversal_stack(entryblock);
+    if (blocks == NULL) {
+        status = ERROR;
+        goto done;
+    }
+    basicblock **sp = blocks;
+    *sp = entryblock;
+    sp++;
+    entryblock->b_startdepth = 0;
+    entryblock->b_visited = 1;
+
+    #define PUSH_REF(instr, local)                \
+        do {                                      \
+            if (ref_stack_push(&refs, (ref){(instr), (local)}) < 0) { \
+                status = ERROR;                   \
+                goto done;                        \
+            }                                     \
+        } while(0)
+
+    while (sp != blocks) {
+        basicblock *block = *--sp;
+        assert(block->b_startdepth > -1);
+
+        // Reset per-block state.
+        memset(instr_flags, 0, block->b_iused * sizeof(*instr_flags));
+
+        // Reset the stack of refs. We don't track references on the stack
+        // across basic blocks, but the bytecode will expect their
+        // presence. Add dummy references as necessary.
+        ref_stack_clear(&refs);
+        for (int i = 0; i < block->b_startdepth; i++) {
+            PUSH_REF(DUMMY_INSTR, NOT_LOCAL);
+        }
+
+        for (int i = 0; i < block->b_iused; i++) {
+            cfg_instr *instr = &block->b_instr[i];
+            int opcode = instr->i_opcode;
+            int oparg = instr->i_oparg;
+            assert(opcode != EXTENDED_ARG);
+            switch (opcode) {
+                // Opcodes that load and store locals
+                case DELETE_FAST: {
+                    kill_local(instr_flags, &refs, oparg);
+                    break;
+                }
+
+                case LOAD_FAST: {
+                    PUSH_REF(i, oparg);
+                    break;
+                }
+
+                case LOAD_FAST_AND_CLEAR: {
+                    kill_local(instr_flags, &refs, oparg);
+                    PUSH_REF(i, oparg);
+                    break;
+                }
+
+                case LOAD_FAST_LOAD_FAST: {
+                    PUSH_REF(i, oparg >> 4);
+                    PUSH_REF(i, oparg & 15);
+                    break;
+                }
+
+                case STORE_FAST: {
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg, r);
+                    break;
+                }
+
+                case STORE_FAST_LOAD_FAST: {
+                    // STORE_FAST
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // LOAD_FAST
+                    PUSH_REF(i, oparg & 15);
+                    break;
+                }
+
+                case STORE_FAST_STORE_FAST: {
+                    // STORE_FAST
+                    ref r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // STORE_FAST
+                    r = ref_stack_pop(&refs);
+                    store_local(instr_flags, &refs, oparg & 15, r);
+                    break;
+                }
+
+                // Opcodes that shuffle values on the stack
+                case COPY: {
+                    assert(oparg > 0);
+                    Py_ssize_t idx = refs.size - oparg;
+                    ref r = ref_stack_at(&refs, idx);
+                    PUSH_REF(r.instr, r.local);
+                    break;
+                }
+
+                case SWAP: {
+                    assert(oparg >= 2);
+                    ref_stack_swap_top(&refs, oparg);
+                    break;
+                }
+
+                // We treat opcodes that do not consume all of their inputs on
+                // a case by case basis, as we have no generic way of knowing
+                // how many inputs should be left on the stack.
+
+                // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
+                case GET_ANEXT:
+                case GET_ITER:
+                case GET_LEN:
+                case GET_YIELD_FROM_ITER:
+                case IMPORT_FROM:
+                case MATCH_KEYS:
+                case MATCH_MAPPING:
+                case MATCH_SEQUENCE:
+                case WITH_EXCEPT_START: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_pushed = num_pushed - num_popped;
+                    assert(net_pushed >= 0);
+                    for (int j = 0; j < net_pushed; j++) {
+                        PUSH_REF(i, NOT_LOCAL);
+                    }
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push no new values
+                case DICT_MERGE:
+                case DICT_UPDATE:
+                case LIST_APPEND:
+                case LIST_EXTEND:
+                case MAP_ADD:
+                case RERAISE:
+                case SET_ADD:
+                case SET_UPDATE: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_popped = num_popped - num_pushed;
+                    assert(net_popped > 0);
+                    for (int i = 0; i < net_popped; i++) {
+                        ref_stack_pop(&refs);
+                    }
+                    break;
+                }
+
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push new values
+                case CHECK_EXC_MATCH: {
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case FOR_ITER: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size + 1);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case LOAD_ATTR:
+                case LOAD_SUPER_ATTR: {
+                    ref self = ref_stack_pop(&refs);
+                    if (opcode == LOAD_SUPER_ATTR) {
+                        ref_stack_pop(&refs);
+                        ref_stack_pop(&refs);
+                    }
+                    PUSH_REF(i, NOT_LOCAL);
+                    if (oparg & 1) {
+                        // A method call; conservatively assume that self is pushed
+                        // back onto the stack
+                        PUSH_REF(self.instr, self.local);
+                    }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
+                    break;
+                }
+
+                case SEND: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                // Opcodes that consume all of their inputs
+                default: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    if (HAS_TARGET(instr->i_opcode)) {
+                        load_fast_push_block(&sp, instr->i_target, refs.size - num_popped + num_pushed);
+                    }
+                    if (!IS_BLOCK_PUSH_OPCODE(instr->i_opcode)) {
+                        // Block push opcodes only affect the stack when jumping
+                        // to the target.
+                        for (int j = 0; j < num_popped; j++) {
+                            ref_stack_pop(&refs);
+                        }
+                        for (int j = 0; j < num_pushed; j++) {
+                            PUSH_REF(i, NOT_LOCAL);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Push fallthrough block
+        if (BB_HAS_FALLTHROUGH(block)) {
+            assert(block->b_next != NULL);
+            load_fast_push_block(&sp, block->b_next, refs.size);
+        }
+
+        // Mark instructions that produce values that are on the stack at the
+        // end of the basic block
+        for (Py_ssize_t i = 0; i < refs.size; i++) {
+            ref r = ref_stack_at(&refs, i);
+            if (r.instr != -1) {
+                instr_flags[r.instr] |= REF_UNCONSUMED;
+            }
+        }
+
+        // Optimize instructions
+        for (int i = 0; i < block->b_iused; i++) {
+            if (!instr_flags[i]) {
+                cfg_instr *instr = &block->b_instr[i];
+                switch (instr->i_opcode) {
+                    case LOAD_FAST:
+                        instr->i_opcode = LOAD_FAST_BORROW;
+                        break;
+                    case LOAD_FAST_LOAD_FAST:
+                        instr->i_opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    #undef PUSH_REF
+
+    status = SUCCESS;
+
+done:
+    ref_stack_fini(&refs);
+    PyMem_Free(instr_flags);
+    PyMem_Free(blocks);
+    return status;
+}
+
 // helper functions for add_checks_for_loads_of_unknown_variables
 static inline void
 maybe_push(basicblock *b, uint64_t unsafe_mask, basicblock ***sp)
@@ -3017,11 +3472,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3029,6 +3486,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
@@ -3133,8 +3591,19 @@ duplicate_exits_without_lineno(cfg_builder *g)
  * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
+
+static inline void
+maybe_propagate_location(basicblock *b, int i, location loc)
+{
+    assert(b->b_iused > i);
+    if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
+         b->b_instr[i].i_loc = loc;
+    }
+}
+
 static void
-propagate_line_numbers(basicblock *entryblock) {
+propagate_line_numbers(basicblock *entryblock)
+{
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
@@ -3143,26 +3612,21 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
-                b->b_instr[i].i_loc = prev_location;
-            }
-            else {
-                prev_location = b->b_instr[i].i_loc;
-            }
+            maybe_propagate_location(b, i, prev_location);
+            prev_location = b->b_instr[i].i_loc;
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    b->b_next->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(b->b_next, 0, prev_location);
             }
         }
         if (is_jump(last)) {
             basicblock *target = last->i_target;
+            while (target->b_iused == 0 && target->b_predecessors == 1) {
+                target = target->b_next;
+            }
             if (target->b_predecessors == 1) {
-                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    target->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(target, 0, prev_location);
             }
         }
     }
@@ -3271,6 +3735,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
@@ -3278,6 +3743,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
     }
@@ -3308,6 +3774,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
+                .i_except = NULL,
             };
             if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
@@ -3324,6 +3791,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = nfreevars,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }
@@ -3430,16 +3898,38 @@ _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
             seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
+    int offset = 0;
     for (int i = 0; i < seq->s_used; i++) {
         _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_opcode == ANNOTATIONS_PLACEHOLDER) {
+            if (seq->s_annotations_code != NULL) {
+                assert(seq->s_annotations_code->s_labelmap_size == 0
+                    && seq->s_annotations_code->s_nested == NULL);
+                for (int j = 0; j < seq->s_annotations_code->s_used; j++) {
+                    _PyInstruction *ann_instr = &seq->s_annotations_code->s_instrs[j];
+                    assert(!HAS_TARGET(ann_instr->i_opcode));
+                    if (_PyCfgBuilder_Addop(g, ann_instr->i_opcode, ann_instr->i_oparg, ann_instr->i_loc) < 0) {
+                        goto error;
+                    }
+                }
+                offset += seq->s_annotations_code->s_used - 1;
+            }
+            else {
+                offset -= 1;
+            }
+            continue;
+        }
         if (instr->i_target) {
-            jump_target_label lbl_ = {i};
+            jump_target_label lbl_ = {i + offset};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            oparg += offset;
+        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
@@ -3525,6 +4015,11 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
 
+    /* Can't modify the bytecode after inserting instructions that produce
+     * borrowed references.
+     */
+    RETURN_IF_ERROR(optimize_load_fast(g));
+
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
         return ERROR;
@@ -3608,6 +4103,15 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
                                 nparams, firstlineno) < 0) {
         goto error;
     }
+
+    if (calculate_stackdepth(g) == ERROR) {
+        goto error;
+    }
+
+    if (optimize_load_fast(g) != SUCCESS) {
+        goto error;
+    }
+
     res = cfg_to_instruction_sequence(g);
 error:
     Py_DECREF(const_cache);

@@ -1,5 +1,6 @@
 import contextlib
 import io
+import warnings
 import unittest
 from unittest.mock import patch
 from textwrap import dedent
@@ -58,7 +59,7 @@ class TestSimpleInteract(unittest.TestCase):
         console = InteractiveColoredConsole()
         code = dedent("""\
         raise Exception('foobar')
-        print('spam&eggs')
+        print('spam', 'eggs', sep='&')
         """)
         f = io.StringIO()
         with contextlib.redirect_stderr(f):
@@ -112,7 +113,7 @@ class TestSimpleInteract(unittest.TestCase):
         r = """
     def f(x, x): ...
              ^
-SyntaxError: duplicate argument 'x' in function definition"""
+SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertIn(r, f.getvalue())
 
     def test_runsource_shows_syntax_error_for_failed_compilation(self):
@@ -273,3 +274,28 @@ class TestMoreLines(unittest.TestCase):
         code = "if foo:"
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
         self.assertTrue(_more_lines(console, code))
+
+
+class TestWarnings(unittest.TestCase):
+    def test_pep_765_warning(self):
+        """
+        Test that a SyntaxWarning emitted from the
+        AST optimizer is only shown once in the REPL.
+        """
+        # gh-131927
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        def f():
+            try:
+                return 1
+            finally:
+                return 2
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            console.runsource(code)
+
+        count = sum("'return' in a 'finally' block" in str(w.message)
+                    for w in caught)
+        self.assertEqual(count, 1)

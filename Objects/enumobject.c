@@ -6,6 +6,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/enumobject.c.h"
 
@@ -220,9 +221,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);
@@ -272,9 +271,7 @@ enum_next(PyObject *op)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);
@@ -370,7 +367,7 @@ typedef struct {
 @classmethod
 reversed.__new__ as reversed_new
 
-    sequence as seq: object
+    object as seq: object
     /
 
 Return a reverse iterator over the values of the given sequence.
@@ -378,7 +375,7 @@ Return a reverse iterator over the values of the given sequence.
 
 static PyObject *
 reversed_new_impl(PyTypeObject *type, PyObject *seq)
-/*[clinic end generated code: output=f7854cc1df26f570 input=aeb720361e5e3f1d]*/
+/*[clinic end generated code: output=f7854cc1df26f570 input=4781869729e3ba50]*/
 {
     Py_ssize_t n;
     PyObject *reversed_meth;

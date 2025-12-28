@@ -139,6 +139,9 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_can_see_class_scope = 0;
     ste->ste_comp_iter_expr = 0;
     ste->ste_needs_classdict = 0;
+    ste->ste_has_conditional_annotations = 0;
+    ste->ste_in_conditional_block = 0;
+    ste->ste_in_unevaluated_annotation = 0;
     ste->ste_annotation_block = NULL;
 
     ste->ste_has_docstring = 0;
@@ -377,8 +380,8 @@ static void dump_symtable(PySTEntryObject* ste)
 }
 #endif
 
-#define DUPLICATE_ARGUMENT \
-"duplicate argument '%U' in function definition"
+#define DUPLICATE_PARAMETER \
+"duplicate parameter '%U' in function definition"
 
 static struct symtable *
 symtable_new(void)
@@ -945,6 +948,12 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
         return 0;
     if (res)
         ste->ste_needs_classdict = 1;
+    res = PySet_Discard(free, &_Py_ID(__conditional_annotations__));
+    if (res < 0)
+        return 0;
+    if (res) {
+        ste->ste_has_conditional_annotations = 1;
+    }
     return 1;
 }
 
@@ -1198,6 +1207,8 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
             goto error;
         if (PySet_Add(newbound, &_Py_ID(__classdict__)) < 0)
             goto error;
+        if (PySet_Add(newbound, &_Py_ID(__conditional_annotations__)) < 0)
+            goto error;
     }
 
     /* Recursively call analyze_child_block() on each child block.
@@ -1383,7 +1394,7 @@ symtable_exit_block(struct symtable *st)
 }
 
 static int
-symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
+symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool add_to_children)
 {
     if (PyList_Append(st->st_stack, (PyObject *)ste) < 0) {
         return 0;
@@ -1414,7 +1425,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
     if (ste->ste_type == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
 
-    if (prev) {
+    if (add_to_children && prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
         }
@@ -1429,7 +1440,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     PySTEntryObject *ste = ste_new(st, name, block, ast, loc);
     if (ste == NULL)
         return 0;
-    int result = symtable_enter_existing_block(st, ste);
+    int result = symtable_enter_existing_block(st, ste, /* add_to_children */true);
     Py_DECREF(ste);
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
         _Py_DECLARE_STR(format, ".format");
@@ -1483,7 +1494,7 @@ symtable_add_def_helper(struct symtable *st, PyObject *name, int flag, struct _s
         }
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
-            PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
+            PyErr_Format(PyExc_SyntaxError, DUPLICATE_PARAMETER, name);
             SET_ERROR_LOCATION(st->st_filename, loc);
             goto error;
         }
@@ -1729,6 +1740,13 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         } \
     } while(0)
 
+#define ENTER_CONDITIONAL_BLOCK(ST) \
+    int in_conditional_block = (ST)->st_cur->ste_in_conditional_block; \
+    (ST)->st_cur->ste_in_conditional_block = 1;
+
+#define LEAVE_CONDITIONAL_BLOCK(ST) \
+    (ST)->st_cur->ste_in_conditional_block = in_conditional_block;
+
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
     return 0; \
@@ -1848,7 +1866,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2012,30 +2030,42 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         VISIT(st, expr, s->v.AugAssign.value);
         break;
     }
-    case For_kind:
+    case For_kind: {
         VISIT(st, expr, s->v.For.target);
         VISIT(st, expr, s->v.For.iter);
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.For.body);
         if (s->v.For.orelse)
             VISIT_SEQ(st, stmt, s->v.For.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
-    case While_kind:
+    }
+    case While_kind: {
         VISIT(st, expr, s->v.While.test);
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.While.body);
         if (s->v.While.orelse)
             VISIT_SEQ(st, stmt, s->v.While.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
-    case If_kind:
+    }
+    case If_kind: {
         /* XXX if 0: and lookup_yield() hacks */
         VISIT(st, expr, s->v.If.test);
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.If.body);
         if (s->v.If.orelse)
             VISIT_SEQ(st, stmt, s->v.If.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
-    case Match_kind:
+    }
+    case Match_kind: {
         VISIT(st, expr, s->v.Match.subject);
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, match_case, s->v.Match.cases);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
+    }
     case Raise_kind:
         if (s->v.Raise.exc) {
             VISIT(st, expr, s->v.Raise.exc);
@@ -2044,18 +2074,24 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             }
         }
         break;
-    case Try_kind:
+    case Try_kind: {
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.Try.body);
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
         VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
-    case TryStar_kind:
+    }
+    case TryStar_kind: {
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.TryStar.body);
         VISIT_SEQ(st, excepthandler, s->v.TryStar.handlers);
         VISIT_SEQ(st, stmt, s->v.TryStar.orelse);
         VISIT_SEQ(st, stmt, s->v.TryStar.finalbody);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
+    }
     case Assert_kind:
         VISIT(st, expr, s->v.Assert.test);
         if (s->v.Assert.msg)
@@ -2142,10 +2178,13 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     case Continue_kind:
         /* nothing to do here */
         break;
-    case With_kind:
+    case With_kind: {
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, withitem, s->v.With.items);
         VISIT_SEQ(st, stmt, s->v.With.body);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
+    }
     case AsyncFunctionDef_kind: {
         if (!symtable_add_def(st, s->v.AsyncFunctionDef.name, DEF_LOCAL, LOCATION(s)))
             return 0;
@@ -2184,7 +2223,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2201,25 +2240,31 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         }
         break;
     }
-    case AsyncWith_kind:
+    case AsyncWith_kind: {
         maybe_set_ste_coroutine_for_module(st, s);
         if (!symtable_raise_if_not_coroutine(st, ASYNC_WITH_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             return 0;
         }
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, withitem, s->v.AsyncWith.items);
         VISIT_SEQ(st, stmt, s->v.AsyncWith.body);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
-    case AsyncFor_kind:
+    }
+    case AsyncFor_kind: {
         maybe_set_ste_coroutine_for_module(st, s);
         if (!symtable_raise_if_not_coroutine(st, ASYNC_FOR_OUTSIDE_ASYNC_FUNC, LOCATION(s))) {
             return 0;
         }
         VISIT(st, expr, s->v.AsyncFor.target);
         VISIT(st, expr, s->v.AsyncFor.iter);
+        ENTER_CONDITIONAL_BLOCK(st);
         VISIT_SEQ(st, stmt, s->v.AsyncFor.body);
         if (s->v.AsyncFor.orelse)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
+        LEAVE_CONDITIONAL_BLOCK(st);
         break;
+    }
     }
     LEAVE_RECURSIVE();
     return 1;
@@ -2368,7 +2413,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
             VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
-        if (!symtable_enter_block(st, &_Py_ID(lambda),
+        if (!symtable_enter_block(st, &_Py_STR(anon_lambda),
                                   FunctionBlock, (void *)e, LOCATION(e))) {
             return 0;
         }
@@ -2465,8 +2510,16 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.FormattedValue.format_spec)
             VISIT(st, expr, e->v.FormattedValue.format_spec);
         break;
+    case Interpolation_kind:
+        VISIT(st, expr, e->v.Interpolation.value);
+        if (e->v.Interpolation.format_spec)
+            VISIT(st, expr, e->v.Interpolation.format_spec);
+        break;
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
+    case TemplateStr_kind:
+        VISIT_SEQ(st, expr, e->v.TemplateStr.values);
         break;
     case Constant_kind:
         /* Nothing to do here. */
@@ -2494,17 +2547,19 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
             VISIT(st, expr, e->v.Slice.step);
         break;
     case Name_kind:
-        if (!symtable_add_def_ctx(st, e->v.Name.id,
-                                  e->v.Name.ctx == Load ? USE : DEF_LOCAL,
-                                  LOCATION(e), e->v.Name.ctx)) {
-            return 0;
-        }
-        /* Special-case super: it counts as a use of __class__ */
-        if (e->v.Name.ctx == Load &&
-            _PyST_IsFunctionLike(st->st_cur) &&
-            _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
-            if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
+        if (!st->st_cur->ste_in_unevaluated_annotation) {
+            if (!symtable_add_def_ctx(st, e->v.Name.id,
+                                    e->v.Name.ctx == Load ? USE : DEF_LOCAL,
+                                    LOCATION(e), e->v.Name.ctx)) {
                 return 0;
+            }
+            /* Special-case super: it counts as a use of __class__ */
+            if (e->v.Name.ctx == Load &&
+                _PyST_IsFunctionLike(st->st_cur) &&
+                _PyUnicode_EqualToASCIIString(e->v.Name.id, "super")) {
+                if (!symtable_add_def(st, &_Py_ID(__class__), USE, LOCATION(e)))
+                    return 0;
+            }
         }
         break;
     /* child nodes of List and Tuple will have expr_context set */
@@ -2522,11 +2577,21 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name,
-    void *key, const char *ste_scope_info)
+    type_param_ty tp, const char *ste_scope_info)
 {
+    if (_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
+
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
+                                                   "used for type parameter", name);
+        PyErr_SetObject(PyExc_SyntaxError, error_msg);
+        Py_DECREF(error_msg);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(tp));
+        return 0;
+    }
+
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e))) {
+        if (!symtable_enter_block(st, name, TypeVariableBlock, (void *)tp, LOCATION(e))) {
             return 0;
         }
 
@@ -2568,12 +2633,12 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp, ste_scope_info)) {
+                                                        tp, ste_scope_info)) {
             return 0;
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_value, tp->v.TypeVar.name,
-                                                        (void *)((uintptr_t)tp + 1), "a TypeVar default")) {
+                                                        (type_param_ty)((uintptr_t)tp + 1), "a TypeVar default")) {
             return 0;
         }
         break;
@@ -2583,7 +2648,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_value, tp->v.TypeVarTuple.name,
-                                                        (void *)tp, "a TypeVarTuple default")) {
+                                                        tp, "a TypeVarTuple default")) {
             return 0;
         }
         break;
@@ -2593,7 +2658,7 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
 
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_value, tp->v.ParamSpec.name,
-                                                        (void *)tp, "a ParamSpec default")) {
+                                                        tp, "a ParamSpec default")) {
             return 0;
         }
         break;
@@ -2689,6 +2754,20 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 static int
 symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
+    // Annotations in local scopes are not executed and should not affect the symtable
+    bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
+
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
+            && !st->st_cur->ste_has_conditional_annotations)
+    {
+        st->st_cur->ste_has_conditional_annotations = 1;
+        if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__), USE, LOCATION(annotation))) {
+            return 0;
+        }
+    }
     struct _symtable_entry *parent_ste = st->st_cur;
     if (parent_ste->ste_annotation_block == NULL) {
         _Py_block_ty current_type = parent_ste->ste_type;
@@ -2707,15 +2786,22 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         }
     }
     else {
-        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
+        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block,
+                                           /* add_to_children */false)) {
             return 0;
         }
     }
-    VISIT(st, expr, annotation);
+    if (is_unevaluated) {
+        st->st_cur->ste_in_unevaluated_annotation = 1;
+    }
+    int rc = symtable_visit_expr(st, annotation);
+    if (is_unevaluated) {
+        st->st_cur->ste_in_unevaluated_annotation = 0;
+    }
     if (!symtable_exit_block(st)) {
         return 0;
     }
-    return 1;
+    return rc;
 }
 
 static int
@@ -2969,7 +3055,7 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
 static int
 symtable_visit_genexp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(genexpr),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_genexpr),
                                          e->v.GeneratorExp.generators,
                                          e->v.GeneratorExp.elt, NULL);
 }
@@ -2977,7 +3063,7 @@ symtable_visit_genexp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_listcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(listcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_listcomp),
                                          e->v.ListComp.generators,
                                          e->v.ListComp.elt, NULL);
 }
@@ -2985,7 +3071,7 @@ symtable_visit_listcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_setcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(setcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_setcomp),
                                          e->v.SetComp.generators,
                                          e->v.SetComp.elt, NULL);
 }
@@ -2993,7 +3079,7 @@ symtable_visit_setcomp(struct symtable *st, expr_ty e)
 static int
 symtable_visit_dictcomp(struct symtable *st, expr_ty e)
 {
-    return symtable_handle_comprehension(st, e, &_Py_ID(dictcomp),
+    return symtable_handle_comprehension(st, e, &_Py_STR(anon_dictcomp),
                                          e->v.DictComp.generators,
                                          e->v.DictComp.key,
                                          e->v.DictComp.value);
@@ -3051,7 +3137,7 @@ symtable_raise_if_not_coroutine(struct symtable *st, const char *msg, _Py_Source
 
 struct symtable *
 _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
-                              int start, PyCompilerFlags *flags)
+                              int start, PyCompilerFlags *flags, PyObject *module)
 {
     struct symtable *st;
     mod_ty mod;
@@ -3061,7 +3147,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
     if (arena == NULL)
         return NULL;
 
-    mod = _PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = _PyParser_ASTFromString(str, filename, start, flags, arena, module);
     if (mod == NULL) {
         _PyArena_Free(arena);
         return NULL;

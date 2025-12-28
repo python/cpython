@@ -52,6 +52,12 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
+static void
+simple_object_dealloc(PyObject *self)
+{
+    PyObject_Free(self);
+}
+
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
 static PyObject *
@@ -171,7 +177,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Free,  /* tp_dealloc */
+    simple_object_dealloc,      /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -509,8 +515,7 @@ test_thread_state(PyObject *self, PyObject *args)
         return NULL;
 
     if (!PyCallable_Check(fn)) {
-        PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
-            Py_TYPE(fn)->tp_name);
+        PyErr_Format(PyExc_TypeError, "'%T' object is not callable", fn);
         return NULL;
     }
 
@@ -1578,9 +1583,9 @@ getitem_with_error(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    PyGenObject *gen;
+    PyObject *gen;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyGen_Type, &gen))
+    if (!PyArg_ParseTuple(args, "O", &gen))
         return NULL;
 
     /* This is used in a test to check what happens if a signal arrives just
@@ -1594,7 +1599,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
+    return PyObject_CallMethod(gen, "send", "O", Py_None);
 }
 
 
@@ -1737,7 +1742,7 @@ meth_o(PyObject* self, PyObject* obj)
 }
 
 static PyObject*
-meth_noargs(PyObject* self, PyObject* ignored)
+meth_noargs(PyObject* self, PyObject *Py_UNUSED(dummy))
 {
     return _null_to_none(self);
 }
@@ -2201,9 +2206,8 @@ test_macros(PyObject *self, PyObject *Py_UNUSED(args))
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 {
-    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+    // Get the function (removed in 3.15) from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyWeakref_GetObject(PyObject *);
 
     // Create a new heap type, create an instance of this type, and delete the
     // type. This object supports weak references.
@@ -2244,18 +2248,11 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     ref = PyWeakref_GetObject(weakref);  // borrowed ref
     assert(ref == obj);
 
-    // test PyWeakref_GET_OBJECT(), reference is alive
-    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
-    assert(ref == obj);
-
     // delete the referenced object: clear the weakref
     assert(Py_REFCNT(obj) == 1);
     Py_DECREF(obj);
 
     assert(PyWeakref_IsDead(weakref));
-
-    // test PyWeakref_GET_OBJECT(), reference is dead
-    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
     ref = UNINITIALIZED_PTR;
@@ -2307,13 +2304,12 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_DECREF(weakref);
 
     Py_RETURN_NONE;
-
-    _Py_COMP_DIAG_POP
 }
 
 struct simpletracer_data {
     int create_count;
     int destroy_count;
+    int tracker_removed;
     void* addresses[10];
 };
 
@@ -2321,10 +2317,18 @@ static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
     struct simpletracer_data* the_data = (struct simpletracer_data*)data;
     assert(the_data->create_count + the_data->destroy_count < (int)Py_ARRAY_LENGTH(the_data->addresses));
     the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
-    if (event == PyRefTracer_CREATE) {
-        the_data->create_count++;
-    } else {
-        the_data->destroy_count++;
+    switch (event) {
+        case PyRefTracer_CREATE:
+            the_data->create_count++;
+            break;
+        case PyRefTracer_DESTROY:
+            the_data->destroy_count++;
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            the_data->tracker_removed++;
+            break;
+        default:
+            return -1;
     }
     return 0;
 }
@@ -2388,6 +2392,10 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
         PyErr_SetString(PyExc_ValueError, "The object destruction was not correctly traced");
         goto failed;
     }
+    if (tracer_data.tracker_removed != 1) {
+        PyErr_SetString(PyExc_ValueError, "The tracker removal was not correctly traced");
+        goto failed;
+    }
     PyRefTracer_SetTracer(current_tracer, current_data);
     Py_RETURN_NONE;
 failed:
@@ -2413,12 +2421,22 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_BEGIN_CRITICAL_SECTION2(module, module);
     Py_END_CRITICAL_SECTION2();
 
+#ifdef Py_GIL_DISABLED
+    // avoid unused variable compiler warning on GIL-enabled build
+    PyMutex mut = {0};
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&mut);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2_MUTEX(&mut, &mut);
+    Py_END_CRITICAL_SECTION2();
+#endif
+
     Py_RETURN_NONE;
 }
 
 
 // Used by `finalize_thread_hang`.
-#ifdef _POSIX_THREADS
+#if defined(_POSIX_THREADS) && !defined(__wasi__)
 static void finalize_thread_hang_cleanup_callback(void *Py_UNUSED(arg)) {
     // Should not reach here.
     Py_FatalError("pthread thread termination was triggered unexpectedly");
@@ -2518,11 +2536,15 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 static int
 _reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
 {
-    if (event == PyRefTracer_CREATE) {
-        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
-    }
-    else {  // PyRefTracer_DESTROY
-        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    switch (event) {
+        case PyRefTracer_CREATE:
+            printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_DESTROY:
+            printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            return 0;
     }
     return 0;
 }
@@ -2540,6 +2562,39 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+
+typedef struct {
+    PyObject_HEAD
+} ManagedWeakrefNoGCObject;
+
+static void
+ManagedWeakrefNoGC_dealloc(PyObject *self)
+{
+    PyObject_ClearWeakRefs(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ManagedWeakrefNoGC_slots[] = {
+    {Py_tp_dealloc, ManagedWeakrefNoGC_dealloc},
+    {0, 0}
+};
+
+static PyType_Spec ManagedWeakrefNoGC_spec = {
+    .name = "_testcapi.ManagedWeakrefNoGCType",
+    .basicsize = sizeof(ManagedWeakrefNoGCObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_MANAGED_WEAKREF),
+    .slots = ManagedWeakrefNoGC_slots,
+};
+
+static PyObject *
+create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2552,10 +2607,10 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
-    {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
+    {"test_capsule", test_capsule, METH_NOARGS},
+    {"test_from_contiguous", test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
-    {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
+    {"test_pep3118_obsolete_write_locks", test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
@@ -2634,6 +2689,8 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"create_managed_weakref_nogc_type",
+        create_managed_weakref_nogc_type, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2768,6 +2825,7 @@ typedef struct {
     PyObject *ao_iterator;
 } awaitObject;
 
+#define awaitObject_CAST(op)    ((awaitObject *)(op))
 
 static PyObject *
 awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2790,21 +2848,23 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static void
-awaitObject_dealloc(awaitObject *ao)
+awaitObject_dealloc(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     Py_CLEAR(ao->ao_iterator);
     Py_TYPE(ao)->tp_free(ao);
 }
 
 
 static PyObject *
-awaitObject_await(awaitObject *ao)
+awaitObject_await(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
-    (unaryfunc)awaitObject_await,           /* am_await */
+    awaitObject_await,                      /* am_await */
     0,                                      /* am_aiter */
     0,                                      /* am_anext */
     0,                                      /* am_send  */
@@ -2816,7 +2876,7 @@ static PyTypeObject awaitType = {
     "awaitType",
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
+    awaitObject_dealloc,                /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -2871,8 +2931,9 @@ MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 void
-MyList_dealloc(MyListObject* op)
+MyList_dealloc(PyObject *self)
 {
+    MyListObject *op = (MyListObject *)self;
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
@@ -2887,7 +2948,7 @@ static PyTypeObject MyList_Type = {
     "MyList",
     sizeof(MyListObject),
     0,
-    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    MyList_dealloc,                             /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -2935,11 +2996,11 @@ generic_alias_dealloc(PyObject *op)
 {
     PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyObject *op, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
     PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
@@ -3090,7 +3151,7 @@ ContainerNoGC_dealloc(PyObject *op)
 {
     ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
@@ -3165,75 +3226,98 @@ create_manual_heap_type(void)
     return (PyObject *)type;
 }
 
-static struct PyModuleDef _testcapimodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_testcapi",
-    .m_size = sizeof(testcapistate_t),
-    .m_methods = TestMethods,
+typedef struct {
+    PyObject_VAR_HEAD
+} ManagedDictObject;
+
+int ManagedDict_traverse(PyObject *self, visitproc visit, void *arg) {
+    PyObject_VisitManagedDict(self, visit, arg);
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+int ManagedDict_clear(PyObject *self) {
+    PyObject_ClearManagedDict(self);
+    return 0;
+}
+
+static PyGetSetDef ManagedDict_getset[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL},
 };
 
-/* Per PEP 489, this module will not be converted to multi-phase initialization
- */
+static PyType_Slot ManagedDict_slots[] = {
+    {Py_tp_new, (void *)PyType_GenericNew},
+    {Py_tp_getset, (void *)ManagedDict_getset},
+    {Py_tp_traverse, (void *)ManagedDict_traverse},
+    {Py_tp_clear, (void *)ManagedDict_clear},
+    {0}
+};
 
-PyMODINIT_FUNC
-PyInit__testcapi(void)
+static PyType_Spec ManagedDict_spec = {
+    "_testcapi.ManagedDictType",
+    sizeof(ManagedDictObject),
+    0, // itemsize
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC,
+    ManagedDict_slots
+};
+
+static PyObject *
+create_managed_dict_type(void)
 {
-    PyObject *m;
+   return PyType_FromSpec(&ManagedDict_spec);
+}
 
-    m = PyModule_Create(&_testcapimodule);
-    if (m == NULL)
-        return NULL;
-#ifdef Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(m, Py_MOD_GIL_NOT_USED);
-#endif
-
+static int
+_testcapi_exec(PyObject *m)
+{
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
     if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
-        return NULL;
+        return -1;
     }
     if (PyType_Ready(&matmulType) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
     if (PyType_Ready(&ipowType) < 0) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(&ipowType);
     PyModule_AddObject(m, "ipowType", (PyObject *)&ipowType);
 
     if (PyType_Ready(&awaitType) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&awaitType);
     PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
 
     MyList_Type.tp_base = &PyList_Type;
     if (PyType_Ready(&MyList_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MyList_Type);
     PyModule_AddObject(m, "MyList", (PyObject *)&MyList_Type);
 
     if (PyType_Ready(&GenericAlias_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&GenericAlias_Type);
     PyModule_AddObject(m, "GenericAlias", (PyObject *)&GenericAlias_Type);
 
     if (PyType_Ready(&Generic_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&Generic_Type);
     PyModule_AddObject(m, "Generic", (PyObject *)&Generic_Type);
 
     if (PyType_Ready(&MethInstance_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethInstance_Type);
     PyModule_AddObject(m, "MethInstance", (PyObject *)&MethInstance_Type);
 
     if (PyType_Ready(&MethClass_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethClass_Type);
     PyModule_AddObject(m, "MethClass", (PyObject *)&MethClass_Type);
 
     if (PyType_Ready(&MethStatic_Type) < 0)
-        return NULL;
+        return -1;
     Py_INCREF(&MethStatic_Type);
     PyModule_AddObject(m, "MethStatic", (PyObject *)&MethStatic_Type);
 
@@ -3275,14 +3359,18 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "INT64_MAX", PyLong_FromInt64(INT64_MAX));
     PyModule_AddObject(m, "UINT64_MAX", PyLong_FromUInt64(UINT64_MAX));
 
+    if (PyModule_AddIntMacro(m, _Py_STACK_GROWS_DOWN)) {
+        return -1;
+    }
+
     if (PyModule_AddIntMacro(m, Py_single_input)) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, Py_file_input)) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddIntMacro(m, Py_eval_input)) {
-        return NULL;
+        return -1;
     }
 
     testcapistate_t *state = get_testcapi_state(m);
@@ -3290,135 +3378,171 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "error", state->error);
 
     if (PyType_Ready(&ContainerNoGC_type) < 0) {
-        return NULL;
+        return -1;
     }
     Py_INCREF(&ContainerNoGC_type);
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
-        return NULL;
+        return -1;
 
     PyObject *manual_heap_type = create_manual_heap_type();
     if (manual_heap_type == NULL) {
-        return NULL;
+        return -1;
     }
     if (PyModule_Add(m, "ManualHeapType", manual_heap_type) < 0) {
-        return NULL;
+        return -1;
     }
 
+    PyObject *managed_dict_type = create_managed_dict_type();
+    if (managed_dict_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "ManagedDictType", managed_dict_type) < 0) {
+        return -1;
+    }
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Abstract(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Bytes(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Docstring(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Mem(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Watchers(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Long(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Float(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Complex(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Numbers(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Dict(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Set(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_List(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Tuple(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Exceptions(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Code(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Buffer(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_File(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Codec(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Immortal(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_GC(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Run(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Hash(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
-        return NULL;
+        return -1;
+    }
+    if (_PyTestCapi_Init_Modsupport(m) < 0) {
+        return -1;
     }
     if (_PyTestCapi_Init_Monitoring(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Object(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Config(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Import(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Frame(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Type(m) < 0) {
-        return NULL;
+        return -1;
     }
     if (_PyTestCapi_Init_Function(m) < 0) {
-        return NULL;
+        return -1;
+    }
+    if (_PyTestCapi_Init_Module(m) < 0) {
+        return -1;
     }
 
-    PyState_AddModule(m, &_testcapimodule);
-    return m;
+    return 0;
+}
+
+PyABIInfo_VAR(abi_info);
+
+static PyModuleDef_Slot _testcapi_slots[] = {
+    {Py_mod_abi, &abi_info},
+    {Py_mod_exec, _testcapi_exec},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
+
+static struct PyModuleDef _testcapimodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_testcapi",
+    .m_size = sizeof(testcapistate_t),
+    .m_methods = TestMethods,
+    .m_slots = _testcapi_slots
+};
+
+PyMODINIT_FUNC
+PyInit__testcapi(void)
+{
+    return PyModuleDef_Init(&_testcapimodule);
 }

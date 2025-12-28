@@ -44,9 +44,11 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('n'), &_Py_ID(strict), },
     };
     #undef NUM_KEYWORDS
@@ -161,9 +163,11 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(key), },
     };
     #undef NUM_KEYWORDS
@@ -341,6 +345,11 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
         n = ival;
+        if (n < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "n cannot be negative");
+            goto exit;
+        }
     }
 skip_optional:
     return_value = itertools_tee_impl(module, iterable, n);
@@ -521,9 +530,11 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
@@ -563,6 +574,11 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_impl(type, iterable, r);
 
@@ -593,9 +609,11 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
@@ -635,6 +653,11 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
             goto exit;
         }
         r = ival;
+        if (r < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "r cannot be negative");
+            goto exit;
+        }
     }
     return_value = itertools_combinations_with_replacement_impl(type, iterable, r);
 
@@ -664,9 +687,11 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
@@ -727,9 +752,11 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(func), &_Py_ID(initial), },
     };
     #undef NUM_KEYWORDS
@@ -803,9 +830,11 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(data), &_Py_ID(selectors), },
     };
     #undef NUM_KEYWORDS
@@ -902,9 +931,11 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(start), &_Py_ID(step), },
     };
     #undef NUM_KEYWORDS
@@ -949,4 +980,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=688855b1dc77bf5a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7f385837b13edbeb input=a9049054013a1b77]*/

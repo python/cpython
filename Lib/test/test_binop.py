@@ -383,7 +383,7 @@ class OperationOrderTests(unittest.TestCase):
         self.assertEqual(op_sequence(le, B, C), ['C.__ge__', 'B.__le__'])
         self.assertEqual(op_sequence(le, C, B), ['C.__le__', 'B.__ge__'])
 
-        self.assertTrue(issubclass(V, B))
+        self.assertIsSubclass(V, B)
         self.assertEqual(op_sequence(eq, B, V), ['B.__eq__', 'V.__eq__'])
         self.assertEqual(op_sequence(le, B, V), ['B.__le__', 'V.__ge__'])
 

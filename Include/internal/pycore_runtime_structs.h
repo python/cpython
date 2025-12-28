@@ -77,9 +77,7 @@ struct _fileutils_state {
 struct _parser_runtime_state {
 #ifdef Py_DEBUG
     long memo_statistics[_PYPEGEN_NSTATISTICS];
-#ifdef Py_GIL_DISABLED
     PyMutex mutex;
-#endif
 #else
     int _not_used;
 #endif
@@ -106,7 +104,7 @@ struct _Py_cached_objects {
 };
 
 // These would be in pycore_long.h if it weren't for an include cycle.
-#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLPOSINTS           1025
 #define _PY_NSMALLNEGINTS           5
 
 #include "pycore_global_strings.h" // struct _Py_global_strings
@@ -223,9 +221,6 @@ struct pyruntimestate {
     struct _pythread_runtime_state threads;
     struct _signals_runtime_state signals;
 
-    /* Used for the thread state bound to the current thread. */
-    Py_tss_t autoTSSkey;
-
     /* Used instead of PyThreadState.trash when there is not current tstate. */
     Py_tss_t trashTSSkey;
 
@@ -278,12 +273,6 @@ struct pyruntimestate {
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
     struct _Py_time_runtime_state time;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    // Used in "Python/emscripten_trampoline.c" to choose between type
-    // reflection trampoline and EM_JS trampoline.
-    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
-#endif
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_cached_objects cached_objects;

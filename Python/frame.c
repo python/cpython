@@ -69,6 +69,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     if (prev) {
         assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
+        PyObject *exc = PyErr_GetRaisedException();
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -80,6 +81,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
         else {
             f->f_back = (PyFrameObject *)Py_NewRef(back);
         }
+        PyErr_SetRaisedException(exc);
     }
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
@@ -107,7 +109,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
     assert(frame->owner != FRAME_OWNED_BY_GENERATOR ||
-        _PyGen_GetGeneratorFromFrame(frame)->gi_frame_state == FRAME_CLEARED);
+           FT_ATOMIC_LOAD_INT8_RELAXED(_PyGen_GetGeneratorFromFrame(frame)->gi_frame_state) == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
     assert(_PyThreadState_GET()->current_frame != frame);
@@ -139,7 +141,9 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
