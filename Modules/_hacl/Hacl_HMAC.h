@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __Hacl_HMAC_H
-#define __Hacl_HMAC_H
+#ifndef Hacl_HMAC_H
+#define Hacl_HMAC_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -220,5 +220,5 @@ Hacl_HMAC_compute_blake2b_32(
 }
 #endif
 
-#define __Hacl_HMAC_H_DEFINED
-#endif
+#define Hacl_HMAC_H_DEFINED
+#endif /* Hacl_HMAC_H */

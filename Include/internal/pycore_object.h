@@ -252,35 +252,10 @@ _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
     }
 }
 
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
-{
-    if (_Py_IsImmortal(op)) {
-        _Py_DECREF_IMMORTAL_STAT_INC();
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-#ifdef Py_REF_DEBUG
-    _Py_DEC_REFTOTAL(PyInterpreterState_Get());
-#endif
-    op->ob_refcnt--;
-#ifdef Py_DEBUG
-    if (op->ob_refcnt <= 0) {
-        _Py_FatalRefcountError("Expected a positive remaining refcount");
-    }
-#endif
-}
-
 #else
 // TODO: implement Py_DECREF specializations for Py_GIL_DISABLED build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
-{
-    Py_DECREF(op);
-}
-
-static inline void
-_Py_DECREF_NO_DEALLOC(PyObject *op)
 {
     Py_DECREF(op);
 }
@@ -496,6 +471,9 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
 #define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL_SPECIALIZED(_PyObject_CAST(op), destruct)
 
 #endif
+#else  // Py_GIL_DISABLED
+# define Py_DECREF_MORTAL(op) Py_DECREF(op)
+# define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF(op)
 #endif
 
 /* Inline functions trading binary compatibility for speed:
@@ -863,8 +841,7 @@ static inline Py_hash_t
 _PyObject_HashFast(PyObject *op)
 {
     if (PyUnicode_CheckExact(op)) {
-        Py_hash_t hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(
-                             _PyASCIIObject_CAST(op)->hash);
+        Py_hash_t hash = PyUnstable_Unicode_GET_CACHED_HASH(op);
         if (hash != -1) {
             return hash;
         }
@@ -1031,7 +1008,8 @@ enum _PyAnnotateFormat {
     _Py_ANNOTATE_FORMAT_STRING = 4,
 };
 
-int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetDict(PyObject *obj, PyObject *value);
+extern int _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 
 #ifndef Py_GIL_DISABLED
 static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
@@ -1045,6 +1023,8 @@ static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
     }
 #endif
 }
+#else
+# define _Py_INCREF_MORTAL(op) Py_INCREF(op)
 #endif
 
 /* Utility for the tp_traverse slot of mutable heap types that have no other
