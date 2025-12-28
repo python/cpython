@@ -47,6 +47,8 @@ typedef struct _PyExitData {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     const _PyUOpInstruction *trace;
+    // The interpreter this executor belongs to.
+    PyInterpreterState *interp;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;

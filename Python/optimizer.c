@@ -1647,8 +1647,11 @@ unlink_executor(_PyExecutorObject *executor)
         prev->vm_data.links.next = next;
     }
     else {
-        // prev == NULL implies that executor is the list head
-        PyInterpreterState *interp = PyInterpreterState_Get();
+        // prev == NULL often implies that executor is the list head
+        // Note that we should *not* get the current interpreter, as
+        // that may not always correspond to the interpreter this executor
+        // belongs to.
+        PyInterpreterState *interp = executor->interp;
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
@@ -1663,6 +1666,7 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
+    executor->interp = _PyInterpreterState_GET();
     link_executor(executor);
 }
 
