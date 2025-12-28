@@ -4210,6 +4210,27 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
         self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
+    def test_suggestions_with_custom___dir__(self):
+        class M(type):
+            def __dir__(cls):
+                return [None, "fox"]
+
+        class C0:
+            def __dir__(self):
+                return [..., "bluch"]
+
+        class C1(C0, metaclass=M):
+            pass
+
+        self.assertNotIn("'bluch'", self.get_suggestion(C0, "blach"))
+        self.assertIn("'bluch'", self.get_suggestion(C0(), "blach"))
+
+        self.assertIn("'fox'", self.get_suggestion(C1, "foo"))
+        self.assertNotIn("'fox'", self.get_suggestion(C1(), "foo"))
+
+        self.assertNotIn("'bluch'", self.get_suggestion(C1, "blach"))
+        self.assertIn("'bluch'", self.get_suggestion(C1(), "blach"))
+
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
