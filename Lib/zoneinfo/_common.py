@@ -119,8 +119,10 @@ def load_data(fobj):
         assert c == b"\n", c
 
         tz_bytes = b""
-        while (c := fobj.read(1)) != b"\n":
-            tz_bytes += c
+        line = fobj.readline()
+        if not line.endswith(b"\n"):
+            raise ValueError("Invalid TZif file: unexpected end of file")
+        tz_bytes = line.rstrip(b"\n")
 
         tz_str = tz_bytes
     else:
