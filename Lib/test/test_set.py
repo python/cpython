@@ -675,6 +675,35 @@ class TestSet(TestJointOps, unittest.TestCase):
         with self.assertRaises(KeyError):
             myset.discard(elem2)
 
+    def test_set_add_to_dummy_slot(self):
+        # gh-141805
+        tasks = set()
+
+        class Dummy:
+            def __hash__(self):
+                return 0
+
+        class CorruptTrigger:
+            triggered = False
+
+            def __hash__(self):
+                return 0
+
+            def __eq__(self, value):
+                if not self.triggered:
+                    self.triggered = True
+                    tasks.add(self)
+                return False
+
+        tasks.add(Dummy())
+        tasks.add(Dummy())
+        tasks.pop()
+        self.assertEqual(len(tasks), 1)
+        tasks.add(CorruptTrigger())
+        self.assertEqual(len(tasks), 2)
+        # cover the case in gh-141805 that triggers segfault
+        repr(tasks)
+
 
 class SetSubclass(set):
     pass
