@@ -6369,6 +6369,29 @@ class RotatingFileHandlerTest(BaseFileTest):
         self.assertFalse(rh.shouldRollover(self.next_rec()))
         rh.close()
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_should_not_rollover_named_pipe(self):
+        # gh-143237 - test with non-seekable special file (named pipe)
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        try:
+            os.mkfifo(filename)
+        except PermissionError as e:
+            self.skipTest('os.mkfifo(): %s' % e)
+
+        def other_side():
+            with open(filename, 'rb') as f:
+                f.read(1)
+
+        thread = threading.Thread(target=other_side)
+        with threading_helper.start_threads([thread]):
+            rh = logging.handlers.RotatingFileHandler(
+                    filename, encoding="utf-8", maxBytes=1)
+            try:
+                self.assertFalse(rh.shouldRollover(self.next_rec()))
+            finally:
+                rh.close()
+
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
             f.write(b'\n')
