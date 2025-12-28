@@ -180,6 +180,15 @@ def weekday(year, month, day):
 
 
 def _validate_month(month):
+    """
+    Validate that the month value is within the allowed range (1–12).
+
+    Raises:
+        TypeError: if month is not an integer
+        IllegalMonthError: if the month is outside the valid range
+    """
+    if not isinstance(month, int):
+        raise TypeError(f"month must be int, not {type(month).__name__}")
     if not 1 <= month <= 12:
         raise IllegalMonthError(month)
 
@@ -832,7 +841,12 @@ _EPOCH_ORD = datetime.date(EPOCH, 1, 1).toordinal()
 
 
 def timegm(tuple):
-    """Unrelated but handy function to calculate Unix timestamp from GMT."""
+    """
+    Convert a time tuple in UTC (GMT) to seconds since the Unix epoch.
+
+    This function is the inverse of time.gmtime() and does not apply
+    any timezone or daylight saving adjustments.
+    """
     year, month, day, hour, minute, second = tuple[:6]
     days = datetime.date(year, month, 1).toordinal() - _EPOCH_ORD + day - 1
     hours = days*24 + hour
