@@ -1,0 +1,2 @@
+Introduced :meth:`importlib.abc.MetaPathFinder.discover`
+and :meth:`importlib.abc.PathEntryFinder.discover`.
