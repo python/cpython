@@ -486,7 +486,7 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = executor_clear_implicit_interp,
+    .tp_clear = executor_clear,
     .tp_is_gc = executor_is_gc,
 };
 
@@ -1635,7 +1635,7 @@ link_executor(_PyExecutorObject *executor)
 }
 
 static void
-unlink_executor(PyInterpreterState *interp, _PyExecutorObject *executor)
+unlink_executor(_PyExecutorObject *executor)
 {
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
     _PyExecutorObject *next = links->next;
@@ -1648,6 +1648,7 @@ unlink_executor(PyInterpreterState *interp, _PyExecutorObject *executor)
     }
     else {
         // prev == NULL implies that executor is the list head
+        PyInterpreterState *interp = PyInterpreterState_Get();
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
@@ -1769,12 +1770,6 @@ executor_clear(PyObject *op)
     return 0;
 }
 
-static int
-executor_clear_implicit_interp(PyObject *op)
-{
-    return executor_clear(_PyInterpreterState_GET(), op);
-}
-
 void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
@@ -1790,6 +1785,12 @@ static void  jit_tracer_invalidate_dependency(PyThreadState *tstate, void *obj);
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
+
+    // It doesn't matter if we don't invalidate all threads.
+    // If more threads are spawned, we force the jit not to compile anyways
+    // so the trace gets abandoned.
+    jit_tracer_invalidate_dependency(_PyThreadState_GET(), obj);
+
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
     _Py_BloomFilter_Add(&obj_filter, obj);
