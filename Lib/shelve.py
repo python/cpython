@@ -105,6 +105,17 @@ class Shelf(collections.abc.MutableMapping):
             self.serializer = serializer
             self.deserializer = deserializer
 
+    @staticmethod
+    def _validate_serialized_value(serialized_value, original_value):
+        if (serialized_value is None or
+            not isinstance(serialized_value, (bytes, str))):
+            if serialized_value is None:
+                invalid_type = "None"
+            else:
+                invalid_type = type(serialized_value).__name__
+            msg = f"Serializer must return bytes or str, not {invalid_type}"
+            raise ShelveError(msg)
+
     def __iter__(self):
         for k in self.dict.keys():
             yield k.decode(self.keyencoding)
@@ -134,6 +145,7 @@ class Shelf(collections.abc.MutableMapping):
         if self.writeback:
             self.cache[key] = value
         serialized_value = self.serializer(value, self._protocol)
+        self._validate_serialized_value(serialized_value, value)
         self.dict[key.encode(self.keyencoding)] = serialized_value
 
     def __delitem__(self, key):
