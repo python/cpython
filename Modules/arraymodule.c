@@ -1632,7 +1632,9 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;
-        Py_DECREF(res); /* drop write result */
+        Py_DECREF(res);
+
+        offset += size;
     }
 
   done:
