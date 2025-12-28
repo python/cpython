@@ -214,18 +214,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(parser._wsp_splitter(s, 1), res)
 
     params_test__wsp_splitter = Params(
+        test__wsp_splitter_one_word = C('foo', ['foo']),
+        test__wsp_splitter_two_words = C('foo def', ['foo', ' ', 'def']),
+        test__wsp_splitter_ws_runs = C('foo \t def jik', ['foo', ' \t ', 'def jik']),
         )
-
-    def test__wsp_splitter_one_word(self):
-        self.assertEqual(parser._wsp_splitter('foo', 1), ['foo'])
-
-    def test__wsp_splitter_two_words(self):
-        self.assertEqual(parser._wsp_splitter('foo def', 1),
-                                               ['foo', ' ', 'def'])
-
-    def test__wsp_splitter_ws_runs(self):
-        self.assertEqual(parser._wsp_splitter('foo \t def jik', 1),
-                                              ['foo', ' \t ', 'def jik'])
 
 
     # get_fws
