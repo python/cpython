@@ -1589,11 +1589,8 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
 {
     /* Write 64K blocks at a time */
     /* XXX Make the block size settable */
-    const Py_ssize_t BLOCKSIZE = 64*1024;
-    const Py_ssize_t itemsize = self->ob_descr->itemsize;
-
-    Py_ssize_t nbytes = Py_SIZE(self) * itemsize;
-    Py_ssize_t nblocks = (nbytes + BLOCKSIZE - 1) / BLOCKSIZE;
+    Py_ssize_t BLOCKSIZE = 64*1024;
+    Py_ssize_t max_items = PY_SSIZE_T_MAX / self->ob_descr->itemsize;
 
     if (Py_SIZE(self) == 0)
         goto done;
@@ -1601,17 +1598,17 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
 
-    for (Py_ssize_t i = 0; i < nblocks; i++) {
+    Py_ssize_t offset = 0;
+    while (1) {
         if (self->ob_item == NULL || Py_SIZE(self) == 0) {
             break;
         }
 
-        if (Py_SIZE(self) > PY_SSIZE_T_MAX / itemsize) {
+        if (Py_SIZE(self) > max_items) {
             return PyErr_NoMemory();
         }
 
-        Py_ssize_t current_nbytes = Py_SIZE(self) * itemsize;
-        const Py_ssize_t offset = i * BLOCKSIZE;
+        Py_ssize_t current_nbytes = Py_SIZE(self) * self->ob_descr->itemsize;
         if (offset >= current_nbytes) {
             break;
         }
@@ -1627,12 +1624,13 @@ array_array_tofile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f)
         bytes = PyBytes_FromStringAndSize(ptr, size);
         if (bytes == NULL)
             return NULL;
-
         res = PyObject_CallMethodOneArg(f, state->str_write, bytes);
         Py_DECREF(bytes);
         if (res == NULL)
             return NULL;
-        Py_DECREF(res);
+        Py_DECREF(res); /* drop write result */
+
+        offset += size;
     }
 
   done:

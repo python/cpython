@@ -1,1 +1,1 @@
-Use-After-Free Vulnerability Fixed in CPython array.array.tofile().
+:mod:`array`: fix a crash in :mod:`array.array.tofile` when the array is concurrently modified by the writer.

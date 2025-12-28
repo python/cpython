@@ -1368,6 +1368,8 @@ class NumberTest(BaseTest):
         self.assertEqual(a, b)
 
     def test_tofile_concurrent_mutation(self):
+        # Keep this test in sync with the implementation in
+        # Modules/arraymodule.c:array_array_tofile_impl()
         BLOCKSIZE = 64 * 1024
         victim = array.array('B', b'\0' * (BLOCKSIZE * 2))
 
