@@ -1,2 +1,2 @@
 :mod:`zoneinfo`: fix infinite loop in :meth:`ZoneInfo.from_file
-<zoneinfo.ZoneInfo.from_file>` when parsing a malformed TZif file.
+<zoneinfo.ZoneInfo.from_file>` when parsing a malformed TZif file. Patch by Fatih Celik.
