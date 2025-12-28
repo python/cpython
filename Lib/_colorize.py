@@ -273,9 +273,13 @@ class LiveProfiler(ThemeSection):
     func_stack_fg: int = CursesColors.YELLOW
     func_shown_fg: int = CursesColors.MAGENTA
 
-    # Table header colors
+    # Table header colors (for sorted column highlight)
     sorted_header_fg: int = CursesColors.BLACK
-    sorted_header_bg: int = CursesColors.YELLOW
+    sorted_header_bg: int = CursesColors.CYAN
+
+    # Normal header colors (non-sorted columns)
+    normal_header_fg: int = CursesColors.WHITE
+    normal_header_bg: int = CursesColors.BLUE
 
     # Data row colors
     samples_fg: int = CursesColors.CYAN
@@ -303,7 +307,7 @@ LiveProfilerLight = LiveProfiler(
     # Status display colors
     pid_fg=CursesColors.BLUE,
     uptime_fg=CursesColors.GREEN,
-    time_fg=CursesColors.YELLOW,
+    time_fg=CursesColors.RED,  # Use red instead of yellow for better visibility on light bg
     interval_fg=CursesColors.MAGENTA,
 
     # Thread view colors
@@ -317,23 +321,27 @@ LiveProfilerLight = LiveProfiler(
     # Stats colors
     on_gil_fg=CursesColors.GREEN,
     off_gil_fg=CursesColors.RED,
-    waiting_gil_fg=CursesColors.YELLOW,
+    waiting_gil_fg=CursesColors.RED,  # Use red instead of yellow for visibility
     gc_fg=CursesColors.MAGENTA,
 
     # Function display colors
     func_total_fg=CursesColors.BLUE,
     func_exec_fg=CursesColors.GREEN,
-    func_stack_fg=CursesColors.YELLOW,
+    func_stack_fg=CursesColors.RED,  # Use red instead of yellow
     func_shown_fg=CursesColors.MAGENTA,
 
-    # Table header colors
+    # Table header colors (for sorted column highlight)
     sorted_header_fg=CursesColors.WHITE,
-    sorted_header_bg=CursesColors.BLUE,
+    sorted_header_bg=CursesColors.MAGENTA,
+
+    # Normal header colors (non-sorted columns)
+    normal_header_fg=CursesColors.WHITE,
+    normal_header_bg=CursesColors.BLUE,
 
     # Data row colors
     samples_fg=CursesColors.BLUE,
     file_fg=CursesColors.GREEN,
-    func_fg=CursesColors.MAGENTA,
+    func_fg=CursesColors.MAGENTA,  # Use magenta instead of yellow
 
     # Trend indicator colors
     trend_up_fg=CursesColors.GREEN,

@@ -729,8 +729,7 @@ class TableWidget(Widget):
             column_flags
         )
 
-        # Get color attributes from the colors dict (already initialized)
-        color_samples = self.colors.get("color_samples", curses.A_NORMAL)
+        # Get color attributes
         color_file = self.colors.get("color_file", curses.A_NORMAL)
         color_func = self.colors.get("color_func", curses.A_NORMAL)
 
@@ -759,10 +758,10 @@ class TableWidget(Widget):
                 else 0
             )
 
-            # Helper function to get trend color for a specific column
+            # Helper function to get trend color
             def get_trend_color(column_name):
                 trend = trends.get(column_name, "stable")
-                if trend_tracker is not None:
+                if trend_tracker is not None and trend_tracker.enabled:
                     return trend_tracker.get_color(trend)
                 return curses.A_NORMAL
 
@@ -770,7 +769,7 @@ class TableWidget(Widget):
             samples_str = f"{direct_calls}/{cumulative_calls}"
             col = 0
 
-            # Samples column - apply trend color based on nsamples trend
+            # Samples column - apply trend color
             nsamples_color = get_trend_color("nsamples")
             self.add_str(line, col, f"{samples_str:>13}", nsamples_color)
             col += 15
@@ -819,9 +818,7 @@ class TableWidget(Widget):
                     simplified_path = self.collector.simplify_path(filename)
                     file_line = f"{simplified_path}:{lineno}"
                     remaining_width = width - col - 1
-                    self.add_str(
-                        line, col, file_line[:remaining_width], color_file
-                    )
+                    self.add_str(line, col, file_line[:remaining_width], color_file)
 
             line += 1
 

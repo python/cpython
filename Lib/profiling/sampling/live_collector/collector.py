@@ -540,8 +540,12 @@ class LiveStatsCollector(Collector):
                 self.display.init_color_pair(2, profiler_theme.file_fg, default_bg)
                 self.display.init_color_pair(3, profiler_theme.func_fg, default_bg)
 
-                header_bg = 2 if profiler_theme.background_style == "dark" else 4
-                self.display.init_color_pair(COLOR_PAIR_HEADER_BG, 0, header_bg)
+                # Normal header background color pair
+                self.display.init_color_pair(
+                    COLOR_PAIR_HEADER_BG,
+                    profiler_theme.normal_header_fg,
+                    profiler_theme.normal_header_bg,
+                )
 
                 self.display.init_color_pair(COLOR_PAIR_CYAN, profiler_theme.pid_fg, default_bg)
                 self.display.init_color_pair(COLOR_PAIR_YELLOW, profiler_theme.time_fg, default_bg)
@@ -567,7 +571,7 @@ class LiveStatsCollector(Collector):
                     "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA) | A_BOLD,
                     "red": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
                     "sorted_header": self.display.get_color_pair(COLOR_PAIR_SORTED_HEADER) | A_BOLD,
-                    "normal_header": A_REVERSE | A_BOLD,
+                    "normal_header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
                     "color_samples": self.display.get_color_pair(1),
                     "color_file": self.display.get_color_pair(2),
                     "color_func": self.display.get_color_pair(3),
@@ -576,6 +580,7 @@ class LiveStatsCollector(Collector):
                     "trend_stable": A_NORMAL,
                 }
 
+        # Fallback for no-color mode
         return {
             "header": A_REVERSE | A_BOLD,
             "cyan": A_BOLD,
