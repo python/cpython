@@ -87,7 +87,7 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
-       _PyFrameEvalFunction prev_eval_frame;
+        PyUnstable_FrameEvalFunction prev_eval_frame;
 #else
         int _not_used;
 #endif
@@ -868,7 +868,7 @@ struct _is {
     PyObject *sysdict_copy;
     PyObject *builtins_copy;
     // Initialized to _PyEval_EvalFrameDefault().
-    _PyFrameEvalFunction eval_frame;
+    PyUnstable_FrameEvalFunction eval_frame;
 
     PyFunction_WatchCallback func_watchers[FUNC_MAX_WATCHERS];
     // One bit is set for each non-NULL entry in func_watchers

@@ -656,8 +656,12 @@ decode_locale_ex(PyObject *self, PyObject *args)
 static PyObject *
 set_eval_frame_default(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyUnstable_FrameEvalFunction eval_func = _PyEval_EvalFrameDefault;
+    if (PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_func) < 0) {
+        return NULL;
+    }
     module_state *state = get_module_state(self);
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), _PyEval_EvalFrameDefault);
     Py_CLEAR(state->record_list);
     Py_RETURN_NONE;
 }
@@ -689,7 +693,10 @@ set_eval_frame_record(PyObject *self, PyObject *list)
         return NULL;
     }
     Py_XSETREF(state->record_list, Py_NewRef(list));
-    _PyInterpreterState_SetEvalFrameFunc(_PyInterpreterState_GET(), record_eval);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (PyUnstable_InterpreterState_SetEvalFrameFunc(interp, record_eval) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 

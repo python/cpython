@@ -2595,6 +2595,32 @@ create_managed_weakref_nogc_type(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+noop_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
+{
+    return NULL;
+}
+
+static PyObject *
+test_interpreter_setevalframefunc(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyUnstable_FrameEvalFunction eval_func;
+    int res;
+
+    eval_func = PyUnstable_InterpreterState_GetEvalFrameFunc(interp);
+
+    res = PyUnstable_InterpreterState_SetEvalFrameFunc(interp, noop_eval);
+    assert(res == 0);
+    assert(PyUnstable_InterpreterState_GetEvalFrameFunc(interp) == noop_eval);
+
+    res = PyUnstable_InterpreterState_SetEvalFrameFunc(interp, eval_func);
+    assert(res == 0);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2691,6 +2717,8 @@ static PyMethodDef TestMethods[] = {
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"create_managed_weakref_nogc_type",
         create_managed_weakref_nogc_type, METH_NOARGS},
+    {"test_interpreter_setevalframefunc",
+        test_interpreter_setevalframefunc, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
