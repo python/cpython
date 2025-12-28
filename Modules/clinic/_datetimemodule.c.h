@@ -409,6 +409,74 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(datetime_date_isoformat__doc__,
+"isoformat($self, /, basic=False)\n"
+"--\n"
+"\n"
+"Return string in ISO 8601 format, YYYY-MM-DD.\n"
+"\n"
+"If basic is true, uses the basic format, YYYYMMDD.");
+
+#define DATETIME_DATE_ISOFORMAT_METHODDEF    \
+    {"isoformat", _PyCFunction_CAST(datetime_date_isoformat), METH_FASTCALL|METH_KEYWORDS, datetime_date_isoformat__doc__},
+
+static PyObject *
+datetime_date_isoformat_impl(PyDateTime_Date *self, int basic);
+
+static PyObject *
+datetime_date_isoformat(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(basic), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"basic", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "isoformat",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int basic = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    basic = PyObject_IsTrue(args[0]);
+    if (basic < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = datetime_date_isoformat_impl((PyDateTime_Date *)self, basic);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(datetime_date_strftime__doc__,
 "strftime($self, /, format)\n"
 "--\n"
@@ -2113,4 +2181,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=4bdd9006166008a9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a961d9d6e858f52d input=a9049054013a1b77]*/

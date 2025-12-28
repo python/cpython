@@ -3595,16 +3595,21 @@ date_repr(PyObject *op)
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
+/*[clinic input]
+datetime.date.isoformat
+
+    basic: bool = False
+
+Return string in ISO 8601 format, YYYY-MM-DD.
+
+If basic is true, uses the basic format, YYYYMMDD.
+[clinic start generated code]*/
+
 static PyObject *
-date_isoformat(PyObject *op, PyObject *args, PyObject *kw)
+datetime_date_isoformat_impl(PyDateTime_Date *self, int basic)
+/*[clinic end generated code: output=c458fbf6d05e16f2 input=1bd448614fd107d0]*/
 {
-    int basic = 0;
-    static char *keywords[] = {"basic", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|p:isoformat", keywords, &basic)) {
-        return NULL;
-    }
     const char *format = basic ? "%04d%02d%02d" : "%04d-%02d-%02d";
-    PyDateTime_Date *self = PyDate_CAST(op);
     return PyUnicode_FromFormat(format, GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 }
 
@@ -3997,9 +4002,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return a named tuple containing ISO year, week number, and "
                "weekday.")},
 
-    {"isoformat",   _PyCFunction_CAST(date_isoformat),        METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return string in ISO 8601 format, YYYY-MM-DD.\n"
-               "If basic is true, uses the basic format, YYYYMMDD.")},
+    DATETIME_DATE_ISOFORMAT_METHODDEF
 
     {"isoweekday", date_isoweekday, METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
@@ -4863,8 +4866,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec,
 
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
-
-    static const char * const specs_extended[][2] = {
+    static const char *const specs_extended[][2] = {
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
@@ -4879,7 +4881,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec,
         {"microseconds", "%02d%02d%02d.%06d"},
     };
 
-    const char *(*specs)[2] = basic ? specs_basic : specs_extended;
+    const char *const (*specs)[2] = basic ? specs_basic : specs_extended;
     // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
     size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
     size_t given_spec;
@@ -6444,14 +6446,14 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
 
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
-    static const char * const specs_extended[][2] = {
+    static const char *const specs_extended[][2] = {
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
         {"milliseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%03d"},
         {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
     };
-    static const char * const specs_basic[][2] = {
+    static const char *const specs_basic[][2] = {
         {"hours", "%04d%02d%02d%c%02d"},
         {"minutes", "%04d%02d%02d%c%02d%02d"},
         {"seconds", "%04d%02d%02d%c%02d%02d%02d"},
@@ -6459,7 +6461,7 @@ datetime_datetime_isoformat_impl(PyDateTime_DateTime *self, int sep,
         {"microseconds", "%04d%02d%02d%c%02d%02d%02d.%06d"},
     };
 
-    const char *(*specs)[2] = basic ? specs_basic : specs_extended;
+    const char *const(*specs)[2] = basic ? specs_basic : specs_extended;
     // due to array decaying, Py_ARRAY_LENGTH(specs) would return 0
     size_t specs_count = basic ? Py_ARRAY_LENGTH(specs_basic) : Py_ARRAY_LENGTH(specs_extended);
     size_t given_spec;
