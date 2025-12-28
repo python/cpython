@@ -148,5 +148,6 @@ class OverlappedRefleakTests(unittest.TestCase):
         with self.assertRaises(OSError):
             ov.WSARecvFromInto(0x1234, buf, len(buf), 0)
 
+
 if __name__ == '__main__':
     unittest.main()
