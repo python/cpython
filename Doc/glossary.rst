@@ -1415,6 +1415,8 @@ Glossary
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
 
+      See also :ref:`slice-objects`.
+
    soft deprecated
       A soft deprecated API should not be used in new code,
       but it is safe for already existing code to use it.
