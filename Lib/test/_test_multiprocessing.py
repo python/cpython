@@ -3392,6 +3392,7 @@ class _TestMyManager(BaseTestCase):
     ALLOWED_TYPES = ('manager',)
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3404,6 +3405,7 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         with manager:
@@ -3414,6 +3416,7 @@ class _TestMyManager(BaseTestCase):
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_mymanager_context_prestarted(self):
         manager = MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
@@ -3485,6 +3488,7 @@ class _TestRemoteManager(BaseTestCase):
         queue.put(tuple(cls.values))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer('TSan: leaks threads', thread=True)
     def test_remote(self):
         authkey = os.urandom(32)
 
@@ -3527,6 +3531,7 @@ class _TestManagerRestart(BaseTestCase):
         queue.put('hello world')
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @support.skip_if_sanitizer("TSan: leaks threads", thread=True)
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
@@ -5966,6 +5971,26 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(ValueError, ctx.set_start_method, 'spawn')
             self.assertRaises(ValueError, ctx.set_start_method, None)
             self.check_context(ctx)
+
+    @staticmethod
+    def _dummy_func():
+        pass
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_spawn_dont_set_context(self):
+        # Run a process with spawn or forkserver context may change
+        # the global start method, see gh-109263.
+        for method in ('fork', 'spawn', 'forkserver'):
+            multiprocessing.set_start_method(None, force=True)
+
+            try:
+                ctx = multiprocessing.get_context(method)
+            except ValueError:
+                continue
+            process = ctx.Process(target=self._dummy_func)
+            process.start()
+            process.join()
+            self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
 
     def test_context_check_module_types(self):
         try:

@@ -24,7 +24,7 @@ from ..constants import (
 )
 from .constants import (
     MICROSECONDS_PER_SECOND,
-    DISPLAY_UPDATE_INTERVAL,
+    DISPLAY_UPDATE_INTERVAL_SEC,
     MIN_TERMINAL_WIDTH,
     MIN_TERMINAL_HEIGHT,
     HEADER_LINES,
@@ -157,7 +157,7 @@ class LiveStatsCollector(Collector):
         self.max_sample_rate = 0  # Track maximum sample rate seen
         self.successful_samples = 0  # Track samples that captured frames
         self.failed_samples = 0  # Track samples that failed to capture frames
-        self.display_update_interval = DISPLAY_UPDATE_INTERVAL  # Instance variable for display refresh rate
+        self.display_update_interval_sec = DISPLAY_UPDATE_INTERVAL_SEC  # Instance variable for display refresh rate
 
         # Thread status statistics (bit flags)
         self.thread_status_counts = {
@@ -216,6 +216,9 @@ class LiveStatsCollector(Collector):
     def elapsed_time(self):
         """Get the elapsed time, frozen when finished."""
         if self.finished and self.finish_timestamp is not None:
+            # Handle case where process exited before any samples were collected
+            if self.start_time is None:
+                return 0
             return self.finish_timestamp - self.start_time
         return time.perf_counter() - self.start_time if self.start_time else 0
 
@@ -348,7 +351,7 @@ class LiveStatsCollector(Collector):
         self.failed_samples += 1
         self.total_samples += 1
 
-    def collect(self, stack_frames):
+    def collect(self, stack_frames, timestamp_us=None):
         """Collect and display profiling data."""
         if self.start_time is None:
             self.start_time = time.perf_counter()
@@ -410,7 +413,7 @@ class LiveStatsCollector(Collector):
             if (
                 self._last_display_update is None
                 or (current_time - self._last_display_update)
-                >= self.display_update_interval
+                >= self.display_update_interval_sec
             ):
                 self._update_display()
                 self._last_display_update = current_time
@@ -987,14 +990,14 @@ class LiveStatsCollector(Collector):
 
         elif ch == ord("+") or ch == ord("="):
             # Decrease update interval (faster refresh)
-            self.display_update_interval = max(
-                0.05, self.display_update_interval - 0.05
+            self.display_update_interval_sec = max(
+                0.05, self.display_update_interval_sec - 0.05
             )  # Min 20Hz
 
         elif ch == ord("-") or ch == ord("_"):
             # Increase update interval (slower refresh)
-            self.display_update_interval = min(
-                1.0, self.display_update_interval + 0.05
+            self.display_update_interval_sec = min(
+                1.0, self.display_update_interval_sec + 0.05
             )  # Max 1Hz
 
         elif ch == ord("c") or ch == ord("C"):

@@ -310,7 +310,7 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
     while (ts) {
         _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
         if (current != NULL) {
-            _Py_DECREF_NO_DEALLOC((PyObject *)current);
+            Py_DECREF((PyObject *)current);
         }
         ts = ts->next;
     }
@@ -320,6 +320,10 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
 static void
 add_to_pending_deletion_list(_PyExecutorObject *self)
 {
+    if (self->vm_data.pending_deletion) {
+        return;
+    }
+    self->vm_data.pending_deletion = 1;
     PyInterpreterState *interp = PyInterpreterState_Get();
     self->vm_data.links.previous = NULL;
     self->vm_data.links.next = interp->executor_deletion_list_head;
@@ -627,7 +631,7 @@ _PyJit_translate_single_bytecode_to_trace(
     uint32_t target = 0;
 
     target = Py_IsNone((PyObject *)old_code)
-        ? (int)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
+        ? (uint32_t)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
         : INSTR_IP(target_instr, old_code);
 
     // Rewind EXTENDED_ARG so that we see the whole thing.
@@ -698,12 +702,6 @@ _PyJit_translate_single_bytecode_to_trace(
         assert(_Py_GetBaseCodeUnit(old_code, target).op.code == EXTENDED_ARG);
     }
 #endif
-
-    // Skip over super instructions.
-    if (_tstate->jit_tracer_state.prev_state.instr_is_super) {
-        _tstate->jit_tracer_state.prev_state.instr_is_super = false;
-        return 1;
-    }
 
     if (opcode == ENTER_EXECUTOR) {
         goto full;
@@ -1073,7 +1071,6 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
     _tstate->jit_tracer_state.prev_state.instr_stacklevel = curr_stackdepth;
-    _tstate->jit_tracer_state.prev_state.instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _tstate->jit_tracer_state.initial_state.jump_backward_instr = curr_instr;
 
@@ -1666,6 +1663,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
+    executor->vm_data.pending_deletion = 0;
     for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
