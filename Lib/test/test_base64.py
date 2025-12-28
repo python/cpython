@@ -174,27 +174,6 @@ class BaseXYTestCase(unittest.TestCase):
            b"RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0NT"
            b"Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==")
 
-        eq(base64.b64encode(b"www.python.org", wrapcol=0), b'd3d3LnB5dGhvbi5vcmc=')
-        eq(base64.b64encode(b"www.python.org", wrapcol=8), b'd3d3LnB5\ndGhvbi5v\ncmc=')
-        eq(base64.b64encode(b"www.python.org", wrapcol=76), b'd3d3LnB5dGhvbi5vcmc=')
-        eq(base64.b64encode(b"www.python.org", wrapcol=1),
-           b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=')
-        eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize),
-           b'd3d3LnB5dGhvbi5vcmc=')
-        if check_impl_detail():
-            eq(base64.b64encode(b"www.python.org", wrapcol=sys.maxsize*2),
-               b'd3d3LnB5dGhvbi5vcmc=')
-            with self.assertRaises(OverflowError):
-                base64.b64encode(b"www.python.org", wrapcol=2**1000)
-        with self.assertRaises(ValueError):
-            base64.b64encode(b"www.python.org", wrapcol=-8)
-        with self.assertRaises(TypeError):
-            base64.b64encode(b"www.python.org", wrapcol=8.0)
-        with self.assertRaises(TypeError):
-            base64.b64encode(b"www.python.org", wrapcol='8')
-        eq(base64.b64encode(b"", wrapcol=0), b'')
-        eq(base64.b64encode(b"", wrapcol=8), b'')
-
         # Test with arbitrary alternative characters
         eq(base64.b64encode(b'\xd3V\xbeo\xf7\x1d', altchars=b'*$'), b'01a*b$cd')
         eq(base64.b64encode(b'\xd3V\xbeo\xf7\x1d', altchars=bytearray(b'*$')),
@@ -229,6 +208,31 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.urlsafe_b64encode,
                                b'\xd3V\xbeo\xf7\x1d', b'01a-b_cd')
         self.check_encode_type_errors(base64.urlsafe_b64encode)
+
+    def test_b64encode_wrapcol(self):
+        eq = self.assertEqual
+        b = b'www.python.org'
+        eq(base64.b64encode(b, wrapcol=0), b'd3d3LnB5dGhvbi5vcmc=')
+        eq(base64.b64encode(b, wrapcol=8), b'd3d3LnB5\ndGhvbi5v\ncmc=')
+        eq(base64.b64encode(b, wrapcol=76), b'd3d3LnB5dGhvbi5vcmc=')
+        eq(base64.b64encode(b, wrapcol=1),
+           b'd\n3\nd\n3\nL\nn\nB\n5\nd\nG\nh\nv\nb\ni\n5\nv\nc\nm\nc\n=')
+        eq(base64.b64encode(b, wrapcol=sys.maxsize), b'd3d3LnB5dGhvbi5vcmc=')
+        if check_impl_detail():
+            eq(base64.b64encode(b, wrapcol=sys.maxsize*2),
+               b'd3d3LnB5dGhvbi5vcmc=')
+            with self.assertRaises(OverflowError):
+                base64.b64encode(b, wrapcol=2**1000)
+        with self.assertRaises(ValueError):
+            base64.b64encode(b, wrapcol=-8)
+        with self.assertRaises(TypeError):
+            base64.b64encode(b, wrapcol=8.0)
+        with self.assertRaises(TypeError):
+            base64.b64encode(b, wrapcol='8')
+        with self.assertRaises(TypeError):
+            base64.b64encode(b, wrapcol=None)
+        eq(base64.b64encode(b'', wrapcol=0), b'')
+        eq(base64.b64encode(b'', wrapcol=8), b'')
 
     def test_b64decode(self):
         eq = self.assertEqual
@@ -637,17 +641,45 @@ class BaseXYTestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, base64.a85encode, "")
 
-        eq(base64.a85encode(b"www.python.org", wrapcol=7, adobe=False),
-           b'GB\\6`E-\nZP=Df.1\nGEb>')
-        eq(base64.a85encode(b"\0\0\0\0www.python.org", wrapcol=7, adobe=False),
-           b'zGB\\6`E\n-ZP=Df.\n1GEb>')
-        eq(base64.a85encode(b"www.python.org", wrapcol=7, adobe=True),
-           b'<~GB\\6`\nE-ZP=Df\n.1GEb>\n~>')
-
         eq(base64.a85encode(b' '*8, foldspaces=True, adobe=False), b'yy')
         eq(base64.a85encode(b' '*7, foldspaces=True, adobe=False), b'y+<Vd')
         eq(base64.a85encode(b' '*6, foldspaces=True, adobe=False), b'y+<U')
         eq(base64.a85encode(b' '*5, foldspaces=True, adobe=False), b'y+9')
+
+    def test_a85encode_wrapcol(self):
+        eq = self.assertEqual
+        b = b'www.python.org'
+        eq(base64.a85encode(b, wrapcol=0), b'GB\\6`E-ZP=Df.1GEb>')
+        eq(base64.a85encode(b, wrapcol=7), b'GB\\6`E-\nZP=Df.1\nGEb>')
+        eq(base64.a85encode(b"\0\0\0\0www.python.org", wrapcol=7),
+           b'zGB\\6`E\n-ZP=Df.\n1GEb>')
+        eq(base64.a85encode(b, wrapcol=75), b'GB\\6`E-ZP=Df.1GEb>')
+        eq(base64.a85encode(b, wrapcol=1),
+           b'G\nB\n\\\n6\n`\nE\n-\nZ\nP\n=\nD\nf\n.\n1\nG\nE\nb\n>')
+        eq(base64.a85encode(b, wrapcol=7, adobe=True),
+           b'<~GB\\6`\nE-ZP=Df\n.1GEb>\n~>')
+        eq(base64.a85encode(b, wrapcol=1),
+           b'G\nB\n\\\n6\n`\nE\n-\nZ\nP\n=\nD\nf\n.\n1\nG\nE\nb\n>')
+        eq(base64.a85encode(b, wrapcol=1, adobe=True),
+           b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
+        eq(base64.a85encode(b, wrapcol=sys.maxsize), b'GB\\6`E-ZP=Df.1GEb>')
+        if check_impl_detail():
+            eq(base64.a85encode(b, wrapcol=2**1000), b'GB\\6`E-ZP=Df.1GEb>')
+            eq(base64.a85encode(b, wrapcol=-7),
+               b'G\nB\n\\\n6\n`\nE\n-\nZ\nP\n=\nD\nf\n.\n1\nG\nE\nb\n>')
+            eq(base64.a85encode(b, wrapcol=-7, adobe=True),
+               b'<~\nGB\n\\6\n`E\n-Z\nP=\nDf\n.1\nGE\nb>\n~>')
+        with self.assertRaises(TypeError):
+            base64.a85encode(b, wrapcol=7.0)
+        with self.assertRaises(TypeError):
+            base64.a85encode(b, wrapcol='7')
+        if check_impl_detail():
+            eq(base64.a85encode(b, wrapcol=None), b'GB\\6`E-ZP=Df.1GEb>')
+        eq(base64.a85encode(b'', wrapcol=0), b'')
+        eq(base64.a85encode(b'', wrapcol=7), b'')
+        eq(base64.a85encode(b'', wrapcol=1, adobe=True), b'<~\n~>')
+        eq(base64.a85encode(b'', wrapcol=3, adobe=True), b'<~\n~>')
+        eq(base64.a85encode(b'', wrapcol=4, adobe=True), b'<~~>')
 
     def test_b85encode(self):
         eq = self.assertEqual
