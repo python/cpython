@@ -154,7 +154,9 @@ static void
 _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
-        PyMem_RawFree(handle->pages[i].data);
+        if (handle->pages[i].data) {
+            PyMem_RawFree(handle->pages[i].data);
+        }
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
     }
