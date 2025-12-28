@@ -730,32 +730,6 @@ class OrderedDictTests:
         with self.assertRaises(ValueError):
             a |= "BAD"
 
-    def test_getitem_re_entrant_clear_during_copy(self):
-        class Evil(self.OrderedDict):
-            def __getitem__(self, key):
-                super().clear()
-                return None
-
-        evil_dict = Evil([(i, i) for i in range(4)])
-        result = evil_dict.copy()
-
-        self.assertEqual(len(result), 4)
-
-    def test_getitem_re_entrant_modify_during_copy(self):
-        class Modifier(self.OrderedDict):
-            def __getitem__(self, key):
-                self['new_key'] = 'new_value'
-                return super().__getitem__(key)
-
-        original = Modifier([(1, 'one'), (2, 'two')])
-        result = original.copy()
-
-        self.assertIn(1, result)
-        self.assertIn(2, result)
-        self.assertEqual(result[1], 'one')
-        self.assertEqual(result[2], 'two')
-        self.assertEqual(result["new_key"], "new_value")
-
     @support.cpython_only
     def test_ordered_dict_items_result_gc(self):
         # bpo-42536: OrderedDict.items's tuple-reuse speed trick breaks the GC's
@@ -899,6 +873,26 @@ class CPythonOrderedDictSideEffects:
         self.assertEqual(Key.count, 2)
         self.assertDictEqual(dict1, dict.fromkeys((0, 4.2)))
         self.assertDictEqual(dict2, dict.fromkeys((0, Key(), 4.2)))
+
+    def test_getitem_re_entrant_clear_during_copy(self):
+        class Evil(self.OrderedDict):
+            def __getitem__(self, key):
+                super().clear()
+                return None
+
+        evil_dict = Evil([(i, i) for i in range(4)])
+        with self.assertRaises(RuntimeError):
+            result = evil_dict.copy()
+
+    def test_getitem_re_entrant_modify_during_copy(self):
+        class Modifier(self.OrderedDict):
+            def __getitem__(self, key):
+                self['new_key'] = 'new_value'
+                return super().__getitem__(key)
+
+        original = Modifier([(1, 'one'), (2, 'two')])
+        with self.assertRaises(RuntimeError):
+            result = original.copy()
 
 
 @unittest.skipUnless(c_coll, 'requires the C version of the collections module')

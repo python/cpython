@@ -1266,51 +1266,39 @@ OrderedDict_copy_impl(PyObject *od)
         }
     }
     else {
-        Py_ssize_t i, size = PyODict_Size((PyODictObject *)od);
-        PyObject **keys;
-        if (size < 0) {
-            goto fail;
-        }
+        PyODictObject *self = _PyODictObject_CAST(od);
+        size_t state = self->od_state;
+        _ODictNode *cur = _odict_FIRST(od);
 
-        if (size == 0) {
-            return od_copy;
-        }
-
-        keys = PyMem_Malloc(size * sizeof(PyObject *));
-        if (keys == NULL) {
-            PyErr_NoMemory();
-            goto fail;
-        }
-
-        i = 0;
-        _odict_FOREACH(od, node) {
-            keys[i] = _odictnode_KEY(node);
-            Py_INCREF(keys[i]);
-            i++;
-        }
-
-        for (i = 0; i < size; i++) {
-            int res;
-            PyObject *value = PyObject_GetItem((PyObject *)od, keys[i]);
+        while (cur != NULL) {
+            if (self->od_state != state) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                goto fail;
+            }
+            PyObject *key = Py_NewRef(_odictnode_KEY(cur));
+            PyObject *value = PyObject_GetItem((PyObject *)od, key);
             if (value == NULL) {
-                for (Py_ssize_t j = 0; j < size; j++) {
-                    Py_DECREF(keys[j]);
-                }
-                PyMem_Free(keys);
+                Py_DECREF(key);
                 goto fail;
             }
-            res = PyObject_SetItem((PyObject *)od_copy, keys[i], value);
+            if (self->od_state != state) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                PyErr_SetString(PyExc_RuntimeError,
+                                "OrderedDict mutated during iteration");
+                goto fail;
+            }
+            if (PyObject_SetItem((PyObject *)od_copy, key, value) != 0) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto fail;
+            }
+            Py_DECREF(key);
             Py_DECREF(value);
-            Py_DECREF(keys[i]);
-            if (res != 0) {
-                for (; i < size; i++) {
-                    Py_DECREF(keys[i]);
-                }
-                PyMem_Free(keys);
-                goto fail;
-            }
+
+            cur = _odictnode_NEXT(cur);
         }
-        PyMem_Free(keys);
     }
     return od_copy;
 
