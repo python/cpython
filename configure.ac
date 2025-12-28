@@ -2142,6 +2142,34 @@ if test "$Py_BOLT" = 'true' ; then
     AC_MSG_ERROR([llvm-bolt is required for a --enable-bolt build but could not be found.])
   fi
 
+  # Check for packed relocations (-Wl,-z,pack-relative-relocs) which use DT_RELR format.
+  # BOLT has issues analyzing these compact relocations.
+  AC_MSG_CHECKING([for packed relocations in LDFLAGS])
+  has_packed_relocs="no"
+  case "$LDFLAGS $LDFLAGS_NODIST" in
+    *-Wl,-z,pack-relative-relocs*)
+      has_packed_relocs="yes"
+      ;;
+  esac
+  AC_MSG_RESULT([$has_packed_relocs])
+
+  # Check BOLT version if it's < 21.1.0, to determine if we need to skip functions with computed gotos.
+  AC_MSG_CHECKING([llvm-bolt version])
+  llvm_bolt_version=$("${LLVM_BOLT}" --version 2>/dev/null | grep -oE '[[0-9]]+\.[[0-9]]+\.[[0-9]]+' | head -1)
+  AC_MSG_RESULT([${llvm_bolt_version}])
+
+  # Parse version
+  llvm_bolt_major=$(echo "${llvm_bolt_version}" | cut -d. -f1)
+  llvm_bolt_minor=$(echo "${llvm_bolt_version}" | cut -d. -f2)
+
+  bolt_need_skip_computed_goto="yes"
+  if test -n "${llvm_bolt_major}" && test "${llvm_bolt_major}" -ge 21; then
+    if test "${llvm_bolt_major}" -gt 21 || test "${llvm_bolt_minor}" -ge 1; then
+      bolt_need_skip_computed_goto="no"
+      AC_MSG_RESULT([LLVM ${llvm_bolt_version} supports computed gotos])
+    fi
+  fi
+
   AC_SUBST([MERGE_FDATA])
   AC_PATH_TOOL([MERGE_FDATA], [merge-fdata], [''], [${llvm_path}])
   if test -n "${MERGE_FDATA}" -a -x "${MERGE_FDATA}"
@@ -2171,15 +2199,80 @@ then
     [BOLT_COMMON_FLAGS],
     [m4_normalize("
       [-update-debug-sections]
-
-      dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
-      dnl Exclude functions containing computed gotos.
-      dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
-      dnl GCC's LTO creates .lto_priv.0 clones of these functions.
-      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1,sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1]
     ")]
   )
+
+  dnl BOLT versions before LLVM 21.1.0 don't support computed gotos in PIC compiled code.
+  dnl Exclude functions containing computed gotos for older versions.
+  dnl Fixed in LLVM 21.1.0+ via https://github.com/llvm/llvm-project/pull/120267
+  if test "${bolt_need_skip_computed_goto}" = "yes"; then
+    dnl Skip base computed goto functions
+    BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1"
+    dnl GCC's LTO creates .lto_priv.0 clones that also need to be skipped
+    dnl Skip if packed relocs not present.
+    if test "${has_packed_relocs}" != "yes" && test "${ac_cv_cc_name}" = "gcc" && test "${with_lto}" != "no" && test -n "${with_lto}"; then
+      BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+    fi
+  fi
+
+  dnl When packed relocations are used, BOLT cannot properly
+  dnl analyze the DT_RELR format. Build skip list for functions that fail with packed relocs.
+  if test "${has_packed_relocs}" = "yes"; then
+    bolt_base="_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1"
+    bolt_sre_lto="sre_ucs1_match.lto_priv.0/1,sre_ucs2_match.lto_priv.0/1,sre_ucs4_match.lto_priv.0/1"
+    bolt_all_lto="_PyEval_EvalFrameDefault.lto_priv.0/1,${bolt_sre_lto}"
+
+    case "${ac_cv_cc_name}" in
+      gcc)
+        dnl GCC's LTO creates .lto_priv.0 variants; PGO creates .localalias variants (in shared builds)
+        bolt_skip_list=""
+
+        dnl Determine what to include based on build configuration
+        bolt_need_base=$( (test "${bolt_need_skip_computed_goto}" != "yes" && test "${enable_shared}" = "yes") && echo "yes" || echo "no")
+        bolt_need_lto=$( (test "${with_lto}" != "no" && test -n "${with_lto}") && echo "yes" || echo "no")
+        bolt_need_pgo=$( (test "${enable_optimizations}" = "yes" && test "${enable_shared}" = "yes") && echo "yes" || echo "no")
+
+        dnl Build the skip list $bolt_skip_list
+        test "${bolt_need_base}" = "yes" && bolt_skip_list="${bolt_base}"
+        if test "${bolt_need_lto}" = "yes"; then
+          if test "${enable_shared}" = "yes"; then
+            test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+            bolt_skip_list="${bolt_skip_list}${bolt_all_lto}"
+          elif test "${bolt_need_skip_computed_goto}" != "yes"; then
+            bolt_skip_list="${bolt_all_lto}"
+          else
+            dnl BOLT < 21.1.0 + static: need to add LTO variants
+            test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+            bolt_skip_list="${bolt_skip_list}${bolt_all_lto}"
+          fi
+        fi
+        if test "${bolt_need_pgo}" = "yes"; then
+          test -n "${bolt_skip_list}" && bolt_skip_list="${bolt_skip_list},"
+          if test "${bolt_need_lto}" = "yes"; then
+            bolt_skip_list="${bolt_skip_list}_PyEval_EvalFrameDefault.localalias.lto_priv.0/1"
+          else
+            bolt_skip_list="${bolt_skip_list}_PyEval_EvalFrameDefault.localalias/1"
+          fi
+        fi
+
+        dnl Apply the skip list to BOLT_COMMON_FLAGS
+        if test -n "${bolt_skip_list}"; then
+          if test "${bolt_need_skip_computed_goto}" = "yes"; then
+            BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS},${bolt_skip_list}"
+          else
+            BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=${bolt_skip_list}"
+          fi
+        fi
+        ;;
+      clang*)
+        if test "${bolt_need_skip_computed_goto}" != "yes"; then
+          BOLT_COMMON_FLAGS="${BOLT_COMMON_FLAGS} -skip-funcs=${bolt_base}"
+        fi
+        ;;
+    esac
+  fi
 fi
+AC_MSG_RESULT([$BOLT_COMMON_FLAGS])
 
 AC_ARG_VAR(
   [BOLT_INSTRUMENT_FLAGS],
