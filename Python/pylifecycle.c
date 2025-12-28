@@ -1923,7 +1923,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
         _PyPerfTrampoline_Fini();
-        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
