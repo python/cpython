@@ -1,0 +1,1 @@
+Fix infinite loop in zoneinfo.ZoneInfo.from_file when parsing a malformed TZif file.
