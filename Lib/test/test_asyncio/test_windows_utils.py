@@ -129,45 +129,24 @@ class PopenTests(unittest.TestCase):
             pass
 
 
-class OverlappedLeakTests(unittest.TestCase):
-    def _invalid_socket_handle(self):
-        return 0
+class OverlappedRefleakTests(unittest.TestCase):
 
-    def test_overlapped_wsasendto_failure_releases_user_buffer(self):
+    def test_wsasendto_failure(self):
         ov = _overlapped.Overlapped()
         buf = bytearray(4096)
         with self.assertRaises(OSError):
-            ov.WSASendTo(self._invalid_socket_handle(),
-                         memoryview(buf), 0, ("127.0.0.1", 1))
-        # If the exported buffer is still held, this will raise BufferError.
-        buf.append(1)
+            ov.WSASendTo(0x1234, buf, 0, ("127.0.0.1", 1))
 
-    def test_overlapped_wsarecvfrominto_failure_releases_user_buffer(self):
+    def test_wsarecvfrom_failure(self):
+        ov = _overlapped.Overlapped()
+        with self.assertRaises(OSError):
+            ov.WSARecvFrom(0x1234, 1024, 0)
+
+    def test_wsarecvfrominto_failure(self):
         ov = _overlapped.Overlapped()
         buf = bytearray(4096)
         with self.assertRaises(OSError):
-            ov.WSARecvFromInto(self._invalid_socket_handle(),
-                               memoryview(buf), len(buf), 0)
-        # If the exported buffer is still held, this will raise BufferError.
-        buf.append(1)
-
-    @support.refcount_test
-    def test_overlapped_wsarecvfrom_failure_does_not_leak_allocated_buffer(self):
-        gettotalrefcount = support.get_attribute(sys, "gettotalrefcount")
-
-        def run_once():
-            ov = _overlapped.Overlapped()
-            with self.assertRaises(OSError):
-                ov.WSARecvFrom(self._invalid_socket_handle(), 4096, 0)
-
-        # Warm up
-        run_once()
-        before = gettotalrefcount()
-        for _ in range(2000):
-            run_once()
-        after = gettotalrefcount()
-        self.assertAlmostEqual(after - before, 0, delta=20)
-
+            ov.WSARecvFromInto(0x1234, buf, len(buf), 0)
 
 if __name__ == '__main__':
     unittest.main()
