@@ -1721,7 +1721,7 @@ finalize_modules(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     // Invalidate all executors and turn off JIT:
-    interp->jit = 0;
+    FT_ATOMIC_STORE_UINT8(interp->jit, 0);
     interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
