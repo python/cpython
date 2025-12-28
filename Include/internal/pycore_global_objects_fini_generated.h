@@ -2150,7 +2150,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write_through));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(year));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(z85));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(zdict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(zstd_dict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).ascii[0]);
