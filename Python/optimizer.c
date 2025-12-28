@@ -184,12 +184,17 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
-    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
-    if (exit != NULL) {
-        exit->executor = executor;
-    }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
+    _PyExitData *exit = _tstate->jit_tracer_state.initial_state.exit;
+    if (exit != NULL && !progress_needed) {
+        exit->executor = executor;
+    }
+    else {
+        // An executor inserted into the code object now has a strong reference
+        // to it from the code object. Thus, we don't need this reference anymore.
+        Py_DECREF(executor);
+    }
     interp->compiling = false;
     return 1;
 }
@@ -241,10 +246,7 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
-static int executor_clear(PyInterpreterState *interp, PyObject *executor);
-static int executor_clear_implicit_interp(PyObject *executor);
-static void unlink_executor(PyInterpreterState *interp, _PyExecutorObject *executor);
-
+static int executor_clear(PyObject *executor);
 
 void
 _PyExecutor_Free(_PyExecutorObject *self)
@@ -255,63 +257,80 @@ _PyExecutor_Free(_PyExecutorObject *self)
     PyObject_GC_Del(self);
 }
 
+static void executor_invalidate(PyObject *op);
+
+static void
+executor_clear_exits(_PyExecutorObject *executor)
+{
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
+    _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
+    for (uint32_t i = 0; i < executor->exit_count; i++) {
+        _PyExitData *exit = &executor->exits[i];
+        exit->temperature = initial_unreachable_backoff_counter();
+        _PyExecutorObject *old = executor->exits[i].executor;
+        exit->executor = exit->is_dynamic ? cold_dynamic : cold;
+        Py_DECREF(old);
+    }
+}
+
+
 void
 _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
 {
+    if (interp->executor_deletion_list_head == NULL) {
+        return;
+    }
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    while (ts) {
+        _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
+        Py_XINCREF(current);
+        ts = ts->next;
+    }
     HEAD_UNLOCK(runtime);
+    _PyExecutorObject *keep_list = NULL;
+    do {
+        _PyExecutorObject *exec = interp->executor_deletion_list_head;
+        interp->executor_deletion_list_head = exec->vm_data.links.next;
+        if (Py_REFCNT(exec) == 0) {
+            _PyExecutor_Free(exec);
+        } else {
+            exec->vm_data.links.next = keep_list;
+            keep_list = exec;
+        }
+    } while (interp->executor_deletion_list_head != NULL);
+    interp->executor_deletion_list_head = keep_list;
+    HEAD_LOCK(runtime);
+    ts = PyInterpreterState_ThreadHead(interp);
     while (ts) {
         _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
         if (current != NULL) {
-            /* Anything in this list will be unlinked, so we can reuse the
-             * linked field as a reachability marker. */
-            current->vm_data.linked = 1;
+            Py_DECREF((PyObject *)current);
         }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+        ts = ts->next;
     }
-    _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
-    _PyExecutorObject *exec = *prev_to_next_ptr;
-    while (exec != NULL) {
-        if (exec->vm_data.linked) {
-            // This executor is currently executing
-            exec->vm_data.linked = 0;
-            prev_to_next_ptr = &exec->vm_data.links.next;
-        }
-        else {
-            *prev_to_next_ptr = exec->vm_data.links.next;
-            _PyExecutor_Free(exec);
-        }
-        exec = *prev_to_next_ptr;
-    }
-    interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
+    HEAD_UNLOCK(runtime);
 }
 
 static void
 add_to_pending_deletion_list(_PyExecutorObject *self)
 {
+    if (self->vm_data.pending_deletion) {
+        return;
+    }
+    self->vm_data.pending_deletion = 1;
     PyInterpreterState *interp = PyInterpreterState_Get();
+    self->vm_data.links.previous = NULL;
     self->vm_data.links.next = interp->executor_deletion_list_head;
     interp->executor_deletion_list_head = self;
-    if (interp->executor_deletion_list_remaining_capacity > 0) {
-        interp->executor_deletion_list_remaining_capacity--;
-    }
-    else {
-        _Py_ClearExecutorDeletionList(interp);
-    }
 }
 
 static void
 uop_dealloc(PyObject *op) {
     _PyExecutorObject *self = _PyExecutorObject_CAST(op);
-    _PyObject_GC_UNTRACK(self);
+    executor_invalidate(op);
     assert(self->vm_data.code == NULL);
-    unlink_executor(_PyInterpreterState_GET(), self);
-    // Once unlinked it becomes impossible to invalidate an executor, so do it here.
-    self->vm_data.valid = 0;
     add_to_pending_deletion_list(self);
 }
 
@@ -606,13 +625,14 @@ _PyJit_translate_single_bytecode_to_trace(
     int trace_length = _tstate->jit_tracer_state.prev_state.code_curr_size;
     _PyUOpInstruction *trace = _tstate->jit_tracer_state.code_buffer;
     int max_length = _tstate->jit_tracer_state.prev_state.code_max_size;
+    int exit_op = stop_tracing_opcode == 0 ? _EXIT_TRACE : stop_tracing_opcode;
 
     _Py_CODEUNIT *this_instr =  _tstate->jit_tracer_state.prev_state.instr;
     _Py_CODEUNIT *target_instr = this_instr;
     uint32_t target = 0;
 
     target = Py_IsNone((PyObject *)old_code)
-        ? (int)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
+        ? (uint32_t)(target_instr - _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS_PTR)
         : INSTR_IP(target_instr, old_code);
 
     // Rewind EXTENDED_ARG so that we see the whole thing.
@@ -672,8 +692,11 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 
     if (stop_tracing_opcode != 0) {
-        ADD_TO_TRACE(stop_tracing_opcode, 0, 0, target);
-        goto done;
+        // gh-143183: It's important we rewind to the last known proper target.
+        // The current target might be garbage as stop tracing usually indicates
+        // we are in something that we can't trace.
+        DPRINTF(2, "Told to stop tracing\n");
+        goto unsupported;
     }
 
     DPRINTF(2, "%p %d: %s(%d) %d %d\n", old_code, target, _PyOpcode_OpName[opcode], oparg, needs_guard_ip, old_stack_level);
@@ -684,18 +707,8 @@ _PyJit_translate_single_bytecode_to_trace(
     }
 #endif
 
-    // Skip over super instructions.
-    if (_tstate->jit_tracer_state.prev_state.instr_is_super) {
-        _tstate->jit_tracer_state.prev_state.instr_is_super = false;
-        return 1;
-    }
-
-    if (opcode == ENTER_EXECUTOR) {
-        goto full;
-    }
-
     if (!_tstate->jit_tracer_state.prev_state.dependencies_still_valid) {
-        goto done;
+        goto full;
     }
 
     // This happens when a recursive call happens that we can't trace. Such as Python -> C -> Python calls
@@ -707,11 +720,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
-        goto unsupported;
-    }
-
-    // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
-    if (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize) {
         unsupported:
         {
             // Rewind to previous instruction and replace with _EXIT_TRACE.
@@ -725,13 +733,14 @@ _PyJit_translate_single_bytecode_to_trace(
                 int32_t old_target = (int32_t)uop_get_target(curr);
                 curr++;
                 trace_length++;
-                curr->opcode = _EXIT_TRACE;
+                curr->opcode = exit_op;
                 curr->format = UOP_FORMAT_TARGET;
                 curr->target = old_target;
             }
             goto done;
         }
     }
+
 
     if (opcode == NOP) {
         return 1;
@@ -1058,7 +1067,6 @@ _PyJit_TryInitializeTracing(
     _tstate->jit_tracer_state.prev_state.instr_frame = frame;
     _tstate->jit_tracer_state.prev_state.instr_oparg = oparg;
     _tstate->jit_tracer_state.prev_state.instr_stacklevel = curr_stackdepth;
-    _tstate->jit_tracer_state.prev_state.instr_is_super = false;
     assert(curr_instr->op.code == JUMP_BACKWARD_JIT || (exit != NULL));
     _tstate->jit_tracer_state.initial_state.jump_backward_instr = curr_instr;
 
@@ -1622,7 +1630,6 @@ link_executor(_PyExecutorObject *executor)
         head->vm_data.links.previous = executor;
         interp->executor_list_head = executor;
     }
-    executor->vm_data.linked = true;
     /* executor_list_head must be first in list */
     assert(interp->executor_list_head->vm_data.links.previous == NULL);
 }
@@ -1630,11 +1637,7 @@ link_executor(_PyExecutorObject *executor)
 static void
 unlink_executor(PyInterpreterState *interp, _PyExecutorObject *executor)
 {
-    if (!executor->vm_data.linked) {
-        return;
-    }
     _PyExecutorLinkListNode *links = &executor->vm_data.links;
-    assert(executor->vm_data.valid);
     _PyExecutorObject *next = links->next;
     _PyExecutorObject *prev = links->previous;
     if (next != NULL) {
@@ -1648,7 +1651,6 @@ unlink_executor(PyInterpreterState *interp, _PyExecutorObject *executor)
         assert(interp->executor_list_head == executor);
         interp->executor_list_head = next;
     }
-    executor->vm_data.linked = false;
 }
 
 /* This must be called by optimizers before using the executor */
@@ -1656,67 +1658,54 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
+    executor->vm_data.pending_deletion = 0;
     for (int i = 0; i < _Py_BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);
 }
 
-_PyExecutorObject *
-_PyExecutor_GetColdExecutor(void)
+static _PyExecutorObject *
+make_cold_executor(uint16_t opcode)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->cold_executor != NULL) {
-        return interp->cold_executor;
-    }
     _PyExecutorObject *cold = allocate_executor(0, 1);
     if (cold == NULL) {
         Py_FatalError("Cannot allocate core JIT code");
     }
-    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT_r00;
-#ifdef _Py_JIT
-    cold->jit_code = NULL;
-    cold->jit_size = 0;
+    ((_PyUOpInstruction *)cold->trace)->opcode = opcode;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
     cold->vm_data.warm = true;
+#ifdef _Py_JIT
+    cold->jit_code = NULL;
+    cold->jit_size = 0;
     if (_PyJIT_Compile(cold, cold->trace, 1)) {
         Py_DECREF(cold);
         Py_FatalError("Cannot allocate core JIT code");
     }
 #endif
     _Py_SetImmortal((PyObject *)cold);
-    interp->cold_executor = cold;
     return cold;
+}
+
+_PyExecutorObject *
+_PyExecutor_GetColdExecutor(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->cold_executor == NULL) {
+        return interp->cold_executor = make_cold_executor(_COLD_EXIT_r00);;
+    }
+    return interp->cold_executor;
 }
 
 _PyExecutorObject *
 _PyExecutor_GetColdDynamicExecutor(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->cold_dynamic_executor != NULL) {
-        assert(interp->cold_dynamic_executor->trace[0].opcode == _COLD_DYNAMIC_EXIT_r00);
-        return interp->cold_dynamic_executor;
+    if (interp->cold_dynamic_executor == NULL) {
+        interp->cold_dynamic_executor = make_cold_executor(_COLD_DYNAMIC_EXIT_r00);
     }
-    _PyExecutorObject *cold = allocate_executor(0, 1);
-    if (cold == NULL) {
-        Py_FatalError("Cannot allocate core JIT code");
-    }
-    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_DYNAMIC_EXIT_r00;
-#ifdef _Py_JIT
-    cold->jit_code = NULL;
-    cold->jit_size = 0;
-    // This is initialized to true so we can prevent the executor
-    // from being immediately detected as cold and invalidated.
-    cold->vm_data.warm = true;
-    if (_PyJIT_Compile(cold, cold->trace, 1)) {
-        Py_DECREF(cold);
-        Py_FatalError("Cannot allocate core JIT code");
-    }
-#endif
-    _Py_SetImmortal((PyObject *)cold);
-    interp->cold_dynamic_executor = cold;
-    return cold;
+    return interp->cold_dynamic_executor;
 }
 
 void
@@ -1755,38 +1744,28 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
     Py_DECREF(executor);
 }
 
-// Note: we must use the interp state supplied and pass it to
-// unlink_executor. This function might be called when a new
-// interpreter is being created/removed. Thus the interpreter
-// state is inconsistent with where the executor actually belongs.
-static int
-executor_clear(PyInterpreterState *interp, PyObject *op)
+/* Executors can be invalidated at any time,
+   even with a stop-the-world lock held.
+   Consequently it must not run arbitrary code,
+   including Py_DECREF with a non-executor. */
+static void
+executor_invalidate(PyObject *op)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
     if (!executor->vm_data.valid) {
-        return 0;
+        return;
     }
-    assert(executor->vm_data.valid == 1);
-    unlink_executor(interp, executor);
     executor->vm_data.valid = 0;
-
-    /* It is possible for an executor to form a reference
-     * cycle with itself, so decref'ing a side exit could
-     * free the executor unless we hold a strong reference to it
-     */
-    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
-    _PyExecutorObject *cold_dynamic = _PyExecutor_GetColdDynamicExecutor();
-    Py_INCREF(executor);
-    for (uint32_t i = 0; i < executor->exit_count; i++) {
-        executor->exits[i].temperature = initial_unreachable_backoff_counter();
-        _PyExecutorObject *e = executor->exits[i].executor;
-        executor->exits[i].executor = NULL;
-        if (e != cold && e != cold_dynamic && e->vm_data.code == NULL) {
-            executor_clear(interp, (PyObject *)e);
-        }
-    }
+    unlink_executor(executor);
+    executor_clear_exits(executor);
     _Py_ExecutorDetach(executor);
-    Py_DECREF(executor);
+    _PyObject_GC_UNTRACK(op);
+}
+
+static int
+executor_clear(PyObject *op)
+{
+    executor_invalidate(op);
     return 0;
 }
 
@@ -1820,13 +1799,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     if (invalidate == NULL) {
         goto error;
     }
-
-    // It doesn't matter if we don't invalidate all threads.
-    // If more threads are spawned, we force the jit not to compile anyways
-    // so the trace gets abandoned.
-    jit_tracer_invalidate_dependency(_PyThreadState_GET(), obj);
-
-    /* Clearing an executor can deallocate others, so we need to make a list of
+    /* Clearing an executor can clear others, so we need to make a list of
      * executors to invalidate first */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
@@ -1840,7 +1813,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
-        executor_clear(interp, exec);
+        executor_invalidate(exec);
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
         }
@@ -1872,13 +1845,13 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
-        assert(executor->vm_data.valid == 1 && executor->vm_data.linked == 1);
+        assert(executor->vm_data.valid);
         if (executor->vm_data.code) {
             // Clear the entire code object so its co_executors array be freed:
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
         else {
-            executor_clear(interp, (PyObject *)executor);
+            executor_invalidate((PyObject *)executor);
         }
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
@@ -1913,7 +1886,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
         PyObject *exec = PyList_GET_ITEM(invalidate, i);
-        executor_clear(interp, exec);
+        executor_invalidate(exec);
     }
     Py_DECREF(invalidate);
     return;

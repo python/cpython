@@ -562,6 +562,9 @@ locale
   but included in the language code.
   (Contributed by Serhiy Storchaka in :gh:`137729`.)
 
+* Undeprecate the :func:`locale.getdefaultlocale` function.
+  (Contributed by Victor Stinner in :gh:`130796`.)
+
 
 math
 ----
@@ -591,6 +594,11 @@ mmap
   if it is ``False``, the file handle corresponding to *fileno* will
   not be duplicated.
   (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+* Added the :meth:`mmap.mmap.set_name` method
+  to annotate an anonymous memory mapping
+  if Linux kernel supports :manpage:`PR_SET_VMA_ANON_NAME <PR_SET_VMA(2const)>` (Linux 5.17 or newer).
+  (Contributed by Donghee Na in :gh:`142419`.)
 
 
 os
@@ -844,6 +852,18 @@ zlib
 Optimizations
 =============
 
+* Builds using Visual Studio 2026 (MSVC 18) may now use the new
+  :ref:`tail-calling interpreter <whatsnew314-tail-call-interpreter>`.
+  Results on Visual Studio 18.1.1 report between
+  `15-20% <https://github.com/faster-cpython/ideas/blob/main/results/5800X-msvc.pgo2-vs-msvc.pgo.tc.svg>`__
+  speedup on the geometric mean of pyperformance on Windows x86-64 over
+  the switch-case interpreter on an AMD Ryzen 7 5800X. We have
+  observed speedups ranging from 14% for large pure-Python libraries
+  to 40% for long-running small pure-Python scripts on Windows.
+  This was made possible by a new feature introduced in MSVC 18.
+  (Contributed by Chris Eibl, Ken Jin, and Brandt Bucher in :gh:`143068`.
+  Special thanks to the MSVC team including Hulon Jenkins.)
+
 csv
 ---
 
@@ -920,8 +940,8 @@ code results in constants, the code can be simplified by the JIT.
 The JIT avoids :term:`reference count`\ s where possible. This generally
 reduces the cost of most operations in Python.
 
-(Contributed by Ken Jin, Donghee Na, Zheao Li, Savannah Ostrowski,
-Noam Cohen, Tomas Roun, PuQing in :gh:`134584`.)
+(Contributed by Ken Jin, Donghee Na, Zheao Li, Hai Zhu, Savannah Ostrowski,
+Noam Cohen, Tomas Roun, and PuQing in :gh:`134584`.)
 
 .. rubric:: Better machine code generation
 
@@ -1104,9 +1124,9 @@ New deprecations
 
 * ``__version__``
 
-  * The ``__version__`` attribute has been deprecated in these standard library
-    modules and will be removed in Python 3.20.
-    Use :py:data:`sys.version_info` instead.
+  * The ``__version__``, ``version`` and ``VERSION`` attributes have been
+    deprecated in these standard library modules and will be removed in
+    Python 3.20. Use :py:data:`sys.version_info` instead.
 
     - :mod:`argparse`
     - :mod:`csv`
@@ -1127,6 +1147,9 @@ New deprecations
     - :mod:`tkinter.font`
     - :mod:`tkinter.ttk`
     - :mod:`wsgiref.simple_server`
+    - :mod:`xml.etree.ElementTree`
+    - :mod:`!xml.sax.expatreader`
+    - :mod:`xml.sax.handler`
     - :mod:`zlib`
 
     (Contributed by Hugo van Kemenade and Stan Ulbrych in :gh:`76007`.)

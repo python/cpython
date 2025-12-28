@@ -490,7 +490,7 @@ static inline int check_interpreter_whence(long);
 #endif
 
 extern _Py_CODEUNIT *
-_Py_LazyJitTrampoline(
+_Py_LazyJitShim(
     struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 );
 
@@ -570,7 +570,6 @@ init_interpreter(PyInterpreterState *interp,
     interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
-    interp->executor_deletion_list_remaining_capacity = 0;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */

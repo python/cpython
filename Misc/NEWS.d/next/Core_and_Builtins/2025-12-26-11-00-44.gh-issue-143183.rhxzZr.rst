@@ -1,0 +1,1 @@
+Fix a bug in the JIT when dealing with unsupported control-flow or operations.
