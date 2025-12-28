@@ -966,26 +966,9 @@ binascii_b2a_ascii85_impl(PyObject *module, Py_buffer *data, int fold_spaces,
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
-/*[clinic input]
-binascii.a2b_base85
-
-    data: ascii_buffer
-    /
-    *
-    strict_mode: bool = False
-        When set to True, bytes that are not in the base85 alphabet
-        (or the Z85 alphabet, if z85 is True) are not allowed.
-    z85: bool = False
-        When set to True, the Z85 alphabet is used instead of the standard
-        base85 alphabet.
-
-Decode a line of base85 data.
-[clinic start generated code]*/
-
 static PyObject *
-binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
-                         int z85)
-/*[clinic end generated code: output=c5b9118ffe77f1cb input=65c2a532ad64ebd5]*/
+internal_a2b_base85(PyObject *module, Py_buffer *data, int strict_mode,
+                    const unsigned char table_a2b[], const char *name)
 {
     const unsigned char *ascii_data = data->buf;
     Py_ssize_t ascii_len = data->len;
@@ -1001,8 +984,6 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
     }
     unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
-    const unsigned char *table_a2b = z85 ? table_a2b_base85_z85
-                                         : table_a2b_base85;
     uint32_t leftchar = 0;
     int group_pos = 0;
     for (; ascii_len > 0 || group_pos != 0; ascii_len--, ascii_data++) {
@@ -1024,8 +1005,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
                 if (state != NULL) {
                     PyErr_Format(state->Error,
                                  "%s overflow in hunk starting at byte %d",
-                                 z85 ? "z85" : "base85",
-                                 (data->len - ascii_len) / 5 * 5);
+                                 name, (data->len - ascii_len) / 5 * 5);
                 }
                 goto error;
             }
@@ -1036,7 +1016,7 @@ binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode,
             state = get_binascii_state(module);
             if (state != NULL) {
                 PyErr_Format(state->Error, "bad %s character at position %d",
-                             z85 ? "z85" : "base85", data->len - ascii_len);
+                             name, data->len - ascii_len);
             }
             goto error;
         }
@@ -1063,26 +1043,9 @@ error:
     return NULL;
 }
 
-/*[clinic input]
-binascii.b2a_base85
-
-    data: Py_buffer
-    /
-    *
-    pad: bool = False
-        Pad input to a multiple of 4 before encoding.
-    newline: bool = True
-        Append a newline to the result.
-    z85: bool = False
-        Use Z85 alphabet instead of standard base85 alphabet.
-
-Base85-code line of data.
-[clinic start generated code]*/
-
 static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
-                         int newline, int z85)
-/*[clinic end generated code: output=d3740e9a20c8e071 input=e4e07591f7a11ae4]*/
+internal_b2a_base85(PyObject *module, Py_buffer *data, int pad, int newline,
+                    const unsigned char table_b2a[])
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t bin_len = data->len;
@@ -1105,8 +1068,6 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
     unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     /* Encode all full-length chunks. */
-    const unsigned char *table_b2a = z85 ? table_b2a_base85_z85
-                                         : table_b2a_base85;
     for (; bin_len >= 4; bin_len -= 4, bin_data += 4) {
         uint32_t leftchar = (bin_data[0] << 24) | (bin_data[1] << 16) |
                             (bin_data[2] << 8)  |  bin_data[3];
@@ -1148,6 +1109,93 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
     }
 
     return PyBytesWriter_FinishWithPointer(writer, ascii_data);
+}
+
+/*[clinic input]
+binascii.a2b_base85
+
+    data: ascii_buffer
+    /
+    *
+    strict_mode: bool = False
+        When set to True, bytes that are not in the Base85 alphabet
+        are not allowed.
+
+Decode a line of Base85 data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_a2b_base85_impl(PyObject *module, Py_buffer *data, int strict_mode)
+/*[clinic end generated code: output=337b9418636f30f4 input=d19293f194c8cb78]*/
+{
+    return internal_a2b_base85(module, data, strict_mode,
+                               table_a2b_base85, "Base85");
+}
+
+/*[clinic input]
+binascii.b2a_base85
+
+    data: Py_buffer
+    /
+    *
+    pad: bool = False
+        Pad input to a multiple of 4 before encoding.
+    newline: bool = True
+        Append a newline to the result.
+
+Base85-code line of data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, int pad,
+                         int newline)
+/*[clinic end generated code: output=56936eb231e15dc0 input=3899d4f5c3a589a0]*/
+{
+    return internal_b2a_base85(module, data, pad, newline, table_b2a_base85);
+}
+
+/*[clinic input]
+binascii.a2b_z85
+
+    data: ascii_buffer
+    /
+    *
+    strict_mode: bool = False
+        When set to True, bytes that are not in the Z85 alphabet
+        are not allowed.
+
+Decode a line of Z85 data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_a2b_z85_impl(PyObject *module, Py_buffer *data, int strict_mode)
+/*[clinic end generated code: output=a2083e8f05d38960 input=a0d5afbf2aebee4d]*/
+{
+    return internal_a2b_base85(module, data, strict_mode,
+                               table_a2b_base85_z85, "Z85");
+}
+
+/*[clinic input]
+binascii.b2a_z85
+
+    data: Py_buffer
+    /
+    *
+    pad: bool = False
+        Pad input to a multiple of 4 before encoding.
+    newline: bool = True
+        Append a newline to the result.
+
+Z85-code line of data.
+[clinic start generated code]*/
+
+static PyObject *
+binascii_b2a_z85_impl(PyObject *module, Py_buffer *data, int pad,
+                      int newline)
+/*[clinic end generated code: output=a61636b3f618fc1d input=f71c473209eb8f41]*/
+{
+    return internal_b2a_base85(module, data, pad, newline,
+                               table_b2a_base85_z85);
 }
 
 /*[clinic input]
@@ -1811,6 +1859,8 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_A2B_ASCII85_METHODDEF
     BINASCII_A2B_BASE85_METHODDEF
     BINASCII_B2A_BASE85_METHODDEF
+    BINASCII_A2B_Z85_METHODDEF
+    BINASCII_B2A_Z85_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF

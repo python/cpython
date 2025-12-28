@@ -124,18 +124,15 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: a2b_base85(string, /, *, strict_mode=False, z85=False)
+.. function:: a2b_base85(string, /, *, strict_mode=False)
 
-   Convert base85 data back to binary and return the binary data.
+   Convert Base85 data back to binary and return the binary data.
    More than one line may be passed at a time.
 
-   If *strict_mode* is true, only valid base85 data will be converted.
-   Invalid base85 data will raise :exc:`binascii.Error`.
+   If *strict_mode* is true, only valid Base85 data will be converted.
+   Invalid Base85 data will raise :exc:`binascii.Error`.
 
-   If *z85* is true, the base85 data uses the Z85 alphabet.
-   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
-
-   Valid base85 data contains characters from the base85 alphabet in groups
+   Valid Base85 data contains characters from the Base85 alphabet in groups
    of five (except for the final group, which may have from two to five
    characters). Each group encodes 32 bits of binary data in the range from
    ``0`` to ``2 ** 32 - 1``, inclusive.
@@ -143,16 +140,45 @@ The :mod:`binascii` module defines the following functions:
    .. versionadded:: next
 
 
-.. function:: b2a_base85(data, /, *, pad=False, newline=True, z85=False)
+.. function:: b2a_base85(data, /, *, pad=False, newline=True)
 
-   Convert binary data to a line of ASCII characters in base85 coding.
+   Convert binary data to a line of ASCII characters in Base85 coding.
    The return value is the converted line.
 
    If *pad* is true, the input is padded to a multiple of 4 before encoding.
 
    If *newline* is true, a newline char is appended to the result.
 
-   If *z85* is true, the Z85 alphabet is used for conversion.
+   .. versionadded:: next
+
+
+.. function:: a2b_z85(string, /, *, strict_mode=False)
+
+   Convert Z85 data back to binary and return the binary data.
+   More than one line may be passed at a time.
+
+   If *strict_mode* is true, only valid Z85 data will be converted.
+   Invalid Z85 data will raise :exc:`binascii.Error`.
+
+   Valid Z85 data contains characters from the Z85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive.
+
+   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: next
+
+
+.. function:: b2a_z85(data, /, *, pad=False, newline=True)
+
+   Convert binary data to a line of ASCII characters in Z85 coding.
+   The return value is the converted line.
+
+   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+
+   If *newline* is true, a newline char is appended to the result.
+
    See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
 
    .. versionadded:: next

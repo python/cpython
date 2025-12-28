@@ -345,14 +345,14 @@ def b85decode(b):
 
 def z85encode(s, pad=False):
     """Encode bytes-like object b in z85 format and return a bytes object."""
-    return binascii.b2a_base85(s, pad=pad, newline=False, z85=True)
+    return binascii.b2a_z85(s, pad=pad, newline=False)
 
 def z85decode(s):
     """Decode the z85-encoded bytes-like object or ASCII string b
 
     The result is returned as a bytes object.
     """
-    return binascii.a2b_base85(s, strict_mode=True, z85=True)
+    return binascii.a2b_z85(s, strict_mode=True)
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
