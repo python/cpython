@@ -695,6 +695,7 @@ _PyJit_translate_single_bytecode_to_trace(
         // gh-143183: It's important we rewind to the last known proper target.
         // The current target might be garbage as stop tracing usually indicates
         // we are in something that we can't trace.
+        DPRINTF(2, "Told to stop tracing\n");
         goto unsupported;
     }
 
@@ -723,11 +724,6 @@ _PyJit_translate_single_bytecode_to_trace(
 
     if (oparg > 0xFFFF) {
         DPRINTF(2, "Unsupported: oparg too large\n");
-        goto unsupported;
-    }
-
-    // TODO (gh-140277): The constituent use one extra stack slot. So we need to check for headroom.
-    if (opcode == BINARY_OP_SUBSCR_GETITEM && old_stack_level + 1 > old_code->co_stacksize) {
         unsupported:
         {
             // Rewind to previous instruction and replace with _EXIT_TRACE.
@@ -748,6 +744,7 @@ _PyJit_translate_single_bytecode_to_trace(
             goto done;
         }
     }
+
 
     if (opcode == NOP) {
         return 1;
