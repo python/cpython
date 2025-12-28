@@ -277,9 +277,9 @@ class LiveProfiler(ThemeSection):
     sorted_header_fg: int = CursesColors.BLACK
     sorted_header_bg: int = CursesColors.CYAN
 
-    # Normal header colors (non-sorted columns)
-    normal_header_fg: int = CursesColors.WHITE
-    normal_header_bg: int = CursesColors.BLUE
+    # Normal header colors (non-sorted columns) - use reverse video style
+    normal_header_fg: int = CursesColors.BLACK
+    normal_header_bg: int = CursesColors.WHITE
 
     # Data row colors
     samples_fg: int = CursesColors.CYAN
@@ -300,19 +300,19 @@ class LiveProfiler(ThemeSection):
 
 
 LiveProfilerLight = LiveProfiler(
-    # Header colors
+    # Header colors - use black for better contrast on light bg
     title_fg=CursesColors.BLUE,
     title_bg=CursesColors.DEFAULT,
 
-    # Status display colors
+    # Status display colors - darker colors for light backgrounds
     pid_fg=CursesColors.BLUE,
-    uptime_fg=CursesColors.GREEN,
-    time_fg=CursesColors.RED,  # Use red instead of yellow for better visibility on light bg
-    interval_fg=CursesColors.MAGENTA,
+    uptime_fg=CursesColors.BLACK,
+    time_fg=CursesColors.BLACK,
+    interval_fg=CursesColors.BLUE,
 
     # Thread view colors
-    thread_all_fg=CursesColors.GREEN,
-    thread_single_fg=CursesColors.MAGENTA,
+    thread_all_fg=CursesColors.BLACK,
+    thread_single_fg=CursesColors.BLUE,
 
     # Progress bar colors
     bar_good_fg=CursesColors.GREEN,
@@ -321,27 +321,27 @@ LiveProfilerLight = LiveProfiler(
     # Stats colors
     on_gil_fg=CursesColors.GREEN,
     off_gil_fg=CursesColors.RED,
-    waiting_gil_fg=CursesColors.RED,  # Use red instead of yellow for visibility
-    gc_fg=CursesColors.MAGENTA,
+    waiting_gil_fg=CursesColors.RED,
+    gc_fg=CursesColors.BLUE,
 
     # Function display colors
     func_total_fg=CursesColors.BLUE,
-    func_exec_fg=CursesColors.GREEN,
-    func_stack_fg=CursesColors.RED,  # Use red instead of yellow
-    func_shown_fg=CursesColors.MAGENTA,
+    func_exec_fg=CursesColors.BLACK,
+    func_stack_fg=CursesColors.BLACK,
+    func_shown_fg=CursesColors.BLUE,
 
     # Table header colors (for sorted column highlight)
     sorted_header_fg=CursesColors.WHITE,
-    sorted_header_bg=CursesColors.MAGENTA,
+    sorted_header_bg=CursesColors.BLUE,
 
     # Normal header colors (non-sorted columns)
     normal_header_fg=CursesColors.WHITE,
-    normal_header_bg=CursesColors.BLUE,
+    normal_header_bg=CursesColors.BLACK,
 
-    # Data row colors
-    samples_fg=CursesColors.BLUE,
-    file_fg=CursesColors.GREEN,
-    func_fg=CursesColors.MAGENTA,  # Use magenta instead of yellow
+    # Data row colors - use dark colors readable on white
+    samples_fg=CursesColors.BLACK,
+    file_fg=CursesColors.BLACK,
+    func_fg=CursesColors.BLUE,  # Blue is more readable than magenta on light bg
 
     # Trend indicator colors
     trend_up_fg=CursesColors.GREEN,
