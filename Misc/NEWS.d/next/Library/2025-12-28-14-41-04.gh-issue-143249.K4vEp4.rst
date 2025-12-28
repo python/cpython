@@ -1,1 +1,0 @@
-Fix possible buffer leaks in Windows overlapped I/O operations when the operation fails.
