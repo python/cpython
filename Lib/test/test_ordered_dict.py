@@ -971,76 +971,73 @@ class CPythonOrderedDictTests(OrderedDictTests,
 
         gc.collect()
 
-    def test_getitem_re_entrant_clear_during_copy(self):
-        class Evil(self.OrderedDict):
+    def test_copy_concurrent_clear_in__getitem__(self):
+        class MyOD(self.OrderedDict):
             def __getitem__(self, key):
                 super().clear()
                 return None
 
-        evil_dict = Evil([(i, i) for i in range(4)])
-        with self.assertRaises(RuntimeError):
-            result = evil_dict.copy()
+        od = MyOD([(i, i) for i in range(4)])
+        self.assertRaises(RuntimeError, od.copy)
 
-    def test_getitem_re_entrant_modify_during_copy(self):
-        class Modifier(self.OrderedDict):
+    def test_copy_concurrent_insertion_in__getitem__(self):
+        class MyOD(self.OrderedDict):
             def __getitem__(self, key):
                 self['new_key'] = 'new_value'
                 return super().__getitem__(key)
 
-        original = Modifier([(1, 'one'), (2, 'two')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
+        od = MyOD([(1, 'one'), (2, 'two')])
+        self.assertRaises(RuntimeError, od.copy)
 
-    def test_getitem_re_entrant_delete_during_copy(self):
-        class Deleter(self.OrderedDict):
+    def test_copy_concurrent_deletion_by_del_in__getitem__(self):
+        class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                Deleter.call_count += 1
-                if Deleter.call_count == 1:
+                MyOD.call_count += 1
+                if MyOD.call_count == 1:
                     del self[3]
                 return super().__getitem__(key)
 
-        original = Deleter([(1, 'one'), (2, 'two'), (3, 'three')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
 
-    def test_getitem_re_entrant_add_during_copy(self):
-        class MultiAdder(self.OrderedDict):
-            def __getitem__(self, key):
-                self['new_key1'] = 'new_value1'
-                return super().__getitem__(key)
-
-        original = MultiAdder([(1, 'one'), (2, 'two'), (3, 'three')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
-
-    def test_getitem_re_entrant_pop_during_copy(self):
-        class Popper(self.OrderedDict):
+    def test_copy_concurrent_deletion_by_pop_in__getitem__(self):
+        class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                Popper.call_count += 1
-                if Popper.call_count == 1:
+                MyOD.call_count += 1
+                if MyOD.call_count == 1:
                     self.pop(3, None)
                 return super().__getitem__(key)
 
-        original = Popper([(1, 'one'), (2, 'two'), (3, 'three')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
 
-    def test_getitem_re_entrant_mixed_mutation_during_copy(self):
-        class MixedMutator(self.OrderedDict):
+    def test_copy_concurrent_deletion_and_set_in__getitem__(self):
+        class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                MixedMutator.call_count += 1
-                if MixedMutator.call_count == 1:
+                MyOD.call_count += 1
+                if MyOD.call_count == 1:
                     del self[3]
-                elif MixedMutator.call_count == 2:
+                elif MyOD.call_count == 2:
                     self['new_key'] = 'new_value'
                 return super().__getitem__(key)
 
-        original = MixedMutator([(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')])
-        with self.assertRaises(RuntimeError):
-            result = original.copy()
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three'), (4, 'four')])
+        self.assertRaises(RuntimeError, od.copy)
+
+    def test_copy_concurrent_mutation_in__setitem__(self):
+        od = None
+
+        class MyOD(self.OrderedDict):
+            def __setitem__(self, key, value):
+                if od is not None and len(od) > 1:
+                    del od[3]
+                return super().__setitem__(key, value)
+
+        od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
+        self.assertRaises(RuntimeError, od.copy)
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

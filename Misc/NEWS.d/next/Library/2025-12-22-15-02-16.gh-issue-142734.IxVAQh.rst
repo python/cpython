@@ -1,1 +1,1 @@
-fix ordereddict copy heap-use-after-free security issue
+:mod:`collections`: fix use-after-free crashes in :meth:`OrderedDict.copy <dict.copy>` when the dictionary to copy is concurrently mutated.
