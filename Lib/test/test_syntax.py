@@ -2346,6 +2346,12 @@ Invalid pattern matching constructs:
     SyntaxError: positional patterns follow keyword patterns
 
     >>> match ...:
+    ...   case Foo(y=1, x=2, y=3):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: attribute name repeated in class pattern: y
+
+    >>> match ...:
     ...   case C(a=b, c, d=e, f, g=h, i, j=k, ...):
     ...     ...
     Traceback (most recent call last):
