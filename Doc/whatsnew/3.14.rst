@@ -1075,7 +1075,7 @@ io
 textwrap
 --------
 
-* Optimise the :func:`~textwrap.dedent` function, improving performance by
+* Optimize the :func:`~textwrap.dedent` function, improving performance by
   an average of 2.4x, with larger improvements for bigger inputs,
   and fix a bug with incomplete normalization of blank lines with whitespace
   characters other than space and tab.

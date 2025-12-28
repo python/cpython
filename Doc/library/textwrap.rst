@@ -104,7 +104,7 @@ functions should be good enough; otherwise, you should use an instance of
 
    .. versionchanged:: next
       The :func:`!dedent` function now correctly normalizes blank lines containing
-      only whitespace characters. Previously, the implementation only normalised
+      only whitespace characters. Previously, the implementation only normalized
       blank lines containing tabs and spaces.
 
 .. function:: indent(text, prefix, predicate=None)
