@@ -814,6 +814,8 @@ MODULE__BISECT_FALSE
 MODULE__BISECT_TRUE
 MODULE__ASYNCIO_FALSE
 MODULE__ASYNCIO_TRUE
+MODULE__MATH_INTEGER_FALSE
+MODULE__MATH_INTEGER_TRUE
 MODULE_ARRAY_FALSE
 MODULE_ARRAY_TRUE
 MODULE_TIME_FALSE
@@ -840,8 +842,9 @@ LIBREADLINE_CFLAGS
 WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
-PLATLIBDIR
 BINLIBDEST
+LIBDEST
+PLATLIBDIR
 LIBPYTHON
 MODULE_DEPS_SHARED
 EXT_SUFFIX
@@ -855,6 +858,8 @@ HAVE_GETHOSTBYNAME_R_3_ARG
 HAVE_GETHOSTBYNAME_R_5_ARG
 HAVE_GETHOSTBYNAME_R_6_ARG
 LIBOBJS
+REMOTE_DEBUGGING_LIBS
+REMOTE_DEBUGGING_CFLAGS
 LIBZSTD_LIBS
 LIBZSTD_CFLAGS
 LIBLZMA_LIBS
@@ -965,6 +970,7 @@ LDLIBRARY
 LIBRARY
 BUILDEXEEXT
 NO_AS_NEEDED
+_Py_STACK_GROWS_DOWN
 MULTIARCH_CPPFLAGS
 PLATFORM_TRIPLET
 MULTIARCH
@@ -1009,6 +1015,7 @@ UNIVERSALSDK
 host_exec_prefix
 host_prefix
 MACHDEP
+MISSING_STDLIB_CONFIG
 PKG_CONFIG_LIBDIR
 PKG_CONFIG_PATH
 PKG_CONFIG
@@ -1080,6 +1087,7 @@ ac_user_opts='
 enable_option_checking
 with_build_python
 with_pkg_config
+with_missing_stdlib_config
 enable_universalsdk
 with_universal_archs
 with_framework_name
@@ -1819,7 +1827,8 @@ Optional Features:
                           no)
   --enable-wasm-dynamic-linking
                           Enable dynamic linking support for WebAssembly
-                          (default is no)
+                          (default is no); WASI requires an external dynamic
+                          loader to handle imports
   --enable-wasm-pthreads  Enable pthread emulation for WebAssembly (default is
                           no)
   --enable-shared         enable building a shared Python library (default is
@@ -1859,6 +1868,9 @@ Optional Packages:
   --with-pkg-config=[yes|no|check]
                           use pkg-config to detect build options (default is
                           check)
+  --with-missing-stdlib-config=FILE
+                          File with custom module error messages for missing
+                          stdlib modules
   --with-universal-archs=ARCH
                           specify the kind of macOS universal binary that
                           should be created. This option is only valid when
@@ -3816,7 +3828,7 @@ fi
 
 
 
-for ac_prog in python$PACKAGE_VERSION python3.13 python3.12 python3.11 python3.10 python3 python
+for ac_prog in python$PACKAGE_VERSION python3.15 python3.14 python3.13 python3.12 python3.11 python3.10 python3 python
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4091,6 +4103,19 @@ esac
 if test "$with_pkg_config" = yes -a -z "$PKG_CONFIG"; then
   as_fn_error $? "pkg-config is required" "$LINENO" 5]
 fi
+
+
+# Check whether --with-missing-stdlib-config was given.
+if test ${with_missing_stdlib_config+y}
+then :
+  withval=$with_missing_stdlib_config; MISSING_STDLIB_CONFIG="$withval"
+else case e in #(
+  e) MISSING_STDLIB_CONFIG=""
+ ;;
+esac
+fi
+
+
 
 # Set name for machine-dependent library files
 
@@ -7211,6 +7236,18 @@ if test x$MULTIARCH != x; then
 fi
 
 
+# Guess C stack direction
+case $host in #(
+  hppa*) :
+    _Py_STACK_GROWS_DOWN=0 ;; #(
+  *) :
+    _Py_STACK_GROWS_DOWN=1 ;;
+esac
+
+printf "%s\n" "#define _Py_STACK_GROWS_DOWN $_Py_STACK_GROWS_DOWN" >>confdefs.h
+
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PEP 11 support tier" >&5
 printf %s "checking for PEP 11 support tier... " >&6; }
 case $host/$ac_cv_cc_name in #(
@@ -7382,7 +7419,7 @@ then :
   Emscripten) :
      ;; #(
   WASI) :
-    as_fn_error $? "WASI dynamic linking is not implemented yet." "$LINENO" 5 ;; #(
+     ;; #(
   *) :
     as_fn_error $? "--enable-wasm-dynamic-linking only applies to Emscripten and WASI" "$LINENO" 5
    ;;
@@ -7774,10 +7811,6 @@ else # shared is disabled
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
 printf "%s\n" "$LDLIBRARY" >&6; }
-
-if test "$cross_compiling" = yes; then
-  RUNSHARED=
-fi
 
 # HOSTRUNNER - Program to run CPython for the host platform
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
@@ -22992,6 +23025,22 @@ printf "%s\n" "yes" >&6; }
         have_libzstd=yes
 fi
 
+if test "x$have_libzstd" = xyes
+then :
+
+  REMOTE_DEBUGGING_CFLAGS="-DHAVE_ZSTD $LIBZSTD_CFLAGS"
+  REMOTE_DEBUGGING_LIBS="$LIBZSTD_LIBS"
+
+else case e in #(
+  e)
+  REMOTE_DEBUGGING_CFLAGS=""
+  REMOTE_DEBUGGING_LIBS=""
+ ;;
+esac
+fi
+
+
+
 
 
 
@@ -23913,6 +23962,25 @@ if test $ac_have_decl = 1
 then :
 
 printf "%s\n" "#define HAVE_UT_NAMESIZE 1" >>confdefs.h
+
+fi
+
+
+ac_fn_check_decl "$LINENO" "PR_SET_VMA_ANON_NAME" "ac_cv_have_decl_PR_SET_VMA_ANON_NAME" "#include <linux/prctl.h>
+               #include <sys/prctl.h>
+" "$ac_c_undeclared_builtin_options" "CFLAGS"
+if test "x$ac_cv_have_decl_PR_SET_VMA_ANON_NAME" = xyes
+then :
+  ac_have_decl=1
+else case e in #(
+  e) ac_have_decl=0 ;;
+esac
+fi
+printf "%s\n" "#define HAVE_DECL_PR_SET_VMA_ANON_NAME $ac_have_decl" >>confdefs.h
+if test $ac_have_decl = 1
+then :
+
+printf "%s\n" "#define HAVE_PR_SET_VMA_ANON_NAME 1" >>confdefs.h
 
 fi
 
@@ -26090,8 +26158,8 @@ main (void)
 {
 
   unsigned int fpcr;
-  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
-  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
+  __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=dm" (fpcr));
+  __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "dm" (fpcr));
 
   ;
   return 0;
@@ -26893,15 +26961,10 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
-PLATLIBDIR="lib"
+PLATLIBDIR="lib"  # XXX: We should probably calculate the defauly from libdir, if defined.
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-platlibdir" >&5
 printf %s "checking for --with-platlibdir... " >&6; }
 
@@ -26918,7 +26981,6 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -26932,10 +26994,14 @@ fi
 
 
 
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+
+
 if test x$PLATFORM_TRIPLET = x; then
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}"
 else
-  LIBPL='$(prefix)'"/${PLATLIBDIR}/python${VERSION}${ABI_THREAD}/config-${LDVERSION}-${PLATFORM_TRIPLET}"
+  LIBPL='$(LIBDEST)'"/config-${LDVERSION}-${PLATFORM_TRIPLET}"
 fi
 
 
@@ -29972,6 +30038,7 @@ SRCDIRS="\
   Modules/_hacl \
   Modules/_io \
   Modules/_multiprocessing \
+  Modules/_remote_debugging \
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
@@ -31337,6 +31404,28 @@ then :
 fi
 
 
+        if test "$py_cv_module__math_integer" != "n/a"
+then :
+  py_cv_module__math_integer=yes
+fi
+   if test "$py_cv_module__math_integer" = yes; then
+  MODULE__MATH_INTEGER_TRUE=
+  MODULE__MATH_INTEGER_FALSE='#'
+else
+  MODULE__MATH_INTEGER_TRUE='#'
+  MODULE__MATH_INTEGER_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__MATH_INTEGER_STATE=$py_cv_module__math_integer$as_nl"
+  if test "x$py_cv_module__math_integer" = xyes
+then :
+
+
+
+
+fi
+
+
         if test "$py_cv_module__asyncio" != "n/a"
 then :
   py_cv_module__asyncio=yes
@@ -31573,8 +31662,8 @@ fi
   if test "x$py_cv_module__remote_debugging" = xyes
 then :
 
-
-
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_CFLAGS=$REMOTE_DEBUGGING_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__REMOTE_DEBUGGING_LDFLAGS=$REMOTE_DEBUGGING_LIBS$as_nl"
 
 fi
 
@@ -34303,10 +34392,10 @@ else case e in #(
       JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
       ;;
     aarch64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-aarch64-unknown-linux-gnu.h"
       ;;
     x86_64-*-linux-gnu)
-      JIT_STENCILS_H="jit_stencils-$host.h"
+      JIT_STENCILS_H="jit_stencils-x86_64-unknown-linux-gnu.h"
       ;;
   esac ;;
 esac
@@ -34445,6 +34534,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_ARRAY_TRUE}" && test -z "${MODULE_ARRAY_FALSE}"; then
   as_fn_error $? "conditional \"MODULE_ARRAY\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__MATH_INTEGER_TRUE}" && test -z "${MODULE__MATH_INTEGER_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__MATH_INTEGER\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__ASYNCIO_TRUE}" && test -z "${MODULE__ASYNCIO_FALSE}"; then

@@ -846,11 +846,15 @@ class GCTests(unittest.TestCase):
         self.assertEqual(len(stats), 3)
         for st in stats:
             self.assertIsInstance(st, dict)
-            self.assertEqual(set(st),
-                             {"collected", "collections", "uncollectable"})
+            self.assertEqual(
+                set(st),
+                {"collected", "collections", "uncollectable", "candidates", "duration"}
+            )
             self.assertGreaterEqual(st["collected"], 0)
             self.assertGreaterEqual(st["collections"], 0)
             self.assertGreaterEqual(st["uncollectable"], 0)
+            self.assertGreaterEqual(st["candidates"], 0)
+            self.assertGreaterEqual(st["duration"], 0)
         # Check that collection counts are incremented correctly
         if gc.isenabled():
             self.addCleanup(gc.enable)
@@ -861,11 +865,25 @@ class GCTests(unittest.TestCase):
         self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"])
+        self.assertGreater(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertEqual(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable", "candidates"]:
+            self.assertGreaterEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertEqual(new[2][stat], old[2][stat])
         gc.collect(2)
-        new = gc.get_stats()
-        self.assertEqual(new[0]["collections"], old[0]["collections"] + 1)
+        old, new = new, gc.get_stats()
+        self.assertEqual(new[0]["collections"], old[0]["collections"])
         self.assertEqual(new[1]["collections"], old[1]["collections"])
         self.assertEqual(new[2]["collections"], old[2]["collections"] + 1)
+        self.assertEqual(new[0]["duration"], old[0]["duration"])
+        self.assertEqual(new[1]["duration"], old[1]["duration"])
+        self.assertGreater(new[2]["duration"], old[2]["duration"])
+        for stat in ["collected", "uncollectable", "candidates"]:
+            self.assertEqual(new[0][stat], old[0][stat])
+            self.assertEqual(new[1][stat], old[1][stat])
+            self.assertGreaterEqual(new[2][stat], old[2][stat])
 
     def test_freeze(self):
         gc.freeze()
@@ -1213,6 +1231,24 @@ class GCTests(unittest.TestCase):
         assert_python_ok("-c", code_inside_function)
 
 
+    @unittest.skipUnless(Py_GIL_DISABLED, "requires free-threaded GC")
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+    def test_tuple_untrack_counts(self):
+        # This ensures that the free-threaded GC is counting untracked tuples
+        # in the "long_lived_total" count.  This is required to avoid
+        # performance issues from running the GC too frequently.  See
+        # GH-142531 as an example.
+        gc.collect()
+        count = _testinternalcapi.get_long_lived_total()
+        n = 20_000
+        tuples = [(x,) for x in range(n)]
+        gc.collect()
+        new_count = _testinternalcapi.get_long_lived_total()
+        self.assertFalse(gc.is_tracked(tuples[0]))
+        # Use n // 2 just in case some other objects were collected.
+        self.assertTrue(new_count - count > (n // 2))
+
+
 class IncrementalGCTests(unittest.TestCase):
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
@@ -1298,9 +1334,11 @@ class GCCallbackTests(unittest.TestCase):
         # Check that we got the right info dict for all callbacks
         for v in self.visit:
             info = v[2]
-            self.assertTrue("generation" in info)
-            self.assertTrue("collected" in info)
-            self.assertTrue("uncollectable" in info)
+            self.assertIn("generation", info)
+            self.assertIn("collected", info)
+            self.assertIn("uncollectable", info)
+            self.assertIn("candidates", info)
+            self.assertIn("duration", info)
 
     def test_collect_generation(self):
         self.preclean()

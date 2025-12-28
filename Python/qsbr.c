@@ -36,6 +36,7 @@
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 #include "pycore_qsbr.h"
 #include "pycore_tstate.h"          // _PyThreadStateImpl
+#include "pycore_stats.h"           // FT_STAT_QSBR_POLL_INC()
 
 
 // Starting size of the array of qsbr thread states
@@ -56,7 +57,7 @@ qsbr_allocate(struct _qsbr_shared *shared)
     return qsbr;
 }
 
-// Initialize (or reintialize) the freelist of QSBR thread states
+// Initialize (or reinitialize) the freelist of QSBR thread states
 static void
 initialize_new_array(struct _qsbr_shared *shared)
 {
@@ -158,7 +159,7 @@ _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
-
+    FT_STAT_QSBR_POLL_INC();
     uint64_t rd_seq = qsbr_poll_scan(qsbr->shared);
     return QSBR_LEQ(goal, rd_seq);
 }
