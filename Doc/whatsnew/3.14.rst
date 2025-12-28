@@ -1256,6 +1256,14 @@ curses
   (Contributed by Serhiy Storchaka in :gh:`133139`.)
 
 
+datetime
+--------
+
+* Add the :meth:`~datetime.date.strptime` method to the
+  :class:`datetime.date` and :class:`datetime.time` classes.
+  (Contributed by Wannes Boeykens in :gh:`41431`.)
+
+
 decimal
 -------
 
@@ -1635,18 +1643,6 @@ operator
   to ``obj is None`` and ``operator.is_not_none(obj)`` is equivalent
   to ``obj is not None``.
   (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
-
-
-datetime
---------
-
-* Add support for the ISO 8601 basic format for the following methods:
-
-  - :meth:`date.isoformat <datetime.date.isoformat>`
-  - :meth:`datetime.isoformat <datetime.datetime.isoformat>`
-  - :meth:`time.isoformat <datetime.time.isoformat>`
-
-  (Contributed by Bénédikt Tran in :gh:`118948`.)
 
 
 os
