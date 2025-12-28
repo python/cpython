@@ -1,11 +1,16 @@
 """Test the binascii C module."""
 
+import sys
+import threading
 import unittest
 import binascii
 import array
 import re
+from test import support
 from test.support import bigmemtest, _1G, _4G
 from test.support.hypothesis_helper import hypothesis
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
 
 
 # Note: "*_hex" functions are aliases for "(un)hexlify"
@@ -515,6 +520,64 @@ class ChecksumBigBufferTestCase(unittest.TestCase):
     def test_big_buffer(self, size):
         data = b"nyan" * (_1G + 1)
         self.assertEqual(binascii.crc32(data), 1044521549)
+
+
+class FreeThreadingTest(unittest.TestCase):
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         'only meaningful in free-threaded builds')
+    def test_import_does_not_enable_gil(self):
+        assert_python_ok(
+            '-X', 'gil=0',
+            '-c',
+            (
+                'import sys\n'
+                'if sys._is_gil_enabled():\n'
+                '    raise SystemExit("GIL unexpectedly enabled")\n'
+                'import binascii\n'
+                'if sys._is_gil_enabled():\n'
+                '    raise SystemExit("GIL unexpectedly enabled after import")\n'
+            ),
+        )
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        if sys._is_gil_enabled():
+            self.skipTest('test requires running with -X gil=0')
+
+        num_threads = 8
+        barrier = threading.Barrier(num_threads)
+
+        payload = (
+            b'The quick brown fox jumps over the lazy dog.\r\n'
+            + bytes(range(256))
+        )
+        hexed = binascii.hexlify(payload)
+        b64 = binascii.b2a_base64(payload, newline=False)
+        expected_crc = binascii.crc32(payload)
+
+        def worker():
+            barrier.wait(timeout=support.SHORT_TIMEOUT)
+            for _ in range(1000):
+                if binascii.unhexlify(hexed) != payload:
+                    raise AssertionError('unhexlify mismatch')
+                if binascii.hexlify(payload) != hexed:
+                    raise AssertionError('hexlify mismatch')
+                if binascii.a2b_base64(b64) != payload:
+                    raise AssertionError('a2b_base64 mismatch')
+                if binascii.b2a_base64(payload, newline=False) != b64:
+                    raise AssertionError('b2a_base64 mismatch')
+                if binascii.crc32(payload) != expected_crc:
+                    raise AssertionError('crc32 mismatch')
+
+        threads = [threading.Thread(target=worker) for _ in range(num_threads)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+            if cm.exc_value is not None:
+                raise cm.exc_value
 
 
 if __name__ == "__main__":
