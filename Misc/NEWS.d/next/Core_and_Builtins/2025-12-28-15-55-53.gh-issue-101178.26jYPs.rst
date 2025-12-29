@@ -1,2 +1,2 @@
-Add Ascii85, Base85, and Z95 support to :mod:`binascii` and improve the
+Add Ascii85, Base85, and Z85 support to :mod:`binascii` and improve the
 performance of the base-85 converters in :mod:`base64`.
