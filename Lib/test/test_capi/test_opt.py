@@ -3018,7 +3018,10 @@ class TestUopsOptimization(unittest.TestCase):
             for idx, op in enumerate(ops):
                 opname = op[0]
                 if opname == "_EXIT_TRACE":
-                    # All executors exits should point to another valid executor
+                    # As this is a link outer executor to inner
+                    # executor problem, all executors exits should point to
+                    # another valid executor. In this case, none of them
+                    # should be the cold executor.
                     exit = op[3]
                     link_to = _testinternalcapi.get_exit_executor(exit)
                     self.assertIn(id(link_to), executor_ids)
