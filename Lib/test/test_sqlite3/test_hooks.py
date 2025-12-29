@@ -154,13 +154,11 @@ class AuthorizerTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_authorizer_concurrent_mutation_in_call(self):
         self.cx.execute("create table if not exists test(a number)")
 
-        class Handler:
-            cx = self.cx
-            def __call__(self, *a, **kw):
-                self.cx.set_authorizer(None)
-                raise ZeroDivisionError("hello world")
+        def handler(*a, **kw):
+            self.cx.set_authorizer(None)
+            raise ZeroDivisionError("hello world")
 
-        self.cx.set_authorizer(Handler())
+        self.cx.set_authorizer(handler)
         self.assert_not_authorized(self.cx.execute, "select * from test")
 
     @with_tracebacks(OverflowError)
@@ -168,15 +166,13 @@ class AuthorizerTests(MemoryDatabaseMixin, unittest.TestCase):
         _testcapi = import_helper.import_module("_testcapi")
         self.cx.execute("create table if not exists test(a number)")
 
-        class Handler:
-            cx = self.cx
-            def __call__(self, *a, **kw):
-                self.cx.set_authorizer(None)
-                # We expect 'int' at the C level, so this one will raise
-                # when converting via PyLong_Int().
-                return _testcapi.INT_MAX + 1
+        def handler(*a, **kw):
+            self.cx.set_authorizer(None)
+            # We expect 'int' at the C level, so this one will raise
+            # when converting via PyLong_Int().
+            return _testcapi.INT_MAX + 1
 
-        self.cx.set_authorizer(Handler())
+        self.cx.set_authorizer(handler)
         self.assert_not_authorized(self.cx.execute, "select * from test")
 
 
@@ -294,21 +290,18 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_progress_handler_concurrent_mutation_in_call(self):
         self.cx.execute("create table if not exists test(a number)")
 
-        class Handler:
-            cx = self.cx
-            def __call__(self, *a, **kw):
-                self.cx.set_progress_handler(None, 1)
-                raise ZeroDivisionError("hello world")
+        def handler(*a, **kw):
+            self.cx.set_progress_handler(None, 1)
+            raise ZeroDivisionError("hello world")
 
-        self.cx.set_progress_handler(Handler(), 1)
+        self.cx.set_progress_handler(handler, 1)
         self.assert_interrupted(self.cx.execute, "select * from test")
 
     def test_progress_handler_concurrent_mutation_in_conversion(self):
         self.cx.execute("create table if not exists test(a number)")
 
         class Handler:
-            cx = self.cx
-            def __bool__(self):
+            def __bool__(_):
                 # clear the progress handler
                 self.cx.set_progress_handler(None, 1)
                 raise ValueError  # force PyObject_True() to fail
@@ -466,14 +459,12 @@ class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_trace_callback_concurrent_mutation_in_call(self):
         self.cx.execute("create table if not exists test(a number)")
 
-        class Handler:
-            cx = self.cx
-            def __call__(self, statement):
-                # clear the progress handler
-                self.cx.set_trace_callback(None)
-                raise ZeroDivisionError("hello world")
+        def handler(statement):
+            # clear the progress handler
+            self.cx.set_trace_callback(None)
+            raise ZeroDivisionError("hello world")
 
-        self.cx.set_trace_callback(Handler())
+        self.cx.set_trace_callback(handler)
         self.cx.execute("select * from test")
 
 
