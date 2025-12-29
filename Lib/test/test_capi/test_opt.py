@@ -60,6 +60,13 @@ def iter_opnames(ex):
 def get_opnames(ex):
     return list(iter_opnames(ex))
 
+def iter_ops(ex):
+    for item in ex:
+        yield item
+
+def get_ops(ex):
+    return list(iter_ops(ex))
+
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
@@ -1859,6 +1866,21 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_TUPLE", uops)
         self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
 
+    def test_remove_guard_for_tuple_bounds_check(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                t = (1, 2, 3)
+                x += t[0]
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+
     def test_binary_subcsr_str_int_narrows_to_str(self):
         def testfunc(n):
             x = []
@@ -2988,14 +3010,25 @@ class TestUopsOptimization(unittest.TestCase):
         # Outer loop warms up later, linking to the inner one.
         # Therefore, we have at least two executors.
         self.assertGreaterEqual(len(all_executors), 2)
+        executor_ids = [id(e) for e in all_executors]
         for executor in all_executors:
-            opnames = list(get_opnames(executor))
+            ops = get_ops(executor)
             # Assert all executors first terminator ends in
             # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
-            for idx, op in enumerate(opnames):
-                if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
+            for idx, op in enumerate(ops):
+                opname = op[0]
+                if opname == "_EXIT_TRACE":
+                    # As this is a link outer executor to inner
+                    # executor problem, all executors exits should point to
+                    # another valid executor. In this case, none of them
+                    # should be the cold executor.
+                    exit = op[3]
+                    link_to = _testinternalcapi.get_exit_executor(exit)
+                    self.assertIn(id(link_to), executor_ids)
                     break
-                elif op == "_DEOPT":
+                elif opname == "_JUMP_TO_TOP":
+                    break
+                elif opname == "_DEOPT":
                     self.fail(f"_DEOPT encountered first at executor"
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
@@ -3290,6 +3323,48 @@ class TestUopsOptimization(unittest.TestCase):
 
         for i in range(TIER2_THRESHOLD * 10):
             f1()
+
+    def test_143183(self):
+        # https://github.com/python/cpython/issues/143183
+
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        def f1():
+            class AsyncIter:
+                def __init__(self):
+                    self.limit = 0
+                    self.count = 0
+
+                def __aiter__(self):
+                    return self
+
+                async def __anext__(self):
+                    if self.count >= self.limit:
+                        ...
+                    self.count += 1j
+
+            class AsyncCtx:
+                async def async_for_driver():
+                    try:
+                        for _ in range({TIER2_THRESHOLD}):
+                            try:
+                                async for _ in AsyncIter():
+                                    ...
+                            except TypeError:
+                                ...
+                    except Exception:
+                        ...
+
+                c = async_for_driver()
+                while True:
+                    try:
+                        c.send(None)
+                    except StopIteration:
+                        break
+
+        for _ in range({TIER2_THRESHOLD // 40}):
+            f1()
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
 
 def global_identity(x):
     return x
