@@ -1079,10 +1079,11 @@ class CursorTests(unittest.TestCase):
                 self.value = value
 
             def __getitem__(self, i):
+                if self.value == 3:
+                    self.side_effect()
                 return self.value
 
             def __len__(self):
-                self.side_effect()
                 return 1
 
         class Ps(CxWrapper):
