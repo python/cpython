@@ -14,7 +14,7 @@ There are two variants of the interactive :term:`REPL`.  The classic
 basic interpreter is supported on all platforms with minimal line
 control capabilities.
 
-On Windows, or Unix-like systems with :mod:`curses` support,
+On Windows and Unix-like systems,
 a new interactive shell is used by default since Python 3.13.
 This one supports color, multiline editing, history browsing, and
 paste mode.  To disable color, see :ref:`using-on-controlling-color` for
