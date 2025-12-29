@@ -1,3 +1,2 @@
-Fix a type confusion in zoneinfo where a malicious override of _weak_cache
-in a zoneinfo subclass can cause memory corruption and crash the
-interpreter.
+:mod:`zoneinfo`: fix a crash when instantiating :class:`~zoneinfo.ZoneInfo`
+objects for which the internal class-level cache is inconsistent.

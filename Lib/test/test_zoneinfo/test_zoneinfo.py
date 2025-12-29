@@ -1575,33 +1575,37 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
 
-    def test_weak_cache_get_type_confusion(self):
-        class EvilCache:
+    def test_inconsistent_weak_cache_get(self):
+        class Cache:
             def get(self, key, default=None):
                 return 1337
 
-        class EvilZoneInfo(self.klass):
+        class ZI(self.klass):
             pass
+        # Must set AFTER class creation to override __init_subclass__
+        ZI._weak_cache = Cache()
 
-        EvilZoneInfo._weak_cache = EvilCache()
+        with self.assertRaises(TypeError) as te:
+            ZI("America/Los_Angeles")
+        # Heap type objects' tp_name should just be the type name, i.e. ZI
+        self.assertEqual(str(te.exception), "expected ZI, got int")
 
-        with self.assertRaises(TypeError):
-            EvilZoneInfo("America/Los_Angeles")
-
-    def test_weak_cache_setdefault_type_confusion(self):
-        class EvilCache:
+    def test_inconsistent_weak_cache_setdefault(self):
+        class Cache:
             def get(self, key, default=None):
                 return default
             def setdefault(self, key, value):
                 return 1337
 
-        class EvilZoneInfo(self.klass):
+        class ZI(self.klass):
             pass
+        # Must set AFTER class creation to override __init_subclass__
+        ZI._weak_cache = Cache()
 
-        EvilZoneInfo._weak_cache = EvilCache()
-
-        with self.assertRaises(TypeError):
-            EvilZoneInfo("America/Los_Angeles")
+        with self.assertRaises(TypeError) as te:
+            ZI("America/Los_Angeles")
+        # Heap type objects' tp_name should just be the type name, i.e. ZI
+        self.assertEqual(str(te.exception), "expected ZI, got int")
 
 class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
     module = py_zoneinfo

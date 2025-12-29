@@ -328,9 +328,8 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
     }
 
     if (instance != Py_None && !PyObject_TypeCheck(instance, type)) {
-        const char *e = "%s._weak_cache.get() returned %s, expected %s";
-        PyErr_Format(PyExc_TypeError, e,
-                     type->tp_name, Py_TYPE(instance)->tp_name, type->tp_name);
+        PyErr_Format(PyExc_TypeError, "expected %s, got %s",
+                     type->tp_name, Py_TYPE(instance)->tp_name);
         Py_DECREF(instance);
         Py_DECREF(weak_cache);
         return NULL;
@@ -353,9 +352,8 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         }
 
         if (!PyObject_TypeCheck(instance, type)) {
-            const char *e = "%s._weak_cache.setdefault() returned %s, expected %s";
-            PyErr_Format(PyExc_TypeError, e,
-                         type->tp_name, Py_TYPE(instance)->tp_name, type->tp_name);
+            PyErr_Format(PyExc_TypeError, "expected %s, got %s",
+                         type->tp_name, Py_TYPE(instance)->tp_name);
             Py_DECREF(instance);
             Py_DECREF(weak_cache);
             return NULL;
