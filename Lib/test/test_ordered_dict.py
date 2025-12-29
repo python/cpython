@@ -993,8 +993,8 @@ class CPythonOrderedDictTests(OrderedDictTests,
         class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                MyOD.call_count += 1
-                if MyOD.call_count == 1:
+                self.call_count += 1
+                if self.call_count == 1:
                     del self[3]
                 return super().__getitem__(key)
 
@@ -1005,9 +1005,9 @@ class CPythonOrderedDictTests(OrderedDictTests,
         class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                MyOD.call_count += 1
-                if MyOD.call_count == 1:
-                    self.pop(3, None)
+                self.call_count += 1
+                if self.call_count == 1:
+                    self.pop(3)
                 return super().__getitem__(key)
 
         od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
@@ -1017,10 +1017,10 @@ class CPythonOrderedDictTests(OrderedDictTests,
         class MyOD(self.OrderedDict):
             call_count = 0
             def __getitem__(self, key):
-                MyOD.call_count += 1
-                if MyOD.call_count == 1:
+                self.call_count += 1
+                if self.call_count == 1:
                     del self[3]
-                elif MyOD.call_count == 2:
+                elif self.call_count == 2:
                     self['new_key'] = 'new_value'
                 return super().__getitem__(key)
 
@@ -1029,11 +1029,12 @@ class CPythonOrderedDictTests(OrderedDictTests,
 
     def test_copy_concurrent_mutation_in__setitem__(self):
         od = None
-
         class MyOD(self.OrderedDict):
+            call_count = 0
             def __setitem__(self, key, value):
-                if od is not None and len(od) > 1:
-                    del od[3]
+                self.call_count += 1
+                if od is not None and len(od) > 1 and self.call_count == 1:
+                    del od[1]
                 return super().__setitem__(key, value)
 
         od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])

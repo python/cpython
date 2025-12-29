@@ -1268,15 +1268,18 @@ OrderedDict_copy_impl(PyObject *od)
     else {
         PyODictObject *self = _PyODictObject_CAST(od);
         size_t state = self->od_state;
-        _ODictNode *cur;
 
-        _odict_FOREACH(od, cur) {
-            PyObject *key = Py_NewRef(_odictnode_KEY(cur));
+        _odict_FOREACH(od, node) {
+            PyObject *key = Py_NewRef(_odictnode_KEY(node));
             PyObject *value = PyObject_GetItem(od, key);
             if (value == NULL) {
                 Py_DECREF(key);
+                if (self->od_state != state) {
+                    goto invalid_state;
+                }
                 goto fail;
             }
+
             int rc = PyObject_SetItem(od_copy, key, value);
             Py_DECREF(key);
             Py_DECREF(value);
