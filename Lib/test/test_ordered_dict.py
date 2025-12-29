@@ -995,7 +995,7 @@ class CPythonOrderedDictTests(OrderedDictTests,
             def __getitem__(self, key):
                 self.call_count += 1
                 if self.call_count == 1:
-                    del self[3]
+                    del self[next(iter(self))]
                 return super().__getitem__(key)
 
         od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
@@ -1007,7 +1007,7 @@ class CPythonOrderedDictTests(OrderedDictTests,
             def __getitem__(self, key):
                 self.call_count += 1
                 if self.call_count == 1:
-                    self.pop(3)
+                    self.pop(next(iter(self)))
                 return super().__getitem__(key)
 
         od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
@@ -1019,7 +1019,7 @@ class CPythonOrderedDictTests(OrderedDictTests,
             def __getitem__(self, key):
                 self.call_count += 1
                 if self.call_count == 1:
-                    del self[3]
+                    del self[next(iter(self))]
                 elif self.call_count == 2:
                     self['new_key'] = 'new_value'
                 return super().__getitem__(key)
@@ -1030,11 +1030,15 @@ class CPythonOrderedDictTests(OrderedDictTests,
     def test_copy_concurrent_mutation_in__setitem__(self):
         od = None
         class MyOD(self.OrderedDict):
-            call_count = 0
+            _instance_count = 0
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                MyOD._instance_count += 1
+
             def __setitem__(self, key, value):
-                self.call_count += 1
-                if od is not None and len(od) > 1 and self.call_count == 1:
-                    del od[1]
+                if self._instance_count == 2 and len(od) > 1:
+                    del od[next(iter(od))]
                 return super().__setitem__(key, value)
 
         od = MyOD([(1, 'one'), (2, 'two'), (3, 'three')])
