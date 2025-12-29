@@ -3000,7 +3000,7 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
     Py_DECREF(cb);
     return ret;
 }
