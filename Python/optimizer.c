@@ -1027,9 +1027,6 @@ _PyJit_TryInitializeTracing(
     // Don't trace into the inner call because it will stomp on the previous trace, causing endless retraces.
     if (_tstate->jit_tracer_state.prev_state.code_curr_size > CODE_SIZE_EMPTY ||
         _tstate->jit_tracer_state.initial_state.func != NULL) {
-        // gh-143123: It is possible for another function to finalize the current
-        // tracer's state while tracing. This might happen in a
-        // Python -> C -> Python call.
         return 0;
     }
     if (oparg > 0xFFFF) {
