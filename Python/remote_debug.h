@@ -33,6 +33,9 @@ extern "C" {
 #ifdef __linux__
 #    include <elf.h>
 #    include <sys/uio.h>
+#    include <sys/ptrace.h>
+#    include <sys/wait.h>
+#    include <dirent.h>
 #    if INTPTR_MAX == INT64_MAX
 #        define Elf_Ehdr Elf64_Ehdr
 #        define Elf_Shdr Elf64_Shdr
@@ -43,6 +46,17 @@ extern "C" {
 #        define Elf_Phdr Elf32_Phdr
 #    endif
 #    include <sys/mman.h>
+
+// PTRACE options - define if not available
+#    ifndef PTRACE_SEIZE
+#        define PTRACE_SEIZE 0x4206
+#    endif
+#    ifndef PTRACE_INTERRUPT
+#        define PTRACE_INTERRUPT 0x4207
+#    endif
+#    ifndef PTRACE_EVENT_STOP
+#        define PTRACE_EVENT_STOP 128
+#    endif
 #endif
 
 #if defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
@@ -55,6 +69,7 @@ extern "C" {
 #  include <mach/mach_vm.h>
 #  include <mach/machine.h>
 #  include <mach/task_info.h>
+#  include <mach/thread_act.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
 #  include <sys/sysctl.h>
@@ -139,7 +154,9 @@ static void
 _Py_RemoteDebug_FreePageCache(proc_handle_t *handle)
 {
     for (int i = 0; i < MAX_PAGES; i++) {
-        PyMem_RawFree(handle->pages[i].data);
+        if (handle->pages[i].data) {
+            PyMem_RawFree(handle->pages[i].data);
+        }
         handle->pages[i].data = NULL;
         handle->pages[i].valid = 0;
     }
@@ -169,7 +186,7 @@ _Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     }
 #elif defined(MS_WINDOWS)
     handle->hProcess = OpenProcess(
-        PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION,
+        PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION | PROCESS_SUSPEND_RESUME,
         FALSE, pid);
     if (handle->hProcess == NULL) {
         PyErr_SetFromWindowsErr(0);
@@ -722,6 +739,11 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
         }
 
         const char *path = line + path_pos;
+        if (path[0] == '[' && path[strlen(path)-1] == ']') {
+            // Skip [heap], [stack], [anon:cpython:pymalloc], etc.
+            continue;
+        }
+
         const char *filename = strrchr(path, '/');
         if (filename) {
             filename++;  // Move past the '/'

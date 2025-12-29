@@ -92,7 +92,8 @@ function toggleTheme() {
   // Update theme button icon
   const btn = document.getElementById('theme-btn');
   if (btn) {
-    btn.innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';  // sun or moon
+    btn.querySelector('.icon-moon').style.display = next === 'dark' ? 'none' : '';
+    btn.querySelector('.icon-sun').style.display = next === 'dark' ? '' : 'none';
   }
 
   // Re-render flamegraph with new theme colors
@@ -160,7 +161,8 @@ function restoreUIState() {
     document.documentElement.setAttribute('data-theme', savedTheme);
     const btn = document.getElementById('theme-btn');
     if (btn) {
-      btn.innerHTML = savedTheme === 'dark' ? '&#9788;' : '&#9790;';
+      btn.querySelector('.icon-moon').style.display = savedTheme === 'dark' ? 'none' : '';
+      btn.querySelector('.icon-sun').style.display = savedTheme === 'dark' ? '' : 'none';
     }
   }
 
@@ -740,24 +742,38 @@ function populateThreadStats(data, selectedThreadId = null) {
     if (gilReleasedStat) gilReleasedStat.style.display = 'block';
     if (gilWaitingStat) gilWaitingStat.style.display = 'block';
 
+    const gilHeldPct = threadStats.has_gil_pct || 0;
     const gilHeldPctElem = document.getElementById('gil-held-pct');
-    if (gilHeldPctElem) gilHeldPctElem.textContent = `${(threadStats.has_gil_pct || 0).toFixed(1)}%`;
+    if (gilHeldPctElem) gilHeldPctElem.textContent = `${gilHeldPct.toFixed(1)}%`;
+    const gilHeldFill = document.getElementById('gil-held-fill');
+    if (gilHeldFill) gilHeldFill.style.width = `${gilHeldPct}%`;
 
-    const gilReleasedPctElem = document.getElementById('gil-released-pct');
     // GIL Released = not holding GIL and not waiting for it
     const gilReleasedPct = Math.max(0, 100 - (threadStats.has_gil_pct || 0) - (threadStats.gil_requested_pct || 0));
+    const gilReleasedPctElem = document.getElementById('gil-released-pct');
     if (gilReleasedPctElem) gilReleasedPctElem.textContent = `${gilReleasedPct.toFixed(1)}%`;
+    const gilReleasedFill = document.getElementById('gil-released-fill');
+    if (gilReleasedFill) gilReleasedFill.style.width = `${gilReleasedPct}%`;
 
+    const gilWaitingPct = threadStats.gil_requested_pct || 0;
     const gilWaitingPctElem = document.getElementById('gil-waiting-pct');
-    if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${(threadStats.gil_requested_pct || 0).toFixed(1)}%`;
+    if (gilWaitingPctElem) gilWaitingPctElem.textContent = `${gilWaitingPct.toFixed(1)}%`;
+    const gilWaitingFill = document.getElementById('gil-waiting-fill');
+    if (gilWaitingFill) gilWaitingFill.style.width = `${gilWaitingPct}%`;
   }
 
+  const gcPct = threadStats.gc_pct || 0;
   const gcPctElem = document.getElementById('gc-pct');
-  if (gcPctElem) gcPctElem.textContent = `${(threadStats.gc_pct || 0).toFixed(1)}%`;
+  if (gcPctElem) gcPctElem.textContent = `${gcPct.toFixed(1)}%`;
+  const gcFill = document.getElementById('gc-fill');
+  if (gcFill) gcFill.style.width = `${gcPct}%`;
 
   // Exception stats
+  const excPct = threadStats.has_exception_pct || 0;
   const excPctElem = document.getElementById('exc-pct');
-  if (excPctElem) excPctElem.textContent = `${(threadStats.has_exception_pct || 0).toFixed(1)}%`;
+  if (excPctElem) excPctElem.textContent = `${excPct.toFixed(1)}%`;
+  const excFill = document.getElementById('exc-fill');
+  if (excFill) excFill.style.width = `${excPct}%`;
 }
 
 // ============================================================================
@@ -1299,6 +1315,17 @@ function initFlamegraph() {
     toggleInvertBtn.addEventListener('click', toggleInvert);
   }
 }
+
+// Keyboard shortcut: Enter/Space activates toggle switches
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('toggle-switch')) {
+        e.preventDefault();
+        e.target.click();
+    }
+});
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initFlamegraph);

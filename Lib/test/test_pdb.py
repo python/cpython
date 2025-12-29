@@ -3478,6 +3478,49 @@ def test_pdb_issue_gh_65052():
     (Pdb) continue
     """
 
+def test_pdb_commands_last_breakpoint():
+    """See GH-142834
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     foo = 1
+    ...     bar = 2
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 4',
+    ...     'break 3',
+    ...     'clear 2',
+    ...     'commands',
+    ...     'p "success"',
+    ...     'end',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'commands',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) break 3
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) clear 2
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:3
+    (Pdb) commands
+    (com) p "success"
+    (com) end
+    (Pdb) continue
+    'success'
+    > <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>(4)test_function()
+    -> bar = 2
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_commands_last_breakpoint[0]>:4
+    (Pdb) commands
+    *** cannot set commands: no existing breakpoint
+    (Pdb) continue
+    """
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
@@ -3563,10 +3606,22 @@ class PdbTestCase(unittest.TestCase):
 
     def _fd_dir_for_pipe_targets(self):
         """Return a directory exposing live file descriptors, if any."""
+        return self._proc_fd_dir() or self._dev_fd_dir()
+
+    def _proc_fd_dir(self):
+        """Return /proc-backed fd dir when it can be used for pipes."""
+        # GH-142836: Opening /proc/self/fd entries for pipes raises EACCES on
+        # Solaris, so prefer other mechanisms there.
+        if sys.platform.startswith("sunos"):
+            return None
+
         proc_fd = "/proc/self/fd"
         if os.path.isdir(proc_fd) and os.path.exists(os.path.join(proc_fd, '0')):
             return proc_fd
+        return None
 
+    def _dev_fd_dir(self):
+        """Return /dev-backed fd dir when usable."""
         dev_fd = "/dev/fd"
         if os.path.isdir(dev_fd) and os.path.exists(os.path.join(dev_fd, '0')):
             if sys.platform.startswith("freebsd"):
@@ -3576,7 +3631,6 @@ class PdbTestCase(unittest.TestCase):
                 except FileNotFoundError:
                     return None
             return dev_fd
-
         return None
 
     def test_find_function_empty_file(self):
@@ -4038,6 +4092,23 @@ def bœr():
                 with open(rc_path, "w") as f:
                     f.write("invalid")
                 self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
+
+    def test_readrc_current_dir(self):
+        with os_helper.temp_cwd() as cwd:
+            rc_path = os.path.join(cwd, ".pdbrc")
+            with open(rc_path, "w") as f:
+                f.write("invalid")
+            self.assertEqual(pdb.Pdb().rcLines[-1], "invalid")
+
+    def test_readrc_cwd_is_home(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.unset("HOME")
+            with os_helper.temp_cwd() as cwd, patch("os.path.expanduser"):
+                rc_path = os.path.join(cwd, ".pdbrc")
+                os.path.expanduser.return_value = rc_path
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines, ["invalid"])
 
     def test_header(self):
         stdout = StringIO()

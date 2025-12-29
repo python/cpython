@@ -196,7 +196,7 @@ check_stack_bounds(JitOptContext *ctx, JitOptRef *stack_pointer, int offset, int
         (opcode == _RETURN_VALUE) ||
         (opcode == _RETURN_GENERATOR) ||
         (opcode == _YIELD_VALUE);
-    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE())) {
+    if (should_check && (stack_level < 0 || stack_level > STACK_SIZE() + MAX_CACHED_REGISTER)) {
         ctx->contradiction = true;
         ctx->done = true;
         return 1;
@@ -312,7 +312,7 @@ _Py_opt_assert_within_stack_bounds(
         fflush(stdout);
         abort();
     }
-    int size = (int)(frame->stack_len);
+    int size = (int)(frame->stack_len) + MAX_CACHED_REGISTER;
     if (level > size) {
         printf("Stack overflow (depth = %d) at %s:%d\n", level, filename, lineno);
         fflush(stdout);
@@ -326,13 +326,6 @@ _Py_opt_assert_within_stack_bounds(
 #else
 #define ASSERT_WITHIN_STACK_BOUNDS(F, L) (void)0
 #endif
-
-// TODO (gh-134584) generate most of this table automatically
-const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
-    [_BINARY_OP_MULTIPLY_FLOAT] = _BINARY_OP_MULTIPLY_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_ADD_FLOAT] = _BINARY_OP_ADD_FLOAT__NO_DECREF_INPUTS,
-    [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
-};
 
 /* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
@@ -453,7 +446,9 @@ const uint16_t op_without_push[MAX_UOP_ID + 1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = _POP_TOP,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _POP_TOP,
     [_POP_TWO_LOAD_CONST_INLINE_BORROW] = _POP_TWO,
+    [_POP_CALL_ONE_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE,
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = _POP_CALL_TWO,
+    [_SHUFFLE_2_LOAD_CONST_INLINE_BORROW] = _POP_CALL_ONE_LOAD_CONST_INLINE_BORROW,
 };
 
 const bool op_skip[MAX_UOP_ID + 1] = {
@@ -465,6 +460,10 @@ const bool op_skip[MAX_UOP_ID + 1] = {
 
 const uint16_t op_without_pop[MAX_UOP_ID + 1] = {
     [_POP_TOP] = _NOP,
+    [_POP_TOP_NOP] = _NOP,
+    [_POP_TOP_INT] = _NOP,
+    [_POP_TOP_FLOAT] = _NOP,
+    [_POP_TOP_UNICODE] = _NOP,
     [_POP_TOP_LOAD_CONST_INLINE] = _LOAD_CONST_INLINE,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = _LOAD_CONST_INLINE_BORROW,
     [_POP_TWO] = _POP_TOP,
