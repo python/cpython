@@ -926,14 +926,17 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     assert(!sqlite3_stmt_busy(self->statement->st));
+    assert(multiple || Py_IS_TYPE(parameters_iter, &PyListIter_Type));
+
     while (1) {
         parameters = PyIter_Next(parameters_iter);
         if (!parameters) {
+            assert(multiple || !PyErr_Occurred());
             break;
         }
         // PyIter_Next() may have a side-effect on the connection's state.
         // See: https://github.com/python/cpython/issues/143198.
-        if (!pysqlite_check_connection(self->connection)) {
+        if (multiple && !pysqlite_check_connection(self->connection)) {
             goto error;
         }
 
@@ -1005,6 +1008,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
     }
 
     if (!multiple) {
+        assert(!PyErr_Occurred());
         sqlite_int64 lastrowid;
 
         Py_BEGIN_ALLOW_THREADS
