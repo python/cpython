@@ -667,7 +667,6 @@ struct textio
     PyObject_HEAD
     int ok; /* initialized? */
     int detached;
-    int flushing; /* prevent reentrant detach during flush */
     Py_ssize_t chunk_size;
     PyObject *buffer;
     PyObject *encoding;
@@ -725,16 +724,6 @@ struct textio
 };
 
 #define textio_CAST(op) ((textio *)(op))
-
-/* gh-143007 need to check for reentrant flush */
-static inline int
-_textiowrapper_flush(textio *self)
-{
-    self->flushing = 1;
-    int result = _PyFile_Flush((PyObject *)self);
-    self->flushing = 0;
-    return result;
-}
 
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars);
@@ -905,6 +894,11 @@ _textiowrapper_set_decoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
+    if (self->detached > 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "underlying buffer has been detached");
+        return -1;
+    }
     res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(readable));
     if (res == NULL)
         return -1;
@@ -961,6 +955,11 @@ _textiowrapper_set_encoder(textio *self, PyObject *codec_info,
     PyObject *res;
     int r;
 
+    if (self->detached > 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "underlying buffer has been detached");
+        return -1;
+    }
     res = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(writable));
     if (res == NULL)
         return -1;
@@ -1007,6 +1006,11 @@ _textiowrapper_fix_encoder_state(textio *self)
 
     self->encoding_start_of_stream = 1;
 
+    if (self->detached > 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "underlying buffer has been detached");
+        return -1;
+    }
     PyObject *cookieObj = PyObject_CallMethodNoArgs(
         self->buffer, &_Py_ID(tell));
     if (cookieObj == NULL) {
@@ -1119,7 +1123,6 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
 
     self->ok = 0;
     self->detached = 0;
-    self->flushing = 0;
 
     if (encoding == NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1434,7 +1437,7 @@ _io_TextIOWrapper_reconfigure_impl(textio *self, PyObject *encoding,
         return NULL;
     }
 
-    if (_textiowrapper_flush(self) < 0) {
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
     }
     self->b2cratio = 0;
@@ -1548,7 +1551,7 @@ _io_TextIOWrapper_closed_get_impl(textio *self);
 
 #define CHECK_ATTACHED(self) \
     CHECK_INITIALIZED(self); \
-    if (self->detached) { \
+    if (self->detached > 0) { \
         PyErr_SetString(PyExc_ValueError, \
              "underlying buffer has been detached"); \
         return NULL; \
@@ -1559,12 +1562,11 @@ _io_TextIOWrapper_closed_get_impl(textio *self);
         PyErr_SetString(PyExc_ValueError, \
             "I/O operation on uninitialized object"); \
         return -1; \
-    } else if (self->detached) { \
+    } else if (self->detached > 0) { \
         PyErr_SetString(PyExc_ValueError, \
              "underlying buffer has been detached"); \
         return -1; \
     }
-
 
 /*[clinic input]
 @critical_section
@@ -1577,12 +1579,18 @@ _io_TextIOWrapper_detach_impl(textio *self)
 {
     PyObject *buffer;
     CHECK_ATTACHED(self);
-    if (self->flushing) {
+    if (self->detached < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "reentrant call to detach() is not allowed");
         return NULL;
     }
-    if (_textiowrapper_flush(self) < 0) {
+    int entered = (self->detached == 0);
+    if (entered)
+        self->detached = -1;
+    if (_PyFile_Flush((PyObject *)self) < 0) {
+        if (entered && self->detached < 0) {
+            self->detached = 0;
+        }
         return NULL;
     }
     buffer = self->buffer;
@@ -1653,11 +1661,15 @@ _textiowrapper_writeflush(textio *self)
     Py_DECREF(pending);
 
     PyObject *ret;
-    self->flushing = 1;
+    CHECK_ATTACHED_INT(self);
+    int entered = (self->detached == 0);
+    if (entered)
+        self->detached = -1;
     do {
         ret = PyObject_CallMethodOneArg(self->buffer, &_Py_ID(write), b);
     } while (ret == NULL && _PyIO_trap_eintr());
-    self->flushing = 0;
+    if (entered && self->detached < 0)
+        self->detached = 0;
     Py_DECREF(b);
     // NOTE: We cleared buffer but we don't know how many bytes are actually written
     // when an error occurred.
@@ -2602,7 +2614,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
             goto fail;
         }
 
-        if (_textiowrapper_flush(self) < 0) {
+        if (_PyFile_Flush((PyObject *)self) < 0) {
             goto fail;
         }
 
@@ -2649,7 +2661,7 @@ _io_TextIOWrapper_seek_impl(textio *self, PyObject *cookieObj, int whence)
         goto fail;
     }
 
-    if (_textiowrapper_flush(self) < 0) {
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         goto fail;
     }
 
@@ -2776,7 +2788,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
 
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
-    if (_textiowrapper_flush(self) < 0) {
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         goto fail;
     }
 
@@ -2986,7 +2998,7 @@ _io_TextIOWrapper_truncate_impl(textio *self, PyObject *pos)
 {
     CHECK_ATTACHED(self)
 
-    if (_textiowrapper_flush(self) < 0) {
+    if (_PyFile_Flush((PyObject *)self) < 0) {
         return NULL;
     }
 
@@ -3142,7 +3154,14 @@ _io_TextIOWrapper_flush_impl(textio *self)
     self->telling = self->seekable;
     if (_textiowrapper_writeflush(self) < 0)
         return NULL;
-    return PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(flush));
+    int entered = (self->detached == 0);
+    if (entered) {
+        self->detached = -1;
+    }
+    PyObject *ret = PyObject_CallMethodNoArgs(self->buffer, &_Py_ID(flush));
+    if (entered && self->detached < 0)
+        self->detached = 0;
+    return ret;
 }
 
 /*[clinic input]
@@ -3169,7 +3188,7 @@ _io_TextIOWrapper_close_impl(textio *self)
     if (r > 0) {
         Py_RETURN_NONE; /* stream already closed */
     }
-    if (self->detached) {
+    if (self->detached > 0) {
         Py_RETURN_NONE; /* gh-142594 null pointer issue */
     }
     else {
@@ -3184,7 +3203,7 @@ _io_TextIOWrapper_close_impl(textio *self)
                 PyErr_Clear();
             }
         }
-        if (_textiowrapper_flush(self) < 0) {
+        if (_PyFile_Flush((PyObject *)self) < 0) {
             exc = PyErr_GetRaisedException();
         }
 

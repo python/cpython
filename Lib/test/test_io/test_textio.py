@@ -1564,25 +1564,19 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         # gh-143008: Reentrant detach() during flush should raise RuntimeError
         # instead of crashing.
         wrapper = None
-
-        class BadRaw(self.RawIOBase):
-            def write(self, b): return len(b)
-            def read(self, n=-1): return b''
-            def readable(self): return True
-            def writable(self): return True
-            def seekable(self): return True
-            def seek(self, pos, whence=0): return 0
-            def tell(self): return 0
+        wrapper_ref = None
 
         class EvilBuffer(self.BufferedRandom):
             detach_on_write = False
 
             def flush(self):
+                wrapper = wrapper_ref() if wrapper_ref is not None else None
                 if wrapper is not None and not self.detach_on_write:
                     wrapper.detach()
                 return super().flush()
 
             def write(self, b):
+                wrapper = wrapper_ref() if wrapper_ref is not None else None
                 if wrapper is not None and self.detach_on_write:
                     wrapper.detach()
                 return len(b)
@@ -1597,16 +1591,20 @@ class CTextIOWrapperTest(TextIOWrapperTest, CTestCase):
         ]
         for name, method in tests:
             with self.subTest(name):
-                wrapper = self.TextIOWrapper(EvilBuffer(BadRaw()), encoding='utf-8')
+                wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+                wrapper_ref = weakref.ref(wrapper)
                 self.assertRaisesRegex(RuntimeError, "reentrant", method)
-                wrapper = None
+                wrapper_ref = None
+                del wrapper
 
         with self.subTest('read via writeflush'):
             EvilBuffer.detach_on_write = True
-            wrapper = self.TextIOWrapper(EvilBuffer(BadRaw()), encoding='utf-8')
+            wrapper = self.TextIOWrapper(EvilBuffer(self.MockRawIO()), encoding='utf-8')
+            wrapper_ref = weakref.ref(wrapper)
             wrapper.write('x')
             self.assertRaisesRegex(RuntimeError, "reentrant", wrapper.read)
-            wrapper = None
+            wrapper_ref = None
+            del wrapper
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
