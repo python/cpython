@@ -1,5 +1,6 @@
 import faulthandler
 import gc
+import io
 import os
 import random
 import signal
@@ -7,11 +8,12 @@ import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
+from _colorize import can_colorize  # type: ignore[import-not-found]
 
 from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
-    setup_unraisable_hook, setup_threading_excepthook, fix_umask,
+    setup_unraisable_hook, setup_threading_excepthook,
     adjust_rlimit_nofile)
 
 
@@ -26,8 +28,6 @@ def setup_test_dir(testdir: str | None) -> None:
 
 
 def setup_process() -> None:
-    fix_umask()
-
     assert sys.__stderr__ is not None, "sys.__stderr__ is None"
     try:
         stderr_fd = sys.__stderr__.fileno()
@@ -42,7 +42,7 @@ def setup_process() -> None:
         faulthandler.enable(all_threads=True, file=stderr_fd)
 
         # Display the Python traceback on SIGALRM or SIGUSR1 signal
-        signals = []
+        signals: list[signal.Signals] = []
         if hasattr(signal, 'SIGALRM'):
             signals.append(signal.SIGALRM)
         if hasattr(signal, 'SIGUSR1'):
@@ -53,6 +53,14 @@ def setup_process() -> None:
     adjust_rlimit_nofile()
 
     support.record_original_stdout(sys.stdout)
+
+    # Set sys.stdout encoder error handler to backslashreplace,
+    # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+    # when printing a traceback or any other non-encodable character.
+    #
+    # Use an assertion to fix mypy error.
+    assert isinstance(sys.stdout, io.TextIOWrapper)
+    sys.stdout.reconfigure(errors="backslashreplace")
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
@@ -132,3 +140,10 @@ def setup_tests(runtests: RunTests) -> None:
         gc.set_threshold(runtests.gc_threshold)
 
     random.seed(runtests.random_seed)
+
+    # sys.stdout is redirected to a StringIO in single process mode on which
+    # color auto-detect fails as StringIO is not a TTY. If the original
+    # sys.stdout supports color pass that through with FORCE_COLOR so that when
+    # results are printed, such as with -W, they get color.
+    if can_colorize(file=sys.stdout):
+        os.environ['FORCE_COLOR'] = "1"

@@ -690,9 +690,21 @@ msvcrt_SetErrorMode(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned int mode;
 
-    mode = (unsigned int)PyLong_AsUnsignedLongMask(arg);
-    if (mode == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(arg, &mode, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = msvcrt_SetErrorMode_impl(module, mode);
 
@@ -731,4 +743,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=692c6f52bb9193ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f67eaf745685429d input=a9049054013a1b77]*/

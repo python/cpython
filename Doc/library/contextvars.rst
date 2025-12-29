@@ -101,6 +101,21 @@ Context Variables
    the value of the variable to what it was before the corresponding
    *set*.
 
+   The token supports :ref:`context manager protocol <context-managers>`
+   to restore the corresponding context variable value at the exit from
+   :keyword:`with` block::
+
+       var = ContextVar('var', default='default value')
+
+       with var.set('new value'):
+           assert var.get() == 'new value'
+
+       assert var.get() == 'default value'
+
+   .. versionadded:: 3.14
+
+      Added support for usage as a context manager.
+
    .. attribute:: Token.var
 
       A read-only property.  Points to the :class:`ContextVar` object
@@ -298,7 +313,7 @@ client::
         addr = writer.transport.get_extra_info('socket').getpeername()
         client_addr_var.set(addr)
 
-        # In any code that we call is now possible to get
+        # In any code that we call, it is now possible to get the
         # client's address by calling 'client_addr_var.get()'.
 
         while True:
