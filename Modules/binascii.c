@@ -109,8 +109,8 @@ static const unsigned char table_a2b_base64[] = {
  * This allows the compiler to better optimize the hot loops.
  */
 
-/* Forward declaration for table defined after the inline functions */
-static const unsigned char table_b2a_base64[];
+static const unsigned char table_b2a_base64[] =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* Encode 3 bytes into 4 base64 characters. */
 static inline void
@@ -197,9 +197,6 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
 
     return i * 4;
 }
-
-static const unsigned char table_b2a_base64[] =
-"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 
 static const unsigned short crctab_hqx[256] = {
