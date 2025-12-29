@@ -5658,7 +5658,7 @@ long_bitwise(PyLongObject *a,
     z = long_alloc(size_z + negz);
     if (z == NULL) {
         Py_XDECREF(new_a);
-        Py_XDECREF(new_a);
+        Py_XDECREF(new_b);
         return NULL;
     }
 
