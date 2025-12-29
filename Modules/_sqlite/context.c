@@ -49,7 +49,6 @@ callback_context_new_impl(PyTypeObject *type, PyObject *callable)
     ctx->state = state;
     PyObject_GC_Track(ctx);
     return (PyObject *)ctx;
-
 }
 
 static int
@@ -104,8 +103,7 @@ static PyType_Spec callback_context_spec = {
 PyObject *
 pysqlite_create_callback_context(pysqlite_state *state, PyObject *callable)
 {
-    PyTypeObject *type = state->CallbackContextType;
-    return callback_context_new_impl(type, callable);
+    return callback_context_new_impl(state->CallbackContextType, callable);
 }
 
 int

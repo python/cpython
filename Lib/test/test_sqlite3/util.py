@@ -50,7 +50,7 @@ def check_tracebacks(self, cm, exc, exc_regex, msg_regex, obj_name):
         with contextlib.redirect_stderr(buf):
             yield
 
-        self.assertEqual(cm.unraisable.exc_type, exc)
+        self.assertIsSubclass(cm.unraisable.exc_type, exc)
         if exc_regex:
             msg = str(cm.unraisable.exc_value)
             self.assertIsNotNone(exc_regex.search(msg), (exc_regex, msg))

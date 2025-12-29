@@ -1450,6 +1450,8 @@ trace_callback(unsigned int type, void *ctx_vp, void *stmt, void *sql)
 
     assert(ctx_vp != NULL);
     pysqlite_CallbackContext *ctx = pysqlite_CallbackContext_CAST(ctx_vp);
+    // Hold a reference to 'ctx' to prevent concurrent mutations.
+    Py_INCREF(ctx);
     pysqlite_state *state = ctx->state;
     assert(state != NULL);
 
@@ -1474,9 +1476,7 @@ trace_callback(unsigned int type, void *ctx_vp, void *stmt, void *sql)
         sqlite3_free((void *)expanded_sql);
     }
     if (py_statement) {
-        Py_INCREF(ctx);
         PyObject *ret = PyObject_CallOneArg(ctx->callable, py_statement);
-        Py_DECREF(ctx);
         Py_DECREF(py_statement);
         Py_XDECREF(ret);
     }
@@ -1485,6 +1485,7 @@ trace_callback(unsigned int type, void *ctx_vp, void *stmt, void *sql)
     }
 
 exit:
+    Py_DECREF(ctx);
     PyGILState_Release(gilstate);
     return 0;
 }
