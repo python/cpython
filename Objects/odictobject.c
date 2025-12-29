@@ -1274,10 +1274,13 @@ OrderedDict_copy_impl(PyObject *od)
             PyObject *value = PyObject_GetItem(od, key);
             if (value == NULL) {
                 Py_DECREF(key);
-                if (self->od_state != state) {
-                    goto invalid_state;
-                }
                 goto fail;
+            }
+
+            if (self->od_state != state) {
+                Py_DECREF(key);
+                Py_DECREF(value);
+                goto invalid_state;  // 成功获取值但状态改变
             }
 
             int rc = PyObject_SetItem(od_copy, key, value);
