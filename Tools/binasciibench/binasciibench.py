@@ -175,7 +175,7 @@ def main():
     parser.add_argument(
         "-s", "--sizes",
         type=str,
-        default=None,
+        default=",".join(map(str, DEFAULT_SIZES)),
         help="Comma-separated list of sizes to test (e.g., '64,256,1024')"
     )
 
