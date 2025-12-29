@@ -728,31 +728,19 @@ class OpenTests(unittest.TestCase):
             self.assertEqual(type(cx), sqlite.Connection)
 
 
-class CxWrapper:
+class ParamsCxCloseInIterMany:
     def __init__(self, cx):
         self.cx = cx
 
-    def side_effect(self):
-        self.cx.close()
-
-
-class ParamsCxCloseInIterMany(CxWrapper):
     def __iter__(self):
-        self.side_effect()
+        self.cx.close()
         return iter([(1,), (2,), (3,)])
 
 
-class ParamsCxCloseInNext(CxWrapper):
-    def __init__(self, cx):
-        super().__init__(cx)
-        self.r = iter(range(10))
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        self.side_effect()
-        return (next(self.r),)
+def ParamsCxCloseInNext(cx):
+    for i in range(10):
+        cx.close()
+        yield (i,)
 
 
 class CursorTests(unittest.TestCase):
@@ -896,15 +884,10 @@ class CursorTests(unittest.TestCase):
         #
         # Regression test for https://github.com/python/cpython/issues/143198.
 
-        class PT(CxWrapper):
-            def __init__(self, cx, value):
-                super().__init__(cx)
-                self.value = value
-
+        class PT:
             def __getitem__(self, i):
-                self.side_effect()
-                return self.value
-
+                cx.close()
+                return 1
             def __len__(self):
                 return 1
 
@@ -914,7 +897,7 @@ class CursorTests(unittest.TestCase):
         cu = cx.cursor()
         msg = r"Cannot operate on a closed database\."
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-            cu.execute("insert into tmp(a) values (?)", PT(cx, 1))
+            cu.execute("insert into tmp(a) values (?)", PT())
 
     def test_execute_named_param_and_sequence(self):
         dataset = (
@@ -1099,7 +1082,9 @@ class CursorTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             cu.executemany("insert into tmp(a) values (?)", params_class(cx))
 
-    def test_executemany_use_after_close_with_bind_parameters(self):
+    @subTests(("j", "n"), ([0, 1], [0, 3], [1, 3], [2, 3]))
+    @subTests("wtype", (list, lambda x: x))
+    def test_executemany_use_after_close_with_bind_parameters(self, j, n, wtype):
         # Prevent SIGSEGV when closing the connection while binding parameters.
         #
         # Internally, the connection's state is checked after bind_parameters().
@@ -1109,28 +1094,25 @@ class CursorTests(unittest.TestCase):
         #
         # Regression test for https://github.com/python/cpython/issues/143198.
 
-        class PT(CxWrapper):
-            def __init__(self, cx, value):
-                super().__init__(cx)
-                self.value = value
-
-            def __getitem__(self, i):
-                if self.value == len(ITEMS):
-                    self.side_effect()
-                return self.value
-
-            def __len__(self):
-                return 1
-
         cx = sqlite.connect(":memory:")
         cx.execute("create table tmp(a number)")
         self.addCleanup(cx.close)
 
-        ITEMS = [PT(cx, 1), PT(cx, 2), PT(cx, 3)]
+        class PT:
+            def __init__(self, value):
+                self.value = value
+            def __getitem__(self, i):
+                if self.value == j:
+                    cx.close()
+                return self.value
+            def __len__(self):
+                return 1
+
         cu = cx.cursor()
         msg = r"Cannot operate on a closed database\."
+        items = iter(wtype(map(PT, range(n))))
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-            cu.executemany("insert into tmp(a) values (?)", iter(ITEMS))
+            cu.executemany("insert into tmp(a) values (?)", items)
 
     def test_fetch_iter(self):
         # Optional DB-API extension.
@@ -1816,24 +1798,20 @@ class ExtensionTests(unittest.TestCase):
     def test_connection_execute_use_after_close_with_bind_parameters(self):
         # See CursorTests.test_execute_use_after_close_with_bind_parameters().
 
-        class PT(CxWrapper):
-            def __init__(self, cx, value):
-                super().__init__(cx)
-                self.value = value
-
-            def __getitem__(self, i):
-                self.side_effect()
-                return self.value
-
-            def __len__(self):
-                return 1
-
         cx = sqlite.connect(":memory:")
         cx.execute("create table tmp(a number)")
         self.addCleanup(cx.close)
+
+        class PT:
+            def __getitem__(self, i):
+                cx.close()
+                return 1
+            def __len__(self):
+                return 1
+
         msg = r"Cannot operate on a closed database\."
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-            cx.execute("insert into tmp(a) values (?)", PT(cx, 1))
+            cx.execute("insert into tmp(a) values (?)", PT())
 
     def test_connection_executemany(self):
         con = self.con
@@ -1854,30 +1832,31 @@ class ExtensionTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             cx.executemany("insert into tmp(a) values (?)", params_class(cx))
 
-    def test_connection_executemany_use_after_close_with_bind_parameters(self):
+    @subTests(("j", "n"), ([0, 1], [0, 3], [1, 3], [2, 3]))
+    @subTests("wtype", (list, lambda x: x))
+    def test_connection_executemany_use_after_close_with_bind_parameters(
+        self, j, n, wtype,
+    ):
         # See CursorTests.test_executemany_use_after_close_with_bind_parameters().
-
-        class PT(CxWrapper):
-            def __init__(self, cx, value):
-                super().__init__(cx)
-                self.value = value
-
-            def __getitem__(self, i):
-                if self.value == len(ITEMS):
-                    self.side_effect()
-                return self.value
-
-            def __len__(self):
-                return 1
 
         cx = sqlite.connect(":memory:")
         cx.execute("create table tmp(a number)")
         self.addCleanup(cx.close)
 
-        ITEMS = [PT(cx, 1), PT(cx, 2), PT(cx, 3)]
+        class PT:
+            def __init__(self, value):
+                self.value = value
+            def __getitem__(self, i):
+                if self.value == j:
+                    cx.close()
+                return self.value
+            def __len__(self):
+                return 1
+
+        items = iter(wtype(map(PT, range(n))))
         msg = r"Cannot operate on a closed database\."
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
-            cx.executemany("insert into tmp(a) values (?)", iter(ITEMS))
+            cx.executemany("insert into tmp(a) values (?)", items)
 
     def test_connection_executescript(self):
         con = self.con
