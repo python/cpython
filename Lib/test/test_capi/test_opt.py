@@ -3012,7 +3012,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertGreaterEqual(len(all_executors), 2)
         executor_ids = [id(e) for e in all_executors]
         for executor in all_executors:
-            ops = list(get_ops(executor))
+            ops = get_ops(executor)
             # Assert all executors first terminator ends in
             # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
             for idx, op in enumerate(ops):
