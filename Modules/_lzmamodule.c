@@ -1317,7 +1317,7 @@ PyDoc_STRVAR(Decompressor_unused_data_doc,
 "Data found after the end of the compressed stream.");
 
 static PyObject *
-Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(ignored))
+Decompressor_unused_data_get(PyObject *op, void *Py_UNUSED(closure))
 {
     Decompressor *self = Decompressor_CAST(op);
     if (!FT_ATOMIC_LOAD_CHAR_RELAXED(self->eof)) {
