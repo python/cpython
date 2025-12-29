@@ -941,7 +941,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
         }
 
         bind_parameters(state, self->statement, parameters);
-        if (PyErr_Occurred()) {
+        if (PyErr_Occurred() || !pysqlite_check_connection(self->connection)) {
             goto error;
         }
 

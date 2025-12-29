@@ -1069,6 +1069,34 @@ class CursorTests(unittest.TestCase):
         with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
             cu.executemany("insert into tmp(a) values (?)", params_class(cx))
 
+    def test_executemany_use_after_close_with___len__(self):
+        # Prevent SIGSEGV with a len(parameters) closing the connection.
+        # Regression test for https://github.com/python/cpython/issues/143198.
+
+        class PT(CxWrapper):
+            def __init__(self, cx, value):
+                super().__init__(cx)
+                self.value = value
+
+            def __getitem__(self, i):
+                return self.value
+
+            def __len__(self):
+                self.side_effect()
+                return 1
+
+        class Ps(CxWrapper):
+            def __iter__(self):
+                return iter([PT(cx, 1), PT(cx, 2), PT(cx, 3)])
+
+        cx = sqlite.connect(":memory:")
+        cx.execute("create table tmp(a number)")
+        self.addCleanup(cx.close)
+        cu = cx.cursor()
+        msg = r"Cannot operate on a closed database\."
+        with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
+            cu.executemany("insert into tmp(a) values (?)", Ps(cx))
+
     def test_fetch_iter(self):
         # Optional DB-API extension.
         self.cu.execute("delete from test")
