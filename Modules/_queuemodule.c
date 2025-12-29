@@ -524,6 +524,15 @@ queue_free(void *m)
     (void)queue_clear((PyObject *)m);
 }
 
+static PyObject *
+simplequeue_sizeof(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(self));
+    // Add size of the RingBuf items array
+    res += self->buf.items_cap * sizeof(PyObject *);
+    return PyLong_FromSsize_t(res);
+}
+
 #include "clinic/_queuemodule.c.h"
 
 
@@ -534,6 +543,8 @@ static PyMethodDef simplequeue_methods[] = {
     _QUEUE_SIMPLEQUEUE_PUT_METHODDEF
     _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF
     _QUEUE_SIMPLEQUEUE_QSIZE_METHODDEF
+    {"__sizeof__",           (PyCFunction)simplequeue_sizeof,
+    METH_NOARGS,             PyDoc_STR("Return the size of the SimpleQueue in memory, in bytes.")},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,           NULL}              /* sentinel */
