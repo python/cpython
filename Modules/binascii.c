@@ -188,7 +188,8 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
          * approach; on modern pipelined CPUs this is faster than bitmask tricks
          * like XOR+SUB+AND for zero-detection which have data dependencies.
          */
-        if (inp[0] == '=' || inp[1] == '=' || inp[2] == '=' || inp[3] == '=') {
+        if (inp[0] == BASE64_PAD || inp[1] == BASE64_PAD ||
+            inp[2] == BASE64_PAD || inp[3] == BASE64_PAD) {
             break;
         }
 
