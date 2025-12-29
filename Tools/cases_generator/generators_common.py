@@ -7,14 +7,15 @@ from analyzer import (
     analysis_error,
     Label,
     CodeSection,
+    Uop,
 )
 from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
 from stack import Storage, StackError
-
-# Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = False
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt, MacroIfStmt
+from stack import PRINT_STACKS
+DEBUG = False
 
 class TokenIterator:
 
@@ -56,9 +57,7 @@ def root_relative_path(filename: str) -> str:
 
 
 def type_and_null(var: StackItem) -> tuple[str, str]:
-    if var.type:
-        return var.type, "NULL"
-    elif var.is_array():
+    if var.is_array():
         return "_PyStackRef *", "NULL"
     else:
         return "_PyStackRef", "PyStackRef_NULL"
@@ -108,11 +107,15 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
+    cannot_escape: bool
+    jump_prefix: str
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, jump_prefix: str = ""):
         self._replacers = {
             "EXIT_IF": self.exit_if,
+            "AT_END_EXIT_IF": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
+            "HANDLE_PENDING_AND_DEOPT_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
@@ -126,9 +129,15 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "Py_UNREACHABLE": self.unreachable,
+            "TIER1_TO_TIER2": self.tier1_to_tier2,
+            "TIER2_TO_TIER2": self.tier2_to_tier2,
+            "GOTO_TIER_ONE": self.goto_tier_one
         }
         self.out = out
         self.labels = labels
+        self.cannot_escape = cannot_escape
+        self.jump_prefix = jump_prefix
 
     def dispatch(
         self,
@@ -140,7 +149,21 @@ class Emitter:
     ) -> bool:
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
         self.emit(tkn)
+        return False
+
+    def unreachable(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";\n")
         return False
 
     def deopt_if(
@@ -164,18 +187,51 @@ class Emitter:
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
-        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit(f"JUMP_TO_PREDICTED({self.jump_prefix}{family_name});\n")
         self.emit("}\n")
         return not always_true(first_tkn)
 
     exit_if = deopt_if
 
-    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+    def periodic_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("HANDLE_PENDING_AND_DEOPT_IF not support in tier 1")
+
+    def exit_if_after(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        storage.clear_inputs("in AT_END_EXIT_IF")
+        storage.flush(self.out)
+        storage.stack.clear(self.out)
+        return self.exit_if(tkn, tkn_iter, uop, storage, inst)
+
+    def goto_tier_one(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        raise NotImplementedError("GOTO_TIER_ONE not supported in tier 1")
+
+    def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
+            return f"{self.jump_prefix}JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_LABEL({label});"
+        return f"{self.jump_prefix}JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -191,30 +247,44 @@ class Emitter:
         unconditional = always_true(first_tkn)
         if unconditional:
             next(tkn_iter)
-            comma = next(tkn_iter)
-            if comma.kind != "COMMA":
-                raise analysis_error(f"Expected comma, got '{comma.text}'", comma)
+            next(tkn_iter)  # RPAREN
             self.out.start_line()
         else:
             self.out.emit_at("if ", tkn)
             self.emit(lparen)
-            emit_to(self.out, tkn_iter, "COMMA")
+            emit_to(self.out, tkn_iter, "RPAREN")
             self.out.emit(") {\n")
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
 
-        c_offset = storage.stack.peek_offset()
+        c_offset = storage.stack.sp_offset()
         try:
-            offset = -int(c_offset)
+            offset = int(c_offset)
         except ValueError:
             offset = -1
-        self.out.emit(self.goto_error(offset, label, storage))
+        self.out.emit(self.goto_error(offset, storage))
         self.out.emit("\n")
         if not unconditional:
             self.out.emit("}\n")
         return not unconditional
+
+    def tier1_to_tier2(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        self.emit(lparen)
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.out.emit(")")
+        return False
+
+    tier2_to_tier2 = tier1_to_tier2
 
     def error_no_pop(
         self,
@@ -227,7 +297,7 @@ class Emitter:
         next(tkn_iter)  # LPAREN
         next(tkn_iter)  # RPAREN
         next(tkn_iter)  # Semi colon
-        self.out.emit_at(self.goto_error(0, "error", storage), tkn)
+        self.out.emit_at(self.goto_error(0, storage), tkn)
         return False
 
     def decref_inputs(
@@ -241,14 +311,15 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
+        self._print_storage("DECREF_INPUTS", storage)
         try:
-            storage.close_inputs(self.out)
+            if not self.cannot_escape:
+                storage.close_inputs(self.out)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn)
         except Exception as ex:
             ex.args = (ex.args[0] + str(tkn),)
             raise
-        self._print_storage(storage)
         return True
 
     def kill_inputs(
@@ -371,7 +442,7 @@ class Emitter:
         next(tkn_iter)
         storage.clear_inputs("when syncing stack")
         storage.flush(self.out)
-        self._print_storage(storage)
+        storage.stack.clear(self.out)
         return True
 
     def stack_pointer(
@@ -398,14 +469,13 @@ class Emitter:
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.start_line()
-        self.out.emit("JUMP_TO_LABEL(")
+        self.out.emit(f"{self.jump_prefix}JUMP_TO_LABEL(")
         self.out.emit(label)
         self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
         storage.flush(self.out)
         storage.save(self.out)
-        self._print_storage(storage)
 
     def save_stack(
         self,
@@ -423,7 +493,6 @@ class Emitter:
 
     def emit_reload(self, storage: Storage) -> None:
         storage.reload(self.out)
-        self._print_storage(storage)
 
     def reload_stack(
         self,
@@ -449,130 +518,55 @@ class Emitter:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         if uop.instruction_size is None:
             raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
-        self.out.emit(f" {uop.instruction_size} ")
+        self.out.emit(f" {uop.instruction_size}u ")
         return True
 
-    def _print_storage(self, storage: Storage) -> None:
-        if PRINT_STACKS:
+    def _print_storage(self, reason:str, storage: Storage) -> None:
+        if DEBUG:
             self.out.start_line()
+            self.emit(f"/* {reason} */\n")
             self.emit(storage.as_comment())
             self.out.start_line()
 
-    def _emit_if(
+    def _emit_stmt(
         self,
-        tkn_iter: TokenIterator,
+        stmt: Stmt,
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-    ) -> tuple[bool, Token, Storage]:
-        """Returns (reachable?, closing '}', stack)."""
-        tkn = next(tkn_iter)
-        assert tkn.kind == "LPAREN"
-        self.out.emit(tkn)
-        rparen = emit_to(self.out, tkn_iter, "RPAREN")
-        self.emit(rparen)
-        if_storage = storage.copy()
-        reachable, rbrace, if_storage = self._emit_block(tkn_iter, uop, if_storage, inst, True)
-        try:
-            maybe_else = tkn_iter.peek()
-            if maybe_else and maybe_else.kind == "ELSE":
-                self._print_storage(storage)
-                self.emit(rbrace)
-                self.emit(next(tkn_iter))
-                maybe_if = tkn_iter.peek()
-                if maybe_if and maybe_if.kind == "IF":
-                    # Emit extra braces around the if to get scoping right
-                    self.emit(" {\n")
-                    self.emit(next(tkn_iter))
-                    else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
-                    self.out.start_line()
-                    self.emit("}\n")
-                else:
-                    else_reachable, rbrace, else_storage = self._emit_block(tkn_iter, uop, storage, inst, True)
-                if not reachable:
-                    # Discard the if storage
-                    reachable = else_reachable
-                    storage = else_storage
-                elif not else_reachable:
-                    # Discard the else storage
-                    storage = if_storage
-                    reachable = True
-                else:
-                    if PRINT_STACKS:
-                        self.emit("/* Merge */\n")
-                        self.out.emit(if_storage.as_comment())
-                        self.out.emit("\n")
-                        self.out.emit(else_storage.as_comment())
-                    else_storage.merge(if_storage, self.out)
-                    storage = else_storage
-                    self._print_storage(storage)
-            else:
-                if reachable:
-                    if PRINT_STACKS:
-                        self.emit("/* Merge */\n")
-                    if_storage.merge(storage, self.out)
-                    storage = if_storage
-                    self._print_storage(storage)
-                else:
-                    # Discard the if storage
-                    reachable = True
-        except StackError as ex:
-            self._print_storage(if_storage)
-            raise analysis_error(ex.args[0], rbrace) from None
-        return reachable, rbrace, storage
+    ) -> tuple[bool, Token | None, Storage]:
+        method_name = "emit_" + stmt.__class__.__name__
+        method = getattr(self, method_name, None)
+        if method is None:
+            raise NotImplementedError
+        return method(stmt, uop, storage, inst) # type: ignore[no-any-return]
 
-    def _emit_block(
+    def emit_SimpleStmt(
         self,
-        tkn_iter: TokenIterator,
+        stmt: SimpleStmt,
         uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-        emit_first_brace: bool
-    ) -> tuple[bool, Token, Storage]:
-        """ Returns (reachable?, closing '}', stack)."""
-        braces = 1
+    ) -> tuple[bool, Token | None, Storage]:
         local_stores = set(uop.local_stores)
-        tkn = next(tkn_iter)
-        reload: Token | None = None
+        reachable = True
+        tkn = stmt.contents[-1]
         try:
-            reachable = True
-            line : int = -1
-            if tkn.kind != "LBRACE":
-                raise analysis_error(f"PEP 7: expected '{{', found: {tkn.text}", tkn)
-            escaping_calls = uop.properties.escaping_calls
-            if emit_first_brace:
-                self.emit(tkn)
-            self._print_storage(storage)
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
+                escape = uop.properties.escaping_calls[stmt]
+                if escape.kills is not None:
+                    self.stackref_kill(escape.kills, storage, True)
+                self.emit_save(storage)
+            tkn_iter = TokenIterator(stmt.contents)
             for tkn in tkn_iter:
-                if PRINT_STACKS and tkn.line != line:
-                    self.out.start_line()
-                    self.emit(storage.as_comment())
-                    self.out.start_line()
-                    line = tkn.line
-                if tkn in escaping_calls:
-                    escape = escaping_calls[tkn]
-                    if escape.kills is not None:
-                        if tkn == reload:
-                            self.emit_reload(storage)
-                        self.stackref_kill(escape.kills, storage, True)
-                        self.emit_save(storage)
-                    elif tkn != reload:
-                        self.emit_save(storage)
-                    reload = escape.end
-                elif tkn == reload:
-                    self.emit_reload(storage)
-                if tkn.kind == "LBRACE":
-                    self.out.emit(tkn)
-                    braces += 1
-                elif tkn.kind == "RBRACE":
-                    self._print_storage(storage)
-                    braces -= 1
-                    if braces == 0:
-                        return reachable, tkn, storage
-                    self.out.emit(tkn)
-                elif tkn.kind == "GOTO":
+                if tkn.kind == "GOTO":
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
+                    reachable = False
+                elif tkn.kind == "RETURN":
+                    self.emit(tkn)
+                    semicolon = emit_to(self.out, tkn_iter, "SEMI")
+                    self.emit(semicolon)
                     reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
@@ -582,9 +576,6 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.in_local or var.in_memory():
-                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
-                                        raise analysis_error(msg, tkn)
                                     var.in_local = True
                                     var.memory_offset = None
                                     break
@@ -594,38 +585,166 @@ class Emitter:
                                     var.memory_offset = None
                                     break
                         if tkn.text.startswith("DISPATCH"):
-                            self._print_storage(storage)
                             reachable = False
                         self.out.emit(tkn)
-                elif tkn.kind == "IF":
-                    self.out.emit(tkn)
-                    if_reachable, rbrace, storage = self._emit_if(tkn_iter, uop, storage, inst)
-                    if reachable:
-                        reachable = if_reachable
-                    self.out.emit(rbrace)
                 else:
                     self.out.emit(tkn)
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
+                self.emit_reload(storage)
+            return reachable, None, storage
         except StackError as ex:
+            raise analysis_error(ex.args[0], tkn) #from None
+
+
+    def emit_MacroIfStmt(
+        self,
+        stmt: MacroIfStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token | None, Storage]:
+        self.out.emit(stmt.condition)
+        branch = stmt.else_ is not None
+        reachable = True
+        if_storage = storage
+        else_storage = storage.copy()
+        for s in stmt.body:
+            r, tkn, if_storage = self._emit_stmt(s, uop, if_storage, inst)
+            if tkn is not None:
+                self.out.emit(tkn)
+            if not r:
+                reachable = False
+        if branch:
+            assert stmt.else_ is not None
+            self.out.emit(stmt.else_)
+            assert stmt.else_body is not None
+            for s in stmt.else_body:
+                r, tkn, else_storage = self._emit_stmt(s, uop, else_storage, inst)
+                if tkn is not None:
+                    self.out.emit(tkn)
+                if not r:
+                    reachable = False
+            else_storage.merge(if_storage, self.out)
+            storage = if_storage
+        else:
+            if_storage.merge(else_storage, self.out)
+            storage = else_storage
+        self.out.emit(stmt.endif)
+        return reachable, None, storage
+
+
+    def emit_IfStmt(
+        self,
+        stmt: IfStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token | None, Storage]:
+        self.out.emit(stmt.if_)
+        for tkn in stmt.condition:
+            self.out.emit(tkn)
+        if_storage = storage.copy()
+        rbrace: Token | None = stmt.if_
+        try:
+            reachable, rbrace, if_storage = self._emit_stmt(stmt.body, uop, if_storage, inst)
+            if stmt.else_ is not None:
+                assert rbrace is not None
+                self.out.emit(rbrace)
+                self.out.emit(stmt.else_)
+            if stmt.else_body is not None:
+                else_reachable, rbrace, else_storage = self._emit_stmt(stmt.else_body, uop, storage, inst)
+                if not reachable:
+                    reachable, storage = else_reachable, else_storage
+                elif not else_reachable:
+                    # Discard the else storage
+                    storage = if_storage
+                else:
+                    #Both reachable
+                    else_storage.merge(if_storage, self.out)
+                    storage = else_storage
+            else:
+                if reachable:
+                    if_storage.merge(storage, self.out)
+                    storage = if_storage
+                else:
+                    # Discard the if storage
+                    reachable = True
+            return reachable, rbrace, storage
+        except StackError as ex:
+            assert rbrace is not None
+            raise analysis_error(ex.args[0], rbrace) from None
+
+    def emit_BlockStmt(
+        self,
+        stmt: BlockStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+        emit_braces: bool = True,
+    ) -> tuple[bool, Token | None, Storage]:
+        """ Returns (reachable?, closing '}', stack)."""
+        tkn: Token | None = None
+        try:
+            if emit_braces:
+                self.out.emit(stmt.open)
+            reachable = True
+            for s in stmt.body:
+                reachable, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+                if tkn is not None:
+                    self.out.emit(tkn)
+                if not reachable:
+                    break
+            return reachable, stmt.close, storage
+        except StackError as ex:
+            if tkn is None:
+                tkn = stmt.close
             raise analysis_error(ex.args[0], tkn) from None
-        raise analysis_error("Expecting closing brace. Reached end of file", tkn)
+
+    def emit_ForStmt(
+        self,
+        stmt: ForStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token | None, Storage]:
+        """ Returns (reachable?, closing '}', stack)."""
+        self.out.emit(stmt.for_)
+        for tkn in stmt.header:
+            self.out.emit(tkn)
+        return self._emit_stmt(stmt.body, uop, storage, inst)
+
+    def emit_WhileStmt(
+        self,
+        stmt: WhileStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token | None, Storage]:
+        """ Returns (reachable?, closing '}', stack)."""
+        self.out.emit(stmt.while_)
+        for tkn in stmt.condition:
+            self.out.emit(tkn)
+        return self._emit_stmt(stmt.body, uop, storage, inst)
+
 
     def emit_tokens(
         self,
         code: CodeSection,
         storage: Storage,
         inst: Instruction | None,
-    ) -> Storage:
-        tkn_iter = TokenIterator(code.body)
+        emit_braces: bool = True
+    ) -> tuple[bool, Storage]:
         self.out.start_line()
-        reachable, rbrace, storage = self._emit_block(tkn_iter, code, storage, inst, False)
+        reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)
+        assert tkn is not None
         try:
             if reachable:
-                self._print_storage(storage)
                 storage.push_outputs()
-                self._print_storage(storage)
+            if emit_braces:
+                self.out.emit(tkn)
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace) from None
-        return storage
+            raise analysis_error(ex.args[0], tkn) from None
+        return reachable, storage
 
     def emit(self, txt: str | Token) -> None:
         self.out.emit(txt)
@@ -649,7 +768,9 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EVAL_BREAK_FLAG")
     if p.deopts:
         flags.append("HAS_DEOPT_FLAG")
-    if p.side_exit:
+    if p.deopts_periodic:
+        flags.append("HAS_PERIODIC_FLAG")
+    if p.side_exit or p.side_exit_at_end:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
@@ -661,6 +782,12 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
+    if p.sync_sp:
+        flags.append("HAS_SYNC_SP_FLAG")
+    if p.unpredictable_jump:
+        flags.append("HAS_UNPREDICTABLE_JUMP_FLAG")
+    if p.needs_guard_ip:
+        flags.append("HAS_NEEDS_GUARD_IP_FLAG")
     if flags:
         return " | ".join(flags)
     else:

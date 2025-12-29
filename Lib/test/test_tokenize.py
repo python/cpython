@@ -1,6 +1,8 @@
 import contextlib
+import itertools
 import os
 import re
+import string
 import tempfile
 import token
 import tokenize
@@ -605,22 +607,6 @@ f'''__{
     OP         '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    OP         '{'           (1, 4) (1, 5)
-    NL         '\\n'          (1, 5) (1, 6)
-    NAME       'x'           (2, 4) (2, 5)
-    OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
-    OP         '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
         self.check_tokenize("""\
@@ -1230,6 +1216,23 @@ f'''
     FSTRING_END "\'\'\'"         (3, 1) (3, 4)
     """)
 
+        # gh-139516, the '\n' is explicit to ensure no trailing whitespace which would invalidate the test
+        self.check_tokenize('''f"{f(a=lambda: 'à'\n)}"''', """\
+    FSTRING_START \'f"\'          (1, 0) (1, 2)
+    OP         '{'           (1, 2) (1, 3)
+    NAME       'f'           (1, 3) (1, 4)
+    OP         '('           (1, 4) (1, 5)
+    NAME       'a'           (1, 5) (1, 6)
+    OP         '='           (1, 6) (1, 7)
+    NAME       'lambda'      (1, 7) (1, 13)
+    OP         ':'           (1, 13) (1, 14)
+    STRING     "\'à\'"         (1, 15) (1, 18)
+    NL         '\\n'          (1, 18) (1, 19)
+    OP         ')'           (2, 0) (2, 1)
+    OP         '}'           (2, 1) (2, 2)
+    FSTRING_END \'"\'           (2, 2) (2, 3)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1360,7 +1363,8 @@ class TestDetectEncoding(TestCase):
 
     def test_no_bom_no_encoding_cookie(self):
         lines = (
-            b'# something\n',
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something \xe2\x82\xac\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
@@ -1368,16 +1372,54 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, list(lines[:2]))
 
+    def test_no_bom_no_encoding_cookie_first_line_error(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_no_bom_no_encoding_cookie_second_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
     def test_bom_no_cookie(self):
         lines = (
-            b'\xef\xbb\xbf# something\n',
+            b'\xef\xbb\xbf#!/home/\xc3\xa4/bin/python\n',
             b'print(something)\n',
             b'do_something(else)\n'
         )
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
         self.assertEqual(encoding, 'utf-8-sig')
         self.assertEqual(consumed_lines,
-                         [b'# something\n', b'print(something)\n'])
+                         [b'#!/home/\xc3\xa4/bin/python\n', b'print(something)\n'])
+
+    def test_bom_no_cookie_first_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/home/\xa4/bin/python\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_bom_no_cookie_second_line_error(self):
+        lines = (
+            b'\xef\xbb\xbf#!/usr/bin/python\n',
+            b'# something \xe2\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_cookie_first_line_no_bom(self):
         lines = (
@@ -1453,16 +1495,60 @@ class TestDetectEncoding(TestCase):
         expected = [b"print('\xc2\xa3')\n"]
         self.assertEqual(consumed_lines, expected)
 
-    def test_cookie_second_line_commented_first_line(self):
+    def test_first_non_utf8_coding_line(self):
         lines = (
-            b"#print('\xc2\xa3')\n",
-            b'# vim: set fileencoding=iso8859-15 :\n',
-            b"print('\xe2\x82\xac')\n"
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
         )
         encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
-        self.assertEqual(encoding, 'iso8859-15')
-        expected = [b"#print('\xc2\xa3')\n", b'# vim: set fileencoding=iso8859-15 :\n']
-        self.assertEqual(consumed_lines, expected)
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_first_utf8_coding_line_error(self):
+        lines = (
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_second_non_utf8_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso-8859-15 \xa4\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_second_utf8_coding_line_error(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:ascii \xc3\xa4\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_non_utf8_shebang(self):
+        lines = (
+            b'#!/home/\xa4/bin/python\n',
+            b'#coding:iso-8859-15\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso-8859-15')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_utf8_shebang_error(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'#coding:ascii\n',
+            b'print(something)\n'
+        )
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_cookie_second_line_empty_first_line(self):
         lines = (
@@ -1474,6 +1560,70 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'iso8859-15')
         expected = [b'\n', b'# vim: set fileencoding=iso8859-15 :\n']
         self.assertEqual(consumed_lines, expected)
+
+    def test_cookie_third_line(self):
+        lines = (
+            b'#!/home/\xc3\xa4/bin/python\n',
+            b'# something\n',
+            b'# vim: set fileencoding=ascii :\n',
+            b'print(something)\n',
+            b'do_something(else)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:2]))
+
+    def test_double_coding_line(self):
+        # If the first line matches the second line is ignored.
+        lines = (
+            b'#coding:iso8859-15\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_same_line(self):
+        lines = (
+            b'#coding:iso8859-15 coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'iso8859-15')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_double_coding_utf8(self):
+        lines = (
+            b'#coding:utf-8\n',
+            b'#coding:latin1\n',
+            b'print(something)\n'
+        )
+        encoding, consumed_lines = tokenize.detect_encoding(self.get_readline(lines))
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, list(lines[:1]))
+
+    def test_nul_in_first_coding_line(self):
+        lines = (
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
+
+    def test_nul_in_second_coding_line(self):
+        lines = (
+            b'#!/usr/bin/python\n',
+            b'#coding:iso8859-15\x00\n',
+            b'\n',
+            b'print(something)\n'
+        )
+        with self.assertRaisesRegex(SyntaxError,
+                "source code cannot contain null bytes"):
+            tokenize.detect_encoding(self.get_readline(lines))
 
     def test_latin1_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -1498,7 +1648,6 @@ class TestDetectEncoding(TestCase):
             )
         readline = self.get_readline(lines)
         self.assertRaises(SyntaxError, tokenize.detect_encoding, readline)
-
 
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
@@ -1991,6 +2140,10 @@ if 1:
         for case in cases:
             self.check_roundtrip(case)
 
+        self.check_roundtrip(r"t'{ {}}'")
+        self.check_roundtrip(r"t'{f'{ {}}'}{ {}}'")
+        self.check_roundtrip(r"f'{t'{ {}}'}{ {}}'")
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -2471,21 +2624,6 @@ f'''__{
     RBRACE     '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    LBRACE     '{'           (1, 4) (1, 5)
-    NAME       'x'           (2, 4) (2, 5)
-    COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    RBRACE     '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):
@@ -3041,6 +3179,11 @@ async def f():
             "'''sdfsdf''",
             "("*1000+"a"+")"*1000,
             "]",
+            """\
+            f'__{
+                x:d
+            }__'""",
+            " a\n\x00",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
@@ -3259,6 +3402,78 @@ class CommandLineTest(unittest.TestCase):
         '''
         for flag in ['-e', '--exact']:
             self.check_output(source, expect, flag)
+
+
+class StringPrefixTest(unittest.TestCase):
+    @staticmethod
+    def determine_valid_prefixes():
+        # Try all lengths until we find a length that has zero valid
+        # prefixes.  This will miss the case where for example there
+        # are no valid 3 character prefixes, but there are valid 4
+        # character prefixes.  That seems unlikely.
+
+        single_char_valid_prefixes = set()
+
+        # Find all of the single character string prefixes. Just get
+        # the lowercase version, we'll deal with combinations of upper
+        # and lower case later.  I'm using this logic just in case
+        # some uppercase-only prefix is added.
+        for letter in itertools.chain(string.ascii_lowercase, string.ascii_uppercase):
+            try:
+                eval(f'{letter}""')
+                single_char_valid_prefixes.add(letter.lower())
+            except SyntaxError:
+                pass
+
+        # This logic assumes that all combinations of valid prefixes only use
+        # the characters that are valid single character prefixes.  That seems
+        # like a valid assumption, but if it ever changes this will need
+        # adjusting.
+        valid_prefixes = set()
+        for length in itertools.count():
+            num_at_this_length = 0
+            for prefix in (
+                "".join(l)
+                for l in itertools.combinations(single_char_valid_prefixes, length)
+            ):
+                for t in itertools.permutations(prefix):
+                    for u in itertools.product(*[(c, c.upper()) for c in t]):
+                        p = "".join(u)
+                        if p == "not":
+                            # 'not' can never be a string prefix,
+                            # because it's a valid expression: not ""
+                            continue
+                        try:
+                            eval(f'{p}""')
+
+                            # No syntax error, so p is a valid string
+                            # prefix.
+
+                            valid_prefixes.add(p)
+                            num_at_this_length += 1
+                        except SyntaxError:
+                            pass
+            if num_at_this_length == 0:
+                return valid_prefixes
+
+
+    def test_prefixes(self):
+        # Get the list of defined string prefixes.  I don't see an
+        # obvious documented way of doing this, but probably the best
+        # thing is to split apart tokenize.StringPrefix.
+
+        # Make sure StringPrefix begins and ends in parens.  We're
+        # assuming it's of the form "(a|b|ab)", if a, b, and cd are
+        # valid string prefixes.
+        self.assertEqual(tokenize.StringPrefix[0], '(')
+        self.assertEqual(tokenize.StringPrefix[-1], ')')
+
+        # Then split apart everything else by '|'.
+        defined_prefixes = set(tokenize.StringPrefix[1:-1].split('|'))
+
+        # Now compute the actual allowed string prefixes and compare
+        # to what is defined in the tokenize module.
+        self.assertEqual(defined_prefixes, self.determine_valid_prefixes())
 
 
 if __name__ == "__main__":

@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_7_0"
-expected_libexpat_version="2.7.0"
-expected_libexpat_sha256="362e89ca6b8a0d46fc5740a917eb2a8b4d6356edbe016eee09f49c0781215844"
+expected_libexpat_tag="R_2_7_3"
+expected_libexpat_version="2.7.3"
+expected_libexpat_sha256="821ac9710d2c073eaf13e1b1895a9c9aa66c1157a99635c639fbff65cdbdd732"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -52,7 +52,14 @@ done
 rm libexpat.tar.gz
 
 # Step 3: Add the namespacing include to expat_external.h
-sed -i 's/#define Expat_External_INCLUDED 1/&\n\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
+sed -i 's/#  define Expat_External_INCLUDED 1/&\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
+
+if ! grep -q '#include "pyexpatns\.h"' expat_external.h; then
+  echo "
+Error: namespacing include not found in expat_external.h;
+This may be due to source changes and will require updating this script" >&2
+  exit 1
+fi
 
 echo "
 Updated! next steps:

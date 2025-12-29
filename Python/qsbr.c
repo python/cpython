@@ -1,6 +1,6 @@
 /*
  * Implementation of safe memory reclamation scheme using
- * quiescent states.
+ * quiescent states.  See InternalDocs/qsbr.md.
  *
  * This is derived from the "GUS" safe memory reclamation technique
  * in FreeBSD written by Jeffrey Roberson. It is heavily modified. Any bugs
@@ -36,14 +36,11 @@
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 #include "pycore_qsbr.h"
 #include "pycore_tstate.h"          // _PyThreadStateImpl
+#include "pycore_stats.h"           // FT_STAT_QSBR_POLL_INC()
 
 
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
-
-// For _Py_qsbr_deferred_advance(): the number of deferrals before advancing
-// the write sequence.
-#define QSBR_DEFERRED_LIMIT 10
 
 // Allocate a QSBR thread state from the freelist
 static struct _qsbr_thread_state *
@@ -60,7 +57,7 @@ qsbr_allocate(struct _qsbr_shared *shared)
     return qsbr;
 }
 
-// Initialize (or reintialize) the freelist of QSBR thread states
+// Initialize (or reinitialize) the freelist of QSBR thread states
 static void
 initialize_new_array(struct _qsbr_shared *shared)
 {
@@ -117,13 +114,9 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
 }
 
 uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr)
+_Py_qsbr_shared_next(struct _qsbr_shared *shared)
 {
-    if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
-        return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
-    }
-    qsbr->deferrals = 0;
-    return _Py_qsbr_advance(qsbr->shared);
+    return _Py_qsbr_shared_current(shared) + QSBR_INCR;
 }
 
 static uint64_t
@@ -166,7 +159,7 @@ _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
-
+    FT_STAT_QSBR_POLL_INC();
     uint64_t rd_seq = qsbr_poll_scan(qsbr->shared);
     return QSBR_LEQ(goal, rd_seq);
 }

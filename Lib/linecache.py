@@ -33,10 +33,9 @@ def getlines(filename, module_globals=None):
     """Get the lines for a Python source file from the cache.
     Update the cache if it doesn't contain an entry for this file already."""
 
-    if filename in cache:
-        entry = cache[filename]
-        if len(entry) != 1:
-            return cache[filename][2]
+    entry = cache.get(filename, None)
+    if entry is not None and len(entry) != 1:
+        return entry[2]
 
     try:
         return updatecache(filename, module_globals)
@@ -56,11 +55,20 @@ def _make_key(code):
 
 def _getlines_from_code(code):
     code_id = _make_key(code)
-    if code_id in _interactive_cache:
-        entry = _interactive_cache[code_id]
-        if len(entry) != 1:
-            return _interactive_cache[code_id][2]
+    entry = _interactive_cache.get(code_id, None)
+    if entry is not None and len(entry) != 1:
+        return entry[2]
     return []
+
+
+def _source_unavailable(filename):
+    """Return True if the source code is unavailable for such file name."""
+    return (
+        not filename
+        or (filename.startswith('<')
+            and filename.endswith('>')
+            and not filename.startswith('<frozen '))
+    )
 
 
 def checkcache(filename=None):
@@ -74,12 +82,8 @@ def checkcache(filename=None):
         filenames = [filename]
 
     for filename in filenames:
-        try:
-            entry = cache[filename]
-        except KeyError:
-            continue
-
-        if len(entry) == 1:
+        entry = cache.get(filename, None)
+        if entry is None or len(entry) == 1:
             # lazy cache entry, leave it lazy.
             continue
         size, mtime, lines, fullname = entry
@@ -115,13 +119,21 @@ def updatecache(filename, module_globals=None):
         # These import can fail if the interpreter is shutting down
         return []
 
-    if filename in cache:
-        if len(cache[filename]) != 1:
-            cache.pop(filename, None)
-    if not filename or (filename.startswith('<') and filename.endswith('>')):
+    entry = cache.pop(filename, None)
+    if _source_unavailable(filename):
         return []
 
-    fullname = filename
+    if filename.startswith('<frozen '):
+        # This is a frozen module, so we need to use the filename
+        # from the module globals.
+        if module_globals is None:
+            return []
+
+        fullname = module_globals.get('__file__')
+        if fullname is None:
+            return []
+    else:
+        fullname = filename
     try:
         stat = os.stat(fullname)
     except OSError:
@@ -129,9 +141,12 @@ def updatecache(filename, module_globals=None):
 
         # Realise a lazy loader based lookup if there is one
         # otherwise try to lookup right now.
-        if lazycache(filename, module_globals):
+        lazy_entry = entry if entry is not None and len(entry) == 1 else None
+        if lazy_entry is None:
+            lazy_entry = _make_lazycache_entry(filename, module_globals)
+        if lazy_entry is not None:
             try:
-                data = cache[filename][0]()
+                data = lazy_entry[0]()
             except (ImportError, OSError):
                 pass
             else:
@@ -139,13 +154,14 @@ def updatecache(filename, module_globals=None):
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []
-                cache[filename] = (
+                entry = (
                     len(data),
                     None,
                     [line + '\n' for line in data.splitlines()],
                     fullname
                 )
-                return cache[filename][2]
+                cache[filename] = entry
+                return entry[2]
 
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.
@@ -194,28 +210,73 @@ def lazycache(filename, module_globals):
         get_source method must be found, the filename must be a cacheable
         filename, and the filename must not be already cached.
     """
-    if filename in cache:
-        if len(cache[filename]) == 1:
-            return True
-        else:
-            return False
-    if not filename or (filename.startswith('<') and filename.endswith('>')):
-        return False
-    # Try for a __loader__, if available
-    if module_globals and '__name__' in module_globals:
-        spec = module_globals.get('__spec__')
-        name = getattr(spec, 'name', None) or module_globals['__name__']
-        loader = getattr(spec, 'loader', None)
-        if loader is None:
-            loader = module_globals.get('__loader__')
-        get_source = getattr(loader, 'get_source', None)
+    entry = cache.get(filename, None)
+    if entry is not None:
+        return len(entry) == 1
 
-        if name and get_source:
-            def get_lines(name=name, *args, **kwargs):
-                return get_source(name, *args, **kwargs)
-            cache[filename] = (get_lines,)
-            return True
+    lazy_entry = _make_lazycache_entry(filename, module_globals)
+    if lazy_entry is not None:
+        cache[filename] = lazy_entry
+        return True
     return False
+
+
+def _make_lazycache_entry(filename, module_globals):
+    if not filename or (filename.startswith('<') and filename.endswith('>')):
+        return None
+
+    if module_globals is not None and not isinstance(module_globals, dict):
+        raise TypeError(f'module_globals must be a dict, not {type(module_globals).__qualname__}')
+    if not module_globals or '__name__' not in module_globals:
+        return None
+
+    spec = module_globals.get('__spec__')
+    name = getattr(spec, 'name', None) or module_globals['__name__']
+    if name is None:
+        return None
+
+    loader = _bless_my_loader(module_globals)
+    if loader is None:
+        return None
+
+    get_source = getattr(loader, 'get_source', None)
+    if get_source is None:
+        return None
+
+    def get_lines(name=name, *args, **kwargs):
+        return get_source(name, *args, **kwargs)
+    return (get_lines,)
+
+def _bless_my_loader(module_globals):
+    # Similar to _bless_my_loader() in importlib._bootstrap_external,
+    # but always emits warnings instead of errors.
+    loader = module_globals.get('__loader__')
+    if loader is None and '__spec__' not in module_globals:
+        return None
+    spec = module_globals.get('__spec__')
+
+    # The __main__ module has __spec__ = None.
+    if spec is None and module_globals.get('__name__') == '__main__':
+        return loader
+
+    spec_loader = getattr(spec, 'loader', None)
+    if spec_loader is None:
+        import warnings
+        warnings.warn(
+            'Module globals is missing a __spec__.loader',
+            DeprecationWarning)
+        return loader
+
+    assert spec_loader is not None
+    if loader is not None and loader != spec_loader:
+        import warnings
+        warnings.warn(
+            'Module globals; __loader__ != __spec__.loader',
+            DeprecationWarning)
+        return loader
+
+    return spec_loader
+
 
 def _register_code(code, string, name):
     entry = (len(string),
@@ -228,4 +289,5 @@ def _register_code(code, string, name):
         for const in code.co_consts:
             if isinstance(const, type(code)):
                 stack.append(const)
-        _interactive_cache[_make_key(code)] = entry
+        key = _make_key(code)
+        _interactive_cache[key] = entry

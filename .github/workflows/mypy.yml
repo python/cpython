@@ -8,15 +8,29 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
       - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
+      - "Lib/tomllib/**"
+      - "Misc/mypy/**"
+      - "Tools/build/check_extension_modules.py"
+      - "Tools/build/check_warnings.py"
+      - "Tools/build/compute-changes.py"
+      - "Tools/build/consts_getter.py"
+      - "Tools/build/deepfreeze.py"
+      - "Tools/build/generate-build-details.py"
       - "Tools/build/generate_sbom.py"
+      - "Tools/build/generate_stdlib_module_names.py"
+      - "Tools/build/mypy.ini"
+      - "Tools/build/umarshal.py"
+      - "Tools/build/update_file.py"
+      - "Tools/build/verify_ensurepip_wheels.py"
       - "Tools/cases_generator/**"
+      - "Tools/check-c-api-docs/**"
       - "Tools/clinic/**"
       - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
-      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -42,12 +56,13 @@ jobs:
         target: [
           "Lib/_pyrepl",
           "Lib/test/libregrtest",
+          "Lib/tomllib",
           "Tools/build",
           "Tools/cases_generator",
+          "Tools/check-c-api-docs",
           "Tools/clinic",
           "Tools/jit",
           "Tools/peg_generator",
-          "Tools/wasm",
         ]
     steps:
       - uses: actions/checkout@v4
@@ -59,4 +74,5 @@ jobs:
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
+      - run: python3 Misc/mypy/make_symlinks.py --symlink
       - run: mypy --config-file ${{ matrix.target }}/mypy.ini

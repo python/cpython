@@ -1,14 +1,13 @@
 import io
 import mimetypes
 import os
+import shlex
 import sys
 import unittest.mock
-from os import linesep
-
-from test import support
-from test.support import os_helper
-from test.support.script_helper import run_python_until_end
 from platform import win32_edition
+from test import support
+from test.support import cpython_only, force_not_colorized, os_helper
+from test.support.import_helper import ensure_lazy_imports
 
 try:
     import _winapi
@@ -113,13 +112,12 @@ class MimeTypesTestCase(unittest.TestCase):
         eq = self.assertEqual
         # First try strict
         eq(self.db.guess_file_type('foo.xul', strict=True), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=True), None)
         # And then non-strict
         eq(self.db.guess_file_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_file_type('foo.XUL', strict=False), ('text/xul', None))
         eq(self.db.guess_file_type('foo.invalid', strict=False), (None, None))
-        eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
-        eq(self.db.guess_extension('image/JPG', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/jpeg', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/JPEG', strict=False), '.jpg')
 
     def test_filename_with_url_delimiters(self):
         # bpo-38449: URL delimiters cases should be handled also.
@@ -180,8 +178,8 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertTrue(set(all) >= {'.bat', '.c', '.h', '.ksh', '.pl', '.txt'})
         self.assertEqual(len(set(all)), len(all))  # no duplicates
         # And now non-strict
-        all = self.db.guess_all_extensions('image/jpg', strict=False)
-        self.assertEqual(all, ['.jpg'])
+        all = self.db.guess_all_extensions('image/jpeg', strict=False)
+        self.assertEqual(all, ['.jpg', '.jpe', '.jpeg'])
         # And now for no hits
         all = self.db.guess_all_extensions('image/jpg', strict=True)
         self.assertEqual(all, [])
@@ -228,8 +226,13 @@ class MimeTypesTestCase(unittest.TestCase):
             for mime_type, ext in (
                 ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
+                ("application/pdf", ".pdf"),
                 ("application/postscript", ".ps"),
+                ("application/rtf", ".rtf"),
+                ("application/texinfo", ".texi"),
+                ("application/toml", ".toml"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
                 ("application/vnd.ms-excel", ".xls"),
                 ("application/vnd.ms-fontobject", ".eot"),
@@ -241,9 +244,14 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
                 ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
                 ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
-                ("application/x-texinfo", ".texi"),
+                ("application/vnd.rar", ".rar"),
+                ("application/x-7z-compressed", ".7z"),
+                ("application/x-debian-package", ".deb"),
+                ("application/x-httpd-php", ".php"),
+                ("application/x-rpm", ".rpm"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
+                ("application/yaml", ".yaml"),
                 ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
                 ("audio/mp4", ".m4a"),
@@ -268,9 +276,11 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
+                ("model/gltf+json", ".gltf"),
+                ("model/gltf-binary", ".glb"),
+                ("model/stl", ".stl"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
-                ("text/rtf", ".rtf"),
                 ("text/x-rst", ".rst"),
                 ("video/matroska", ".mkv"),
                 ("video/matroska-3d", ".mk3d"),
@@ -278,6 +288,8 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/ogg", ".ogv"),
                 ("video/quicktime", ".mov"),
                 ("video/vnd.avi", ".avi"),
+                ("video/x-m4v", ".m4v"),
+                ("video/x-ms-wmv", ".wmv"),
             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
@@ -285,6 +297,26 @@ class MimeTypesTestCase(unittest.TestCase):
         check_extensions()
         mimetypes.init()
         check_extensions()
+
+    def test_guess_file_type(self):
+        def check_file_type():
+            for mime_type, ext in (
+                ("application/yaml", ".yaml"),
+                ("application/yaml", ".yml"),
+                ("audio/mpeg", ".mp2"),
+                ("audio/mpeg", ".mp3"),
+                ("video/mpeg", ".m1v"),
+                ("video/mpeg", ".mpe"),
+                ("video/mpeg", ".mpeg"),
+                ("video/mpeg", ".mpg"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    result, _ = mimetypes.guess_file_type(f"filename{ext}")
+                    self.assertEqual(result, mime_type)
+
+        check_file_type()
+        mimetypes.init()
+        check_file_type()
 
     def test_init_stability(self):
         mimetypes.init()
@@ -339,9 +371,23 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_type(
             url="scheme:foo.html", strict=True), ("text/html", None))
         self.assertEqual(self.db.guess_all_extensions(
-            type='image/jpg', strict=True), [])
-        self.assertEqual(self.db.guess_extension(
-            type='image/jpg', strict=False), '.jpg')
+            type='image/jpeg', strict=True), ['.jpg', '.jpe', '.jpeg'])
+
+    def test_added_types_are_used(self):
+        mimetypes.add_type('testing/default-type', '')
+        mime_type, _ = mimetypes.guess_type('')
+        self.assertEqual(mime_type, 'testing/default-type')
+
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, None)
+
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, 'testing/type')
+
+    def test_add_type_with_undotted_extension_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            mimetypes.add_type("testing/type", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
@@ -389,56 +435,74 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, mimetypes)
 
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("mimetypes", {"os", "posixpath", "urllib.parse", "argparse"})
 
-class MimetypesCliTestCase(unittest.TestCase):
 
-    def mimetypes_cmd(cls, *args, **kwargs):
-        result, _ = run_python_until_end('-m', 'mimetypes', *args)
-        return result.rc, result.out.decode(), result.err.decode()
+class CommandLineTest(unittest.TestCase):
+    @force_not_colorized
+    def test_parse_args(self):
+        args, help_text = mimetypes._parse_args("-h")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def test_help_option(self):
-        retcode, out, err = self.mimetypes_cmd('-h')
-        self.assertEqual(retcode, 0)
-        self.assertStartsWith(out, 'usage: ')
-        self.assertEqual(err, '')
+        args, help_text = mimetypes._parse_args("--invalid")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def test_invalid_option(self):
-        retcode, out, err = self.mimetypes_cmd('--invalid')
-        self.assertEqual(retcode, 2)
-        self.assertEqual(out, '')
-        self.assertStartsWith(err, 'usage: ')
+        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpeg"))
+        self.assertTrue(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["image/jpeg"])
 
-    def test_guess_extension(self):
-        retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, f'.jpg{linesep}')
-        self.assertEqual(err, '')
+        args, _ = mimetypes._parse_args(shlex.split("-e image/jpeg"))
+        self.assertTrue(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["image/jpeg"])
 
-        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
-        self.assertEqual(retcode, 1)
-        self.assertEqual(out, '')
-        self.assertEqual(err, f'error: unknown type image/jpg{linesep}')
+        args, _ = mimetypes._parse_args(shlex.split("-l foo.webp"))
+        self.assertFalse(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["foo.webp"])
 
-        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, f'.jpg{linesep}')
-        self.assertEqual(err, '')
+        args, _ = mimetypes._parse_args(shlex.split("foo.pic"))
+        self.assertFalse(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["foo.pic"])
 
-    def test_guess_type(self):
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
-        self.assertEqual(err, '')
+    def test_multiple_inputs(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.png")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "type: image/png encoding: None"
+        )
 
-    @unittest.skipIf(
-        sys.platform == 'darwin',
-        'macOS lists common_types in mime.types thus making them always known'
-    )
-    def test_guess_type_conflicting_with_mimetypes(self):
-        retcode, out, err = self.mimetypes_cmd('foo.pic')
-        self.assertEqual(retcode, 1)
-        self.assertEqual(out, '')
-        self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
+    def test_multiple_inputs_error(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.bar_ext")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "error: media type unknown for foo.bar_ext"
+        )
+
+
+    def test_invocation(self):
+        for command, expected in [
+            ("-e image/jpeg", ".jpg"),
+            ("-l foo.webp", "type: image/webp encoding: None"),
+        ]:
+            result = "\n".join(mimetypes._main(shlex.split(command)))
+            self.assertEqual(result, expected)
+
+    def test_invocation_error(self):
+        for command, expected in [
+            ("-e image/jpg", "error: unknown type image/jpg"),
+            ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
+        ]:
+            with self.subTest(command=command):
+                result = "\n".join(mimetypes._main(shlex.split(command)))
+                self.assertEqual(result, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

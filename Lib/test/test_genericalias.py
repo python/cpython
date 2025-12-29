@@ -17,7 +17,7 @@ from dataclasses import Field
 from functools import partial, partialmethod, cached_property
 from graphlib import TopologicalSorter
 from logging import LoggerAdapter, StreamHandler
-from mailbox import Mailbox, _PartialFile
+from mailbox import Mailbox
 try:
     import ctypes
 except ImportError:
@@ -61,6 +61,7 @@ try:
     from tkinter import Event
 except ImportError:
     Event = None
+from string.templatelib import Template, Interpolation
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -116,7 +117,7 @@ class BaseTest(unittest.TestCase):
                      Iterable, Iterator,
                      Reversible,
                      Container, Collection,
-                     Mailbox, _PartialFile,
+                     Mailbox,
                      ContextVar, Token,
                      Field,
                      Set, MutableSet,
@@ -137,9 +138,14 @@ class BaseTest(unittest.TestCase):
                      Future, _WorkItem,
                      Morsel,
                      DictReader, DictWriter,
-                     array]
+                     array,
+                     staticmethod,
+                     classmethod,
+                     Template,
+                     Interpolation,
+                    ]
     if ctypes is not None:
-        generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
+        generic_types.extend((ctypes.Array, ctypes.LibraryLoader, ctypes.py_object))
     if ValueProxy is not None:
         generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
@@ -230,13 +236,13 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(x2), 'tuple[*tuple[int, str]]')
         x3 = tuple[*tuple[int, ...]]
         self.assertEqual(repr(x3), 'tuple[*tuple[int, ...]]')
-        self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
+        self.assertEndsWith(repr(MyList[int]), '.BaseTest.test_repr.<locals>.MyList[int]')
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
 
         # gh-105488
-        self.assertTrue(repr(MyGeneric[int]).endswith('MyGeneric[int]'))
-        self.assertTrue(repr(MyGeneric[[]]).endswith('MyGeneric[[]]'))
-        self.assertTrue(repr(MyGeneric[[int, str]]).endswith('MyGeneric[[int, str]]'))
+        self.assertEndsWith(repr(MyGeneric[int]), 'MyGeneric[int]')
+        self.assertEndsWith(repr(MyGeneric[[]]), 'MyGeneric[[]]')
+        self.assertEndsWith(repr(MyGeneric[[int, str]]), 'MyGeneric[[int, str]]')
 
     def test_exposed_type(self):
         import types
@@ -356,7 +362,7 @@ class BaseTest(unittest.TestCase):
 
     def test_issubclass(self):
         class L(list): ...
-        self.assertTrue(issubclass(L, list))
+        self.assertIsSubclass(L, list)
         with self.assertRaises(TypeError):
             issubclass(L, list[str])
 
@@ -396,7 +402,10 @@ class BaseTest(unittest.TestCase):
         aliases = [
             GenericAlias(list, T),
             GenericAlias(deque, T),
-            GenericAlias(X, T)
+            GenericAlias(X, T),
+            X[T],
+            list[T],
+            deque[T],
         ] + _UNPACKED_TUPLES
         for alias in aliases:
             with self.subTest(alias=alias):
@@ -426,10 +435,26 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(a.__parameters__, (T,))
 
     def test_dir(self):
-        dir_of_gen_alias = set(dir(list[int]))
+        ga = list[int]
+        dir_of_gen_alias = set(dir(ga))
         self.assertTrue(dir_of_gen_alias.issuperset(dir(list)))
-        for generic_alias_property in ("__origin__", "__args__", "__parameters__"):
-            self.assertIn(generic_alias_property, dir_of_gen_alias)
+        for generic_alias_property in (
+            "__origin__", "__args__", "__parameters__",
+            "__unpacked__",
+        ):
+            with self.subTest(generic_alias_property=generic_alias_property):
+                self.assertIn(generic_alias_property, dir_of_gen_alias)
+        for blocked in (
+            "__bases__",
+            "__copy__",
+            "__deepcopy__",
+        ):
+            with self.subTest(blocked=blocked):
+                self.assertNotIn(blocked, dir_of_gen_alias)
+
+        for entry in dir_of_gen_alias:
+            with self.subTest(entry=entry):
+                getattr(ga, entry)  # must not raise `AttributeError`
 
     def test_weakref(self):
         for t in self.generic_types:
