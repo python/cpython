@@ -103,11 +103,9 @@ static const unsigned char table_a2b_base64[] Py_ALIGNED(64) = {
 #define BASE64_MAXBIN ((PY_SSIZE_T_MAX - 3) / 2)
 
 /*
- * Base64 encoding/decoding helpers optimized for throughput.
+ * Fast base64 encoding/decoding helpers.
  *
- * Key optimization: Process complete groups (3 bytes -> 4 chars for encode,
- * 4 chars -> 3 bytes for decode) without loop-carried dependencies.
- * This allows the compiler to better optimize the hot loops.
+ * Process complete groups without loop-carried dependencies.
  */
 
 /* Align to 64 bytes to ensure table fits in a single L1 cache line */
@@ -138,7 +136,6 @@ base64_encode_fast(const unsigned char *in, Py_ssize_t in_len,
     Py_ssize_t n_trios = in_len / 3;
     Py_ssize_t i;
 
-    /* Process complete 3-byte groups. Each iteration is independent. */
     for (i = 0; i < n_trios; i++) {
         base64_encode_trio(in + i * 3, out + i * 4, table);
     }
@@ -179,7 +176,6 @@ base64_decode_fast(const unsigned char *in, Py_ssize_t in_len,
     Py_ssize_t n_quads = in_len / 4;
     Py_ssize_t i;
 
-    /* Process complete 4-character groups. Each iteration is mostly independent. */
     for (i = 0; i < n_quads; i++) {
         const unsigned char *inp = in + i * 4;
 
