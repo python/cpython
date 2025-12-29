@@ -582,8 +582,8 @@ stmt_step(sqlite3_stmt *statement)
  * Return an sqlite3 error code.
  */
 static int
-bind_param0(pysqlite_state *state, pysqlite_Connection *conn,
-            pysqlite_Statement *self, int pos, PyObject *arg)
+bind_param(pysqlite_state *state, pysqlite_Connection *conn,
+           pysqlite_Statement *self, int pos, PyObject *arg)
 {
     int rc = SQLITE_OK;
     parameter_type paramtype;
@@ -701,11 +701,11 @@ need_adapt(pysqlite_state *state, PyObject *obj)
  * Return an sqlite3 error code.
  */
 static int
-bind_param(pysqlite_state *state, pysqlite_Connection *conn,
-           pysqlite_Statement *self, int pos, PyObject *arg)
+bind_object(pysqlite_state *state, pysqlite_Connection *conn,
+            pysqlite_Statement *self, int pos, PyObject *arg)
 {
     if (!need_adapt(state, arg)) {
-        return bind_param0(state, conn, self, pos, arg);
+        return bind_param(state, conn, self, pos, arg);
     }
 
     PyObject *protocol = (PyObject *)state->PrepareProtocolType;
@@ -718,7 +718,7 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
         return SQLITE_ERROR;
     }
 
-    int rc = bind_param0(state, conn, self, pos, adapted);
+    int rc = bind_param(state, conn, self, pos, adapted);
     Py_DECREF(adapted);
     return rc;
 }
@@ -804,7 +804,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
                 return -1;
             }
 
-            sqlite3_rc = bind_param(state, conn, self, i + 1, value);
+            sqlite3_rc = bind_object(state, conn, self, i + 1, value);
             Py_DECREF(value);
             if (sqlite3_rc != SQLITE_OK) {
                 goto error;
@@ -840,7 +840,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
                 return -1;
             }
 
-            sqlite3_rc = bind_param(state, conn, self, i, value);
+            sqlite3_rc = bind_object(state, conn, self, i, value);
             Py_DECREF(value);
             if (sqlite3_rc != SQLITE_OK) {
                 goto error;
