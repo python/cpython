@@ -1,0 +1,17 @@
+@seq = 0;
+
+usdt:@TARGET@:python:function__entry /str(args->arg1) == "start"/ { @trace[tid] = 1; }
+
+usdt:@TARGET@:python:cfunction__entry /@trace[tid]/ {
+    @seq += 1;
+    const char *module = args->arg0 ? str(args->arg0) : "";
+    printf("%d\tcfunction-entry:%s:%s\n", (int)@seq, module, str(args->arg1));
+}
+
+usdt:@TARGET@:python:cfunction__return /@trace[tid]/ {
+    @seq += 1;
+    const char *module = args->arg0 ? str(args->arg0) : "";
+    printf("%d\tcfunction-return:%s:%s\n", (int)@seq, module, str(args->arg1));
+}
+
+usdt:@TARGET@:python:function__return /str(args->arg1) == "start"/ { @trace[tid] = 0; }

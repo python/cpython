@@ -1,0 +1,27 @@
+@seq = 0;
+
+usdt:@TARGET@:python:function__entry /str(args->arg1) == "start"/ {
+    @trace[tid] = 1;
+    @indent[tid] = 0;
+}
+
+usdt:@TARGET@:python:function__entry /@trace[tid]/ {
+    @seq += 1;
+    printf("%d\t%15s:", (int)@seq, "function-entry");
+    printf("%*s", @indent[tid], "");
+    printf("%s:%s:%d\n", str(args->arg0), str(args->arg1), args->arg2);
+    @indent[tid] = @indent[tid] + 1;
+}
+
+usdt:@TARGET@:python:function__return /@trace[tid]/ {
+    @indent[tid] = @indent[tid] - 1;
+    @seq += 1;
+    printf("%d\t%15s:", (int)@seq, "function-return");
+    printf("%*s", @indent[tid], "");
+    printf("%s:%s:%d\n", str(args->arg0), str(args->arg1), args->arg2);
+}
+
+usdt:@TARGET@:python:function__return /str(args->arg1) == "start"/ {
+    @trace[tid] = 0;
+    @indent[tid] = 0;
+}

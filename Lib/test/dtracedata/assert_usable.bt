@@ -1,0 +1,1 @@
+BEGIN { printf("probe: success\n"); exit(); }

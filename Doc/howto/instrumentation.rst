@@ -298,6 +298,19 @@ Available static markers
 
    The arguments are the same as for :c:func:`function__entry`
 
+.. object:: cfunction__entry(str modulename, str funcname)
+
+   This marker indicates that execution of a built-in or extension function has
+   begun. The module name and function name are provided as C strings. The
+   module name may be empty when the function is not associated with a
+   particular module.
+
+.. object:: cfunction__return(str modulename, str funcname)
+
+   This marker is the converse of :c:func:`cfunction__entry`, and indicates that
+   execution of a built-in or extension function has ended. The arguments are
+   the same as for :c:func:`cfunction__entry`.
+
 .. object:: line(str filename, str funcname, int lineno)
 
    This marker indicates a Python line is about to be executed.  It is

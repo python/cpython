@@ -1,0 +1,6 @@
+cfunction__entry:builtins:len
+cfunction__return:builtins:len
+cfunction__entry:math:sqrt
+cfunction__return:math:sqrt
+cfunction__entry:builtins:sum
+cfunction__return:builtins:sum

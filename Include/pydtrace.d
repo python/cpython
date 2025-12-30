@@ -3,6 +3,8 @@
 provider python {
     probe function__entry(const char *, const char *, int);
     probe function__return(const char *, const char *, int);
+    probe cfunction__entry(const char *, const char *);
+    probe cfunction__return(const char *, const char *);
     probe instance__new__start(const char *, const char *);
     probe instance__new__done(const char *, const char *);
     probe instance__delete__start(const char *, const char *);

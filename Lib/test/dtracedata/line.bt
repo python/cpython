@@ -1,0 +1,6 @@
+@seq = 0;
+
+usdt:@TARGET@:python:line /str(args->arg1) == "test_line"/ {
+    @seq += 1;
+    printf("%d\tline:%s:%s:%d\n", (int)@seq, str(args->arg0), str(args->arg1), args->arg2);
+}

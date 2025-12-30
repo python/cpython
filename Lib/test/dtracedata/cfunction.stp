@@ -1,0 +1,24 @@
+global tracing
+
+probe process.mark("function__entry")
+{
+    if (user_string($arg2) == "start") {
+        tracing = 1;
+    }
+}
+
+probe process.mark("cfunction__entry"), process.mark("cfunction__return")
+{
+    if (tracing) {
+        modulename = $arg1 ? user_string($arg1) : "";
+        printf("%d\t%s:%s:%s\n", gettimeofday_us(), $$name,
+               modulename, user_string($arg2));
+    }
+}
+
+probe process.mark("function__return")
+{
+    if (user_string($arg2) == "start") {
+        tracing = 0;
+    }
+}

@@ -1,10 +1,17 @@
 import dis
+import os
 import os.path
 import re
 import subprocess
+import shlex
+import os
+import re
+import subprocess
 import sys
+import tempfile
 import types
 import unittest
+import dis
 
 from test.support import findfile
 
@@ -97,6 +104,37 @@ class SystemTapBackend(TraceBackend):
     COMMAND = ["stap", "-g"]
 
 
+class BpftraceBackend(TraceBackend):
+    EXTENSION = ".bt"
+    COMMAND = ["bpftrace"]
+
+    def __init__(self):
+        self._temps = []
+
+    def generate_trace_command(self, script_file, subcommand=None):
+        with open(script_file) as f:
+            source = f.read().replace("@TARGET@", sys.executable)
+
+        temp = tempfile.NamedTemporaryFile("w", suffix=self.EXTENSION, delete=False)
+        temp.write(source)
+        temp.flush()
+        temp.close()
+        self._temps.append(temp.name)
+
+        quoted_script = shlex.quote(temp.name)
+        quoted_cmd = f"ulimit -l unlimited; exec bpftrace {quoted_script}"
+        if subcommand:
+            quoted_cmd += " -c " + shlex.quote(subcommand)
+        return ["bash", "-c", quoted_cmd]
+
+    def __del__(self):
+        for name in self._temps:
+            try:
+                os.unlink(name)
+            except FileNotFoundError:
+                pass
+
+
 class TraceTests:
     # unittest.TestCase options
     maxDiff = None
@@ -148,6 +186,9 @@ class TraceTests:
     def test_line(self):
         self.run_case("line")
 
+    def test_cfunction_entry_return(self):
+        self.run_case("cfunction")
+
 
 class DTraceNormalTests(TraceTests, unittest.TestCase):
     backend = DTraceBackend()
@@ -166,6 +207,16 @@ class SystemTapNormalTests(TraceTests, unittest.TestCase):
 
 class SystemTapOptimizedTests(TraceTests, unittest.TestCase):
     backend = SystemTapBackend()
+    optimize_python = 2
+
+
+class BpftraceNormalTests(TraceTests, unittest.TestCase):
+    backend = BpftraceBackend()
+    optimize_python = 0
+
+
+class BpftraceOptimizedTests(TraceTests, unittest.TestCase):
+    backend = BpftraceBackend()
     optimize_python = 2
 
 

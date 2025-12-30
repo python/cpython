@@ -1,0 +1,15 @@
+@seq = 0;
+
+usdt:@TARGET@:python:function__entry /str(args->arg1) == "start"/ { @trace[tid] = 1; }
+
+usdt:@TARGET@:python:gc__start /@trace[tid]/ {
+    @seq += 1;
+    printf("%d\tgc-start:%ld\n", (int)@seq, args->arg0);
+}
+
+usdt:@TARGET@:python:gc__done /@trace[tid]/ {
+    @seq += 1;
+    printf("%d\tgc-done:%ld\n", (int)@seq, args->arg0);
+}
+
+usdt:@TARGET@:python:function__return /str(args->arg1) == "start"/ { @trace[tid] = 0; }
