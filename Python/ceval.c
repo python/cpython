@@ -1532,13 +1532,13 @@ typedef struct {
 static int
 _PyEval_SyncLocalsToFast(_PyInterpreterFrame *frame)
 {
-    PyObject *mapping = frame->f_locals;
+    PyObject *locals = frame->f_locals;
     PyCodeObject *co = _PyFrame_GetCode(frame);
     PyObject *names = co->co_localsplusnames;
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
         PyObject *name = PyTuple_GET_ITEM(names, i);
-        PyObject *value = PyObject_GetItem(mapping, name);
+        PyObject *value = PyObject_GetItem(locals, name);
         if (value != NULL) {
             frame->localsplus[i] = PyStackRef_FromPyObjectSteal(value);
         }
@@ -1552,19 +1552,32 @@ _PyEval_SyncLocalsToFast(_PyInterpreterFrame *frame)
     return 0;
 }
 
+
 static int
 _PyEval_SyncFastToLocals(_PyInterpreterFrame *frame)
 {
-    PyObject *mapping = frame->f_locals;
+    PyObject *locals = frame->f_locals;
     PyCodeObject *co = _PyFrame_GetCode(frame);
     PyObject *names = co->co_localsplusnames;
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
+        PyObject *name = PyTuple_GET_ITEM(names, i);
         _PyStackRef sref = frame->localsplus[i];
-        if (!PyStackRef_IsNull(sref)) {
-            PyObject *name = PyTuple_GET_ITEM(names, i);
-            PyObject *obj = PyStackRef_AsPyObjectSteal(sref);
-            if (PyObject_SetItem(mapping, name, obj) < 0) {
+
+        if (PyStackRef_IsNull(sref)) {
+            if (PyObject_DelItem(locals, name) < 0) {
+                if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+                    PyErr_Clear();
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
+        else {
+            PyObject *obj = PyStackRef_AsPyObjectNew(sref);
+            if (PyObject_SetItem(locals, name, obj) < 0) {
+                Py_DECREF(obj);
                 return -1;
             }
         }
@@ -2428,7 +2441,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
     PyCodeObject *co = _PyFrame_GetCode(frame);
     if ((co->co_flags & CO_OPTIMIZED) && frame->f_locals != NULL &&
         frame->f_locals != frame->f_globals && _PyEval_SyncFastToLocals(frame) < 0) {
-        /* Swallow the error while the frame is in a teardown state */
+        /* Ignore any error while the frame is in a teardown state */
         PyErr_WriteUnraisable(frame->f_locals);
     }
     // Update last_profiled_frame for remote profiler frame caching.
@@ -2463,7 +2476,18 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
         goto fail;
     }
     _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
-    if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
+    if (code->co_flags & CO_OPTIMIZED && locals != NULL && locals != func_obj->func_globals) {
+        for (size_t i = 0; i < argcount; i++) {
+            PyStackRef_CLOSE(args[i]);
+        }
+        if (kwnames) {
+            Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+            for (Py_ssize_t i = 0; i < kwcount; i++) {
+                PyStackRef_CLOSE(args[i+argcount]);
+            }
+        }
+    }
+    else if (initialize_locals(tstate, func_obj, frame->localsplus, args, argcount, kwnames)) {
         assert(frame->owner == FRAME_OWNED_BY_THREAD);
         clear_thread_frame(tstate, frame);
         return NULL;

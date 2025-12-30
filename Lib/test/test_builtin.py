@@ -1112,21 +1112,17 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIs(wm.category, SyntaxWarning)
 
     def test_eval_exec_sync_fast_locals(self):
-        def func_assign():
-            a = 1
-
-        def func_read():
+        def func(a, *args, **kwargs):
             b = a + 1
-            a = 3
+            del a
+            args.append(3)
+            kwargs['b'] = kwargs['a'] + 1
 
         for executor in eval, exec:
             with self.subTest(executor=executor.__name__):
-                ns = {}
-                executor(func_assign.__code__, {}, ns, sync_fast_locals=True)
-                self.assertEqual(ns, {'a': 1})
-                ns = {'a': 1}
-                executor(func_read.__code__, {}, ns, sync_fast_locals=True)
-                self.assertEqual(ns, {'a': 3, 'b': 2})
+                ns = {'a': 1, 'args': [2], 'kwargs': {'a': 4}}
+                executor(func, {}, ns, sync_fast_locals=True)
+                self.assertEqual(ns, {'b': 2, 'args': [2, 3], 'kwargs': {'a': 4, 'b': 5}})
 
     def test_filter(self):
         self.assertEqual(list(filter(lambda c: 'a' <= c <= 'z', 'Hello World')), list('elloorld'))
