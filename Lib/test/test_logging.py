@@ -6380,16 +6380,21 @@ class RotatingFileHandlerTest(BaseFileTest):
         except PermissionError as e:
             self.skipTest('os.mkfifo(): %s' % e)
 
+        data = 'not read'
         def other_side():
+            nonlocal data
             with open(filename, 'rb') as f:
-                f.read(1)
+                data = f.read()
 
         thread = threading.Thread(target=other_side)
         with threading_helper.start_threads([thread]):
             rh = logging.handlers.RotatingFileHandler(
                     filename, encoding="utf-8", maxBytes=1)
             with contextlib.closing(rh):
-                self.assertFalse(rh.shouldRollover(self.next_rec()))
+                m = self.next_rec()
+                self.assertFalse(rh.shouldRollover(m))
+                rh.emit(m)
+        self.assertEqual(data.decode(), m.msg + os.linesep)
 
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
