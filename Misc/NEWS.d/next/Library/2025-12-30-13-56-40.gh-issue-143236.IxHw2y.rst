@@ -1,1 +1,1 @@
-Fix a bug in `ceval` where the load name has use-after-free bug.
+Fix a bug in ceval where the load name has use-after-free bug.
