@@ -1646,7 +1646,7 @@ class DictTest(unittest.TestCase):
         obj2 = MyClass()
         d = obj2.__dict__
         d[MyStr("attr1")] = 2
-        assert isinstance(list(d)[0], MyStr)
+        self.assertIsInstance(list(d)[0], MyStr)
 
 
 class CAPITest(unittest.TestCase):
