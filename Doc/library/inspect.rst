@@ -699,10 +699,9 @@ Retrieving source code
    function.
 
    .. note::
-      This function returns the *lines* of source code where the object is
-      defined. If multiple objects are defined on the same line (e.g.
-      multiple lambdas), or if the object is embedded in a larger statement
-      (e.g. a list comprehension), the function will return the entire line(s).
+      This function returns the lines of source code where the object is
+      defined, including indentation. It always returns full lines and does not
+      strip other code that may appear on the same line.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
