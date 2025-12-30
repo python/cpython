@@ -98,6 +98,7 @@ Module Objects
 
    See :pep:`489` for more details.
 
+
 .. c:function:: PyModuleDef* PyModule_GetDef(PyObject *module)
 
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
