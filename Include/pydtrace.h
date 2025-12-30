@@ -18,7 +18,7 @@ extern "C" {
    check to minimize performance impact when probing is off. For example:
 
        if (PyDTrace_FUNCTION_ENTRY_ENABLED())
-           PyDTrace_FUNCTION_ENTRY(f);
+           PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno, modulename);
 */
 
 #else
@@ -26,10 +26,10 @@ extern "C" {
 /* Without DTrace, compile to nothing. */
 
 static inline void PyDTrace_LINE(const char *arg0, const char *arg1, int arg2) {}
-static inline void PyDTrace_FUNCTION_ENTRY(const char *arg0, const char *arg1, int arg2)  {}
-static inline void PyDTrace_FUNCTION_RETURN(const char *arg0, const char *arg1, int arg2) {}
-static inline void PyDTrace_CFUNCTION_ENTRY(const char *arg0, const char *arg1) {}
-static inline void PyDTrace_CFUNCTION_RETURN(const char *arg0, const char *arg1) {}
+static inline void PyDTrace_FUNCTION_ENTRY(const char *arg0, const char *arg1, int arg2, const char *arg3)  {}
+static inline void PyDTrace_FUNCTION_RETURN(const char *arg0, const char *arg1, int arg2, const char *arg3) {}
+static inline void PyDTrace_CFUNCTION_ENTRY(const char *arg0, const char *arg1, int arg2, const char *arg3) {}
+static inline void PyDTrace_CFUNCTION_RETURN(const char *arg0, const char *arg1, int arg2, const char *arg3) {}
 static inline void PyDTrace_GC_START(int arg0) {}
 static inline void PyDTrace_GC_DONE(Py_ssize_t arg0) {}
 static inline void PyDTrace_INSTANCE_NEW_START(const char *arg0, const char *arg1) {}

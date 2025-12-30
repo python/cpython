@@ -24,10 +24,11 @@ probe process.mark("function__entry"), process.mark("function__return")
     filename = user_string($arg1);
     funcname = user_string($arg2);
     lineno = $arg3;
+    modulename = user_string($arg4);
 
     if (tracing) {
-        printf("%d\t%s:%s:%s:%d\n", gettimeofday_us(), $$name,
-               basename(filename), funcname, lineno);
+        printf("%d\t%s:%s:%s:%d:%s\n", gettimeofday_us(), $$name,
+               basename(filename), funcname, lineno, modulename);
     }
 }
 

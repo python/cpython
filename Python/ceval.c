@@ -81,8 +81,8 @@ static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 static void maybe_dtrace_line(PyFrameObject *, PyTraceInfo *, int);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
-static void dtrace_cfunction_entry(PyObject *);
-static void dtrace_cfunction_return(PyObject *);
+static void dtrace_cfunction_entry(PyThreadState *, PyObject *);
+static void dtrace_cfunction_return(PyThreadState *, PyObject *);
 
 static PyObject * import_name(PyThreadState *, PyFrameObject *,
                               PyObject *, PyObject *, PyObject *);
@@ -5848,11 +5848,11 @@ trace_call_function(PyThreadState *tstate,
     PyObject *x;
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         if (PyDTrace_CFUNCTION_ENTRY_ENABLED()) {
-            dtrace_cfunction_entry(func);
+            dtrace_cfunction_entry(tstate, func);
         }
         C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         if (PyDTrace_CFUNCTION_RETURN_ENABLED()) {
-            dtrace_cfunction_return(func);
+            dtrace_cfunction_return(tstate, func);
         }
         return x;
     }
@@ -5899,11 +5899,11 @@ call_function(PyThreadState *tstate,
     }
     else if (PyCFunction_Check(func)) {
         if (PyDTrace_CFUNCTION_ENTRY_ENABLED()) {
-            dtrace_cfunction_entry(func);
+            dtrace_cfunction_entry(tstate, func);
         }
         x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
         if (PyDTrace_CFUNCTION_RETURN_ENABLED()) {
-            dtrace_cfunction_return(func);
+            dtrace_cfunction_return(tstate, func);
         }
     }
     else {
@@ -5932,11 +5932,11 @@ do_call_core(PyThreadState *tstate,
 
     if (PyCFunction_CheckExact(func) || PyCMethod_CheckExact(func)) {
         if (PyDTrace_CFUNCTION_ENTRY_ENABLED()) {
-            dtrace_cfunction_entry(func);
+            dtrace_cfunction_entry(tstate, func);
         }
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         if (PyDTrace_CFUNCTION_RETURN_ENABLED()) {
-            dtrace_cfunction_return(func);
+            dtrace_cfunction_return(tstate, func);
         }
         return result;
     }
@@ -6476,19 +6476,66 @@ _PyEval_RequestCodeExtraIndex(freefunc free)
     return new_index;
 }
 
+static const char *
+dtrace_frame_module_name(PyFrameObject *frame, PyObject **keepalive)
+{
+    const char *modulename = "?";
+    PyObject *globals = frame->f_globals;
+    if (globals == NULL) {
+        return modulename;
+    }
+
+    PyObject *old_type, *old_value, *old_traceback;
+    PyErr_Fetch(&old_type, &old_value, &old_traceback);
+
+    PyObject *nameobj = PyDict_GetItemString(globals, "__name__");
+    if (nameobj != NULL && PyUnicode_Check(nameobj)) {
+        modulename = PyUnicode_AsUTF8(nameobj);
+        if (modulename == NULL) {
+            modulename = "?";
+        }
+        else if (keepalive != NULL) {
+            Py_INCREF(nameobj);
+            *keepalive = nameobj;
+        }
+    }
+
+    PyErr_Restore(old_type, old_value, old_traceback);
+    if (modulename == NULL) {
+        modulename = "?";
+        Py_XDECREF(keepalive ? *keepalive : NULL);
+        if (keepalive) {
+            *keepalive = NULL;
+        }
+    }
+    return modulename;
+}
+
 static void
 dtrace_function_entry(PyFrameObject *f)
 {
     const char *filename;
     const char *funcname;
     int lineno;
+    PyObject *modname_obj = NULL;
+    const char *modulename = "?";
 
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
+    if (filename == NULL) {
+        PyErr_Clear();
+        filename = "?";
+    }
     funcname = PyUnicode_AsUTF8(code->co_name);
+    if (funcname == NULL) {
+        PyErr_Clear();
+        funcname = "?";
+    }
     lineno = PyFrame_GetLineNumber(f);
+    modulename = dtrace_frame_module_name(f, &modname_obj);
 
-    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno, modulename);
+    Py_XDECREF(modname_obj);
 }
 
 static void
@@ -6497,13 +6544,25 @@ dtrace_function_return(PyFrameObject *f)
     const char *filename;
     const char *funcname;
     int lineno;
+    PyObject *modname_obj = NULL;
+    const char *modulename = "?";
 
     PyCodeObject *code = f->f_code;
     filename = PyUnicode_AsUTF8(code->co_filename);
+    if (filename == NULL) {
+        PyErr_Clear();
+        filename = "?";
+    }
     funcname = PyUnicode_AsUTF8(code->co_name);
+    if (funcname == NULL) {
+        PyErr_Clear();
+        funcname = "?";
+    }
     lineno = PyFrame_GetLineNumber(f);
+    modulename = dtrace_frame_module_name(f, &modname_obj);
 
-    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno, modulename);
+    Py_XDECREF(modname_obj);
 }
 
 static const char *
@@ -6549,7 +6608,7 @@ dtrace_cfunction_module_name(PyCFunctionObject *func, PyObject **keepalive)
 }
 
 static void
-dtrace_cfunction_entry(PyObject *func)
+dtrace_cfunction_entry(PyThreadState *tstate, PyObject *func)
 {
     assert(PyCFunction_Check(func));
 
@@ -6557,13 +6616,28 @@ dtrace_cfunction_entry(PyObject *func)
     PyObject *keepalive = NULL;
     const char *module = dtrace_cfunction_module_name(cfunc, &keepalive);
     const char *name = cfunc->m_ml->ml_name;
+    const char *filename = "?";
+    int lineno = 0;
 
-    PyDTrace_CFUNCTION_ENTRY(module, name);
+    PyFrameObject *frame = tstate->frame;
+    if (frame != NULL) {
+        filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+        if (filename == NULL) {
+            PyErr_Clear();
+            filename = "?";
+        }
+        lineno = PyFrame_GetLineNumber(frame);
+    }
+
+    if (module == NULL) {
+        module = "?";
+    }
+    PyDTrace_CFUNCTION_ENTRY(filename, name, lineno, module);
     Py_XDECREF(keepalive);
 }
 
 static void
-dtrace_cfunction_return(PyObject *func)
+dtrace_cfunction_return(PyThreadState *tstate, PyObject *func)
 {
     assert(PyCFunction_Check(func));
 
@@ -6571,8 +6645,23 @@ dtrace_cfunction_return(PyObject *func)
     PyObject *keepalive = NULL;
     const char *module = dtrace_cfunction_module_name(cfunc, &keepalive);
     const char *name = cfunc->m_ml->ml_name;
+    const char *filename = "?";
+    int lineno = 0;
 
-    PyDTrace_CFUNCTION_RETURN(module, name);
+    PyFrameObject *frame = tstate->frame;
+    if (frame != NULL) {
+        filename = PyUnicode_AsUTF8(frame->f_code->co_filename);
+        if (filename == NULL) {
+            PyErr_Clear();
+            filename = "?";
+        }
+        lineno = PyFrame_GetLineNumber(frame);
+    }
+
+    if (module == NULL) {
+        module = "?";
+    }
+    PyDTrace_CFUNCTION_RETURN(filename, name, lineno, module);
     Py_XDECREF(keepalive);
 }
 

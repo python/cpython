@@ -11,7 +11,8 @@ python$target:::function-entry
 {
     printf("%d\t%*s:", timestamp, 15, probename);
     printf("%*s", self->indent, "");
-    printf("%s:%s:%d\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2);
+    printf("%s:%s:%d:%s\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2,
+           copyinstr(arg3));
     self->indent++;
 }
 
@@ -21,7 +22,8 @@ python$target:::function-return
     self->indent--;
     printf("%d\t%*s:", timestamp, 15, probename);
     printf("%*s", self->indent, "");
-    printf("%s:%s:%d\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2);
+    printf("%s:%s:%d:%s\n", basename(copyinstr(arg0)), copyinstr(arg1), arg2,
+           copyinstr(arg3));
 }
 
 python$target:::function-return

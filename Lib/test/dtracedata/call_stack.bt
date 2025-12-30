@@ -9,7 +9,8 @@ usdt:@TARGET@:python:function__entry /@trace[tid]/ {
     @seq += 1;
     printf("%d\t%15s:", (int)@seq, "function-entry");
     printf("%*s", @indent[tid], "");
-    printf("%s:%s:%d\n", str(args->arg0), str(args->arg1), args->arg2);
+    printf("%s:%s:%d:%s\n", str(args->arg0), str(args->arg1), args->arg2,
+           str(args->arg3));
     @indent[tid] = @indent[tid] + 1;
 }
 
@@ -18,7 +19,8 @@ usdt:@TARGET@:python:function__return /@trace[tid]/ {
     @seq += 1;
     printf("%d\t%15s:", (int)@seq, "function-return");
     printf("%*s", @indent[tid], "");
-    printf("%s:%s:%d\n", str(args->arg0), str(args->arg1), args->arg2);
+    printf("%s:%s:%d:%s\n", str(args->arg0), str(args->arg1), args->arg2,
+           str(args->arg3));
 }
 
 usdt:@TARGET@:python:function__return /str(args->arg1) == "start"/ {

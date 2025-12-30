@@ -10,8 +10,9 @@ python$target:::cfunction-entry,
 python$target:::cfunction-return
 /self->tracing/
 {
-    this->module = arg0 ? copyinstr(arg0) : "";
-    printf("%d\t%s:%s:%s\n", timestamp, probename, this->module, copyinstr(arg1));
+    this->module = arg3 ? copyinstr(arg3) : "";
+    printf("%d\t%s:%s:%d:%s:%s\n", timestamp, probename,
+           copyinstr(arg0), arg2, this->module, copyinstr(arg1));
 }
 
 python$target:::function-return

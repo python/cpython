@@ -274,14 +274,14 @@ should instead read:
 Available static markers
 ------------------------
 
-.. object:: function__entry(str filename, str funcname, int lineno)
+.. object:: function__entry(str filename, str funcname, int lineno, str modulename)
 
    This marker indicates that execution of a Python function has begun.
    It is only triggered for pure-Python (bytecode) functions.
 
-   The filename, function name, and line number are provided back to the
-   tracing script as positional arguments, which must be accessed using
-   ``$arg1``, ``$arg2``, ``$arg3``:
+   The filename, function name, line number, and module name are provided back
+   to the tracing script as positional arguments, which must be accessed using
+   ``$arg1``, ``$arg2``, ``$arg3``, ``$arg4``:
 
        * ``$arg1`` : ``(const char *)`` filename, accessible using ``user_string($arg1)``
 
@@ -290,7 +290,9 @@ Available static markers
 
        * ``$arg3`` : ``int`` line number
 
-.. object:: function__return(str filename, str funcname, int lineno)
+       * ``$arg4`` : ``(const char *)`` module name
+
+.. object:: function__return(str filename, str funcname, int lineno, str modulename)
 
    This marker is the converse of :c:func:`function__entry`, and indicates that
    execution of a Python function has ended (either via ``return``, or via an
@@ -298,14 +300,14 @@ Available static markers
 
    The arguments are the same as for :c:func:`function__entry`
 
-.. object:: cfunction__entry(str modulename, str funcname)
+.. object:: cfunction__entry(str filename, str funcname, int lineno, str modulename)
 
    This marker indicates that execution of a built-in or extension function has
-   begun. The module name and function name are provided as C strings. The
-   module name may be empty when the function is not associated with a
-   particular module.
+   begun. The filename and line number refer to the Python call site, while the
+   module name and function name identify the C callable. The module name may
+   be empty when the function is not associated with a particular module.
 
-.. object:: cfunction__return(str modulename, str funcname)
+.. object:: cfunction__return(str filename, str funcname, int lineno, str modulename)
 
    This marker is the converse of :c:func:`cfunction__entry`, and indicates that
    execution of a built-in or extension function has ended. The arguments are
@@ -317,7 +319,9 @@ Available static markers
    the equivalent of line-by-line tracing with a Python profiler.  It is
    not triggered within C functions.
 
-   The arguments are the same as for :c:func:`function__entry`.
+   The arguments are the filename, function name, and line number for the
+   executing frame (the same as the first three arguments to
+   :c:func:`function__entry`).
 
 .. object:: gc__start(int generation)
 

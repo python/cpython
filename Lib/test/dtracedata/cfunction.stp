@@ -10,9 +10,9 @@ probe process.mark("function__entry")
 probe process.mark("cfunction__entry"), process.mark("cfunction__return")
 {
     if (tracing) {
-        modulename = $arg1 ? user_string($arg1) : "";
-        printf("%d\t%s:%s:%s\n", gettimeofday_us(), $$name,
-               modulename, user_string($arg2));
+        modulename = $arg4 ? user_string($arg4) : "";
+        printf("%d\t%s:%s:%d:%s:%s\n", gettimeofday_us(), $$name,
+               user_string($arg1), $arg3, modulename, user_string($arg2));
     }
 }
 

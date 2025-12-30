@@ -1,6 +1,6 @@
-cfunction__entry:builtins:len
-cfunction__return:builtins:len
-cfunction__entry:math:sqrt
-cfunction__return:math:sqrt
-cfunction__entry:builtins:sum
-cfunction__return:builtins:sum
+cfunction__entry:cfunction.py:5:builtins:len
+cfunction__return:cfunction.py:5:builtins:len
+cfunction__entry:cfunction.py:6:math:sqrt
+cfunction__return:cfunction.py:6:math:sqrt
+cfunction__entry:cfunction.py:7:builtins:sum
+cfunction__return:cfunction.py:7:builtins:sum
