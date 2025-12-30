@@ -254,6 +254,8 @@ the Future has a result::
     asyncio.run(main())
 
 
+.. _asyncio-vs-concurrent-futures:
+
 .. important::
 
    The Future object was designed to mimic
