@@ -86,7 +86,7 @@ def nonprintable_defect(chars):
 
 whitespace_inside_ew_defect = (
     errors.InvalidHeaderDefect,
-    'whitespace inside encoded word',
+    'whitespace inside encoded-word',
     )
 
 missing_whitespace_before_ew_defect = (
@@ -518,6 +518,8 @@ class TestParserMixin:
         defects = [] if defects is None else defects
         with warningscheck:
             result = callspec(method)
+        if result is None:
+            return
         if isinstance(result, (parser.TokenList, parser.Terminal)):
             other = []
         else:
@@ -987,32 +989,58 @@ class TestParser(TestParserMixin, TestEmailBase):
             *args,
             charset='us-ascii',
             lang='',
+            # XXX POSTDEP: delete the following line:
             terminal_type=None,
+            # XXX POSTDEP: uncomment following line:
+            # terminal_type='ttext',
+            prefix=None,
+            expect_none=False,
             **kw,
             ):
-        callspec = C(s) if terminal_type is None else C(s, terminal_type)
-        res = self._test_parse(parser.get_encoded_word, callspec, *args, **kw)
+        # XXX POSTDEP: delete from here...
+        if 'warnings' in kw:
+            # old api
+            callspec = C(s) if terminal_type is None else C(s, terminal_type)
+            terminal_type = terminal_type or 'vtext'
+            if (r := kw.get('remainder')) and r[0] not in RFC_WSP:
+                kw['defects'] = kw.get('defects', []) + [
+                    missing_whitespace_after_ew_defect,
+                    ]
+        else:
+            terminal_type = terminal_type or 'ttext'
+            callspec = C(s, terminal_type)
+        # XXX POSTDEP: ...to here
+        # XXX POSTDEP: uncomment the following line:
+        #callspec = C(s, terminal_type)
+        ew = self._test_parse(parser.get_encoded_word, callspec, *args, **kw)
         if 'exception' in kw:
             return
-        self.assertEqual(res.charset, charset)
-        self.assertEqual(res.lang, lang)
-        terminal_type = 'vtext' if terminal_type is None else terminal_type
-        self.verify_terminal_types(res, terminal_type, 'fws')
+        if expect_none:
+            self.assertIsNone(ew)
+            return
+        self.assertEqual(ew.charset, charset)
+        self.assertEqual(ew.lang, lang)
+        self.verify_terminal_types(ew, terminal_type, 'fws')
 
     # This params_map will handle either single strings or C objects.
     @params_map
-    def expect_get_encoded_word_raise(v, *args, **kw):
+    def invalid_encoded_words(v, *args, **kw):
+        # XXX POSTDEP: change 'newapi' to '' in the next line.
+        yield 'newapi', C(v, expect_none=True)
+        # XXX POSTDEP: delete from here...
         newspec = C(
             v,
             *args,
             # "expected encoded word but found '...'"
             exception=(errors.HeaderParseError, re.escape(v)),
+            warnings=[(DeprecationWarning, r"(?=.*API)(?=.*has changed)")],
             test_start=False,
             **kw,
             )
         yield 'oldapi', newspec
+        # XXX POSTDEP: ...to here
 
-    params_test_get_encoded_word__invalid_input = expect_get_encoded_word_raise(
+    params_test_get_encoded_word__invalid_input = invalid_encoded_words(
         null_string =                               '',
         no_chrome =                                 'content',
         eq_only =                                   '=content',
@@ -1039,7 +1067,6 @@ class TestParser(TestParserMixin, TestEmailBase):
         unknown_cte =                               '=?UTF-8?X?content?=',
         invalid_base64_length =                     '=?utf-8?b?abcde?=',
         multicharacter_cte =                        '=?UTF-8?qq?content?=',
-        too_many_qm =                               '=?UTF-8?q?q?content?=',
         empty_lang =                                '=?UTF-8*??q?content?=',
         lang_with_empty_charset =                   '=?*foo??q?content?=',
         **for_each_character(ALL_ASCII)(
@@ -1047,7 +1074,18 @@ class TestParser(TestParserMixin, TestEmailBase):
             ),
         )
 
-    params_test_get_encoded_word = old_api_only(
+    # XXX POSTDEP: delete from here...
+    def test_get_encoded_word_old_api_supports_keywords(self):
+        self._test_parse(
+            parser.get_encoded_word,
+            C('=?UTF-8?q?foo?=', terminal_type='a'),
+            stringified='foo',
+            warnings=[(DeprecationWarning, r"(?=.*API)(?=.*has changed)")],
+            test_start=False,
+            )
+    # XXX POSTDEP: ...to here.
+
+    params_test_get_encoded_word = for_each_api(
 
         valid_ew = C(
             '=?us-ascii?q?this_is_a_test?=  bird',
@@ -1055,15 +1093,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='  bird',
             ),
 
-        # XXX XXX the skip for the RFC_WSP will go away after refactor.  It's
-        # here because it would be a pain to handle the lack of the defect,
-        # which will go away in the refactor.
-        **for_each_character(ALL_ASCII, skip=RFC_WSP)(
+        **for_each_character(ALL_ASCII)(
             ew_followed_by = C(
                 '=?us-ascii?q?foo?={char}',
                 stringified='foo',
                 remainder='{char}',
-                defects=[missing_whitespace_after_ew_defect],
                 ),
             ),
 
@@ -1071,8 +1105,7 @@ class TestParser(TestParserMixin, TestEmailBase):
         # the context from which get_encoded_word is called (ex: ()s are
         # illegal in comment encoded words), but but at least at the moment
         # that it isn't worth the effort to implement.
-        # XXX XXX the skip for ? is a bug which will be fixed in the refactor
-        **for_each_character(RFC_PRINTABLES, skip='_?')(
+        **for_each_character(RFC_PRINTABLES, skip='_')(
             q_content_may_contain = C(
                 '=?us-ascii?q?foo_{char}_bar_{char}?=',
                 stringified='foo {char} bar {char}',
@@ -1093,12 +1126,9 @@ class TestParser(TestParserMixin, TestEmailBase):
             remainder='  =?utf-8?q?second?=',
             ),
 
-        # XXX XXX This defect will also go away (gets detected higher up)
         only_gets_first_ew_even_if_no_space = C(
             '=?us-ascii?q?first?==?utf-8?q?second?=',
             stringified='first',
-            # 'missing trailing whitespace after encoded-word'
-            defects=[missing_whitespace_after_ew_defect],
             remainder='=?utf-8?q?second?=',
             ),
 
@@ -1114,12 +1144,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             charset='utf-8',
             ),
 
-        **for_each_character(
-                RFC_NONPRINTABLES,
-                # XXX XXX skip things split considers whitespace. This is buggy.
-                #                         US  RS  GS  FS
-                skip=RFC_WSP + '\r\n\v\f\x1f\x1e\x1d\x1c',
-                )(
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
             non_printable_defect = C(
                 '=?us-ascii?q?first{char}second?=',
                 stringified='first{char}second',
@@ -1211,7 +1236,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             stringified='\udcc3\udc89ric',
             charset='',
             defects=[
-               charset_defect(' '),
+               charset_defect(''),
                undecodable_bytes_defect,
                whitespace_inside_ew_defect,
                ],
@@ -1265,7 +1290,7 @@ class TestParser(TestParserMixin, TestEmailBase):
     # so it should correctly handle most get_encoded_word parameters.
     @params_map(with_namelist=True)
     def adapt_get_encoded_word_tests_for_get_unstructured(nl, *args, **kw):
-        kw.pop('test_start')
+        kw.pop('test_start', None)
         kw.pop('charset', None)
         kw.pop('terminal_type', None)
         kw.pop('lang', None)
@@ -1283,9 +1308,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         rstripped = remainder.lstrip(RFC_WSP)
         if remainder != rstripped:
             kw['value'] = kw.get('value', stringified) + ' ' + rstripped
-        # Drop the 'warning=...' added by only_old_api; we're doing it ourselves
-        # in the test method.
-        kw.pop('warnings')
+        if 'oldapi' in nl:
+            # get_encoded_word is checking for warnings about its old api being
+            # deprecated, but parse_unstructured don't have an API change.
+            kw.pop('warnings')
         yield 'from_test_get_encoded_word', C(*args, **kw)
 
     @params_map(with_namelist=True)
@@ -1465,8 +1491,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             defects=[missing_whitespace_after_ew_defect],
             ),
 
+        # Although this is technically invalid (unencoded =) we handle it anyway
+        # XXX there should be a defect, which is currently missing.
         invalid_ew2 = C(
             '=?utf-8?q?=somevalue?=',
+            '=somevalue',
             ),
 
         **for_each_character(RFC_PRINTABLES)(
@@ -1476,20 +1505,14 @@ class TestParser(TestParserMixin, TestEmailBase):
                 ),
             ),
 
-        # XXX XXX the '?=' skip is a sort-of bug the refactoring will fix.
-        **for_each_character(RFC_PRINTABLES, skip='_?=')(
+        **for_each_character(RFC_PRINTABLES, skip='_')(
             printable_inside_ews = C(
                 '=?utf-8?q?rock{char}?= =?utf-8?q?{char}hard_place?=',
                 stringified='rock{char}{char}hard place',
                 ),
             ),
 
-        **for_each_character(
-                RFC_NONPRINTABLES,
-                # XXX XXX skip things split considers whitespace. This is buggy.
-                #                         US  RS  GS  FS
-                skip=RFC_WSP + '\r\n\v\f\x1f\x1e\x1d\x1c',
-                )(
+        **for_each_character(RFC_NONPRINTABLES, skip=RFC_WSP)(
             non_wsp_non_printable = C(
                 'some {char} text',
                 stringified='some {char} text',
@@ -2197,12 +2220,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             commenttree=[['foo '], [' bar']],
             ),
 
-        **for_each_character(
-                ALL_ASCII,
-                # XXX XXX skip things split considers whitespace. This is buggy.
-                #                             US  RS  GS  FS
-                skip=CFWS_LEADER + '\r\n\v\f\x1f\x1e\x1d\x1c',
-                )(
+        **for_each_character(ALL_ASCII, skip=CFWS_LEADER)(
             ends_at_non_comment_non_ws = C(
                 '(foo) {char}',
                 remainder='{char}',

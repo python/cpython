@@ -70,7 +70,6 @@ XXX: provide complete list of token types.
 import re
 import sys
 import urllib   # For urllib.parse.unquote
-from string import hexdigits
 from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
@@ -1235,58 +1234,104 @@ def get_fws(value, start):
     fws = WhiteSpaceTerminal(m.group(), 'fws')
     return fws, m.end()
 
-def get_encoded_word(value, terminal_type='vtext'):
+# We need a custom deprecation for this one because we want terminal_type to be
+# required, a return of None instead of exceptions, and for the trailing
+# whitespace defect addition to move elsewhere.
+def _deprecate_old_encoded_word_api(func):
+    @wraps(func)
+    def dispatch(value, *args, **kw):
+        if args and isinstance(args[0], int):
+            return func(value, *args, **kw)
+        from warnings import _deprecated
+        _deprecated(func.__name__, _API_CHANGE_MSG, remove=OLDAPIREMVER)
+        kw.setdefault('terminal_type', args[0] if args else 'vtext')
+        result = func(value, 0, **kw)
+        if result is None:
+            raise _InvalidEwError(f"expected encoded word but found {value}")
+        result, start = result
+        ew, value = result, value[start:]
+        if value and value[0] not in WSP:
+            ew.defects.append(errors.InvalidHeaderDefect(
+                "missing trailing whitespace after encoded-word"))
+        return ew, value
+    return dispatch
+
+# This match is generous; defects are detected during ew parsing.
+_ew_finder = re.compile(r'''
+    =\?                     # literal =?
+    (                       # We might have 'charset' or 'charset*lang' next.
+      (                       # First case: no *
+        (?P<csnolang>[^?*]*?)   # non-greedy to next ? if no * is the charset
+        \?                      # literal ?
+        )
+      |
+      (                       # Second case: charset*lang
+        (?P<cslang>[^?*]*?)     # non-greedy to * is the charset
+        \*                      # literal *
+        (?P<lang>[^?]*?)        # non-greedy to next ? is the lang
+        \?                      # literal ?
+        )
+      )
+    (?P<cte>[^?]*?)         # non-greedy up to the next ? is the CTE
+    \?                      # literal ?
+    (?P<encoded>.*?)        # non-greedy to next ?= is the encoded string
+    \?=                     # literal ?=
+    ''', re.VERBOSE | re.DOTALL).match
+_wsp_finder = re.compile(rf'[{_WSP}]+').search
+_non_wsp_re = _make_non_match_re(_WSP)
+@_deprecate_old_encoded_word_api
+def get_encoded_word(value, start, terminal_type):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
+    If something interpretable as an encoded word occurs starting at start,
+    return an EncodedWord token list with the decoded text decomposed into
+    whitespace and non-whitespace value terminals, and the index of the last
+    character of the encoded word (the '=') plus one.  Register a defect if
+    there is un-encoded whitespace inside the encoded word, and register
+    defects for any any non-printable or invalid characters in the
+    non-whitespace ValueTerminals.
+
+    If the characters starting at start are not interpretable as an encoded
+    word such that it can be decoded from the content transfer encoding, return
+    None.
+
     """
+    ew_match = _ew_finder(value, start)
+    if ew_match is None:
+        return
     ew = EncodedWord()
-    if not value.startswith('=?'):
-        raise errors.HeaderParseError(
-            "expected encoded word but found {}".format(value))
-    tok, *remainder = value[2:].split('?=', 1)
-    if tok == value[2:]:
-        raise errors.HeaderParseError(
-            "expected encoded word but found {}".format(value))
-    remstr = ''.join(remainder)
-    if (len(remstr) > 1 and
-        remstr[0] in hexdigits and
-        remstr[1] in hexdigits and
-        tok.count('?') < 2):
-        # The ? after the CTE was followed by an encoded word escape (=XX).
-        rest, *remainder = remstr.split('?=', 1)
-        tok = tok + '?=' + rest
-    if len(tok.split()) > 1:
-        ew.defects.append(errors.InvalidHeaderDefect(
-            "whitespace inside encoded word"))
-    ew.cte = value
-    value = ''.join(remainder)
-    try:
-        text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
-    except (ValueError, KeyError):
-        raise _InvalidEwError(
-            "encoded word format invalid: '{}'".format(ew.cte))
-    if any(isinstance(x, errors.InvalidBase64LengthDefect) for x in defects):
-        raise _InvalidEwError(
-            "encoded word could not be decoded: '{}'".format(ew.cte),
-            )
+    csnolang, cslang, lang, cte, encoded = ew_match.group(
+        'csnolang', 'cslang', 'lang', 'cte', 'encoded')
+    charset, lang = cslang or csnolang or '', lang or ''
     ew.charset = charset.strip()
     ew.lang = lang.strip()
+    try:
+        text, defects = _ew._decode(ew.charset, cte, encoded)
+    except KeyError:
+        # With an unknown CTE we can't decode the content.  We could just
+        # return it, but that would be less clear than leaving the ew alone.
+        return None
+    if any(isinstance(x, errors.InvalidBase64LengthDefect) for x in defects):
+        return None
     ew.defects.extend(defects)
-    while text:
-        if text[0] in WSP:
-            token, text = get_fws(text)
+    if _wsp_finder(ew_match.group()):
+        ew.defects.append(errors.InvalidHeaderDefect(
+            "whitespace inside encoded-word"))
+    tptr, tlen = 0, len(text)
+    while tptr < tlen:
+        if text[tptr] in WSP:
+            token, tptr = get_fws(text, tptr)
             ew.append(token)
             continue
-        chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, terminal_type)
-        _validate_xtext(vtext)
-        ew.append(vtext)
-        text = ''.join(remainder)
-    # Encoded words should be followed by a WS
-    if value and value[0] not in WSP:
-        ew.defects.append(errors.InvalidHeaderDefect(
-            "missing trailing whitespace after encoded-word"))
-    return ew, value
+        t, tptr = _get_xtext(
+            text,
+            tptr,
+            _non_wsp_re,
+            ValueTerminal,
+            terminal_type,
+            )
+        ew.append(t)
+    return ew, ew_match.end()
 
 def get_unstructured(value):
     """unstructured = (*([FWS] vchar) *WSP) / obs-unstruct
@@ -1310,7 +1355,6 @@ def get_unstructured(value):
     # XXX: but what about bare CR and LF?  They might signal the start or
     # end of an encoded word.  YAGNI for now, since our current parsers
     # will never send us strings with bare CR or LF.
-
     unstructured = UnstructuredTokenList()
     while value:
         if value[0] in WSP:
