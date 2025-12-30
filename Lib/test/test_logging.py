@@ -25,6 +25,7 @@ import logging.config
 
 import codecs
 import configparser
+import contextlib
 import copy
 import datetime
 import pathlib
@@ -6387,10 +6388,8 @@ class RotatingFileHandlerTest(BaseFileTest):
         with threading_helper.start_threads([thread]):
             rh = logging.handlers.RotatingFileHandler(
                     filename, encoding="utf-8", maxBytes=1)
-            try:
+            with contextlib.closing(rh):
                 self.assertFalse(rh.shouldRollover(self.next_rec()))
-            finally:
-                rh.close()
 
     def test_should_rollover(self):
         with open(self.fn, 'wb') as f:
