@@ -187,22 +187,14 @@ class ClearTest(unittest.TestCase):
 
         frame = get_frame()
 
-        class Fuse:
-            cleared = False
-            def __init__(self, s):
-                self.s = s
-            def __hash__(self):
-                return hash(self.s)
-            def __eq__(self, other):
-                if not Fuse.cleared and other == "boom":
-                    Fuse.cleared = True
-                    Fuse.frame.clear()
-                return False
+        class Fuse(dict):
+            def __getitem__(self, key):
+                if key == "boom":
+                    frame.clear()
+                raise KeyError(key)
 
-        Fuse.frame = frame
-        frame.f_locals[Fuse("boom")] = 0
         with self.assertRaises(NameError):
-            exec("boom", {}, frame.f_locals)
+            exec("boom", {}, Fuse())
 
 
 class FrameAttrsTest(unittest.TestCase):
