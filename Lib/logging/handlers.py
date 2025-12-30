@@ -196,7 +196,11 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
-            pos = self.stream.tell()
+            try:
+                pos = self.stream.tell()
+            except io.UnsupportedOperation:
+                # gh-143237: Never rollover a named pipe.
+                return False
             if not pos:
                 # gh-116263: Never rollover an empty file
                 return False
