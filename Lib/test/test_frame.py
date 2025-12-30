@@ -187,15 +187,18 @@ class ClearTest(unittest.TestCase):
 
         frame = get_frame()
 
-        class Fuse(str):
+        class Fuse:
             cleared = False
-            __hash__ = str.__hash__
+            def __init__(self, s):
+                self.s = s
+            def __hash__(self):
+                return hash(self.s)
             def __eq__(self, other):
                 if not Fuse.cleared and other == "boom":
                     Fuse.cleared = True
                     Fuse.frame.clear()
                     return False
-                return super().__eq__(other)
+                return True
 
         Fuse.frame = frame
         frame.f_locals[Fuse("boom")] = 0
