@@ -2476,7 +2476,8 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
         goto fail;
     }
     _PyFrame_Initialize(tstate, frame, func, locals, code, 0, previous);
-    if (code->co_flags & CO_OPTIMIZED && locals != NULL && locals != func_obj->func_globals) {
+    if (code->co_flags & CO_OPTIMIZED && locals != NULL && locals != func_obj->func_globals &&
+        kwnames == NULL) { /* kwnames can be NULL only when invoked through PyEval_EvalCode */
         for (size_t i = 0; i < argcount; i++) {
             PyStackRef_CLOSE(args[i]);
         }
