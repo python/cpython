@@ -207,9 +207,9 @@ freeing the memory.  Two examples of these data structures are the list object
 and the dictionary keys object.  See ``InternalDocs/qsbr.md`` in the CPython
 source tree for more details on how QSBR is implemented.  Running
 :func:`gc.collect` should cause all memory being held by QSBR to be actually
-freed.  Note that even when QSBR frees the memory, mimalloc may not immediately
-return that memory to the OS and so the resident set size (RSS) of the process
-might not decrease.
+freed.  Note that even when QSBR frees the memory, the underlying memory
+allocator may not immediately return that memory to the OS and so the resident
+set size (RSS) of the process might not decrease.
 
 
 mimalloc allocator vs pymalloc
@@ -219,8 +219,8 @@ The default build will normally use the "pymalloc" memory allocator for small
 allocations (512 bytes or smaller).  The free-threaded build does not use
 pymalloc and allocates all Python objects using the "mimalloc" allocator.  The
 pymalloc allocator has the following properties that help keep memory usage
-low: per-allocated-block overhead is small, effectively prevents memory
-fragmentation, and quickly returns free memory to the operating system.  The
+low: small per-allocated-block overhead, effective memory fragmentation
+prevention, and quick return of free memory to the operating system.  The
 mimalloc allocator does quite well in these respects as well but can have some
 more overhead.
 
@@ -230,12 +230,12 @@ from their own heap.  Using separate heaps means that free memory in one heap
 cannot be used for an allocation that uses another heap.  Also, some heaps are
 configured to use QSBR (quiescent-state based reclamation) when freeing the
 memory that backs up the heap (known as "pages" in mimalloc terminology).  The
-details of QSBR are their own topic but the short summary is that it creates a
-delay between the object being freed and the memory being released, either for
-new allocations or back to the OS.
+use of QSBR creates a delay between all memory blocks for a page being freed
+and the memory page being released, either for new allocations or back to the
+OS.
 
-The mimalloc allocator also defers returning memory back to the OS.  You can
-reduce that delay by setting the environment variable
+The mimalloc allocator also defers returning freed memory back to the OS.  You
+can reduce that delay by setting the environment variable
 :envvar:`!MIMALLOC_PURGE_DELAY` to ``0``.  Note that this will likely reduce
 the performance of the allocator.
 
