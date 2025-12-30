@@ -1,0 +1,1 @@
+Fix a bug in :mod:`ceval` where the load name has use-after-free bug.

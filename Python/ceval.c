@@ -4061,9 +4061,17 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                             "no locals found");
         return NULL;
     }
-    if (PyMapping_GetOptionalItem(frame->f_locals, name, &value) < 0) {
+
+    PyObject *locals = frame->f_locals;
+    Py_INCREF(locals);
+
+    if (PyMapping_GetOptionalItem(locals, name, &value) < 0) {
+        Py_DECREF(locals);
         return NULL;
     }
+
+    Py_DECREF(locals);
+
     if (value != NULL) {
         return value;
     }

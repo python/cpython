@@ -177,6 +177,31 @@ class ClearTest(unittest.TestCase):
             self.clear_traceback_frames(exc.__traceback__)
             self.assertIs(None, wr())
 
+    @support.cpython_only
+    def test_frame_clear_during_load_name(self):
+        def get_frame():
+            try:
+                raise RuntimeError
+            except RuntimeError as e:
+                return e.__traceback__.tb_frame
+
+        frame = get_frame()
+
+        class Fuse(str):
+            cleared = False
+            __hash__ = str.__hash__
+            def __eq__(self, other):
+                if not Fuse.cleared and other == "boom":
+                    Fuse.cleared = True
+                    Fuse.frame.clear()
+                    return False
+                return super().__eq__(other)
+
+        Fuse.frame = frame
+        frame.f_locals[Fuse("boom")] = 0
+        with self.assertRaises(NameError):
+            exec("boom", {}, frame.f_locals)
+
 
 class FrameAttrsTest(unittest.TestCase):
 
