@@ -698,6 +698,12 @@ Retrieving source code
    A :exc:`TypeError` is raised if the object is a built-in module, class, or
    function.
 
+   .. note::
+      This function returns the *lines* of source code where the object is
+      defined. If multiple objects are defined on the same line (e.g.
+      multiple lambdas), or if the object is embedded in a larger statement
+      (e.g. a list comprehension), the function will return the entire line(s).
+
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
       former.
