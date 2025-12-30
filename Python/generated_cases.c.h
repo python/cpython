@@ -1042,8 +1042,7 @@
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
             }
-            /* Skip 5 cache entries */
-            // _BINARY_OP_SUBSCR_TUPLE_INT
+            // _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS
             {
                 sub_st = value;
                 tuple_st = nos;
@@ -1062,7 +1061,16 @@
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
+            }
+            /* Skip 5 cache entries */
+            // _BINARY_OP_SUBSCR_TUPLE_INT
+            {
+                PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+                PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
+                assert(PyLong_CheckExact(sub));
+                assert(PyTuple_CheckExact(tuple));
                 STAT_INC(BINARY_OP, hit);
+                Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
                 assert(res_o != NULL);
                 res = PyStackRef_FromPyObjectNew(res_o);
