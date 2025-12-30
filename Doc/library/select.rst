@@ -375,9 +375,15 @@ Edge and Level Trigger Polling (epoll) Objects
 
 .. method:: epoll.poll(timeout=None, maxevents=-1)
 
-   Wait for events.
+   Wait for events. Return a list of ``(fd, eventmask)`` tuples if there's any
+   event. Otherwise, an empty list is returned.  See the :ref:`epoll-objects`
+   section above for the event constants.
+
    If *timeout* is given, it specifies the length of time in seconds
    (may be non-integer) which the system will wait for events before returning.
+
+   *maxevents* specifies the maximum number of events to return. It must be
+   greater than 0, or ``-1`` to use the default (``FD_SETSIZE-1``).
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
