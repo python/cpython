@@ -25,7 +25,7 @@ by the abstract :class:`Executor` class.
 
    :class:`concurrent.futures.Future` must not be confused with
    :class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
-   tasks and coroutines. See :ref:`asyncio-vs-concurrent-futures` for a
+   tasks and coroutines. See the :doc:`asyncio-future` documentation for a
    detailed comparison of the two.
 
 .. include:: ../includes/wasm-notavail.rst
