@@ -332,6 +332,19 @@ dummy_func(void) {
         i = sub_st;
     }
 
+    op(_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS, (tuple_st, sub_st -- tuple_st, sub_st)) {
+        assert(sym_matches_type(tuple_st, &PyTuple_Type));
+        if (sym_is_const(ctx, sub_st)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+            long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+            assert(index >= 0);
+            int tuple_length = sym_tuple_length(tuple_st);
+            if (tuple_length != -1 && index < tuple_length) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+        }
+    }
+
     op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
         assert(sym_matches_type(tuple_st, &PyTuple_Type));
         if (sym_is_const(ctx, sub_st)) {
@@ -466,18 +479,22 @@ dummy_func(void) {
         r = right;
     }
 
-    op(_COMPARE_OP_FLOAT, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_COMPARE_OP_FLOAT, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
-    op(_COMPARE_OP_STR, (left, right -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+    op(_COMPARE_OP_STR, (left, right -- res, l, r)) {
         res = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
-    op(_IS_OP, (left, right -- b)) {
+    op(_IS_OP, (left, right -- b, l, r)) {
         b = sym_new_type(ctx, &PyBool_Type);
+        l = left;
+        r = right;
     }
 
     op(_CONTAINS_OP, (left, right -- b)) {

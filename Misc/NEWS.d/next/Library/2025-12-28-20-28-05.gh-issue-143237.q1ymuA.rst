@@ -1,0 +1,1 @@
+Fix support of named pipes in the rotating :mod:`logging` handlers.
