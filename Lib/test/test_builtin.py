@@ -1121,7 +1121,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         for executor in eval, exec:
             with self.subTest(executor=executor.__name__):
                 ns = {'a': 1, 'args': [2], 'kwargs': {'a': 4}}
-                executor(func, {}, ns, sync_fast_locals=True)
+                executor(func.__code__, {}, ns, sync_fast_locals=True)
                 self.assertEqual(ns, {'b': 2, 'args': [2, 3], 'kwargs': {'a': 4, 'b': 5}})
 
     def test_filter(self):
