@@ -21,12 +21,10 @@ or separate processes, using :class:`ProcessPoolExecutor`.
 Each implements the same interface, which is defined
 by the abstract :class:`Executor` class.
 
-.. important::
-
-   :class:`concurrent.futures.Future` must not be confused with
-   :class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
-   tasks and coroutines. See the :doc:`asyncio-future` documentation for a
-   detailed comparison of the two.
+:class:`concurrent.futures.Future` must not be confused with
+:class:`asyncio.Future`, which is designed for use with :mod:`asyncio`
+tasks and coroutines. See the :doc:`asyncio-future` documentation for a
+detailed comparison of the two.
 
 .. include:: ../includes/wasm-notavail.rst
 
