@@ -197,8 +197,7 @@ class ClearTest(unittest.TestCase):
                 if not Fuse.cleared and other == "boom":
                     Fuse.cleared = True
                     Fuse.frame.clear()
-                    return False
-                return True
+                return False
 
         Fuse.frame = frame
         frame.f_locals[Fuse("boom")] = 0
