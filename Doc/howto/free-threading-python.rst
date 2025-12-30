@@ -260,7 +260,7 @@ following types:
 * module top-level functions
 * class methods defined in the class scope
 * descriptor objects
-* thread-local objects, created by :class:`thread.local`
+* thread-local objects, created by :class:`threading.local`
 
 When deferred reference counting is enabled, references from Python function
 stacks are not added to the reference count.  This scheme reduces the overhead
