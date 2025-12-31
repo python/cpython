@@ -149,9 +149,7 @@ static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
 static int connection_close(pysqlite_Connection *self);
-
-extern int _pysqlite_query_execute(pysqlite_Cursor *, PyObject *, PyObject *);
-extern int _pysqlite_query_executemany(pysqlite_Cursor *, PyObject *, PyObject *);
+int _pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
 new_statement_cache(pysqlite_Connection *self, pysqlite_state *state,
@@ -1859,7 +1857,7 @@ pysqlite_connection_execute_impl(pysqlite_Connection *self, PyObject *sql,
     if (cursor == NULL) {
         return NULL;
     }
-    int rc = _pysqlite_query_execute((pysqlite_Cursor *)cursor, sql, parameters);
+    int rc = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 0, sql, parameters);
     if (rc < 0) {
         Py_DECREF(cursor);
         return NULL;
@@ -1886,7 +1884,7 @@ pysqlite_connection_executemany_impl(pysqlite_Connection *self,
     if (cursor == NULL) {
         return NULL;
     }
-    int rc = _pysqlite_query_executemany((pysqlite_Cursor *)cursor, sql, parameters);
+    int rc = _pysqlite_query_execute((pysqlite_Cursor *)cursor, 1, sql, parameters);
     if (rc < 0) {
         Py_DECREF(cursor);
         return NULL;

@@ -583,64 +583,59 @@ stmt_step(sqlite3_stmt *statement)
  */
 static int
 bind_param(pysqlite_state *state, pysqlite_Connection *conn,
-           pysqlite_Statement *self, int pos, PyObject *arg)
+           pysqlite_Statement *self, int pos, PyObject *parameter)
 {
     int rc = SQLITE_OK;
+    const char *string;
+    Py_ssize_t buflen;
     parameter_type paramtype;
     // Indicate whether 'conn' is safe against conversion's side effects.
     bool safe = false;
 
-    if (arg == Py_None) {
-        return sqlite3_bind_null(self->st, pos);
+    if (parameter == Py_None) {
+        rc = sqlite3_bind_null(self->st, pos);
+        goto final;
     }
 
-    if (PyLong_CheckExact(arg)) {
+    if (PyLong_CheckExact(parameter)) {
         paramtype = TYPE_LONG;
         safe = true;
-    }
-    else if (PyFloat_CheckExact(arg)) {
+    } else if (PyFloat_CheckExact(parameter)) {
         paramtype = TYPE_FLOAT;
         safe = true;
-    }
-    else if (PyUnicode_CheckExact(arg)) {
+    } else if (PyUnicode_CheckExact(parameter)) {
         paramtype = TYPE_UNICODE;
         safe = true;
-    }
-    else if (PyLong_Check(arg)) {
+    } else if (PyLong_Check(parameter)) {
         paramtype = TYPE_LONG;
-    }
-    else if (PyFloat_Check(arg)) {
+    } else if (PyFloat_Check(parameter)) {
         paramtype = TYPE_FLOAT;
-    }
-    else if (PyUnicode_Check(arg)) {
+    } else if (PyUnicode_Check(parameter)) {
         paramtype = TYPE_UNICODE;
-    }
-    else if (PyObject_CheckBuffer(arg)) {
+    } else if (PyObject_CheckBuffer(parameter)) {
         paramtype = TYPE_BUFFER;
-    }
-    else {
+    } else {
         paramtype = TYPE_UNKNOWN;
         safe = true;  // there is no conversion
     }
 
     switch (paramtype) {
         case TYPE_LONG: {
-            sqlite_int64 value = _pysqlite_long_as_int64(arg);
+            sqlite_int64 value = _pysqlite_long_as_int64(parameter);
             rc = (value == -1 && PyErr_Occurred())
                 ? SQLITE_ERROR
                 : sqlite3_bind_int64(self->st, pos, value);
             break;
         }
         case TYPE_FLOAT: {
-            double value = PyFloat_AsDouble(arg);
+            double value = PyFloat_AsDouble(parameter);
             rc = (value == -1 && PyErr_Occurred())
                 ? SQLITE_ERROR
                 : sqlite3_bind_double(self->st, pos, value);
             break;
         }
-        case TYPE_UNICODE: {
-            Py_ssize_t buflen;
-            const char *string = PyUnicode_AsUTF8AndSize(arg, &buflen);
+        case TYPE_UNICODE:
+            string = PyUnicode_AsUTF8AndSize(parameter, &buflen);
             if (string == NULL) {
                 return SQLITE_ERROR;
             }
@@ -651,10 +646,9 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
             }
             rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
             break;
-        }
         case TYPE_BUFFER: {
             Py_buffer view;
-            if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) != 0) {
+            if (PyObject_GetBuffer(parameter, &view, PyBUF_SIMPLE) != 0) {
                 return SQLITE_ERROR;
             }
             if (view.len > INT_MAX) {
@@ -667,15 +661,14 @@ bind_param(pysqlite_state *state, pysqlite_Connection *conn,
             PyBuffer_Release(&view);
             break;
         }
-        case TYPE_UNKNOWN: {
+        case TYPE_UNKNOWN:
             PyErr_Format(state->ProgrammingError,
                     "Error binding parameter %d: type '%s' is not supported",
-                    pos, Py_TYPE(arg)->tp_name);
+                    pos, Py_TYPE(parameter)->tp_name);
             rc = SQLITE_ERROR;
-            break;
-        }
     }
 
+final:
     return (safe || pysqlite_check_connection(conn)) ? rc : SQLITE_ERROR;
 }
 
@@ -696,83 +689,50 @@ need_adapt(pysqlite_state *state, PyObject *obj)
 }
 
 /*
- * Bind the an SQL parameter with the given value (adapted, if needed).
- *
- * Return an sqlite3 error code.
- */
-static int
-bind_object(pysqlite_state *state, pysqlite_Connection *conn,
-            pysqlite_Statement *self, int pos, PyObject *arg)
-{
-    if (!need_adapt(state, arg)) {
-        return bind_param(state, conn, self, pos, arg);
-    }
-
-    PyObject *protocol = (PyObject *)state->PrepareProtocolType;
-    PyObject *adapted = pysqlite_microprotocols_adapt(state, arg, protocol, arg);
-    if (adapted == NULL) {
-        return SQLITE_ERROR;
-    }
-    else if (!pysqlite_check_connection(conn)) {
-        Py_DECREF(adapted);
-        return SQLITE_ERROR;
-    }
-
-    int rc = bind_param(state, conn, self, pos, adapted);
-    Py_DECREF(adapted);
-    return rc;
-}
-
-/*
  * Bind the SQL parameters for the given values (adapted, if needed).
  *
  * On error, return -1 with an exception set; otherwise return 0.
  */
 static int
 bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
-                pysqlite_Statement *self, PyObject *payload)
+                pysqlite_Statement *self, PyObject *parameters)
 {
-    PyObject *value;
-    const char *name;
-    int sqlite3_rc; /* sqlite3 error code */
+    PyObject* current_param;
+    PyObject* adapted;
+    const char* binding_name;
+    int i;
+    int rc; /* sqlite3 error code */
     int num_params_needed;
+    Py_ssize_t num_params;
 
     Py_BEGIN_ALLOW_THREADS
     num_params_needed = sqlite3_bind_parameter_count(self->st);
     Py_END_ALLOW_THREADS
 
-    if (PyTuple_CheckExact(payload) || PyList_CheckExact(payload)
-        || (!PyDict_Check(payload) && PySequence_Check(payload)))
-    {
-        /* bind the SQL parameters whose values are given as a sequence */
-        Py_ssize_t nargs;
-        if (PyTuple_CheckExact(payload)) {
-            nargs = PyTuple_GET_SIZE(payload);
-        }
-        else if (PyList_CheckExact(payload)) {
-            nargs = PyList_GET_SIZE(payload);
-        }
-        else {
-            nargs = PySequence_Size(payload);
-            if (nargs == -1 && PyErr_Occurred()) {
+    if (PyTuple_CheckExact(parameters) || PyList_CheckExact(parameters) || (!PyDict_Check(parameters) && PySequence_Check(parameters))) {
+        /* parameters passed as sequence */
+        if (PyTuple_CheckExact(parameters)) {
+            num_params = PyTuple_GET_SIZE(parameters);
+        } else if (PyList_CheckExact(parameters)) {
+            num_params = PyList_GET_SIZE(parameters);
+        } else {
+            num_params = PySequence_Size(parameters);
+            if (num_params == -1 && PyErr_Occurred()) {
                 return -1;
             }
             else if (!pysqlite_check_connection(conn)) {
                 return -1;
             }
         }
-        if (nargs != num_params_needed) {
+        if (num_params != num_params_needed) {
             PyErr_Format(state->ProgrammingError,
                          "Incorrect number of bindings supplied. The current "
                          "statement uses %d, and there are %zd supplied.",
-                         num_params_needed, nargs);
+                         num_params_needed, num_params);
             return -1;
         }
-
-        for (int i = 0; i < num_params_needed; i++) {
-            // Py_BEGIN_ALLOW_THREADS
-            name = sqlite3_bind_parameter_name(self->st, i+1);
-            // Py_END_ALLOW_THREADS
+        for (i = 0; i < num_params; i++) {
+            const char *name = sqlite3_bind_parameter_name(self->st, i+1);
             if (name != NULL && name[0] != '?') {
                 PyErr_Format(state->ProgrammingError,
                         "Binding %d ('%s') is a named parameter, but you "
@@ -782,158 +742,128 @@ bind_parameters(pysqlite_state *state, pysqlite_Connection *conn,
                 return -1;
             }
 
-            if (PyTuple_CheckExact(payload)) {
-                value = Py_NewRef(PyTuple_GET_ITEM(payload, i));
-            }
-            else if (PyList_CheckExact(payload)) {
-                value = Py_XNewRef(PyList_GetItem(payload, i));
-            }
-            else {
-                value = PySequence_GetItem(payload, i);
-                if (value == NULL) {
+            if (PyTuple_CheckExact(parameters)) {
+                PyObject *item = PyTuple_GET_ITEM(parameters, i);
+                current_param = Py_NewRef(item);
+            } else if (PyList_CheckExact(parameters)) {
+                PyObject *item = PyList_GetItem(parameters, i);
+                current_param = Py_XNewRef(item);
+            } else {
+                current_param = PySequence_GetItem(parameters, i);
+                if (current_param == NULL) {
                     return -1;
                 }
                 else if (!pysqlite_check_connection(conn)) {
-                    Py_DECREF(value);
+                    Py_DECREF(current_param);
                     return -1;
                 }
             }
-            if (value == NULL) {
+            if (!current_param) {
                 assert(PyErr_Occurred());
                 assert(pysqlite_check_connection(conn));
                 return -1;
             }
 
-            sqlite3_rc = bind_object(state, conn, self, i + 1, value);
-            Py_DECREF(value);
-            if (sqlite3_rc != SQLITE_OK) {
-                goto error;
+            if (!need_adapt(state, current_param)) {
+                adapted = current_param;
+            } else {
+                PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+                adapted = pysqlite_microprotocols_adapt(state, current_param,
+                                                        protocol,
+                                                        current_param);
+                Py_DECREF(current_param);
+                if (!adapted) {
+                    return -1;
+                }
+                else if (!pysqlite_check_connection(conn)) {
+                    Py_DECREF(adapted);
+                    return -1;
+                }
+            }
+
+            rc = bind_param(state, conn, self, i + 1, adapted);
+            Py_DECREF(adapted);
+            if (!pysqlite_check_connection(conn)) {
+                return -1;
+            }
+
+            if (rc != SQLITE_OK) {
+                PyObject *exc = PyErr_GetRaisedException();
+                sqlite3 *db = sqlite3_db_handle(self->st);
+                set_error_from_db(state, db);
+                _PyErr_ChainExceptions1(exc);
+                return -1;
             }
         }
-    }
-    else if (PyDict_Check(payload)) {
-        /* bind the SQL parameters whose values are given by a dictionary */
-        for (int i = 1; i <= num_params_needed; i++) {
+    } else if (PyDict_Check(parameters)) {
+        /* parameters passed as dictionary */
+        for (i = 1; i <= num_params_needed; i++) {
             Py_BEGIN_ALLOW_THREADS
-            name = sqlite3_bind_parameter_name(self->st, i);
+            binding_name = sqlite3_bind_parameter_name(self->st, i);
             Py_END_ALLOW_THREADS
-            if (!name) {
+            if (!binding_name) {
                 PyErr_Format(state->ProgrammingError,
                              "Binding %d has no name, but you supplied a "
                              "dictionary (which has only names).", i);
                 return -1;
             }
 
-            name++; /* skip first char (the colon) */
-            int found = PyMapping_GetOptionalItemString(payload, name, &value);
+            binding_name++; /* skip first char (the colon) */
+            PyObject *current_param = NULL;
+            int found = PyMapping_GetOptionalItemString(parameters,
+                                                        binding_name,
+                                                        &current_param);
             if (found == -1) {
                 return -1;
             }
             else if (!pysqlite_check_connection(conn)) {
-                Py_XDECREF(value);
+                Py_XDECREF(current_param);
                 return -1;
             }
             else if (found == 0) {
                 PyErr_Format(state->ProgrammingError,
                              "You did not supply a value for binding "
-                             "parameter :%s.", name);
+                             "parameter :%s.", binding_name);
                 return -1;
             }
 
-            sqlite3_rc = bind_object(state, conn, self, i, value);
-            Py_DECREF(value);
-            if (sqlite3_rc != SQLITE_OK) {
-                goto error;
+            if (!need_adapt(state, current_param)) {
+                adapted = current_param;
+            } else {
+                PyObject *protocol = (PyObject *)state->PrepareProtocolType;
+                adapted = pysqlite_microprotocols_adapt(state, current_param,
+                                                        protocol,
+                                                        current_param);
+                Py_DECREF(current_param);
+                if (!adapted) {
+                    return -1;
+                }
+                else if (!pysqlite_check_connection(conn)) {
+                    Py_DECREF(adapted);
+                    return -1;
+                }
+            }
+
+            rc = bind_param(state, conn, self, i, adapted);
+            Py_DECREF(adapted);
+            if (!pysqlite_check_connection(conn)) {
+                return -1;
+            }
+
+            if (rc != SQLITE_OK) {
+                PyObject *exc = PyErr_GetRaisedException();
+                sqlite3 *db = sqlite3_db_handle(self->st);
+                set_error_from_db(state, db);
+                _PyErr_ChainExceptions1(exc);
+                return -1;
             }
         }
-    }
-    else {
+    } else {
         PyErr_SetString(state->ProgrammingError,
                         "parameters are of unsupported type");
         return -1;
     }
 
-    return 0;
-
-error:
-    assert(sqlite3_rc != SQLITE_OK);
-    PyObject *exc = PyErr_GetRaisedException();
-    sqlite3 *db = sqlite3_db_handle(self->st);
-    set_error_from_db(state, db);
-    _PyErr_ChainExceptions1(exc);
-    return -1;
-}
-
-/*
- * Set the cursor's description by using the current statement.
- *
- * On error, return -1 with an exception set; otherwise return 0.
- */
-static int
-cursor_query_set_description(pysqlite_Cursor *self)
-{
-    int numcols;
-    Py_BEGIN_ALLOW_THREADS
-    numcols = sqlite3_column_count(self->statement->st);
-    Py_END_ALLOW_THREADS
-
-    if (self->description == Py_None && numcols > 0) {
-        Py_SETREF(self->description, PyTuple_New(numcols));
-        if (!self->description) {
-            return -1;
-        }
-        for (int i = 0; i < numcols; i++) {
-            const char *colname = sqlite3_column_name(self->statement->st, i);
-            if (colname == NULL) {
-                PyErr_NoMemory();
-                return -1;
-            }
-            PyObject *column_name = _pysqlite_build_column_name(self, colname);
-            if (column_name == NULL) {
-                return -1;
-            }
-            PyObject *descriptor = PyTuple_Pack(7, column_name,
-                                                Py_None, Py_None, Py_None,
-                                                Py_None, Py_None, Py_None);
-            Py_DECREF(column_name);
-            if (descriptor == NULL) {
-                return -1;
-            }
-            PyTuple_SET_ITEM(self->description, i, descriptor);
-        }
-    }
-    return 0;
-}
-
-/*
- * Suite to execute at the end of cursor.execute() or cursor.executemany().
- *
- * This function is only provided for convenience to avoid large C/Cs.
- */
-static int
-cursor_query_execute_finalize(pysqlite_Cursor *self)
-{
-    self->locked = 0;
-
-    if (PyErr_Occurred()) {
-        if (self->statement) {
-            sqlite3 *db = sqlite3_db_handle(self->statement->st);
-            int sqlite3_state = sqlite3_errcode(db);
-            // stmt_reset() may return a previously set exception,
-            // either triggered because of Python or sqlite3.
-            int rc = stmt_reset(self->statement);
-            Py_CLEAR(self->statement);
-            if (sqlite3_state == SQLITE_OK && rc != SQLITE_OK) {
-                cursor_cannot_reset_stmt_error(self, 1);
-            }
-        }
-        self->rowcount = -1L;
-        return -1;
-    }
-
-    if (self->statement && !sqlite3_stmt_busy(self->statement->st)) {
-        Py_CLEAR(self->statement);
-    }
     return 0;
 }
 
@@ -943,9 +873,14 @@ cursor_query_execute_finalize(pysqlite_Cursor *self)
  * On error, return -1 with an exception set; otherwise return 0.
  */
 int
-_pysqlite_query_execute(pysqlite_Cursor *self, PyObject *operation, PyObject *payload)
-{
-    int rc /* for internal checks */, sqlite3_rc;
+_pysqlite_query_execute(pysqlite_Cursor *self, int multiple, PyObject *operation, PyObject *second_argument) {
+    PyObject *parameters_list = NULL;
+    PyObject *parameters_iter = NULL;
+    PyObject *parameters = NULL;
+    int i;
+    int rc, bind_rc;
+    int numcols;
+    PyObject* column_name;
 
     if (!check_cursor(self)) {
         goto error;
@@ -953,139 +888,42 @@ _pysqlite_query_execute(pysqlite_Cursor *self, PyObject *operation, PyObject *pa
 
     self->locked = 1;
 
-    /* reset description */
-    Py_INCREF(Py_None);
-    Py_SETREF(self->description, Py_None);
-
-    if (self->statement) {
-        // Reset pending statements on this cursor.
-        if (stmt_reset(self->statement) != SQLITE_OK) {
-            goto reset_failure;
-        }
-    }
-
-    PyObject *stmt = get_statement_from_cache(self, operation);
-    Py_XSETREF(self->statement, (pysqlite_Statement *)stmt);
-    if (!self->statement) {
-        goto error;
-    }
-
-    pysqlite_state *state = self->connection->state;
-    if (sqlite3_stmt_busy(self->statement->st)) {
-        Py_SETREF(self->statement,
-                  pysqlite_statement_create(self->connection, operation));
-        if (self->statement == NULL) {
-            goto error;
-        }
-    }
-
-    if (stmt_reset(self->statement) != SQLITE_OK) {
-        goto reset_failure;
-    }
-    self->rowcount = self->statement->is_dml ? 0L : -1L;
-
-    /* We start a transaction implicitly before a DML statement.
-       SELECT is the only exception. See #9924. */
-    if (self->connection->autocommit == AUTOCOMMIT_LEGACY
-        && self->connection->isolation_level
-        && self->statement->is_dml
-        && sqlite3_get_autocommit(self->connection->db)) {
-        if (begin_transaction(self->connection) < 0) {
-            goto error;
-        }
-    }
-
-    assert(!sqlite3_stmt_busy(self->statement->st));
-
-    PyObject *args = (payload == NULL) ? PyTuple_New(0) : Py_NewRef(payload);
-    rc = bind_parameters(state, self->connection, self->statement, args);
-    Py_DECREF(args);
-    if (rc < 0) {
-        goto error;
-    }
-
-    sqlite3_rc = stmt_step(self->statement->st);
-    if (sqlite3_rc != SQLITE_DONE && sqlite3_rc != SQLITE_ROW) {
-        if (PyErr_Occurred()) {
-            /* there was an error that occurred in a user-defined callback */
-            if (state->enable_callback_tracebacks) {
-                PyErr_Print();
+    if (multiple) {
+        if (PyIter_Check(second_argument)) {
+            /* iterator */
+            parameters_iter = Py_NewRef(second_argument);
+        } else {
+            /* sequence */
+            parameters_iter = PyObject_GetIter(second_argument);
+            if (!parameters_iter) {
+                goto error;
             }
-            else {
-                PyErr_Clear();
+            else if (!pysqlite_check_connection(self->connection)) {
+                goto error;
             }
         }
-        set_error_from_db(state, self->connection->db);
-        goto error;
-    }
-
-    if (pysqlite_build_row_cast_map(self) != 0) {
-        _PyErr_FormatFromCause(state->OperationalError,
-                               "Error while building row_cast_map");
-        goto error;
-    }
-
-    if (cursor_query_set_description(self) < 0) {
-        goto error;
-    }
-    if (sqlite3_rc == SQLITE_DONE) {
-        if (self->statement->is_dml) {
-            self->rowcount += (long)sqlite3_changes(self->connection->db);
-        }
-        if (stmt_reset(self->statement) != SQLITE_OK) {
-            goto reset_failure;
-        }
-    }
-
-    assert(!PyErr_Occurred());
-
-    sqlite_int64 lastrowid;
-    Py_BEGIN_ALLOW_THREADS
-    lastrowid = sqlite3_last_insert_rowid(self->connection->db);
-    Py_END_ALLOW_THREADS
-
-    Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
-
-error:
-    return cursor_query_execute_finalize(self);
-
-reset_failure:
-    /* suite to execute when stmt_reset() failed and no exception is set */
-    assert(!PyErr_Occurred());
-    self->locked = 0;
-    self->rowcount = -1L;
-    Py_CLEAR(self->statement);
-    cursor_cannot_reset_stmt_error(self, 0);
-    return -1;
-}
-
-/*
- * Same as _pysqlite_query_execute() but where 'args' is an iterable
- * of sequences or mappings for the SQL parameter bindings.
- */
-int
-_pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject *payloads)
-{
-    PyObject *payloads_iterator = NULL, *payload = NULL;
-    int rc /* for internal checks */, sqlite3_rc;
-
-    if (!check_cursor(self)) {
-        goto error;
-    }
-
-    self->locked = 1;
-
-    if (PyIter_Check(payloads)) {
-        /* iterator */
-        payloads_iterator = Py_NewRef(payloads);
-    }
-    else {
-        /* sequence */
-        payloads_iterator = PyObject_GetIter(payloads);
-        if (payloads_iterator == NULL) {
+    } else {
+        parameters_list = PyList_New(0);
+        if (!parameters_list) {
             goto error;
         }
-        else if (!pysqlite_check_connection(self->connection)) {
+
+        if (second_argument == NULL) {
+            second_argument = PyTuple_New(0);
+            if (!second_argument) {
+                goto error;
+            }
+        } else {
+            Py_INCREF(second_argument);
+        }
+        if (PyList_Append(parameters_list, second_argument) != 0) {
+            Py_DECREF(second_argument);
+            goto error;
+        }
+        Py_DECREF(second_argument);
+
+        parameters_iter = PyObject_GetIter(parameters_list);
+        if (!parameters_iter) {
             goto error;
         }
     }
@@ -1108,7 +946,7 @@ _pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject
     }
 
     pysqlite_state *state = self->connection->state;
-    if (sqlite3_stmt_readonly(self->statement->st)) {
+    if (multiple && sqlite3_stmt_readonly(self->statement->st)) {
         PyErr_SetString(state->ProgrammingError,
                         "executemany() can only execute DML statements.");
         goto error;
@@ -1140,9 +978,8 @@ _pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject
     }
 
     assert(!sqlite3_stmt_busy(self->statement->st));
-
-    while (PyIter_NextItem(payloads_iterator, &payload)) {
-        if (payload == NULL) {
+    while (PyIter_NextItem(parameters_iter, &parameters)) {
+        if (parameters == NULL) {
             goto error;
         }
         // PyIter_NextItem() may have a side-effect on the connection's state.
@@ -1151,14 +988,14 @@ _pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject
             goto error;
         }
 
-        rc = bind_parameters(state, self->connection, self->statement, payload);
-        Py_CLEAR(payload);
-        if (rc < 0) {
+        bind_rc = bind_parameters(state, self->connection, self->statement, parameters);
+        Py_CLEAR(parameters);
+        if (bind_rc < 0) {
             goto error;
         }
 
-        sqlite3_rc = stmt_step(self->statement->st);
-        if (sqlite3_rc != SQLITE_DONE && sqlite3_rc != SQLITE_ROW) {
+        rc = stmt_step(self->statement->st);
+        if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
             if (PyErr_Occurred()) {
                 /* there was an error that occurred in a user-defined callback */
                 if (state->enable_callback_tracebacks) {
@@ -1179,11 +1016,39 @@ _pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject
             goto error;
         }
 
-        assert(sqlite3_rc == SQLITE_ROW || sqlite3_rc == SQLITE_DONE);
-        if (cursor_query_set_description(self) < 0) {
-            goto error;
+        assert(rc == SQLITE_ROW || rc == SQLITE_DONE);
+        Py_BEGIN_ALLOW_THREADS
+        numcols = sqlite3_column_count(self->statement->st);
+        Py_END_ALLOW_THREADS
+
+        if (self->description == Py_None && numcols > 0) {
+            Py_SETREF(self->description, PyTuple_New(numcols));
+            if (!self->description) {
+                goto error;
+            }
+            for (i = 0; i < numcols; i++) {
+                const char *colname;
+                colname = sqlite3_column_name(self->statement->st, i);
+                if (colname == NULL) {
+                    PyErr_NoMemory();
+                    goto error;
+                }
+                column_name = _pysqlite_build_column_name(self, colname);
+                if (column_name == NULL) {
+                    goto error;
+                }
+                PyObject *descriptor = PyTuple_Pack(7, column_name,
+                                                    Py_None, Py_None, Py_None,
+                                                    Py_None, Py_None, Py_None);
+                Py_DECREF(column_name);
+                if (descriptor == NULL) {
+                    goto error;
+                }
+                PyTuple_SET_ITEM(self->description, i, descriptor);
+            }
         }
-        if (sqlite3_rc == SQLITE_DONE) {
+
+        if (rc == SQLITE_DONE) {
             if (self->statement->is_dml) {
                 self->rowcount += (long)sqlite3_changes(self->connection->db);
             }
@@ -1193,17 +1058,52 @@ _pysqlite_query_executemany(pysqlite_Cursor *self, PyObject *operation, PyObject
         }
     }
 
+    if (!multiple) {
+        sqlite_int64 lastrowid;
+
+        Py_BEGIN_ALLOW_THREADS
+        lastrowid = sqlite3_last_insert_rowid(self->connection->db);
+        Py_END_ALLOW_THREADS
+
+        Py_SETREF(self->lastrowid, PyLong_FromLongLong(lastrowid));
+        // Fall through on error.
+    }
+
 error:
-    Py_XDECREF(payload);
-    Py_XDECREF(payloads_iterator);
-    return cursor_query_execute_finalize(self);
+    Py_XDECREF(parameters);
+    Py_XDECREF(parameters_iter);
+    Py_XDECREF(parameters_list);
+
+    self->locked = 0;
+
+    if (PyErr_Occurred()) {
+        if (self->statement) {
+            sqlite3 *db = sqlite3_db_handle(self->statement->st);
+            int sqlite3_state = sqlite3_errcode(db);
+            // stmt_reset() may return a previously set exception,
+            // either triggered because of Python or sqlite3.
+            rc = stmt_reset(self->statement);
+            Py_CLEAR(self->statement);
+            if (sqlite3_state == SQLITE_OK && rc != SQLITE_OK) {
+                cursor_cannot_reset_stmt_error(self, 1);
+            }
+        }
+        self->rowcount = -1L;
+        return -1;
+    }
+
+    if (self->statement && !sqlite3_stmt_busy(self->statement->st)) {
+        Py_CLEAR(self->statement);
+    }
+    return 0;
 
 reset_failure:
     /* suite to execute when stmt_reset() failed and no exception is set */
     assert(!PyErr_Occurred());
 
-    Py_XDECREF(payload);
-    Py_XDECREF(payloads_iterator);
+    Py_XDECREF(parameters);
+    Py_XDECREF(parameters_iter);
+    Py_XDECREF(parameters_list);
 
     self->locked = 0;
     self->rowcount = -1L;
@@ -1227,7 +1127,7 @@ pysqlite_cursor_execute_impl(pysqlite_Cursor *self, PyObject *sql,
                              PyObject *parameters)
 /*[clinic end generated code: output=d81b4655c7c0bbad input=a8e0200a11627f94]*/
 {
-    int rc = _pysqlite_query_execute(self, sql, parameters);
+    int rc = _pysqlite_query_execute(self, 0, sql, parameters);
     return rc < 0 ? NULL : Py_NewRef(self);
 }
 
@@ -1246,7 +1146,7 @@ pysqlite_cursor_executemany_impl(pysqlite_Cursor *self, PyObject *sql,
                                  PyObject *seq_of_parameters)
 /*[clinic end generated code: output=2c65a3c4733fb5d8 input=0d0a52e5eb7ccd35]*/
 {
-    int rc = _pysqlite_query_executemany(self, sql, seq_of_parameters);
+    int rc = _pysqlite_query_execute(self, 1, sql, seq_of_parameters);
     return rc < 0 ? NULL : Py_NewRef(self);
 }
 
