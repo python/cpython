@@ -284,17 +284,17 @@ _ensure-package: venv
 		$(VENVDIR)/bin/python3 -m pip install $(PACKAGE); \
 	fi
 
-.PHONY: _ensure-prek
-_ensure-prek:
-	$(MAKE) _ensure-package PACKAGE=prek
+.PHONY: _ensure-pre-commit
+_ensure-pre-commit:
+	$(MAKE) _ensure-package PACKAGE=pre-commit
 
 .PHONY: _ensure-sphinx-autobuild
 _ensure-sphinx-autobuild:
 	$(MAKE) _ensure-package PACKAGE=sphinx-autobuild
 
 .PHONY: check
-check: _ensure-prek
-	$(VENVDIR)/bin/python3 -m prek run --all-files
+check: _ensure-pre-commit
+	$(VENVDIR)/bin/python3 -m pre-commit run --all-files
 
 .PHONY: serve
 serve:
