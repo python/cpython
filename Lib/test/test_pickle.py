@@ -391,29 +391,29 @@ if has_c_implementation:
         def test_release_in_callback_keepalive(self):
                 base = bytearray(b'A' * 16)
                 pb = pickle.PickleBuffer(base)
-                
+
                 class Evil:
                     def __bool__(self):
                         pb.release()
                         return True
-                        
+
                 def callback(p):
                     return Evil()
-                    
+
                 for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
                     result = self.dumps(pb, proto, buffer_callback=callback)
                     self.assertIn(b'A' * 16, result)
 
         def test_release_in_callback_complex_keepalive(self):
                 base = bytearray(b'A' * 32)
-                view = memoryview(base)[10:26] 
+                view = memoryview(base)[10:26]
                 pb = pickle.PickleBuffer(view)
-                
+
                 class Evil:
                     def __bool__(self):
                         pb.release()
                         return True
-                        
+
                 def callback(p):
                     return Evil()
 
