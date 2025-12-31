@@ -4261,6 +4261,19 @@ class AbstractPickleTests:
         # 2-D, non-contiguous
         check_array(arr[::2])
 
+    def test_concurrent_mutation_in_buffer_with_bytearray(self):
+        def factory():
+            s = b"a" * 16
+            return bytearray(s), s
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def test_concurrent_mutation_in_buffer_with_memoryview(self):
+        def factory():
+            obj = memoryview(b"a" * 32)[10:26]
+            sub = b"a" * len(obj)
+            return obj, sub
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
     def do_test_concurrent_mutation_in_buffer_callback(self, factory):
         class R:
             def __bool__(self):
@@ -4276,20 +4289,6 @@ class AbstractPickleTests:
             with self.subTest(proto=proto, obj=obj, sub=sub):
                 res = self.dumps(buf, proto, buffer_callback=buffer_callback)
                 self.assertIn(sub, res)
-
-    def test_concurrent_mutation_in_buffer_with_bytearray(self):
-        def factory():
-            s = b"a" * 16
-            return bytearray(s), s
-        self.do_test_concurrent_mutation_in_buffer_callback(factory)
-
-    def test_concurrent_mutation_in_buffer_with_memoryview(self):
-        def factory():
-            c, n = b"a", 64
-            sub = c * (n // 2)
-            obj = memoryview(bytearray(c * n))[n // 4 : 3 * n // 4]
-            return obj, sub
-        self.do_test_concurrent_mutation_in_buffer_callback(factory)
 
     def test_evil_class_mutating_dict(self):
         # https://github.com/python/cpython/issues/92930
