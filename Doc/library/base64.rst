@@ -61,14 +61,12 @@ POST request.
    This allows an application to e.g. generate URL or filesystem safe Base64
    strings.  The default is ``None``, for which the standard Base64 alphabet is used.
 
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
+
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.  Raises a
    :exc:`TypeError` if *altchars* is not a :term:`bytes-like object`.
-
-   If *wrapcol* is non-zero, the output will be represented in lines of
-   no more than *wrapcol* characters each, separated by a newline
-   (``b'\n'``) character.
-   If *wrapcol* is zero (default), the output will be represented as
-   a single line.
 
    .. versionchanged:: next
       Added the *wrapcol* parameter.
@@ -223,11 +221,9 @@ Refer to the documentation of the individual functions for more information.
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
    feature is not supported by the "standard" Ascii85 encoding.
 
-   If *wrapcol* is non-zero, the output will be represented in lines of
-   no more than *wrapcol* characters each, separated by a newline
-   (``b'\n'``) character.
-   If *wrapcol* is zero (default), the output will be represented as
-   a single line.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
    *pad* controls whether the input is padded to a multiple of 4
    before encoding. Note that the ``btoa`` implementation always pads.

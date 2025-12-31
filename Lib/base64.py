@@ -52,9 +52,8 @@ def b64encode(s, altchars=None, *, wrapcol=0):
     alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
 
-    If wrapcol is non-zero, the output will be represented in lines of
-    no more than wrapcol characters each, separated by a newline (b'\\n')
-    character.
+    If wrapcol is non-zero, insert a newline (b'\\n') character after at most
+    every wrapcol characters.
     """
     encoded = binascii.b2a_base64(s, wrapcol=wrapcol, newline=False)
     if altchars is not None:
@@ -331,9 +330,8 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
     feature is not supported by the "standard" Adobe encoding.
 
-    If wrapcol is non-zero, the output will be represented in lines of
-    no more than wrapcol characters each, separated by a newline (b'\\n')
-    character.
+    If wrapcol is non-zero, insert a newline (b'\\n') character after at most
+    every wrapcol characters.
 
     pad controls whether the input is padded to a multiple of 4 before
     encoding. Note that the btoa implementation always pads.

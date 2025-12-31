@@ -72,11 +72,9 @@ The :mod:`binascii` module defines the following functions:
    Convert binary data to a line(s) of ASCII characters in base64 coding,
    as specified in :rfc:`4648`.
 
-   If *wrapcol* is non-zero, the output will be represented in lines of
-   no more than *wrapcol* characters each, separated by a newline
-   (``b'\n'``) character.
-   If *wrapcol* is zero (default), the output will be represented as
-   a single line.
+   If *wrapcol* is non-zero, insert a newline (``b'\n'``) character
+   after at most every *wrapcol* characters.
+   If *wrapcol* is zero (default), do not add any newlines.
 
    If *newline* is true (default), a newline character will be added
    at the end of the output.
