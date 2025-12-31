@@ -1,0 +1,3 @@
+:class:`memoryview`: Fix a use-after-free crash during comparison when an
+overridden :meth:`struct.Struct.unpack_from` releases and resizes the
+underlying buffer.
