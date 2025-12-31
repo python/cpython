@@ -59,6 +59,16 @@ message objects.
    the Python standard ``\n`` line endings).  For more information see the
    :mod:`~email.policy` documentation.
 
+   .. note::
+
+      The :class:`EmailMessage` class requires a policy that provides a
+      ``content_manager`` attribute (such as :class:`~email.policy.EmailPolicy`)
+      for content management methods like :meth:`set_content` and
+      :meth:`get_content` to work. The legacy :class:`~email.policy.Compat32`
+      policy does not support these methods. To serialize a message with
+      compat32 formatting, construct the message with a modern policy and pass
+      :const:`~email.policy.compat32` to :meth:`as_string` or :meth:`as_bytes`.
+
    .. method:: as_string(unixfrom=False, maxheaderlen=None, policy=None)
 
       Return the entire message flattened as a string.  When optional
@@ -603,6 +613,12 @@ message objects.
       *content_manager* is not specified, use the ``content_manager`` specified
       by the current :mod:`~email.policy`.
 
+      .. note::
+
+         This method requires a policy with a ``content_manager`` attribute.
+         The legacy :const:`~email.policy.compat32` policy does not support
+         this method.
+
 
    .. method:: set_content(*args, content_manager=None, **kw)
 
@@ -611,6 +627,12 @@ message objects.
       along any other arguments or keywords as additional arguments.  If
       *content_manager* is not specified, use the ``content_manager`` specified
       by the current :mod:`~email.policy`.
+
+      .. note::
+
+         This method requires a policy with a ``content_manager`` attribute.
+         The legacy :const:`~email.policy.compat32` policy does not support
+         this method.
 
 
    .. method:: make_related(boundary=None)
