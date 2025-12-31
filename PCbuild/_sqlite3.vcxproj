@@ -99,7 +99,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Modules\_sqlite\connection.h" />
-    <ClInclude Include="..\Modules\_sqlite\context.h" />
     <ClInclude Include="..\Modules\_sqlite\cursor.h" />
     <ClInclude Include="..\Modules\_sqlite\microprotocols.h" />
     <ClInclude Include="..\Modules\_sqlite\module.h" />
@@ -111,7 +110,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_sqlite\connection.c" />
-    <ClCompile Include="..\Modules\_sqlite\context.c" />
     <ClCompile Include="..\Modules\_sqlite\cursor.c" />
     <ClCompile Include="..\Modules\_sqlite\microprotocols.c" />
     <ClCompile Include="..\Modules\_sqlite\module.c" />

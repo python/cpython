@@ -23,15 +23,20 @@
 
 #ifndef PYSQLITE_CONNECTION_H
 #define PYSQLITE_CONNECTION_H
-
 #include "Python.h"
 #include "pythread.h"
 #include "structmember.h"
 
-#include "context.h"
 #include "module.h"
 
 #include "sqlite3.h"
+
+typedef struct _callback_context
+{
+    PyObject *callable;
+    PyObject *module;
+    pysqlite_state *state;
+} callback_context;
 
 enum autocommit_mode {
     AUTOCOMMIT_LEGACY = LEGACY_TRANSACTION_CONTROL,
@@ -83,9 +88,9 @@ typedef struct
     PyObject* text_factory;
 
     // Remember contexts used by the trace, progress, and authoriser callbacks
-    PyObject *trace_ctx;
-    PyObject *progress_ctx;
-    PyObject *authorizer_ctx;
+    callback_context *trace_ctx;
+    callback_context *progress_ctx;
+    callback_context *authorizer_ctx;
 
     /* Exception objects: borrowed refs. */
     PyObject* Warning;
