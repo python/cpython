@@ -1,0 +1,1 @@
+Add fancycompleter and enable it by default when using pyrepl. This gives colored tab completion.
