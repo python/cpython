@@ -1491,6 +1491,13 @@ Output options
    named ``<format>_<PID>.<ext>`` (for example, ``flamegraph_12345.html``).
    :option:`--heatmap` creates a directory named ``heatmap_<PID>``.
 
+.. option:: --browser
+
+   Automatically open HTML output (:option:`--flamegraph` and
+   :option:`--heatmap`) in your default web browser after generation.
+   When profiling with :option:`--subprocesses`, only the main process
+   opens the browser; subprocess outputs are never auto-opened.
+
 
 pstats display options
 ----------------------
