@@ -294,7 +294,7 @@ _ensure-sphinx-autobuild:
 
 .PHONY: check
 check: _ensure-pre-commit
-	$(VENVDIR)/bin/python3 -m pre-commit run --all-files
+	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
 serve:
