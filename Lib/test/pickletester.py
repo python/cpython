@@ -4275,6 +4275,7 @@ class AbstractPickleTests:
         self.do_test_concurrent_mutation_in_buffer_callback(factory)
 
     def do_test_concurrent_mutation_in_buffer_callback(self, factory):
+        # See: https://github.com/python/cpython/issues/143308.
         class R:
             def __bool__(self):
                 buf.release()
