@@ -2646,43 +2646,58 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
                         "pointing to a non-contiguous buffer");
         return -1;
     }
+
+    int rc = 0;
+    Py_buffer keepalive_view; // to ensure that 'view' is kept alive
+    if (PyObject_GetBuffer(view->obj, &keepalive_view, PyBUF_FULL_RO) != 0) {
+        return -1;
+    }
+
     int in_band = 1;
     if (self->buffer_callback != NULL) {
         PyObject *ret = PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
-            return -1;
+            goto error;
         }
         in_band = PyObject_IsTrue(ret);
         Py_DECREF(ret);
         if (in_band == -1) {
-            return -1;
+            goto error;
         }
     }
     if (in_band) {
         /* Write data in-band */
         if (view->readonly) {
-            return _save_bytes_data(st, self, obj, (const char *)view->buf,
+            rc = _save_bytes_data(st, self, obj, (const char *)view->buf,
                                     view->len);
         }
         else {
-            return _save_bytearray_data(st, self, obj, (const char *)view->buf,
+            rc = _save_bytearray_data(st, self, obj, (const char *)view->buf,
                                         view->len);
         }
+        goto exit;
     }
     else {
         /* Write data out-of-band */
         const char next_buffer_op = NEXT_BUFFER;
         if (_Pickler_Write(self, &next_buffer_op, 1) < 0) {
-            return -1;
+            goto error;
         }
         if (view->readonly) {
             const char readonly_buffer_op = READONLY_BUFFER;
             if (_Pickler_Write(self, &readonly_buffer_op, 1) < 0) {
-                return -1;
+                goto error;
             }
         }
     }
-    return 0;
+
+exit:
+    PyBuffer_Release(&keepalive_view);
+    return rc;
+
+error:
+    PyBuffer_Release(&keepalive_view);
+    return -1;
 }
 
 /* A copy of PyUnicode_AsRawUnicodeEscapeString() that also translates

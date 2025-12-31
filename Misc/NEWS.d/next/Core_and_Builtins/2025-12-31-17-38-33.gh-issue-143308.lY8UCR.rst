@@ -1,0 +1,2 @@
+Fixed Use-After-Free in _pickle.c by incrementing PickleBuffer exports
+during pickling.
