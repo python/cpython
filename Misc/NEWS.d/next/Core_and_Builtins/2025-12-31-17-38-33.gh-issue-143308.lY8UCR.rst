@@ -1,2 +1,3 @@
-Fixed Use-After-Free in _pickle.c by incrementing PickleBuffer exports
-during pickling.
+:mod:`pickle`: fix use-after-free crashes when a :class:`~pickle.PickleBuffer`
+is concurrently mutated by a custom buffer callback during pickling.
+Patch by Bénédikt Tran and Aaron Wieczorek.
