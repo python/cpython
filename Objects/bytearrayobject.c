@@ -2223,7 +2223,6 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
             Py_DECREF(bytearray_obj);
             return NULL;
         }
-        buf[len++] = value;
         Py_DECREF(item);
 
         if (len >= buf_size) {
@@ -2233,7 +2232,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                 Py_DECREF(bytearray_obj);
                 return PyErr_NoMemory();
             }
-            addition = len >> 1;
+            addition = len ? len >> 1 : 1;
             if (addition > PyByteArray_SIZE_MAX - len)
                 buf_size = PyByteArray_SIZE_MAX;
             else
@@ -2247,6 +2246,7 @@ bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints)
                have invalidated it. */
             buf = PyByteArray_AS_STRING(bytearray_obj);
         }
+        buf[len++] = value;
     }
     Py_DECREF(it);
 
@@ -2843,7 +2843,15 @@ bytearray_mod_lock_held(PyObject *v, PyObject *w)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(v);
     if (!PyByteArray_Check(v))
         Py_RETURN_NOTIMPLEMENTED;
-    return _PyBytes_FormatEx(PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1);
+
+    PyByteArrayObject *self = _PyByteArray_CAST(v);
+    /* Increase exports to prevent bytearray storage from changing during op. */
+    self->ob_exports++;
+    PyObject *res = _PyBytes_FormatEx(
+        PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1
+    );
+    self->ob_exports--;
+    return res;
 }
 
 static PyObject *

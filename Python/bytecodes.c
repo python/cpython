@@ -968,9 +968,16 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_TUPLE_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_TUPLE + unused/5 + _BINARY_OP_SUBSCR_TUPLE_INT + _POP_TOP_INT + POP_TOP;
+            _GUARD_TOS_INT +
+            _GUARD_NOS_TUPLE +
+            _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS +
+            unused/5 +
+            _BINARY_OP_SUBSCR_TUPLE_INT +
+            _POP_TOP_INT +
+            POP_TOP;
 
-        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
+        // A guard that checks that the tuple subscript is within bounds
+        op(_GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS, (tuple_st, sub_st -- tuple_st, sub_st)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
 
@@ -981,7 +988,17 @@ dummy_func(
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             DEOPT_IF(index >= PyTuple_GET_SIZE(tuple));
+        }
+
+        op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res, ts, ss)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
+
+            assert(PyLong_CheckExact(sub));
+            assert(PyTuple_CheckExact(tuple));
+
             STAT_INC(BINARY_OP, hit);
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);

@@ -3231,9 +3231,16 @@ memory_hash(PyObject *_self)
                 "memoryview: hashing is restricted to formats 'B', 'b' or 'c'");
             return -1;
         }
-        if (view->obj != NULL && PyObject_Hash(view->obj) == -1) {
-            /* Keep the original error message */
-            return -1;
+        if (view->obj != NULL) {
+            // Prevent 'self' from being freed when computing the item's hash.
+            // See https://github.com/python/cpython/issues/142664.
+            self->exports++;
+            Py_hash_t h = PyObject_Hash(view->obj);
+            self->exports--;
+            if (h == -1) {
+                /* Keep the original error message */
+                return -1;
+            }
         }
 
         if (!MV_C_CONTIGUOUS(self->flags)) {
