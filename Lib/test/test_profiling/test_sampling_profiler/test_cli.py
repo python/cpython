@@ -18,7 +18,6 @@ from test.support import is_emscripten, requires_remote_subprocess_debugging
 from profiling.sampling.cli import main
 from profiling.sampling.errors import SamplingScriptNotFoundError, SamplingModuleNotFoundError, SamplingUnknownProcessError
 
-
 class TestSampleProfilerCLI(unittest.TestCase):
     def _setup_sync_mocks(self, mock_socket, mock_popen):
         """Helper to set up socket and process mocks for coordinator tests."""

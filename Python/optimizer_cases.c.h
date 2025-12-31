@@ -799,6 +799,24 @@
             break;
         }
 
+        case _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS: {
+            JitOptRef sub_st;
+            JitOptRef tuple_st;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length != -1 && index < tuple_length) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+            }
+            break;
+        }
+
         case _BINARY_OP_SUBSCR_TUPLE_INT: {
             JitOptRef sub_st;
             JitOptRef tuple_st;
@@ -1875,11 +1893,21 @@
         }
 
         case _IS_OP: {
+            JitOptRef right;
+            JitOptRef left;
             JitOptRef b;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
             b = sym_new_type(ctx, &PyBool_Type);
-            CHECK_STACK_BOUNDS(-1);
+            l = left;
+            r = right;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-2] = b;
-            stack_pointer += -1;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

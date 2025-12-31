@@ -42,7 +42,9 @@ except ImportError:
     LiveStatsCollector = None
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-
+# Minimum number of samples required before showing the TUI
+# If fewer samples are collected, we skip the TUI and just print a message
+MIN_SAMPLES_FOR_TUI = 200
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL, native=False, gc=True, opcodes=False, skip_non_matching_threads=True, collect_stats=False, blocking=False):
@@ -459,6 +461,11 @@ def sample_live(
     """
     import curses
 
+    # Check if process is alive before doing any heavy initialization
+    if not _is_process_running(pid):
+        print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        return collector
+
     # Get sample interval from collector
     sample_interval_usec = collector.sample_interval_usec
 
@@ -486,6 +493,12 @@ def sample_live(
         collector.init_curses(stdscr)
         try:
             profiler.sample(collector, duration_sec, async_aware=async_aware)
+            # If too few samples were collected, exit cleanly without showing TUI
+            if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+                # Clear screen before exiting to avoid visual artifacts
+                stdscr.clear()
+                stdscr.refresh()
+                return
             # Mark as finished and keep the TUI running until user presses 'q'
             collector.mark_finished()
             # Keep processing input until user quits
@@ -499,5 +512,12 @@ def sample_live(
         curses.wrapper(curses_wrapper_func)
     except KeyboardInterrupt:
         pass
+
+    # If too few samples were collected, print a message
+    if collector.successful_samples < MIN_SAMPLES_FOR_TUI:
+        if collector.successful_samples == 0:
+            print(f"No samples collected - process {pid} exited before profiling could begin.", file=sys.stderr)
+        else:
+            print(f"Only {collector.successful_samples} sample(s) collected (minimum {MIN_SAMPLES_FOR_TUI} required for TUI) - process {pid} exited too quickly.", file=sys.stderr)
 
     return collector
