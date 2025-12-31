@@ -2658,6 +2658,7 @@ class AbstractPickleTests:
             self.assert_is_copy(x, y)
 
         # XXX test __reduce__ protocol?
+
     def test_roundtrip_equality(self):
         expected = self._testdata
         for proto in protocols:
