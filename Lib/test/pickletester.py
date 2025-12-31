@@ -4280,8 +4280,7 @@ class AbstractPickleTests:
                 buf.release()
                 return True
 
-        max_proto = pickle.HIGHEST_PROTOCOL
-        for proto in range(5, max_proto + 1):
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
             obj, sub = factory()
             buf = pickle.PickleBuffer(obj)
             buffer_callback = lambda _: R()
