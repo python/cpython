@@ -1129,7 +1129,7 @@ class NTEventLogHandler(logging.Handler):
     """
     A handler class which sends events to the NT Event Log. Adds a
     registry entry for the specified application name. If no dllname is
-    provided, win32service.pyd (which contains some basic message
+    provided and pywin32 installed, win32service.pyd (which contains some basic message
     placeholders) is used. Note that use of these placeholders will make
     your event logs big, as the entire message source is held in the log.
     If you want slimmer logs, you have to pass in the name of your own DLL
@@ -1137,38 +1137,46 @@ class NTEventLogHandler(logging.Handler):
     """
     def __init__(self, appname, dllname=None, logtype="Application"):
         logging.Handler.__init__(self)
-        try:
-            import win32evtlogutil, win32evtlog
-            self.appname = appname
-            self._welu = win32evtlogutil
-            if not dllname:
-                dllname = os.path.split(self._welu.__file__)
+        import _winapi
+        self._winapi = _winapi
+        self.appname = appname
+        if not dllname:
+            # backward compatibility
+            try:
+                import win32evtlogutil
+                dllname = os.path.split(win32evtlogutil.__file__)
                 dllname = os.path.split(dllname[0])
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
-            self.dllname = dllname
-            self.logtype = logtype
-            # Administrative privileges are required to add a source to the registry.
-            # This may not be available for a user that just wants to add to an
-            # existing source - handle this specific case.
-            try:
-                self._welu.AddSourceToRegistry(appname, dllname, logtype)
-            except Exception as e:
-                # This will probably be a pywintypes.error. Only raise if it's not
-                # an "access denied" error, else let it pass
-                if getattr(e, 'winerror', None) != 5:  # not access denied
-                    raise
-            self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
-            self.typemap = {
-                logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.INFO    : win32evtlog.EVENTLOG_INFORMATION_TYPE,
-                logging.WARNING : win32evtlog.EVENTLOG_WARNING_TYPE,
-                logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
-                logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
-         }
-        except ImportError:
-            print("The Python Win32 extensions for NT (service, event "\
-                        "logging) appear not to be available.")
-            self._welu = None
+            except ImportError:
+                pass
+        self.dllname = dllname
+        self.logtype = logtype
+        # Administrative privileges are required to add a source to the registry.
+        # This may not be available for a user that just wants to add to an
+        # existing source - handle this specific case.
+        try:
+            self._add_source_to_registry(appname, dllname, logtype)
+        except PermissionError:
+            pass
+        self.deftype = _winapi.EVENTLOG_ERROR_TYPE
+        self.typemap = {
+            logging.DEBUG: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.INFO: _winapi.EVENTLOG_INFORMATION_TYPE,
+            logging.WARNING: _winapi.EVENTLOG_WARNING_TYPE,
+            logging.ERROR: _winapi.EVENTLOG_ERROR_TYPE,
+            logging.CRITICAL: _winapi.EVENTLOG_ERROR_TYPE,
+        }
+
+    @staticmethod
+    def _add_source_to_registry(appname, dllname, logtype):
+        import winreg
+
+        key_path = f"SYSTEM\\CurrentControlSet\\Services\\EventLog\\{logtype}\\{appname}"
+
+        with winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+            if dllname:
+                winreg.SetValueEx(key, "EventMessageFile", 0, winreg.REG_EXPAND_SZ, dllname)
+            winreg.SetValueEx(key, "TypesSupported", 0, winreg.REG_DWORD, 7)  # All types are supported
 
     def getMessageID(self, record):
         """
@@ -1209,15 +1217,20 @@ class NTEventLogHandler(logging.Handler):
         Determine the message ID, event category and event type. Then
         log the message in the NT event log.
         """
-        if self._welu:
+        try:
+            id = self.getMessageID(record)
+            cat = self.getEventCategory(record)
+            type = self.getEventType(record)
+            msg = self.format(record)
+
+            # Get a handle to the event log
+            handle = self._winapi.RegisterEventSource(None, self.appname)
             try:
-                id = self.getMessageID(record)
-                cat = self.getEventCategory(record)
-                type = self.getEventType(record)
-                msg = self.format(record)
-                self._welu.ReportEvent(self.appname, id, cat, type, [msg])
-            except Exception:
-                self.handleError(record)
+                self._winapi.ReportEvent(handle, type, cat, id, msg)
+            finally:
+                self._winapi.DeregisterEventSource(handle)
+        except Exception:
+            self.handleError(record)
 
     def close(self):
         """
