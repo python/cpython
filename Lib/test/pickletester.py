@@ -2658,7 +2658,6 @@ class AbstractPickleTests:
             self.assert_is_copy(x, y)
 
         # XXX test __reduce__ protocol?
-
     def test_roundtrip_equality(self):
         expected = self._testdata
         for proto in protocols:
@@ -4260,6 +4259,36 @@ class AbstractPickleTests:
         check_array(arr.T)
         # 2-D, non-contiguous
         check_array(arr[::2])
+
+    def do_test_concurrent_mutation_in_buffer_callback(self, factory):
+        class R:
+            def __bool__(self):
+                buf.release()
+                return True
+
+        max_proto = getattr(self, "proto", pickle.HIGHEST_PROTOCOL)
+        for proto in range(5, max_proto + 1):
+            obj, sub = factory()
+            buf = pickle.PickleBuffer(obj)
+            buffer_callback = lambda _: R()
+
+            with self.subTest(proto=proto, obj=obj, sub=sub):
+                res = self.dumps(buf, proto, buffer_callback=buffer_callback)
+                self.assertIn(sub, res)
+
+    def test_concurrent_mutation_in_buffer_with_bytearray(self):
+        def factory():
+            s = b"a" * 16
+            return bytearray(s), s
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
+
+    def test_concurrent_mutation_in_buffer_with_memoryview(self):
+        def factory():
+            c, n = b"a", 64
+            sub = c * (n // 2)
+            obj = memoryview(bytearray(c * n))[n // 4 : 3 * n // 4]
+            return obj, sub
+        self.do_test_concurrent_mutation_in_buffer_callback(factory)
 
     def test_evil_class_mutating_dict(self):
         # https://github.com/python/cpython/issues/92930
