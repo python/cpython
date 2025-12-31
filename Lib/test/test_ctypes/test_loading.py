@@ -106,6 +106,20 @@ class LoaderTest(unittest.TestCase):
         lib = ctypes.WinDLL(name=None, handle=handle)
         self.assertIs(handle, lib._handle)
 
+    @unittest.skipIf(os.name == "nt", 'POSIX-specific test')
+    def test_load_without_name_and_with_handle_posix(self):
+        # Test that CDLL honors the handle parameter on POSIX systems
+        # This is a regression test for gh-143304
+        if libc_name is None:
+            self.skipTest('could not find libc')
+        # First load a library normally to get a handle
+        lib1 = CDLL(libc_name)
+        handle = lib1._handle
+        # Now create a new CDLL instance with the same handle
+        lib2 = CDLL(name=None, handle=handle)
+        # The handle should be used directly, not ignored
+        self.assertIs(handle, lib2._handle)
+
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
         # On winXP 64-bit, advapi32 loads at an address that does
