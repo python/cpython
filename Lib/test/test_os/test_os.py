@@ -2624,6 +2624,34 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    def test_execve_env_concurrent_mutation_with_fspath(self):
+        # Prevent crash when mutating environment during parsing.
+        # Regression test for https://github.com/python/cpython/issues/143309.
+
+        code = """
+        import os, sys
+
+        class MyPath:
+            def __fspath__(self):
+                mutated.clear()
+                return b"pwn"
+
+        mutated = KEYS = VALUES = [MyPath()]
+
+        class MyEnv:
+            def __len__(self): return 1
+            def __getitem__(self): return 1
+            def keys(self): return KEYS
+            def values(self): return VALUES
+
+        args = [sys.executable, '-c', 'print("hello from execve")']
+        os.execve(args[0], args, MyEnv())
+        """
+
+        rc, out, _ = assert_python_ok('-c', code)
+        self.assertEqual(rc, 0)
+        self.assertIn(b"hello from execve", out)
+
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
         # bpo-32890: Check GetLastError() misuse

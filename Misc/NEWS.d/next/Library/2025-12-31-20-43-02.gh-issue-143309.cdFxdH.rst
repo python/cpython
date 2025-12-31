@@ -1,0 +1,2 @@
+Fix a crash in :func:`os.execve` when given a custom environment mapping
+which is then mutated during parsing. Patch by Bénédikt Tran.

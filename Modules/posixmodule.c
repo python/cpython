@@ -7291,8 +7291,8 @@ static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
     Py_ssize_t i, pos, envc;
-    PyObject *keys=NULL, *vals=NULL;
-    PyObject *key2, *val2, *keyval;
+    PyObject *keys = NULL, *vals = NULL;
+    PyObject *key, *val, *key2, *val2, *keyval;
     EXECV_CHAR **envlist;
 
     i = PyMapping_Size(env);
@@ -7317,19 +7317,28 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
 
     for (pos = 0; pos < i; pos++) {
-        PyObject *key = PyList_GetItem(keys, pos);  // Borrowed ref.
+        // The 'key' and 'val' must be strong references because
+        // of possible side-effects by PyUnicode_FSConverter().
+        key = PyList_GetItemRef(keys, pos);
         if (key == NULL) {
             goto error;
         }
-        PyObject *val = PyList_GetItem(vals, pos);  // Borrowed ref.
+        val = PyList_GetItemRef(vals, pos);
         if (val == NULL) {
+            Py_DECREF(key);
             goto error;
         }
 
+
 #if defined(HAVE_WEXECV) || defined(HAVE_WSPAWNV)
-        if (!PyUnicode_FSDecoder(key, &key2))
+        if (!PyUnicode_FSDecoder(key, &key2)) {
+            Py_DECREF(key);
+            Py_DECREF(val);
             goto error;
+        }
         if (!PyUnicode_FSDecoder(val, &val2)) {
+            Py_DECREF(key);
+            Py_DECREF(val);
             Py_DECREF(key2);
             goto error;
         }
@@ -7339,15 +7348,22 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             PyUnicode_FindChar(key2, '=', 1, PyUnicode_GET_LENGTH(key2), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key);
+            Py_DECREF(val);
             Py_DECREF(key2);
             Py_DECREF(val2);
             goto error;
         }
         keyval = PyUnicode_FromFormat("%U=%U", key2, val2);
 #else
-        if (!PyUnicode_FSConverter(key, &key2))
+        if (!PyUnicode_FSConverter(key, &key2)) {
+            Py_DECREF(key);
+            Py_DECREF(val);
             goto error;
+        }
         if (!PyUnicode_FSConverter(val, &val2)) {
+            Py_DECREF(key);
+            Py_DECREF(val);
             Py_DECREF(key2);
             goto error;
         }
@@ -7355,6 +7371,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
             strchr(PyBytes_AS_STRING(key2) + 1, '=') != NULL)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_DECREF(key);
+            Py_DECREF(val);
             Py_DECREF(key2);
             Py_DECREF(val2);
             goto error;
@@ -7362,6 +7380,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
         keyval = PyBytes_FromFormat("%s=%s", PyBytes_AS_STRING(key2),
                                              PyBytes_AS_STRING(val2));
 #endif
+        Py_DECREF(key);
+        Py_DECREF(val);
         Py_DECREF(key2);
         Py_DECREF(val2);
         if (!keyval)
