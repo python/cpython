@@ -2238,7 +2238,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2278,7 +2278,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2322,7 +2322,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = foo;
         }
         """
@@ -2368,7 +2368,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2415,7 +2415,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_known(ctx, foo);
         }
         """
@@ -2449,6 +2449,118 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_replace_opcode_binop_one_output(self):
+        input = """
+        pure op(OP, (left, right -- res)) {
+            res = foo(left, right);
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res)) {
+            res = sym_new_non_null(ctx, foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(-1);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(-1);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_binop_one_output_insert(self):
+        input = """
+        pure op(OP, (left, right -- res, l, r)) {
+            res = foo(left, right);
+            l = left;
+            r = right;
+        }
+        """
+        input2 = """
+        op(OP, (left, right -- res, l, r)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, right, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef right;
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            JitOptRef r;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            r = right;
+            if (
+                sym_is_safe_const(ctx, left) &&
+                sym_is_safe_const(ctx, right)
+            ) {
+                JitOptRef left_sym = left;
+                JitOptRef right_sym = right;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef right = sym_get_const_as_stackref(ctx, right_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                _PyStackRef r_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left, right);
+                l_stackref = left;
+                r_stackref = right;
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-2] = res;
+                stack_pointer[-1] = l;
+                stack_pointer[0] = r;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-2] = res;
+            stack_pointer[-1] = l;
+            stack_pointer[0] = r;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
     def test_replace_opocode_uop_reject_array_effects(self):
         input = """
         pure op(OP, (foo[2] -- res)) {
@@ -2462,7 +2574,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         input2 = """
         op(OP, (foo[2] -- res)) {
-            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo, res);
             res = sym_new_unknown(ctx);
         }
         """
