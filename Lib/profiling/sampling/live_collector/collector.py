@@ -33,6 +33,9 @@ from .constants import (
     FINISHED_BANNER_EXTRA_LINES,
     DEFAULT_SORT_BY,
     DEFAULT_DISPLAY_LIMIT,
+    COLOR_PAIR_SAMPLES,
+    COLOR_PAIR_FILE,
+    COLOR_PAIR_FUNC,
     COLOR_PAIR_HEADER_BG,
     COLOR_PAIR_CYAN,
     COLOR_PAIR_YELLOW,
@@ -552,79 +555,61 @@ class LiveStatsCollector(Collector):
 
     def _setup_colors(self):
         """Set up color pairs and return color attributes."""
-
         A_BOLD = self.display.get_attr("A_BOLD")
         A_REVERSE = self.display.get_attr("A_REVERSE")
         A_UNDERLINE = self.display.get_attr("A_UNDERLINE")
         A_NORMAL = self.display.get_attr("A_NORMAL")
 
-        # Check both curses color support and _colorize.can_colorize()
         if self.display.has_colors() and self._can_colorize:
             with contextlib.suppress(Exception):
-                # Color constants (using curses values for compatibility)
-                COLOR_CYAN = 6
-                COLOR_GREEN = 2
-                COLOR_YELLOW = 3
-                COLOR_BLACK = 0
-                COLOR_MAGENTA = 5
-                COLOR_RED = 1
+                theme = _colorize.get_theme(force_color=True).live_profiler
+                default_bg = -1
 
-                # Initialize all color pairs used throughout the UI
+                self.display.init_color_pair(COLOR_PAIR_SAMPLES, theme.samples_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FILE, theme.file_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FUNC, theme.func_fg, default_bg)
+
+                # Normal header background color pair
                 self.display.init_color_pair(
-                    1, COLOR_CYAN, -1
-                )  # Data colors for stats rows
-                self.display.init_color_pair(2, COLOR_GREEN, -1)
-                self.display.init_color_pair(3, COLOR_YELLOW, -1)
-                self.display.init_color_pair(
-                    COLOR_PAIR_HEADER_BG, COLOR_BLACK, COLOR_GREEN
+                    COLOR_PAIR_HEADER_BG,
+                    theme.normal_header_fg,
+                    theme.normal_header_bg,
                 )
+
+                self.display.init_color_pair(COLOR_PAIR_CYAN, theme.pid_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_YELLOW, theme.time_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_GREEN, theme.uptime_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_MAGENTA, theme.interval_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_RED, theme.off_gil_fg, default_bg)
                 self.display.init_color_pair(
-                    COLOR_PAIR_CYAN, COLOR_CYAN, COLOR_BLACK
+                    COLOR_PAIR_SORTED_HEADER,
+                    theme.sorted_header_fg,
+                    theme.sorted_header_bg,
                 )
-                self.display.init_color_pair(
-                    COLOR_PAIR_YELLOW, COLOR_YELLOW, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_GREEN, COLOR_GREEN, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_MAGENTA, COLOR_MAGENTA, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_RED, COLOR_RED, COLOR_BLACK
-                )
-                self.display.init_color_pair(
-                    COLOR_PAIR_SORTED_HEADER, COLOR_BLACK, COLOR_YELLOW
-                )
+
+                TREND_UP_PAIR = 11
+                TREND_DOWN_PAIR = 12
+                self.display.init_color_pair(TREND_UP_PAIR, theme.trend_up_fg, default_bg)
+                self.display.init_color_pair(TREND_DOWN_PAIR, theme.trend_down_fg, default_bg)
 
                 return {
-                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG)
-                    | A_BOLD,
-                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN)
-                    | A_BOLD,
-                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW)
-                    | A_BOLD,
-                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN)
-                    | A_BOLD,
-                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA)
-                    | A_BOLD,
-                    "red": self.display.get_color_pair(COLOR_PAIR_RED)
-                    | A_BOLD,
-                    "sorted_header": self.display.get_color_pair(
-                        COLOR_PAIR_SORTED_HEADER
-                    )
-                    | A_BOLD,
-                    "normal_header": A_REVERSE | A_BOLD,
-                    "color_samples": self.display.get_color_pair(1),
-                    "color_file": self.display.get_color_pair(2),
-                    "color_func": self.display.get_color_pair(3),
-                    # Trend colors (stock-like indicators)
-                    "trend_up": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
-                    "trend_down": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "cyan": self.display.get_color_pair(COLOR_PAIR_CYAN) | A_BOLD,
+                    "yellow": self.display.get_color_pair(COLOR_PAIR_YELLOW) | A_BOLD,
+                    "green": self.display.get_color_pair(COLOR_PAIR_GREEN) | A_BOLD,
+                    "magenta": self.display.get_color_pair(COLOR_PAIR_MAGENTA) | A_BOLD,
+                    "red": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
+                    "sorted_header": self.display.get_color_pair(COLOR_PAIR_SORTED_HEADER) | A_BOLD,
+                    "normal_header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
+                    "color_samples": self.display.get_color_pair(COLOR_PAIR_SAMPLES),
+                    "color_file": self.display.get_color_pair(COLOR_PAIR_FILE),
+                    "color_func": self.display.get_color_pair(COLOR_PAIR_FUNC),
+                    "trend_up": self.display.get_color_pair(TREND_UP_PAIR) | A_BOLD,
+                    "trend_down": self.display.get_color_pair(TREND_DOWN_PAIR) | A_BOLD,
                     "trend_stable": A_NORMAL,
                 }
 
-        # Fallback to non-color attributes
+        # Fallback for no-color mode
         return {
             "header": A_REVERSE | A_BOLD,
             "cyan": A_BOLD,
@@ -637,7 +622,6 @@ class LiveStatsCollector(Collector):
             "color_samples": A_NORMAL,
             "color_file": A_NORMAL,
             "color_func": A_NORMAL,
-            # Trend colors (fallback to bold/normal for monochrome)
             "trend_up": A_BOLD,
             "trend_down": A_BOLD,
             "trend_stable": A_NORMAL,
