@@ -2624,6 +2624,8 @@ class ExecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             os.execve(args[0], args, newenv)
 
+    # See https://github.com/python/cpython/issues/137934 and the other
+    # related issues for the reason why we cannot test this on Windows.
     @unittest.skipIf(os.name == "nt", "POSIX-specific test")
     def test_execve_env_concurrent_mutation_with_fspath_posix(self):
         # Prevent crash when mutating environment during parsing.
@@ -2649,49 +2651,6 @@ class ExecTests(unittest.TestCase):
         args = [sys.executable, '-c', "print({message!r})"]
         os.execve(args[0], args, MyEnv())
         """.format(message="hello from execve")
-
-        # Use '__cleanenv' to signal to assert_python_ok() not
-        # to do a copy of os.environ on its own.
-        rc, out, _ = assert_python_ok('-c', code, __cleanenv=True)
-        self.assertEqual(rc, 0)
-        self.assertIn(bytes(message, "ascii"), out)
-
-    @unittest.skipUnless(os.name == "nt", "Windows-specific test")
-    def test_execve_env_concurrent_mutation_with_fspath_windows(self):
-        # See https://github.com/python/cpython/pull/143314
-        # to understand why we cannot use spaces in strings
-        # when using subprocess and os.execve() on Windows.
-        message = "123456"
-
-        code = """
-        import os, sys
-
-        assert "SYSTEMROOT" in os.environ, list(os.environ.keys())
-        assert os.environ["SYSTEMROOT"] == {SYSTEMROOT!r}, (
-            repr(os.environ["SYSTEMROOT"]),
-            repr({SYSTEMROOT!r}),
-        )
-
-        class MyPath:
-            def __fspath__(self):
-                mutated1.clear()
-                mutated2.clear()
-                return b"pwn"
-
-        # Python requires "SYSTEMROOT" to be set so we make sure
-        # that the side effect happens afterwards.
-        mutated1 = KEYS = ["SYSTEMROOT", MyPath()]
-        mutated2 = VALUES = [{SYSTEMROOT!r}, b"ed"]
-
-        class MyEnv:
-            def __getitem__(self): raise RuntimeError("must not be called")
-            def __len__(self): return 2
-            def keys(self): return KEYS
-            def values(self): return VALUES
-
-        args = [sys.executable, '-c', "print({message!r})"]
-        os.execve(args[0], args, MyEnv())
-        """.format(message=message, SYSTEMROOT=os.environ["SYSTEMROOT"])
 
         # Use '__cleanenv' to signal to assert_python_ok() not
         # to do a copy of os.environ on its own.
