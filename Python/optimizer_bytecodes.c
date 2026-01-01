@@ -1064,6 +1064,12 @@ dummy_func(void) {
         none = sym_new_const(ctx, Py_None);
     }
 
+    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, a, c)) {
+        res = sym_new_not_null(ctx);
+        a = args[0];
+        c = callable;
+    }
+
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);

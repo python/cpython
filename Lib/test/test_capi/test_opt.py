@@ -2211,6 +2211,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_O", uops)
         self.assertIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_method_descriptor_o(self):
         def testfunc(n):

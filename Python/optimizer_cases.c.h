@@ -2764,12 +2764,16 @@
         }
 
         case _CALL_BUILTIN_O: {
+            JitOptRef *args;
+            JitOptRef callable;
             JitOptRef res;
             JitOptRef a;
             JitOptRef c;
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            a = sym_new_not_null(ctx);
-            c = sym_new_not_null(ctx);
+            a = args[0];
+            c = callable;
             CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = a;
