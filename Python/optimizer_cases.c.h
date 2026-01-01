@@ -2765,13 +2765,17 @@
 
         case _CALL_BUILTIN_O: {
             JitOptRef *args;
+            JitOptRef self_or_null;
             JitOptRef callable;
             JitOptRef res;
             JitOptRef a;
             JitOptRef c;
             args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            args[0] = sym_new_unknown(ctx);
             a = args[0];
             c = callable;
             CHECK_STACK_BOUNDS(1 - oparg);
@@ -2917,14 +2921,19 @@
 
         case _CALL_METHOD_DESCRIPTOR_O: {
             JitOptRef *args;
+            JitOptRef self_or_null;
             JitOptRef callable;
             JitOptRef res;
             JitOptRef a0;
             JitOptRef a1;
             JitOptRef c;
             args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            args[0] = sym_new_unknown(ctx);
+            args[1] = sym_new_unknown(ctx);
             a0 = args[0];
             a1 = args[1];
             c = callable;

@@ -1066,12 +1066,17 @@ dummy_func(void) {
 
     op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, a, c)) {
         res = sym_new_not_null(ctx);
+        self_or_null = sym_new_not_null(ctx);
+        args[0] = sym_new_unknown(ctx);
         a = args[0];
         c = callable;
     }
 
     op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, a0, a1, c)) {
         res = sym_new_not_null(ctx);
+        self_or_null = sym_new_not_null(ctx);
+        args[0] = sym_new_unknown(ctx);
+        args[1] = sym_new_unknown(ctx);
         a0 = args[0];
         a1 = args[1];
         c = callable;
