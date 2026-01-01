@@ -1685,6 +1685,7 @@ Subcommands
       The *aliases* argument allows to provide a sequence of strings that can be used as alternative names for this subcommand (e.g., ``aliases=['r']`` for a ``'run'`` command).
 
       The *deprecated* argument, if :const:`True`, marks the subcommand as deprecated, which typically issues a warning when used.
+
       All other keyword arguments are passed directly to the
       :class:`!ArgumentParser` constructor.
       This returned :class:`!ArgumentParser` object can be modified as usual.
