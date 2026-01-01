@@ -16,6 +16,7 @@ from tokenize import TokenInfo
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
+    from types import ModuleType
     from typing import Any, Iterable, Iterator, Mapping
 
 
@@ -110,17 +111,7 @@ class ModuleCompleter:
         modules: Iterable[pkgutil.ModuleInfo]
         imported_module = sys.modules.get(path.split('.')[0])
         if imported_module:
-            # Module already imported: only look in its location,
-            # even if a module with the same name would be higher in path
-            imported_path = (imported_module.__spec__
-                             and imported_module.__spec__.origin)
-            if not imported_path:
-                # Module imported but no spec/origin: propose no suggestions
-                return []
-            if os.path.basename(imported_path) == "__init__.py":  # package
-                imported_path = os.path.dirname(imported_path)
-            import_location = os.path.dirname(imported_path)
-            modules = list(pkgutil.iter_modules([import_location]))
+            modules = self._find_already_imported_module_specs(imported_module)
         else:
             modules = self.global_cache
 
@@ -144,6 +135,32 @@ class ModuleCompleter:
     def _is_stdlib_module(self, module_info: pkgutil.ModuleInfo) -> bool:
         return (isinstance(module_info.module_finder, FileFinder)
                 and module_info.module_finder.path == self._stdlib_path)
+
+    def _find_already_imported_module_specs(self, imported_module: ModuleType) -> list[pkgutil.ModuleInfo]:
+        # Module already imported: only look in its location,
+        # even if a module with the same name would be higher in path
+        module_location = self._get_module_location(imported_module)
+        if not module_location:
+            # If we cannot find the module source, propose no suggestions
+            return []
+        import_location = os.path.dirname(module_location)
+        return list(pkgutil.iter_modules([import_location]))
+
+    def _get_module_location(self, imported_module: ModuleType) -> str | None:
+        spec = imported_module.__spec__
+        if not spec:
+            return None
+        if not spec.has_location:
+            if spec.origin == "frozen":  # See Tools/build/freeze_modules.py
+                return os.path.join(self._stdlib_path, f"{spec.name}.py")
+            return None
+        if not spec.origin:
+            return None
+        if imported_module.__package__:
+            # Package: the module location is the parent folder
+            return os.path.dirname(spec.origin)
+        else:
+            return spec.origin
 
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         if prefix:

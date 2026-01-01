@@ -972,6 +972,7 @@ class TestPyReplModuleCompleter(TestCase):
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
             ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+            ("from __phello__ import s\t\n", "from __phello__ import spam"),  # frozen module
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1132,6 +1133,14 @@ class TestPyReplModuleCompleter(TestCase):
             output = reader.readline()
             self.assertEqual(output, "import collections.abc")
 
+    @patch.dict(sys.modules)
+    def test_already_imported_frozen_module(self):
+        importlib.import_module("__phello__")
+        events = code_to_events("from __phello__ import s\t\n")
+        reader = self.prepare_reader(events, namespace={})
+        output = reader.readline()
+        self.assertEqual(output, "from __phello__ import spam")
+
     def test_already_imported_custom_module_no_other_suggestions(self):
         with (tempfile.TemporaryDirectory() as _dir1,
               tempfile.TemporaryDirectory() as _dir2,
@@ -1187,7 +1196,7 @@ class TestPyReplModuleCompleter(TestCase):
         with (tempfile.TemporaryDirectory() as _dir1,
               patch.object(sys, "path", [_dir1, *sys.path])):
             dir1 = pathlib.Path(_dir1)
-            for mod in ("no_origin", "no_spec"):
+            for mod in ("no_origin", "not_has_location", "no_spec"):
                 (dir1 / mod).mkdir()
                 (dir1 / mod / "__init__.py").touch()
                 (dir1 / mod / "foo.py").touch()
@@ -1195,6 +1204,8 @@ class TestPyReplModuleCompleter(TestCase):
                 assert module.__spec__
                 if mod == "no_origin":
                     module.__spec__.origin = None
+                elif mod == "not_has_location":
+                    module.__spec__.has_location = False
                 else:
                     module.__spec__ = None
                 events = code_to_events(f"import {mod}.\t\n")
