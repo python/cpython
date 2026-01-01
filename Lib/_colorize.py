@@ -9,7 +9,7 @@ COLORIZE = True
 
 # types
 if False:
-    from typing import IO, Self, ClassVar
+    from typing import IO, Literal, Self, ClassVar
     _theme: Theme
 
 
@@ -68,6 +68,11 @@ class ANSIColors:
 ColorCodes = set()
 NoColors = ANSIColors()
 
+for attr, code in ANSIColors.__dict__.items():
+    if not attr.startswith("__"):
+        ColorCodes.add(code)
+        setattr(NoColors, attr, "")
+
 
 class CursesColors:
     """Curses color constants for terminal UI theming."""
@@ -80,11 +85,6 @@ class CursesColors:
     CYAN = 6
     WHITE = 7
     DEFAULT = -1
-
-for attr, code in ANSIColors.__dict__.items():
-    if not attr.startswith("__"):
-        ColorCodes.add(code)
-        setattr(NoColors, attr, "")
 
 
 #
@@ -296,13 +296,12 @@ class LiveProfiler(ThemeSection):
     medal_bronze_fg: int = CursesColors.GREEN
 
     # Background style: 'dark' or 'light'
-    background_style: str = "dark"
+    background_style: Literal["dark", "light"] = "dark"
 
 
 LiveProfilerLight = LiveProfiler(
-    # Header colors - use black for better contrast on light bg
-    title_fg=CursesColors.BLUE,
-    title_bg=CursesColors.DEFAULT,
+    # Header colors
+    title_fg=CursesColors.BLUE,  # Blue is more readable than cyan on light bg
 
     # Status display colors - darker colors for light backgrounds
     pid_fg=CursesColors.BLUE,
@@ -314,13 +313,7 @@ LiveProfilerLight = LiveProfiler(
     thread_all_fg=CursesColors.BLACK,
     thread_single_fg=CursesColors.BLUE,
 
-    # Progress bar colors
-    bar_good_fg=CursesColors.GREEN,
-    bar_bad_fg=CursesColors.RED,
-
     # Stats colors
-    on_gil_fg=CursesColors.GREEN,
-    off_gil_fg=CursesColors.RED,
     waiting_gil_fg=CursesColors.RED,
     gc_fg=CursesColors.BLUE,
 
@@ -343,14 +336,8 @@ LiveProfilerLight = LiveProfiler(
     file_fg=CursesColors.BLACK,
     func_fg=CursesColors.BLUE,  # Blue is more readable than magenta on light bg
 
-    # Trend indicator colors
-    trend_up_fg=CursesColors.GREEN,
-    trend_down_fg=CursesColors.RED,
-
     # Medal colors for top functions
-    medal_gold_fg=CursesColors.RED,
     medal_silver_fg=CursesColors.BLUE,
-    medal_bronze_fg=CursesColors.GREEN,
 
     # Background style
     background_style="light",
