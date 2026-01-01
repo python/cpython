@@ -2656,7 +2656,9 @@ class ExecTests(unittest.TestCase):
         os.execve(args[0], args, MyEnv())
         """.format(message=message)
 
-        rc, out, _ = assert_python_ok('-c', code)
+        # Use '__cleanenv' to signal to assert_python_ok() not
+        # to do a copy of os.environ on its own.
+        rc, out, _ = assert_python_ok('-c', code, __cleanenv=True)
         self.assertEqual(rc, 0)
         self.assertIn(bytes(message, "ascii"), out)
 
