@@ -201,42 +201,6 @@ class Difflib(ThemeSection):
 
 
 @dataclass(frozen=True, kw_only=True)
-class Syntax(ThemeSection):
-    prompt: str = ANSIColors.BOLD_MAGENTA
-    keyword: str = ANSIColors.BOLD_BLUE
-    keyword_constant: str = ANSIColors.BOLD_BLUE
-    builtin: str = ANSIColors.CYAN
-    comment: str = ANSIColors.RED
-    string: str = ANSIColors.GREEN
-    number: str = ANSIColors.YELLOW
-    op: str = ANSIColors.RESET
-    definition: str = ANSIColors.BOLD
-    soft_keyword: str = ANSIColors.BOLD_BLUE
-    reset: str = ANSIColors.RESET
-
-
-@dataclass(frozen=True, kw_only=True)
-class Traceback(ThemeSection):
-    type: str = ANSIColors.BOLD_MAGENTA
-    message: str = ANSIColors.MAGENTA
-    filename: str = ANSIColors.MAGENTA
-    line_no: str = ANSIColors.MAGENTA
-    frame: str = ANSIColors.MAGENTA
-    error_highlight: str = ANSIColors.BOLD_RED
-    error_range: str = ANSIColors.RED
-    reset: str = ANSIColors.RESET
-
-
-@dataclass(frozen=True, kw_only=True)
-class Unittest(ThemeSection):
-    passed: str = ANSIColors.GREEN
-    warn: str = ANSIColors.YELLOW
-    fail: str = ANSIColors.RED
-    fail_info: str = ANSIColors.BOLD_RED
-    reset: str = ANSIColors.RESET
-
-
-@dataclass(frozen=True, kw_only=True)
 class LiveProfiler(ThemeSection):
     """Theme section for the live profiling TUI (Tachyon profiler).
 
@@ -342,6 +306,42 @@ LiveProfilerLight = LiveProfiler(
     # Background style
     background_style="light",
 )
+
+
+@dataclass(frozen=True, kw_only=True)
+class Syntax(ThemeSection):
+    prompt: str = ANSIColors.BOLD_MAGENTA
+    keyword: str = ANSIColors.BOLD_BLUE
+    keyword_constant: str = ANSIColors.BOLD_BLUE
+    builtin: str = ANSIColors.CYAN
+    comment: str = ANSIColors.RED
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    op: str = ANSIColors.RESET
+    definition: str = ANSIColors.BOLD
+    soft_keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class Traceback(ThemeSection):
+    type: str = ANSIColors.BOLD_MAGENTA
+    message: str = ANSIColors.MAGENTA
+    filename: str = ANSIColors.MAGENTA
+    line_no: str = ANSIColors.MAGENTA
+    frame: str = ANSIColors.MAGENTA
+    error_highlight: str = ANSIColors.BOLD_RED
+    error_range: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True, kw_only=True)
+class Unittest(ThemeSection):
+    passed: str = ANSIColors.GREEN
+    warn: str = ANSIColors.YELLOW
+    fail: str = ANSIColors.RED
+    fail_info: str = ANSIColors.BOLD_RED
+    reset: str = ANSIColors.RESET
 
 
 @dataclass(frozen=True, kw_only=True)

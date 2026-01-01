@@ -32,6 +32,9 @@ from .constants import (
     FINISHED_BANNER_EXTRA_LINES,
     DEFAULT_SORT_BY,
     DEFAULT_DISPLAY_LIMIT,
+    COLOR_PAIR_SAMPLES,
+    COLOR_PAIR_FILE,
+    COLOR_PAIR_FUNC,
     COLOR_PAIR_HEADER_BG,
     COLOR_PAIR_CYAN,
     COLOR_PAIR_YELLOW,
@@ -532,36 +535,35 @@ class LiveStatsCollector(Collector):
 
         if self.display.has_colors() and self._can_colorize:
             with contextlib.suppress(Exception):
-                theme = _colorize.get_theme(force_color=True)
-                profiler_theme = theme.live_profiler
+                theme = _colorize.get_theme(force_color=True).live_profiler
                 default_bg = -1
 
-                self.display.init_color_pair(1, profiler_theme.samples_fg, default_bg)
-                self.display.init_color_pair(2, profiler_theme.file_fg, default_bg)
-                self.display.init_color_pair(3, profiler_theme.func_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_SAMPLES, theme.samples_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FILE, theme.file_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_FUNC, theme.func_fg, default_bg)
 
                 # Normal header background color pair
                 self.display.init_color_pair(
                     COLOR_PAIR_HEADER_BG,
-                    profiler_theme.normal_header_fg,
-                    profiler_theme.normal_header_bg,
+                    theme.normal_header_fg,
+                    theme.normal_header_bg,
                 )
 
-                self.display.init_color_pair(COLOR_PAIR_CYAN, profiler_theme.pid_fg, default_bg)
-                self.display.init_color_pair(COLOR_PAIR_YELLOW, profiler_theme.time_fg, default_bg)
-                self.display.init_color_pair(COLOR_PAIR_GREEN, profiler_theme.uptime_fg, default_bg)
-                self.display.init_color_pair(COLOR_PAIR_MAGENTA, profiler_theme.interval_fg, default_bg)
-                self.display.init_color_pair(COLOR_PAIR_RED, profiler_theme.off_gil_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_CYAN, theme.pid_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_YELLOW, theme.time_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_GREEN, theme.uptime_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_MAGENTA, theme.interval_fg, default_bg)
+                self.display.init_color_pair(COLOR_PAIR_RED, theme.off_gil_fg, default_bg)
                 self.display.init_color_pair(
                     COLOR_PAIR_SORTED_HEADER,
-                    profiler_theme.sorted_header_fg,
-                    profiler_theme.sorted_header_bg,
+                    theme.sorted_header_fg,
+                    theme.sorted_header_bg,
                 )
 
                 TREND_UP_PAIR = 11
                 TREND_DOWN_PAIR = 12
-                self.display.init_color_pair(TREND_UP_PAIR, profiler_theme.trend_up_fg, default_bg)
-                self.display.init_color_pair(TREND_DOWN_PAIR, profiler_theme.trend_down_fg, default_bg)
+                self.display.init_color_pair(TREND_UP_PAIR, theme.trend_up_fg, default_bg)
+                self.display.init_color_pair(TREND_DOWN_PAIR, theme.trend_down_fg, default_bg)
 
                 return {
                     "header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
@@ -572,9 +574,9 @@ class LiveStatsCollector(Collector):
                     "red": self.display.get_color_pair(COLOR_PAIR_RED) | A_BOLD,
                     "sorted_header": self.display.get_color_pair(COLOR_PAIR_SORTED_HEADER) | A_BOLD,
                     "normal_header": self.display.get_color_pair(COLOR_PAIR_HEADER_BG) | A_BOLD,
-                    "color_samples": self.display.get_color_pair(1),
-                    "color_file": self.display.get_color_pair(2),
-                    "color_func": self.display.get_color_pair(3),
+                    "color_samples": self.display.get_color_pair(COLOR_PAIR_SAMPLES),
+                    "color_file": self.display.get_color_pair(COLOR_PAIR_FILE),
+                    "color_func": self.display.get_color_pair(COLOR_PAIR_FUNC),
                     "trend_up": self.display.get_color_pair(TREND_UP_PAIR) | A_BOLD,
                     "trend_down": self.display.get_color_pair(TREND_DOWN_PAIR) | A_BOLD,
                     "trend_stable": A_NORMAL,
