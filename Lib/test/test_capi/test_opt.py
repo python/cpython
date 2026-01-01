@@ -2557,7 +2557,29 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_POP_TOP_NOP", uops)
+        self.assertIn("_PUSH_FRAME", uops)
         self.assertLessEqual(len(matching_opnames(ex, "_POP_TOP")), 1)
+
+    def test_store_fast_refcount_elimination_when_uninitialized(self):
+        def foo():
+            # Since y is known to be
+            # uninitialized (NULL) here,
+            # The refcount is eliminated in the STORE_FAST.
+            y = 2
+            return y
+        def testfunc(n):
+            # The STORE_FAST for the range here needs a POP_TOP
+            # (for now, until we do loop peeling).
+            for _ in range(n):
+                foo()
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertIn("_PUSH_FRAME", uops)
+        self.assertLessEqual(len(matching_opnames(ex, "_POP_TOP")), 1)
+
 
     def test_float_op_refcount_elimination(self):
         def testfunc(args):
