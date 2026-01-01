@@ -224,6 +224,14 @@ PyMapping_GetOptionalItem(PyObject *obj, PyObject *key, PyObject **result)
     return 0;
 }
 
+PyObject*
+_PyMapping_GetOptionalItem2(PyObject *obj, PyObject *key, int *err)
+{
+    PyObject* result;
+    *err = PyMapping_GetOptionalItem(obj, key, &result);
+    return result;
+}
+
 int
 PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
 {

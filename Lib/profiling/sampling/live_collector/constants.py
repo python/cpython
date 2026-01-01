@@ -5,7 +5,7 @@ MICROSECONDS_PER_SECOND = 1_000_000
 
 # Display update constants
 DISPLAY_UPDATE_HZ = 10
-DISPLAY_UPDATE_INTERVAL = 1.0 / DISPLAY_UPDATE_HZ  # 0.1 seconds
+DISPLAY_UPDATE_INTERVAL_SEC = 1.0 / DISPLAY_UPDATE_HZ  # 0.1 seconds
 
 # Terminal size constraints
 MIN_TERMINAL_WIDTH = 60
@@ -44,6 +44,9 @@ MIN_SAMPLE_RATE_FOR_SCALING = 100
 
 # Finished banner display
 FINISHED_BANNER_EXTRA_LINES = 3  # Blank line + banner + blank line
+
+# Opcode panel display
+OPCODE_PANEL_HEIGHT = 12  # Height reserved for opcode statistics panel
 
 # Color pair IDs
 COLOR_PAIR_SAMPLES = 1

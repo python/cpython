@@ -46,8 +46,10 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
-objects considered false:
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when called, the exception is propagated and the object does
+not have a truth value (for example, :data:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
@@ -164,7 +166,7 @@ This table summarizes the comparison operations:
    pair: object; numeric
    pair: objects; comparing
 
-Objects of different types, except different numeric types, never compare equal.
+Unless stated otherwise, objects of different types never compare equal.
 The ``==`` operator is always defined but for some object types (for example,
 class objects) is equivalent to :keyword:`is`. The ``<``, ``<=``, ``>`` and ``>=``
 operators are only defined where they make sense; for example, they raise a
@@ -2155,6 +2157,21 @@ expression support in the :mod:`re` module).
    that have the Unicode numeric value property, e.g. U+2155,
    VULGAR FRACTION ONE FIFTH.  Formally, numeric characters are those with the property
    value Numeric_Type=Digit, Numeric_Type=Decimal or Numeric_Type=Numeric.
+   For example:
+
+   .. doctest::
+
+      >>> '0123456789'.isnumeric()
+      True
+      >>> '٠١٢٣٤٥٦٧٨٩'.isnumeric()  # Arabic-indic digit zero to nine
+      True
+      >>> '⅕'.isnumeric()  # Vulgar fraction one fifth
+      True
+      >>> '²'.isdecimal(), '²'.isdigit(),  '²'.isnumeric()
+      (False, True, True)
+
+   See also :meth:`isdecimal` and :meth:`isdigit`. Numeric characters are
+   a superset of decimal numbers.
 
 
 .. method:: str.isprintable()
@@ -2245,6 +2262,19 @@ expression support in the :mod:`re` module).
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
+
+   For example:
+
+   .. doctest::
+
+      >>> 'Python'.ljust(10)
+      'Python    '
+      >>> 'Python'.ljust(10, '.')
+      'Python....'
+      >>> 'Monty Python'.ljust(10, '.')
+      'Monty Python'
+
+   See also :meth:`rjust`.
 
 
 .. method:: str.lower()
@@ -5072,9 +5102,6 @@ can be used interchangeably to index the same dictionary entry.
    being added is already present, the value from the keyword argument
    replaces the value from the positional argument.
 
-   Providing keyword arguments as in the first example only works for keys that
-   are valid Python identifiers.  Otherwise, any valid keys can be used.
-
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.  To illustrate dictionary creation and equality,
@@ -5460,9 +5487,11 @@ before the statement body is executed and exited when the statement ends:
    Returning a true value from this method will cause the :keyword:`with` statement
    to suppress the exception and continue execution with the statement immediately
    following the :keyword:`!with` statement. Otherwise the exception continues
-   propagating after this method has finished executing. Exceptions that occur
-   during execution of this method will replace any exception that occurred in the
-   body of the :keyword:`!with` statement.
+   propagating after this method has finished executing.
+
+   If this method raises an exception while handling an earlier exception from the
+   :keyword:`with` block, the new exception is raised, and the original exception
+   is stored in its :attr:`~BaseException.__context__` attribute.
 
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed

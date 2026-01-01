@@ -2,7 +2,8 @@ import collections
 import marshal
 
 from _colorize import ANSIColors
-from .collector import Collector
+from .collector import Collector, extract_lineno
+from .constants import MICROSECONDS_PER_SECOND
 
 
 class PstatsCollector(Collector):
@@ -16,34 +17,45 @@ class PstatsCollector(Collector):
             lambda: collections.defaultdict(int)
         )
         self.skip_idle = skip_idle
+        self._seen_locations = set()
 
-    def _process_frames(self, frames):
+    def _process_frames(self, frames, weight=1):
         """Process a single thread's frame stack."""
         if not frames:
             return
 
+        self._seen_locations.clear()
+
         # Process each frame in the stack to track cumulative calls
+        # frame.location is int, tuple (lineno, end_lineno, col_offset, end_col_offset), or None
         for frame in frames:
-            location = (frame.filename, frame.lineno, frame.funcname)
-            self.result[location]["cumulative_calls"] += 1
+            lineno = extract_lineno(frame.location)
+            location = (frame.filename, lineno, frame.funcname)
+            if location not in self._seen_locations:
+                self._seen_locations.add(location)
+                self.result[location]["cumulative_calls"] += weight
 
         # The top frame gets counted as an inline call (directly executing)
-        top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
-        self.result[top_location]["direct_calls"] += 1
+        top_lineno = extract_lineno(frames[0].location)
+        top_location = (frames[0].filename, top_lineno, frames[0].funcname)
+        self.result[top_location]["direct_calls"] += weight
 
         # Track caller-callee relationships for call graph
         for i in range(1, len(frames)):
             callee_frame = frames[i - 1]
             caller_frame = frames[i]
 
-            callee = (callee_frame.filename, callee_frame.lineno, callee_frame.funcname)
-            caller = (caller_frame.filename, caller_frame.lineno, caller_frame.funcname)
+            callee_lineno = extract_lineno(callee_frame.location)
+            caller_lineno = extract_lineno(caller_frame.location)
+            callee = (callee_frame.filename, callee_lineno, callee_frame.funcname)
+            caller = (caller_frame.filename, caller_lineno, caller_frame.funcname)
 
-            self.callers[callee][caller] += 1
+            self.callers[callee][caller] += weight
 
-    def collect(self, stack_frames):
-        for frames, thread_id in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
-            self._process_frames(frames)
+    def collect(self, stack_frames, timestamps_us=None):
+        weight = len(timestamps_us) if timestamps_us else 1
+        for frames, _ in self._iter_stacks(stack_frames, skip_idle=self.skip_idle):
+            self._process_frames(frames, weight=weight)
 
     def export(self, filename):
         self.create_stats()
@@ -57,7 +69,7 @@ class PstatsCollector(Collector):
 
     # Needed for compatibility with pstats.Stats
     def create_stats(self):
-        sample_interval_sec = self.sample_interval_usec / 1_000_000
+        sample_interval_sec = self.sample_interval_usec / MICROSECONDS_PER_SECOND
         callers = {}
         for fname, call_counts in self.result.items():
             total = call_counts["direct_calls"] * sample_interval_sec
@@ -252,7 +264,7 @@ class PstatsCollector(Collector):
         elif max_value >= 0.001:
             return "ms", 1000.0
         else:
-            return "μs", 1000000.0
+            return "μs", float(MICROSECONDS_PER_SECOND)
 
     def _print_summary(self, stats_list, total_samples):
         """Print summary of interesting functions."""

@@ -490,7 +490,7 @@ static inline int check_interpreter_whence(long);
 #endif
 
 extern _Py_CODEUNIT *
-_Py_LazyJitTrampoline(
+_Py_LazyJitShim(
     struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
 );
 
@@ -570,7 +570,6 @@ init_interpreter(PyInterpreterState *interp,
     interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
-    interp->executor_deletion_list_remaining_capacity = 0;
     interp->executor_creation_counter = JIT_CLEANUP_THRESHOLD;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
@@ -1482,7 +1481,31 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     // This is cleared when PyGILState_Ensure() creates the thread state.
     tstate->gilstate_counter = 1;
 
-    tstate->current_frame = NULL;
+    // Initialize the embedded base frame - sentinel at the bottom of the frame stack
+    _tstate->base_frame.previous = NULL;
+    _tstate->base_frame.f_executable = PyStackRef_None;
+    _tstate->base_frame.f_funcobj = PyStackRef_NULL;
+    _tstate->base_frame.f_globals = NULL;
+    _tstate->base_frame.f_builtins = NULL;
+    _tstate->base_frame.f_locals = NULL;
+    _tstate->base_frame.frame_obj = NULL;
+    _tstate->base_frame.instr_ptr = NULL;
+    _tstate->base_frame.stackpointer = _tstate->base_frame.localsplus;
+    _tstate->base_frame.return_offset = 0;
+    _tstate->base_frame.owner = FRAME_OWNED_BY_INTERPRETER;
+    _tstate->base_frame.visited = 0;
+#ifdef Py_DEBUG
+    _tstate->base_frame.lltrace = 0;
+#endif
+#ifdef Py_GIL_DISABLED
+    _tstate->base_frame.tlbc_index = 0;
+#endif
+    _tstate->base_frame.localsplus[0] = PyStackRef_NULL;
+
+    // current_frame starts pointing to the base frame
+    tstate->current_frame = &_tstate->base_frame;
+    // base_frame pointer for profilers to validate stack unwinding
+    tstate->base_frame = &_tstate->base_frame;
     tstate->datastack_chunk = NULL;
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
@@ -1660,7 +1683,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->current_frame != NULL) {
+    if (verbose && tstate->current_frame != tstate->base_frame) {
         /* bpo-20526: After the main thread calls
            _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
            (or in Py_EndInterpreter() for subinterpreters),
@@ -1741,16 +1764,23 @@ PyThreadState_Clear(PyThreadState *tstate)
     struct _Py_freelists *freelists = _Py_freelists_GET();
     _PyObject_ClearFreeLists(freelists, 1);
 
+    // Flush the thread's local GC allocation count to the global count
+    // before the thread state is cleared, otherwise the count is lost.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    _Py_atomic_add_int(&tstate->interp->gc.young.count,
+                       (int)tstate_impl->gc.alloc_count);
+    tstate_impl->gc.alloc_count = 0;
+
     // Merge our thread-local refcounts into the type's own refcount and
     // free our local refcount array.
-    _PyObject_FinalizePerThreadRefcounts((_PyThreadStateImpl *)tstate);
+    _PyObject_FinalizePerThreadRefcounts(tstate_impl);
 
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
 
     // Release our thread-local copies of the bytecode for reuse by another
     // thread
-    _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
+    _Py_ClearTLBCIndex(tstate_impl);
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.
