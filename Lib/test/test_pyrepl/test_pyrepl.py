@@ -1324,6 +1324,7 @@ class TestPyReplModuleCompleter(TestCase):
             (dir / "pack" / "foo.py").touch()
             (dir / "pack" / "bar.py").touch()
             (dir / "pack" / "baz.py").touch()
+            sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
             with patch.object(sys, "path", [_dir, *sys.path]):
                 cases = (
                     # needs 2 tabs to import (show prompt, then import)
@@ -1344,6 +1345,8 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack import b\t\n", "from pack import ba", set()),
                     ("from pack import b\t\t\n", "from pack import ba", set()),
                     ("from pack import b\t\t\t\n", "from pack import ba", {"pack"}),
+                    # stdlib modules are automatically imported
+                    ("from graphlib import T\t\n", "from graphlib import TopologicalSorter", {"graphlib"}),
                 )
                 for code, expected, expected_imports in cases:
                     with self.subTest(code=code), patch.dict(sys.modules):
@@ -1554,6 +1557,8 @@ class TestPyReplModuleCompleter(TestCase):
             (dir / "pack").mkdir()
             (dir / "pack" / "__init__.py").write_text("foo = 1; bar = 2;")
             (dir / "pack" / "bar.py").touch()
+            sys.modules.pop("graphlib", None)  # test modules may have been imported by previous tests
+            sys.modules.pop("compression.zstd", None)
             with patch.object(sys, "path", [_dir, *sys.path]):
                 cases = (
                     # no match != not an import
@@ -1575,6 +1580,9 @@ class TestPyReplModuleCompleter(TestCase):
                     ("from pack import ", (["bar", "foo"], None), set()),
                     ("from pack.bar import ", ([], (_prompt, None)), {"pack.bar"}),
                     ("from pack.bar import ", ([], None), set()),
+                    # stdlib = auto-imported
+                    ("from graphlib import T", (["TopologicalSorter"], None), {"graphlib"}),
+                    ("from compression.zstd import c", (["compress"], None), {"compression.zstd"}),
                 )
                 completer = ModuleCompleter()
                 for i, (code, expected, expected_imports) in enumerate(cases):
@@ -1594,8 +1602,6 @@ class TestPyReplModuleCompleter(TestCase):
 
                         new_imports = sys.modules.keys() - _imported
                         self.assertSetEqual(new_imports, expected_imports)
-                        for mod in new_imports:
-                            self.addCleanup(sys.modules.pop, mod)
 
 class TestHardcodedSubmodules(TestCase):
     @patch.dict(sys.modules)
