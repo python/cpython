@@ -7325,7 +7325,6 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
         }
         val = PyList_GetItemRef(vals, pos);
         if (val == NULL) {
-            Py_DECREF(key);
             goto error;
         }
 
