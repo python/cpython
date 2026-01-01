@@ -4,7 +4,7 @@ import _remote_debugging
 
 from .gecko_collector import GeckoCollector
 from .stack_collector import FlamegraphCollector, CollapsedStackCollector
-from .pstats_collector import PStatsCollector
+from .pstats_collector import PstatsCollector
 
 
 class BinaryReader:
@@ -114,7 +114,7 @@ def convert_binary_to_format(input_file, output_file, output_format,
         elif output_format == 'collapsed':
             collector = CollapsedStackCollector(interval)
         elif output_format == 'pstats':
-            collector = PStatsCollector(interval)
+            collector = PstatsCollector(interval)
         elif output_format == 'gecko':
             collector = GeckoCollector(interval)
         else:
