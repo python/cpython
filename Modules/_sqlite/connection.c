@@ -937,8 +937,6 @@ func_callback(sqlite3_context *context, int argc, sqlite3_value **argv)
     args = _pysqlite_build_py_params(context, argc, argv);
     if (args) {
         callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-        assert(ctx != NULL);
-
         incref_callback_context(ctx);
         py_retval = PyObject_CallObject(ctx->callable, args);
         decref_callback_context(ctx);
@@ -968,7 +966,6 @@ step_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     PyObject* stepmethod = NULL;
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-    assert(ctx != NULL);
     incref_callback_context(ctx);
 
     aggregate_instance = (PyObject**)sqlite3_aggregate_context(context, sizeof(PyObject*));
@@ -1039,7 +1036,6 @@ final_callback(sqlite3_context *context)
     PyObject *exc = PyErr_GetRaisedException();
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-    assert(ctx != NULL);
     incref_callback_context(ctx);
     function_result = PyObject_CallMethodNoArgs(*aggregate_instance,
                                                 ctx->state->str_finalize);
@@ -1257,7 +1253,6 @@ inverse_callback(sqlite3_context *context, int argc, sqlite3_value **params)
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-    assert(ctx != NULL);
     incref_callback_context(ctx);
 
     int size = sizeof(PyObject *);
@@ -1307,7 +1302,6 @@ value_callback(sqlite3_context *context)
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     callback_context *ctx = (callback_context *)sqlite3_user_data(context);
-    assert(ctx != NULL);
     incref_callback_context(ctx);
 
     int size = sizeof(PyObject *);
@@ -1449,7 +1443,7 @@ pysqlite_connection_create_aggregate_impl(pysqlite_Connection *self,
 }
 
 static int
-authorizer_callback(void *ctx, int action, const char *arg1,
+authorizer_callback(void *ctx_vp, int action, const char *arg1,
                     const char *arg2 , const char *dbname,
                     const char *access_attempt_source)
 {
@@ -1458,9 +1452,9 @@ authorizer_callback(void *ctx, int action, const char *arg1,
     PyObject *ret;
     int rc = SQLITE_DENY;
 
-    assert(ctx != NULL);
+    callback_context *ctx = (callback_context *)ctx_vp;
     incref_callback_context(ctx);
-    PyObject *callable = ((callback_context *)ctx)->callable;
+    PyObject *callable = ctx->callable;
     ret = PyObject_CallFunction(callable, "issss", action, arg1, arg2, dbname,
                                 access_attempt_source);
 
@@ -1488,18 +1482,17 @@ authorizer_callback(void *ctx, int action, const char *arg1,
 }
 
 static int
-progress_callback(void *ctx)
+progress_callback(void *ctx_vp)
 {
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
     int rc;
     PyObject *ret;
 
-    assert(ctx != NULL);
+    callback_context *ctx = (callback_context *)ctx_vp;
     incref_callback_context(ctx);
-    PyObject *callable = ((callback_context *)ctx)->callable;
 
-    ret = PyObject_CallNoArgs(callable);
+    ret = PyObject_CallNoArgs(ctx->callable);
     if (!ret) {
         /* abort query if error occurred */
         rc = -1;
@@ -1524,7 +1517,7 @@ progress_callback(void *ctx)
  * to ensure future compatibility.
  */
 static int
-trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
+trace_callback(unsigned int type, void *ctx_vp, void *stmt, void *sql)
 {
     if (type != SQLITE_TRACE_STMT) {
         return 0;
@@ -1532,9 +1525,9 @@ trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
 
     PyGILState_STATE gilstate = PyGILState_Ensure();
 
-    assert(ctx != NULL);
+    callback_context *ctx = (callback_context *)ctx_vp;
     incref_callback_context(ctx);
-    pysqlite_state *state = ((callback_context *)ctx)->state;
+    pysqlite_state *state = ctx->state;
     assert(state != NULL);
 
     PyObject *py_statement = NULL;
@@ -1548,7 +1541,7 @@ trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
 
         PyErr_SetString(state->DataError,
                 "Expanded SQL string exceeds the maximum string length");
-        print_or_clear_traceback((callback_context *)ctx);
+        print_or_clear_traceback(ctx);
 
         // Fall back to unexpanded sql
         py_statement = PyUnicode_FromString((const char *)sql);
@@ -1558,13 +1551,12 @@ trace_callback(unsigned int type, void *ctx, void *stmt, void *sql)
         sqlite3_free((void *)expanded_sql);
     }
     if (py_statement) {
-        PyObject *callable = ((callback_context *)ctx)->callable;
-        PyObject *ret = PyObject_CallOneArg(callable, py_statement);
+        PyObject *ret = PyObject_CallOneArg(ctx->callable, py_statement);
         Py_DECREF(py_statement);
         Py_XDECREF(ret);
     }
     if (PyErr_Occurred()) {
-        print_or_clear_traceback((callback_context *)ctx);
+        print_or_clear_traceback(ctx);
     }
 
 exit:
@@ -2011,7 +2003,6 @@ collation_callback(void *context, int text1_length, const void *text1_data,
         goto finally;
     }
 
-    assert(ctx != NULL);
     PyObject *args[] = { NULL, string1, string2 };  // Borrowed refs.
     size_t nargsf = 2 | PY_VECTORCALL_ARGUMENTS_OFFSET;
     retval = PyObject_Vectorcall(ctx->callable, args + 1, nargsf, NULL);
