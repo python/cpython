@@ -18,13 +18,23 @@ from test.support import (
     requires_remote_subprocess_debugging,
 )
 
-from profiling.sampling._child_monitor import (
-    get_child_pids,
-    ChildProcessMonitor,
-    is_python_process,
-    _MAX_CHILD_PROFILERS,
-    _CLEANUP_INTERVAL_CYCLES,
-)
+# Guard imports that require _remote_debugging module.
+# This module is not available on all platforms (e.g., WASI).
+try:
+    from profiling.sampling._child_monitor import (
+        get_child_pids,
+        ChildProcessMonitor,
+        is_python_process,
+        _MAX_CHILD_PROFILERS,
+        _CLEANUP_INTERVAL_CYCLES,
+    )
+except ImportError:
+    # Module will be skipped via @requires_remote_subprocess_debugging decorators
+    get_child_pids = None
+    ChildProcessMonitor = None
+    is_python_process = None
+    _MAX_CHILD_PROFILERS = None
+    _CLEANUP_INTERVAL_CYCLES = None
 from profiling.sampling.cli import (
     _add_sampling_options,
     _validate_args,
