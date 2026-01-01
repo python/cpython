@@ -35,13 +35,22 @@ except ImportError:
     is_python_process = None
     _MAX_CHILD_PROFILERS = None
     _CLEANUP_INTERVAL_CYCLES = None
-from profiling.sampling.cli import (
-    _add_sampling_options,
-    _validate_args,
-    _build_child_profiler_args,
-    _build_output_pattern,
-    _setup_child_monitor,
-)
+
+try:
+    from profiling.sampling.cli import (
+        _add_sampling_options,
+        _validate_args,
+        _build_child_profiler_args,
+        _build_output_pattern,
+        _setup_child_monitor,
+    )
+except ImportError:
+    # cli module imports sample module which requires _remote_debugging
+    _add_sampling_options = None
+    _validate_args = None
+    _build_child_profiler_args = None
+    _build_output_pattern = None
+    _setup_child_monitor = None
 
 from .helpers import _cleanup_process
 

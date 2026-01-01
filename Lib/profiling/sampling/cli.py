@@ -35,7 +35,11 @@ from .constants import (
     SORT_MODE_NSAMPLES_CUMUL,
 )
 
-from ._child_monitor import ChildProcessMonitor
+try:
+    from ._child_monitor import ChildProcessMonitor
+except ImportError:
+    # _remote_debugging module not available on this platform (e.g., WASI)
+    ChildProcessMonitor = None
 
 try:
     from .live_collector import LiveStatsCollector
@@ -654,6 +658,11 @@ def _validate_args(args, parser):
 
     # --subprocesses is incompatible with --live
     if hasattr(args, 'subprocesses') and args.subprocesses:
+        if ChildProcessMonitor is None:
+            parser.error(
+                "--subprocesses is not available on this platform "
+                "(requires _remote_debugging module)."
+            )
         if hasattr(args, 'live') and args.live:
             parser.error("--subprocesses is incompatible with --live mode.")
 
