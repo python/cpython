@@ -157,6 +157,16 @@ class ModuleCompleter:
         if not imported_module:
             if path in self._failed_imports:  # Do not propose to import again
                 return [], None
+            root = path.split(".")[0]
+            mod_info = next((m for m in self.global_cache if m.name == root),
+                             None)
+            if mod_info and self._is_stdlib_module(mod_info):
+                # Stdlib module: auto-import (no risk of dangerous side-effect)
+                try:
+                    imported_module = importlib.import_module(path)
+                except Exception:
+                    sys.modules.pop(path, None)  # Clean half-imported module
+        if not imported_module:
             return [], self._get_import_completion_action(path)
         try:
             module_attributes = dir(imported_module)
