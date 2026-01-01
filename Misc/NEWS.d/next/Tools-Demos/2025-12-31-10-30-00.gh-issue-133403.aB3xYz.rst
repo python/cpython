@@ -1,0 +1,2 @@
+Add type annotations to :file:`Tools/build/generate_levenshtein_examples.py`
+and configure mypy to check it with strict type checking.
