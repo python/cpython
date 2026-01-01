@@ -1,1 +1,1 @@
-Fix :class:`ctypes.CDLL` to honor the ``handle`` parameter on POSIX systems. The parameter was being ignored, causing the library to always call ``_dlopen()`` even when a valid handle was provided.
+Fix :class:`ctypes.CDLL` to honor the ``handle`` parameter on POSIX systems.
