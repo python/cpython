@@ -112,7 +112,7 @@ class LoaderTest(unittest.TestCase):
         lib1 = CDLL(libc_name)
         handle = lib1._handle
         lib2 = CDLL(name=None, handle=handle)
-        self.assertIs(handle, lib2._handle)
+        self.assertIs(lib2._handle, handle)
 
     @unittest.skipUnless(os.name == "nt", 'Windows-specific test')
     def test_1703286_A(self):
