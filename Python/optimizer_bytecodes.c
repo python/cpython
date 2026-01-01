@@ -109,8 +109,10 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_STORE_FAST, (value --)) {
+    op(_SWAP_FAST, (value -- trash)) {
+        JitOptRef tmp = GETLOCAL(oparg);
         GETLOCAL(oparg) = value;
+        trash = tmp;
     }
 
     op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- ls, ss)) {
