@@ -2541,6 +2541,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 l_stackref = left;
                 r_stackref = right;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 CHECK_STACK_BOUNDS(1);
                 stack_pointer[-2] = res;

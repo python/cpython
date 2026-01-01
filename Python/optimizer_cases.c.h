@@ -535,6 +535,8 @@
                 l_stackref = left;
                 r_stackref = right;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
@@ -597,6 +599,8 @@
                 l_stackref = left;
                 r_stackref = right;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
@@ -659,6 +663,8 @@
                 l_stackref = left;
                 r_stackref = right;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
@@ -1999,6 +2005,8 @@
                 r_stackref = right;
                 res_stackref = (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
@@ -2061,6 +2069,8 @@
                 r_stackref = right;
                 res_stackref =  (sign_ish & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);
@@ -2121,6 +2131,8 @@
                 assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
                 res_stackref = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? PyStackRef_True : PyStackRef_False;
                 /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                (void)r_stackref;
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
                 if (sym_is_const(ctx, res)) {
                     PyObject *result = sym_get_const(ctx, res);

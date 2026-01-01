@@ -227,6 +227,9 @@ class OptimizerEmitter(Emitter):
         emitter.emit_tokens(self.original_uop, storage, inst=None, emit_braces=False)
         self.out.start_line()
         emitter.emit("/* End of uop copied from bytecodes for constant evaluation */\n")
+        for outp in self.original_uop.stack.outputs:
+            if not outp.name == output_identifier.text:
+                emitter.emit(f"(void){outp.name}_stackref;\n")
 
         # Output stackref is created from new reference.
         emitter.emit(f"{output_identifier.text} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({output_identifier.text}_stackref));\n")
