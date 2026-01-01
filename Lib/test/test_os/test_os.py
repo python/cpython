@@ -2628,6 +2628,14 @@ class ExecTests(unittest.TestCase):
         # Prevent crash when mutating environment during parsing.
         # Regression test for https://github.com/python/cpython/issues/143309.
 
+        if os.name == "nt":
+            # See https://github.com/python/cpython/pull/143314
+            # to understand why we cannot use spaces in strings
+            # when using subprocess and os.execve() on Windows.
+            message = 123456
+        else:
+            message = "hello from execve"
+
         code = """
         import os, sys
 
@@ -2644,13 +2652,13 @@ class ExecTests(unittest.TestCase):
             def keys(self): return KEYS
             def values(self): return VALUES
 
-        args = [sys.executable, '-c', 'print("hello from execve")']
+        args = [sys.executable, '-c', "print('{message}')"]
         os.execve(args[0], args, MyEnv())
-        """
+        """.format(message=message)
 
         rc, out, _ = assert_python_ok('-c', code)
         self.assertEqual(rc, 0)
-        self.assertIn(b"hello from execve", out)
+        self.assertIn(bytes(message, "ascii"), out)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32-specific test")
     def test_execve_with_empty_path(self):
