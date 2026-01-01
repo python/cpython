@@ -2540,6 +2540,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_LOAD_ATTR_METHOD_NO_DICT", uops)
         self.assertNotIn("_LOAD_ATTR_METHOD_LAZY_DICT", uops)
 
+    def test_store_fast_refcount_elimination(self):
+        def foo(x):
+            # Since x is known to be
+            # a constant value (1) here,
+            # The refcount is eliminated in the STOER_FAST.
+            x = 2
+            return x
+        def testfunc(n):
+            # The STORE_FAST for the range here needs a POP_TOP
+            # (for now, until we do loop peeling).
+            for _ in range(n):
+                foo(1)
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(len(matching_opnames(ex, "_POP_TOP")), 1)
+
     def test_float_op_refcount_elimination(self):
         def testfunc(args):
             a, b, n = args
