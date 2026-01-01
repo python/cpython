@@ -2544,7 +2544,7 @@ class TestUopsOptimization(unittest.TestCase):
         def foo(x):
             # Since x is known to be
             # a constant value (1) here,
-            # The refcount is eliminated in the STOER_FAST.
+            # The refcount is eliminated in the STORE_FAST.
             x = 2
             return x
         def testfunc(n):
