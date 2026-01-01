@@ -1688,7 +1688,6 @@ Subcommands
 
       All other keyword arguments are passed directly to the
       :class:`!ArgumentParser` constructor.
-      This returned :class:`!ArgumentParser` object can be modified as usual.
 
    Description of parameters:
 
