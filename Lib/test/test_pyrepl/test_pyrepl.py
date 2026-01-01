@@ -1038,6 +1038,8 @@ class TestPyReplModuleCompleter(TestCase):
             (None, "from . import readl\t\n", "from . import readl"),
             ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+            ("_pyrepl", "from .. import toodeep\t\n", "from .. import toodeep"),
+            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
@@ -1075,6 +1077,18 @@ class TestPyReplModuleCompleter(TestCase):
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, expected)
+
+    def test_global_cache(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mod_aa.py").mkdir()
+            (dir1 / "mod_bb.py").mkdir()
+            events = code_to_events("import mod_a\t\nimport mod_b\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output_1, output_2 = reader.readline(), reader.readline()
+            self.assertEqual(output_1, "import mod_aa")
+            self.assertEqual(output_2, "import mod_bb")
 
     def test_hardcoded_stdlib_submodules(self):
         cases = (
@@ -1291,6 +1305,7 @@ class TestPyReplModuleCompleter(TestCase):
             'import ..foo',
             'import .foo.bar',
             'import foo; x = 1',
+            'import foo; 1,',
             'import a.; x = 1',
             'import a.b; x = 1',
             'import a.b.; x = 1',
@@ -1310,6 +1325,8 @@ class TestPyReplModuleCompleter(TestCase):
             'from foo import import',
             'from foo import from',
             'from foo import as',
+            'from \\x',  # _tokenize SyntaxError -> tokenize TokenError
+            'if 1:\n pass\n\tpass',  # _tokenize TabError -> tokenize TabError
         )
         for code in cases:
             parser = ImportParser(code)
