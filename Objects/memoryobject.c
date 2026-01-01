@@ -2623,7 +2623,10 @@ memory_subscript(PyObject *_self, PyObject *key)
         if (sliced == NULL)
             return NULL;
 
-        if (init_slice(&sliced->view, key, 0) < 0) {
+        self->exports++;
+        int rc = init_slice(&sliced->view, key, 0);
+        self->exports--;
+        if (rc < 0) {
             Py_DECREF(sliced);
             return NULL;
         }
