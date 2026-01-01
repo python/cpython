@@ -94,6 +94,7 @@ const uint32_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_SLICE] = HAS_EXIT_FLAG,
     [_TO_BOOL_LIST] = HAS_ESCAPES_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_COMPACT_ASCII] = HAS_EXIT_FLAG,
     [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
     [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
     [_TO_BOOL_STR] = HAS_ESCAPES_FLAG,
@@ -897,6 +898,15 @@ const _PyUopCachingInfo _PyUop_Caching[MAX_UOP_ID+1] = {
             { 1, 1, _TO_BOOL_NONE_r11 },
             { 2, 2, _TO_BOOL_NONE_r22 },
             { 3, 3, _TO_BOOL_NONE_r33 },
+        },
+    },
+    [_GUARD_NOS_COMPACT_ASCII] = {
+        .best = { 0, 1, 2, 3 },
+        .entries = {
+            { 2, 0, _GUARD_NOS_COMPACT_ASCII_r02 },
+            { 2, 1, _GUARD_NOS_COMPACT_ASCII_r12 },
+            { 2, 2, _GUARD_NOS_COMPACT_ASCII_r22 },
+            { 3, 3, _GUARD_NOS_COMPACT_ASCII_r33 },
         },
     },
     [_GUARD_NOS_UNICODE] = {
@@ -3391,6 +3401,10 @@ const uint16_t _PyUop_Uncached[MAX_UOP_REGS_ID+1] = {
     [_TO_BOOL_NONE_r11] = _TO_BOOL_NONE,
     [_TO_BOOL_NONE_r22] = _TO_BOOL_NONE,
     [_TO_BOOL_NONE_r33] = _TO_BOOL_NONE,
+    [_GUARD_NOS_COMPACT_ASCII_r02] = _GUARD_NOS_COMPACT_ASCII,
+    [_GUARD_NOS_COMPACT_ASCII_r12] = _GUARD_NOS_COMPACT_ASCII,
+    [_GUARD_NOS_COMPACT_ASCII_r22] = _GUARD_NOS_COMPACT_ASCII,
+    [_GUARD_NOS_COMPACT_ASCII_r33] = _GUARD_NOS_COMPACT_ASCII,
     [_GUARD_NOS_UNICODE_r02] = _GUARD_NOS_UNICODE,
     [_GUARD_NOS_UNICODE_r12] = _GUARD_NOS_UNICODE,
     [_GUARD_NOS_UNICODE_r22] = _GUARD_NOS_UNICODE,
@@ -4333,6 +4347,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_REGS_ID+1] = {
     [_GUARD_KEYS_VERSION_r11] = "_GUARD_KEYS_VERSION_r11",
     [_GUARD_KEYS_VERSION_r22] = "_GUARD_KEYS_VERSION_r22",
     [_GUARD_KEYS_VERSION_r33] = "_GUARD_KEYS_VERSION_r33",
+    [_GUARD_NOS_COMPACT_ASCII] = "_GUARD_NOS_COMPACT_ASCII",
+    [_GUARD_NOS_COMPACT_ASCII_r02] = "_GUARD_NOS_COMPACT_ASCII_r02",
+    [_GUARD_NOS_COMPACT_ASCII_r12] = "_GUARD_NOS_COMPACT_ASCII_r12",
+    [_GUARD_NOS_COMPACT_ASCII_r22] = "_GUARD_NOS_COMPACT_ASCII_r22",
+    [_GUARD_NOS_COMPACT_ASCII_r33] = "_GUARD_NOS_COMPACT_ASCII_r33",
     [_GUARD_NOS_DICT] = "_GUARD_NOS_DICT",
     [_GUARD_NOS_DICT_r02] = "_GUARD_NOS_DICT_r02",
     [_GUARD_NOS_DICT_r12] = "_GUARD_NOS_DICT_r12",
@@ -5070,6 +5089,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _TO_BOOL_NONE:
             return 1;
+        case _GUARD_NOS_COMPACT_ASCII:
+            return 0;
         case _GUARD_NOS_UNICODE:
             return 0;
         case _GUARD_TOS_UNICODE:

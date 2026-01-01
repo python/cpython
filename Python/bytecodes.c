@@ -529,6 +529,12 @@ dummy_func(
             res = PyStackRef_False;
         }
 
+        op (_GUARD_NOS_COMPACT_ASCII, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyUnicode_CheckExact(o));
+            EXIT_IF(!PyUnicode_IS_COMPACT_ASCII(o));
+        }
+
         op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             EXIT_IF(!PyUnicode_CheckExact(o));
@@ -934,7 +940,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
-            _GUARD_TOS_INT + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + POP_TOP;
+            _GUARD_TOS_INT + _GUARD_NOS_COMPACT_ASCII + unused/5 + _BINARY_OP_SUBSCR_STR_INT + _POP_TOP_INT + POP_TOP;
 
         op(_BINARY_OP_SUBSCR_STR_INT, (str_st, sub_st -- res, s, i)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
