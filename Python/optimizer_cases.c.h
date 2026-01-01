@@ -2916,14 +2916,18 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
+            JitOptRef *args;
+            JitOptRef callable;
             JitOptRef res;
             JitOptRef a0;
             JitOptRef a1;
             JitOptRef c;
+            args = &stack_pointer[-oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            a0 = sym_new_not_null(ctx);
-            a1 = sym_new_not_null(ctx);
-            c = sym_new_not_null(ctx);
+            a0 = args[0];
+            a1 = args[1];
+            c = callable;
             CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = a0;
