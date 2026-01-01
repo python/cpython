@@ -2327,8 +2327,9 @@
             _PyStackRef self_or_null;
             _PyStackRef *args;
             _PyStackRef res;
-            _PyStackRef a;
             _PyStackRef c;
+            _PyStackRef s;
+            _PyStackRef a;
             _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2374,16 +2375,18 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
-                a = arg;
                 c = callable;
+                s = self_or_null;
+                a = args[0];
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
             {
-                value = c;
+                value = a;
                 stack_pointer[-2 - oparg] = res;
-                stack_pointer[-1 - oparg] = a;
-                stack_pointer += -oparg;
+                stack_pointer[-1 - oparg] = c;
+                stack_pointer[-oparg] = s;
+                stack_pointer += 1 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
@@ -2391,7 +2394,16 @@
             }
             // _POP_TOP
             {
-                value = a;
+                value = s;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = c;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3613,9 +3625,9 @@
             _PyStackRef self_or_null;
             _PyStackRef *args;
             _PyStackRef res;
-            _PyStackRef a0;
-            _PyStackRef a1;
             _PyStackRef c;
+            _PyStackRef s;
+            _PyStackRef a;
             _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -3673,17 +3685,17 @@
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
-                a0 = self_stackref;
-                a1 = arg_stackref;
                 c = callable;
+                s = self_or_null;
+                a = args[0];
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
             {
-                value = c;
+                value = a;
                 stack_pointer[-2 - oparg] = res;
-                stack_pointer[-1 - oparg] = a0;
-                stack_pointer[-oparg] = a1;
+                stack_pointer[-1 - oparg] = c;
+                stack_pointer[-oparg] = s;
                 stack_pointer += 1 - oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3692,7 +3704,7 @@
             }
             // _POP_TOP
             {
-                value = a1;
+                value = s;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3701,7 +3713,7 @@
             }
             // _POP_TOP
             {
-                value = a0;
+                value = c;
                 stack_pointer += -1;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);

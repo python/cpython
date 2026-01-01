@@ -13568,8 +13568,9 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
-            _PyStackRef a;
             _PyStackRef c;
+            _PyStackRef s;
+            _PyStackRef a;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -13612,14 +13613,16 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            a = arg;
             c = callable;
+            s = self_or_null;
+            a = args[0];
             res = PyStackRef_FromPyObjectSteal(res_o);
-            _tos_cache2 = c;
-            _tos_cache1 = a;
-            _tos_cache0 = res;
+            _tos_cache2 = a;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer += -2 - oparg;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -14309,9 +14312,9 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
-            _PyStackRef a0;
-            _PyStackRef a1;
             _PyStackRef c;
+            _PyStackRef s;
+            _PyStackRef a;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -14366,13 +14369,13 @@
                 SET_CURRENT_CACHED_VALUES(0);
                 JUMP_TO_ERROR();
             }
-            a0 = self_stackref;
-            a1 = arg_stackref;
             c = callable;
+            s = self_or_null;
+            a = args[0];
             res = PyStackRef_FromPyObjectSteal(res_o);
-            _tos_cache2 = c;
-            _tos_cache1 = a1;
-            _tos_cache0 = a0;
+            _tos_cache2 = a;
+            _tos_cache1 = s;
+            _tos_cache0 = c;
             SET_CURRENT_CACHED_VALUES(3);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;

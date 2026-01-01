@@ -4170,7 +4170,7 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, a, c)) {
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
             /* Builtin METH_O functions */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4193,8 +4193,9 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            a = arg;
             c = callable;
+            s = self_or_null;
+            a = args[0];
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -4203,6 +4204,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
+            POP_TOP +
             POP_TOP +
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
@@ -4362,7 +4364,7 @@ dummy_func(
             none = PyStackRef_None;
         }
 
-         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, a0, a1, c)) {
+         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
             int total_args = oparg;
@@ -4393,9 +4395,9 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            a0 = self_stackref;
-            a1 = arg_stackref;
             c = callable;
+            s = self_or_null;
+            a = args[0];
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }

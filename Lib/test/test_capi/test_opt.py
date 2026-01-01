@@ -2201,7 +2201,8 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for _ in range(n):
-                y = abs(1)
+                my_abs = abs
+                y = my_abs(1)
                 x += y
             return x
 
@@ -2210,7 +2211,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_BUILTIN_O", uops)
-        self.assertIn("_POP_TOP", uops)
+        self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
     def test_call_method_descriptor_o(self):
@@ -2226,8 +2227,10 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
+        pop_tops = [opname for opname in iter_opnames(ex) if opname == "_POP_TOP"]
         self.assertIn("_CALL_METHOD_DESCRIPTOR_O", uops)
-        self.assertIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+        self.assertLessEqual(len(pop_tops), 1)
 
     def test_get_len_with_const_tuple(self):
         def testfunc(n):
