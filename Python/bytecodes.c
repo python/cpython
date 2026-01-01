@@ -2485,7 +2485,7 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+        op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             PyObject **addr = (PyObject **)((char *)owner_o + index);
@@ -2498,6 +2498,8 @@ dummy_func(
             attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
+            o = owner;
+            DEAD(owner);
             DECREF_INPUTS();
         }
 
@@ -2505,6 +2507,7 @@ dummy_func(
             unused/1 +
             _GUARD_TYPE_VERSION +
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
+            POP_TOP +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 

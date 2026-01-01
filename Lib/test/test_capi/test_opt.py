@@ -2573,6 +2573,25 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_POP_TOP", uops)
         self.assertIn("_POP_TOP_NOP", uops)
 
+    def test_load_addr_slot(self):
+        def testfunc(n):
+            class C:
+                __slots__ = ('x',)
+            c = C()
+            c.x = 42
+            x = 0
+            for _ in range(n):
+                x += c.x
+            return x
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, 42 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertIn("_LOAD_ATTR_SLOT", uops)
+        self.assertNotIn("_POP_TOP", uops)
+        self.assertIn("_POP_TOP_NOP", uops)
+
     def test_int_add_op_refcount_elimination(self):
         def testfunc(n):
             c = 1
