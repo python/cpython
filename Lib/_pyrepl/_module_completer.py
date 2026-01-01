@@ -111,7 +111,7 @@ class ModuleCompleter:
         modules: Iterable[pkgutil.ModuleInfo]
         imported_module = sys.modules.get(path.split('.')[0])
         if imported_module:
-            modules = self._find_already_imported_module_specs(imported_module)
+            modules = self._find_already_imported_module_infos(imported_module)
         else:
             modules = self.global_cache
 
@@ -136,7 +136,7 @@ class ModuleCompleter:
         return (isinstance(module_info.module_finder, FileFinder)
                 and module_info.module_finder.path == self._stdlib_path)
 
-    def _find_already_imported_module_specs(self, imported_module: ModuleType) -> list[pkgutil.ModuleInfo]:
+    def _find_already_imported_module_infos(self, imported_module: ModuleType) -> list[pkgutil.ModuleInfo]:
         # Module already imported: only look in its location,
         # even if a module with the same name would be higher in path
         module_location = self._get_module_location(imported_module)
