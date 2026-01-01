@@ -60,6 +60,13 @@ def iter_opnames(ex):
 def get_opnames(ex):
     return list(iter_opnames(ex))
 
+def iter_ops(ex):
+    for item in ex:
+        yield item
+
+def get_ops(ex):
+    return list(iter_ops(ex))
+
 
 @requires_specialization
 @unittest.skipIf(Py_GIL_DISABLED, "optimizer not yet supported in free-threaded builds")
@@ -3003,14 +3010,25 @@ class TestUopsOptimization(unittest.TestCase):
         # Outer loop warms up later, linking to the inner one.
         # Therefore, we have at least two executors.
         self.assertGreaterEqual(len(all_executors), 2)
+        executor_ids = [id(e) for e in all_executors]
         for executor in all_executors:
-            opnames = list(get_opnames(executor))
+            ops = get_ops(executor)
             # Assert all executors first terminator ends in
             # _EXIT_TRACE or _JUMP_TO_TOP, not _DEOPT
-            for idx, op in enumerate(opnames):
-                if op == "_EXIT_TRACE" or op == "_JUMP_TO_TOP":
+            for idx, op in enumerate(ops):
+                opname = op[0]
+                if opname == "_EXIT_TRACE":
+                    # As this is a link outer executor to inner
+                    # executor problem, all executors exits should point to
+                    # another valid executor. In this case, none of them
+                    # should be the cold executor.
+                    exit = op[3]
+                    link_to = _testinternalcapi.get_exit_executor(exit)
+                    self.assertIn(id(link_to), executor_ids)
                     break
-                elif op == "_DEOPT":
+                elif opname == "_JUMP_TO_TOP":
+                    break
+                elif opname == "_DEOPT":
                     self.fail(f"_DEOPT encountered first at executor"
                               f" {executor} at offset {idx} rather"
                               f" than expected _EXIT_TRACE")
