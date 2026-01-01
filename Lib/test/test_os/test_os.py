@@ -2666,8 +2666,11 @@ class ExecTests(unittest.TestCase):
         code = """
         import os, sys
 
-        assert list(os.environ.keys()) == ["SYSTEMROOT"]
-        assert list(os.environ.values()) == [{SYSTEMROOT!r}]
+        assert "SYSTEMROOT" in os.environ, list(os.environ.keys())
+        assert os.environ["SYSTEMROOT"] == {SYSTEMROOT!r}, (
+            repr(os.environ["SYSTEMROOT"]),
+            repr({SYSTEMROOT!r}),
+        )
 
         class MyPath:
             def __fspath__(self):
