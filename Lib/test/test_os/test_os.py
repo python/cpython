@@ -2652,7 +2652,7 @@ class ExecTests(unittest.TestCase):
             def keys(self): return KEYS
             def values(self): return VALUES
 
-        args = [sys.executable, '-c', "print('{message}')"]
+        args = [sys.executable, '-c', "print({message!r})"]
         os.execve(args[0], args, MyEnv())
         """.format(message=message)
 
