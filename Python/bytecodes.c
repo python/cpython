@@ -2500,7 +2500,6 @@ dummy_func(
             STAT_INC(LOAD_ATTR, hit);
             o = owner;
             DEAD(owner);
-            DECREF_INPUTS();
         }
 
         macro(LOAD_ATTR_SLOT) =
