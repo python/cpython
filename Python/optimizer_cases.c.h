@@ -2777,8 +2777,14 @@
             c = callable;
             if (sym_is_not_null(self_or_null)) {
                 args--;
+                s = args[0];
             }
-            s = args[0];
+            else if (sym_is_null(self_or_null)) {
+                s = args[0];
+            }
+            else {
+                s = sym_new_unknown(ctx);
+            }
             CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = c;
@@ -2935,9 +2941,13 @@
             c = callable;
             if (sym_is_not_null(self_or_null)) {
                 args--;
+                s = args[0];
+                a = args[1];
             }
-            s = args[0];
-            a = args[1];
+            else {
+                s = sym_new_unknown(ctx);
+                a = sym_new_unknown(ctx);
+            }
             CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = c;

@@ -1069,8 +1069,14 @@ dummy_func(void) {
         c = callable;
         if (sym_is_not_null(self_or_null)) {
             args--;
+            s = args[0];
         }
-        s = args[0];
+        else if (sym_is_null(self_or_null)) {
+            s = args[0];
+        }
+        else {
+            s = sym_new_unknown(ctx);
+        }
     }
 
     op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
@@ -1078,9 +1084,13 @@ dummy_func(void) {
         c = callable;
         if (sym_is_not_null(self_or_null)) {
             args--;
+            s = args[0];
+            a = args[1];
         }
-        s = args[0];
-        a = args[1];
+        else {
+            s = sym_new_unknown(ctx);
+            a = sym_new_unknown(ctx);
+        }
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {
