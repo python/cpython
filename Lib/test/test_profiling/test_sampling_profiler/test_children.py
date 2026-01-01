@@ -438,6 +438,11 @@ class TestCLIChildrenFlag(unittest.TestCase):
             child_args,
             f"Flag '--flamegraph' not found in args: {child_args}",
         )
+        self.assertNotIn(
+            "--browser",
+            child_args,
+            f"Flag '--browser' should not be in child args: {child_args}",
+        )
 
     def test_build_child_profiler_args_no_gc(self):
         """Test building CLI args with --no-gc."""
