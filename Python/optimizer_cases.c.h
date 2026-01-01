@@ -1045,9 +1045,22 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
+            JitOptRef v;
             JitOptRef gen_frame;
-            gen_frame = PyJitRef_NULL;
-            ctx->done = true;
+            v = stack_pointer[-1];
+            assert((this_instr + 1)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 1));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+            if (new_frame == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
+            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
             stack_pointer[-1] = gen_frame;
             break;
         }
@@ -2231,8 +2244,19 @@
 
         case _FOR_ITER_GEN_FRAME: {
             JitOptRef gen_frame;
-            gen_frame = PyJitRef_NULL;
-            ctx->done = true;
+            assert((this_instr + 1)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 1));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+            if (new_frame == NULL) {
+                ctx->done = true;
+                break;
+            }
+            new_frame->stack[0] = sym_new_const(ctx, Py_None);
+            gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;

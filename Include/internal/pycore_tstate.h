@@ -45,6 +45,7 @@ typedef struct _PyJitTracerPreviousState {
     PyCodeObject *instr_code; // Strong
     struct _PyInterpreterFrame *instr_frame;
     _PyBloomFilter dependencies;
+    int jump_backward_seen;
 } _PyJitTracerPreviousState;
 
 typedef struct _PyJitTracerState {

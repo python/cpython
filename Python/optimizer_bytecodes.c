@@ -927,15 +927,35 @@ dummy_func(void) {
     }
 
     op(_FOR_ITER_GEN_FRAME, (unused, unused -- unused, unused, gen_frame)) {
-        gen_frame = PyJitRef_NULL;
-        /* We are about to hit the end of the trace */
-        ctx->done = true;
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 1));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+        if (new_frame == NULL) {
+            ctx->done = true;
+            break;
+        }
+        new_frame->stack[0] = sym_new_const(ctx, Py_None);
+        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
     }
 
-    op(_SEND_GEN_FRAME, (unused, unused -- unused, gen_frame)) {
-        gen_frame = PyJitRef_NULL;
-        // We are about to hit the end of the trace:
-        ctx->done = true;
+    op(_SEND_GEN_FRAME, (unused, v -- unused, gen_frame)) {
+        assert((this_instr + 1)->opcode == _PUSH_FRAME);
+        PyCodeObject *co = get_code_with_logging((this_instr + 1));
+        if (co == NULL) {
+            ctx->done = true;
+            break;
+        }
+        _Py_UOpsAbstractFrame *new_frame = frame_new(ctx, co, 1, NULL, 0);
+        if (new_frame == NULL) {
+            ctx->done = true;
+            break;
+        }
+        new_frame->stack[0] = PyJitRef_StripReferenceInfo(v);
+        gen_frame = PyJitRef_Wrap((JitOptSymbol *)new_frame);
     }
 
     op(_CHECK_STACK_SPACE, (unused, unused, unused[oparg] -- unused, unused, unused[oparg])) {
