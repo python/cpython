@@ -7317,8 +7317,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
 
     for (pos = 0; pos < i; pos++) {
-        // The 'key' and 'val' must be strong references because
-        // of possible side-effects by PyUnicode_FSConverter().
+        // The 'key' and 'val' must be strong references because of
+        // possible side-effects by PyUnicode_FS{Converter,Decoder}().
         key = PyList_GetItemRef(keys, pos);
         if (key == NULL) {
             goto error;
