@@ -664,15 +664,10 @@ The header objects and their attributes are described in
 
    .. note::
 
-      The :const:`compat32` policy does not provide a ``content_manager``
-      attribute and cannot be used with content management methods like
-      :meth:`~email.message.EmailMessage.set_content` and
-      :meth:`~email.message.EmailMessage.get_content`. To serialize an
-      :class:`~email.message.EmailMessage` with compat32 formatting, construct
-      the message with :data:`~email.policy.default` or another
-      :class:`EmailPolicy` instance, then pass :const:`compat32` to
-      :meth:`~email.message.EmailMessage.as_string` or
-      :meth:`~email.message.EmailMessage.as_bytes`.
+      The :const:`compat32` policy should not be used as a policy for
+      :class:`~email.message.EmailMessage` objects, and should only be used
+      to serialize messages that were created using the :const:`compat32`
+      policy.
 
 
 .. rubric:: Footnotes

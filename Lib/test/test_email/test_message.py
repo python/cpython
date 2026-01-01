@@ -1113,21 +1113,6 @@ class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
         attachments = msg.iter_attachments()
         self.assertEqual(list(attachments), [])
 
-    def test_set_content_with_compat32_policy_raises(self):
-        m = MIMEPart(policy=policy.compat32)
-        with self.assertRaises(TypeError) as cm:
-            m.set_content(b'\x00'*100, 'image', 'png')
-        self.assertIn('content_manager', str(cm.exception))
-
-    def test_set_content_with_compat32_policy_flattening(self):
-        m = MIMEPart()
-        m.set_content(b'\x00'*100, 'image', 'png')
-        message_as_bytes = m.as_bytes(policy=policy.compat32)
-        self.assertEqual(message_as_bytes,
-                         b'Content-Type: image/png\nContent-Transfer-Encoding: base64\n\n'
-                         b'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n'
-                         b'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\n')
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -1136,18 +1136,12 @@ class MIMEPart(Message):
 
     def get_content(self, *args, content_manager=None, **kw):
         if content_manager is None:
-            content_manager = getattr(self.policy, 'content_manager', None)
-            if content_manager is None:
-                raise TypeError('policy %s lacks content_manager'
-                                % type(self.policy).__name__)
+            content_manager = self.policy.content_manager
         return content_manager.get_content(self, *args, **kw)
 
     def set_content(self, *args, content_manager=None, **kw):
         if content_manager is None:
-            content_manager = getattr(self.policy, 'content_manager', None)
-            if content_manager is None:
-                raise TypeError('policy %s lacks content_manager'
-                                % type(self.policy).__name__)
+            content_manager = self.policy.content_manager
         content_manager.set_content(self, *args, **kw)
 
     def _make_multipart(self, subtype, disallowed_subtypes, boundary):
