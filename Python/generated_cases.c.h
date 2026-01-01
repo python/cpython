@@ -2329,7 +2329,6 @@
             _PyStackRef res;
             _PyStackRef c;
             _PyStackRef s;
-            _PyStackRef a;
             _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -2376,26 +2375,15 @@
                     JUMP_TO_LABEL(error);
                 }
                 c = callable;
-                s = self_or_null;
-                a = args[0];
+                s = args[0];
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP
             {
-                value = a;
+                value = s;
                 stack_pointer[-2 - oparg] = res;
                 stack_pointer[-1 - oparg] = c;
-                stack_pointer[-oparg] = s;
-                stack_pointer += 1 - oparg;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_XCLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            // _POP_TOP
-            {
-                value = s;
-                stack_pointer += -1;
+                stack_pointer += -oparg;
                 ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_XCLOSE(value);
@@ -3686,8 +3674,8 @@
                     JUMP_TO_LABEL(error);
                 }
                 c = callable;
-                s = self_or_null;
-                a = args[0];
+                s = arguments[0];
+                a = arguments[1];
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
             // _POP_TOP

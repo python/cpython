@@ -13570,7 +13570,6 @@
             _PyStackRef res;
             _PyStackRef c;
             _PyStackRef s;
-            _PyStackRef a;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -13614,15 +13613,13 @@
                 JUMP_TO_ERROR();
             }
             c = callable;
-            s = self_or_null;
-            a = args[0];
+            s = args[0];
             res = PyStackRef_FromPyObjectSteal(res_o);
-            _tos_cache2 = a;
-            _tos_cache1 = s;
-            _tos_cache0 = c;
+            _tos_cache2 = s;
+            _tos_cache1 = c;
+            _tos_cache0 = res;
             SET_CURRENT_CACHED_VALUES(3);
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer += -2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             assert(WITHIN_STACK_BOUNDS_IGNORING_CACHE());
             break;
@@ -14370,8 +14367,8 @@
                 JUMP_TO_ERROR();
             }
             c = callable;
-            s = self_or_null;
-            a = args[0];
+            s = arguments[0];
+            a = arguments[1];
             res = PyStackRef_FromPyObjectSteal(res_o);
             _tos_cache2 = a;
             _tos_cache1 = s;

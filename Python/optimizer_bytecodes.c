@@ -1064,18 +1064,23 @@ dummy_func(void) {
         none = sym_new_const(ctx, Py_None);
     }
 
-    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
+    op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
         res = sym_new_not_null(ctx);
         c = callable;
-        s = self_or_null;
-        a = args[0];
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+        }
+        s = args[0];
     }
 
     op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
         res = sym_new_not_null(ctx);
         c = callable;
-        s = self_or_null;
-        a = args[0];
+        if (sym_is_not_null(self_or_null)) {
+            args--;
+        }
+        s = args[0];
+        a = args[1];
     }
 
     op(_GUARD_IS_FALSE_POP, (flag -- )) {

@@ -2770,20 +2770,20 @@
             JitOptRef res;
             JitOptRef c;
             JitOptRef s;
-            JitOptRef a;
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
             c = callable;
-            s = self_or_null;
-            a = args[0];
-            CHECK_STACK_BOUNDS(2 - oparg);
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+            }
+            s = args[0];
+            CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = c;
             stack_pointer[-oparg] = s;
-            stack_pointer[1 - oparg] = a;
-            stack_pointer += 2 - oparg;
+            stack_pointer += 1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
@@ -2933,8 +2933,11 @@
             callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
             c = callable;
-            s = self_or_null;
-            a = args[0];
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+            }
+            s = args[0];
+            a = args[1];
             CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-2 - oparg] = res;
             stack_pointer[-1 - oparg] = c;

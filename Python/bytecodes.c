@@ -4170,7 +4170,7 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC_AT_END;
 
-        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s, a)) {
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res, c, s)) {
             /* Builtin METH_O functions */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4194,8 +4194,7 @@ dummy_func(
                 ERROR_NO_POP();
             }
             c = callable;
-            s = self_or_null;
-            a = args[0];
+            s = args[0];
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -4204,7 +4203,6 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
-            POP_TOP +
             POP_TOP +
             POP_TOP +
             _CHECK_PERIODIC_AT_END;
@@ -4396,8 +4394,8 @@ dummy_func(
                 ERROR_NO_POP();
             }
             c = callable;
-            s = self_or_null;
-            a = args[0];
+            s = arguments[0];
+            a = arguments[1];
             INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
