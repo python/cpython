@@ -1,4 +1,3 @@
-import collections
 import unittest
 import subprocess
 import sys
