@@ -2913,10 +2913,19 @@
 
         case _CALL_METHOD_DESCRIPTOR_O: {
             JitOptRef res;
+            JitOptRef a0;
+            JitOptRef a1;
+            JitOptRef c;
             res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
+            a0 = sym_new_not_null(ctx);
+            a1 = sym_new_not_null(ctx);
+            c = sym_new_not_null(ctx);
+            CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-1 - oparg] = a0;
+            stack_pointer[-oparg] = a1;
+            stack_pointer[1 - oparg] = c;
+            stack_pointer += 2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }

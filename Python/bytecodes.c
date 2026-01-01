@@ -4362,7 +4362,7 @@ dummy_func(
             none = PyStackRef_None;
         }
 
-         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
+         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res, a0, a1, c)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
             int total_args = oparg;
@@ -4390,8 +4390,13 @@ dummy_func(
                                   PyStackRef_AsPyObjectBorrow(arg_stackref));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            DECREF_INPUTS();
-            ERROR_IF(res_o == NULL);
+            if (res_o == NULL) {
+                ERROR_NO_POP();
+            }
+            a0 = self_stackref;
+            a1 = arg_stackref;
+            c = callable;
+            INPUTS_DEAD();
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4399,6 +4404,9 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_O +
+            POP_TOP +
+            POP_TOP +
+            POP_TOP +
             _CHECK_PERIODIC_AT_END;
 
         op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {

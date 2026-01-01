@@ -3613,6 +3613,10 @@
             _PyStackRef self_or_null;
             _PyStackRef *args;
             _PyStackRef res;
+            _PyStackRef a0;
+            _PyStackRef a1;
+            _PyStackRef c;
+            _PyStackRef value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_METHOD_DESCRIPTOR_O
@@ -3666,34 +3670,46 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 _Py_LeaveRecursiveCallTstate(tstate);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp;
-                for (int _i = oparg; --_i >= 0;) {
-                    tmp = args[_i];
-                    args[_i] = PyStackRef_NULL;
-                    PyStackRef_CLOSE(tmp);
-                }
-                tmp = self_or_null;
-                self_or_null = PyStackRef_NULL;
-                stack_pointer[-1 - oparg] = self_or_null;
-                PyStackRef_XCLOSE(tmp);
-                tmp = callable;
-                callable = PyStackRef_NULL;
-                stack_pointer[-2 - oparg] = callable;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -2 - oparg;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 if (res_o == NULL) {
                     JUMP_TO_LABEL(error);
                 }
+                a0 = self_stackref;
+                a1 = arg_stackref;
+                c = callable;
                 res = PyStackRef_FromPyObjectSteal(res_o);
+            }
+            // _POP_TOP
+            {
+                value = c;
+                stack_pointer[-2 - oparg] = res;
+                stack_pointer[-1 - oparg] = a0;
+                stack_pointer[-oparg] = a1;
+                stack_pointer += 1 - oparg;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = a1;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            // _POP_TOP
+            {
+                value = a0;
+                stack_pointer += -1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_XCLOSE(value);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // _CHECK_PERIODIC_AT_END
             {
-                stack_pointer[0] = res;
-                stack_pointer += 1;
-                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
