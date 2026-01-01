@@ -472,6 +472,10 @@ class HeatmapCollector(StackTraceCollector):
         self.callers_graph = collections.defaultdict(set)
         self.function_definitions = {}
 
+        # Map each sampled line to its function for proper caller lookup
+        # (filename, lineno) -> funcname
+        self.line_to_function = {}
+
         # Edge counting for call path analysis
         self.edge_samples = collections.Counter()
 
@@ -595,6 +599,10 @@ class HeatmapCollector(StackTraceCollector):
         # Record function definition location
         if funcname and (filename, funcname) not in self.function_definitions:
             self.function_definitions[(filename, funcname)] = lineno
+
+        # Map this line to its function for caller/callee navigation
+        if funcname:
+            self.line_to_function[(filename, lineno)] = funcname
 
     def _record_bytecode_sample(self, filename, lineno, opcode,
                                 end_lineno=None, col_offset=None, end_col_offset=None,
@@ -1150,13 +1158,36 @@ class HeatmapCollector(StackTraceCollector):
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     def _build_navigation_buttons(self, filename: str, line_num: int) -> str:
-        """Build navigation buttons for callers/callees."""
+        """Build navigation buttons for callers/callees.
+
+        - Callers: All lines in a function show who calls this function
+        - Callees: Only actual call site lines show what they call
+        """
         line_key = (filename, line_num)
-        caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        funcname = self.line_to_function.get(line_key)
+
+        # Get callers: look up by function definition line, not current line
+        # This ensures all lines in a function show who calls this function
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            func_def_key = (filename, func_def_line)
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(func_def_key, set()))
+        else:
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        # Get callees: only show for actual call site lines (not every line in function)
         callee_list = self._deduplicate_by_function(self.call_graph.get(line_key, set()))
 
         # Get edge counts for each caller/callee
-        callers_with_counts = self._get_edge_counts(line_key, caller_list, is_caller=True)
+        # For callers, use the function definition key for edge lookup
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            caller_edge_key = (filename, func_def_line)
+        else:
+            caller_edge_key = line_key
+        callers_with_counts = self._get_edge_counts(caller_edge_key, caller_list, is_caller=True)
+        # For callees, use the actual line key since that's where the call happens
         callees_with_counts = self._get_edge_counts(line_key, callee_list, is_caller=False)
 
         # Build navigation buttons with counts
