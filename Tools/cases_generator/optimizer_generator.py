@@ -253,7 +253,7 @@ class OptimizerEmitter(Emitter):
                 },
             }
 
-            input_count = len(used_stack_inputs)
+            output_index = -1
             for idx, outp in enumerate(reversed(uop.stack.outputs)):
                 if outp.name == output_identifier.text:
                     output_index =  idx
@@ -261,6 +261,7 @@ class OptimizerEmitter(Emitter):
             else:
                 raise analysis_error(f"Could not find output {output_identifier.text} in uop.", output_identifier)
             assert output_index >= 0
+            input_count = len(used_stack_inputs)
             if input_count in input_count_to_uop and output_index in input_count_to_uop[input_count]:
                 replacement_uop = input_count_to_uop[input_count][output_index]
                 input_desc = "one input" if input_count == 1 else "two inputs"
