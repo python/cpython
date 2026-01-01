@@ -2563,6 +2563,58 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_replace_opcode_unaryop_one_output_insert(self):
+        input = """
+        pure op(OP, (left -- res, l)) {
+            res = foo(left);
+            l = left;
+        }
+        """
+        input2 = """
+        op(OP, (left -- res, l)) {
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            REPLACE_OPCODE_IF_EVALUATES_PURE(left, res);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef left;
+            JitOptRef res;
+            JitOptRef l;
+            left = stack_pointer[-1];
+            res = sym_new_non_null(ctx, foo);
+            l = left;
+            if (
+                sym_is_safe_const(ctx, left)
+            ) {
+                JitOptRef left_sym = left;
+                _PyStackRef left = sym_get_const_as_stackref(ctx, left_sym);
+                _PyStackRef res_stackref;
+                _PyStackRef l_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                res_stackref = foo(left);
+                l_stackref = left;
+                /* End of uop copied from bytecodes for constant evaluation */
+                (void)l_stackref;
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                CHECK_STACK_BOUNDS(1);
+                stack_pointer[-1] = res;
+                stack_pointer[0] = l;
+                stack_pointer += 1;
+                ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+                break;
+            }
+            CHECK_STACK_BOUNDS(1);
+            stack_pointer[-1] = res;
+            stack_pointer[0] = l;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
     def test_replace_opocode_uop_reject_array_effects(self):
         input = """
         pure op(OP, (foo[2] -- res)) {
