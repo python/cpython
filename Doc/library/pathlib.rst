@@ -33,6 +33,11 @@ right for your task, :class:`Path` is most likely what you need. It instantiates
 a :ref:`concrete path <concrete-paths>` for the platform the code is running on.
 
 Pure paths are useful in some special cases; for example:
+#. Pure path objects provide path-handling operations which don't actually
+access a filesystem.
+Use pure paths when you need to manipulate path strings
+without requiring the path to exist on disk,such as when generating paths
+for remote systems or validating path formats.
 
 #. If you want to manipulate Windows paths on a Unix machine (or vice versa).
    You cannot instantiate a :class:`WindowsPath` when running on Unix, but you
