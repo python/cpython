@@ -661,9 +661,10 @@ dummy_func(void) {
         o = owner;
     }
 
-    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr)) {
+    op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, o)) {
         attr = sym_new_not_null(ctx);
         (void)index;
+        o = owner;
     }
 
     op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr)) {
