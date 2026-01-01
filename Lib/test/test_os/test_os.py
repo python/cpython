@@ -2632,7 +2632,7 @@ class ExecTests(unittest.TestCase):
             # See https://github.com/python/cpython/pull/143314
             # to understand why we cannot use spaces in strings
             # when using subprocess and os.execve() on Windows.
-            message = 123456
+            message = "123456"
         else:
             message = "hello from execve"
 
