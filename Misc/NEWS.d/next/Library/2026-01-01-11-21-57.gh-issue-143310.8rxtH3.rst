@@ -1,3 +1,3 @@
-:mod:`tkinter`: fix a crash when a Python object is mutated during the
-conversion to a Tcl object (e.g., when setting a Tcl variable). Patch by
-Bénédikt Tran.
+:mod:`tkinter`: fix a crash when a Python :class:`list` is mutated during
+the conversion to a Tcl object (e.g., when setting a Tcl variable).
+Patch by Bénédikt Tran.

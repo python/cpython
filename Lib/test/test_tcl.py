@@ -544,13 +544,19 @@ class TclTest(unittest.TestCase):
         # Prevent SIGSEV when the object to convert is concurrently mutated.
         # See: https://github.com/python/cpython/issues/143310.
 
+        string = "value"
+
         class Value:
             def __str__(self):
                 values.clear()
-                return "value"
+                return string
 
-        self.passValue(values := [Value(), "pad"])
-        self.passValue(values := collections.UserList([Value(), "pad"]))
+        class List(list):
+            pass
+
+        expect = (string, "pad") if self.wantobjects else f"{string} pad"
+        self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
+        self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
     def test_user_command(self):
         result = None

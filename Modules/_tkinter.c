@@ -1032,7 +1032,7 @@ AsObj(PyObject *value)
     }
 
     if (PyList_Check(value)) {
-        PyObject *value_as_tuple = PySequence_Tuple(value);
+        PyObject *value_as_tuple = PyList_AsTuple(value);
         if (value_as_tuple == NULL) {
             return NULL;
         }
