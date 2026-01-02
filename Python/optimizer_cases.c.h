@@ -3062,7 +3062,13 @@
 
         case _PY_FRAME_EX: {
             JitOptRef ex_frame;
-            ex_frame = sym_new_not_null(ctx);
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            PyCodeObject *co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            ex_frame = PyJitRef_Wrap((JitOptSymbol *)frame_new(ctx, co, 0, NULL, 0));
             CHECK_STACK_BOUNDS(-3);
             stack_pointer[-4] = ex_frame;
             stack_pointer += -3;
