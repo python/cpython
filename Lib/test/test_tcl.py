@@ -40,6 +40,9 @@ class TclTest(unittest.TestCase):
         self.interp = Tcl()
         self.wantobjects = self.interp.tk.wantobjects()
 
+    def passValue(self, value):
+        return self.interp.call('set', '_', value)
+
     def testEval(self):
         tcl = self.interp
         tcl.eval('set a 1')
@@ -490,8 +493,7 @@ class TclTest(unittest.TestCase):
                 self.assertIsInstance(result, str)
 
     def test_passing_values(self):
-        def passValue(value):
-            return self.interp.call('set', '_', value)
+        passValue = self.passValue
 
         self.assertEqual(passValue(True), True if self.wantobjects else '1')
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
@@ -536,6 +538,24 @@ class TclTest(unittest.TestCase):
                          (1, '2', (3.4,)) if self.wantobjects else '1 2 3.4')
         self.assertEqual(passValue(['a', ['b', 'c']]),
                          ('a', ('b', 'c')) if self.wantobjects else 'a {b c}')
+
+    def test_set_object_concurrent_mutation_in_sequence_conversion(self):
+        # Prevent SIGSEV when the object to convert is concurrently mutated.
+        # See: https://github.com/python/cpython/issues/143310.
+
+        string = "value"
+
+        class Value:
+            def __str__(self):
+                values.clear()
+                return string
+
+        class List(list):
+            pass
+
+        expect = (string, "pad") if self.wantobjects else f"{string} pad"
+        self.assertEqual(self.passValue(values := [Value(), "pad"]), expect)
+        self.assertEqual(self.passValue(values := List([Value(), "pad"])), expect)
 
     def test_user_command(self):
         result = None
