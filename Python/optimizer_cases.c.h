@@ -3075,6 +3075,10 @@
             break;
         }
 
+        case _CHECK_IS_NOT_PY_CALLABLE_EX: {
+            break;
+        }
+
         case _CALL_FUNCTION_EX_NON_PY_GENERAL: {
             JitOptRef result;
             result = sym_new_not_null(ctx);

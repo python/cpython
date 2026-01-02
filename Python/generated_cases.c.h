@@ -2415,22 +2415,34 @@
             int opcode = CALL_EX_NON_PY_GENERAL;
             (void)(opcode);
             #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CALL_EX_NON_PY_GENERAL);
             static_assert(INLINE_CACHE_ENTRIES_CALL_FUNCTION_EX == 1, "incorrect cache size");
+            _PyStackRef func_st;
             _PyStackRef func;
             _PyStackRef callargs;
-            _PyStackRef func_st;
             _PyStackRef null;
             _PyStackRef callargs_st;
             _PyStackRef kwargs_st;
             _PyStackRef result;
             /* Skip 1 cache entry */
+            // _CHECK_IS_NOT_PY_CALLABLE_EX
+            {
+                func_st = stack_pointer[-4];
+                PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+                if (Py_TYPE(func) == &PyFunction_Type && ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall) {
+                    UPDATE_MISS_STATS(CALL_FUNCTION_EX);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL_FUNCTION_EX));
+                    JUMP_TO_PREDICTED(CALL_FUNCTION_EX);
+                }
+            }
             // _MAKE_CALLARGS_A_TUPLE
             {
                 callargs = stack_pointer[-2];
-                func = stack_pointer[-4];
+                func = func_st;
                 PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
                 if (!PyTuple_CheckExact(callargs_o)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);

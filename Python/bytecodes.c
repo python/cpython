@@ -4915,6 +4915,11 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
+        op(_CHECK_IS_NOT_PY_CALLABLE_EX, (func_st, unused, unused, unused -- func_st, unused, unused, unused)) {
+            PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
+            EXIT_IF(Py_TYPE(func) == &PyFunction_Type && ((PyFunctionObject *)func)->vectorcall == _PyFunction_Vectorcall);
+        }
+
         op(_CALL_FUNCTION_EX_NON_PY_GENERAL, (func_st, null, callargs_st, kwargs_st -- result)) {
             PyObject *func = PyStackRef_AsPyObjectBorrow(func_st);
             PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
@@ -4933,6 +4938,7 @@ dummy_func(
 
         macro(CALL_EX_NON_PY_GENERAL) =
             unused/1 +
+            _CHECK_IS_NOT_PY_CALLABLE_EX +
             _MAKE_CALLARGS_A_TUPLE +
             _CALL_FUNCTION_EX_NON_PY_GENERAL +
             _CHECK_PERIODIC_AT_END;
