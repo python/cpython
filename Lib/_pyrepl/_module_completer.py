@@ -16,7 +16,6 @@ from tokenize import TokenInfo
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from types import ModuleType
     from typing import Any, Iterable, Iterator, Mapping
 
 
