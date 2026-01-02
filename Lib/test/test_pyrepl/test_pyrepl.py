@@ -1037,6 +1037,8 @@ class TestPyReplModuleCompleter(TestCase):
             (None, "from . import readl\t\n", "from . import readl"),
             ("_pyrepl", "from .readl\t\n", "from .readline"),
             ("_pyrepl", "from . import readl\t\n", "from . import readline"),
+            ("_pyrepl", "from .. import toodeep\t\n", "from .. import toodeep"),
+            ("concurrent", "from .futures.i\t\n", "from .futures.interpreter"),
         )
         for package, code, expected in cases:
             with self.subTest(code=code):
@@ -1074,6 +1076,18 @@ class TestPyReplModuleCompleter(TestCase):
                 reader = self.prepare_reader(events, namespace={})
                 output = reader.readline()
                 self.assertEqual(output, expected)
+
+    def test_global_cache(self):
+        with (tempfile.TemporaryDirectory() as _dir1,
+              patch.object(sys, "path", [_dir1, *sys.path])):
+            dir1 = pathlib.Path(_dir1)
+            (dir1 / "mod_aa.py").mkdir()
+            (dir1 / "mod_bb.py").mkdir()
+            events = code_to_events("import mod_a\t\nimport mod_b\t\n")
+            reader = self.prepare_reader(events, namespace={})
+            output_1, output_2 = reader.readline(), reader.readline()
+            self.assertEqual(output_1, "import mod_aa")
+            self.assertEqual(output_2, "import mod_bb")
 
     def test_hardcoded_stdlib_submodules(self):
         cases = (
@@ -1203,6 +1217,7 @@ class TestPyReplModuleCompleter(TestCase):
             'import ..foo',
             'import .foo.bar',
             'import foo; x = 1',
+            'import foo; 1,',
             'import a.; x = 1',
             'import a.b; x = 1',
             'import a.b.; x = 1',
@@ -1222,6 +1237,8 @@ class TestPyReplModuleCompleter(TestCase):
             'from foo import import',
             'from foo import from',
             'from foo import as',
+            'from \\x',  # _tokenize SyntaxError -> tokenize TokenError
+            'if 1:\n pass\n\tpass',  # _tokenize TabError -> tokenize TabError
         )
         for code in cases:
             parser = ImportParser(code)
@@ -1406,6 +1423,9 @@ class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
+        # Ignore PYTHONSTARTUP to not pollute the output
+        # with an unrelated traceback. See GH-137568.
+        env.pop('PYTHONSTARTUP', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -1440,10 +1460,10 @@ class TestMain(ReplTestCase):
         case2 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file and the .py source exists
-        case3 = f"{pre}, '__cached__', '__doc__', '__file__', {post}" in output
+        case3 = f"{pre}, '__doc__', '__file__', {post}" in output
 
         # if `__main__` is a cached .pyc file but there's no .py source file
-        case4 = f"{pre}, '__cached__', '__doc__', {post}" in output
+        case4 = f"{pre}, '__doc__', {post}" in output
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
@@ -1825,6 +1845,69 @@ class TestMain(ReplTestCase):
                     " outside of the Python REPL"
                 )
                 self.assertIn(hint, output)
+
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+
+        commands = "print('Something pretty long', end='')\nexit()\n"
+        expected_output_sequence = "Something pretty long>>> exit()"
+
+        basic_output, basic_exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(basic_exit_code, 0)
+        self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+
+        # Build patterns for escape sequences that don't affect cursor position
+        # or visual output. Use terminfo to get platform-specific sequences,
+        # falling back to hard-coded patterns for capabilities not in terminfo.
+        from _pyrepl.terminfo import TermInfo
+        ti = TermInfo(os.environ.get("TERM", ""))
+
+        safe_patterns = []
+
+        # smkx/rmkx - application cursor keys and keypad mode
+        smkx = ti.get("smkx")
+        rmkx = ti.get("rmkx")
+        if smkx:
+            safe_patterns.append(re.escape(smkx.decode("ascii")))
+        if rmkx:
+            safe_patterns.append(re.escape(rmkx.decode("ascii")))
+        if not smkx and not rmkx:
+            safe_patterns.append(r'\x1b\[\?1[hl]')  # application cursor keys
+            safe_patterns.append(r'\x1b[=>]')  # application keypad mode
+
+        # ich1 - insert character (only safe form that inserts exactly 1 char)
+        ich1 = ti.get("ich1")
+        if ich1:
+            safe_patterns.append(re.escape(ich1.decode("ascii")) + r'(?=[ -~])')
+        else:
+            safe_patterns.append(r'\x1b\[(?:1)?@(?=[ -~])')
+
+        # civis/cnorm - cursor visibility (may include cursor blinking control)
+        civis = ti.get("civis")
+        cnorm = ti.get("cnorm")
+        if civis:
+            safe_patterns.append(re.escape(civis.decode("ascii")))
+        if cnorm:
+            safe_patterns.append(re.escape(cnorm.decode("ascii")))
+        if not civis and not cnorm:
+            safe_patterns.append(r'\x1b\[\?25[hl]')  # cursor visibility
+            safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking
+
+        # Modern extensions not in standard terminfo - always use patterns
+        safe_patterns.append(r'\x1b\[\?2004[hl]')  # bracketed paste mode
+        safe_patterns.append(r'\x1b\[\?12[hl]')  # cursor blinking (may be separate)
+        safe_patterns.append(r'\x1b\[\?[01]c')  # device attributes
+
+        safe_escapes = re.compile('|'.join(safe_patterns))
+        cleaned_output = safe_escapes.sub('', output)
+        self.assertIn(expected_output_sequence, cleaned_output)
+
 
 class TestPyReplCtrlD(TestCase):
     """Test Ctrl+D behavior in _pyrepl to match old pre-3.13 REPL behavior.
