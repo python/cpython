@@ -13,7 +13,7 @@ from itertools import product
 from unittest import mock
 
 from test import support
-from test.support import import_helper, warnings_helper
+from test.support import force_not_colorized_test_class, import_helper, warnings_helper
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -1250,10 +1250,12 @@ class CommandLineTestCases:
         self.do_test_standalone_uuid(8)
 
 
+@force_not_colorized_test_class
 class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
 
+@force_not_colorized_test_class
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
 class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
