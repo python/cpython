@@ -185,7 +185,7 @@
 
         case _PUSH_NULL: {
             JitOptRef res;
-            res = sym_new_null(ctx);
+            res = PyJitRef_Borrow(sym_new_null(ctx));
             CHECK_STACK_BOUNDS(1);
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -796,6 +796,24 @@
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             sym_set_type(tos, &PyTuple_Type);
+            break;
+        }
+
+        case _GUARD_BINARY_OP_SUBSCR_TUPLE_INT_BOUNDS: {
+            JitOptRef sub_st;
+            JitOptRef tuple_st;
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length != -1 && index < tuple_length) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
+                }
+            }
             break;
         }
 
@@ -1648,11 +1666,19 @@
         }
 
         case _LOAD_ATTR_SLOT: {
+            JitOptRef owner;
             JitOptRef attr;
+            JitOptRef o;
+            owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             (void)index;
+            o = owner;
+            CHECK_STACK_BOUNDS(1);
             stack_pointer[-1] = attr;
+            stack_pointer[0] = o;
+            stack_pointer += 1;
+            ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
 
@@ -2746,16 +2772,31 @@
         }
 
         case _CALL_BUILTIN_O: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
-            JitOptRef a;
             JitOptRef c;
+            JitOptRef s;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            a = sym_new_not_null(ctx);
-            c = sym_new_not_null(ctx);
+            c = callable;
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+                s = args[0];
+            }
+            else if (sym_is_null(self_or_null)) {
+                s = args[0];
+            }
+            else {
+                s = sym_new_unknown(ctx);
+            }
             CHECK_STACK_BOUNDS(1 - oparg);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer[-1 - oparg] = a;
-            stack_pointer[-oparg] = c;
+            stack_pointer[-1 - oparg] = c;
+            stack_pointer[-oparg] = s;
             stack_pointer += 1 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
@@ -2894,11 +2935,33 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
+            JitOptRef *args;
+            JitOptRef self_or_null;
+            JitOptRef callable;
             JitOptRef res;
+            JitOptRef c;
+            JitOptRef s;
+            JitOptRef a;
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             res = sym_new_not_null(ctx);
-            CHECK_STACK_BOUNDS(-1 - oparg);
+            c = callable;
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+                s = args[0];
+                a = args[1];
+            }
+            else {
+                s = sym_new_unknown(ctx);
+                a = sym_new_unknown(ctx);
+            }
+            CHECK_STACK_BOUNDS(2 - oparg);
             stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-1 - oparg] = c;
+            stack_pointer[-oparg] = s;
+            stack_pointer[1 - oparg] = a;
+            stack_pointer += 2 - oparg;
             ASSERT_WITHIN_STACK_BOUNDS(__FILE__, __LINE__);
             break;
         }
