@@ -977,11 +977,6 @@
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
                 }
-                if (!PyUnicode_IS_COMPACT_ASCII(str)) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
                 uint8_t c = PyUnicode_1BYTE_DATA(str)[index];
                 assert(c < 128);
                 STAT_INC(BINARY_OP, hit);

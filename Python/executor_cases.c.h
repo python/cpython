@@ -4810,13 +4810,6 @@
                 SET_CURRENT_CACHED_VALUES(2);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (!PyUnicode_IS_COMPACT_ASCII(str)) {
-                UOP_STAT_INC(uopcode, miss);
-                _tos_cache1 = sub_st;
-                _tos_cache0 = str_st;
-                SET_CURRENT_CACHED_VALUES(2);
-                JUMP_TO_JUMP_TARGET();
-            }
             uint8_t c = PyUnicode_1BYTE_DATA(str)[index];
             assert(c < 128);
             STAT_INC(BINARY_OP, hit);

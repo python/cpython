@@ -413,9 +413,6 @@ dummy_func(void) {
     }
 
     op(_GUARD_NOS_COMPACT_ASCII, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyUnicode_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
         sym_set_type(nos, &PyUnicode_Type);
     }
 
