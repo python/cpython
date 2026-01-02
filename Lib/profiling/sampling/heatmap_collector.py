@@ -18,6 +18,7 @@ from typing import Dict, List, Tuple
 from ._css_utils import get_combined_css
 from ._format_utils import fmt
 from .collector import normalize_location, extract_lineno
+from .opcode_utils import get_opcode_info, format_opcode
 from .stack_collector import StackTraceCollector
 
 
@@ -472,6 +473,10 @@ class HeatmapCollector(StackTraceCollector):
         self.callers_graph = collections.defaultdict(set)
         self.function_definitions = {}
 
+        # Map each sampled line to its function for proper caller lookup
+        # (filename, lineno) -> funcname
+        self.line_to_function = {}
+
         # Edge counting for call path analysis
         self.edge_samples = collections.Counter()
 
@@ -521,7 +526,7 @@ class HeatmapCollector(StackTraceCollector):
         }
         self.stats.update(kwargs)
 
-    def process_frames(self, frames, thread_id):
+    def process_frames(self, frames, thread_id, weight=1):
         """Process stack frames and count samples per line.
 
         Args:
@@ -529,8 +534,9 @@ class HeatmapCollector(StackTraceCollector):
                     leaf-to-root order. location is (lineno, end_lineno, col_offset, end_col_offset).
                     opcode is None if not gathered.
             thread_id: Thread ID for this stack trace
+            weight: Number of samples this stack represents (for batched RLE)
         """
-        self._total_samples += 1
+        self._total_samples += weight
         self._seen_lines.clear()
 
         for i, (filename, location, funcname, opcode) in enumerate(frames):
@@ -548,15 +554,16 @@ class HeatmapCollector(StackTraceCollector):
                 self._seen_lines.add(line_key)
 
             self._record_line_sample(filename, lineno, funcname, is_leaf=is_leaf,
-                                     count_cumulative=count_cumulative)
+                                     count_cumulative=count_cumulative, weight=weight)
 
             if opcode is not None:
                 # Set opcodes_enabled flag when we first encounter opcode data
                 self.opcodes_enabled = True
                 self._record_bytecode_sample(filename, lineno, opcode,
-                                             end_lineno, col_offset, end_col_offset)
+                                             end_lineno, col_offset, end_col_offset,
+                                             weight=weight)
 
-            # Build call graph for adjacent frames
+            # Build call graph for adjacent frames (relationships are deduplicated anyway)
             if i + 1 < len(frames):
                 next_frame = frames[i + 1]
                 next_lineno = extract_lineno(next_frame[1])
@@ -578,24 +585,29 @@ class HeatmapCollector(StackTraceCollector):
         return True
 
     def _record_line_sample(self, filename, lineno, funcname, is_leaf=False,
-                            count_cumulative=True):
+                            count_cumulative=True, weight=1):
         """Record a sample for a specific line."""
         # Track cumulative samples (all occurrences in stack)
         if count_cumulative:
-            self.line_samples[(filename, lineno)] += 1
-            self.file_samples[filename][lineno] += 1
+            self.line_samples[(filename, lineno)] += weight
+            self.file_samples[filename][lineno] += weight
 
         # Track self/leaf samples (only when at top of stack)
         if is_leaf:
-            self.line_self_samples[(filename, lineno)] += 1
-            self.file_self_samples[filename][lineno] += 1
+            self.line_self_samples[(filename, lineno)] += weight
+            self.file_self_samples[filename][lineno] += weight
 
         # Record function definition location
         if funcname and (filename, funcname) not in self.function_definitions:
             self.function_definitions[(filename, funcname)] = lineno
 
+        # Map this line to its function for caller/callee navigation
+        if funcname:
+            self.line_to_function[(filename, lineno)] = funcname
+
     def _record_bytecode_sample(self, filename, lineno, opcode,
-                                end_lineno=None, col_offset=None, end_col_offset=None):
+                                end_lineno=None, col_offset=None, end_col_offset=None,
+                                weight=1):
         """Record a sample for a specific bytecode instruction.
 
         Args:
@@ -605,6 +617,7 @@ class HeatmapCollector(StackTraceCollector):
             end_lineno: End line number (may be -1 if not available)
             col_offset: Column offset in UTF-8 bytes (may be -1 if not available)
             end_col_offset: End column offset in UTF-8 bytes (may be -1 if not available)
+            weight: Number of samples this represents (for batched RLE)
         """
         key = (filename, lineno)
 
@@ -612,7 +625,7 @@ class HeatmapCollector(StackTraceCollector):
         if opcode not in self.line_opcodes[key]:
             self.line_opcodes[key][opcode] = {'count': 0, 'locations': set()}
 
-        self.line_opcodes[key][opcode]['count'] += 1
+        self.line_opcodes[key][opcode]['count'] += weight
 
         # Store unique location info if column offset is available (not -1)
         if col_offset is not None and col_offset >= 0:
@@ -630,8 +643,6 @@ class HeatmapCollector(StackTraceCollector):
         Returns:
             List of dicts with instruction info, sorted by samples descending
         """
-        from .opcode_utils import get_opcode_info, format_opcode
-
         key = (filename, lineno)
         opcode_data = self.line_opcodes.get(key, {})
 
@@ -1034,8 +1045,6 @@ class HeatmapCollector(StackTraceCollector):
         Simple: collect ranges with sample counts, assign each byte position to
         smallest covering range, then emit spans for contiguous runs with sample data.
         """
-        import html as html_module
-
         content = line_content.rstrip('\n')
         if not content:
             return ''
@@ -1058,7 +1067,7 @@ class HeatmapCollector(StackTraceCollector):
                             range_data[key]['opcodes'].append(opname)
 
         if not range_data:
-            return html_module.escape(content)
+            return html.escape(content)
 
         # For each byte position, find the smallest covering range
         byte_to_range = {}
@@ -1086,7 +1095,7 @@ class HeatmapCollector(StackTraceCollector):
         def flush_span():
             nonlocal span_chars, current_range
             if span_chars:
-                text = html_module.escape(''.join(span_chars))
+                text = html.escape(''.join(span_chars))
                 if current_range:
                     data = range_data.get(current_range, {'samples': 0, 'opcodes': []})
                     samples = data['samples']
@@ -1100,7 +1109,7 @@ class HeatmapCollector(StackTraceCollector):
                                   f'data-samples="{samples}" '
                                   f'data-max-samples="{max_range_samples}" '
                                   f'data-pct="{pct}" '
-                                  f'data-opcodes="{html_module.escape(opcodes)}">{text}</span>')
+                                  f'data-opcodes="{html.escape(opcodes)}">{text}</span>')
                 else:
                     result.append(text)
                 span_chars = []
@@ -1146,13 +1155,36 @@ class HeatmapCollector(StackTraceCollector):
         return f"rgba({r}, {g}, {b}, {alpha})"
 
     def _build_navigation_buttons(self, filename: str, line_num: int) -> str:
-        """Build navigation buttons for callers/callees."""
+        """Build navigation buttons for callers/callees.
+
+        - Callers: All lines in a function show who calls this function
+        - Callees: Only actual call site lines show what they call
+        """
         line_key = (filename, line_num)
-        caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        funcname = self.line_to_function.get(line_key)
+
+        # Get callers: look up by function definition line, not current line
+        # This ensures all lines in a function show who calls this function
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            func_def_key = (filename, func_def_line)
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(func_def_key, set()))
+        else:
+            caller_list = self._deduplicate_by_function(self.callers_graph.get(line_key, set()))
+
+        # Get callees: only show for actual call site lines (not every line in function)
         callee_list = self._deduplicate_by_function(self.call_graph.get(line_key, set()))
 
         # Get edge counts for each caller/callee
-        callers_with_counts = self._get_edge_counts(line_key, caller_list, is_caller=True)
+        # For callers, use the function definition key for edge lookup
+        if funcname:
+            func_def_line = self.function_definitions.get((filename, funcname), line_num)
+            caller_edge_key = (filename, func_def_line)
+        else:
+            caller_edge_key = line_key
+        callers_with_counts = self._get_edge_counts(caller_edge_key, caller_list, is_caller=True)
+        # For callees, use the actual line key since that's where the call happens
         callees_with_counts = self._get_edge_counts(line_key, callee_list, is_caller=False)
 
         # Build navigation buttons with counts
