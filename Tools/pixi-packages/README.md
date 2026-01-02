@@ -22,7 +22,7 @@ Each package definition is contained in a subdirectory, but they share the build
 - `default`
 - `free-threading`
 - `asan`: ASan-instrumented build
-- `tsan`: free-threading, TSan-instrumented build
+- `tsan-free-threading`: TSan-instrumented free-threading build
 
 ## Maintenance
 

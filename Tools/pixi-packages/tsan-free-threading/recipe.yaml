@@ -16,7 +16,7 @@ build:
   script:
     file: ../build.sh
     env:
-      PYTHON_VARIANT: "tsan"
+      PYTHON_VARIANT: "tsan-free-threading"
 
 # derived from https://github.com/conda-forge/python-feedstock/blob/main/recipe/meta.yaml
 requirements:

@@ -9,9 +9,9 @@ elif [[ "${PYTHON_VARIANT}" == "asan" ]]; then
     BUILD_DIR="../build_asan"
     CONFIGURE_EXTRA="--with-address-sanitizer"
     export ASAN_OPTIONS="strict_init_order=true"
-elif [[ "${PYTHON_VARIANT}" == "tsan" ]]; then
-    echo "BUILD TYPE: TSAN"
-    BUILD_DIR="../build_tsan"
+elif [[ "${PYTHON_VARIANT}" == "tsan-free-threading" ]]; then
+    echo "BUILD TYPE: TSAN FREE-THREADING"
+    BUILD_DIR="../build_tsan_free_threading"
     CONFIGURE_EXTRA="--disable-gil --with-thread-sanitizer"
     export TSAN_OPTIONS="suppressions=${SRC_DIR}/Tools/tsan/suppressions_free_threading.txt"
 else
